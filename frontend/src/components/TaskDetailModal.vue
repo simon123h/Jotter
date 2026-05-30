@@ -1,0 +1,408 @@
+<script setup lang="ts">
+import { ref, watch, computed } from 'vue';
+import { marked } from 'marked';
+import type { Task, BucketName } from '../types';
+import { getTask, updateTask, deleteTask } from '../api';
+
+const props = defineProps<{
+  isOpen: boolean;
+  taskId: number | null;
+  buckets: { name: BucketName; title: string }[];
+}>();
+
+const emit = defineEmits<{
+  (e: 'close'): void;
+  (e: 'updated'): void;
+  (e: 'deleted'): void;
+}>();
+
+const task = ref<Task | null>(null);
+const loading = ref(false);
+const error = ref<string | null>(null);
+const isEditing = ref(false);
+
+// Edit state
+const editTitle = ref('');
+const editBucket = ref<string>('todo');
+const editTags = ref('');
+const editBody = ref('');
+
+// Fetch task detail when modal opens or taskId changes
+watch(
+  () => props.taskId,
+  async (newId) => {
+    if (newId !== null && props.isOpen) {
+      await fetchTaskDetail(newId);
+    } else {
+      task.value = null;
+      isEditing.value = false;
+    }
+  }
+);
+
+watch(
+  () => props.isOpen,
+  async (open) => {
+    if (open && props.taskId !== null) {
+      await fetchTaskDetail(props.taskId);
+    }
+  }
+);
+
+const fetchTaskDetail = async (id: number) => {
+  loading.value = true;
+  error.value = null;
+  try {
+    const fetchedTask = await getTask(id);
+    task.value = fetchedTask;
+    // Set edit form values
+    editTitle.value = fetchedTask.title;
+    editBucket.value = fetchedTask.bucket;
+    editTags.value = fetchedTask.tags.join(', ');
+    editBody.value = fetchedTask.body;
+  } catch (err: any) {
+    error.value = err.message || 'Failed to load task details';
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Compile Markdown body safely
+const parsedMarkdown = computed(() => {
+  if (!task.value || !task.value.body) return '';
+  try {
+    return marked.parse(task.value.body);
+  } catch (e) {
+    return task.value.body;
+  }
+});
+
+const handleSave = async () => {
+  if (!task.value) return;
+  
+  loading.value = true;
+  error.value = null;
+  try {
+    // Process tags (split by comma and trim)
+    const tagArray = editTags.value
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    const updated = await updateTask(task.value.id, {
+      title: editTitle.value,
+      bucket: editBucket.value,
+      tags: tagArray,
+      body: editBody.value,
+    });
+    
+    task.value = updated;
+    isEditing.value = false;
+    emit('updated');
+  } catch (err: any) {
+    error.value = err.message || 'Failed to update task';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const handleDelete = async () => {
+  if (!task.value) return;
+  if (!confirm('Are you sure you want to delete this task? This cannot be undone.')) return;
+
+  loading.value = true;
+  error.value = null;
+  try {
+    await deleteTask(task.value.id);
+    emit('deleted');
+    emit('close');
+  } catch (err: any) {
+    error.value = err.message || 'Failed to delete task';
+    loading.value = false;
+  }
+};
+
+const cancelEdit = () => {
+  if (task.value) {
+    editTitle.value = task.value.title;
+    editBucket.value = task.value.bucket;
+    editTags.value = task.value.tags.join(', ');
+    editBody.value = task.value.body;
+  }
+  isEditing.value = false;
+};
+</script>
+
+<template>
+  <div
+    v-if="isOpen"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+  >
+    <!-- Backdrop -->
+    <div
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+      @click="emit('close')"
+    ></div>
+
+    <!-- Modal Content -->
+    <div
+      class="relative bg-slate-900 border border-slate-700/80 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
+    >
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-mono px-2 py-1 bg-slate-800 text-slate-400 rounded-md border border-slate-700">
+            Task #{{ taskId }}
+          </span>
+          <span
+            v-if="task && !isEditing"
+            class="text-xs uppercase font-bold px-2.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20"
+          >
+            {{ task.bucket }}
+          </span>
+        </div>
+        <button
+          @click="emit('close')"
+          class="text-slate-400 hover:text-white transition-colors p-1.5 hover:bg-slate-800 rounded-lg"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Error alert -->
+      <div v-if="error" class="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-lg">
+        {{ error }}
+      </div>
+
+      <!-- Main Body -->
+      <div class="p-6 overflow-y-auto flex-grow">
+        <!-- Loading State -->
+        <div v-if="loading && !task" class="flex flex-col items-center justify-center py-12 gap-3">
+          <div class="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-slate-400 text-sm">Loading task...</span>
+        </div>
+
+        <div v-else-if="task">
+          <!-- View Mode -->
+          <div v-if="!isEditing" class="space-y-6">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-100 mb-2 leading-snug">
+                {{ task.title }}
+              </h2>
+              
+              <!-- Tags -->
+              <div v-if="task.tags.length" class="flex flex-wrap gap-1.5 mt-3">
+                <span
+                  v-for="tag in task.tags"
+                  :key="tag"
+                  class="text-xs font-semibold px-2.5 py-0.5 bg-slate-800 text-slate-300 border border-slate-700 rounded-md"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+            </div>
+
+            <div class="border-t border-slate-800 pt-6">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Notes & Description</h4>
+              
+              <!-- Rendered Markdown -->
+              <div
+                v-if="task.body"
+                class="markdown-content text-slate-300 prose prose-invert max-w-none space-y-4"
+                v-html="parsedMarkdown"
+              ></div>
+              <div v-else class="text-slate-500 italic text-sm py-4">
+                No description provided. Click Edit to add details.
+              </div>
+            </div>
+            
+            <div class="text-[11px] text-slate-500 flex gap-4 border-t border-slate-800 pt-4 font-mono">
+              <span>Created: {{ new Date(task.created_at).toLocaleString() }}</span>
+              <span>Updated: {{ new Date(task.updated_at).toLocaleString() }}</span>
+            </div>
+          </div>
+
+          <!-- Edit Mode -->
+          <div v-else class="space-y-4">
+            <!-- Title -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Title</label>
+              <input
+                v-model="editTitle"
+                type="text"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                placeholder="Task title"
+              />
+            </div>
+
+            <!-- Bucket & Tags Row -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Column</label>
+                <select
+                  v-model="editBucket"
+                  class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                >
+                  <option v-for="b in buckets" :key="b.name" :value="b.name">{{ b.title }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Tags (comma-separated)</label>
+                <input
+                  v-model="editTags"
+                  type="text"
+                  class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                  placeholder="e.g. bug, high-priority, ui"
+                />
+              </div>
+            </div>
+
+            <!-- Body (Markdown Textarea) -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Markdown Body
+              </label>
+              <textarea
+                v-model="editBody"
+                rows="10"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-slate-100 font-mono text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                placeholder="Markdown details go here..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="px-6 py-4 border-t border-slate-800 flex justify-between items-center bg-slate-900/30 shrink-0">
+        <div>
+          <button
+            v-if="task && !isEditing"
+            @click="handleDelete"
+            class="text-xs font-semibold px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl transition-colors"
+          >
+            Delete Task
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <!-- View mode buttons -->
+          <template v-if="!isEditing">
+            <button
+              @click="isEditing = true"
+              class="text-xs font-semibold px-4.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl transition-all"
+            >
+              Edit
+            </button>
+            <button
+              @click="emit('close')"
+              class="text-xs font-semibold px-4.5 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl shadow-md hover:shadow-violet-500/10 transition-all"
+            >
+              Close
+            </button>
+          </template>
+
+          <!-- Edit mode buttons -->
+          <template v-else>
+            <button
+              @click="cancelEdit"
+              class="text-xs font-semibold px-4.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl transition-all"
+              :disabled="loading"
+            >
+              Cancel
+            </button>
+            <button
+              @click="handleSave"
+              class="text-xs font-semibold px-4.5 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl shadow-md hover:shadow-violet-500/10 transition-all flex items-center gap-2"
+              :disabled="loading"
+            >
+              <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              Save Changes
+            </button>
+          </template>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style>
+/* Style rendered markdown headers and checklists inside the modal */
+.markdown-content h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #f8fafc;
+}
+.markdown-content h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: #f8fafc;
+}
+.markdown-content h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  color: #f1f5f9;
+}
+.markdown-content ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.markdown-content ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.markdown-content li {
+  margin-bottom: 0.25rem;
+}
+.markdown-content p {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+.markdown-content code {
+  background-color: #1e293b;
+  padding: 0.15rem 0.3rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  color: #f472b6;
+}
+.markdown-content pre {
+  background-color: #0f172a;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+}
+.markdown-content a {
+  color: #a78bfa;
+  text-decoration: underline;
+}
+.markdown-content a:hover {
+  color: #c084fc;
+}
+.markdown-content blockquote {
+  border-left: 3px solid #64748b;
+  padding-left: 0.75rem;
+  color: #94a3b8;
+  font-style: italic;
+  margin: 0.75rem 0;
+}
+.markdown-content input[type="checkbox"] {
+  accent-color: #8b5cf6;
+  margin-right: 0.5rem;
+  border-radius: 0.25rem;
+}
+</style>

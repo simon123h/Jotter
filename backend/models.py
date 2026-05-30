@@ -1,0 +1,34 @@
+from pydantic import BaseModel, Field
+from typing import List, Optional
+
+class TaskBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    bucket: str = Field("todo", description="Column/status bucket e.g., backlog, todo, in-progress, done")
+    tags: List[str] = Field(default_factory=list)
+    body: str = Field("", description="Markdown content of the task")
+
+class TaskCreate(TaskBase):
+    pass
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    bucket: Optional[str] = None
+    tags: Optional[List[str]] = None
+    body: Optional[str] = None
+    position: Optional[float] = None
+
+class TaskMove(BaseModel):
+    bucket: str
+    position: float
+
+class TaskResponse(BaseModel):
+    id: int
+    title: str
+    bucket: str
+    position: float
+    tags: List[str]
+    body: str
+    created_at: str
+    updated_at: str
+
+    model_config = {"from_attributes": True}
