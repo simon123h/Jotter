@@ -1,4 +1,4 @@
-import type { Task } from './types';
+import type { Task, Bucket } from './types';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -75,4 +75,48 @@ export async function syncSystem(): Promise<{ synchronized_tasks: number }> {
     throw new Error(`Failed to sync database: ${response.statusText}`);
   }
   return response.json();
+}
+
+export async function getBuckets(): Promise<Bucket[]> {
+  const response = await fetch(`${API_BASE}/buckets`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch columns: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function createBucket(title: string): Promise<Bucket> {
+  const response = await fetch(`${API_BASE}/buckets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to create column: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function updateBucket(name: string, payload: { title?: string; position?: number }): Promise<Bucket> {
+  const response = await fetch(`${API_BASE}/buckets/${name}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to update column: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function deleteBucket(name: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/buckets/${name}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to delete column: ${response.statusText}`);
+  }
 }

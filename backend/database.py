@@ -33,6 +33,13 @@ def init_db():
         """)
         # Indexes for fast querying/filtering
         conn.execute("CREATE INDEX IF NOT EXISTS idx_tasks_bucket ON tasks(bucket)")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS buckets (
+                name TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                position REAL NOT NULL
+            )
+        """)
         conn.commit()
     finally:
         conn.close()

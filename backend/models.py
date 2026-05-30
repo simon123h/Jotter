@@ -38,3 +38,23 @@ class TaskResponse(BaseModel):
     updated_at: str
 
     model_config = {"from_attributes": True}
+
+
+class BucketBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+    title: str = Field(..., min_length=1, max_length=100)
+
+
+class BucketCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=100)
+
+
+class BucketUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=100)
+    position: Optional[float] = None
+
+
+class BucketResponse(BucketBase):
+    position: float
+
+    model_config = {"from_attributes": True}
