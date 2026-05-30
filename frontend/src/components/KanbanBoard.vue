@@ -308,7 +308,7 @@ const triggerSync = async () => {
             :title="t('themeChoose')"
           >
             <span class="w-3.5 h-3.5 rounded-full" :class="themes.find((t) => t.id === currentTheme)?.color"></span>
-            {{ t('themeLabel') }}
+            <span class="lg:hidden xl:inline">{{ t('themeLabel') }}</span>
             <svg class="w-3.5 h-3.5 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
@@ -343,7 +343,8 @@ const triggerSync = async () => {
             :title="t('language.choose')"
           >
             <span class="text-sm shrink-0">🌐</span>
-            {{ t('language.' + locale) }}
+            <span class="lg:hidden xl:inline">{{ t('language.' + locale) }}</span>
+            <span class="hidden lg:inline xl:hidden uppercase">{{ locale }}</span>
             <svg class="w-3.5 h-3.5 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
@@ -387,7 +388,9 @@ const triggerSync = async () => {
           <svg class="w-4 h-4" :class="{ 'animate-spin': syncLoading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2" />
           </svg>
-          {{ syncLoading ? t('sync.syncing') : t('sync.button') }}
+          <span class="lg:hidden xl:inline">
+            {{ syncLoading ? t('sync.syncing') : t('sync.button') }}
+          </span>
         </button>
 
         <!-- New Task Button -->
