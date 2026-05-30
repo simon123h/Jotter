@@ -201,7 +201,7 @@ const triggerSync = async () => {
 <template>
   <div class="flex-grow flex flex-col p-6 max-w-7xl mx-auto w-full gap-6">
     <!-- Header Controls -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-theme-border pb-6">
+    <header class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-theme-border pb-6">
       <div>
         <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-theme-grad-from to-theme-grad-to bg-clip-text text-transparent">
           {{ t('brand.title') }}
@@ -210,9 +210,9 @@ const triggerSync = async () => {
       </div>
 
       <!-- Toolbar Actions -->
-      <div class="flex flex-wrap items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
         <!-- Search -->
-        <div class="relative min-w-[200px]">
+        <div class="relative min-w-[200px] flex-grow sm:flex-grow-0">
           <input
             v-model="searchQuery"
             type="text"
