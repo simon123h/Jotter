@@ -1,1 +1,181 @@
 @import "tailwindcss";
+
+@theme {
+  --color-theme-base: var(--theme-bg-base);
+  --color-theme-column: var(--theme-bg-column);
+  --color-theme-card: var(--theme-bg-card);
+  --color-theme-border: var(--theme-border);
+  --color-theme-primary: var(--theme-primary);
+  --color-theme-primary-hover: var(--theme-primary-hover);
+  --color-theme-accent: var(--theme-accent);
+  --color-theme-accent-hover: var(--theme-accent-hover);
+  --color-theme-ring: var(--theme-ring);
+  
+  --color-theme-text-main: var(--theme-text-main);
+  --color-theme-text-card: var(--theme-text-card);
+  --color-theme-text-muted: var(--theme-text-muted);
+  --color-theme-text-input: var(--theme-text-input);
+  
+  --color-theme-grad-from: var(--theme-grad-from);
+  --color-theme-grad-to: var(--theme-grad-to);
+}
+
+/* Default Theme: Nordic Light (Light) */
+:root {
+  --theme-bg-base: #f8fafc; /* slate-50 */
+  --theme-bg-column: rgba(241, 245, 249, 0.85); /* slate-100 */
+  --theme-bg-card: #ffffff;
+  --theme-border: #cbd5e1; /* slate-300 */
+  --theme-primary: #1d4ed8; /* blue-700 */
+  --theme-primary-hover: #2563eb; /* blue-600 */
+  --theme-accent: #3b82f6; /* blue-500 */
+  --theme-accent-hover: #60a5fa;
+  --theme-grad-from: #1d4ed8;
+  --theme-grad-to: #0369a1; /* sky-700 */
+  --theme-ring: rgba(37, 99, 235, 0.15);
+  
+  --theme-text-main: #0f172a; /* slate-900 */
+  --theme-text-card: #1e293b; /* slate-800 */
+  --theme-text-muted: #475569; /* slate-600 */
+  --theme-text-input: #0f172a;
+}
+
+/* Theme: Midnight Violet (Dark) */
+.theme-midnight {
+  --theme-bg-base: #0f172a; /* slate-900 */
+  --theme-bg-column: rgba(30, 41, 59, 0.4); /* slate-800/40 */
+  --theme-bg-card: #1e293b; /* slate-800 */
+  --theme-border: rgba(51, 65, 85, 0.5); /* slate-700/50 */
+  --theme-primary: #6d28d9; /* violet-700 */
+  --theme-primary-hover: #7c3aed; /* violet-600 */
+  --theme-accent: #a78bfa; /* violet-400 */
+  --theme-accent-hover: #c084fc;
+  --theme-grad-from: #a78bfa;
+  --theme-grad-to: #818cf8; /* indigo-400 */
+  --theme-ring: rgba(139, 92, 246, 0.3);
+  
+  --theme-text-main: #f8fafc; /* slate-50 */
+  --theme-text-card: #f1f5f9; /* slate-100 */
+  --theme-text-muted: #94a3b8; /* slate-400 */
+  --theme-text-input: #f8fafc;
+}
+
+/* Theme: Emerald Forest (Dark) */
+.theme-forest {
+  --theme-bg-base: #022c22; /* emerald-950 */
+  --theme-bg-column: rgba(6, 78, 59, 0.4); /* emerald-900/40 */
+  --theme-bg-card: #064e3b; /* emerald-900 */
+  --theme-border: rgba(4, 120, 87, 0.4); /* emerald-700/40 */
+  --theme-primary: #047857; /* emerald-700 */
+  --theme-primary-hover: #059669; /* emerald-600 */
+  --theme-accent: #34d399; /* emerald-400 */
+  --theme-accent-hover: #6ee7b7;
+  --theme-grad-from: #34d399;
+  --theme-grad-to: #2dd4bf; /* teal-400 */
+  --theme-ring: rgba(52, 211, 153, 0.3);
+  
+  --theme-text-main: #f0fdf4;
+  --theme-text-card: #ecfdf5;
+  --theme-text-muted: #a7f3d0;
+  --theme-text-input: #f0fdf4;
+}
+
+/* Theme: Nordic Frost (Dark) */
+.theme-frost {
+  --theme-bg-base: #0b132b; /* deep ice dark */
+  --theme-bg-column: rgba(28, 37, 65, 0.5); /* dark ice-blue column */
+  --theme-bg-card: #1c2541; /* slate-ish card */
+  --theme-border: rgba(58, 80, 107, 0.5);
+  --theme-primary: #0369a1; /* sky-700 */
+  --theme-primary-hover: #0284c7; /* sky-600 */
+  --theme-accent: #38bdf8; /* sky-400 */
+  --theme-accent-hover: #7dd3fc;
+  --theme-grad-from: #38bdf8;
+  --theme-grad-to: #60a5fa; /* blue-400 */
+  --theme-ring: rgba(56, 189, 248, 0.3);
+  
+  --theme-text-main: #f0f9ff;
+  --theme-text-card: #e0f2fe;
+  --theme-text-muted: #bae6fd;
+  --theme-text-input: #f0f9ff;
+}
+
+/* Theme: Cyberpunk Neon (Dark) */
+.theme-cyberpunk {
+  --theme-bg-base: #080808; /* near black */
+  --theme-bg-column: rgba(24, 24, 27, 0.6); /* zinc-900/60 */
+  --theme-bg-card: #18181b; /* zinc-900 */
+  --theme-border: rgba(63, 63, 70, 0.6);
+  --theme-primary: #be185d; /* pink-700 */
+  --theme-primary-hover: #db2777; /* pink-600 */
+  --theme-accent: #f472b6; /* pink-400 */
+  --theme-accent-hover: #fbcfe8;
+  --theme-grad-from: #f472b6;
+  --theme-grad-to: #22d3ee; /* cyan-400 */
+  --theme-ring: rgba(244, 114, 182, 0.3);
+  
+  --theme-text-main: #ffffff;
+  --theme-text-card: #ffffff;
+  --theme-text-muted: #a1a1aa;
+  --theme-text-input: #ffffff;
+}
+
+/* Theme: Sakura Rose (Dark) */
+.theme-sakura {
+  --theme-bg-base: #1f1118; /* deep warm plum */
+  --theme-bg-column: rgba(136, 19, 55, 0.2); /* rose-900/20 */
+  --theme-bg-card: #4c0519; /* rose-950 */
+  --theme-border: rgba(159, 18, 57, 0.5); /* rose-900/50 */
+  --theme-primary: #be123c; /* rose-700 */
+  --theme-primary-hover: #e11d48; /* rose-600 */
+  --theme-accent: #fda4af; /* rose-300 */
+  --theme-accent-hover: #fecdd3;
+  --theme-grad-from: #fb7185;
+  --theme-grad-to: #fcd34d; /* amber-300 */
+  --theme-ring: rgba(251, 113, 133, 0.3);
+  
+  --theme-text-main: #fff1f2;
+  --theme-text-card: #ffe4e6;
+  --theme-text-muted: #fecdd3;
+  --theme-text-input: #fff1f2;
+}
+
+/* Theme: Nordic Light (Light) */
+.theme-nordic-light {
+  --theme-bg-base: #f8fafc; /* slate-50 */
+  --theme-bg-column: rgba(241, 245, 249, 0.85); /* slate-100 */
+  --theme-bg-card: #ffffff;
+  --theme-border: #cbd5e1; /* slate-300 */
+  --theme-primary: #1d4ed8; /* blue-700 */
+  --theme-primary-hover: #2563eb; /* blue-600 */
+  --theme-accent: #3b82f6; /* blue-500 */
+  --theme-accent-hover: #60a5fa;
+  --theme-grad-from: #1d4ed8;
+  --theme-grad-to: #0369a1; /* sky-700 */
+  --theme-ring: rgba(37, 99, 235, 0.15);
+  
+  --theme-text-main: #0f172a; /* slate-900 */
+  --theme-text-card: #1e293b; /* slate-800 */
+  --theme-text-muted: #475569; /* slate-600 */
+  --theme-text-input: #0f172a;
+}
+
+/* Theme: Desert Amber (Light) */
+.theme-desert-light {
+  --theme-bg-base: #fdfbf7; /* warm cream */
+  --theme-bg-column: rgba(245, 240, 230, 0.9); /* sand-column */
+  --theme-bg-card: #ffffff;
+  --theme-border: #e7e0d0; /* sand-border */
+  --theme-primary: #c2410c; /* orange-700 */
+  --theme-primary-hover: #ea580c; /* orange-600 */
+  --theme-accent: #f97316; /* orange-500 */
+  --theme-accent-hover: #fb923c;
+  --theme-grad-from: #c2410c;
+  --theme-grad-to: #b45309; /* amber-700 */
+  --theme-ring: rgba(234, 88, 12, 0.15);
+  
+  --theme-text-main: #1c1917; /* stone-900 */
+  --theme-text-card: #292524; /* stone-800 */
+  --theme-text-muted: #57534e; /* stone-600 */
+  --theme-text-input: #1c1917;
+}

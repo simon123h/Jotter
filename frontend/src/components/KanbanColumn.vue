@@ -48,18 +48,18 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col bg-slate-850/50 border border-slate-800/80 rounded-2xl w-full max-h-[80vh] min-w-[280px]">
+  <div class="flex flex-col bg-theme-column border border-theme-border rounded-2xl w-full max-h-[80vh] min-w-[280px]">
     <!-- Column Header -->
-    <div class="px-5 py-4 flex justify-between items-center border-b border-slate-800 bg-slate-850/30 rounded-t-2xl shrink-0">
+    <div class="px-5 py-4 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t-2xl shrink-0">
       <div class="flex items-center gap-2.5">
-        <h3 class="font-bold text-sm uppercase tracking-wider text-slate-300">{{ title }}</h3>
-        <span class="text-xs px-2 py-0.5 bg-slate-800 border border-slate-700/60 text-slate-400 font-bold rounded-full">
+        <h3 class="font-bold text-sm uppercase tracking-wider text-theme-text-main">{{ title }}</h3>
+        <span class="text-xs px-2 py-0.5 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded-full">
           {{ tasks.length }}
         </span>
       </div>
       <button
         @click="emit('add-task-click', bucketName)"
-        class="text-slate-400 hover:text-white hover:bg-slate-800 p-1 rounded-lg transition-colors"
+        class="text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card p-1 rounded-lg transition-colors cursor-pointer"
         title="Add task to this column"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +94,7 @@ onMounted(() => {
   background: transparent;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: #334155;
+  background-color: var(--theme-border);
   border-radius: 20px;
 }
 </style>

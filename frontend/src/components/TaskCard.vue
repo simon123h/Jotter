@@ -28,14 +28,14 @@ const getTagClasses = (tag: string) => {
 
 <template>
   <div
-    class="bg-slate-800 border border-slate-700/60 p-4 rounded-xl shadow-sm hover:shadow-md hover:border-violet-500/50 hover:shadow-violet-500/5 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group flex flex-col gap-3"
+    class="bg-theme-card border border-theme-border p-4 rounded-xl shadow-sm hover:shadow-md hover:border-theme-accent/50 hover:shadow-theme-ring hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group flex flex-col gap-3"
     @click="emit('click', task)"
   >
     <div class="flex justify-between items-start gap-2">
-      <h4 class="font-medium text-slate-100 group-hover:text-white transition-colors line-clamp-2">
+      <h4 class="font-medium text-theme-text-card group-hover:text-theme-primary transition-colors line-clamp-2">
         {{ task.title }}
       </h4>
-      <span class="text-xs font-mono text-slate-500 shrink-0">#{{ task.id }}</span>
+      <span class="text-xs font-mono text-theme-text-muted shrink-0">#{{ task.id }}</span>
     </div>
 
     <!-- Tags List -->

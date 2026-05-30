@@ -21,6 +21,36 @@ const selectedTaskId = ref<number | null>(null);
 const isCreateOpen = ref(false);
 const createDefaultBucket = ref<BucketName>('todo');
 
+// Theme state
+const currentTheme = ref(localStorage.getItem('jotter-theme') || 'nordic-light');
+const isThemeDropdownOpen = ref(false);
+
+const themes = [
+  { id: 'midnight', name: 'Midnight Violet', color: 'bg-violet-500' },
+  { id: 'forest', name: 'Emerald Forest', color: 'bg-emerald-500' },
+  { id: 'frost', name: 'Nordic Frost', color: 'bg-sky-500' },
+  { id: 'cyberpunk', name: 'Cyberpunk Neon', color: 'bg-pink-500' },
+  { id: 'sakura', name: 'Sakura Rose', color: 'bg-rose-500' },
+  { id: 'nordic-light', name: 'Nordic Light', color: 'bg-blue-600' },
+  { id: 'desert-light', name: 'Desert Amber', color: 'bg-orange-600' },
+];
+
+const setTheme = (theme: string) => {
+  currentTheme.value = theme;
+  localStorage.setItem('jotter-theme', theme);
+  const docClasses = document.documentElement.classList;
+  // Remove existing themes
+  docClasses.forEach((c) => {
+    if (c.startsWith('theme-')) {
+      docClasses.remove(c);
+    }
+  });
+  if (theme !== 'nordic-light') {
+    docClasses.add('theme-' + theme);
+  }
+  isThemeDropdownOpen.value = false;
+};
+
 const buckets: Bucket[] = [
   { name: 'backlog', title: 'Backlog' },
   { name: 'todo', title: 'To Do' },
@@ -42,6 +72,7 @@ const fetchAllTasks = async () => {
 
 onMounted(() => {
   fetchAllTasks();
+  setTheme(currentTheme.value);
 });
 
 // Compute unique list of tags across all tasks
@@ -168,12 +199,12 @@ const triggerSync = async () => {
 <template>
   <div class="flex-grow flex flex-col p-6 max-w-7xl mx-auto w-full gap-6">
     <!-- Header Controls -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-theme-border pb-6">
       <div>
-        <h1 class="text-3xl font-black tracking-tight text-white bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+        <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-theme-grad-from to-theme-grad-to bg-clip-text text-transparent">
           Jotter
         </h1>
-        <p class="text-slate-400 text-sm mt-1">
+        <p class="text-theme-text-muted text-sm mt-1">
           Single Source of Truth: Plain Markdown Files. SQLite Ephemeral Index.
         </p>
       </div>
@@ -186,14 +217,49 @@ const triggerSync = async () => {
             v-model="searchQuery"
             type="text"
             placeholder="Search tasks..."
-            class="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500"
+            class="w-full bg-theme-card/80 border border-theme-border/60 rounded-xl px-4 py-2 text-sm text-theme-text-input placeholder-theme-text-muted/60 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
           />
+        </div>
+
+        <!-- Theme Selector Dropdown -->
+        <div class="relative">
+          <!-- Overlay to close dropdown -->
+          <div v-if="isThemeDropdownOpen" class="fixed inset-0 z-10" @click="isThemeDropdownOpen = false"></div>
+
+          <button
+            @click="isThemeDropdownOpen = !isThemeDropdownOpen"
+            class="relative z-20 flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-card hover:bg-theme-column/85 text-theme-text-card border border-theme-border rounded-xl transition-all shadow-sm cursor-pointer"
+            title="Choose theme"
+          >
+            <span class="w-3.5 h-3.5 rounded-full" :class="themes.find(t => t.id === currentTheme)?.color"></span>
+            Theme
+            <svg class="w-3.5 h-3.5 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          <!-- Dropdown Menu -->
+          <div
+            v-if="isThemeDropdownOpen"
+            class="absolute right-0 mt-2 w-48 bg-theme-card border border-theme-border rounded-xl shadow-xl z-20 p-1.5 space-y-1"
+          >
+            <button
+              v-for="t in themes"
+              :key="t.id"
+              @click="setTheme(t.id)"
+              class="w-full flex items-center gap-3 px-3 py-2 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded-lg transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/30': currentTheme === t.id }"
+            >
+              <span class="w-3 h-3 rounded-full shrink-0" :class="t.color"></span>
+              {{ t.name }}
+            </button>
+          </div>
         </div>
 
         <!-- Sync Button -->
         <button
           @click="triggerSync"
-          class="flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl transition-all shadow-sm"
+          class="flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded-xl transition-all shadow-sm cursor-pointer"
           :disabled="syncLoading"
           title="Rebuild database index from Markdown files"
         >
@@ -217,7 +283,7 @@ const triggerSync = async () => {
         <!-- New Task Button -->
         <button
           @click="openCreateModal('todo')"
-          class="flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl shadow-md hover:shadow-violet-500/10 transition-all"
+          class="flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-xl shadow-md hover:shadow-theme-ring/20 transition-all cursor-pointer"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -242,14 +308,14 @@ const triggerSync = async () => {
 
     <!-- Horizontal Tag Filter List -->
     <div v-if="allTags.length" class="flex items-center gap-2 overflow-x-auto pb-2 shrink-0">
-      <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">Tags:</span>
+      <span class="text-xs font-bold text-theme-text-muted uppercase tracking-wider shrink-0">Tags:</span>
       <button
         @click="selectedTag = null"
-        class="text-xs font-semibold px-3 py-1 rounded-full border transition-all shrink-0"
+        class="text-xs font-semibold px-3 py-1 rounded-full border transition-all shrink-0 cursor-pointer"
         :class="
           !selectedTag
-            ? 'bg-violet-500/15 border-violet-500 text-violet-400 font-bold shadow-sm'
-            : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+            ? 'bg-theme-primary/15 border-theme-accent text-theme-accent font-bold shadow-sm'
+            : 'bg-theme-card border-theme-border/60 text-theme-text-muted hover:text-theme-text-main'
         "
       >
         All
@@ -258,11 +324,11 @@ const triggerSync = async () => {
         v-for="tag in allTags"
         :key="tag"
         @click="selectedTag = tag === selectedTag ? null : tag"
-        class="text-xs font-semibold px-3 py-1 rounded-full border transition-all shrink-0"
+        class="text-xs font-semibold px-3 py-1 rounded-full border transition-all shrink-0 cursor-pointer"
         :class="
           tag === selectedTag
-            ? 'bg-violet-500/15 border-violet-500 text-violet-400 font-bold shadow-sm'
-            : 'bg-slate-800 border-slate-700/60 text-slate-400 hover:text-white'
+            ? 'bg-theme-primary/15 border-theme-accent text-theme-accent font-bold shadow-sm'
+            : 'bg-theme-card border-theme-border/60 text-theme-text-muted hover:text-theme-text-main'
         "
       >
         {{ tag }}
@@ -271,16 +337,16 @@ const triggerSync = async () => {
 
     <!-- Loading Board state -->
     <div v-if="loading && !tasks.length" class="flex-grow flex flex-col items-center justify-center py-20 gap-3">
-      <div class="w-12 h-12 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
-      <span class="text-slate-400">Loading Jotter Board...</span>
+      <div class="w-12 h-12 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
+      <span class="text-theme-text-muted">Loading Jotter Board...</span>
     </div>
 
     <!-- Empty Board state -->
     <div
       v-else-if="!tasks.length"
-      class="flex-grow flex flex-col items-center justify-center text-center py-20 bg-slate-850/20 border border-dashed border-slate-800 rounded-3xl p-8"
+      class="flex-grow flex flex-col items-center justify-center text-center py-20 bg-theme-column/10 border border-dashed border-theme-border rounded-3xl p-8"
     >
-      <div class="p-4 bg-slate-800/50 rounded-full border border-slate-700 mb-4 text-violet-400">
+      <div class="p-4 bg-theme-card/50 rounded-full border border-theme-border mb-4 text-theme-accent">
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -290,13 +356,13 @@ const triggerSync = async () => {
           />
         </svg>
       </div>
-      <h3 class="font-bold text-slate-200 text-lg">No tasks found</h3>
-      <p class="text-slate-400 text-sm max-w-sm mt-1">
+      <h3 class="font-bold text-theme-text-main text-lg">No tasks found</h3>
+      <p class="text-theme-text-muted text-sm max-w-sm mt-1">
         Get started by creating a new task, or sync the index if you already have Markdown files in the `tasks` folder.
       </p>
       <button
         @click="openCreateModal('todo')"
-        class="mt-5 text-xs font-semibold px-4.5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl shadow-md transition-all"
+        class="mt-5 text-xs font-semibold px-4.5 py-2.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-xl shadow-md transition-all cursor-pointer"
       >
         Create First Task
       </button>
