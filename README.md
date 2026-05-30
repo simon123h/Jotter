@@ -56,7 +56,15 @@ The backend acts as a CRUD wrapper, handling the dual-write operations to both t
 
     POST /system/sync - The fail-safe endpoint: drops DB tables and rebuilds from .md files.
 
-Future Enhancements
+## Testing
+
+We have built-in automated test suites for both the backend and the frontend:
+
+- **Run all tests:** `npm run test` (executes backend Python tests, followed by Vitest frontend tests)
+- **Run backend tests only:** `npm run test:backend` (runs pytest on the python app)
+- **Run frontend tests only:** `npm run test:frontend` (runs Vitest once on the frontend app)
+
+## Future Enhancements
 
     Version Control: Track the .md directory with Git to preserve task history.
 
