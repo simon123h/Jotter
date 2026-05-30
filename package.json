@@ -11,6 +11,7 @@
     "test:backend": "cd backend && PYTHONPATH=. .venv/bin/pytest -v test_main.py",
     "test:frontend": "cd frontend && npm run test",
     "test": "npm run test:backend && npm run test:frontend",
+    "test:coverage": "cd backend && PYTHONPATH=. .venv/bin/pytest --cov=. --cov-report=json test_main.py && cd ../frontend && npx vitest run --coverage && cd .. && node scripts/combine-coverage.js",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"
   },
   "devDependencies": {

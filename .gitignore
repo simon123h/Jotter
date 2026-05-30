@@ -5,3 +5,10 @@ venv
 tasks
 node_modules/
 dist/
+
+# Pytest & Coverage
+.coverage
+coverage.json
+.pytest_cache/
+__pycache__/
+**/__pycache__/
