@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import type { Task, Bucket, BucketName } from '../types';
-import { getTasks, moveTask, syncSystem } from '../api';
+import { getTasks, moveTask, syncSystem, getBuckets, createBucket, updateBucket, deleteBucket } from '../api';
 import KanbanColumn from './KanbanColumn.vue';
 import TaskDetailModal from './TaskDetailModal.vue';
 import TaskCreateModal from './TaskCreateModal.vue';
@@ -10,9 +10,14 @@ import { useI18n } from '../composables/useI18n';
 const { locale, t } = useI18n();
 
 const tasks = ref<Task[]>([]);
+const buckets = ref<Bucket[]>([]);
 const loading = ref(false);
 const syncLoading = ref(false);
 const error = ref<string | null>(null);
+
+// Column create state
+const isAddingColumn = ref(false);
+const newColumnTitle = ref('');
 
 // Filter state
 const searchQuery = ref('');
@@ -55,27 +60,37 @@ const setTheme = (theme: string) => {
   isThemeDropdownOpen.value = false;
 };
 
-const buckets: Bucket[] = [
-  { name: 'backlog', title: 'Backlog' },
-  { name: 'todo', title: 'To Do' },
-  { name: 'in-progress', title: 'In Progress' },
-  { name: 'done', title: 'Done' },
-];
+const fetchBuckets = async () => {
+  try {
+    buckets.value = await getBuckets();
+  } catch (err: any) {
+    error.value = err.message || 'Failed to fetch columns';
+  }
+};
 
 const fetchAllTasks = async () => {
-  loading.value = true;
-  error.value = null;
   try {
     tasks.value = await getTasks();
   } catch (err: any) {
     error.value = t('errors.fetchTasks', { message: err.message || err });
+  }
+};
+
+const fetchAllData = async () => {
+  loading.value = true;
+  error.value = null;
+  try {
+    await fetchBuckets();
+    await fetchAllTasks();
+  } catch (err: any) {
+    error.value = t('errors.fetchData', { message: err.message || err });
   } finally {
     loading.value = false;
   }
 };
 
 onMounted(() => {
-  fetchAllTasks();
+  fetchAllData();
   setTheme(currentTheme.value);
 });
 
@@ -101,23 +116,22 @@ const filteredTasks = computed(() => {
 
 // Group tasks by bucket name
 const tasksByBucket = computed(() => {
-  const groups: Record<BucketName, Task[]> = {
-    backlog: [],
-    todo: [],
-    'in-progress': [],
-    done: [],
-  };
+  const groups: Record<string, Task[]> = {};
+  buckets.value.forEach((b) => {
+    groups[b.name] = [];
+  });
 
   filteredTasks.value.forEach((task) => {
-    const b = task.bucket as BucketName;
-    if (groups[b]) {
-      groups[b].push(task);
+    const b = task.bucket;
+    if (groups[b] === undefined) {
+      groups[b] = [];
     }
+    groups[b].push(task);
   });
 
   // Sort each bucket by position ascending
   Object.keys(groups).forEach((key) => {
-    groups[key as BucketName].sort((a, b) => a.position - b.position);
+    groups[key].sort((a, b) => a.position - b.position);
   });
 
   return groups;
@@ -183,13 +197,75 @@ const handleCardDropped = async ({
   }
 };
 
+const handleAddColumn = async () => {
+  const title = newColumnTitle.value.trim();
+  if (!title) return;
+  try {
+    await createBucket(title);
+    newColumnTitle.value = '';
+    isAddingColumn.value = false;
+    await fetchBuckets();
+  } catch (err: any) {
+    error.value = err.message || 'Failed to create column';
+  }
+};
+
+const handleRenameColumn = async ({ bucketName, newTitle }: { bucketName: string; newTitle: string }) => {
+  if (!newTitle.trim()) return;
+  try {
+    await updateBucket(bucketName, { title: newTitle.trim() });
+    await fetchBuckets();
+  } catch (err: any) {
+    error.value = err.message || 'Failed to rename column';
+  }
+};
+
+const handleDeleteColumn = async (bucketName: string) => {
+  try {
+    await deleteBucket(bucketName);
+    await fetchBuckets();
+  } catch (err: any) {
+    error.value = err.message || 'Failed to delete column';
+  }
+};
+
+const handleMoveColumn = async (bucketName: string, direction: 'left' | 'right') => {
+  const index = buckets.value.findIndex((b) => b.name === bucketName);
+  if (index === -1) return;
+  if (direction === 'left' && index === 0) return;
+  if (direction === 'right' && index === buckets.value.length - 1) return;
+
+  const targetIndex = direction === 'left' ? index - 1 : index + 1;
+  const currentCol = buckets.value[index];
+  const targetCol = buckets.value[targetIndex];
+
+  // Swap positions locally
+  const tempPos = currentCol.position;
+  currentCol.position = targetCol.position;
+  targetCol.position = tempPos;
+
+  // Sort local list
+  buckets.value.sort((a, b) => a.position - b.position);
+
+  try {
+    // Persist updates to the database
+    await Promise.all([
+      updateBucket(currentCol.name, { position: currentCol.position }),
+      updateBucket(targetCol.name, { position: targetCol.position }),
+    ]);
+  } catch {
+    error.value = 'Failed to reorder columns. Reverting changes.';
+    await fetchBuckets();
+  }
+};
+
 const triggerSync = async () => {
   syncLoading.value = true;
   error.value = null;
   try {
     const result = await syncSystem();
     alert(t('sync.success', { count: result.synchronized_tasks }));
-    await fetchAllTasks();
+    await fetchAllData();
   } catch (err: any) {
     error.value = t('sync.error', { message: err.message || err });
   } finally {
@@ -316,7 +392,7 @@ const triggerSync = async () => {
 
         <!-- New Task Button -->
         <button
-          @click="openCreateModal('todo')"
+          @click="openCreateModal(buckets[0]?.name || 'todo')"
           class="flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-xl shadow-md hover:shadow-theme-ring/20 transition-all cursor-pointer"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -392,25 +468,73 @@ const triggerSync = async () => {
         {{ t('emptyStateText') }}
       </p>
       <button
-        @click="openCreateModal('todo')"
+        @click="openCreateModal(buckets[0]?.name || 'todo')"
         class="mt-5 text-xs font-semibold px-4.5 py-2.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-xl shadow-md transition-all cursor-pointer"
       >
         {{ t('createFirstTaskButton') }}
       </button>
     </div>
 
-    <!-- Board Grid -->
-    <div v-else class="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start overflow-x-auto pb-4">
+    <!-- Board Columns (Horizontal Scrolling Flex) -->
+    <div v-else class="flex-grow flex gap-6 items-start overflow-x-auto pb-4 w-full select-none">
       <KanbanColumn
-        v-for="b in buckets"
+        v-for="(b, idx) in buckets"
         :key="b.name"
         :bucket-name="b.name"
         :title="b.title"
         :tasks="tasksByBucket[b.name] || []"
+        :is-first="idx === 0"
+        :is-last="idx === buckets.length - 1"
         @task-click="openDetailModal"
         @add-task-click="openCreateModal"
         @card-dropped="handleCardDropped"
+        @rename-column="handleRenameColumn"
+        @delete-column="handleDeleteColumn"
+        @move-column="handleMoveColumn"
       />
+
+      <!-- Add Column Card -->
+      <div
+        class="flex flex-col bg-theme-column/20 border border-dashed border-theme-border/60 rounded-2xl w-72 shrink-0 p-4 transition-all"
+      >
+        <div v-if="!isAddingColumn" class="flex items-center justify-center h-28">
+          <button
+            @click="isAddingColumn = true"
+            class="flex flex-col items-center gap-2 text-theme-text-muted hover:text-theme-text-main font-semibold text-xs cursor-pointer w-full py-6 rounded-xl hover:bg-theme-card/30 transition-all"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            {{ t('buttons.addColumn') }}
+          </button>
+        </div>
+        <div v-else class="space-y-3">
+          <h4 class="font-bold text-xs uppercase tracking-wider text-theme-text-muted">{{ t('newColumnTitle') }}</h4>
+          <input
+            v-model="newColumnTitle"
+            type="text"
+            :placeholder="t('columnTitlePlaceholder')"
+            class="w-full bg-theme-card border border-theme-border/60 rounded-xl px-3 py-2 text-xs text-theme-text-input placeholder-theme-text-muted/60 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+            @keyup.enter="handleAddColumn"
+            @keyup.esc="isAddingColumn = false"
+            autofocus
+          />
+          <div class="flex gap-2 justify-end">
+            <button
+              @click="isAddingColumn = false"
+              class="text-[10px] font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded-lg cursor-pointer"
+            >
+              {{ t('buttons.cancel') }}
+            </button>
+            <button
+              @click="handleAddColumn"
+              class="text-[10px] font-semibold px-2.5 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-lg cursor-pointer"
+            >
+              {{ t('buttons.add') }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Task Detail Modal -->

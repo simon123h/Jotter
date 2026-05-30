@@ -9,9 +9,10 @@ export interface Task {
   updated_at: string;
 }
 
-export type BucketName = 'backlog' | 'todo' | 'in-progress' | 'done';
+export type BucketName = string;
 
 export interface Bucket {
   name: BucketName;
   title: string;
+  position: number;
 }

@@ -14,6 +14,40 @@ TASKS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "task
 # Ensure the tasks directory exists
 os.makedirs(TASKS_DIR, exist_ok=True)
 
+BUCKETS_FILE = os.path.join(TASKS_DIR, "buckets.json")
+
+DEFAULT_BUCKETS = [
+    {"name": "backlog", "title": "Backlog", "position": 1000.0},
+    {"name": "todo", "title": "To Do", "position": 2000.0},
+    {"name": "in-progress", "title": "In Progress", "position": 3000.0},
+    {"name": "done", "title": "Done", "position": 4000.0},
+]
+
+
+def load_buckets_file() -> list:
+    """Loads buckets from the buckets.json file. If it doesn't exist, writes defaults and returns them."""
+    if not os.path.exists(BUCKETS_FILE):
+        write_buckets_file(DEFAULT_BUCKETS)
+        return DEFAULT_BUCKETS
+    try:
+        with open(BUCKETS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return DEFAULT_BUCKETS
+
+
+def write_buckets_file(buckets: list):
+    """Writes the list of buckets to buckets.json atomically."""
+    temp_fd, temp_path = tempfile.mkstemp(dir=TASKS_DIR, suffix=".tmp")
+    try:
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
+            json.dump(buckets, f, indent=2)
+        os.replace(temp_path, BUCKETS_FILE)
+    except Exception:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise
+
 
 def slugify(value: str) -> str:
     """Converts a string to a URL-friendly slug."""
@@ -124,13 +158,31 @@ def delete_task_file(task_id: int) -> bool:
 
 def sync_db_with_files() -> int:
     """
-    Clears the SQLite tasks table and rebuilds it by parsing all files in tasks/.
+    Clears the SQLite tasks and buckets tables, and rebuilds them.
+    Loads buckets from buckets.json and tasks from all markdown files in tasks/.
+    Auto-creates missing buckets referenced by task markdown files.
     Returns the count of successfully synchronized tasks.
     """
     count = 0
     with db_session() as conn:
-        # Clear existing table data
+        # Clear existing tables data
         conn.execute("DELETE FROM tasks")
+        conn.execute("DELETE FROM buckets")
+
+        # Sync buckets first
+        buckets = load_buckets_file()
+        bucket_names = set()
+        max_bucket_position = 0.0
+
+        for b in buckets:
+            conn.execute(
+                "INSERT INTO buckets (name, title, position) VALUES (?, ?, ?)",
+                (b["name"], b["title"], b["position"]),
+            )
+            bucket_names.add(b["name"])
+            max_bucket_position = max(max_bucket_position, b["position"])
+
+        buckets_modified = False
 
         for filename in os.listdir(TASKS_DIR):
             if filename.endswith(".md"):
@@ -151,6 +203,19 @@ def sync_db_with_files() -> int:
                     tags = metadata.get("tags", [])
                     created_at = metadata.get("created_at", "")
                     updated_at = metadata.get("updated_at", "")
+
+                    # Auto-create column if it doesn't exist
+                    if bucket not in bucket_names:
+                        new_title = bucket.replace("-", " ").title()
+                        new_pos = max_bucket_position + 1000.0
+                        conn.execute(
+                            "INSERT INTO buckets (name, title, position) VALUES (?, ?, ?)",
+                            (bucket, new_title, new_pos),
+                        )
+                        buckets.append({"name": bucket, "title": new_title, "position": new_pos})
+                        bucket_names.add(bucket)
+                        max_bucket_position = new_pos
+                        buckets_modified = True
 
                     conn.execute(
                         """
@@ -173,5 +238,8 @@ def sync_db_with_files() -> int:
                     count += 1
                 except Exception as e:
                     print(f"Error syncing file {filename}: {e}")
+
+        if buckets_modified:
+            write_buckets_file(buckets)
 
     return count

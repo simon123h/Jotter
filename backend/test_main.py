@@ -111,3 +111,64 @@ def test_crud_flow():
     # Check it's gone from database listing
     response = client.get("/tasks")
     assert response.json() == []
+
+
+def test_buckets_flow():
+    # 1. List buckets (should contain the 4 default buckets)
+    response = client.get("/buckets")
+    assert response.status_code == 200
+    buckets = response.json()
+    assert len(buckets) == 4
+    assert buckets[0]["name"] == "backlog"
+    assert buckets[1]["name"] == "todo"
+    assert buckets[2]["name"] == "in-progress"
+    assert buckets[3]["name"] == "done"
+
+    # 2. Create bucket
+    response = client.post("/buckets", json={"title": "QA Test"})
+    assert response.status_code == 201
+    data = response.json()
+    assert data["name"] == "qa-test"
+    assert data["title"] == "QA Test"
+    assert data["position"] == 5000.0
+
+    # Verify buckets.json was updated
+    assert os.path.exists(storage.BUCKETS_FILE)
+    buckets_list = storage.load_buckets_file()
+    assert len(buckets_list) == 5
+    assert buckets_list[-1]["name"] == "qa-test"
+
+    # 3. Update bucket title
+    response = client.put("/buckets/qa-test", json={"title": "Quality Assurance"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "qa-test"
+    assert data["title"] == "Quality Assurance"
+
+    # 4. Try deleting a bucket that has tasks
+    # Create a task in "qa-test"
+    task_payload = {
+        "title": "Task in QA",
+        "bucket": "qa-test",
+        "tags": [],
+        "body": "Test body",
+    }
+    task_response = client.post("/tasks", json=task_payload)
+    assert task_response.status_code == 201
+    task_data = task_response.json()
+
+    # Try to delete "qa-test" - should fail
+    response = client.delete("/buckets/qa-test")
+    assert response.status_code == 400
+    assert "contains" in response.json()["detail"]
+
+    # Delete the task
+    client.delete(f"/tasks/{task_data['id']}")
+
+    # Try to delete "qa-test" - should succeed now
+    response = client.delete("/buckets/qa-test")
+    assert response.status_code == 200
+
+    # Verify bucket is gone
+    response = client.get("/buckets")
+    assert len(response.json()) == 4
