@@ -3,6 +3,9 @@ import { ref, onMounted } from 'vue';
 import Sortable from 'sortablejs';
 import type { Task, BucketName } from '../types';
 import TaskCard from './TaskCard.vue';
+import { useI18n } from '../composables/useI18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   bucketName: BucketName;
@@ -52,7 +55,7 @@ onMounted(() => {
     <!-- Column Header -->
     <div class="px-5 py-4 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t-2xl shrink-0">
       <div class="flex items-center gap-2.5">
-        <h3 class="font-bold text-sm uppercase tracking-wider text-theme-text-main">{{ title }}</h3>
+        <h3 class="font-bold text-sm uppercase tracking-wider text-theme-text-main">{{ t('buckets.' + bucketName) }}</h3>
         <span class="text-xs px-2 py-0.5 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded-full">
           {{ tasks.length }}
         </span>
@@ -60,7 +63,7 @@ onMounted(() => {
       <button
         @click="emit('add-task-click', bucketName)"
         class="text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card p-1 rounded-lg transition-colors cursor-pointer"
-        title="Add task to this column"
+        :title="t('colAddTooltip')"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />

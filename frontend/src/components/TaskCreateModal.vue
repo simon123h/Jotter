@@ -2,6 +2,9 @@
 import { ref, watch } from 'vue';
 import type { BucketName } from '../types';
 import { createTask } from '../api';
+import { useI18n } from '../composables/useI18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -37,7 +40,7 @@ watch(
 
 const handleSubmit = async () => {
   if (!title.value.trim()) {
-    error.value = 'Title is required';
+    error.value = t('errors.titleRequired');
     return;
   }
 
@@ -59,7 +62,7 @@ const handleSubmit = async () => {
     emit('created');
     emit('close');
   } catch (err: any) {
-    error.value = err.message || 'Failed to create task';
+    error.value = t('errors.createTask', { message: err.message || err });
   } finally {
     loading.value = false;
   }
@@ -77,7 +80,7 @@ const handleSubmit = async () => {
     >
       <!-- Header -->
       <div class="px-6 py-4 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
-        <h3 class="text-lg font-bold text-theme-text-main">Create New Task</h3>
+        <h3 class="text-lg font-bold text-theme-text-main">{{ t('createModalTitle') }}</h3>
         <button
           @click="emit('close')"
           class="text-theme-text-muted hover:text-theme-text-main transition-colors p-1.5 hover:bg-theme-card rounded-lg cursor-pointer"
@@ -97,46 +100,48 @@ const handleSubmit = async () => {
       <form @submit.prevent="handleSubmit" class="p-6 overflow-y-auto flex-grow space-y-4">
         <!-- Title -->
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">Title *</label>
+          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">{{ t('form.titleLabel') }}</label>
           <input
             v-model="title"
             type="text"
             required
             class="w-full bg-theme-base/60 border border-theme-border rounded-xl px-4 py-2.5 text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            placeholder="What needs to be done?"
+            :placeholder="t('form.titlePlaceholder')"
           />
         </div>
 
         <!-- Bucket & Tags Row -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">Column</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">{{ t('form.columnLabel') }}</label>
             <select
               v-model="bucket"
               class="w-full bg-theme-base/60 border border-theme-border rounded-xl px-4 py-2.5 text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
             >
-              <option v-for="b in buckets" :key="b.name" :value="b.name">{{ b.title }}</option>
+              <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">Tags (comma-separated)</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">{{ t('form.tagsLabel') }}</label>
             <input
               v-model="tags"
               type="text"
               class="w-full bg-theme-base/60 border border-theme-border rounded-xl px-4 py-2.5 text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-              placeholder="e.g. bug, high-priority"
+              :placeholder="t('form.tagsPlaceholder')"
             />
           </div>
         </div>
 
         <!-- Body (Markdown Textarea) -->
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5"> Markdown Description </label>
+          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+            {{ t('form.markdownLabel') }}
+          </label>
           <textarea
             v-model="body"
             rows="6"
             class="w-full bg-theme-base/60 border border-theme-border rounded-xl p-4 text-theme-text-input font-mono text-sm focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            placeholder="Write notes, checklists, or steps in markdown..."
+            :placeholder="t('form.markdownPlaceholder')"
           ></textarea>
         </div>
       </form>
@@ -149,7 +154,7 @@ const handleSubmit = async () => {
           class="text-xs font-semibold px-4.5 py-2.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded-xl transition-all cursor-pointer"
           :disabled="loading"
         >
-          Cancel
+          {{ t('buttons.cancel') }}
         </button>
         <button
           type="submit"
@@ -158,7 +163,7 @@ const handleSubmit = async () => {
           :disabled="loading"
         >
           <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          Create Task
+          {{ t('buttons.create') }}
         </button>
       </div>
     </div>

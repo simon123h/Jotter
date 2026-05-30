@@ -5,6 +5,9 @@ import { getTasks, moveTask, syncSystem } from '../api';
 import KanbanColumn from './KanbanColumn.vue';
 import TaskDetailModal from './TaskDetailModal.vue';
 import TaskCreateModal from './TaskCreateModal.vue';
+import { useI18n } from '../composables/useI18n';
+
+const { locale, t } = useI18n();
 
 const tasks = ref<Task[]>([]);
 const loading = ref(false);
@@ -24,6 +27,7 @@ const createDefaultBucket = ref<BucketName>('todo');
 // Theme state
 const currentTheme = ref(localStorage.getItem('jotter-theme') || 'nordic-light');
 const isThemeDropdownOpen = ref(false);
+const isLanguageDropdownOpen = ref(false);
 
 const themes = [
   { id: 'midnight', name: 'Midnight Violet', color: 'bg-violet-500' },
@@ -64,7 +68,7 @@ const fetchAllTasks = async () => {
   try {
     tasks.value = await getTasks();
   } catch (err: any) {
-    error.value = err.message || 'Failed to fetch tasks';
+    error.value = t('errors.fetchTasks', { message: err.message || err });
   } finally {
     loading.value = false;
   }
@@ -174,7 +178,7 @@ const handleCardDropped = async ({
       // Revert if API call fails
       movedTask.bucket = originalBucket;
       movedTask.position = originalPosition;
-      error.value = 'Failed to persist card movement. Reverted change.';
+      error.value = t('errors.moveTask');
     }
   }
 };
@@ -184,10 +188,10 @@ const triggerSync = async () => {
   error.value = null;
   try {
     const result = await syncSystem();
-    alert(`Index synchronized successfully! Loaded ${result.synchronized_tasks} tasks from markdown files.`);
+    alert(t('sync.success', { count: result.synchronized_tasks }));
     await fetchAllTasks();
   } catch (err: any) {
-    error.value = err.message || 'Failed to sync index';
+    error.value = t('sync.error', { message: err.message || err });
   } finally {
     syncLoading.value = false;
   }
@@ -200,9 +204,9 @@ const triggerSync = async () => {
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-theme-border pb-6">
       <div>
         <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-theme-grad-from to-theme-grad-to bg-clip-text text-transparent">
-          Jotter
+          {{ t('brand.title') }}
         </h1>
-        <p class="text-theme-text-muted text-sm mt-1">Single Source of Truth: Plain Markdown Files. SQLite Ephemeral Index.</p>
+        <p class="text-theme-text-muted text-sm mt-1">{{ t('brand.subtitle') }}</p>
       </div>
 
       <!-- Toolbar Actions -->
@@ -212,7 +216,7 @@ const triggerSync = async () => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search tasks..."
+            :placeholder="t('searchPlaceholder')"
             class="w-full bg-theme-card/80 border border-theme-border/60 rounded-xl px-4 py-2 text-sm text-theme-text-input placeholder-theme-text-muted/60 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
           />
         </div>
@@ -225,10 +229,10 @@ const triggerSync = async () => {
           <button
             @click="isThemeDropdownOpen = !isThemeDropdownOpen"
             class="relative z-20 flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-card hover:bg-theme-column/85 text-theme-text-card border border-theme-border rounded-xl transition-all shadow-sm cursor-pointer"
-            title="Choose theme"
+            :title="t('themeChoose')"
           >
             <span class="w-3.5 h-3.5 rounded-full" :class="themes.find((t) => t.id === currentTheme)?.color"></span>
-            Theme
+            {{ t('themeLabel') }}
             <svg class="w-3.5 h-3.5 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
@@ -240,14 +244,59 @@ const triggerSync = async () => {
             class="absolute right-0 mt-2 w-48 bg-theme-card border border-theme-border rounded-xl shadow-xl z-20 p-1.5 space-y-1"
           >
             <button
-              v-for="t in themes"
-              :key="t.id"
-              @click="setTheme(t.id)"
+              v-for="th in themes"
+              :key="th.id"
+              @click="setTheme(th.id)"
               class="w-full flex items-center gap-3 px-3 py-2 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded-lg transition-colors text-left font-medium cursor-pointer"
-              :class="{ 'bg-theme-column/50 border border-theme-border/30': currentTheme === t.id }"
+              :class="{ 'bg-theme-column/50 border border-theme-border/30': currentTheme === th.id }"
             >
-              <span class="w-3 h-3 rounded-full shrink-0" :class="t.color"></span>
-              {{ t.name }}
+              <span class="w-3 h-3 rounded-full shrink-0" :class="th.color"></span>
+              {{ t('themeNames.' + th.id) }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Language Selector Dropdown -->
+        <div class="relative">
+          <!-- Overlay to close dropdown -->
+          <div v-if="isLanguageDropdownOpen" class="fixed inset-0 z-10" @click="isLanguageDropdownOpen = false"></div>
+
+          <button
+            @click="isLanguageDropdownOpen = !isLanguageDropdownOpen"
+            class="relative z-20 flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-card hover:bg-theme-column/85 text-theme-text-card border border-theme-border rounded-xl transition-all shadow-sm cursor-pointer"
+            :title="t('language.choose')"
+          >
+            <span class="text-sm shrink-0">🌐</span>
+            {{ t('language.' + locale) }}
+            <svg class="w-3.5 h-3.5 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div
+            v-if="isLanguageDropdownOpen"
+            class="absolute right-0 mt-2 w-36 bg-theme-card border border-theme-border rounded-xl shadow-xl z-20 p-1.5 space-y-1"
+          >
+            <button
+              @click="
+                locale = 'en';
+                isLanguageDropdownOpen = false;
+              "
+              class="w-full flex items-center gap-2 px-3 py-2 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded-lg transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/30': locale === 'en' }"
+            >
+              English
+            </button>
+            <button
+              @click="
+                locale = 'de';
+                isLanguageDropdownOpen = false;
+              "
+              class="w-full flex items-center gap-2 px-3 py-2 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded-lg transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/30': locale === 'de' }"
+            >
+              Deutsch
             </button>
           </div>
         </div>
@@ -257,12 +306,12 @@ const triggerSync = async () => {
           @click="triggerSync"
           class="flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded-xl transition-all shadow-sm cursor-pointer"
           :disabled="syncLoading"
-          title="Rebuild database index from Markdown files"
+          :title="t('sync.tooltip')"
         >
           <svg class="w-4 h-4" :class="{ 'animate-spin': syncLoading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2" />
           </svg>
-          {{ syncLoading ? 'Syncing...' : 'Sync Index' }}
+          {{ syncLoading ? t('sync.syncing') : t('sync.button') }}
         </button>
 
         <!-- New Task Button -->
@@ -273,7 +322,7 @@ const triggerSync = async () => {
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          Add Task
+          {{ t('addTaskButton') }}
         </button>
       </div>
     </header>
@@ -290,7 +339,7 @@ const triggerSync = async () => {
 
     <!-- Horizontal Tag Filter List -->
     <div v-if="allTags.length" class="flex items-center gap-2 overflow-x-auto pb-2 shrink-0">
-      <span class="text-xs font-bold text-theme-text-muted uppercase tracking-wider shrink-0">Tags:</span>
+      <span class="text-xs font-bold text-theme-text-muted uppercase tracking-wider shrink-0">{{ t('tagsLabel') }}</span>
       <button
         @click="selectedTag = null"
         class="text-xs font-semibold px-3 py-1 rounded-full border transition-all shrink-0 cursor-pointer"
@@ -300,7 +349,7 @@ const triggerSync = async () => {
             : 'bg-theme-card border-theme-border/60 text-theme-text-muted hover:text-theme-text-main'
         "
       >
-        All
+        {{ t('tagsAll') }}
       </button>
       <button
         v-for="tag in allTags"
@@ -320,7 +369,7 @@ const triggerSync = async () => {
     <!-- Loading Board state -->
     <div v-if="loading && !tasks.length" class="flex-grow flex flex-col items-center justify-center py-20 gap-3">
       <div class="w-12 h-12 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
-      <span class="text-theme-text-muted">Loading Jotter Board...</span>
+      <span class="text-theme-text-muted">{{ t('loadingBoard') }}</span>
     </div>
 
     <!-- Empty Board state -->
@@ -338,15 +387,15 @@ const triggerSync = async () => {
           />
         </svg>
       </div>
-      <h3 class="font-bold text-theme-text-main text-lg">No tasks found</h3>
+      <h3 class="font-bold text-theme-text-main text-lg">{{ t('emptyStateTitle') }}</h3>
       <p class="text-theme-text-muted text-sm max-w-sm mt-1">
-        Get started by creating a new task, or sync the index if you already have Markdown files in the `tasks` folder.
+        {{ t('emptyStateText') }}
       </p>
       <button
         @click="openCreateModal('todo')"
         class="mt-5 text-xs font-semibold px-4.5 py-2.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-xl shadow-md transition-all cursor-pointer"
       >
-        Create First Task
+        {{ t('createFirstTaskButton') }}
       </button>
     </div>
 
