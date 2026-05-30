@@ -1,0 +1,17 @@
+{
+  "name": "my-kanban",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-First Markdown Kanban App with Ephemeral Index",
+  "scripts": {
+    "dev:backend": "cd backend && .venv/bin/uvicorn main:app --port 8000 --reload",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently --kill-others-on-fail --names \"backend,frontend\" --prefix-colors \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "cd frontend && npm run build",
+    "test:backend": "cd backend && PYTHONPATH=. .venv/bin/pytest -v test_main.py",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
