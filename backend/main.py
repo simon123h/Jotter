@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from database import db_session, init_db
 from models import TaskCreate, TaskMove, TaskResponse, TaskUpdate
@@ -27,7 +28,12 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Jotter API", lifespan=lifespan)
+app = FastAPI(
+    title="Jotter API",
+    description="Backend REST API for Jotter - a local-first markdown Kanban board with an ephemeral SQLite database index.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
 # Enable CORS for frontend integration
 app.add_middleware(
@@ -39,10 +45,25 @@ app.add_middleware(
 )
 
 
-@app.get("/tasks", response_model=List[TaskResponse])
+@app.get("/", include_in_schema=False)
+def root():
+    """Redirect to OpenAPI documentation (Swagger UI)."""
+    return RedirectResponse(url="/docs")
+
+
+@app.get(
+    "/tasks",
+    response_model=List[TaskResponse],
+    tags=["Tasks"],
+    summary="List all tasks",
+    description=(
+        "Retrieve all indexed tasks from the SQLite database. Supports optional filtering by column (bucket) or tag. "
+        "Note that the task description body is excluded in this list endpoint for performance reasons."
+    ),
+)
 def get_tasks(
-    bucket: Optional[str] = Query(None, description="Filter by bucket"),
-    tag: Optional[str] = Query(None, description="Filter by tag"),
+    bucket: Optional[str] = Query(None, description="Filter by bucket (column) name"),
+    tag: Optional[str] = Query(None, description="Filter by tag name"),
 ):
     with db_session() as conn:
         query = "SELECT * FROM tasks"
@@ -89,7 +110,13 @@ def get_tasks(
         return tasks
 
 
-@app.get("/tasks/{task_id}", response_model=TaskResponse)
+@app.get(
+    "/tasks/{task_id}",
+    response_model=TaskResponse,
+    tags=["Tasks"],
+    summary="Get task details",
+    description="Retrieve full details for a specific task by its numeric ID, including its markdown body parsed from the disk file.",
+)
 def get_task(task_id: int):
     task_data = read_task_file(task_id)
     if not task_data:
@@ -100,7 +127,17 @@ def get_task(task_id: int):
     return TaskResponse(**task_data)
 
 
-@app.post("/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+@app.post(
+    "/tasks",
+    response_model=TaskResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Tasks"],
+    summary="Create new task",
+    description=(
+        "Create a new task in the specified bucket. Generates a new task ID, creates the corresponding "
+        "markdown file on disk with YAML frontmatter, and indexes it into the SQLite database."
+    ),
+)
 def create_task(task: TaskCreate):
     now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     new_id = generate_next_id()
@@ -148,7 +185,16 @@ def create_task(task: TaskCreate):
         return TaskResponse(**task_data)
 
 
-@app.put("/tasks/{task_id}", response_model=TaskResponse)
+@app.put(
+    "/tasks/{task_id}",
+    response_model=TaskResponse,
+    tags=["Tasks"],
+    summary="Update task",
+    description=(
+        "Modify attributes (title, bucket, position, tags, body) of an existing task. "
+        "Overwrites the markdown file on disk and updates the SQLite database index."
+    ),
+)
 def update_task(task_id: int, task_update: TaskUpdate):
     # Fetch existing task from Markdown
     existing = read_task_file(task_id)
@@ -200,7 +246,13 @@ def update_task(task_id: int, task_update: TaskUpdate):
     return TaskResponse(**updated_data)
 
 
-@app.patch("/tasks/{task_id}/move", response_model=TaskResponse)
+@app.patch(
+    "/tasks/{task_id}/move",
+    response_model=TaskResponse,
+    tags=["Tasks"],
+    summary="Move/Reorder task",
+    description="Quickly update the column bucket and position of a task, primarily utilized for drag-and-drop board updates.",
+)
 def move_task(task_id: int, task_move: TaskMove):
     # Fetch existing task from Markdown
     existing = read_task_file(task_id)
@@ -233,7 +285,15 @@ def move_task(task_id: int, task_move: TaskMove):
     return TaskResponse(**updated_data)
 
 
-@app.delete("/tasks/{task_id}")
+@app.delete(
+    "/tasks/{task_id}",
+    tags=["Tasks"],
+    summary="Delete task",
+    description=(
+        "Remove the markdown file for the specified task from disk and delete the corresponding "
+        "row from the SQLite ephemeral database index."
+    ),
+)
 def delete_task(task_id: int):
     # Delete from filesystem
     deleted = delete_task_file(task_id)
@@ -250,7 +310,15 @@ def delete_task(task_id: int):
     return {"status": "success", "detail": f"Task {task_id} deleted"}
 
 
-@app.post("/system/sync")
+@app.post(
+    "/system/sync",
+    tags=["System"],
+    summary="Sync database index",
+    description=(
+        "Empty the SQLite index tables and re-scan the entire tasks directory, importing YAML "
+        "frontmatter data from all markdown files back into the SQLite database. Acts as a fail-safe."
+    ),
+)
 def sync_system():
     try:
         count = sync_db_with_files()
