@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --color-theme-base: var(--theme-bg-base);
@@ -10,12 +10,12 @@
   --color-theme-accent: var(--theme-accent);
   --color-theme-accent-hover: var(--theme-accent-hover);
   --color-theme-ring: var(--theme-ring);
-  
+
   --color-theme-text-main: var(--theme-text-main);
   --color-theme-text-card: var(--theme-text-card);
   --color-theme-text-muted: var(--theme-text-muted);
   --color-theme-text-input: var(--theme-text-input);
-  
+
   --color-theme-grad-from: var(--theme-grad-from);
   --color-theme-grad-to: var(--theme-grad-to);
 }
@@ -33,7 +33,7 @@
   --theme-grad-from: #1d4ed8;
   --theme-grad-to: #0369a1; /* sky-700 */
   --theme-ring: rgba(37, 99, 235, 0.15);
-  
+
   --theme-text-main: #0f172a; /* slate-900 */
   --theme-text-card: #1e293b; /* slate-800 */
   --theme-text-muted: #475569; /* slate-600 */
@@ -53,7 +53,7 @@
   --theme-grad-from: #a78bfa;
   --theme-grad-to: #818cf8; /* indigo-400 */
   --theme-ring: rgba(139, 92, 246, 0.3);
-  
+
   --theme-text-main: #f8fafc; /* slate-50 */
   --theme-text-card: #f1f5f9; /* slate-100 */
   --theme-text-muted: #94a3b8; /* slate-400 */
@@ -73,7 +73,7 @@
   --theme-grad-from: #34d399;
   --theme-grad-to: #2dd4bf; /* teal-400 */
   --theme-ring: rgba(52, 211, 153, 0.3);
-  
+
   --theme-text-main: #f0fdf4;
   --theme-text-card: #ecfdf5;
   --theme-text-muted: #a7f3d0;
@@ -93,7 +93,7 @@
   --theme-grad-from: #38bdf8;
   --theme-grad-to: #60a5fa; /* blue-400 */
   --theme-ring: rgba(56, 189, 248, 0.3);
-  
+
   --theme-text-main: #f0f9ff;
   --theme-text-card: #e0f2fe;
   --theme-text-muted: #bae6fd;
@@ -113,7 +113,7 @@
   --theme-grad-from: #f472b6;
   --theme-grad-to: #22d3ee; /* cyan-400 */
   --theme-ring: rgba(244, 114, 182, 0.3);
-  
+
   --theme-text-main: #ffffff;
   --theme-text-card: #ffffff;
   --theme-text-muted: #a1a1aa;
@@ -133,7 +133,7 @@
   --theme-grad-from: #fb7185;
   --theme-grad-to: #fcd34d; /* amber-300 */
   --theme-ring: rgba(251, 113, 133, 0.3);
-  
+
   --theme-text-main: #fff1f2;
   --theme-text-card: #ffe4e6;
   --theme-text-muted: #fecdd3;
@@ -153,7 +153,7 @@
   --theme-grad-from: #1d4ed8;
   --theme-grad-to: #0369a1; /* sky-700 */
   --theme-ring: rgba(37, 99, 235, 0.15);
-  
+
   --theme-text-main: #0f172a; /* slate-900 */
   --theme-text-card: #1e293b; /* slate-800 */
   --theme-text-muted: #475569; /* slate-600 */
@@ -173,7 +173,7 @@
   --theme-grad-from: #c2410c;
   --theme-grad-to: #b45309; /* amber-700 */
   --theme-ring: rgba(234, 88, 12, 0.15);
-  
+
   --theme-text-main: #1c1917; /* stone-900 */
   --theme-text-card: #292524; /* stone-800 */
   --theme-text-muted: #57534e; /* stone-600 */

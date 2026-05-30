@@ -46,6 +46,14 @@ jobs:
         run: |
           npm run install:all
 
+      - name: Check Formatting
+        run: |
+          npm run format:check
+
+      - name: Run Linters
+        run: |
+          npm run lint
+
       - name: Build Frontend
         run: |
           npm run build

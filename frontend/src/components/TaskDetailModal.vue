@@ -72,14 +72,14 @@ const parsedMarkdown = computed(() => {
   if (!task.value || !task.value.body) return '';
   try {
     return marked.parse(task.value.body);
-  } catch (e) {
+  } catch {
     return task.value.body;
   }
 });
 
 const handleSave = async () => {
   if (!task.value) return;
-  
+
   loading.value = true;
   error.value = null;
   try {
@@ -95,7 +95,7 @@ const handleSave = async () => {
       tags: tagArray,
       body: editBody.value,
     });
-    
+
     task.value = updated;
     isEditing.value = false;
     emit('updated');
@@ -134,15 +134,9 @@ const cancelEdit = () => {
 </script>
 
 <template>
-  <div
-    v-if="isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-  >
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
     <!-- Backdrop -->
-    <div
-      class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
-      @click="emit('close')"
-    ></div>
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
 
     <!-- Modal Content -->
     <div
@@ -191,7 +185,7 @@ const cancelEdit = () => {
               <h2 class="text-2xl font-bold text-theme-text-main mb-2 leading-snug">
                 {{ task.title }}
               </h2>
-              
+
               <!-- Tags -->
               <div v-if="task.tags.length" class="flex flex-wrap gap-1.5 mt-3">
                 <span
@@ -206,18 +200,16 @@ const cancelEdit = () => {
 
             <div class="border-t border-theme-border pt-6">
               <h4 class="text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-3">Notes & Description</h4>
-              
+
               <!-- Rendered Markdown -->
               <div
                 v-if="task.body"
                 class="markdown-content text-theme-text-card prose prose-invert max-w-none space-y-4"
                 v-html="parsedMarkdown"
               ></div>
-              <div v-else class="text-theme-text-muted italic text-sm py-4">
-                No description provided. Click Edit to add details.
-              </div>
+              <div v-else class="text-theme-text-muted italic text-sm py-4">No description provided. Click Edit to add details.</div>
             </div>
-            
+
             <div class="text-[11px] text-theme-text-muted flex gap-4 border-t border-theme-border pt-4 font-mono">
               <span>Created: {{ new Date(task.created_at).toLocaleString() }}</span>
               <span>Updated: {{ new Date(task.updated_at).toLocaleString() }}</span>
@@ -261,9 +253,7 @@ const cancelEdit = () => {
 
             <!-- Body (Markdown Textarea) -->
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
-                Markdown Body
-              </label>
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5"> Markdown Body </label>
               <textarea
                 v-model="editBody"
                 rows="10"
@@ -400,7 +390,7 @@ const cancelEdit = () => {
   font-style: italic;
   margin: 0.75rem 0;
 }
-.markdown-content input[type="checkbox"] {
+.markdown-content input[type='checkbox'] {
   accent-color: var(--theme-primary);
   margin-right: 0.5rem;
   border-radius: 0.25rem;

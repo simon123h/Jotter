@@ -12,6 +12,18 @@
     "test:frontend": "cd frontend && npm run test",
     "test": "npm run test:backend && npm run test:frontend",
     "test:coverage": "cd backend && PYTHONPATH=. .venv/bin/pytest --cov=. --cov-report=json test_main.py && cd ../frontend && npx vitest run --coverage && cd .. && node scripts/combine-coverage.js",
+    "lint:backend": "cd backend && .venv/bin/ruff check .",
+    "lint:backend:fix": "cd backend && .venv/bin/ruff check . --fix",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:frontend:fix": "cd frontend && npm run lint:fix",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:fix": "npm run lint:backend:fix && npm run lint:frontend:fix",
+    "format:backend": "cd backend && .venv/bin/ruff format .",
+    "format:backend:check": "cd backend && .venv/bin/ruff format . --check",
+    "format:frontend": "cd frontend && npm run format",
+    "format:frontend:check": "cd frontend && npm run format:check",
+    "format": "npm run format:backend && npm run format:frontend",
+    "format:check": "npm run format:backend:check && npm run format:frontend:check",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"
   },
   "devDependencies": {

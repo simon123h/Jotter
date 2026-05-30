@@ -1,9 +1,9 @@
-import sqlite3
 import os
-import json
+import sqlite3
 from contextlib import contextmanager
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.db")
+
 
 def get_db_connection():
     """Establishes a connection to the SQLite database and configures WAL mode."""
@@ -13,6 +13,7 @@ def get_db_connection():
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
     return conn
+
 
 def init_db():
     """Initializes the tasks database table if it doesn't exist."""
@@ -35,6 +36,7 @@ def init_db():
         conn.commit()
     finally:
         conn.close()
+
 
 @contextmanager
 def db_session():

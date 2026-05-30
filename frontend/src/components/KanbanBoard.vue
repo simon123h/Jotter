@@ -140,15 +140,13 @@ const handleCardDropped = async ({
   newIndex: number;
 }) => {
   // Find other tasks in the target bucket
-  const targetBucketTasks = tasks.value
-    .filter((t) => t.bucket === toBucket)
-    .sort((a, b) => a.position - b.position);
+  const targetBucketTasks = tasks.value.filter((t) => t.bucket === toBucket).sort((a, b) => a.position - b.position);
 
   // Exclude the dragged task itself (for intra-column reordering)
   const otherTasks = targetBucketTasks.filter((t) => t.id !== taskId);
 
   // Calculate new position
-  let newPosition = 1000.0;
+  let newPosition: number;
   if (otherTasks.length === 0) {
     newPosition = 1000.0;
   } else if (newIndex === 0) {
@@ -172,7 +170,7 @@ const handleCardDropped = async ({
 
     try {
       await moveTask(taskId, toBucket, newPosition);
-    } catch (err) {
+    } catch {
       // Revert if API call fails
       movedTask.bucket = originalBucket;
       movedTask.position = originalPosition;
@@ -204,9 +202,7 @@ const triggerSync = async () => {
         <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-theme-grad-from to-theme-grad-to bg-clip-text text-transparent">
           Jotter
         </h1>
-        <p class="text-theme-text-muted text-sm mt-1">
-          Single Source of Truth: Plain Markdown Files. SQLite Ephemeral Index.
-        </p>
+        <p class="text-theme-text-muted text-sm mt-1">Single Source of Truth: Plain Markdown Files. SQLite Ephemeral Index.</p>
       </div>
 
       <!-- Toolbar Actions -->
@@ -231,13 +227,13 @@ const triggerSync = async () => {
             class="relative z-20 flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-card hover:bg-theme-column/85 text-theme-text-card border border-theme-border rounded-xl transition-all shadow-sm cursor-pointer"
             title="Choose theme"
           >
-            <span class="w-3.5 h-3.5 rounded-full" :class="themes.find(t => t.id === currentTheme)?.color"></span>
+            <span class="w-3.5 h-3.5 rounded-full" :class="themes.find((t) => t.id === currentTheme)?.color"></span>
             Theme
             <svg class="w-3.5 h-3.5 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-          
+
           <!-- Dropdown Menu -->
           <div
             v-if="isThemeDropdownOpen"
@@ -263,19 +259,8 @@ const triggerSync = async () => {
           :disabled="syncLoading"
           title="Rebuild database index from Markdown files"
         >
-          <svg
-            class="w-4 h-4"
-            :class="{ 'animate-spin': syncLoading }"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2"
-            />
+          <svg class="w-4 h-4" :class="{ 'animate-spin': syncLoading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2" />
           </svg>
           {{ syncLoading ? 'Syncing...' : 'Sync Index' }}
         </button>
@@ -294,10 +279,7 @@ const triggerSync = async () => {
     </header>
 
     <!-- Error Banner -->
-    <div
-      v-if="error"
-      class="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl flex justify-between items-center"
-    >
+    <div v-if="error" class="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl flex justify-between items-center">
       <span>{{ error }}</span>
       <button @click="error = null" class="hover:text-white">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

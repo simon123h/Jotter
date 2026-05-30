@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
 from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
@@ -7,8 +9,10 @@ class TaskBase(BaseModel):
     tags: List[str] = Field(default_factory=list)
     body: str = Field("", description="Markdown content of the task")
 
+
 class TaskCreate(TaskBase):
     pass
+
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
@@ -17,9 +21,11 @@ class TaskUpdate(BaseModel):
     body: Optional[str] = None
     position: Optional[float] = None
 
+
 class TaskMove(BaseModel):
     bucket: str
     position: float
+
 
 class TaskResponse(BaseModel):
     id: int

@@ -10,11 +10,12 @@ import KanbanBoard from './components/KanbanBoard.vue';
 
 <style>
 /* Global resets and body styling */
-html, body {
+html,
+body {
   background-color: var(--theme-bg-base); /* dynamic theme color */
   margin: 0;
   padding: 0;
   transition: background-color 0.2s ease;
-  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 }
 </style>

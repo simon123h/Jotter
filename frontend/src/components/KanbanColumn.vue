@@ -31,10 +31,10 @@ onMounted(() => {
       onEnd: (evt) => {
         const { item, to, oldIndex, newIndex } = evt;
         if (oldIndex === undefined || newIndex === undefined) return;
-        
+
         const taskId = Number(item.getAttribute('data-task-id'));
         const toBucket = to.getAttribute('data-bucket-name') as BucketName;
-        
+
         emit('card-dropped', {
           taskId,
           toBucket,
@@ -74,13 +74,7 @@ onMounted(() => {
       :data-bucket-name="bucketName"
       class="flex-grow p-4 overflow-y-auto space-y-3 min-h-[150px] scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent"
     >
-      <TaskCard
-        v-for="task in tasks"
-        :key="task.id"
-        :task="task"
-        :data-task-id="task.id"
-        @click="emit('task-click', task)"
-      />
+      <TaskCard v-for="task in tasks" :key="task.id" :task="task" :data-task-id="task.id" @click="emit('task-click', task)" />
     </div>
   </div>
 </template>

@@ -67,15 +67,9 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div
-    v-if="isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-  >
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
     <!-- Backdrop -->
-    <div
-      class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
-      @click="emit('close')"
-    ></div>
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
 
     <!-- Modal Content -->
     <div
@@ -137,9 +131,7 @@ const handleSubmit = async () => {
 
         <!-- Body (Markdown Textarea) -->
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
-            Markdown Description
-          </label>
+          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5"> Markdown Description </label>
           <textarea
             v-model="body"
             rows="6"
