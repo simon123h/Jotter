@@ -5,7 +5,7 @@ import tempfile
 import unicodedata
 import frontmatter
 from typing import List, Optional, Dict, Any, Tuple
-from .database import db_session
+from database import db_session
 
 TASKS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tasks")
 

@@ -4,15 +4,15 @@ import pytest
 from fastapi.testclient import TestClient
 
 # Override paths before importing backend modules to ensure testing isolation
-import backend.database as db
-import backend.storage as storage
+import database as db
+import storage as storage
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data")
 db.DB_PATH = os.path.join(TEST_DATA_DIR, "test_tasks.db")
 storage.TASKS_DIR = os.path.join(TEST_DATA_DIR, "tasks")
 
 # Now import app and endpoints
-from backend.main import app
+from main import app
 
 client = TestClient(app)
 

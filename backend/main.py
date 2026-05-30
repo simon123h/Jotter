@@ -6,9 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from contextlib import asynccontextmanager
 
-from .database import init_db, db_session
-from .models import TaskCreate, TaskUpdate, TaskMove, TaskResponse
-from .storage import (
+from database import init_db, db_session
+from models import TaskCreate, TaskUpdate, TaskMove, TaskResponse
+from storage import (
     read_task_file,
     write_task_file,
     delete_task_file,
