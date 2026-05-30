@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     sync_db_with_files()
     yield
 
-app = FastAPI(title="Local-First Markdown Kanban App API", lifespan=lifespan)
+app = FastAPI(title="Jotter API", lifespan=lifespan)
 
 # Enable CORS for frontend integration
 app.add_middleware(

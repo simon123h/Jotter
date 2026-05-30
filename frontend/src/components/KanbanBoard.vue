@@ -171,7 +171,7 @@ const triggerSync = async () => {
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
       <div>
         <h1 class="text-3xl font-black tracking-tight text-white bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
-          Local-First Markdown Kanban
+          Jotter
         </h1>
         <p class="text-slate-400 text-sm mt-1">
           Single Source of Truth: Plain Markdown Files. SQLite Ephemeral Index.
@@ -272,7 +272,7 @@ const triggerSync = async () => {
     <!-- Loading Board state -->
     <div v-if="loading && !tasks.length" class="flex-grow flex flex-col items-center justify-center py-20 gap-3">
       <div class="w-12 h-12 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
-      <span class="text-slate-400">Loading Kanban Board...</span>
+      <span class="text-slate-400">Loading Jotter Board...</span>
     </div>
 
     <!-- Empty Board state -->

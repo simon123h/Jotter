@@ -1,6 +1,6 @@
-# Kanban Board - Frontend
+# Jotter - Frontend
 
-A Kanban board application built with Vue 3 and TypeScript, communicating with a Python/SQLite backend.
+A local-first Markdown Kanban board application built with Vue 3 and TypeScript, communicating with a Python/SQLite backend.
 
 ## Project Setup
 

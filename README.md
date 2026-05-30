@@ -1,6 +1,4 @@
-# Local-First Markdown Kanban App
-
-https://gemini.google.com/app/00eaf729eec7d5ba
+# Jotter - Local-First Markdown Kanban App
 
 ## Project Overview
 

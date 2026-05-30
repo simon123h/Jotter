@@ -1,8 +1,8 @@
 {
-  "name": "my-kanban",
+  "name": "jotter",
   "version": "1.0.0",
   "private": true,
-  "description": "Local-First Markdown Kanban App with Ephemeral Index",
+  "description": "Jotter - Local-First Markdown Kanban App with Ephemeral Index",
   "scripts": {
     "dev:backend": "cd backend && .venv/bin/uvicorn main:app --port 8000 --reload",
     "dev:frontend": "cd frontend && npm run dev",
