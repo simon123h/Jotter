@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, nextTick, watch } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue';
 import Sortable from 'sortablejs';
 import type { Task } from '../types';
 import TaskCard from './TaskCard.vue';
@@ -75,10 +75,13 @@ const timeColumns = computed(() => {
 const columnsContainer = ref<HTMLElement | null>(null);
 const sortableInstances: Sortable[] = [];
 
-const initSortable = () => {
-  // Destroy old instances
+const destroySortables = () => {
   sortableInstances.forEach((s) => s.destroy());
   sortableInstances.length = 0;
+};
+
+const initSortable = () => {
+  destroySortables();
 
   if (!columnsContainer.value) return;
 
@@ -91,8 +94,10 @@ const initSortable = () => {
       ghostClass: 'opacity-40',
       chosenClass: 'scale-[1.02]',
       dragClass: 'rotate-1',
+      // Exclude the empty-state placeholder from being treated as a draggable
+      filter: '.empty-placeholder',
       onEnd: (evt) => {
-        const { item, from, to } = evt;
+        const { item, from, to, oldIndex } = evt;
         // Skip if dropped back in the same column (just reordering within)
         if (from === to) return;
 
@@ -100,6 +105,18 @@ const initSortable = () => {
         const columnId = to.getAttribute('data-column-id') as string;
 
         if (!taskId || !columnId) return;
+
+        // CRITICAL: Revert Sortable's DOM manipulation before emitting.
+        // Sortable has already physically moved the element in the DOM, but
+        // Vue's virtual DOM doesn't know about this. We put the element back
+        // and let Vue handle the re-render via reactivity when the due date
+        // is updated by the parent.
+        to.removeChild(item);
+        if (oldIndex != null && from.children[oldIndex]) {
+          from.insertBefore(item, from.children[oldIndex]);
+        } else {
+          from.appendChild(item);
+        }
 
         emit('update-due-date', { taskId, columnId });
       },
@@ -112,9 +129,20 @@ onMounted(() => {
   nextTick(() => initSortable());
 });
 
-// Re-init Sortable when the task grouping changes so empty columns stay droppable
+// Re-init Sortable when the task grouping changes so empty columns stay droppable.
+// Use a debounced nextTick to avoid destroying instances during rapid updates.
+let reinitPending = false;
 watch(timeColumns, () => {
-  nextTick(() => initSortable());
+  if (reinitPending) return;
+  reinitPending = true;
+  nextTick(() => {
+    initSortable();
+    reinitPending = false;
+  });
+});
+
+onBeforeUnmount(() => {
+  destroySortables();
 });
 </script>
 
@@ -145,7 +173,8 @@ watch(timeColumns, () => {
         :data-column-id="col.id"
         class="flex-grow p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] scroller-thin"
       >
-        <div v-if="!col.tasks.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-[11px] py-12 pointer-events-none">
+        <!-- Empty state (non-draggable placeholder) -->
+        <div v-if="!col.tasks.length" class="empty-placeholder h-full flex items-center justify-center text-theme-text-muted italic text-[11px] py-12 pointer-events-none">
           {{ t('timeView.emptyColumn') }}
         </div>
         <TaskCard
