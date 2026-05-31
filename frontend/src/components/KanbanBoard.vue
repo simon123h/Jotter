@@ -19,10 +19,11 @@ import TaskCreateModal from './TaskCreateModal.vue';
 import BoardView from './BoardView.vue';
 import ListView from './ListView.vue';
 import MatrixView from './MatrixView.vue';
+import TimeView from './TimeView.vue';
 import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
-import { Globe, LayoutGrid, List, ChevronDown, RefreshCw, Plus, X, ClipboardList, Menu, Eye, EyeOff, Grid } from '@lucide/vue';
+import { Globe, LayoutGrid, List, ChevronDown, RefreshCw, Plus, X, ClipboardList, Menu, Eye, EyeOff, Grid, Clock } from '@lucide/vue';
 
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();
@@ -54,9 +55,10 @@ const error = ref<string | null>(null);
 const searchQuery = ref('');
 const selectedTag = ref<string | null>(null);
 
-// View Mode state (board, list, or matrix)
-const viewMode = ref<'board' | 'list' | 'matrix'>((localStorage.getItem('jotter-view-mode') as 'board' | 'list' | 'matrix') || 'board');
-const setViewMode = (mode: 'board' | 'list' | 'matrix') => {
+// View Mode state (board, list, matrix, or time)
+type ViewMode = 'board' | 'list' | 'matrix' | 'time';
+const viewMode = ref<ViewMode>((localStorage.getItem('jotter-view-mode') as ViewMode) || 'board');
+const setViewMode = (mode: ViewMode) => {
   viewMode.value = mode;
   localStorage.setItem('jotter-view-mode', mode);
 };
@@ -481,6 +483,18 @@ const triggerSync = async () => {
             <Grid class="w-3.5 h-3.5" />
             <span class="hidden sm:inline">{{ t('views.matrix') }}</span>
           </button>
+          <button
+            @click="setViewMode('time')"
+            class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+            :class="
+              viewMode === 'time'
+                ? 'bg-theme-primary text-white'
+                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+            "
+          >
+            <Clock class="w-3.5 h-3.5" />
+            <span class="hidden sm:inline">{{ t('views.time') }}</span>
+          </button>
         </div>
 
         <!-- Hide Done Column Toggle -->
@@ -700,6 +714,14 @@ const triggerSync = async () => {
 
           <!-- Matrix View Mode (Eisenhower 2x2 Matrix) -->
           <MatrixView v-else-if="viewMode === 'matrix'" :tasks="filteredTasks" @task-click="openDetailModal" />
+
+          <!-- Time View Mode (Deadline-based columns) -->
+          <TimeView
+            v-else-if="viewMode === 'time'"
+            :tasks="filteredTasks"
+            @task-click="openDetailModal"
+            @mark-done="handleMarkTaskDone"
+          />
         </div>
 
         <!-- Task Detail Modal -->

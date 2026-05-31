@@ -117,6 +117,7 @@ export const en = {
     board: 'Board',
     list: 'List View',
     matrix: 'Matrix',
+    time: 'Time View',
   },
   matrix: {
     thresholdLabel: 'Urgency Threshold: {days} days or less',
@@ -129,6 +130,15 @@ export const en = {
     q4Title: 'Eliminate',
     q4Desc: 'Not Urgent & Not Important',
     emptyQuadrant: 'No tasks in this quadrant',
+  },
+  timeView: {
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    thisWeek: 'This Week',
+    thisMonth: 'This Month',
+    thisYear: 'This Year',
+    noDate: 'No Date',
+    emptyColumn: 'No tasks',
   },
   table: {
     id: 'ID',

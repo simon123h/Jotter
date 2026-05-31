@@ -119,6 +119,7 @@ export const de = {
     board: 'Board',
     list: 'Listenansicht',
     matrix: 'Matrix',
+    time: 'Zeitansicht',
   },
   matrix: {
     thresholdLabel: 'Dringlichkeitsschwelle: {days} Tage oder weniger',
@@ -131,6 +132,15 @@ export const de = {
     q4Title: 'Eliminieren',
     q4Desc: 'Nicht dringend & Nicht wichtig',
     emptyQuadrant: 'Keine Aufgaben in diesem Quadranten',
+  },
+  timeView: {
+    today: 'Heute',
+    tomorrow: 'Morgen',
+    thisWeek: 'Diese Woche',
+    thisMonth: 'Diesen Monat',
+    thisYear: 'Dieses Jahr',
+    noDate: 'Ohne Datum',
+    emptyColumn: 'Keine Aufgaben',
   },
   table: {
     id: 'ID',
