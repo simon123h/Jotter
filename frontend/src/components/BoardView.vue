@@ -16,21 +16,30 @@ const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
   (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; oldIndex: number; newIndex: number }): void;
-  (e: 'rename-column', payload: { bucketName: string; newTitle: string }): void;
+  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string }): void;
   (e: 'delete-column', bucketName: string): void;
   (e: 'move-column', bucketName: string, direction: 'left' | 'right'): void;
-  (e: 'create-column', title: string): void;
+  (e: 'create-column', title: string, subtitle: string): void;
 }>();
 
-// Column create state (moved locally here as it belongs strictly to board view layout)
+// Column create state
 const isAddingColumn = ref(false);
 const newColumnTitle = ref('');
+const newColumnSubtitle = ref('');
 
 const handleAddColumn = () => {
   const title = newColumnTitle.value.trim();
+  const subtitle = newColumnSubtitle.value.trim();
   if (!title) return;
-  emit('create-column', title);
+  emit('create-column', title, subtitle);
   newColumnTitle.value = '';
+  newColumnSubtitle.value = '';
+  isAddingColumn.value = false;
+};
+
+const handleCancelAddColumn = () => {
+  newColumnTitle.value = '';
+  newColumnSubtitle.value = '';
   isAddingColumn.value = false;
 };
 </script>
@@ -42,6 +51,7 @@ const handleAddColumn = () => {
       :key="b.name"
       :bucket-name="b.name"
       :title="b.title"
+      :subtitle="b.subtitle"
       :tasks="tasksByBucket[b.name] || []"
       :is-first="idx === 0"
       :is-last="idx === buckets.length - 1"
@@ -72,14 +82,22 @@ const handleAddColumn = () => {
           v-model="newColumnTitle"
           type="text"
           :placeholder="t('columnTitlePlaceholder')"
-          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary"
           @keyup.enter="handleAddColumn"
-          @keyup.esc="isAddingColumn = false"
+          @keyup.esc="handleCancelAddColumn"
           autofocus
+        />
+        <input
+          v-model="newColumnSubtitle"
+          type="text"
+          placeholder="Column description/subtitle (optional)"
+          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary font-sans italic"
+          @keyup.enter="handleAddColumn"
+          @keyup.esc="handleCancelAddColumn"
         />
         <div class="flex gap-1.5 justify-end">
           <button
-            @click="isAddingColumn = false"
+            @click="handleCancelAddColumn"
             class="text-[10px] font-semibold px-2 py-1 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded cursor-pointer"
           >
             {{ t('buttons.cancel') }}

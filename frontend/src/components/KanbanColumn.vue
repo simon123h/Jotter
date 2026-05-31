@@ -11,6 +11,7 @@ const { t } = useI18n();
 const props = defineProps<{
   bucketName: BucketName;
   title: string;
+  subtitle: string;
   tasks: Task[];
   isFirst: boolean;
   isLast: boolean;
@@ -20,7 +21,7 @@ const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
   (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; oldIndex: number; newIndex: number }): void;
-  (e: 'rename-column', payload: { bucketName: string; newTitle: string }): void;
+  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string }): void;
   (e: 'delete-column', bucketName: string): void;
   (e: 'move-column', bucketName: string, direction: 'left' | 'right'): void;
 }>();
@@ -28,10 +29,12 @@ const emit = defineEmits<{
 const cardsContainer = ref<HTMLElement | null>(null);
 const isEditing = ref(false);
 const editTitle = ref('');
+const editSubtitle = ref('');
 const titleInputRef = ref<HTMLInputElement | null>(null);
 
 const startEditing = () => {
   editTitle.value = props.title;
+  editSubtitle.value = props.subtitle || '';
   isEditing.value = true;
   nextTick(() => {
     titleInputRef.value?.focus();
@@ -39,14 +42,28 @@ const startEditing = () => {
 };
 
 const saveTitle = () => {
-  if (editTitle.value.trim() && editTitle.value.trim() !== props.title) {
-    emit('rename-column', { bucketName: props.bucketName, newTitle: editTitle.value.trim() });
+  const cleanTitle = editTitle.value.trim();
+  const cleanSubtitle = editSubtitle.value.trim();
+  if (cleanTitle && (cleanTitle !== props.title || cleanSubtitle !== props.subtitle)) {
+    emit('rename-column', {
+      bucketName: props.bucketName,
+      newTitle: cleanTitle,
+      newSubtitle: cleanSubtitle,
+    });
   }
   isEditing.value = false;
 };
 
 const cancelEditing = () => {
   isEditing.value = false;
+};
+
+const handleFocusOut = (event: FocusEvent) => {
+  const container = event.currentTarget as HTMLElement;
+  const relatedTarget = event.relatedTarget as HTMLElement | null;
+  if (!relatedTarget || !container.contains(relatedTarget)) {
+    saveTitle();
+  }
 };
 
 const displayTitle = computed(() => {
@@ -86,32 +103,51 @@ onMounted(() => {
 <template>
   <div class="flex flex-col bg-theme-column border border-theme-border rounded w-full h-full min-w-[280px] w-72 shrink-0 md:w-80 group/col">
     <!-- Column Header -->
-    <div class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t shrink-0">
+    <div class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t shrink-0 min-h-[48px]">
       <!-- Title Area (Normal or Edit Mode) -->
-      <div class="flex-grow flex items-center gap-1.5 overflow-hidden mr-1">
-        <div v-if="!isEditing" class="flex items-center gap-1.5 overflow-hidden">
-          <h3
-            class="font-bold text-xs uppercase tracking-wider text-theme-text-main truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
+      <div class="flex-grow flex flex-col justify-center overflow-hidden mr-1">
+        <div v-if="!isEditing" class="flex flex-col gap-0.5 overflow-hidden">
+          <div class="flex items-center gap-1.5 overflow-hidden">
+            <h3
+              class="font-bold text-xs uppercase tracking-wider text-theme-text-main truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
+              @dblclick="startEditing"
+              :title="t('doubleClickToRename')"
+            >
+              {{ displayTitle }}
+            </h3>
+            <span
+              class="text-[9px] px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0"
+            >
+              {{ tasks.length }}
+            </span>
+          </div>
+          <!-- Subtitle / Description -->
+          <span
+            v-if="subtitle"
+            class="text-[10px] text-theme-text-muted truncate cursor-pointer font-sans italic hover:text-theme-accent leading-normal"
             @dblclick="startEditing"
             :title="t('doubleClickToRename')"
           >
-            {{ displayTitle }}
-          </h3>
-          <span
-            class="text-[9px] px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0"
-          >
-            {{ tasks.length }}
+            {{ subtitle }}
           </span>
         </div>
-        <div v-else class="flex items-center gap-1.5 w-full">
+        <div v-else class="flex flex-col gap-1 w-full pr-1 py-0.5" @focusout="handleFocusOut">
           <input
             ref="titleInputRef"
             v-model="editTitle"
             type="text"
+            placeholder="Column Title"
             class="bg-theme-card border border-theme-primary/60 rounded px-1.5 py-0.5 text-xs font-bold text-theme-text-input focus:outline-none w-full"
             @keyup.enter="saveTitle"
             @keyup.esc="cancelEditing"
-            @blur="saveTitle"
+          />
+          <input
+            v-model="editSubtitle"
+            type="text"
+            placeholder="Add description..."
+            class="bg-theme-card border border-theme-border rounded px-1.5 py-0.5 text-[9px] text-theme-text-input focus:outline-none w-full font-sans italic"
+            @keyup.enter="saveTitle"
+            @keyup.esc="cancelEditing"
           />
         </div>
       </div>

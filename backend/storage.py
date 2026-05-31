@@ -21,10 +21,10 @@ BUCKETS_FILE = os.path.join(TASKS_DIR, "buckets.json")
 PROJECTS_FILE = os.path.join(TASKS_DIR, "projects.json")
 
 DEFAULT_BUCKETS = [
-    {"name": "backlog", "title": "Backlog", "position": 1000.0},
-    {"name": "todo", "title": "To Do", "position": 2000.0},
-    {"name": "in-progress", "title": "In Progress", "position": 3000.0},
-    {"name": "done", "title": "Done", "position": 4000.0},
+    {"name": "backlog", "title": "Backlog", "subtitle": "", "position": 1000.0},
+    {"name": "todo", "title": "To Do", "subtitle": "", "position": 2000.0},
+    {"name": "in-progress", "title": "In Progress", "subtitle": "", "position": 3000.0},
+    {"name": "done", "title": "Done", "subtitle": "", "position": 4000.0},
 ]
 
 
@@ -130,7 +130,11 @@ def load_buckets_file(project_id: str = "default") -> list:
         return DEFAULT_BUCKETS
     try:
         with open(buckets_file, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            for item in data:
+                if "subtitle" not in item:
+                    item["subtitle"] = ""
+            return data
     except Exception:
         return DEFAULT_BUCKETS
 
@@ -337,8 +341,8 @@ def sync_db_with_files() -> int:
 
             for b in buckets:
                 conn.execute(
-                    "INSERT INTO buckets (project_id, name, title, position) VALUES (?, ?, ?, ?)",
-                    (p["id"], b["name"], b["title"], b["position"]),
+                    "INSERT INTO buckets (project_id, name, title, subtitle, position) VALUES (?, ?, ?, ?, ?)",
+                    (p["id"], b["name"], b["title"], b.get("subtitle", ""), b["position"]),
                 )
                 bucket_names.add(b["name"])
                 max_bucket_position = max(max_bucket_position, b["position"])
@@ -372,13 +376,14 @@ def sync_db_with_files() -> int:
                                 new_title = bucket.replace("-", " ").title()
                                 new_pos = max_bucket_position + 1000.0
                                 conn.execute(
-                                    "INSERT INTO buckets (project_id, name, title, position) VALUES (?, ?, ?, ?)",
-                                    (p["id"], bucket, new_title, new_pos),
+                                    "INSERT INTO buckets (project_id, name, title, subtitle, position) VALUES (?, ?, ?, ?, ?)",
+                                    (p["id"], bucket, new_title, "", new_pos),
                                 )
                                 buckets.append(
                                     {
                                         "name": bucket,
                                         "title": new_title,
+                                        "subtitle": "",
                                         "position": new_pos,
                                     }
                                 )

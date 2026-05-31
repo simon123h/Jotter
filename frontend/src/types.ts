@@ -21,5 +21,6 @@ export type BucketName = string;
 export interface Bucket {
   name: BucketName;
   title: string;
+  subtitle: string;
   position: number;
 }

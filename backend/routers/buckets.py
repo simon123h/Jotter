@@ -21,7 +21,7 @@ def get_buckets(project_id: str):
             )
 
         cursor = conn.execute(
-            "SELECT name, title, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
         rows = cursor.fetchall()
@@ -65,19 +65,19 @@ def create_bucket(project_id: str, bucket: BucketCreate):
             new_position = float(row["max_pos"]) + 1000.0
 
         conn.execute(
-            "INSERT INTO buckets (project_id, name, title, position) VALUES (?, ?, ?, ?)",
-            (project_id, name, bucket.title, new_position),
+            "INSERT INTO buckets (project_id, name, title, subtitle, position) VALUES (?, ?, ?, ?, ?)",
+            (project_id, name, bucket.title, bucket.subtitle or "", new_position),
         )
 
         # Sync to project's buckets.json file
         cursor = conn.execute(
-            "SELECT name, title, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
         all_buckets = [dict(r) for r in cursor.fetchall()]
         write_buckets_file(project_id, all_buckets)
 
-        return BucketResponse(name=name, title=bucket.title, position=new_position)
+        return BucketResponse(name=name, title=bucket.title, subtitle=bucket.subtitle or "", position=new_position)
 
 
 @router.put("/{name}", response_model=BucketResponse)
@@ -93,7 +93,7 @@ def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
 
         # Check if bucket exists in this project
         cursor = conn.execute(
-            "SELECT name, title, position FROM buckets WHERE project_id = ? AND name = ?",
+            "SELECT name, title, subtitle, position FROM buckets WHERE project_id = ? AND name = ?",
             (project_id, name),
         )
         existing = cursor.fetchone()
@@ -104,22 +104,23 @@ def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
             )
 
         updated_title = bucket_update.title if bucket_update.title is not None else existing["title"]
+        updated_subtitle = bucket_update.subtitle if bucket_update.subtitle is not None else existing["subtitle"]
         updated_position = bucket_update.position if bucket_update.position is not None else existing["position"]
 
         conn.execute(
-            "UPDATE buckets SET title = ?, position = ? WHERE project_id = ? AND name = ?",
-            (updated_title, updated_position, project_id, name),
+            "UPDATE buckets SET title = ?, subtitle = ?, position = ? WHERE project_id = ? AND name = ?",
+            (updated_title, updated_subtitle, updated_position, project_id, name),
         )
 
         # Sync to project's buckets.json file
         cursor = conn.execute(
-            "SELECT name, title, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
         all_buckets = [dict(r) for r in cursor.fetchall()]
         write_buckets_file(project_id, all_buckets)
 
-        return BucketResponse(name=name, title=updated_title, position=updated_position)
+        return BucketResponse(name=name, title=updated_title, subtitle=updated_subtitle, position=updated_position)
 
 
 @router.delete("/{name}")
@@ -162,7 +163,7 @@ def delete_bucket(project_id: str, name: str):
 
         # Sync to project's buckets.json file
         cursor = conn.execute(
-            "SELECT name, title, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
         all_buckets = [dict(r) for r in cursor.fetchall()]

@@ -293,19 +293,27 @@ const handleCardDropped = async ({
   }
 };
 
-const handleCreateColumn = async (title: string) => {
+const handleCreateColumn = async (title: string, subtitle: string) => {
   try {
-    await createBucket(activeProjectId.value, title);
+    await createBucket(activeProjectId.value, title, subtitle);
     await fetchBuckets();
   } catch (err: any) {
     error.value = err.message || 'Failed to create column';
   }
 };
 
-const handleRenameColumn = async ({ bucketName, newTitle }: { bucketName: string; newTitle: string }) => {
+const handleRenameColumn = async ({
+  bucketName,
+  newTitle,
+  newSubtitle,
+}: {
+  bucketName: string;
+  newTitle: string;
+  newSubtitle: string;
+}) => {
   if (!newTitle.trim()) return;
   try {
-    await updateBucket(activeProjectId.value, bucketName, { title: newTitle.trim() });
+    await updateBucket(activeProjectId.value, bucketName, { title: newTitle.trim(), subtitle: newSubtitle });
     await fetchBuckets();
   } catch (err: any) {
     error.value = err.message || 'Failed to rename column';

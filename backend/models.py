@@ -63,14 +63,17 @@ class TaskResponse(BaseModel):
 class BucketBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
     title: str = Field(..., min_length=1, max_length=100)
+    subtitle: str = Field("", description="A short subtitle/description of the column")
 
 
 class BucketCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=100)
+    subtitle: Optional[str] = Field("", description="A short subtitle/description of the column")
 
 
 class BucketUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=100)
+    subtitle: Optional[str] = Field(None, description="A short subtitle/description of the column")
     position: Optional[float] = None
 
 

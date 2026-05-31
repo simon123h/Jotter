@@ -44,11 +44,18 @@ def init_db():
                 project_id TEXT NOT NULL,
                 name TEXT NOT NULL,
                 title TEXT NOT NULL,
+                subtitle TEXT NOT NULL DEFAULT '',
                 position REAL NOT NULL,
                 PRIMARY KEY (project_id, name),
                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
             )
         """)
+
+        # Check if buckets table has subtitle column (migration check)
+        cursor = conn.execute("PRAGMA table_info(buckets)")
+        bucket_columns = [row["name"] for row in cursor.fetchall()]
+        if bucket_columns and "subtitle" not in bucket_columns:
+            conn.execute("ALTER TABLE buckets ADD COLUMN subtitle TEXT NOT NULL DEFAULT ''")
 
         # 3. Tasks table
         conn.execute("""

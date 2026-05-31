@@ -58,6 +58,12 @@ const getChecklistStats = (body: string) => {
             :class="{ '-rotate-90': collapsedColumns[b.name] }"
           />
           <span>{{ t('buckets.' + b.name) || b.title }}</span>
+          <span
+            v-if="b.subtitle"
+            class="text-[9px] lowercase italic text-theme-text-muted/60 font-sans tracking-normal ml-1.5 normal-case font-medium"
+          >
+            &mdash; {{ b.subtitle }}
+          </span>
           <span class="px-1 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted rounded text-[9px] font-bold">
             {{ tasksByBucket[b.name]?.length || 0 }}
           </span>
