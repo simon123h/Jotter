@@ -12,6 +12,7 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_d
 db.DB_PATH = os.path.join(TEST_DATA_DIR, "test_tasks.db")
 storage.TASKS_DIR = os.path.join(TEST_DATA_DIR, "tasks")
 storage.BUCKETS_FILE = os.path.join(storage.TASKS_DIR, "default", "buckets.json")
+storage.PROJECTS_FILE = os.path.join(storage.TASKS_DIR, "projects.json")
 
 # Now import app and endpoints
 from main import app  # noqa: E402
@@ -83,14 +84,14 @@ def test_crud_flow():
     response = client.post("/projects/default/tasks", json=task_payload)
     assert response.status_code == 201
     data = response.json()
-    assert data["id"] == 1000
+    assert data["id"] == 1
     assert data["project_id"] == "default"
     assert data["title"] == "Test Task 1"
     assert data["bucket"] == "todo"
     assert data["tags"] == ["test", "feature"]
 
     # Verify file was created in test default project directory
-    expected_filename = "1000-test-task-1.md"
+    expected_filename = "000001-test-task-1.md"
     assert os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))
 
     # 3. Read specific task (should include body)
@@ -109,7 +110,7 @@ def test_crud_flow():
 
     # Verify old file was deleted and new file was created
     assert not os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))
-    new_expected_filename = "1000-test-task-1-updated.md"
+    new_expected_filename = "000001-test-task-1-updated.md"
     assert os.path.exists(os.path.join(storage.TASKS_DIR, "default", new_expected_filename))
 
     # 5. Move task (change bucket and position)

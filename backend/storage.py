@@ -165,28 +165,52 @@ def slugify(value: str) -> str:
 def get_task_file_path(task_id: int) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     """
     Finds the file path and project ID for a task ID by scanning directories.
+    Supports both 6-digit zero-padded prefixes and legacy numeric prefixes.
     Returns (absolute_file_path, filename, project_id) if found, else (None, None, None).
     """
-    prefix = f"{task_id}-"
+    prefix_padded = f"{task_id:06d}-"
+    prefix_legacy = f"{task_id}-"
     if not os.path.exists(TASKS_DIR):
         return None, None, None
 
+    def search_in_dir(directory: str) -> Tuple[Optional[str], Optional[str]]:
+        for filename in os.listdir(directory):
+            if filename.endswith(".md"):
+                if filename.startswith(prefix_padded) or filename.startswith(prefix_legacy):
+                    return os.path.join(directory, filename), filename
+        return None, None
+
+    # Check root TASKS_DIR first (for testing/legacy)
+    filepath, filename = search_in_dir(TASKS_DIR)
+    if filepath:
+        return filepath, filename, "default"
+
+    # Check subdirectories
     for item in os.listdir(TASKS_DIR):
         project_dir = os.path.join(TASKS_DIR, item)
         if os.path.isdir(project_dir) and not item.startswith("."):
-            for filename in os.listdir(project_dir):
-                if filename.startswith(prefix) and filename.endswith(".md"):
-                    return os.path.join(project_dir, filename), filename, item
+            filepath, filename = search_in_dir(project_dir)
+            if filepath:
+                return filepath, filename, item
 
     return None, None, None
 
 
 def generate_next_id() -> int:
-    """Finds the maximum task ID from all project files and returns max + 1 (starts at 1000)."""
-    max_id = 999
+    """Finds the maximum task ID from all project files and returns max + 1 (starts at 1)."""
+    max_id = 0
     if not os.path.exists(TASKS_DIR):
         return max_id + 1
 
+    # Check flat root directory
+    for filename in os.listdir(TASKS_DIR):
+        filepath = os.path.join(TASKS_DIR, filename)
+        if os.path.isfile(filepath) and filename.endswith(".md"):
+            parts = filename.split("-", 1)
+            if parts[0].isdigit():
+                max_id = max(max_id, int(parts[0]))
+
+    # Check subdirectories
     for item in os.listdir(TASKS_DIR):
         project_dir = os.path.join(TASKS_DIR, item)
         if os.path.isdir(project_dir) and not item.startswith("."):
@@ -232,7 +256,7 @@ def write_task_file(task_id: int, task_data: Dict[str, Any]) -> str:
     os.makedirs(project_dir, exist_ok=True)
 
     slug = slugify(task_data["title"])
-    new_filename = f"{task_id}-{slug}.md"
+    new_filename = f"{task_id:06d}-{slug}.md"
     new_filepath = os.path.join(project_dir, new_filename)
 
     old_filepath, old_filename, old_project_id = get_task_file_path(task_id)
