@@ -44,6 +44,8 @@ export const en = {
     markdownLabelEdit: 'Markdown Body',
     markdownPlaceholder: 'Write notes, checklists, or steps in markdown...',
     markdownPlaceholderEdit: 'Markdown details go here...',
+    dueDateLabel: 'Due Date',
+    priorityLabel: 'Priority',
   },
   buttons: {
     cancel: 'Cancel',
@@ -83,6 +85,13 @@ export const en = {
     todo: 'To Do',
     'in-progress': 'In Progress',
     done: 'Done',
+  },
+  priorityOptions: {
+    none: 'No Priority',
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+    urgent: 'Urgent',
   },
   doneBucket: {
     show: 'Show "Done" column',

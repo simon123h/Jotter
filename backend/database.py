@@ -57,6 +57,15 @@ def init_db():
         if bucket_columns and "subtitle" not in bucket_columns:
             conn.execute("ALTER TABLE buckets ADD COLUMN subtitle TEXT NOT NULL DEFAULT ''")
 
+        # Check if tasks table has due_date and priority columns (migration check)
+        cursor = conn.execute("PRAGMA table_info(tasks)")
+        task_columns = [row["name"] for row in cursor.fetchall()]
+        if task_columns:
+            if "due_date" not in task_columns:
+                conn.execute("ALTER TABLE tasks ADD COLUMN due_date TEXT")
+            if "priority" not in task_columns:
+                conn.execute("ALTER TABLE tasks ADD COLUMN priority TEXT")
+
         # 3. Tasks table
         conn.execute("""
             CREATE TABLE IF NOT EXISTS tasks (
@@ -67,6 +76,8 @@ def init_db():
                 position REAL NOT NULL,
                 tags TEXT NOT NULL, -- JSON array of strings
                 filename TEXT NOT NULL,
+                due_date TEXT,
+                priority TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,

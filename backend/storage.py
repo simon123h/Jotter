@@ -243,6 +243,8 @@ def read_task_file(task_id: int) -> Optional[Dict[str, Any]]:
         "bucket": metadata.get("bucket", "todo"),
         "position": float(metadata.get("position", 1000.0)),
         "tags": metadata.get("tags", []),
+        "due_date": metadata.get("due_date", None),
+        "priority": metadata.get("priority", None),
         "body": post.content,
         "created_at": metadata.get("created_at", ""),
         "updated_at": metadata.get("updated_at", ""),
@@ -274,6 +276,8 @@ def write_task_file(task_id: int, task_data: Dict[str, Any]) -> str:
         bucket=task_data["bucket"],
         position=task_data["position"],
         tags=task_data["tags"],
+        due_date=task_data.get("due_date", None),
+        priority=task_data.get("priority", None),
         created_at=task_data["created_at"],
         updated_at=task_data["updated_at"],
     )
@@ -368,6 +372,8 @@ def sync_db_with_files() -> int:
                             bucket = metadata.get("bucket", "todo")
                             position = float(metadata.get("position", 1000.0))
                             tags = metadata.get("tags", [])
+                            due_date = metadata.get("due_date", None)
+                            priority = metadata.get("priority", None)
                             created_at = metadata.get("created_at", "")
                             updated_at = metadata.get("updated_at", "")
 
@@ -394,9 +400,9 @@ def sync_db_with_files() -> int:
                             conn.execute(
                                 """
                                 INSERT INTO tasks (
-                                    id, project_id, title, bucket, position, tags, filename, created_at, updated_at
+                                    id, project_id, title, bucket, position, tags, filename, due_date, priority, created_at, updated_at
                                 )
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             """,
                                 (
                                     id_val,
@@ -406,6 +412,8 @@ def sync_db_with_files() -> int:
                                     position,
                                     json.dumps(tags),
                                     filename,
+                                    due_date,
+                                    priority,
                                     created_at,
                                     updated_at,
                                 ),

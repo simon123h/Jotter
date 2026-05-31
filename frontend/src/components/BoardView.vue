@@ -65,10 +65,7 @@ const handleCancelAddColumn = () => {
 </script>
 
 <template>
-  <div
-    ref="columnsContainer"
-    class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin"
-  >
+  <div ref="columnsContainer" class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
     <KanbanColumn
       v-for="(b, idx) in buckets"
       :key="b.name"

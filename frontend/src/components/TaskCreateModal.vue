@@ -23,6 +23,8 @@ const title = ref('');
 const bucket = ref<BucketName>('todo');
 const tags = ref('');
 const body = ref('');
+const dueDate = ref('');
+const priority = ref('');
 const loading = ref(false);
 const error = ref<string | null>(null);
 
@@ -35,6 +37,8 @@ watch(
       bucket.value = props.defaultBucket;
       tags.value = '';
       body.value = '';
+      dueDate.value = '';
+      priority.value = '';
       error.value = null;
     }
   }
@@ -59,6 +63,8 @@ const handleSubmit = async () => {
       bucket: bucket.value,
       tags: tagArray,
       body: body.value,
+      due_date: dueDate.value || undefined,
+      priority: priority.value || undefined,
     });
 
     emit('created');
@@ -131,6 +137,35 @@ const handleSubmit = async () => {
               class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
               :placeholder="t('form.tagsPlaceholder')"
             />
+          </div>
+        </div>
+
+        <!-- Due Date & Priority Row -->
+        <div class="grid grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+              t('form.dueDateLabel')
+            }}</label>
+            <input
+              v-model="dueDate"
+              type="date"
+              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+            />
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+              t('form.priorityLabel')
+            }}</label>
+            <select
+              v-model="priority"
+              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+            >
+              <option value="">{{ t('priorityOptions.none') }}</option>
+              <option value="low">{{ t('priorityOptions.low') }}</option>
+              <option value="medium">{{ t('priorityOptions.medium') }}</option>
+              <option value="high">{{ t('priorityOptions.high') }}</option>
+              <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
+            </select>
           </div>
         </div>
 

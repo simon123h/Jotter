@@ -68,7 +68,10 @@ export async function getTask(projectId: string, id: number): Promise<Task> {
   return response.json();
 }
 
-export async function createTask(projectId: string, task: { title: string; bucket: string; tags: string[]; body: string }): Promise<Task> {
+export async function createTask(
+  projectId: string,
+  task: { title: string; bucket: string; tags: string[]; body: string; due_date?: string; priority?: string }
+): Promise<Task> {
   const response = await fetch(`${API_BASE}/projects/${projectId}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -45,6 +45,8 @@ export const de = {
     markdownLabelEdit: 'Markdown-Text',
     markdownPlaceholder: 'Schreibe Notizen, Checklisten oder Schritte in Markdown...',
     markdownPlaceholderEdit: 'Markdown-Details kommen hierhin...',
+    dueDateLabel: 'Fälligkeitsdatum',
+    priorityLabel: 'Priorität',
   },
   buttons: {
     cancel: 'Abbrechen',
@@ -84,6 +86,13 @@ export const de = {
     todo: 'Zu erledigen',
     'in-progress': 'In Bearbeitung',
     done: 'Erledigt',
+  },
+  priorityOptions: {
+    none: 'Keine Priorität',
+    low: 'Niedrig',
+    medium: 'Mittel',
+    high: 'Hoch',
+    urgent: 'Dringend',
   },
   doneBucket: {
     show: '"Erledigt"-Spalte anzeigen',

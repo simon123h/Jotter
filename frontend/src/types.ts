@@ -12,6 +12,8 @@ export interface Task {
   position: number;
   tags: string[];
   body: string;
+  due_date?: string;
+  priority?: string;
   created_at: string;
   updated_at: string;
 }

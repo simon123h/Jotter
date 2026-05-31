@@ -27,6 +27,8 @@ class TaskBase(BaseModel):
     )
     tags: List[str] = Field(default_factory=list)
     body: str = Field("", description="Markdown content of the task")
+    due_date: Optional[str] = Field(None, description="Optional due date in YYYY-MM-DD format")
+    priority: Optional[str] = Field(None, description="Optional priority level: low, medium, high, urgent")
 
 
 class TaskCreate(TaskBase):
@@ -39,6 +41,8 @@ class TaskUpdate(BaseModel):
     tags: Optional[List[str]] = None
     body: Optional[str] = None
     position: Optional[float] = None
+    due_date: Optional[str] = None
+    priority: Optional[str] = None
 
 
 class TaskMove(BaseModel):
@@ -54,6 +58,8 @@ class TaskResponse(BaseModel):
     position: float
     tags: List[str]
     body: str
+    due_date: Optional[str] = None
+    priority: Optional[str] = None
     created_at: str
     updated_at: str
 

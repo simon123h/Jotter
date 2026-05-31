@@ -33,6 +33,8 @@ const editTitle = ref('');
 const editBucket = ref<string>('todo');
 const editTags = ref('');
 const editBody = ref('');
+const editDueDate = ref('');
+const editPriority = ref('');
 
 // Fetch task detail when modal opens or taskId changes
 watch(
@@ -67,6 +69,8 @@ const fetchTaskDetail = async (id: number) => {
     editBucket.value = fetchedTask.bucket;
     editTags.value = fetchedTask.tags.join(', ');
     editBody.value = fetchedTask.body;
+    editDueDate.value = fetchedTask.due_date || '';
+    editPriority.value = fetchedTask.priority || '';
   } catch (err: any) {
     error.value = t('errors.loadTask', { message: err.message || err });
   } finally {
@@ -101,6 +105,8 @@ const handleSave = async () => {
       bucket: editBucket.value,
       tags: tagArray,
       body: editBody.value,
+      due_date: editDueDate.value,
+      priority: editPriority.value,
     });
 
     task.value = updated;
@@ -143,8 +149,25 @@ const cancelEdit = () => {
     editBucket.value = task.value.bucket;
     editTags.value = task.value.tags.join(', ');
     editBody.value = task.value.body;
+    editDueDate.value = task.value.due_date || '';
+    editPriority.value = task.value.priority || '';
   }
   isEditing.value = false;
+};
+
+const getPriorityClasses = (prio: string) => {
+  switch (prio) {
+    case 'low':
+      return 'bg-blue-500/10 text-blue-400 border-blue-500/25';
+    case 'medium':
+      return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/25';
+    case 'high':
+      return 'bg-orange-500/10 text-orange-400 border-orange-500/25';
+    case 'urgent':
+      return 'bg-red-500/10 text-red-400 border-red-500/25 animate-pulse';
+    default:
+      return 'bg-slate-500/10 text-slate-400 border-slate-500/25';
+  }
 };
 </script>
 
@@ -209,6 +232,25 @@ const cancelEdit = () => {
                   {{ tag }}
                 </span>
               </div>
+
+              <!-- Due Date & Priority Info -->
+              <div v-if="task.due_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
+                <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
+                  <span class="text-[9px] font-bold uppercase tracking-wider text-theme-text-muted">Due:</span>
+                  <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-[10px] font-semibold text-theme-text-card">
+                    {{ new Date(task.due_date).toLocaleDateString() }}
+                  </span>
+                </div>
+                <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
+                  <span class="text-[9px] font-bold uppercase tracking-wider text-theme-text-muted">Priority:</span>
+                  <span
+                    class="px-2 py-0.5 rounded border text-[9px] font-extrabold uppercase tracking-wider"
+                    :class="getPriorityClasses(task.priority)"
+                  >
+                    {{ t('priorityOptions.' + task.priority) }}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div class="border-t border-theme-border pt-4">
@@ -267,6 +309,35 @@ const cancelEdit = () => {
                   class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
                   :placeholder="t('form.tagsPlaceholderEdit')"
                 />
+              </div>
+            </div>
+
+            <!-- Due Date & Priority Row -->
+            <div class="grid grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                  t('form.dueDateLabel')
+                }}</label>
+                <input
+                  v-model="editDueDate"
+                  type="date"
+                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                  t('form.priorityLabel')
+                }}</label>
+                <select
+                  v-model="editPriority"
+                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                >
+                  <option value="">{{ t('priorityOptions.none') }}</option>
+                  <option value="low">{{ t('priorityOptions.low') }}</option>
+                  <option value="medium">{{ t('priorityOptions.medium') }}</option>
+                  <option value="high">{{ t('priorityOptions.high') }}</option>
+                  <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
+                </select>
               </div>
             </div>
 

@@ -80,6 +80,8 @@ def test_crud_flow():
         "bucket": "todo",
         "tags": ["test", "feature"],
         "body": "# Markdown Content\nWith a list:\n- Sub 1\n- Sub 2",
+        "due_date": "2026-06-15",
+        "priority": "high",
     }
     response = client.post("/projects/default/tasks", json=task_payload)
     assert response.status_code == 201
@@ -89,6 +91,8 @@ def test_crud_flow():
     assert data["title"] == "Test Task 1"
     assert data["bucket"] == "todo"
     assert data["tags"] == ["test", "feature"]
+    assert data["due_date"] == "2026-06-15"
+    assert data["priority"] == "high"
 
     # Verify file was created in test default project directory
     expected_filename = "000001-test-task-1.md"
@@ -99,14 +103,23 @@ def test_crud_flow():
     assert response.status_code == 200
     task_detail = response.json()
     assert task_detail["body"] == task_payload["body"]
+    assert task_detail["due_date"] == "2026-06-15"
+    assert task_detail["priority"] == "high"
 
     # 4. Update task (title change -> filename should change)
-    update_payload = {"title": "Test Task 1 Updated", "body": "Updated markdown content"}
+    update_payload = {
+        "title": "Test Task 1 Updated",
+        "body": "Updated markdown content",
+        "due_date": "2026-06-20",
+        "priority": "urgent",
+    }
     response = client.put(f"/projects/default/tasks/{data['id']}", json=update_payload)
     assert response.status_code == 200
     updated_data = response.json()
     assert updated_data["title"] == "Test Task 1 Updated"
     assert updated_data["body"] == "Updated markdown content"
+    assert updated_data["due_date"] == "2026-06-20"
+    assert updated_data["priority"] == "urgent"
 
     # Verify old file was deleted and new file was created
     assert not os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))

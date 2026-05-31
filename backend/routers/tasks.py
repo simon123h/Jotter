@@ -59,6 +59,8 @@ def get_tasks(
                     position=row["position"],
                     tags=row_tags,
                     body="",  # Do not return full body in listing for efficiency
+                    due_date=row["due_date"],
+                    priority=row["priority"],
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
                 )
@@ -121,6 +123,8 @@ def create_task(project_id: str, task: TaskCreate):
             "position": new_position,
             "tags": task.tags,
             "body": task.body,
+            "due_date": task.due_date,
+            "priority": task.priority,
             "created_at": now_str,
             "updated_at": now_str,
         }
@@ -131,8 +135,8 @@ def create_task(project_id: str, task: TaskCreate):
         # Insert into SQLite index
         conn.execute(
             """
-            INSERT INTO tasks (id, project_id, title, bucket, position, tags, filename, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO tasks (id, project_id, title, bucket, position, tags, filename, due_date, priority, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 new_id,
@@ -142,6 +146,8 @@ def create_task(project_id: str, task: TaskCreate):
                 new_position,
                 json.dumps(task.tags),
                 filename,
+                task.due_date,
+                task.priority,
                 now_str,
                 now_str,
             ),
@@ -168,6 +174,8 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
     updated_position = task_update.position if task_update.position is not None else existing["position"]
     updated_tags = task_update.tags if task_update.tags is not None else existing["tags"]
     updated_body = task_update.body if task_update.body is not None else existing["body"]
+    updated_due_date = task_update.due_date if task_update.due_date is not None else existing.get("due_date")
+    updated_priority = task_update.priority if task_update.priority is not None else existing.get("priority")
 
     updated_data = {
         "id": task_id,
@@ -177,6 +185,8 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
         "position": updated_position,
         "tags": updated_tags,
         "body": updated_body,
+        "due_date": updated_due_date,
+        "priority": updated_priority,
         "created_at": existing["created_at"],
         "updated_at": now_str,
     }
@@ -221,7 +231,7 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
         conn.execute(
             """
             UPDATE tasks
-            SET title = ?, bucket = ?, position = ?, tags = ?, filename = ?, updated_at = ?
+            SET title = ?, bucket = ?, position = ?, tags = ?, filename = ?, due_date = ?, priority = ?, updated_at = ?
             WHERE id = ? AND project_id = ?
         """,
             (
@@ -230,6 +240,8 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
                 updated_position,
                 json.dumps(updated_tags),
                 new_filename,
+                updated_due_date,
+                updated_priority,
                 now_str,
                 task_id,
                 project_id,

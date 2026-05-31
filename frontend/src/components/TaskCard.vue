@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { marked } from 'marked';
-import { ChevronDown, ClipboardList, Check } from '@lucide/vue';
+import { ChevronDown, ClipboardList, Check, Calendar } from '@lucide/vue';
 import type { Task } from '../types';
 
 const props = defineProps<{
@@ -66,6 +66,30 @@ const getTagClasses = (tag: string) => {
   ];
   return themes[hash % themes.length];
 };
+
+const formatDate = (dateStr: string) => {
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+};
+
+const getPriorityClasses = (prio: string) => {
+  switch (prio) {
+    case 'low':
+      return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+    case 'medium':
+      return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+    case 'high':
+      return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+    case 'urgent':
+      return 'bg-red-500/10 text-red-400 border-red-500/20 animate-pulse';
+    default:
+      return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+  }
+};
 </script>
 
 <template>
@@ -104,6 +128,21 @@ const getTagClasses = (tag: string) => {
       >
         {{ tag }}
       </span>
+    </div>
+
+    <!-- Due Date & Priority on Card -->
+    <div v-if="task.due_date || task.priority" class="flex flex-wrap gap-2.5 items-center text-[9px] mt-0.5 select-none">
+      <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
+        <Calendar class="w-3 h-3 shrink-0" />
+        <span>{{ formatDate(task.due_date) }}</span>
+      </div>
+      <div
+        v-if="task.priority"
+        class="px-1.5 py-0.25 rounded border text-[8px] font-extrabold uppercase tracking-wider leading-none"
+        :class="getPriorityClasses(task.priority)"
+      >
+        {{ task.priority }}
+      </div>
     </div>
 
     <!-- Notes Preview Snippet / Expanded Content -->
