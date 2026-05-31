@@ -94,8 +94,6 @@ const initSortable = () => {
       ghostClass: 'opacity-40',
       chosenClass: 'scale-[1.02]',
       dragClass: 'rotate-1',
-      // Exclude the empty-state placeholder from being treated as a draggable
-      filter: '.empty-placeholder',
       onEnd: (evt) => {
         const { item, from, to, oldIndex } = evt;
         // Skip if dropped back in the same column (just reordering within)
@@ -106,7 +104,7 @@ const initSortable = () => {
 
         if (!taskId || !columnId) return;
 
-        // CRITICAL: Revert Sortable's DOM manipulation before emitting.
+        // Revert Sortable's DOM manipulation before emitting.
         // Sortable has already physically moved the element in the DOM, but
         // Vue's virtual DOM doesn't know about this. We put the element back
         // and let Vue handle the re-render via reactivity when the due date
@@ -130,7 +128,6 @@ onMounted(() => {
 });
 
 // Re-init Sortable when the task grouping changes so empty columns stay droppable.
-// Use a debounced nextTick to avoid destroying instances during rapid updates.
 let reinitPending = false;
 watch(timeColumns, () => {
   if (reinitPending) return;
@@ -168,23 +165,36 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- Cards Container (droppable zone) -->
-      <div
-        :data-column-id="col.id"
-        class="flex-grow p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] scroller-thin"
-      >
-        <!-- Empty state (non-draggable placeholder) -->
-        <div v-if="!col.tasks.length" class="empty-placeholder h-full flex items-center justify-center text-theme-text-muted italic text-[11px] py-12 pointer-events-none">
+      <!--
+        Cards area wrapper: position-relative so the empty-state overlay
+        can be positioned absolutely OUTSIDE the Sortable container.
+        This is critical: the Sortable container (data-column-id div) must
+        contain ONLY TaskCard elements, never a placeholder div, otherwise
+        Sortable cannot detect it as a valid drop zone when it's empty.
+      -->
+      <div class="flex-grow relative">
+        <!-- Empty state overlay (positioned on top, pointer-events-none so drops pass through) -->
+        <div
+          v-if="!col.tasks.length"
+          class="absolute inset-0 flex items-center justify-center text-theme-text-muted italic text-[11px] pointer-events-none z-0"
+        >
           {{ t('timeView.emptyColumn') }}
         </div>
-        <TaskCard
-          v-for="task in col.tasks"
-          :key="task.id"
-          :task="task"
-          :data-task-id="task.id"
-          @click="emit('task-click', task)"
-          @mark-done="emit('mark-done', task)"
-        />
+
+        <!-- Sortable drop zone: contains ONLY TaskCards, never placeholder elements -->
+        <div
+          :data-column-id="col.id"
+          class="p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] h-full scroller-thin relative z-10"
+        >
+          <TaskCard
+            v-for="task in col.tasks"
+            :key="task.id"
+            :task="task"
+            :data-task-id="task.id"
+            @click="emit('task-click', task)"
+            @mark-done="emit('mark-done', task)"
+          />
+        </div>
       </div>
     </div>
   </div>
