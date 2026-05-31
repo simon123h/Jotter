@@ -118,6 +118,19 @@ export const de = {
   views: {
     board: 'Board',
     list: 'Listenansicht',
+    matrix: 'Matrix',
+  },
+  matrix: {
+    thresholdLabel: 'Dringlichkeitsschwelle: {days} Tage oder weniger',
+    q1Title: 'Sofort erledigen',
+    q1Desc: 'Dringend & Wichtig',
+    q2Title: 'Einplanen',
+    q2Desc: 'Nicht dringend & Wichtig',
+    q3Title: 'Delegieren',
+    q3Desc: 'Dringend & Nicht wichtig',
+    q4Title: 'Eliminieren',
+    q4Desc: 'Nicht dringend & Nicht wichtig',
+    emptyQuadrant: 'Keine Aufgaben in diesem Quadranten',
   },
   table: {
     id: 'ID',

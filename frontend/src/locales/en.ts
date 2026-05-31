@@ -116,6 +116,19 @@ export const en = {
   views: {
     board: 'Board',
     list: 'List View',
+    matrix: 'Matrix',
+  },
+  matrix: {
+    thresholdLabel: 'Urgency Threshold: {days} days or less',
+    q1Title: 'Do First',
+    q1Desc: 'Urgent & Important',
+    q2Title: 'Schedule',
+    q2Desc: 'Not Urgent & Important',
+    q3Title: 'Delegate',
+    q3Desc: 'Urgent & Not Important',
+    q4Title: 'Eliminate',
+    q4Desc: 'Not Urgent & Not Important',
+    emptyQuadrant: 'No tasks in this quadrant',
   },
   table: {
     id: 'ID',
