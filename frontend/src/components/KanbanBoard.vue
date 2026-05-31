@@ -489,9 +489,6 @@ const triggerSync = async () => {
               / {{ projects.find((p) => p.id === activeProjectId)?.title }}
             </span>
           </h1>
-          <p class="text-theme-text-muted text-[10px] font-sans hidden xl:inline-block border-l border-theme-border pl-2 truncate">
-            {{ t('brand.subtitle') }}
-          </p>
         </div>
 
         <!-- Toolbar Actions -->
