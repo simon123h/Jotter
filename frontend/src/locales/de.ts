@@ -85,6 +85,15 @@ export const de = {
     'in-progress': 'In Bearbeitung',
     done: 'Erledigt',
   },
+  projects: {
+    sidebarTitle: 'Projekte',
+    newProject: 'Neues Projekt',
+    newProjectPlaceholder: 'Projekttitel...',
+    renameProject: 'Projekt umbenennen',
+    deleteProjectConfirm:
+      'Bist du sicher, dass du das Projekt "{title}" und all seine Aufgaben löschen möchtest? Dies kann nicht rückgängig gemacht werden.',
+    deleteProjectDefaultError: 'Das Standardprojekt kann nicht gelöscht werden.',
+  },
   language: {
     label: 'Sprache',
     choose: 'Sprache auswählen',

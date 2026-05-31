@@ -84,6 +84,14 @@ export const en = {
     'in-progress': 'In Progress',
     done: 'Done',
   },
+  projects: {
+    sidebarTitle: 'Projects',
+    newProject: 'New Project',
+    newProjectPlaceholder: 'Project title...',
+    renameProject: 'Rename Project',
+    deleteProjectConfirm: 'Are you sure you want to delete the project "{title}" and all its tasks? This action cannot be undone.',
+    deleteProjectDefaultError: 'The default project cannot be deleted.',
+  },
   language: {
     label: 'Language',
     choose: 'Choose language',

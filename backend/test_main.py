@@ -11,7 +11,7 @@ import storage as storage
 TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data")
 db.DB_PATH = os.path.join(TEST_DATA_DIR, "test_tasks.db")
 storage.TASKS_DIR = os.path.join(TEST_DATA_DIR, "tasks")
-storage.BUCKETS_FILE = os.path.join(storage.TASKS_DIR, "buckets.json")
+storage.BUCKETS_FILE = os.path.join(storage.TASKS_DIR, "default", "buckets.json")
 
 # Now import app and endpoints
 from main import app  # noqa: E402
@@ -22,7 +22,7 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def setup_and_teardown():
     # Setup test folder structure
-    os.makedirs(storage.TASKS_DIR, exist_ok=True)
+    os.makedirs(os.path.join(storage.TASKS_DIR, "default"), exist_ok=True)
     db.init_db()
     storage.sync_db_with_files()
 
@@ -33,9 +33,43 @@ def setup_and_teardown():
         shutil.rmtree(TEST_DATA_DIR)
 
 
+def test_projects_flow():
+    # 1. List projects (should initially contain default project)
+    response = client.get("/projects")
+    assert response.status_code == 200
+    projects = response.json()
+    assert len(projects) == 1
+    assert projects[0]["id"] == "default"
+
+    # 2. Create project
+    response = client.post("/projects", json={"title": "Project Alpha"})
+    assert response.status_code == 201
+    data = response.json()
+    assert data["id"] == "project-alpha"
+    assert data["title"] == "Project Alpha"
+
+    # Verify lists
+    response = client.get("/projects")
+    assert len(response.json()) == 2
+
+    # 3. Update project title
+    response = client.put("/projects/project-alpha", json={"title": "Project Alpha Updated"})
+    assert response.status_code == 200
+    assert response.json()["title"] == "Project Alpha Updated"
+
+    # 4. Delete project
+    response = client.delete("/projects/project-alpha")
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+
+    # Verify gone
+    response = client.get("/projects")
+    assert len(response.json()) == 1
+
+
 def test_crud_flow():
     # 1. List tasks (should be empty)
-    response = client.get("/tasks")
+    response = client.get("/projects/default/tasks")
     assert response.status_code == 200
     assert response.json() == []
 
@@ -46,53 +80,53 @@ def test_crud_flow():
         "tags": ["test", "feature"],
         "body": "# Markdown Content\nWith a list:\n- Sub 1\n- Sub 2",
     }
-    response = client.post("/tasks", json=task_payload)
+    response = client.post("/projects/default/tasks", json=task_payload)
     assert response.status_code == 201
     data = response.json()
     assert data["id"] == 1000
+    assert data["project_id"] == "default"
     assert data["title"] == "Test Task 1"
     assert data["bucket"] == "todo"
     assert data["tags"] == ["test", "feature"]
 
-    # Verify file was created
+    # Verify file was created in test default project directory
     expected_filename = "1000-test-task-1.md"
-    assert os.path.exists(os.path.join(storage.TASKS_DIR, expected_filename))
+    assert os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))
 
     # 3. Read specific task (should include body)
-    response = client.get(f"/tasks/{data['id']}")
+    response = client.get(f"/projects/default/tasks/{data['id']}")
     assert response.status_code == 200
     task_detail = response.json()
     assert task_detail["body"] == task_payload["body"]
 
     # 4. Update task (title change -> filename should change)
     update_payload = {"title": "Test Task 1 Updated", "body": "Updated markdown content"}
-    response = client.put(f"/tasks/{data['id']}", json=update_payload)
+    response = client.put(f"/projects/default/tasks/{data['id']}", json=update_payload)
     assert response.status_code == 200
     updated_data = response.json()
     assert updated_data["title"] == "Test Task 1 Updated"
     assert updated_data["body"] == "Updated markdown content"
 
     # Verify old file was deleted and new file was created
-    assert not os.path.exists(os.path.join(storage.TASKS_DIR, expected_filename))
+    assert not os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))
     new_expected_filename = "1000-test-task-1-updated.md"
-    assert os.path.exists(os.path.join(storage.TASKS_DIR, new_expected_filename))
+    assert os.path.exists(os.path.join(storage.TASKS_DIR, "default", new_expected_filename))
 
     # 5. Move task (change bucket and position)
     move_payload = {"bucket": "in-progress", "position": 500.0}
-    response = client.patch(f"/tasks/{data['id']}/move", json=move_payload)
+    response = client.patch(f"/projects/default/tasks/{data['id']}/move", json=move_payload)
     assert response.status_code == 200
     moved_data = response.json()
     assert moved_data["bucket"] == "in-progress"
     assert moved_data["position"] == 500.0
 
     # 6. Test sync system (reconstruct DB)
-    # Let's delete the SQLite DB file manually
     os.remove(db.DB_PATH)
     db.init_db()  # Recreate empty DB
 
-    # DB is now empty, GET /tasks should return nothing
-    response = client.get("/tasks")
-    assert response.json() == []
+    # DB is now empty, GET /tasks should return 404 since project doesn't exist
+    response = client.get("/projects/default/tasks")
+    assert response.status_code == 404
 
     # Call system/sync to reconstruct DB from the markdown files
     response = client.post("/system/sync")
@@ -100,23 +134,23 @@ def test_crud_flow():
     assert response.json()["synchronized_tasks"] == 1
 
     # Verify task is back in database list
-    response = client.get("/tasks")
+    response = client.get("/projects/default/tasks")
     assert len(response.json()) == 1
     assert response.json()[0]["title"] == "Test Task 1 Updated"
 
     # 7. Delete task
-    response = client.delete(f"/tasks/{data['id']}")
+    response = client.delete(f"/projects/default/tasks/{data['id']}")
     assert response.status_code == 200
-    assert not os.path.exists(os.path.join(storage.TASKS_DIR, new_expected_filename))
+    assert not os.path.exists(os.path.join(storage.TASKS_DIR, "default", new_expected_filename))
 
     # Check it's gone from database listing
-    response = client.get("/tasks")
+    response = client.get("/projects/default/tasks")
     assert response.json() == []
 
 
 def test_buckets_flow():
     # 1. List buckets (should contain the 4 default buckets)
-    response = client.get("/buckets")
+    response = client.get("/projects/default/buckets")
     assert response.status_code == 200
     buckets = response.json()
     assert len(buckets) == 4
@@ -126,7 +160,7 @@ def test_buckets_flow():
     assert buckets[3]["name"] == "done"
 
     # 2. Create bucket
-    response = client.post("/buckets", json={"title": "QA Test"})
+    response = client.post("/projects/default/buckets", json={"title": "QA Test"})
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "qa-test"
@@ -135,12 +169,12 @@ def test_buckets_flow():
 
     # Verify buckets.json was updated
     assert os.path.exists(storage.BUCKETS_FILE)
-    buckets_list = storage.load_buckets_file()
+    buckets_list = storage.load_buckets_file("default")
     assert len(buckets_list) == 5
     assert buckets_list[-1]["name"] == "qa-test"
 
     # 3. Update bucket title
-    response = client.put("/buckets/qa-test", json={"title": "Quality Assurance"})
+    response = client.put("/projects/default/buckets/qa-test", json={"title": "Quality Assurance"})
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "qa-test"
@@ -154,22 +188,22 @@ def test_buckets_flow():
         "tags": [],
         "body": "Test body",
     }
-    task_response = client.post("/tasks", json=task_payload)
+    task_response = client.post("/projects/default/tasks", json=task_payload)
     assert task_response.status_code == 201
     task_data = task_response.json()
 
     # Try to delete "qa-test" - should fail
-    response = client.delete("/buckets/qa-test")
+    response = client.delete("/projects/default/buckets/qa-test")
     assert response.status_code == 400
     assert "contains" in response.json()["detail"]
 
     # Delete the task
-    client.delete(f"/tasks/{task_data['id']}")
+    client.delete(f"/projects/default/tasks/{task_data['id']}")
 
     # Try to delete "qa-test" - should succeed now
-    response = client.delete("/buckets/qa-test")
+    response = client.delete("/projects/default/buckets/qa-test")
     assert response.status_code == 200
 
     # Verify bucket is gone
-    response = client.get("/buckets")
+    response = client.get("/projects/default/buckets")
     assert len(response.json()) == 4

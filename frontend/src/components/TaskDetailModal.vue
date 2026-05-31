@@ -9,6 +9,7 @@ const { t } = useI18n();
 
 const props = defineProps<{
   isOpen: boolean;
+  projectId: string;
   taskId: number | null;
   buckets: { name: BucketName; title: string }[];
 }>();
@@ -56,7 +57,7 @@ const fetchTaskDetail = async (id: number) => {
   loading.value = true;
   error.value = null;
   try {
-    const fetchedTask = await getTask(id);
+    const fetchedTask = await getTask(props.projectId, id);
     task.value = fetchedTask;
     // Set edit form values
     editTitle.value = fetchedTask.title;
@@ -92,7 +93,7 @@ const handleSave = async () => {
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
-    const updated = await updateTask(task.value.id, {
+    const updated = await updateTask(props.projectId, task.value.id, {
       title: editTitle.value,
       bucket: editBucket.value,
       tags: tagArray,
@@ -116,7 +117,7 @@ const handleDelete = async () => {
   loading.value = true;
   error.value = null;
   try {
-    await deleteTask(task.value.id);
+    await deleteTask(props.projectId, task.value.id);
     emit('deleted');
     emit('close');
   } catch (err: any) {

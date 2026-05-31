@@ -3,9 +3,28 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
+class ProjectCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=100)
+
+
+class ProjectUpdate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=100)
+
+
+class ProjectResponse(BaseModel):
+    id: str
+    title: str
+    created_at: str
+
+    model_config = {"from_attributes": True}
+
+
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
-    bucket: str = Field("todo", description="Column/status bucket e.g., backlog, todo, in-progress, done")
+    bucket: str = Field(
+        "todo",
+        description="Column/status bucket e.g., backlog, todo, in-progress, done",
+    )
     tags: List[str] = Field(default_factory=list)
     body: str = Field("", description="Markdown content of the task")
 
@@ -29,6 +48,7 @@ class TaskMove(BaseModel):
 
 class TaskResponse(BaseModel):
     id: int
+    project_id: str
     title: str
     bucket: str
     position: float

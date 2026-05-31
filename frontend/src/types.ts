@@ -1,5 +1,12 @@
+export interface Project {
+  id: string;
+  title: string;
+  created_at: string;
+}
+
 export interface Task {
   id: number;
+  project_id: string;
   title: string;
   bucket: string;
   position: number;

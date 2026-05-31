@@ -8,6 +8,7 @@ const { t } = useI18n();
 
 const props = defineProps<{
   isOpen: boolean;
+  projectId: string;
   defaultBucket: BucketName;
   buckets: { name: BucketName; title: string }[];
 }>();
@@ -52,7 +53,7 @@ const handleSubmit = async () => {
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
-    await createTask({
+    await createTask(props.projectId, {
       title: title.value.trim(),
       bucket: bucket.value,
       tags: tagArray,

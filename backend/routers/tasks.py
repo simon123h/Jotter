@@ -8,33 +8,30 @@ from database import db_session
 from models import TaskCreate, TaskMove, TaskResponse, TaskUpdate
 from storage import delete_task_file, generate_next_id, read_task_file, write_task_file
 
-router = APIRouter(prefix="/tasks", tags=["Tasks"])
+router = APIRouter(prefix="/projects/{project_id}/tasks", tags=["Tasks"])
 
 
-@router.get(
-    "",
-    response_model=List[TaskResponse],
-    summary="List all tasks",
-    description=(
-        "Retrieve all indexed tasks from the SQLite database. Supports optional filtering by column (bucket) or tag. "
-        "Note that the task description body is excluded in this list endpoint for performance reasons."
-    ),
-)
+@router.get("", response_model=List[TaskResponse])
 def get_tasks(
+    project_id: str,
     bucket: Optional[str] = Query(None, description="Filter by bucket (column) name"),
     tag: Optional[str] = Query(None, description="Filter by tag name"),
 ):
     with db_session() as conn:
-        query = "SELECT * FROM tasks"
-        params = []
-        conditions = []
+        # Verify project exists
+        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
+        if not cursor.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found.",
+            )
+
+        query = "SELECT * FROM tasks WHERE project_id = ?"
+        params = [project_id]
 
         if bucket:
-            conditions.append("bucket = ?")
+            query += " AND bucket = ?"
             params.append(bucket)
-
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
 
         # Order by position ascending
         query += " ORDER BY position ASC"
@@ -56,6 +53,7 @@ def get_tasks(
             tasks.append(
                 TaskResponse(
                     id=row["id"],
+                    project_id=row["project_id"],
                     title=row["title"],
                     bucket=row["bucket"],
                     position=row["position"],
@@ -69,39 +67,47 @@ def get_tasks(
         return tasks
 
 
-@router.get(
-    "/{task_id}",
-    response_model=TaskResponse,
-    summary="Get task details",
-    description="Retrieve full details for a specific task by its numeric ID, including its markdown body parsed from the disk file.",
-)
-def get_task(task_id: int):
+@router.get("/{task_id}", response_model=TaskResponse)
+def get_task(project_id: str, task_id: int):
     task_data = read_task_file(task_id)
-    if not task_data:
+    if not task_data or task_data["project_id"] != project_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Task with ID {task_id} not found on disk",
+            detail=f"Task with ID {task_id} not found in project '{project_id}'",
         )
     return TaskResponse(**task_data)
 
 
-@router.post(
-    "",
-    response_model=TaskResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Create new task",
-    description=(
-        "Create a new task in the specified bucket. Generates a new task ID, creates the corresponding "
-        "markdown file on disk with YAML frontmatter, and indexes it into the SQLite database."
-    ),
-)
-def create_task(task: TaskCreate):
-    now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    new_id = generate_next_id()
-
-    # Calculate position: max position in current bucket + 1000.0 (or default to 1000.0)
+@router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+def create_task(project_id: str, task: TaskCreate):
     with db_session() as conn:
-        cursor = conn.execute("SELECT MAX(position) as max_pos FROM tasks WHERE bucket = ?", (task.bucket,))
+        # Verify project exists
+        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
+        if not cursor.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found.",
+            )
+
+        # Verify bucket exists for this project
+        cursor = conn.execute(
+            "SELECT 1 FROM buckets WHERE project_id = ? AND name = ?",
+            (project_id, task.bucket),
+        )
+        if not cursor.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Bucket '{task.bucket}' does not exist in project '{project_id}'.",
+            )
+
+        now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        new_id = generate_next_id()
+
+        # Calculate position: max position in current bucket + 1000.0 (or default to 1000.0)
+        cursor = conn.execute(
+            "SELECT MAX(position) as max_pos FROM tasks WHERE project_id = ? AND bucket = ?",
+            (project_id, task.bucket),
+        )
         row = cursor.fetchone()
         new_position = 1000.0
         if row and row["max_pos"] is not None:
@@ -109,6 +115,7 @@ def create_task(task: TaskCreate):
 
         task_data = {
             "id": new_id,
+            "project_id": project_id,
             "title": task.title,
             "bucket": task.bucket,
             "position": new_position,
@@ -124,11 +131,12 @@ def create_task(task: TaskCreate):
         # Insert into SQLite index
         conn.execute(
             """
-            INSERT INTO tasks (id, title, bucket, position, tags, filename, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO tasks (id, project_id, title, bucket, position, tags, filename, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 new_id,
+                project_id,
                 task.title,
                 task.bucket,
                 new_position,
@@ -142,20 +150,15 @@ def create_task(task: TaskCreate):
         return TaskResponse(**task_data)
 
 
-@router.put(
-    "/{task_id}",
-    response_model=TaskResponse,
-    summary="Update task",
-    description=(
-        "Modify attributes (title, bucket, position, tags, body) of an existing task. "
-        "Overwrites the markdown file on disk and updates the SQLite database index."
-    ),
-)
-def update_task(task_id: int, task_update: TaskUpdate):
+@router.put("/{task_id}", response_model=TaskResponse)
+def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
     # Fetch existing task from Markdown
     existing = read_task_file(task_id)
-    if not existing:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Task with ID {task_id} not found")
+    if not existing or existing["project_id"] != project_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task with ID {task_id} not found in project '{project_id}'",
+        )
 
     now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -168,6 +171,7 @@ def update_task(task_id: int, task_update: TaskUpdate):
 
     updated_data = {
         "id": task_id,
+        "project_id": project_id,
         "title": updated_title,
         "bucket": updated_bucket,
         "position": updated_position,
@@ -177,16 +181,28 @@ def update_task(task_id: int, task_update: TaskUpdate):
         "updated_at": now_str,
     }
 
-    # Write to Markdown file (handles slug/filename changes internally)
-    new_filename = write_task_file(task_id, updated_data)
-
-    # Update SQLite index
     with db_session() as conn:
+        # Verify new bucket exists if changed
+        if task_update.bucket is not None:
+            cursor = conn.execute(
+                "SELECT 1 FROM buckets WHERE project_id = ? AND name = ?",
+                (project_id, updated_bucket),
+            )
+            if not cursor.fetchone():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Bucket '{updated_bucket}' does not exist in project '{project_id}'.",
+                )
+
+        # Write to Markdown file
+        new_filename = write_task_file(task_id, updated_data)
+
+        # Update SQLite index
         conn.execute(
             """
             UPDATE tasks
             SET title = ?, bucket = ?, position = ?, tags = ?, filename = ?, updated_at = ?
-            WHERE id = ?
+            WHERE id = ? AND project_id = ?
         """,
             (
                 updated_title,
@@ -196,23 +212,22 @@ def update_task(task_id: int, task_update: TaskUpdate):
                 new_filename,
                 now_str,
                 task_id,
+                project_id,
             ),
         )
 
     return TaskResponse(**updated_data)
 
 
-@router.patch(
-    "/{task_id}/move",
-    response_model=TaskResponse,
-    summary="Move/Reorder task",
-    description="Quickly update the column bucket and position of a task, primarily utilized for drag-and-drop board updates.",
-)
-def move_task(task_id: int, task_move: TaskMove):
+@router.patch("/{task_id}/move", response_model=TaskResponse)
+def move_task(project_id: str, task_id: int, task_move: TaskMove):
     # Fetch existing task from Markdown
     existing = read_task_file(task_id)
-    if not existing:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Task with ID {task_id} not found")
+    if not existing or existing["project_id"] != project_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task with ID {task_id} not found in project '{project_id}'",
+        )
 
     now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -223,42 +238,49 @@ def move_task(task_id: int, task_move: TaskMove):
         "updated_at": now_str,
     }
 
-    # Write to Markdown file
-    new_filename = write_task_file(task_id, updated_data)
-
-    # Update SQLite index
     with db_session() as conn:
+        # Verify target bucket exists for this project
+        cursor = conn.execute(
+            "SELECT 1 FROM buckets WHERE project_id = ? AND name = ?",
+            (project_id, task_move.bucket),
+        )
+        if not cursor.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Bucket '{task_move.bucket}' does not exist in project '{project_id}'.",
+            )
+
+        # Write to Markdown file
+        new_filename = write_task_file(task_id, updated_data)
+
+        # Update SQLite index
         conn.execute(
             """
             UPDATE tasks
             SET bucket = ?, position = ?, filename = ?, updated_at = ?
-            WHERE id = ?
+            WHERE id = ? AND project_id = ?
         """,
-            (task_move.bucket, task_move.position, new_filename, now_str, task_id),
+            (task_move.bucket, task_move.position, new_filename, now_str, task_id, project_id),
         )
 
     return TaskResponse(**updated_data)
 
 
-@router.delete(
-    "/{task_id}",
-    summary="Delete task",
-    description=(
-        "Remove the markdown file for the specified task from disk and delete the corresponding "
-        "row from the SQLite ephemeral database index."
-    ),
-)
-def delete_task(task_id: int):
-    # Delete from filesystem
-    deleted = delete_task_file(task_id)
-    if not deleted:
+@router.delete("/{task_id}")
+def delete_task(project_id: str, task_id: int):
+    # Verify task exists in the project
+    existing = read_task_file(task_id)
+    if not existing or existing["project_id"] != project_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Task with ID {task_id} not found on disk",
+            detail=f"Task with ID {task_id} not found in project '{project_id}'",
         )
+
+    # Delete from filesystem
+    delete_task_file(task_id)
 
     # Delete from SQLite
     with db_session() as conn:
-        conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        conn.execute("DELETE FROM tasks WHERE id = ? AND project_id = ?", (task_id, project_id))
 
     return {"status": "success", "detail": f"Task {task_id} deleted"}

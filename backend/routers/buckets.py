@@ -6,19 +6,30 @@ from database import db_session
 from models import BucketCreate, BucketResponse, BucketUpdate
 from storage import slugify, write_buckets_file
 
-router = APIRouter(prefix="/buckets", tags=["Buckets"])
+router = APIRouter(prefix="/projects/{project_id}/buckets", tags=["Buckets"])
 
 
 @router.get("", response_model=List[BucketResponse])
-def get_buckets():
+def get_buckets(project_id: str):
     with db_session() as conn:
-        cursor = conn.execute("SELECT name, title, position FROM buckets ORDER BY position ASC")
+        # Verify project exists
+        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
+        if not cursor.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found.",
+            )
+
+        cursor = conn.execute(
+            "SELECT name, title, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            (project_id,),
+        )
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
 
 
 @router.post("", response_model=BucketResponse, status_code=status.HTTP_201_CREATED)
-def create_bucket(bucket: BucketCreate):
+def create_bucket(project_id: str, bucket: BucketCreate):
     name = slugify(bucket.title)
     if not name:
         raise HTTPException(
@@ -27,75 +38,117 @@ def create_bucket(bucket: BucketCreate):
         )
 
     with db_session() as conn:
-        # Check if bucket name already exists
-        cursor = conn.execute("SELECT 1 FROM buckets WHERE name = ?", (name,))
+        # Verify project exists
+        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
+        if not cursor.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found.",
+            )
+
+        # Check if bucket name already exists in this project
+        cursor = conn.execute(
+            "SELECT 1 FROM buckets WHERE project_id = ? AND name = ?",
+            (project_id, name),
+        )
         if cursor.fetchone():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"A column with a similar name '{name}' already exists.",
+                detail=f"A column with a similar name '{name}' already exists in project '{project_id}'.",
             )
 
         # Calculate position: max position + 1000.0
-        cursor = conn.execute("SELECT MAX(position) as max_pos FROM buckets")
+        cursor = conn.execute("SELECT MAX(position) as max_pos FROM buckets WHERE project_id = ?", (project_id,))
         row = cursor.fetchone()
         new_position = 1000.0
         if row and row["max_pos"] is not None:
             new_position = float(row["max_pos"]) + 1000.0
 
         conn.execute(
-            "INSERT INTO buckets (name, title, position) VALUES (?, ?, ?)",
-            (name, bucket.title, new_position),
+            "INSERT INTO buckets (project_id, name, title, position) VALUES (?, ?, ?, ?)",
+            (project_id, name, bucket.title, new_position),
         )
 
-        # Sync to buckets.json file
-        cursor = conn.execute("SELECT name, title, position FROM buckets ORDER BY position ASC")
+        # Sync to project's buckets.json file
+        cursor = conn.execute(
+            "SELECT name, title, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            (project_id,),
+        )
         all_buckets = [dict(r) for r in cursor.fetchall()]
-        write_buckets_file(all_buckets)
+        write_buckets_file(project_id, all_buckets)
 
         return BucketResponse(name=name, title=bucket.title, position=new_position)
 
 
 @router.put("/{name}", response_model=BucketResponse)
-def update_bucket(name: str, bucket_update: BucketUpdate):
+def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
     with db_session() as conn:
-        # Check if bucket exists
-        cursor = conn.execute("SELECT name, title, position FROM buckets WHERE name = ?", (name,))
+        # Verify project exists
+        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
+        if not cursor.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found.",
+            )
+
+        # Check if bucket exists in this project
+        cursor = conn.execute(
+            "SELECT name, title, position FROM buckets WHERE project_id = ? AND name = ?",
+            (project_id, name),
+        )
         existing = cursor.fetchone()
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Column '{name}' not found.",
+                detail=f"Column '{name}' not found in project '{project_id}'.",
             )
 
         updated_title = bucket_update.title if bucket_update.title is not None else existing["title"]
         updated_position = bucket_update.position if bucket_update.position is not None else existing["position"]
 
         conn.execute(
-            "UPDATE buckets SET title = ?, position = ? WHERE name = ?",
-            (updated_title, updated_position, name),
+            "UPDATE buckets SET title = ?, position = ? WHERE project_id = ? AND name = ?",
+            (updated_title, updated_position, project_id, name),
         )
 
-        # Sync to buckets.json file
-        cursor = conn.execute("SELECT name, title, position FROM buckets ORDER BY position ASC")
+        # Sync to project's buckets.json file
+        cursor = conn.execute(
+            "SELECT name, title, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            (project_id,),
+        )
         all_buckets = [dict(r) for r in cursor.fetchall()]
-        write_buckets_file(all_buckets)
+        write_buckets_file(project_id, all_buckets)
 
         return BucketResponse(name=name, title=updated_title, position=updated_position)
 
 
 @router.delete("/{name}")
-def delete_bucket(name: str):
+def delete_bucket(project_id: str, name: str):
     with db_session() as conn:
-        # Check if bucket exists
-        cursor = conn.execute("SELECT 1 FROM buckets WHERE name = ?", (name,))
+        # Verify project exists
+        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
         if not cursor.fetchone():
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Column '{name}' not found.",
+                detail=f"Project '{project_id}' not found.",
             )
 
-        # Check if there are tasks in this bucket
-        cursor = conn.execute("SELECT COUNT(*) as count FROM tasks WHERE bucket = ?", (name,))
+        # Check if bucket exists in this project
+        cursor = conn.execute(
+            "SELECT 1 FROM buckets WHERE project_id = ? AND name = ?",
+            (project_id, name),
+        )
+        if not cursor.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Column '{name}' not found in project '{project_id}'.",
+            )
+
+        # Check if there are tasks in this bucket in this project
+        cursor = conn.execute(
+            "SELECT COUNT(*) as count FROM tasks WHERE project_id = ? AND bucket = ?",
+            (project_id, name),
+        )
         row = cursor.fetchone()
         if row and row["count"] > 0:
             raise HTTPException(
@@ -105,11 +158,14 @@ def delete_bucket(name: str):
                 ),
             )
 
-        conn.execute("DELETE FROM buckets WHERE name = ?", (name,))
+        conn.execute("DELETE FROM buckets WHERE project_id = ? AND name = ?", (project_id, name))
 
-        # Sync to buckets.json file
-        cursor = conn.execute("SELECT name, title, position FROM buckets ORDER BY position ASC")
+        # Sync to project's buckets.json file
+        cursor = conn.execute(
+            "SELECT name, title, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            (project_id,),
+        )
         all_buckets = [dict(r) for r in cursor.fetchall()]
-        write_buckets_file(all_buckets)
+        write_buckets_file(project_id, all_buckets)
 
         return {"status": "success", "detail": f"Column '{name}' deleted"}
