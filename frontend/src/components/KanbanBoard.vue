@@ -21,7 +21,7 @@ import ListView from './ListView.vue';
 import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
-import { Globe, LayoutGrid, List, ChevronDown, RefreshCw, Plus, X, ClipboardList } from '@lucide/vue';
+import { Globe, LayoutGrid, List, ChevronDown, RefreshCw, Plus, X, ClipboardList, Menu } from '@lucide/vue';
 
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();
@@ -44,6 +44,13 @@ const viewMode = ref<'board' | 'list'>((localStorage.getItem('jotter-view-mode')
 const setViewMode = (mode: 'board' | 'list') => {
   viewMode.value = mode;
   localStorage.setItem('jotter-view-mode', mode);
+};
+
+// Sidebar visibility state
+const isSidebarOpen = ref(localStorage.getItem('jotter-sidebar-open') !== 'false');
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value;
+  localStorage.setItem('jotter-sidebar-open', String(isSidebarOpen.value));
 };
 
 // Modal state
@@ -302,15 +309,7 @@ const handleCreateColumn = async (title: string, subtitle: string) => {
   }
 };
 
-const handleRenameColumn = async ({
-  bucketName,
-  newTitle,
-  newSubtitle,
-}: {
-  bucketName: string;
-  newTitle: string;
-  newSubtitle: string;
-}) => {
+const handleRenameColumn = async ({ bucketName, newTitle, newSubtitle }: { bucketName: string; newTitle: string; newSubtitle: string }) => {
   if (!newTitle.trim()) return;
   try {
     await updateBucket(activeProjectId.value, bucketName, { title: newTitle.trim(), subtitle: newSubtitle });
@@ -380,273 +379,301 @@ const triggerSync = async () => {
 </script>
 
 <template>
-  <div class="h-screen w-full flex overflow-hidden select-none bg-theme-base">
-    <!-- Left Projects Sidebar -->
-    <ProjectSidebar
-      :projects="projects"
-      :active-project-id="activeProjectId"
-      @select-project="selectProject"
-      @create-project="handleCreateProject"
-      @rename-project="handleRenameProject"
-      @delete-project="handleDeleteProject"
-    />
-
-    <!-- Main Content Panel -->
-    <div class="flex-grow flex flex-col p-3 overflow-hidden">
-      <!-- Header Controls -->
-      <header class="flex items-center justify-between gap-3 border-b border-theme-border pb-2.5 shrink-0">
-        <div class="flex items-baseline gap-2 overflow-hidden mr-2">
-          <h1 class="text-lg font-bold tracking-tight text-theme-text-main truncate">
-            {{ t('brand.title') }}
-            <span class="text-sm font-semibold text-theme-text-muted ml-1" v-if="projects.find((p) => p.id === activeProjectId)">
-              / {{ projects.find((p) => p.id === activeProjectId)?.title }}
-            </span>
-          </h1>
-        </div>
-
-        <!-- Toolbar Actions -->
-        <div class="flex items-center gap-2 shrink-0">
-          <!-- Search -->
-          <div class="relative w-32 sm:w-44 md:w-56">
-            <input
-              v-model="searchQuery"
-              type="text"
-              :placeholder="t('searchPlaceholder')"
-              class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            />
-          </div>
-
-          <!-- View Mode Toggle -->
-          <div class="flex items-center bg-theme-card border border-theme-border rounded p-0.5 shadow-sm shrink-0">
-            <button
-              @click="setViewMode('board')"
-              class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
-              :class="
-                viewMode === 'board'
-                  ? 'bg-theme-primary text-white'
-                  : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
-              "
-            >
-              <LayoutGrid class="w-3.5 h-3.5" />
-              <span class="hidden sm:inline">{{ t('views.board') }}</span>
-            </button>
-            <button
-              @click="setViewMode('list')"
-              class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
-              :class="
-                viewMode === 'list'
-                  ? 'bg-theme-primary text-white'
-                  : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
-              "
-            >
-              <List class="w-3.5 h-3.5" />
-              <span class="hidden sm:inline">{{ t('views.list') }}</span>
-            </button>
-          </div>
-
-          <!-- Theme Selector Dropdown -->
-          <div class="relative shrink-0">
-            <div v-if="isThemeDropdownOpen" class="fixed inset-0 z-10" @click="isThemeDropdownOpen = false"></div>
-
-            <button
-              @click="isThemeDropdownOpen = !isThemeDropdownOpen"
-              class="relative z-20 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer"
-              :title="t('themeChoose')"
-            >
-              <span class="w-3 h-3 rounded-full" :class="themes.find((t) => t.id === currentTheme)?.color"></span>
-              <span class="hidden lg:inline">{{ t('themeLabel') }}</span>
-              <ChevronDown class="w-3 h-3 text-theme-text-muted" />
-            </button>
-
-            <div
-              v-if="isThemeDropdownOpen"
-              class="absolute right-0 mt-1 w-44 bg-theme-card border border-theme-border rounded shadow-xl z-20 p-1 space-y-0.5"
-            >
-              <button
-                v-for="th in themes"
-                :key="th.id"
-                @click="setTheme(th.id)"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
-                :class="{ 'bg-theme-column/50 border border-theme-border/20': currentTheme === th.id }"
-              >
-                <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="th.color"></span>
-                {{ t('themeNames.' + th.id) }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Language Selector Dropdown -->
-          <div class="relative shrink-0">
-            <div v-if="isLanguageDropdownOpen" class="fixed inset-0 z-10" @click="isLanguageDropdownOpen = false"></div>
-
-            <button
-              @click="isLanguageDropdownOpen = !isLanguageDropdownOpen"
-              class="relative z-20 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer"
-              :title="t('language.choose')"
-            >
-              <Globe class="w-3.5 h-3.5 text-theme-text-muted shrink-0 mr-0.5" />
-              <span class="hidden lg:inline">{{ t('language.' + locale) }}</span>
-              <span class="lg:hidden uppercase">{{ locale }}</span>
-              <ChevronDown class="w-3 h-3 text-theme-text-muted" />
-            </button>
-
-            <div
-              v-if="isLanguageDropdownOpen"
-              class="absolute right-0 mt-1 w-28 bg-theme-card border border-theme-border rounded shadow-xl z-20 p-1 space-y-0.5"
-            >
-              <button
-                @click="
-                  locale = 'en';
-                  isLanguageDropdownOpen = false;
-                "
-                class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
-                :class="{ 'bg-theme-column/50 border border-theme-border/20': locale === 'en' }"
-              >
-                English
-              </button>
-              <button
-                @click="
-                  locale = 'de';
-                  isLanguageDropdownOpen = false;
-                "
-                class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
-                :class="{ 'bg-theme-column/50 border border-theme-border/20': locale === 'de' }"
-              >
-                Deutsch
-              </button>
-            </div>
-          </div>
-
-          <!-- Sync Button -->
-          <button
-            @click="triggerSync"
-            class="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer shrink-0"
-            :disabled="syncLoading"
-            :title="t('sync.tooltip')"
-          >
-            <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" />
-            <span class="hidden lg:inline">
-              {{ syncLoading ? t('sync.syncing') : t('sync.button') }}
-            </span>
-          </button>
-
-          <!-- New Task Button -->
-          <button
-            @click="openCreateModal(buckets[0]?.name || 'todo')"
-            class="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm hover:shadow-theme-ring/10 transition-all cursor-pointer shrink-0"
-          >
-            <Plus class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">{{ t('addTaskButton') }}</span>
-          </button>
-        </div>
-      </header>
-
-      <!-- Error Banner -->
-      <div
-        v-if="error"
-        class="mt-2 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded flex justify-between items-center shrink-0"
-      >
-        <span>{{ error }}</span>
-        <button @click="error = null" class="hover:text-white cursor-pointer">
-          <X class="w-4 h-4" />
+  <div class="h-screen w-full flex flex-col overflow-hidden select-none bg-theme-base">
+    <!-- Header Controls (Navigation Bar spans full width) -->
+    <header class="flex items-center justify-between gap-3 border-b border-theme-border px-4 py-3 shrink-0 bg-theme-card z-10">
+      <div class="flex items-center gap-2.5 overflow-hidden mr-2">
+        <!-- Hamburger Menu Button -->
+        <button
+          @click="toggleSidebar"
+          class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-all cursor-pointer shrink-0"
+          :title="isSidebarOpen ? 'Collapse Sidebar' : 'Expand Sidebar'"
+        >
+          <Menu class="w-4 h-4 shrink-0" />
         </button>
+        <h1 class="text-base font-bold tracking-tight text-theme-text-main truncate flex items-center gap-1.5">
+          {{ t('brand.title') }}
+          <span class="text-xs font-semibold text-theme-text-muted opacity-80" v-if="projects.find((p) => p.id === activeProjectId)">
+            / {{ projects.find((p) => p.id === activeProjectId)?.title }}
+          </span>
+        </h1>
       </div>
 
-      <!-- Horizontal Tag Filter List -->
-      <div v-if="allTags.length" class="flex items-center gap-1.5 overflow-x-auto pb-1.5 mt-2.5 shrink-0 scroller-thin">
-        <span class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider shrink-0 mr-1">{{ t('tagsLabel') }}</span>
-        <button
-          @click="selectedTag = null"
-          class="text-[10px] font-semibold px-2 py-0.5 rounded border transition-all shrink-0 cursor-pointer"
-          :class="
-            !selectedTag
-              ? 'bg-theme-primary/15 border-theme-accent text-theme-accent font-bold shadow-sm'
-              : 'bg-theme-card border-theme-border/60 text-theme-text-muted hover:text-theme-text-main'
-          "
-        >
-          {{ t('tagsAll') }}
-        </button>
-        <button
-          v-for="tag in allTags"
-          :key="tag"
-          @click="selectedTag = tag === selectedTag ? null : tag"
-          class="text-[10px] font-semibold px-2 py-0.5 rounded border transition-all shrink-0 cursor-pointer"
-          :class="
-            tag === selectedTag
-              ? 'bg-theme-primary/15 border-theme-accent text-theme-accent font-bold shadow-sm'
-              : 'bg-theme-card border-theme-border/60 text-theme-text-muted hover:text-theme-text-main'
-          "
-        >
-          {{ tag }}
-        </button>
-      </div>
-
-      <!-- Main Content Panel (Responsive Layout Flex) -->
-      <div class="flex-grow overflow-hidden mt-2.5 relative">
-        <!-- Loading Board state -->
-        <div v-if="loading && !tasks.length" class="absolute inset-0 flex flex-col items-center justify-center gap-2">
-          <div class="w-10 h-10 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
-          <span class="text-theme-text-muted text-xs">{{ t('loadingBoard') }}</span>
+      <!-- Toolbar Actions -->
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- Search -->
+        <div class="relative w-32 sm:w-44 md:w-56">
+          <input
+            v-model="searchQuery"
+            type="text"
+            :placeholder="t('searchPlaceholder')"
+            class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+          />
         </div>
 
-        <!-- Empty Board state -->
+        <!-- View Mode Toggle -->
+        <div class="flex items-center bg-theme-card border border-theme-border rounded p-0.5 shadow-sm shrink-0">
+          <button
+            @click="setViewMode('board')"
+            class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+            :class="
+              viewMode === 'board'
+                ? 'bg-theme-primary text-white'
+                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+            "
+          >
+            <LayoutGrid class="w-3.5 h-3.5" />
+            <span class="hidden sm:inline">{{ t('views.board') }}</span>
+          </button>
+          <button
+            @click="setViewMode('list')"
+            class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+            :class="
+              viewMode === 'list'
+                ? 'bg-theme-primary text-white'
+                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+            "
+          >
+            <List class="w-3.5 h-3.5" />
+            <span class="hidden sm:inline">{{ t('views.list') }}</span>
+          </button>
+        </div>
+
+        <!-- Theme Selector Dropdown -->
+        <div class="relative shrink-0">
+          <div v-if="isThemeDropdownOpen" class="fixed inset-0 z-10" @click="isThemeDropdownOpen = false"></div>
+
+          <button
+            @click="isThemeDropdownOpen = !isThemeDropdownOpen"
+            class="relative z-20 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer"
+            :title="t('themeChoose')"
+          >
+            <span class="w-3 h-3 rounded-full" :class="themes.find((t) => t.id === currentTheme)?.color"></span>
+            <span class="hidden lg:inline">{{ t('themeLabel') }}</span>
+            <ChevronDown class="w-3 h-3 text-theme-text-muted" />
+          </button>
+
+          <div
+            v-if="isThemeDropdownOpen"
+            class="absolute right-0 mt-1 w-44 bg-theme-card border border-theme-border rounded shadow-xl z-20 p-1 space-y-0.5"
+          >
+            <button
+              v-for="th in themes"
+              :key="th.id"
+              @click="setTheme(th.id)"
+              class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/20': currentTheme === th.id }"
+            >
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="th.color"></span>
+              {{ t('themeNames.' + th.id) }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Language Selector Dropdown -->
+        <div class="relative shrink-0">
+          <div v-if="isLanguageDropdownOpen" class="fixed inset-0 z-10" @click="isLanguageDropdownOpen = false"></div>
+
+          <button
+            @click="isLanguageDropdownOpen = !isLanguageDropdownOpen"
+            class="relative z-20 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer"
+            :title="t('language.choose')"
+          >
+            <Globe class="w-3.5 h-3.5 text-theme-text-muted shrink-0 mr-0.5" />
+            <span class="hidden lg:inline">{{ t('language.' + locale) }}</span>
+            <span class="lg:hidden uppercase">{{ locale }}</span>
+            <ChevronDown class="w-3 h-3 text-theme-text-muted" />
+          </button>
+
+          <div
+            v-if="isLanguageDropdownOpen"
+            class="absolute right-0 mt-1 w-28 bg-theme-card border border-theme-border rounded shadow-xl z-20 p-1 space-y-0.5"
+          >
+            <button
+              @click="
+                locale = 'en';
+                isLanguageDropdownOpen = false;
+              "
+              class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/20': locale === 'en' }"
+            >
+              English
+            </button>
+            <button
+              @click="
+                locale = 'de';
+                isLanguageDropdownOpen = false;
+              "
+              class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/20': locale === 'de' }"
+            >
+              Deutsch
+            </button>
+          </div>
+        </div>
+
+        <!-- Sync Button -->
+        <button
+          @click="triggerSync"
+          class="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer shrink-0"
+          :disabled="syncLoading"
+          :title="t('sync.tooltip')"
+        >
+          <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" />
+          <span class="hidden lg:inline">
+            {{ syncLoading ? t('sync.syncing') : t('sync.button') }}
+          </span>
+        </button>
+
+        <!-- New Task Button -->
+        <button
+          @click="openCreateModal(buckets[0]?.name || 'todo')"
+          class="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm hover:shadow-theme-ring/10 transition-all cursor-pointer shrink-0"
+        >
+          <Plus class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">{{ t('addTaskButton') }}</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Layout Area (Below Header) -->
+    <div class="flex-grow flex overflow-hidden w-full relative">
+      <!-- Left Projects Sidebar (with sliding transition) -->
+      <transition name="sidebar">
+        <ProjectSidebar
+          v-show="isSidebarOpen"
+          :projects="projects"
+          :active-project-id="activeProjectId"
+          @select-project="selectProject"
+          @create-project="handleCreateProject"
+          @rename-project="handleRenameProject"
+          @delete-project="handleDeleteProject"
+        />
+      </transition>
+
+      <!-- Main Content Area -->
+      <div class="flex-grow flex flex-col p-3 overflow-hidden">
+        <!-- Error Banner -->
         <div
-          v-else-if="!tasks.length"
-          class="h-full flex flex-col items-center justify-center text-center bg-theme-column/10 border border-dashed border-theme-border rounded p-6"
+          v-if="error"
+          class="mt-2 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded flex justify-between items-center shrink-0"
         >
-          <div class="p-3 bg-theme-card/50 rounded border border-theme-border mb-3 text-theme-accent">
-            <ClipboardList class="w-6 h-6" />
-          </div>
-          <h3 class="font-bold text-theme-text-main text-sm">{{ t('emptyStateTitle') }}</h3>
-          <p class="text-theme-text-muted text-xs max-w-sm mt-0.5">
-            {{ t('emptyStateText') }}
-          </p>
-          <button
-            @click="openCreateModal(buckets[0]?.name || 'todo')"
-            class="mt-4 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow transition-all cursor-pointer"
-          >
-            {{ t('createFirstTaskButton') }}
+          <span>{{ error }}</span>
+          <button @click="error = null" class="hover:text-white cursor-pointer">
+            <X class="w-4 h-4" />
           </button>
         </div>
 
-        <!-- Board View Columns (Horizontal Scrolling Flex) -->
-        <BoardView
-          v-if="viewMode === 'board'"
+        <!-- Horizontal Tag Filter List -->
+        <div v-if="allTags.length" class="flex items-center gap-1.5 overflow-x-auto pb-1.5 mt-2.5 shrink-0 scroller-thin">
+          <span class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider shrink-0 mr-1">{{ t('tagsLabel') }}</span>
+          <button
+            @click="selectedTag = null"
+            class="text-[10px] font-semibold px-2 py-0.5 rounded border transition-all shrink-0 cursor-pointer"
+            :class="
+              !selectedTag
+                ? 'bg-theme-primary/15 border-theme-accent text-theme-accent font-bold shadow-sm'
+                : 'bg-theme-card border-theme-border/60 text-theme-text-muted hover:text-theme-text-main'
+            "
+          >
+            {{ t('tagsAll') }}
+          </button>
+          <button
+            v-for="tag in allTags"
+            :key="tag"
+            @click="selectedTag = tag === selectedTag ? null : tag"
+            class="text-[10px] font-semibold px-2 py-0.5 rounded border transition-all shrink-0 cursor-pointer"
+            :class="
+              tag === selectedTag
+                ? 'bg-theme-primary/15 border-theme-accent text-theme-accent font-bold shadow-sm'
+                : 'bg-theme-card border-theme-border/60 text-theme-text-muted hover:text-theme-text-main'
+            "
+          >
+            {{ tag }}
+          </button>
+        </div>
+
+        <!-- Main Content Panel (Responsive Layout Flex) -->
+        <div class="flex-grow overflow-hidden mt-2.5 relative">
+          <!-- Loading Board state -->
+          <div v-if="loading && !tasks.length" class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+            <div class="w-10 h-10 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-theme-text-muted text-xs">{{ t('loadingBoard') }}</span>
+          </div>
+
+          <!-- Empty Board state -->
+          <div
+            v-else-if="!tasks.length"
+            class="h-full flex flex-col items-center justify-center text-center bg-theme-column/10 border border-dashed border-theme-border rounded p-6"
+          >
+            <div class="p-3 bg-theme-card/50 rounded border border-theme-border mb-3 text-theme-accent">
+              <ClipboardList class="w-6 h-6" />
+            </div>
+            <h3 class="font-bold text-theme-text-main text-sm">{{ t('emptyStateTitle') }}</h3>
+            <p class="text-theme-text-muted text-xs max-w-sm mt-0.5">
+              {{ t('emptyStateText') }}
+            </p>
+            <button
+              @click="openCreateModal(buckets[0]?.name || 'todo')"
+              class="mt-4 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow transition-all cursor-pointer"
+            >
+              {{ t('createFirstTaskButton') }}
+            </button>
+          </div>
+
+          <!-- Board View Columns (Horizontal Scrolling Flex) -->
+          <BoardView
+            v-if="viewMode === 'board'"
+            :buckets="buckets"
+            :tasks-by-bucket="tasksByBucket"
+            @task-click="openDetailModal"
+            @add-task-click="openCreateModal"
+            @card-dropped="handleCardDropped"
+            @rename-column="handleRenameColumn"
+            @delete-column="handleDeleteColumn"
+            @move-column="handleMoveColumn"
+            @create-column="handleCreateColumn"
+          />
+
+          <!-- List View Mode (Data dense Table View) -->
+          <ListView v-else-if="viewMode === 'list'" :buckets="buckets" :tasks-by-bucket="tasksByBucket" @task-click="openDetailModal" />
+        </div>
+
+        <!-- Task Detail Modal -->
+        <TaskDetailModal
+          :is-open="isDetailOpen"
+          :project-id="activeProjectId"
+          :task-id="selectedTaskId"
           :buckets="buckets"
-          :tasks-by-bucket="tasksByBucket"
-          @task-click="openDetailModal"
-          @add-task-click="openCreateModal"
-          @card-dropped="handleCardDropped"
-          @rename-column="handleRenameColumn"
-          @delete-column="handleDeleteColumn"
-          @move-column="handleMoveColumn"
-          @create-column="handleCreateColumn"
+          @close="isDetailOpen = false"
+          @updated="fetchAllTasks"
+          @deleted="fetchAllTasks"
         />
 
-        <!-- List View Mode (Data dense Table View) -->
-        <ListView v-else-if="viewMode === 'list'" :buckets="buckets" :tasks-by-bucket="tasksByBucket" @task-click="openDetailModal" />
+        <!-- Task Create Modal -->
+        <TaskCreateModal
+          :is-open="isCreateOpen"
+          :project-id="activeProjectId"
+          :default-bucket="createDefaultBucket"
+          :buckets="buckets"
+          @close="isCreateOpen = false"
+          @created="fetchAllTasks"
+        />
       </div>
-
-      <!-- Task Detail Modal -->
-      <TaskDetailModal
-        :is-open="isDetailOpen"
-        :project-id="activeProjectId"
-        :task-id="selectedTaskId"
-        :buckets="buckets"
-        @close="isDetailOpen = false"
-        @updated="fetchAllTasks"
-        @deleted="fetchAllTasks"
-      />
-
-      <!-- Task Create Modal -->
-      <TaskCreateModal
-        :is-open="isCreateOpen"
-        :project-id="activeProjectId"
-        :default-bucket="createDefaultBucket"
-        :buckets="buckets"
-        @close="isCreateOpen = false"
-        @created="fetchAllTasks"
-      />
     </div>
   </div>
 </template>
+
+<style scoped>
+.sidebar-enter-active,
+.sidebar-leave-active {
+  transition:
+    margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.15s ease;
+}
+.sidebar-enter-from,
+.sidebar-leave-to {
+  margin-left: -16rem; /* matches w-64 width */
+  opacity: 0;
+}
+</style>
