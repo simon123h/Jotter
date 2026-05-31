@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import type { Task, Bucket, BucketName, Project } from '../types';
 import {
   getTasks,
@@ -18,8 +18,10 @@ import TaskDetailModal from './TaskDetailModal.vue';
 import TaskCreateModal from './TaskCreateModal.vue';
 import BoardView from './BoardView.vue';
 import ListView from './ListView.vue';
+import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
+import { Globe } from '@lucide/vue';
 
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();
@@ -103,27 +105,9 @@ const selectProject = (projectId: string) => {
   fetchAllData();
 };
 
-const showAddProjectInput = ref(false);
-const newProjectTitle = ref('');
-const addProjectInput = ref<HTMLInputElement | null>(null);
-
-const triggerAddProject = () => {
-  showAddProjectInput.value = true;
-  nextTick(() => {
-    addProjectInput.value?.focus();
-  });
-};
-
-const handleCreateProject = async () => {
-  const title = newProjectTitle.value.trim();
-  if (!title) {
-    showAddProjectInput.value = false;
-    return;
-  }
+const handleCreateProject = async (title: string) => {
   try {
     const created = await createProject(title);
-    newProjectTitle.value = '';
-    showAddProjectInput.value = false;
     await fetchProjects();
     selectProject(created.id);
   } catch (err: any) {
@@ -131,30 +115,9 @@ const handleCreateProject = async () => {
   }
 };
 
-// Project editing and deletion
-const editingProjectId = ref<string | null>(null);
-const editingProjectTitle = ref('');
-
-const startRenameProject = (project: Project) => {
-  editingProjectId.value = project.id;
-  editingProjectTitle.value = project.title;
-  nextTick(() => {
-    const input = document.getElementById(`rename-${project.id}`) as HTMLInputElement;
-    input?.focus();
-  });
-};
-
-const saveRenameProject = async () => {
-  const projId = editingProjectId.value;
-  const newTitle = editingProjectTitle.value.trim();
-  if (!projId) return;
-  if (!newTitle) {
-    editingProjectId.value = null;
-    return;
-  }
+const handleRenameProject = async ({ id, title }: { id: string; title: string }) => {
   try {
-    await updateProject(projId, newTitle);
-    editingProjectId.value = null;
+    await updateProject(id, title);
     await fetchProjects();
   } catch (err: any) {
     error.value = err.message || 'Failed to rename project';
@@ -411,89 +374,14 @@ const triggerSync = async () => {
 <template>
   <div class="h-screen w-full flex overflow-hidden select-none bg-theme-base">
     <!-- Left Projects Sidebar -->
-    <aside class="w-64 border-r border-theme-border flex flex-col shrink-0 bg-theme-card">
-      <!-- Sidebar Header -->
-      <div class="p-4 border-b border-theme-border flex items-center justify-between shrink-0">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-theme-text-main flex items-center gap-1.5">
-          <span class="text-sm">📁</span> {{ t('projects.sidebarTitle') }}
-        </h2>
-      </div>
-
-      <!-- Projects List -->
-      <div class="flex-grow overflow-y-auto p-2 space-y-1 scroller-thin">
-        <div
-          v-for="project in projects"
-          :key="project.id"
-          class="group relative flex items-center justify-between px-3 py-2 rounded text-xs transition-all cursor-pointer font-medium"
-          :class="
-            project.id === activeProjectId
-              ? 'bg-theme-primary/10 text-theme-accent border border-theme-primary/15'
-              : 'text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main border border-transparent'
-          "
-          @click="selectProject(project.id)"
-        >
-          <!-- Project Title / Inline Rename Input -->
-          <div class="flex items-center gap-2 overflow-hidden flex-grow mr-2">
-            <span class="text-theme-text-muted text-[10px]">#</span>
-            <input
-              v-if="editingProjectId === project.id"
-              :id="`rename-${project.id}`"
-              v-model="editingProjectTitle"
-              type="text"
-              class="w-full bg-theme-base border border-theme-border rounded px-1.5 py-0.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
-              @keydown.enter="saveRenameProject"
-              @blur="saveRenameProject"
-            />
-            <span v-else class="truncate text-[11px] font-sans">{{ project.title }}</span>
-          </div>
-
-          <!-- Project Actions (Rename, Delete) visible on hover -->
-          <div
-            v-if="editingProjectId !== project.id && project.id !== 'default'"
-            class="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity"
-          >
-            <!-- Rename Icon -->
-            <button
-              @click.stop="startRenameProject(project)"
-              class="p-0.5 text-[10px] text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-colors cursor-pointer"
-              :title="t('projects.renameProject')"
-            >
-              ✏️
-            </button>
-            <!-- Delete Icon -->
-            <button
-              @click.stop="handleDeleteProject(project)"
-              class="p-0.5 text-[10px] text-red-400 hover:text-red-300 hover:bg-theme-column rounded transition-colors cursor-pointer"
-              :title="t('buttons.delete')"
-            >
-              🗑️
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Add Project Action at Bottom of Sidebar -->
-      <div class="p-3 border-t border-theme-border shrink-0">
-        <div v-if="showAddProjectInput" class="flex flex-col gap-2">
-          <input
-            v-model="newProjectTitle"
-            ref="addProjectInput"
-            type="text"
-            :placeholder="t('projects.newProjectPlaceholder')"
-            class="w-full bg-theme-base border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
-            @keydown.enter="handleCreateProject"
-            @blur="handleCreateProject"
-          />
-        </div>
-        <button
-          v-else
-          @click="triggerAddProject"
-          class="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold border border-dashed border-theme-border text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary hover:bg-theme-column/30 rounded transition-all cursor-pointer"
-        >
-          <span>➕</span> {{ t('projects.newProject') }}
-        </button>
-      </div>
-    </aside>
+    <ProjectSidebar
+      :projects="projects"
+      :active-project-id="activeProjectId"
+      @select-project="selectProject"
+      @create-project="handleCreateProject"
+      @rename-project="handleRenameProject"
+      @delete-project="handleDeleteProject"
+    />
 
     <!-- Main Content Panel -->
     <div class="flex-grow flex flex-col p-3 overflow-hidden">
@@ -599,7 +487,7 @@ const triggerSync = async () => {
               class="relative z-20 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer"
               :title="t('language.choose')"
             >
-              <span class="text-xs shrink-0">🌐</span>
+              <Globe class="w-3.5 h-3.5 text-theme-text-muted shrink-0 mr-0.5" />
               <span class="hidden lg:inline">{{ t('language.' + locale) }}</span>
               <span class="lg:hidden uppercase">{{ locale }}</span>
               <svg class="w-3 h-3 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
