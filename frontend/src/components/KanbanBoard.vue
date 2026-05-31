@@ -355,32 +355,36 @@ const handleDeleteColumn = async (bucketName: string) => {
   }
 };
 
-const handleMoveColumn = async (bucketName: string, direction: 'left' | 'right') => {
-  const index = buckets.value.findIndex((b) => b.name === bucketName);
-  if (index === -1) return;
-  if (direction === 'left' && index === 0) return;
-  if (direction === 'right' && index === buckets.value.length - 1) return;
+const handleColumnReordered = async ({ oldIndex, newIndex }: { oldIndex: number; newIndex: number }) => {
+  const visibleCols = [...displayedBuckets.value];
+  if (oldIndex < 0 || oldIndex >= visibleCols.length || newIndex < 0 || newIndex >= visibleCols.length) return;
+  if (oldIndex === newIndex) return;
 
-  const targetIndex = direction === 'left' ? index - 1 : index + 1;
-  const currentCol = buckets.value[index];
-  const targetCol = buckets.value[targetIndex];
+  const [draggedCol] = visibleCols.splice(oldIndex, 1);
+  visibleCols.splice(newIndex, 0, draggedCol);
 
-  // Swap positions locally
-  const tempPos = currentCol.position;
-  currentCol.position = targetCol.position;
-  targetCol.position = tempPos;
+  let newPosition: number;
+  if (newIndex === 0) {
+    newPosition = visibleCols[1].position - 1000.0;
+  } else if (newIndex === visibleCols.length - 1) {
+    newPosition = visibleCols[visibleCols.length - 2].position + 1000.0;
+  } else {
+    const prevCol = visibleCols[newIndex - 1];
+    const nextCol = visibleCols[newIndex + 1];
+    newPosition = (prevCol.position + nextCol.position) / 2.0;
+  }
 
-  // Sort local list
+  // Optimistic local update
+  const originalPosition = draggedCol.position;
+  draggedCol.position = newPosition;
   buckets.value.sort((a, b) => a.position - b.position);
 
   try {
-    // Persist updates to the database
-    await Promise.all([
-      updateBucket(activeProjectId.value, currentCol.name, { position: currentCol.position }),
-      updateBucket(activeProjectId.value, targetCol.name, { position: targetCol.position }),
-    ]);
-  } catch {
+    await updateBucket(activeProjectId.value, draggedCol.name, { position: newPosition });
+  } catch (err) {
     error.value = 'Failed to reorder columns. Reverting changes.';
+    draggedCol.position = originalPosition;
+    buckets.value.sort((a, b) => a.position - b.position);
     await fetchBuckets();
   }
 };
@@ -668,9 +672,9 @@ const triggerSync = async () => {
             @card-dropped="handleCardDropped"
             @rename-column="handleRenameColumn"
             @delete-column="handleDeleteColumn"
-            @move-column="handleMoveColumn"
             @create-column="handleCreateColumn"
             @mark-done="handleMarkTaskDone"
+            @column-reordered="handleColumnReordered"
           />
 
           <!-- List View Mode (Data dense Table View) -->

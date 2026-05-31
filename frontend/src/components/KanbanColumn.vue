@@ -4,7 +4,7 @@ import Sortable from 'sortablejs';
 import type { Task, BucketName } from '../types';
 import TaskCard from './TaskCard.vue';
 import { useI18n } from '../composables/useI18n';
-import { ChevronLeft, ChevronRight, Pencil, Trash2, Plus } from '@lucide/vue';
+import { Pencil, Trash2, Plus } from '@lucide/vue';
 
 const { t } = useI18n();
 
@@ -23,7 +23,6 @@ const emit = defineEmits<{
   (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; oldIndex: number; newIndex: number }): void;
   (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string }): void;
   (e: 'delete-column', bucketName: string): void;
-  (e: 'move-column', bucketName: string, direction: 'left' | 'right'): void;
   (e: 'mark-done', task: Task): void;
 }>();
 
@@ -104,7 +103,9 @@ onMounted(() => {
 <template>
   <div class="flex flex-col bg-theme-column border border-theme-border rounded w-full h-full min-w-[280px] w-72 shrink-0 md:w-80 group/col">
     <!-- Column Header -->
-    <div class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t shrink-0 min-h-[48px]">
+    <div
+      class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t shrink-0 min-h-[48px] cursor-grab active:cursor-grabbing column-drag-handle"
+    >
       <!-- Title Area (Normal or Edit Mode) -->
       <div class="flex-grow flex flex-col justify-center overflow-hidden mr-1">
         <div v-if="!isEditing" class="flex flex-col gap-0.5 overflow-hidden">
@@ -155,26 +156,6 @@ onMounted(() => {
 
       <!-- Action Buttons -->
       <div class="flex items-center gap-0.5 shrink-0">
-        <!-- Move Left -->
-        <button
-          v-if="!isFirst && !isEditing"
-          @click="emit('move-column', bucketName, 'left')"
-          class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card rounded transition-colors cursor-pointer animate-fade-in"
-          :title="t('moveColumnLeftTooltip')"
-        >
-          <ChevronLeft class="w-3.5 h-3.5 shrink-0" />
-        </button>
-
-        <!-- Move Right -->
-        <button
-          v-if="!isLast && !isEditing"
-          @click="emit('move-column', bucketName, 'right')"
-          class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card rounded transition-colors cursor-pointer animate-fade-in"
-          :title="t('moveColumnRightTooltip')"
-        >
-          <ChevronRight class="w-3.5 h-3.5 shrink-0" />
-        </button>
-
         <!-- Rename Column -->
         <button
           v-if="!isEditing"

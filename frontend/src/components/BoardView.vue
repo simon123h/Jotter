@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { Plus } from '@lucide/vue';
+import Sortable from 'sortablejs';
 import type { Task, Bucket, BucketName } from '../types';
 import KanbanColumn from './KanbanColumn.vue';
 import { useI18n } from '../composables/useI18n';
@@ -18,15 +19,33 @@ const emit = defineEmits<{
   (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; oldIndex: number; newIndex: number }): void;
   (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string }): void;
   (e: 'delete-column', bucketName: string): void;
-  (e: 'move-column', bucketName: string, direction: 'left' | 'right'): void;
   (e: 'create-column', title: string, subtitle: string): void;
   (e: 'mark-done', task: Task): void;
+  (e: 'column-reordered', payload: { oldIndex: number; newIndex: number }): void;
 }>();
 
 // Column create state
 const isAddingColumn = ref(false);
 const newColumnTitle = ref('');
 const newColumnSubtitle = ref('');
+
+const columnsContainer = ref<HTMLElement | null>(null);
+
+onMounted(() => {
+  if (columnsContainer.value) {
+    Sortable.create(columnsContainer.value, {
+      animation: 180,
+      draggable: '.group\\/col',
+      handle: '.column-drag-handle',
+      filter: 'button, input, select, textarea',
+      onEnd: (evt) => {
+        const { oldIndex, newIndex } = evt;
+        if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;
+        emit('column-reordered', { oldIndex, newIndex });
+      },
+    });
+  }
+});
 
 const handleAddColumn = () => {
   const title = newColumnTitle.value.trim();
@@ -46,7 +65,10 @@ const handleCancelAddColumn = () => {
 </script>
 
 <template>
-  <div class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
+  <div
+    ref="columnsContainer"
+    class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin"
+  >
     <KanbanColumn
       v-for="(b, idx) in buckets"
       :key="b.name"
@@ -61,7 +83,6 @@ const handleCancelAddColumn = () => {
       @card-dropped="(payload) => emit('card-dropped', payload)"
       @rename-column="(payload) => emit('rename-column', payload)"
       @delete-column="(bucket) => emit('delete-column', bucket)"
-      @move-column="(bucket, direction) => emit('move-column', bucket, direction)"
       @mark-done="(task) => emit('mark-done', task)"
     />
 
