@@ -2,9 +2,10 @@
 import { ref, onMounted, computed } from 'vue';
 import type { Task, Bucket, BucketName } from '../types';
 import { getTasks, moveTask, syncSystem, getBuckets, createBucket, updateBucket, deleteBucket } from '../api';
-import KanbanColumn from './KanbanColumn.vue';
 import TaskDetailModal from './TaskDetailModal.vue';
 import TaskCreateModal from './TaskCreateModal.vue';
+import BoardView from './BoardView.vue';
+import ListView from './ListView.vue';
 import { useI18n } from '../composables/useI18n';
 
 const { locale, t } = useI18n();
@@ -15,10 +16,6 @@ const loading = ref(false);
 const syncLoading = ref(false);
 const error = ref<string | null>(null);
 
-// Column create state
-const isAddingColumn = ref(false);
-const newColumnTitle = ref('');
-
 // Filter state
 const searchQuery = ref('');
 const selectedTag = ref<string | null>(null);
@@ -28,22 +25,6 @@ const viewMode = ref<'board' | 'list'>((localStorage.getItem('jotter-view-mode')
 const setViewMode = (mode: 'board' | 'list') => {
   viewMode.value = mode;
   localStorage.setItem('jotter-view-mode', mode);
-};
-
-// Collapsed state for columns in List view
-const collapsedColumns = ref<Record<string, boolean>>({});
-const toggleColumnCollapse = (bucketName: string) => {
-  collapsedColumns.value[bucketName] = !collapsedColumns.value[bucketName];
-};
-
-// Checklist helper
-const getChecklistStats = (body: string) => {
-  if (!body) return null;
-  const matches = body.match(/- \[[ xX]\]/g);
-  if (!matches) return null;
-  const total = matches.length;
-  const checked = (body.match(/- \[[xX]\]/g) || []).length;
-  return { checked, total };
 };
 
 // Modal state
@@ -221,13 +202,9 @@ const handleCardDropped = async ({
   }
 };
 
-const handleAddColumn = async () => {
-  const title = newColumnTitle.value.trim();
-  if (!title) return;
+const handleCreateColumn = async (title: string) => {
   try {
     await createBucket(title);
-    newColumnTitle.value = '';
-    isAddingColumn.value = false;
     await fetchBuckets();
   } catch (err: any) {
     error.value = err.message || 'Failed to create column';
@@ -543,184 +520,21 @@ const triggerSync = async () => {
       </div>
 
       <!-- Board View Columns (Horizontal Scrolling Flex) -->
-      <div v-else-if="viewMode === 'board'" class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
-        <KanbanColumn
-          v-for="(b, idx) in buckets"
-          :key="b.name"
-          :bucket-name="b.name"
-          :title="b.title"
-          :tasks="tasksByBucket[b.name] || []"
-          :is-first="idx === 0"
-          :is-last="idx === buckets.length - 1"
-          @task-click="openDetailModal"
-          @add-task-click="openCreateModal"
-          @card-dropped="handleCardDropped"
-          @rename-column="handleRenameColumn"
-          @delete-column="handleDeleteColumn"
-          @move-column="handleMoveColumn"
-        />
-
-        <!-- Add Column Card -->
-        <div
-          class="flex flex-col bg-theme-column/20 border border-dashed border-theme-border/60 rounded w-72 shrink-0 p-3 h-full justify-between"
-        >
-          <div v-if="!isAddingColumn" class="flex items-center justify-center h-20 flex-grow">
-            <button
-              @click="isAddingColumn = true"
-              class="flex flex-col items-center gap-1.5 text-theme-text-muted hover:text-theme-text-main font-semibold text-xs cursor-pointer w-full py-4 rounded hover:bg-theme-card/30 transition-all"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              {{ t('buttons.addColumn') }}
-            </button>
-          </div>
-          <div v-else class="space-y-2.5 flex-grow">
-            <h4 class="font-bold text-[10px] uppercase tracking-wider text-theme-text-muted">{{ t('newColumnTitle') }}</h4>
-            <input
-              v-model="newColumnTitle"
-              type="text"
-              :placeholder="t('columnTitlePlaceholder')"
-              class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-              @keyup.enter="handleAddColumn"
-              @keyup.esc="isAddingColumn = false"
-              autofocus
-            />
-            <div class="flex gap-1.5 justify-end">
-              <button
-                @click="isAddingColumn = false"
-                class="text-[10px] font-semibold px-2 py-1 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded cursor-pointer"
-              >
-                {{ t('buttons.cancel') }}
-              </button>
-              <button
-                @click="handleAddColumn"
-                class="text-[10px] font-semibold px-2 py-1 bg-theme-primary hover:bg-theme-primary-hover text-white rounded cursor-pointer"
-              >
-                {{ t('buttons.add') }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoardView
+        v-if="viewMode === 'board'"
+        :buckets="buckets"
+        :tasks-by-bucket="tasksByBucket"
+        @task-click="openDetailModal"
+        @add-task-click="openCreateModal"
+        @card-dropped="handleCardDropped"
+        @rename-column="handleRenameColumn"
+        @delete-column="handleDeleteColumn"
+        @move-column="handleMoveColumn"
+        @create-column="handleCreateColumn"
+      />
 
       <!-- List View Mode (Data dense Table View) -->
-      <div v-else-if="viewMode === 'list'" class="h-full overflow-y-auto scroller-thin border border-theme-border rounded bg-theme-card/10">
-        <div class="min-w-[800px] w-full border-collapse text-left font-sans text-xs">
-          <!-- Table Header -->
-          <div
-            class="flex items-center bg-theme-column/60 border-b border-theme-border text-[10px] font-bold uppercase tracking-wider text-theme-text-muted px-3 py-2 select-none sticky top-0 z-10 backdrop-blur-sm"
-          >
-            <span class="w-16 shrink-0">{{ t('table.id') }}</span>
-            <span class="flex-grow min-w-0">{{ t('table.title') }}</span>
-            <span class="w-20 shrink-0 text-center">{{ t('table.progress') }}</span>
-            <span class="w-52 shrink-0">{{ t('table.tags') }}</span>
-            <span class="w-28 shrink-0 text-right">{{ t('table.updated') }}</span>
-          </div>
-
-          <!-- Grouped by bucket -->
-          <div v-for="b in buckets" :key="b.name" class="border-b border-theme-border last:border-b-0">
-            <!-- Group Header -->
-            <div
-              @click="toggleColumnCollapse(b.name)"
-              class="bg-theme-column/25 px-3 py-1.5 flex items-center gap-2 cursor-pointer select-none hover:bg-theme-column/40 border-b border-theme-border/30 text-[10px] font-bold uppercase tracking-wider text-theme-text-muted"
-            >
-              <svg
-                class="w-3.5 h-3.5 transform transition-transform text-theme-text-muted"
-                :class="{ '-rotate-90': collapsedColumns[b.name] }"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-              <span>{{ t('buckets.' + b.name) || b.title }}</span>
-              <span class="px-1 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted rounded text-[9px] font-bold">
-                {{ tasksByBucket[b.name]?.length || 0 }}
-              </span>
-            </div>
-
-            <!-- Group Rows -->
-            <div v-show="!collapsedColumns[b.name]" class="divide-y divide-theme-border/30 bg-theme-card/10">
-              <div
-                v-if="!tasksByBucket[b.name] || !tasksByBucket[b.name].length"
-                class="px-8 py-2 text-theme-text-muted italic text-[11px]"
-              >
-                No tasks in this column.
-              </div>
-              <div
-                v-else
-                v-for="task in tasksByBucket[b.name]"
-                :key="task.id"
-                @click="openDetailModal(task)"
-                class="flex items-center hover:bg-theme-column/20 px-3 py-2 cursor-pointer transition-colors duration-100 gap-3 group"
-              >
-                <!-- Task ID -->
-                <span class="font-mono text-theme-text-muted text-[10px] w-16 shrink-0 font-medium"> #{{ task.id }} </span>
-
-                <!-- Task Title + Note snippet -->
-                <div class="flex-grow min-w-0 flex items-baseline gap-2 overflow-hidden">
-                  <span class="font-bold text-theme-text-card group-hover:text-theme-accent transition-colors truncate">
-                    {{ task.title }}
-                  </span>
-                  <!-- Sneak peak of markdown body if available -->
-                  <span v-if="task.body" class="text-theme-text-muted/60 text-[10px] truncate italic max-w-[28rem] font-sans">
-                    -
-                    {{
-                      task.body
-                        .replace(/#+\s+/g, '')
-                        .replace(/[-\*]\s+\[[ xX]\]/g, '')
-                        .replace(/[-\*]\s+/g, '')
-                        .replace(/[`\*_]/g, '')
-                        .replace(/\s+/g, ' ')
-                        .trim()
-                    }}
-                  </span>
-                </div>
-
-                <!-- Checklist Stats -->
-                <div class="w-20 shrink-0 flex items-center justify-center">
-                  <span
-                    v-if="getChecklistStats(task.body)"
-                    class="flex items-center gap-1 text-[9px] font-bold"
-                    :class="
-                      getChecklistStats(task.body).checked === getChecklistStats(task.body).total
-                        ? 'text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20'
-                        : 'text-theme-text-muted'
-                    "
-                  >
-                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"
-                      />
-                    </svg>
-                    <span>{{ getChecklistStats(task.body).checked }}/{{ getChecklistStats(task.body).total }}</span>
-                  </span>
-                </div>
-
-                <!-- Tags -->
-                <div class="w-52 shrink-0 overflow-hidden flex flex-wrap gap-1">
-                  <span
-                    v-for="tag in task.tags"
-                    :key="tag"
-                    class="text-[9px] uppercase font-bold tracking-wider px-1 py-0.5 rounded border bg-theme-column/30 text-theme-text-muted border-theme-border/45"
-                  >
-                    {{ tag }}
-                  </span>
-                </div>
-
-                <!-- Updated Date -->
-                <span class="w-28 shrink-0 text-right text-[10px] text-theme-text-muted font-mono">
-                  {{ new Date(task.updated_at).toLocaleString() }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ListView v-else-if="viewMode === 'list'" :buckets="buckets" :tasks-by-bucket="tasksByBucket" @task-click="openDetailModal" />
     </div>
 
     <!-- Task Detail Modal -->
