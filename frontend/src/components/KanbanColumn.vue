@@ -24,6 +24,7 @@ const emit = defineEmits<{
   (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string }): void;
   (e: 'delete-column', bucketName: string): void;
   (e: 'move-column', bucketName: string, direction: 'left' | 'right'): void;
+  (e: 'mark-done', task: Task): void;
 }>();
 
 const cardsContainer = ref<HTMLElement | null>(null);
@@ -218,7 +219,14 @@ onMounted(() => {
       :data-bucket-name="bucketName"
       class="flex-grow p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] scroller-thin"
     >
-      <TaskCard v-for="task in tasks" :key="task.id" :task="task" :data-task-id="task.id" @click="emit('task-click', task)" />
+      <TaskCard
+        v-for="task in tasks"
+        :key="task.id"
+        :task="task"
+        :data-task-id="task.id"
+        @click="emit('task-click', task)"
+        @mark-done="emit('mark-done', $event)"
+      />
     </div>
   </div>
 </template>

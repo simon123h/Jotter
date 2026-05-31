@@ -52,4 +52,32 @@ describe('TaskCard.vue', () => {
     expect(wrapper.emitted('click')).toBeTruthy();
     expect(wrapper.emitted('click')?.[0]).toEqual([mockTask]);
   });
+
+  it('emits mark-done event when the checkmark button is clicked', async () => {
+    const wrapper = mount(TaskCard, {
+      props: {
+        task: mockTask,
+      },
+    });
+
+    const markDoneBtn = wrapper.find('button[title="Mark as done"]');
+    expect(markDoneBtn.exists()).toBe(true);
+
+    await markDoneBtn.trigger('click');
+
+    expect(wrapper.emitted('mark-done')).toBeTruthy();
+    expect(wrapper.emitted('mark-done')?.[0]).toEqual([mockTask]);
+  });
+
+  it('does not render checkmark button if task is in the done bucket', () => {
+    const doneTask = { ...mockTask, bucket: 'done' };
+    const wrapper = mount(TaskCard, {
+      props: {
+        task: doneTask,
+      },
+    });
+
+    const markDoneBtn = wrapper.find('button[title="Mark as done"]');
+    expect(markDoneBtn.exists()).toBe(false);
+  });
 });

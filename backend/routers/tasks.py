@@ -189,10 +189,30 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
                 (project_id, updated_bucket),
             )
             if not cursor.fetchone():
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Bucket '{updated_bucket}' does not exist in project '{project_id}'.",
-                )
+                if updated_bucket == "done":
+                    cursor_pos = conn.execute("SELECT MAX(position) as max_pos FROM buckets WHERE project_id = ?", (project_id,))
+                    row_pos = cursor_pos.fetchone()
+                    new_position = 1000.0
+                    if row_pos and row_pos["max_pos"] is not None:
+                        new_position = float(row_pos["max_pos"]) + 1000.0
+
+                    conn.execute(
+                        "INSERT INTO buckets (project_id, name, title, subtitle, position) VALUES (?, ?, ?, ?, ?)",
+                        (project_id, "done", "Done", "", new_position),
+                    )
+
+                    cursor_sync = conn.execute(
+                        "SELECT name, title, subtitle, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
+                        (project_id,),
+                    )
+                    from storage import write_buckets_file
+                    all_buckets = [dict(r) for r in cursor_sync.fetchall()]
+                    write_buckets_file(project_id, all_buckets)
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Bucket '{updated_bucket}' does not exist in project '{project_id}'.",
+                    )
 
         # Write to Markdown file
         new_filename = write_task_file(task_id, updated_data)
@@ -245,10 +265,30 @@ def move_task(project_id: str, task_id: int, task_move: TaskMove):
             (project_id, task_move.bucket),
         )
         if not cursor.fetchone():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Bucket '{task_move.bucket}' does not exist in project '{project_id}'.",
-            )
+            if task_move.bucket == "done":
+                cursor_pos = conn.execute("SELECT MAX(position) as max_pos FROM buckets WHERE project_id = ?", (project_id,))
+                row_pos = cursor_pos.fetchone()
+                new_position = 1000.0
+                if row_pos and row_pos["max_pos"] is not None:
+                    new_position = float(row_pos["max_pos"]) + 1000.0
+
+                conn.execute(
+                    "INSERT INTO buckets (project_id, name, title, subtitle, position) VALUES (?, ?, ?, ?, ?)",
+                    (project_id, "done", "Done", "", new_position),
+                )
+
+                cursor_sync = conn.execute(
+                    "SELECT name, title, subtitle, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
+                    (project_id,),
+                )
+                from storage import write_buckets_file
+                all_buckets = [dict(r) for r in cursor_sync.fetchall()]
+                write_buckets_file(project_id, all_buckets)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Bucket '{task_move.bucket}' does not exist in project '{project_id}'.",
+                )
 
         # Write to Markdown file
         new_filename = write_task_file(task_id, updated_data)

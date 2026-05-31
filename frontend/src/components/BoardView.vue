@@ -20,6 +20,7 @@ const emit = defineEmits<{
   (e: 'delete-column', bucketName: string): void;
   (e: 'move-column', bucketName: string, direction: 'left' | 'right'): void;
   (e: 'create-column', title: string, subtitle: string): void;
+  (e: 'mark-done', task: Task): void;
 }>();
 
 // Column create state
@@ -61,6 +62,7 @@ const handleCancelAddColumn = () => {
       @rename-column="(payload) => emit('rename-column', payload)"
       @delete-column="(bucket) => emit('delete-column', bucket)"
       @move-column="(bucket, direction) => emit('move-column', bucket, direction)"
+      @mark-done="(task) => emit('mark-done', task)"
     />
 
     <!-- Add Column Card -->

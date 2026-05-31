@@ -84,6 +84,12 @@ export const en = {
     'in-progress': 'In Progress',
     done: 'Done',
   },
+  doneBucket: {
+    show: 'Show "Done" column',
+    hide: 'Hide "Done" column',
+    showText: 'Show Done',
+    hideText: 'Hide Done',
+  },
   projects: {
     sidebarTitle: 'Projects',
     newProject: 'New Project',

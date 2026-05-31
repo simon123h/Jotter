@@ -21,13 +21,27 @@ import ListView from './ListView.vue';
 import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
-import { Globe, LayoutGrid, List, ChevronDown, RefreshCw, Plus, X, ClipboardList, Menu } from '@lucide/vue';
+import { Globe, LayoutGrid, List, ChevronDown, RefreshCw, Plus, X, ClipboardList, Menu, Eye, EyeOff } from '@lucide/vue';
 
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();
 
 const tasks = ref<Task[]>([]);
 const buckets = ref<Bucket[]>([]);
+
+// Hide "Done" column state
+const hideDoneColumn = ref(localStorage.getItem('jotter-hide-done-column') === 'true');
+const toggleHideDoneColumn = () => {
+  hideDoneColumn.value = !hideDoneColumn.value;
+  localStorage.setItem('jotter-hide-done-column', String(hideDoneColumn.value));
+};
+
+const displayedBuckets = computed(() => {
+  if (hideDoneColumn.value) {
+    return buckets.value.filter((b) => b.name !== 'done');
+  }
+  return buckets.value;
+});
 const projects = ref<Project[]>([]);
 const activeProjectId = ref<string>(localStorage.getItem('jotter-active-project-id') || 'default');
 
@@ -319,6 +333,19 @@ const handleRenameColumn = async ({ bucketName, newTitle, newSubtitle }: { bucke
   }
 };
 
+const handleMarkTaskDone = async (task: Task) => {
+  try {
+    const targetBucketTasks = tasks.value.filter((t) => t.bucket === 'done').sort((a, b) => a.position - b.position);
+    const newPosition = targetBucketTasks.length > 0 ? targetBucketTasks[targetBucketTasks.length - 1].position + 1000.0 : 1000.0;
+
+    await moveTask(activeProjectId.value, task.id, 'done', newPosition);
+    await fetchBuckets();
+    await fetchAllTasks();
+  } catch (err: any) {
+    error.value = err.message || 'Failed to mark task as done';
+  }
+};
+
 const handleDeleteColumn = async (bucketName: string) => {
   try {
     await deleteBucket(activeProjectId.value, bucketName);
@@ -438,6 +465,16 @@ const triggerSync = async () => {
             <span class="hidden sm:inline">{{ t('views.list') }}</span>
           </button>
         </div>
+
+        <!-- Hide Done Column Toggle -->
+        <button
+          @click="toggleHideDoneColumn"
+          class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer shrink-0"
+          :title="hideDoneColumn ? t('doneBucket.show') : t('doneBucket.hide')"
+        >
+          <component :is="hideDoneColumn ? EyeOff : Eye" class="w-3.5 h-3.5 text-theme-text-muted" />
+          <span class="hidden md:inline">{{ hideDoneColumn ? t('doneBucket.showText') : t('doneBucket.hideText') }}</span>
+        </button>
 
         <!-- Theme Selector Dropdown -->
         <div class="relative shrink-0">
@@ -624,7 +661,7 @@ const triggerSync = async () => {
           <!-- Board View Columns (Horizontal Scrolling Flex) -->
           <BoardView
             v-if="viewMode === 'board'"
-            :buckets="buckets"
+            :buckets="displayedBuckets"
             :tasks-by-bucket="tasksByBucket"
             @task-click="openDetailModal"
             @add-task-click="openCreateModal"
@@ -633,10 +670,16 @@ const triggerSync = async () => {
             @delete-column="handleDeleteColumn"
             @move-column="handleMoveColumn"
             @create-column="handleCreateColumn"
+            @mark-done="handleMarkTaskDone"
           />
 
           <!-- List View Mode (Data dense Table View) -->
-          <ListView v-else-if="viewMode === 'list'" :buckets="buckets" :tasks-by-bucket="tasksByBucket" @task-click="openDetailModal" />
+          <ListView
+            v-else-if="viewMode === 'list'"
+            :buckets="displayedBuckets"
+            :tasks-by-bucket="tasksByBucket"
+            @task-click="openDetailModal"
+          />
         </div>
 
         <!-- Task Detail Modal -->

@@ -212,3 +212,47 @@ def test_buckets_flow():
     # Verify bucket is gone
     response = client.get("/projects/default/buckets")
     assert len(response.json()) == 4
+
+
+def test_done_bucket_auto_creation():
+    # 1. Create a project
+    project_payload = {"title": "Done Test Project"}
+    response = client.post("/projects", json=project_payload)
+    assert response.status_code == 201
+    project_id = response.json()["id"]
+
+    # 2. Delete the "done" bucket
+    response = client.delete(f"/projects/{project_id}/buckets/done")
+    assert response.status_code == 200
+
+    # Verify "done" is gone
+    response = client.get(f"/projects/{project_id}/buckets")
+    buckets = response.json()
+    assert len(buckets) == 3
+    assert not any(b["name"] == "done" for b in buckets)
+
+    # 3. Create a task in another bucket (e.g. "todo")
+    task_payload = {
+        "title": "Task 1",
+        "bucket": "todo",
+        "tags": [],
+        "body": "Body",
+    }
+    response = client.post(f"/projects/{project_id}/tasks", json=task_payload)
+    assert response.status_code == 201
+    task_id = response.json()["id"]
+
+    # 4. Move task to "done" bucket, which currently does not exist
+    move_payload = {"bucket": "done", "position": 100.0}
+    response = client.patch(f"/projects/{project_id}/tasks/{task_id}/move", json=move_payload)
+    assert response.status_code == 200
+
+    # 5. Verify the "done" bucket was automatically created and has the right title
+    response = client.get(f"/projects/{project_id}/buckets")
+    buckets = response.json()
+    assert len(buckets) == 4
+    done_bucket = next(b for b in buckets if b["name"] == "done")
+    assert done_bucket["title"] == "Done"
+    other_max = max(b["position"] for b in buckets if b["name"] != "done")
+    assert done_bucket["position"] == other_max + 1000.0
+

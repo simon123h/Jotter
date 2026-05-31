@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { marked } from 'marked';
-import { ChevronDown, ClipboardList } from '@lucide/vue';
+import { ChevronDown, ClipboardList, Check } from '@lucide/vue';
 import type { Task } from '../types';
 
 const props = defineProps<{
@@ -10,6 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'click', task: Task): void;
+  (e: 'mark-done', task: Task): void;
 }>();
 
 const isExpanded = ref(false);
@@ -77,9 +78,20 @@ const getTagClasses = (tag: string) => {
       <h4 class="text-xs font-bold text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2">
         {{ task.title }}
       </h4>
-      <span class="text-[10px] font-mono text-theme-text-muted shrink-0 font-medium bg-theme-column/40 px-1.5 py-0.5 rounded">
-        #{{ task.id }}
-      </span>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Mark Done Button -->
+        <button
+          v-if="task.bucket !== 'done'"
+          @click.stop="emit('mark-done', task)"
+          class="p-0.5 text-theme-text-muted hover:text-emerald-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
+          title="Mark as done"
+        >
+          <Check class="w-3 h-3 shrink-0" />
+        </button>
+        <span class="text-[10px] font-mono text-theme-text-muted font-medium bg-theme-column/40 px-1.5 py-0.5 rounded">
+          #{{ task.id }}
+        </span>
+      </div>
     </div>
 
     <!-- Tags List -->

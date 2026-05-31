@@ -85,6 +85,12 @@ export const de = {
     'in-progress': 'In Bearbeitung',
     done: 'Erledigt',
   },
+  doneBucket: {
+    show: '"Erledigt"-Spalte anzeigen',
+    hide: '"Erledigt"-Spalte ausblenden',
+    showText: 'Erledigte zeigen',
+    hideText: 'Erledigte ausblenden',
+  },
   projects: {
     sidebarTitle: 'Projekte',
     newProject: 'Neues Projekt',
