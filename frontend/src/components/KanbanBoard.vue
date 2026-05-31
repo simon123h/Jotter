@@ -23,6 +23,29 @@ const newColumnTitle = ref('');
 const searchQuery = ref('');
 const selectedTag = ref<string | null>(null);
 
+// View Mode state (board or list)
+const viewMode = ref<'board' | 'list'>((localStorage.getItem('jotter-view-mode') as 'board' | 'list') || 'board');
+const setViewMode = (mode: 'board' | 'list') => {
+  viewMode.value = mode;
+  localStorage.setItem('jotter-view-mode', mode);
+};
+
+// Collapsed state for columns in List view
+const collapsedColumns = ref<Record<string, boolean>>({});
+const toggleColumnCollapse = (bucketName: string) => {
+  collapsedColumns.value[bucketName] = !collapsedColumns.value[bucketName];
+};
+
+// Checklist helper
+const getChecklistStats = (body: string) => {
+  if (!body) return null;
+  const matches = body.match(/- \[[ xX]\]/g);
+  if (!matches) return null;
+  const total = matches.length;
+  const checked = (body.match(/- \[[xX]\]/g) || []).length;
+  return { checked, total };
+};
+
 // Modal state
 const isDetailOpen = ref(false);
 const selectedTaskId = ref<number | null>(null);
@@ -105,10 +128,11 @@ const allTags = computed(() => {
   return Array.from(tagsSet).sort();
 });
 
-// Filter tasks based on Search query & selected tag
+// Filter tasks based on Search query (title + body) & selected tag
 const filteredTasks = computed(() => {
+  const query = searchQuery.value.toLowerCase();
   return tasks.value.filter((task) => {
-    const matchesSearch = task.title.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const matchesSearch = task.title.toLowerCase().includes(query) || (task.body && task.body.toLowerCase().includes(query));
     const matchesTag = !selectedTag.value || (task.tags && task.tags.includes(selectedTag.value));
     return matchesSearch && matchesTag;
   });
@@ -275,93 +299,128 @@ const triggerSync = async () => {
 </script>
 
 <template>
-  <div class="flex-grow flex flex-col p-6 max-w-7xl mx-auto w-full gap-6">
+  <div class="h-screen w-full flex flex-col p-3 overflow-hidden select-none bg-theme-base">
     <!-- Header Controls -->
-    <header class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-theme-border pb-6">
-      <div>
-        <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-theme-grad-from to-theme-grad-to bg-clip-text text-transparent">
+    <header class="flex items-center justify-between gap-3 border-b border-theme-border pb-2.5 shrink-0">
+      <div class="flex items-baseline gap-2">
+        <h1 class="text-lg font-bold tracking-tight text-theme-text-main">
           {{ t('brand.title') }}
         </h1>
-        <p class="text-theme-text-muted text-sm mt-1">{{ t('brand.subtitle') }}</p>
+        <p class="text-theme-text-muted text-[10px] font-sans hidden md:inline-block border-l border-theme-border pl-2">
+          {{ t('brand.subtitle') }}
+        </p>
       </div>
 
       <!-- Toolbar Actions -->
-      <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
+      <div class="flex items-center gap-2">
         <!-- Search -->
-        <div class="relative min-w-[200px] flex-grow sm:flex-grow-0">
+        <div class="relative w-44 md:w-56">
           <input
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchPlaceholder')"
-            class="w-full bg-theme-card/80 border border-theme-border/60 rounded-xl px-4 py-2 text-sm text-theme-text-input placeholder-theme-text-muted/60 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+            class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
           />
         </div>
 
+        <!-- View Mode Toggle -->
+        <div class="flex items-center bg-theme-card border border-theme-border rounded p-0.5 shadow-sm shrink-0">
+          <button
+            @click="setViewMode('board')"
+            class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+            :class="
+              viewMode === 'board'
+                ? 'bg-theme-primary text-white'
+                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+            "
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+              />
+            </svg>
+            <span class="hidden sm:inline">{{ t('views.board') }}</span>
+          </button>
+          <button
+            @click="setViewMode('list')"
+            class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+            :class="
+              viewMode === 'list'
+                ? 'bg-theme-primary text-white'
+                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+            "
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span class="hidden sm:inline">{{ t('views.list') }}</span>
+          </button>
+        </div>
+
         <!-- Theme Selector Dropdown -->
-        <div class="relative">
-          <!-- Overlay to close dropdown -->
+        <div class="relative shrink-0">
           <div v-if="isThemeDropdownOpen" class="fixed inset-0 z-10" @click="isThemeDropdownOpen = false"></div>
 
           <button
             @click="isThemeDropdownOpen = !isThemeDropdownOpen"
-            class="relative z-20 flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-card hover:bg-theme-column/85 text-theme-text-card border border-theme-border rounded-xl transition-all shadow-sm cursor-pointer"
+            class="relative z-20 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer"
             :title="t('themeChoose')"
           >
-            <span class="w-3.5 h-3.5 rounded-full" :class="themes.find((t) => t.id === currentTheme)?.color"></span>
-            <span class="lg:hidden xl:inline">{{ t('themeLabel') }}</span>
-            <svg class="w-3.5 h-3.5 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span class="w-3 h-3 rounded-full" :class="themes.find((t) => t.id === currentTheme)?.color"></span>
+            <span class="hidden lg:inline">{{ t('themeLabel') }}</span>
+            <svg class="w-3 h-3 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
-          <!-- Dropdown Menu -->
           <div
             v-if="isThemeDropdownOpen"
-            class="absolute right-0 mt-2 w-48 bg-theme-card border border-theme-border rounded-xl shadow-xl z-20 p-1.5 space-y-1"
+            class="absolute right-0 mt-1 w-44 bg-theme-card border border-theme-border rounded shadow-xl z-20 p-1 space-y-0.5"
           >
             <button
               v-for="th in themes"
               :key="th.id"
               @click="setTheme(th.id)"
-              class="w-full flex items-center gap-3 px-3 py-2 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded-lg transition-colors text-left font-medium cursor-pointer"
-              :class="{ 'bg-theme-column/50 border border-theme-border/30': currentTheme === th.id }"
+              class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/20': currentTheme === th.id }"
             >
-              <span class="w-3 h-3 rounded-full shrink-0" :class="th.color"></span>
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="th.color"></span>
               {{ t('themeNames.' + th.id) }}
             </button>
           </div>
         </div>
 
         <!-- Language Selector Dropdown -->
-        <div class="relative">
-          <!-- Overlay to close dropdown -->
+        <div class="relative shrink-0">
           <div v-if="isLanguageDropdownOpen" class="fixed inset-0 z-10" @click="isLanguageDropdownOpen = false"></div>
 
           <button
             @click="isLanguageDropdownOpen = !isLanguageDropdownOpen"
-            class="relative z-20 flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-card hover:bg-theme-column/85 text-theme-text-card border border-theme-border rounded-xl transition-all shadow-sm cursor-pointer"
+            class="relative z-20 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer"
             :title="t('language.choose')"
           >
-            <span class="text-sm shrink-0">🌐</span>
-            <span class="lg:hidden xl:inline">{{ t('language.' + locale) }}</span>
-            <span class="hidden lg:inline xl:hidden uppercase">{{ locale }}</span>
-            <svg class="w-3.5 h-3.5 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span class="text-xs shrink-0">🌐</span>
+            <span class="hidden lg:inline">{{ t('language.' + locale) }}</span>
+            <span class="lg:hidden uppercase">{{ locale }}</span>
+            <svg class="w-3 h-3 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
-          <!-- Dropdown Menu -->
           <div
             v-if="isLanguageDropdownOpen"
-            class="absolute right-0 mt-2 w-36 bg-theme-card border border-theme-border rounded-xl shadow-xl z-20 p-1.5 space-y-1"
+            class="absolute right-0 mt-1 w-28 bg-theme-card border border-theme-border rounded shadow-xl z-20 p-1 space-y-0.5"
           >
             <button
               @click="
                 locale = 'en';
                 isLanguageDropdownOpen = false;
               "
-              class="w-full flex items-center gap-2 px-3 py-2 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded-lg transition-colors text-left font-medium cursor-pointer"
-              :class="{ 'bg-theme-column/50 border border-theme-border/30': locale === 'en' }"
+              class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/20': locale === 'en' }"
             >
               English
             </button>
@@ -370,8 +429,8 @@ const triggerSync = async () => {
                 locale = 'de';
                 isLanguageDropdownOpen = false;
               "
-              class="w-full flex items-center gap-2 px-3 py-2 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded-lg transition-colors text-left font-medium cursor-pointer"
-              :class="{ 'bg-theme-column/50 border border-theme-border/30': locale === 'de' }"
+              class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/20': locale === 'de' }"
             >
               Deutsch
             </button>
@@ -381,14 +440,14 @@ const triggerSync = async () => {
         <!-- Sync Button -->
         <button
           @click="triggerSync"
-          class="flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded-xl transition-all shadow-sm cursor-pointer"
+          class="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer shrink-0"
           :disabled="syncLoading"
           :title="t('sync.tooltip')"
         >
-          <svg class="w-4 h-4" :class="{ 'animate-spin': syncLoading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2" />
           </svg>
-          <span class="lg:hidden xl:inline">
+          <span class="hidden lg:inline">
             {{ syncLoading ? t('sync.syncing') : t('sync.button') }}
           </span>
         </button>
@@ -396,20 +455,23 @@ const triggerSync = async () => {
         <!-- New Task Button -->
         <button
           @click="openCreateModal(buckets[0]?.name || 'todo')"
-          class="flex items-center gap-2 text-xs font-semibold px-4 py-2.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-xl shadow-md hover:shadow-theme-ring/20 transition-all cursor-pointer"
+          class="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm hover:shadow-theme-ring/10 transition-all cursor-pointer shrink-0"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          {{ t('addTaskButton') }}
+          <span class="hidden sm:inline">{{ t('addTaskButton') }}</span>
         </button>
       </div>
     </header>
 
     <!-- Error Banner -->
-    <div v-if="error" class="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl flex justify-between items-center">
+    <div
+      v-if="error"
+      class="mt-2 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded flex justify-between items-center shrink-0"
+    >
       <span>{{ error }}</span>
-      <button @click="error = null" class="hover:text-white">
+      <button @click="error = null" class="hover:text-white cursor-pointer">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -417,11 +479,11 @@ const triggerSync = async () => {
     </div>
 
     <!-- Horizontal Tag Filter List -->
-    <div v-if="allTags.length" class="flex items-center gap-2 overflow-x-auto pb-2 shrink-0">
-      <span class="text-xs font-bold text-theme-text-muted uppercase tracking-wider shrink-0">{{ t('tagsLabel') }}</span>
+    <div v-if="allTags.length" class="flex items-center gap-1.5 overflow-x-auto pb-1.5 mt-2.5 shrink-0 scroller-thin">
+      <span class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider shrink-0 mr-1">{{ t('tagsLabel') }}</span>
       <button
         @click="selectedTag = null"
-        class="text-xs font-semibold px-3 py-1 rounded-full border transition-all shrink-0 cursor-pointer"
+        class="text-[10px] font-semibold px-2 py-0.5 rounded border transition-all shrink-0 cursor-pointer"
         :class="
           !selectedTag
             ? 'bg-theme-primary/15 border-theme-accent text-theme-accent font-bold shadow-sm'
@@ -434,7 +496,7 @@ const triggerSync = async () => {
         v-for="tag in allTags"
         :key="tag"
         @click="selectedTag = tag === selectedTag ? null : tag"
-        class="text-xs font-semibold px-3 py-1 rounded-full border transition-all shrink-0 cursor-pointer"
+        class="text-[10px] font-semibold px-2 py-0.5 rounded border transition-all shrink-0 cursor-pointer"
         :class="
           tag === selectedTag
             ? 'bg-theme-primary/15 border-theme-accent text-theme-accent font-bold shadow-sm'
@@ -445,96 +507,217 @@ const triggerSync = async () => {
       </button>
     </div>
 
-    <!-- Loading Board state -->
-    <div v-if="loading && !tasks.length" class="flex-grow flex flex-col items-center justify-center py-20 gap-3">
-      <div class="w-12 h-12 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
-      <span class="text-theme-text-muted">{{ t('loadingBoard') }}</span>
-    </div>
-
-    <!-- Empty Board state -->
-    <div
-      v-else-if="!tasks.length"
-      class="flex-grow flex flex-col items-center justify-center text-center py-20 bg-theme-column/10 border border-dashed border-theme-border rounded-3xl p-8"
-    >
-      <div class="p-4 bg-theme-card/50 rounded-full border border-theme-border mb-4 text-theme-accent">
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-          />
-        </svg>
+    <!-- Main Content Panel (Responsive Layout Flex) -->
+    <div class="flex-grow overflow-hidden mt-2.5 relative">
+      <!-- Loading Board state -->
+      <div v-if="loading && !tasks.length" class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+        <div class="w-10 h-10 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
+        <span class="text-theme-text-muted text-xs">{{ t('loadingBoard') }}</span>
       </div>
-      <h3 class="font-bold text-theme-text-main text-lg">{{ t('emptyStateTitle') }}</h3>
-      <p class="text-theme-text-muted text-sm max-w-sm mt-1">
-        {{ t('emptyStateText') }}
-      </p>
-      <button
-        @click="openCreateModal(buckets[0]?.name || 'todo')"
-        class="mt-5 text-xs font-semibold px-4.5 py-2.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-xl shadow-md transition-all cursor-pointer"
-      >
-        {{ t('createFirstTaskButton') }}
-      </button>
-    </div>
 
-    <!-- Board Columns (Horizontal Scrolling Flex) -->
-    <div v-else class="flex-grow flex gap-6 items-start overflow-x-auto pb-4 w-full select-none">
-      <KanbanColumn
-        v-for="(b, idx) in buckets"
-        :key="b.name"
-        :bucket-name="b.name"
-        :title="b.title"
-        :tasks="tasksByBucket[b.name] || []"
-        :is-first="idx === 0"
-        :is-last="idx === buckets.length - 1"
-        @task-click="openDetailModal"
-        @add-task-click="openCreateModal"
-        @card-dropped="handleCardDropped"
-        @rename-column="handleRenameColumn"
-        @delete-column="handleDeleteColumn"
-        @move-column="handleMoveColumn"
-      />
-
-      <!-- Add Column Card -->
+      <!-- Empty Board state -->
       <div
-        class="flex flex-col bg-theme-column/20 border border-dashed border-theme-border/60 rounded-2xl w-72 shrink-0 p-4 transition-all"
+        v-else-if="!tasks.length"
+        class="h-full flex flex-col items-center justify-center text-center bg-theme-column/10 border border-dashed border-theme-border rounded p-6"
       >
-        <div v-if="!isAddingColumn" class="flex items-center justify-center h-28">
-          <button
-            @click="isAddingColumn = true"
-            class="flex flex-col items-center gap-2 text-theme-text-muted hover:text-theme-text-main font-semibold text-xs cursor-pointer w-full py-6 rounded-xl hover:bg-theme-card/30 transition-all"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            {{ t('buttons.addColumn') }}
-          </button>
+        <div class="p-3 bg-theme-card/50 rounded border border-theme-border mb-3 text-theme-accent">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+            />
+          </svg>
         </div>
-        <div v-else class="space-y-3">
-          <h4 class="font-bold text-xs uppercase tracking-wider text-theme-text-muted">{{ t('newColumnTitle') }}</h4>
-          <input
-            v-model="newColumnTitle"
-            type="text"
-            :placeholder="t('columnTitlePlaceholder')"
-            class="w-full bg-theme-card border border-theme-border/60 rounded-xl px-3 py-2 text-xs text-theme-text-input placeholder-theme-text-muted/60 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            @keyup.enter="handleAddColumn"
-            @keyup.esc="isAddingColumn = false"
-            autofocus
-          />
-          <div class="flex gap-2 justify-end">
+        <h3 class="font-bold text-theme-text-main text-sm">{{ t('emptyStateTitle') }}</h3>
+        <p class="text-theme-text-muted text-xs max-w-sm mt-0.5">
+          {{ t('emptyStateText') }}
+        </p>
+        <button
+          @click="openCreateModal(buckets[0]?.name || 'todo')"
+          class="mt-4 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow transition-all cursor-pointer"
+        >
+          {{ t('createFirstTaskButton') }}
+        </button>
+      </div>
+
+      <!-- Board View Columns (Horizontal Scrolling Flex) -->
+      <div v-else-if="viewMode === 'board'" class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
+        <KanbanColumn
+          v-for="(b, idx) in buckets"
+          :key="b.name"
+          :bucket-name="b.name"
+          :title="b.title"
+          :tasks="tasksByBucket[b.name] || []"
+          :is-first="idx === 0"
+          :is-last="idx === buckets.length - 1"
+          @task-click="openDetailModal"
+          @add-task-click="openCreateModal"
+          @card-dropped="handleCardDropped"
+          @rename-column="handleRenameColumn"
+          @delete-column="handleDeleteColumn"
+          @move-column="handleMoveColumn"
+        />
+
+        <!-- Add Column Card -->
+        <div
+          class="flex flex-col bg-theme-column/20 border border-dashed border-theme-border/60 rounded w-72 shrink-0 p-3 h-full justify-between"
+        >
+          <div v-if="!isAddingColumn" class="flex items-center justify-center h-20 flex-grow">
             <button
-              @click="isAddingColumn = false"
-              class="text-[10px] font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded-lg cursor-pointer"
+              @click="isAddingColumn = true"
+              class="flex flex-col items-center gap-1.5 text-theme-text-muted hover:text-theme-text-main font-semibold text-xs cursor-pointer w-full py-4 rounded hover:bg-theme-card/30 transition-all"
             >
-              {{ t('buttons.cancel') }}
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              {{ t('buttons.addColumn') }}
             </button>
-            <button
-              @click="handleAddColumn"
-              class="text-[10px] font-semibold px-2.5 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-lg cursor-pointer"
+          </div>
+          <div v-else class="space-y-2.5 flex-grow">
+            <h4 class="font-bold text-[10px] uppercase tracking-wider text-theme-text-muted">{{ t('newColumnTitle') }}</h4>
+            <input
+              v-model="newColumnTitle"
+              type="text"
+              :placeholder="t('columnTitlePlaceholder')"
+              class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              @keyup.enter="handleAddColumn"
+              @keyup.esc="isAddingColumn = false"
+              autofocus
+            />
+            <div class="flex gap-1.5 justify-end">
+              <button
+                @click="isAddingColumn = false"
+                class="text-[10px] font-semibold px-2 py-1 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded cursor-pointer"
+              >
+                {{ t('buttons.cancel') }}
+              </button>
+              <button
+                @click="handleAddColumn"
+                class="text-[10px] font-semibold px-2 py-1 bg-theme-primary hover:bg-theme-primary-hover text-white rounded cursor-pointer"
+              >
+                {{ t('buttons.add') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- List View Mode (Data dense Table View) -->
+      <div v-else-if="viewMode === 'list'" class="h-full overflow-y-auto scroller-thin border border-theme-border rounded bg-theme-card/10">
+        <div class="min-w-[800px] w-full border-collapse text-left font-sans text-xs">
+          <!-- Table Header -->
+          <div
+            class="flex items-center bg-theme-column/60 border-b border-theme-border text-[10px] font-bold uppercase tracking-wider text-theme-text-muted px-3 py-2 select-none sticky top-0 z-10 backdrop-blur-sm"
+          >
+            <span class="w-16 shrink-0">{{ t('table.id') }}</span>
+            <span class="flex-grow min-w-0">{{ t('table.title') }}</span>
+            <span class="w-20 shrink-0 text-center">{{ t('table.progress') }}</span>
+            <span class="w-52 shrink-0">{{ t('table.tags') }}</span>
+            <span class="w-28 shrink-0 text-right">{{ t('table.updated') }}</span>
+          </div>
+
+          <!-- Grouped by bucket -->
+          <div v-for="b in buckets" :key="b.name" class="border-b border-theme-border last:border-b-0">
+            <!-- Group Header -->
+            <div
+              @click="toggleColumnCollapse(b.name)"
+              class="bg-theme-column/25 px-3 py-1.5 flex items-center gap-2 cursor-pointer select-none hover:bg-theme-column/40 border-b border-theme-border/30 text-[10px] font-bold uppercase tracking-wider text-theme-text-muted"
             >
-              {{ t('buttons.add') }}
-            </button>
+              <svg
+                class="w-3.5 h-3.5 transform transition-transform text-theme-text-muted"
+                :class="{ '-rotate-90': collapsedColumns[b.name] }"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+              <span>{{ t('buckets.' + b.name) || b.title }}</span>
+              <span class="px-1 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted rounded text-[9px] font-bold">
+                {{ tasksByBucket[b.name]?.length || 0 }}
+              </span>
+            </div>
+
+            <!-- Group Rows -->
+            <div v-show="!collapsedColumns[b.name]" class="divide-y divide-theme-border/30 bg-theme-card/10">
+              <div
+                v-if="!tasksByBucket[b.name] || !tasksByBucket[b.name].length"
+                class="px-8 py-2 text-theme-text-muted italic text-[11px]"
+              >
+                No tasks in this column.
+              </div>
+              <div
+                v-else
+                v-for="task in tasksByBucket[b.name]"
+                :key="task.id"
+                @click="openDetailModal(task)"
+                class="flex items-center hover:bg-theme-column/20 px-3 py-2 cursor-pointer transition-colors duration-100 gap-3 group"
+              >
+                <!-- Task ID -->
+                <span class="font-mono text-theme-text-muted text-[10px] w-16 shrink-0 font-medium"> #{{ task.id }} </span>
+
+                <!-- Task Title + Note snippet -->
+                <div class="flex-grow min-w-0 flex items-baseline gap-2 overflow-hidden">
+                  <span class="font-bold text-theme-text-card group-hover:text-theme-accent transition-colors truncate">
+                    {{ task.title }}
+                  </span>
+                  <!-- Sneak peak of markdown body if available -->
+                  <span v-if="task.body" class="text-theme-text-muted/60 text-[10px] truncate italic max-w-[28rem] font-sans">
+                    -
+                    {{
+                      task.body
+                        .replace(/#+\s+/g, '')
+                        .replace(/[-\*]\s+\[[ xX]\]/g, '')
+                        .replace(/[-\*]\s+/g, '')
+                        .replace(/[`\*_]/g, '')
+                        .replace(/\s+/g, ' ')
+                        .trim()
+                    }}
+                  </span>
+                </div>
+
+                <!-- Checklist Stats -->
+                <div class="w-20 shrink-0 flex items-center justify-center">
+                  <span
+                    v-if="getChecklistStats(task.body)"
+                    class="flex items-center gap-1 text-[9px] font-bold"
+                    :class="
+                      getChecklistStats(task.body).checked === getChecklistStats(task.body).total
+                        ? 'text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20'
+                        : 'text-theme-text-muted'
+                    "
+                  >
+                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"
+                      />
+                    </svg>
+                    <span>{{ getChecklistStats(task.body).checked }}/{{ getChecklistStats(task.body).total }}</span>
+                  </span>
+                </div>
+
+                <!-- Tags -->
+                <div class="w-52 shrink-0 overflow-hidden flex flex-wrap gap-1">
+                  <span
+                    v-for="tag in task.tags"
+                    :key="tag"
+                    class="text-[9px] uppercase font-bold tracking-wider px-1 py-0.5 rounded border bg-theme-column/30 text-theme-text-muted border-theme-border/45"
+                  >
+                    {{ tag }}
+                  </span>
+                </div>
+
+                <!-- Updated Date -->
+                <span class="w-28 shrink-0 text-right text-[10px] text-theme-text-muted font-mono">
+                  {{ new Date(task.updated_at).toLocaleString() }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

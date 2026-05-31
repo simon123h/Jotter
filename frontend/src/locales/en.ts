@@ -90,4 +90,16 @@ export const en = {
     en: 'English',
     de: 'Deutsch',
   },
+  views: {
+    board: 'Board',
+    list: 'List View',
+  },
+  table: {
+    id: 'ID',
+    title: 'Title',
+    status: 'Status',
+    tags: 'Tags',
+    progress: 'Progress',
+    updated: 'Updated',
+  },
 };

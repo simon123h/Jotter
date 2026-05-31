@@ -179,3 +179,25 @@
   --theme-text-muted: #57534e; /* stone-600 */
   --theme-text-input: #1c1917;
 }
+
+/* Custom global high-density thin scrollbar */
+.scroller-thin {
+  --scrollbar-thumb: var(--theme-border);
+  --scrollbar-track: transparent;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+@supports not (scrollbar-color: auto) {
+  .scroller-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scroller-thin::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 3px;
+  }
+  .scroller-thin::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+}

@@ -83,23 +83,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    class="flex flex-col bg-theme-column border border-theme-border rounded-2xl w-full max-h-[80vh] min-w-[280px] w-72 shrink-0 md:w-80 group/col"
-  >
+  <div class="flex flex-col bg-theme-column border border-theme-border rounded w-full h-full min-w-[280px] w-72 shrink-0 md:w-80 group/col">
     <!-- Column Header -->
-    <div class="px-4 py-3 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t-2xl shrink-0">
+    <div class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t shrink-0">
       <!-- Title Area (Normal or Edit Mode) -->
-      <div class="flex-grow flex items-center gap-2 overflow-hidden mr-1">
-        <div v-if="!isEditing" class="flex items-center gap-2 overflow-hidden">
+      <div class="flex-grow flex items-center gap-1.5 overflow-hidden mr-1">
+        <div v-if="!isEditing" class="flex items-center gap-1.5 overflow-hidden">
           <h3
-            class="font-black text-xs uppercase tracking-wider text-theme-text-main truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
+            class="font-bold text-xs uppercase tracking-wider text-theme-text-main truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
             @dblclick="startEditing"
             :title="t('doubleClickToRename')"
           >
             {{ displayTitle }}
           </h3>
           <span
-            class="text-[10px] px-1.5 py-0.5 bg-theme-card border border-theme-border/60 text-theme-text-muted font-extrabold rounded-full shrink-0"
+            class="text-[9px] px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0"
           >
             {{ tasks.length }}
           </span>
@@ -109,7 +107,7 @@ onMounted(() => {
             ref="titleInputRef"
             v-model="editTitle"
             type="text"
-            class="bg-theme-card border border-theme-primary/60 rounded px-2 py-1 text-xs font-bold text-theme-text-input focus:outline-none w-full"
+            class="bg-theme-card border border-theme-primary/60 rounded px-1.5 py-0.5 text-xs font-bold text-theme-text-input focus:outline-none w-full"
             @keyup.enter="saveTitle"
             @keyup.esc="cancelEditing"
             @blur="saveTitle"
@@ -118,7 +116,7 @@ onMounted(() => {
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex items-center gap-1 shrink-0">
+      <div class="flex items-center gap-0.5 shrink-0">
         <!-- Move Left -->
         <button
           v-if="!isFirst && !isEditing"
@@ -190,7 +188,7 @@ onMounted(() => {
           class="text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card p-1 rounded transition-colors cursor-pointer border border-theme-border/20 shadow-sm"
           :title="t('colAddTooltip')"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
         </button>
@@ -201,23 +199,9 @@ onMounted(() => {
     <div
       ref="cardsContainer"
       :data-bucket-name="bucketName"
-      class="flex-grow p-4 overflow-y-auto space-y-3 min-h-[150px] scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent"
+      class="flex-grow p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] scroller-thin"
     >
       <TaskCard v-for="task in tasks" :key="task.id" :task="task" :data-task-id="task.id" @click="emit('task-click', task)" />
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Scoped scrollbar styling for board lists */
-.scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
-}
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: var(--theme-border);
-  border-radius: 20px;
-}
-</style>

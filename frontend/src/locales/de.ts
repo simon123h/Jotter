@@ -91,4 +91,16 @@ export const de = {
     en: 'English',
     de: 'Deutsch',
   },
+  views: {
+    board: 'Board',
+    list: 'Listenansicht',
+  },
+  table: {
+    id: 'ID',
+    title: 'Titel',
+    status: 'Spalte',
+    tags: 'Tags',
+    progress: 'Fortschritt',
+    updated: 'Aktualisiert',
+  },
 };
