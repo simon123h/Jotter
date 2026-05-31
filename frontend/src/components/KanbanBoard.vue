@@ -4,6 +4,7 @@ import type { Task, Bucket, BucketName, Project } from '../types';
 import {
   getTasks,
   moveTask,
+  updateTask,
   syncSystem,
   getBuckets,
   createBucket,
@@ -410,6 +411,72 @@ const triggerSync = async () => {
     syncLoading.value = false;
   }
 };
+
+/** Compute a due-date string for a time-view column and persist it. */
+const handleTimeViewDueDateUpdate = async ({ taskId, columnId }: { taskId: number; columnId: string }) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let newDueDate: string | null = null;
+
+  switch (columnId) {
+    case 'today':
+      newDueDate = formatDateISO(today);
+      break;
+    case 'tomorrow': {
+      const d = new Date(today);
+      d.setDate(d.getDate() + 1);
+      newDueDate = formatDateISO(d);
+      break;
+    }
+    case 'thisWeek': {
+      // End of current ISO week (Sunday)
+      const d = new Date(today);
+      const dayOfWeek = d.getDay(); // 0=Sun
+      const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+      d.setDate(d.getDate() + daysUntilSunday);
+      newDueDate = formatDateISO(d);
+      break;
+    }
+    case 'thisMonth': {
+      const d = new Date(today);
+      d.setDate(d.getDate() + 30);
+      newDueDate = formatDateISO(d);
+      break;
+    }
+    case 'thisYear': {
+      const d = new Date(today.getFullYear(), 11, 31); // Dec 31
+      newDueDate = formatDateISO(d);
+      break;
+    }
+    case 'noDate':
+    default:
+      newDueDate = null;
+      break;
+  }
+
+  // Optimistic local update
+  const task = tasks.value.find((t) => t.id === taskId);
+  if (!task) return;
+
+  const originalDueDate = task.due_date;
+  task.due_date = newDueDate ?? undefined;
+
+  try {
+    await updateTask(activeProjectId.value, taskId, { due_date: newDueDate as any });
+  } catch (err: any) {
+    // Revert on failure
+    task.due_date = originalDueDate;
+    error.value = err.message || 'Failed to update due date';
+  }
+};
+
+const formatDateISO = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 </script>
 
 <template>
@@ -721,6 +788,7 @@ const triggerSync = async () => {
             :tasks="filteredTasks"
             @task-click="openDetailModal"
             @mark-done="handleMarkTaskDone"
+            @update-due-date="handleTimeViewDueDateUpdate"
           />
         </div>
 

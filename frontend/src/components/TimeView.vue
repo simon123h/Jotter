@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-
+import { computed, onMounted, ref, nextTick, watch } from 'vue';
+import Sortable from 'sortablejs';
 import type { Task } from '../types';
 import TaskCard from './TaskCard.vue';
 import { useI18n } from '../composables/useI18n';
@@ -14,16 +14,21 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'mark-done', task: Task): void;
+  (e: 'update-due-date', payload: { taskId: number; columnId: string }): void;
 }>();
+
+export type TimeColumnId = 'noDate' | 'today' | 'tomorrow' | 'thisWeek' | 'thisMonth' | 'thisYear';
 
 // Group tasks into relative time columns
 const timeColumns = computed(() => {
-  const todayCols: Task[] = [];
-  const tomorrowCols: Task[] = [];
-  const thisWeekCols: Task[] = [];
-  const thisMonthCols: Task[] = [];
-  const thisYearCols: Task[] = [];
-  const noDateCols: Task[] = [];
+  const groups: Record<TimeColumnId, Task[]> = {
+    noDate: [],
+    today: [],
+    tomorrow: [],
+    thisWeek: [],
+    thisMonth: [],
+    thisYear: [],
+  };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -33,7 +38,7 @@ const timeColumns = computed(() => {
     if (task.bucket === 'done') return;
 
     if (!task.due_date) {
-      noDateCols.push(task);
+      groups.noDate.push(task);
       return;
     }
 
@@ -44,31 +49,77 @@ const timeColumns = computed(() => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays <= 0) {
-      todayCols.push(task);
+      groups.today.push(task);
     } else if (diffDays === 1) {
-      tomorrowCols.push(task);
+      groups.tomorrow.push(task);
     } else if (diffDays > 1 && diffDays <= 7) {
-      thisWeekCols.push(task);
+      groups.thisWeek.push(task);
     } else if (diffDays > 7 && diffDays <= 30) {
-      thisMonthCols.push(task);
+      groups.thisMonth.push(task);
     } else {
-      thisYearCols.push(task);
+      groups.thisYear.push(task);
     }
   });
 
   return [
-    { id: 'today', title: t('timeView.today'), tasks: todayCols, bgClass: 'bg-red-500/5', borderClass: 'border-red-500/20' },
-    { id: 'tomorrow', title: t('timeView.tomorrow'), tasks: tomorrowCols, bgClass: 'bg-orange-500/5', borderClass: 'border-orange-500/20' },
-    { id: 'thisWeek', title: t('timeView.thisWeek'), tasks: thisWeekCols, bgClass: 'bg-yellow-500/5', borderClass: 'border-yellow-500/20' },
-    { id: 'thisMonth', title: t('timeView.thisMonth'), tasks: thisMonthCols, bgClass: 'bg-blue-500/5', borderClass: 'border-blue-500/20' },
-    { id: 'thisYear', title: t('timeView.thisYear'), tasks: thisYearCols, bgClass: 'bg-emerald-500/5', borderClass: 'border-emerald-500/20' },
-    { id: 'noDate', title: t('timeView.noDate'), tasks: noDateCols, bgClass: 'bg-slate-500/5', borderClass: 'border-slate-500/20' },
+    { id: 'noDate' as TimeColumnId, title: t('timeView.noDate'), tasks: groups.noDate, bgClass: 'bg-slate-500/5' },
+    { id: 'today' as TimeColumnId, title: t('timeView.today'), tasks: groups.today, bgClass: 'bg-red-500/5' },
+    { id: 'tomorrow' as TimeColumnId, title: t('timeView.tomorrow'), tasks: groups.tomorrow, bgClass: 'bg-orange-500/5' },
+    { id: 'thisWeek' as TimeColumnId, title: t('timeView.thisWeek'), tasks: groups.thisWeek, bgClass: 'bg-yellow-500/5' },
+    { id: 'thisMonth' as TimeColumnId, title: t('timeView.thisMonth'), tasks: groups.thisMonth, bgClass: 'bg-blue-500/5' },
+    { id: 'thisYear' as TimeColumnId, title: t('timeView.thisYear'), tasks: groups.thisYear, bgClass: 'bg-emerald-500/5' },
   ];
+});
+
+// Sortable drag-and-drop between time columns
+const columnsContainer = ref<HTMLElement | null>(null);
+const sortableInstances: Sortable[] = [];
+
+const initSortable = () => {
+  // Destroy old instances
+  sortableInstances.forEach((s) => s.destroy());
+  sortableInstances.length = 0;
+
+  if (!columnsContainer.value) return;
+
+  const cardContainers = columnsContainer.value.querySelectorAll<HTMLElement>('[data-column-id]');
+  cardContainers.forEach((container) => {
+    const instance = Sortable.create(container, {
+      group: 'time-view',
+      animation: 180,
+      delay: 0,
+      ghostClass: 'opacity-40',
+      chosenClass: 'scale-[1.02]',
+      dragClass: 'rotate-1',
+      onEnd: (evt) => {
+        const { item, from, to } = evt;
+        // Skip if dropped back in the same column (just reordering within)
+        if (from === to) return;
+
+        const taskId = Number(item.getAttribute('data-task-id'));
+        const columnId = to.getAttribute('data-column-id') as string;
+
+        if (!taskId || !columnId) return;
+
+        emit('update-due-date', { taskId, columnId });
+      },
+    });
+    sortableInstances.push(instance);
+  });
+};
+
+onMounted(() => {
+  nextTick(() => initSortable());
+});
+
+// Re-init Sortable when the task grouping changes so empty columns stay droppable
+watch(timeColumns, () => {
+  nextTick(() => initSortable());
 });
 </script>
 
 <template>
-  <div class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
+  <div ref="columnsContainer" class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
     <div
       v-for="col in timeColumns"
       :key="col.id"
@@ -89,16 +140,19 @@ const timeColumns = computed(() => {
         </div>
       </div>
 
-      <!-- Cards Container -->
-      <div class="flex-grow p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] scroller-thin">
-        <div v-if="!col.tasks.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-[11px] py-12">
+      <!-- Cards Container (droppable zone) -->
+      <div
+        :data-column-id="col.id"
+        class="flex-grow p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] scroller-thin"
+      >
+        <div v-if="!col.tasks.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-[11px] py-12 pointer-events-none">
           {{ t('timeView.emptyColumn') }}
         </div>
         <TaskCard
-          v-else
           v-for="task in col.tasks"
           :key="task.id"
           :task="task"
+          :data-task-id="task.id"
           @click="emit('task-click', task)"
           @mark-done="emit('mark-done', task)"
         />

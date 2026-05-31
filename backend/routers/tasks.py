@@ -174,8 +174,9 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
     updated_position = task_update.position if task_update.position is not None else existing["position"]
     updated_tags = task_update.tags if task_update.tags is not None else existing["tags"]
     updated_body = task_update.body if task_update.body is not None else existing["body"]
-    updated_due_date = task_update.due_date if task_update.due_date is not None else existing.get("due_date")
-    updated_priority = task_update.priority if task_update.priority is not None else existing.get("priority")
+    # due_date and priority support explicit null to clear the field
+    updated_due_date = task_update.due_date if "due_date" in task_update.model_fields_set else existing.get("due_date")
+    updated_priority = task_update.priority if "priority" in task_update.model_fields_set else existing.get("priority")
 
     updated_data = {
         "id": task_id,
