@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { Plus } from '@lucide/vue';
 import type { Task, Bucket, BucketName } from '../types';
 import KanbanColumn from './KanbanColumn.vue';
 import { useI18n } from '../composables/useI18n';
@@ -61,9 +62,7 @@ const handleAddColumn = () => {
           @click="isAddingColumn = true"
           class="flex flex-col items-center gap-1.5 text-theme-text-muted hover:text-theme-text-main font-semibold text-xs cursor-pointer w-full py-4 rounded hover:bg-theme-card/30 transition-all"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+          <Plus class="w-5 h-5 shrink-0" />
           {{ t('buttons.addColumn') }}
         </button>
       </div>

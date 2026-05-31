@@ -5,6 +5,7 @@ import type { Task, BucketName } from '../types';
 import { getTask, updateTask, deleteTask } from '../api';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
+import { X } from '@lucide/vue';
 
 const { t } = useI18n();
 const { showDialog } = useDialog();
@@ -173,9 +174,7 @@ const cancelEdit = () => {
           @click="emit('close')"
           class="text-slate-400 hover:text-white transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X class="w-4 h-4 shrink-0" />
         </button>
       </div>
 

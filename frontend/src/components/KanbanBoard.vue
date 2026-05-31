@@ -21,7 +21,7 @@ import ListView from './ListView.vue';
 import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
-import { Globe } from '@lucide/vue';
+import { Globe, LayoutGrid, List, ChevronDown, RefreshCw, Plus, X, ClipboardList } from '@lucide/vue';
 
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();
@@ -419,14 +419,7 @@ const triggerSync = async () => {
                   : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
               "
             >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                />
-              </svg>
+              <LayoutGrid class="w-3.5 h-3.5" />
               <span class="hidden sm:inline">{{ t('views.board') }}</span>
             </button>
             <button
@@ -438,9 +431,7 @@ const triggerSync = async () => {
                   : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
               "
             >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
+              <List class="w-3.5 h-3.5" />
               <span class="hidden sm:inline">{{ t('views.list') }}</span>
             </button>
           </div>
@@ -456,9 +447,7 @@ const triggerSync = async () => {
             >
               <span class="w-3 h-3 rounded-full" :class="themes.find((t) => t.id === currentTheme)?.color"></span>
               <span class="hidden lg:inline">{{ t('themeLabel') }}</span>
-              <svg class="w-3 h-3 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDown class="w-3 h-3 text-theme-text-muted" />
             </button>
 
             <div
@@ -490,9 +479,7 @@ const triggerSync = async () => {
               <Globe class="w-3.5 h-3.5 text-theme-text-muted shrink-0 mr-0.5" />
               <span class="hidden lg:inline">{{ t('language.' + locale) }}</span>
               <span class="lg:hidden uppercase">{{ locale }}</span>
-              <svg class="w-3 h-3 text-theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDown class="w-3 h-3 text-theme-text-muted" />
             </button>
 
             <div
@@ -529,9 +516,7 @@ const triggerSync = async () => {
             :disabled="syncLoading"
             :title="t('sync.tooltip')"
           >
-            <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2" />
-            </svg>
+            <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" />
             <span class="hidden lg:inline">
               {{ syncLoading ? t('sync.syncing') : t('sync.button') }}
             </span>
@@ -542,9 +527,7 @@ const triggerSync = async () => {
             @click="openCreateModal(buckets[0]?.name || 'todo')"
             class="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm hover:shadow-theme-ring/10 transition-all cursor-pointer shrink-0"
           >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus class="w-3.5 h-3.5" />
             <span class="hidden sm:inline">{{ t('addTaskButton') }}</span>
           </button>
         </div>
@@ -557,9 +540,7 @@ const triggerSync = async () => {
       >
         <span>{{ error }}</span>
         <button @click="error = null" class="hover:text-white cursor-pointer">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X class="w-4 h-4" />
         </button>
       </div>
 
@@ -606,14 +587,7 @@ const triggerSync = async () => {
           class="h-full flex flex-col items-center justify-center text-center bg-theme-column/10 border border-dashed border-theme-border rounded p-6"
         >
           <div class="p-3 bg-theme-card/50 rounded border border-theme-border mb-3 text-theme-accent">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1.5"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-              />
-            </svg>
+            <ClipboardList class="w-6 h-6" />
           </div>
           <h3 class="font-bold text-theme-text-main text-sm">{{ t('emptyStateTitle') }}</h3>
           <p class="text-theme-text-muted text-xs max-w-sm mt-0.5">

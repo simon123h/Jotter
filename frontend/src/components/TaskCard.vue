@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { marked } from 'marked';
+import { ChevronDown, ClipboardList } from '@lucide/vue';
 import type { Task } from '../types';
 
 const props = defineProps<{
@@ -109,15 +110,7 @@ const getTagClasses = (tag: string) => {
           class="shrink-0 p-0.5 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer"
           :title="isExpanded ? 'Collapse notes' : 'Expand notes'"
         >
-          <svg
-            class="w-3.5 h-3.5 transform transition-transform"
-            :class="{ 'rotate-180': isExpanded }"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
+          <ChevronDown class="w-3.5 h-3.5 transform transition-transform animate-duration-150" :class="{ 'rotate-180': isExpanded }" />
         </button>
       </div>
 
@@ -142,14 +135,7 @@ const getTagClasses = (tag: string) => {
             : 'text-theme-text-muted'
         "
       >
-        <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-          />
-        </svg>
+        <ClipboardList class="w-3 h-3 shrink-0" />
         <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
       </div>
       <div v-else></div>

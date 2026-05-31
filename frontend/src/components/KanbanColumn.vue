@@ -4,6 +4,7 @@ import Sortable from 'sortablejs';
 import type { Task, BucketName } from '../types';
 import TaskCard from './TaskCard.vue';
 import { useI18n } from '../composables/useI18n';
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Plus } from '@lucide/vue';
 
 const { t } = useI18n();
 
@@ -124,9 +125,7 @@ onMounted(() => {
           class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card rounded transition-colors cursor-pointer animate-fade-in"
           :title="t('moveColumnLeftTooltip')"
         >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
+          <ChevronLeft class="w-3.5 h-3.5 shrink-0" />
         </button>
 
         <!-- Move Right -->
@@ -136,9 +135,7 @@ onMounted(() => {
           class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card rounded transition-colors cursor-pointer animate-fade-in"
           :title="t('moveColumnRightTooltip')"
         >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
+          <ChevronRight class="w-3.5 h-3.5 shrink-0" />
         </button>
 
         <!-- Rename Column -->
@@ -148,14 +145,7 @@ onMounted(() => {
           class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card rounded transition-colors cursor-pointer"
           :title="t('renameColumnTooltip')"
         >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-            />
-          </svg>
+          <Pencil class="w-3.5 h-3.5 shrink-0" />
         </button>
 
         <!-- Delete Column -->
@@ -171,14 +161,7 @@ onMounted(() => {
           "
           :title="tasks.length > 0 ? t('deleteColumnDisabledTooltip') : t('deleteColumnTooltip')"
         >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
+          <Trash2 class="w-3.5 h-3.5 shrink-0" />
         </button>
 
         <!-- Add Task -->
@@ -188,9 +171,7 @@ onMounted(() => {
           class="text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card p-1 rounded transition-colors cursor-pointer border border-theme-border/20 shadow-sm"
           :title="t('colAddTooltip')"
         >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+          <Plus class="w-3.5 h-3.5 shrink-0" />
         </button>
       </div>
     </div>
