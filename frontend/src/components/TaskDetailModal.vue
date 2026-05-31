@@ -4,8 +4,10 @@ import { marked } from 'marked';
 import type { Task, BucketName } from '../types';
 import { getTask, updateTask, deleteTask } from '../api';
 import { useI18n } from '../composables/useI18n';
+import { useDialog } from '../composables/useDialog';
 
 const { t } = useI18n();
+const { showDialog } = useDialog();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -112,7 +114,15 @@ const handleSave = async () => {
 
 const handleDelete = async () => {
   if (!task.value) return;
-  if (!confirm(t('deleteConfirm'))) return;
+  const confirmed = await showDialog({
+    title: t('buttons.delete'),
+    message: t('deleteConfirm'),
+    type: 'warning',
+    showCancel: true,
+    confirmText: t('buttons.delete'),
+    cancelText: t('buttons.cancel'),
+  });
+  if (!confirmed) return;
 
   loading.value = true;
   error.value = null;

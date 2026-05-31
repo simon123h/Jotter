@@ -19,8 +19,10 @@ import TaskCreateModal from './TaskCreateModal.vue';
 import BoardView from './BoardView.vue';
 import ListView from './ListView.vue';
 import { useI18n } from '../composables/useI18n';
+import { useDialog } from '../composables/useDialog';
 
 const { locale, t } = useI18n();
+const { showDialog } = useDialog();
 
 const tasks = ref<Task[]>([]);
 const buckets = ref<Bucket[]>([]);
@@ -161,11 +163,22 @@ const saveRenameProject = async () => {
 
 const handleDeleteProject = async (project: Project) => {
   if (project.id === 'default') {
-    alert(t('projects.deleteProjectDefaultError'));
+    await showDialog({
+      title: t('projects.sidebarTitle'),
+      message: t('projects.deleteProjectDefaultError'),
+      type: 'error',
+    });
     return;
   }
-  const message = t('projects.deleteProjectConfirm', { title: project.title });
-  if (!confirm(message)) return;
+  const confirmed = await showDialog({
+    title: t('buttons.delete'),
+    message: t('projects.deleteProjectConfirm', { title: project.title }),
+    type: 'warning',
+    showCancel: true,
+    confirmText: t('buttons.delete'),
+    cancelText: t('buttons.cancel'),
+  });
+  if (!confirmed) return;
 
   try {
     await deleteProject(project.id);
@@ -380,7 +393,11 @@ const triggerSync = async () => {
   error.value = null;
   try {
     const result = await syncSystem();
-    alert(t('sync.success', { count: result.synchronized_tasks }));
+    await showDialog({
+      title: t('sync.button'),
+      message: t('sync.success', { count: result.synchronized_tasks }),
+      type: 'success',
+    });
     await fetchProjects();
     await fetchAllData();
   } catch (err: any) {
