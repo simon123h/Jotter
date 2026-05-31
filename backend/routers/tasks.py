@@ -217,6 +217,7 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
                         (project_id,),
                     )
                     from storage import write_buckets_file
+
                     all_buckets = [dict(r) for r in cursor_sync.fetchall()]
                     write_buckets_file(project_id, all_buckets)
                 else:
@@ -295,6 +296,7 @@ def move_task(project_id: str, task_id: int, task_move: TaskMove):
                     (project_id,),
                 )
                 from storage import write_buckets_file
+
                 all_buckets = [dict(r) for r in cursor_sync.fetchall()]
                 write_buckets_file(project_id, all_buckets)
             else:

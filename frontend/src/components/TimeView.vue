@@ -159,7 +159,9 @@ onBeforeUnmount(() => {
           <h3 class="font-bold text-xs uppercase tracking-wider text-theme-text-main truncate">
             {{ col.title }}
           </h3>
-          <span class="text-[10px] px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0">
+          <span
+            class="text-[10px] px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0"
+          >
             {{ col.tasks.length }}
           </span>
         </div>
@@ -182,10 +184,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Sortable drop zone: contains ONLY TaskCards, never placeholder elements -->
-        <div
-          :data-column-id="col.id"
-          class="p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] h-full scroller-thin relative z-10"
-        >
+        <div :data-column-id="col.id" class="p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] h-full scroller-thin relative z-10">
           <TaskCard
             v-for="task in col.tasks"
             :key="task.id"

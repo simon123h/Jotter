@@ -268,4 +268,3 @@ def test_done_bucket_auto_creation():
     assert done_bucket["title"] == "Done"
     other_max = max(b["position"] for b in buckets if b["name"] != "done")
     assert done_bucket["position"] == other_max + 1000.0
-
