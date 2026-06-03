@@ -39,11 +39,9 @@ const getChecklistStats = (body: string) => {
       <div
         class="flex items-center bg-theme-column/60 border-b border-theme-border text-[10px] font-bold uppercase tracking-wider text-theme-text-muted px-3 py-2 select-none sticky top-0 z-10 backdrop-blur-sm"
       >
-        <span class="w-16 shrink-0">{{ t('table.id') }}</span>
         <span class="flex-grow min-w-0">{{ t('table.title') }}</span>
         <span class="w-20 shrink-0 text-center">{{ t('table.progress') }}</span>
         <span class="w-52 shrink-0">{{ t('table.tags') }}</span>
-        <span class="w-28 shrink-0 text-right">{{ t('table.updated') }}</span>
       </div>
 
       <!-- Grouped by bucket -->
@@ -81,9 +79,6 @@ const getChecklistStats = (body: string) => {
             @click="emit('task-click', task)"
             class="flex items-center hover:bg-theme-column/20 px-3 py-2 cursor-pointer transition-colors duration-100 gap-3 group"
           >
-            <!-- Task ID -->
-            <span class="font-mono text-theme-text-muted text-[10px] w-16 shrink-0 font-medium"> #{{ task.id }} </span>
-
             <!-- Task Title + Note snippet -->
             <div class="flex-grow min-w-0 flex items-baseline gap-2 overflow-hidden">
               <span class="font-bold text-theme-text-card group-hover:text-theme-accent transition-colors truncate">
@@ -130,11 +125,6 @@ const getChecklistStats = (body: string) => {
                 {{ tag }}
               </span>
             </div>
-
-            <!-- Updated Date -->
-            <span class="w-28 shrink-0 text-right text-[10px] text-theme-text-muted font-mono">
-              {{ new Date(task.updated_at).toLocaleString() }}
-            </span>
           </div>
         </div>
       </div>

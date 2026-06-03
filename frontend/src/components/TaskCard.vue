@@ -102,19 +102,15 @@ const getPriorityClasses = (prio: string) => {
       <h4 class="text-xs font-bold text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2">
         {{ task.title }}
       </h4>
-      <div class="flex items-center gap-1.5 shrink-0">
+      <div v-if="task.bucket !== 'done'" class="flex items-center gap-1.5 shrink-0">
         <!-- Mark Done Button -->
         <button
-          v-if="task.bucket !== 'done'"
           @click.stop="emit('mark-done', task)"
           class="p-0.5 text-theme-text-muted hover:text-emerald-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
           title="Mark as done"
         >
           <Check class="w-3 h-3 shrink-0" />
         </button>
-        <span class="text-[10px] font-mono text-theme-text-muted font-medium bg-theme-column/40 px-1.5 py-0.5 rounded">
-          #{{ task.id }}
-        </span>
       </div>
     </div>
 
@@ -174,11 +170,13 @@ const getPriorityClasses = (prio: string) => {
       ></div>
     </div>
 
-    <!-- Meta Information Footer (Checklist & Time) -->
-    <div class="flex justify-between items-center text-[10px] text-theme-text-muted mt-1 pt-1 border-t border-theme-border/40">
+    <!-- Meta Information Footer (Checklist Stats only) -->
+    <div
+      v-if="checklistStats"
+      class="flex justify-between items-center text-[10px] text-theme-text-muted mt-1 pt-1 border-t border-theme-border/40"
+    >
       <!-- Checklist Stats -->
       <div
-        v-if="checklistStats"
         class="flex items-center gap-1 font-semibold"
         :class="
           checklistStats.checked === checklistStats.total
@@ -189,11 +187,6 @@ const getPriorityClasses = (prio: string) => {
         <ClipboardList class="w-3 h-3 shrink-0" />
         <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
       </div>
-      <div v-else></div>
-      <!-- spacer if no checklist -->
-
-      <!-- Updated At Caption -->
-      <span class="font-mono">{{ new Date(task.updated_at).toLocaleDateString() }}</span>
     </div>
   </div>
 </template>

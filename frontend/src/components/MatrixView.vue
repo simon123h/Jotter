@@ -147,9 +147,6 @@ const formatDate = (dateStr: string) => {
           >
             <div class="flex justify-between items-start gap-2">
               <span class="text-xs font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
-              <span class="text-[9px] font-mono text-theme-text-muted bg-theme-column/50 px-1 py-0.25 rounded shrink-0">
-                #{{ task.id }}
-              </span>
             </div>
             <div class="flex items-center gap-2 mt-0.5 text-[9px]">
               <span v-if="task.due_date" class="flex items-center gap-1 text-red-400 font-medium">
@@ -193,9 +190,6 @@ const formatDate = (dateStr: string) => {
           >
             <div class="flex justify-between items-start gap-2">
               <span class="text-xs font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
-              <span class="text-[9px] font-mono text-theme-text-muted bg-theme-column/50 px-1 py-0.25 rounded shrink-0">
-                #{{ task.id }}
-              </span>
             </div>
             <div class="flex items-center gap-2 mt-0.5 text-[9px]">
               <span v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
@@ -239,9 +233,6 @@ const formatDate = (dateStr: string) => {
           >
             <div class="flex justify-between items-start gap-2">
               <span class="text-xs font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
-              <span class="text-[9px] font-mono text-theme-text-muted bg-theme-column/50 px-1 py-0.25 rounded shrink-0">
-                #{{ task.id }}
-              </span>
             </div>
             <div class="flex items-center gap-2 mt-0.5 text-[9px]">
               <span v-if="task.due_date" class="flex items-center gap-1 text-red-400 font-medium">
@@ -285,9 +276,6 @@ const formatDate = (dateStr: string) => {
           >
             <div class="flex justify-between items-start gap-2">
               <span class="text-xs font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
-              <span class="text-[9px] font-mono text-theme-text-muted bg-theme-column/50 px-1 py-0.25 rounded shrink-0">
-                #{{ task.id }}
-              </span>
             </div>
             <div class="flex items-center gap-2 mt-0.5 text-[9px]">
               <span v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
