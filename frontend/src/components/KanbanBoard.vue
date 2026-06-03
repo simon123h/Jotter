@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watchEffect } from 'vue';
+import { ref, onMounted, computed, watch, watchEffect } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import type { Task, Bucket, BucketName, Project } from '../types';
 import {
   getTasks,
@@ -30,6 +31,9 @@ import { Globe, LayoutGrid, List, ChevronDown, RefreshCw, Plus, X, ClipboardList
 const { locale, t } = useI18n();
 const { showDialog, isOpen: dialogIsOpen } = useDialog();
 
+const route = useRoute();
+const router = useRouter();
+
 const tasks = ref<Task[]>([]);
 const buckets = ref<Bucket[]>([]);
 
@@ -47,7 +51,7 @@ const displayedBuckets = computed(() => {
   return buckets.value;
 });
 const projects = ref<Project[]>([]);
-const activeProjectId = ref<string>(localStorage.getItem('jotter-active-project-id') || 'default');
+const activeProjectId = ref<string>((route.params.projectId as string) || localStorage.getItem('jotter-active-project-id') || 'default');
 
 const loading = ref(false);
 const syncLoading = ref(false);
@@ -59,10 +63,13 @@ const selectedTag = ref<string | null>(null);
 
 // View Mode state (board, list, matrix, or time)
 type ViewMode = 'board' | 'list' | 'matrix' | 'time';
-const viewMode = ref<ViewMode>((localStorage.getItem('jotter-view-mode') as ViewMode) || 'board');
+const viewMode = ref<ViewMode>((route.params.viewMode as ViewMode) || (localStorage.getItem('jotter-view-mode') as ViewMode) || 'board');
 const setViewMode = (mode: ViewMode) => {
-  viewMode.value = mode;
-  localStorage.setItem('jotter-view-mode', mode);
+  router.push({
+    name: 'project-view',
+    params: { projectId: activeProjectId.value, viewMode: mode },
+    query: route.query,
+  });
 };
 
 // Sidebar visibility state
@@ -73,8 +80,8 @@ const toggleSidebar = () => {
 };
 
 // Modal state
-const isDetailOpen = ref(false);
-const selectedTaskId = ref<number | null>(null);
+const selectedTaskId = ref<number | null>(route.params.taskId ? Number(route.params.taskId) : null);
+const isDetailOpen = ref(!!route.params.taskId);
 const isCreateOpen = ref(false);
 const createDefaultBucket = ref<BucketName>('todo');
 
@@ -134,11 +141,11 @@ const fetchProjects = async () => {
 };
 
 const selectProject = (projectId: string) => {
-  activeProjectId.value = projectId;
-  localStorage.setItem('jotter-active-project-id', projectId);
-  error.value = null;
-  selectedTag.value = null;
-  fetchAllData();
+  router.push({
+    name: 'project-view',
+    params: { projectId, viewMode: viewMode.value },
+    query: route.query,
+  });
 };
 
 const handleCreateProject = async (title: string) => {
@@ -270,9 +277,50 @@ const tasksByBucket = computed(() => {
 });
 
 const openDetailModal = (task: Task) => {
-  selectedTaskId.value = task.id;
-  isDetailOpen.value = true;
+  router.push({
+    name: 'task-detail',
+    params: { projectId: activeProjectId.value, viewMode: viewMode.value, taskId: String(task.id) },
+    query: route.query,
+  });
 };
+
+const closeDetailModal = () => {
+  router.push({
+    name: 'project-view',
+    params: { projectId: activeProjectId.value, viewMode: viewMode.value },
+    query: route.query,
+  });
+};
+
+// Sync route parameters with component state dynamically
+watch(
+  () => [route.params.projectId, route.params.viewMode, route.params.taskId],
+  async ([newProjectId, newViewMode, newTaskId]) => {
+    // 1. Project ID Sync
+    if (newProjectId && newProjectId !== activeProjectId.value) {
+      activeProjectId.value = newProjectId as string;
+      localStorage.setItem('jotter-active-project-id', newProjectId as string);
+      error.value = null;
+      selectedTag.value = null;
+      await fetchAllData();
+    }
+
+    // 2. View Mode Sync
+    if (newViewMode && newViewMode !== viewMode.value) {
+      viewMode.value = newViewMode as ViewMode;
+      localStorage.setItem('jotter-view-mode', newViewMode as ViewMode);
+    }
+
+    // 3. Task ID Sync
+    if (newTaskId) {
+      selectedTaskId.value = Number(newTaskId);
+      isDetailOpen.value = true;
+    } else {
+      isDetailOpen.value = false;
+      selectedTaskId.value = null;
+    }
+  }
+);
 
 const openCreateModal = (bucket: BucketName) => {
   createDefaultBucket.value = bucket;
@@ -821,7 +869,7 @@ const formatDateISO = (d: Date): string => {
           :project-id="activeProjectId"
           :task-id="selectedTaskId"
           :buckets="buckets"
-          @close="isDetailOpen = false"
+          @close="closeDetailModal"
           @updated="fetchAllTasks"
           @deleted="fetchAllTasks"
         />

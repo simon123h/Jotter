@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import KanbanBoard from './components/KanbanBoard.vue';
 import GlobalDialog from './components/GlobalDialog.vue';
 </script>
 
 <template>
   <div class="min-h-screen bg-theme-base text-theme-text-main flex flex-col font-sans selection:bg-theme-primary/30">
-    <KanbanBoard />
+    <router-view />
     <GlobalDialog />
   </div>
 </template>
