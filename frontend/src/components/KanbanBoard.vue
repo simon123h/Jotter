@@ -480,7 +480,7 @@ const formatDateISO = (d: Date): string => {
 </script>
 
 <template>
-  <div class="h-screen w-full flex flex-col overflow-hidden select-none bg-theme-base">
+  <div class="h-screen w-full flex flex-col overflow-hidden bg-theme-base">
     <!-- Header Controls (Navigation Bar spans full width) -->
     <header class="flex items-center justify-between gap-3 border-b border-theme-border px-4 py-3 shrink-0 bg-theme-card z-10">
       <div class="flex items-center gap-2.5 overflow-hidden mr-2">
