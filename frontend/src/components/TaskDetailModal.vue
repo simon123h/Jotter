@@ -6,8 +6,9 @@ import { getTask, updateTask, deleteTask } from '../api';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
 import { X } from '@lucide/vue';
+import { parseTitleState } from '../utils/dateParser';
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 const { showDialog } = useDialog();
 
 const props = defineProps<{
@@ -35,6 +36,9 @@ const editTags = ref('');
 const editBody = ref('');
 const editDueDate = ref('');
 const editPriority = ref('');
+
+const lastMatchedKeyword = ref<string | null>(null);
+const lastExtractedTags = ref<string[]>([]);
 
 // Fetch task detail when modal opens or taskId changes
 watch(
@@ -71,12 +75,53 @@ const fetchTaskDetail = async (id: number) => {
     editBody.value = fetchedTask.body;
     editDueDate.value = fetchedTask.due_date || '';
     editPriority.value = fetchedTask.priority || '';
+    lastMatchedKeyword.value = null;
+    lastExtractedTags.value = [];
   } catch (err: any) {
     error.value = t('errors.loadTask', { message: err.message || err });
   } finally {
     loading.value = false;
   }
 };
+
+// Watch for date keywords and hashtags in the title in real-time while editing
+watch(editTitle, (newTitle) => {
+  if (!isEditing.value) return;
+  const result = parseTitleState(newTitle, locale.value);
+
+  // 1. Due Date Sync
+  if (result.matchedKeyword) {
+    if (result.matchedKeyword !== lastMatchedKeyword.value) {
+      editDueDate.value = result.dueDate || '';
+      lastMatchedKeyword.value = result.matchedKeyword;
+    }
+  } else {
+    lastMatchedKeyword.value = null;
+  }
+
+  // 2. Tags Sync
+  const currentTags = result.tags;
+  const lastTags = lastExtractedTags.value;
+  const isTagsEqual = currentTags.length === lastTags.length && currentTags.every((t, idx) => t === lastTags[idx]);
+  if (!isTagsEqual) {
+    const inputTags = editTags.value
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    const tagsToRemove = lastTags.filter((t) => !currentTags.includes(t));
+    let updatedTags = inputTags.filter((t) => !tagsToRemove.includes(t));
+
+    currentTags.forEach((t) => {
+      if (!updatedTags.includes(t)) {
+        updatedTags.push(t);
+      }
+    });
+
+    editTags.value = updatedTags.join(', ');
+    lastExtractedTags.value = [...currentTags];
+  }
+});
 
 // Compile Markdown body safely
 const parsedMarkdown = computed(() => {
@@ -91,6 +136,14 @@ const parsedMarkdown = computed(() => {
 const handleSave = async () => {
   if (!task.value) return;
 
+  const parseResult = parseTitleState(editTitle.value, locale.value);
+  const finalTitle = parseResult.cleanTitle;
+
+  if (!finalTitle) {
+    error.value = t('errors.titleRequired');
+    return;
+  }
+
   loading.value = true;
   error.value = null;
   try {
@@ -101,7 +154,7 @@ const handleSave = async () => {
       .filter((t) => t.length > 0);
 
     const updated = await updateTask(props.projectId, task.value.id, {
-      title: editTitle.value,
+      title: finalTitle,
       bucket: editBucket.value,
       tags: tagArray,
       body: editBody.value,
@@ -151,6 +204,8 @@ const cancelEdit = () => {
     editBody.value = task.value.body;
     editDueDate.value = task.value.due_date || '';
     editPriority.value = task.value.priority || '';
+    lastMatchedKeyword.value = null;
+    lastExtractedTags.value = [];
   }
   isEditing.value = false;
 };

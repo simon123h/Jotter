@@ -4,8 +4,9 @@ import { X } from '@lucide/vue';
 import type { BucketName } from '../types';
 import { createTask } from '../api';
 import { useI18n } from '../composables/useI18n';
+import { parseTitleState } from '../utils/dateParser';
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -39,6 +40,9 @@ const handleKeyDown = (event: KeyboardEvent) => {
   }
 };
 
+const lastMatchedKeyword = ref<string | null>(null);
+const lastExtractedTags = ref<string[]>([]);
+
 // Reset form when modal opens
 watch(
   () => props.isOpen,
@@ -51,6 +55,8 @@ watch(
       dueDate.value = '';
       priority.value = '';
       error.value = null;
+      lastMatchedKeyword.value = null;
+      lastExtractedTags.value = [];
 
       window.addEventListener('keydown', handleKeyDown);
 
@@ -68,9 +74,51 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
 });
 
+// Watch for date keywords and hashtags in the title in real-time
+watch(title, (newTitle) => {
+  const result = parseTitleState(newTitle, locale.value);
+
+  // 1. Due Date Sync
+  if (result.matchedKeyword) {
+    if (result.matchedKeyword !== lastMatchedKeyword.value) {
+      dueDate.value = result.dueDate || '';
+      lastMatchedKeyword.value = result.matchedKeyword;
+    }
+  } else {
+    lastMatchedKeyword.value = null;
+  }
+
+  // 2. Tags Sync
+  const currentTags = result.tags;
+  const lastTags = lastExtractedTags.value;
+  const isTagsEqual = currentTags.length === lastTags.length && currentTags.every((t, idx) => t === lastTags[idx]);
+  if (!isTagsEqual) {
+    const inputTags = tags.value
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    const tagsToRemove = lastTags.filter((t) => !currentTags.includes(t));
+    let updatedTags = inputTags.filter((t) => !tagsToRemove.includes(t));
+
+    currentTags.forEach((t) => {
+      if (!updatedTags.includes(t)) {
+        updatedTags.push(t);
+      }
+    });
+
+    tags.value = updatedTags.join(', ');
+    lastExtractedTags.value = [...currentTags];
+  }
+});
+
 const handleSubmit = async () => {
   if (loading.value) return;
-  if (!title.value.trim()) {
+
+  const parseResult = parseTitleState(title.value, locale.value);
+  const finalTitle = parseResult.cleanTitle;
+
+  if (!finalTitle) {
     error.value = t('errors.titleRequired');
     return;
   }
@@ -84,7 +132,7 @@ const handleSubmit = async () => {
       .filter((t) => t.length > 0);
 
     await createTask(props.projectId, {
-      title: title.value.trim(),
+      title: finalTitle,
       bucket: bucket.value,
       tags: tagArray,
       body: body.value,
