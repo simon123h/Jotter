@@ -42,6 +42,11 @@ def test_projects_flow():
     assert len(projects) == 1
     assert projects[0]["id"] == "default"
 
+    # Try to delete default project when it is the last remaining project - should fail
+    response = client.delete("/projects/default")
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Cannot delete the last remaining project."
+
     # 2. Create project
     response = client.post("/projects", json={"title": "Project Alpha"})
     assert response.status_code == 201
@@ -54,18 +59,25 @@ def test_projects_flow():
     assert len(response.json()) == 2
 
     # 3. Update project title
-    response = client.put("/projects/project-alpha", json={"title": "Project Alpha Updated"})
+    response = client.put("/projects/default", json={"title": "Default Project Renamed"})
     assert response.status_code == 200
-    assert response.json()["title"] == "Project Alpha Updated"
+    assert response.json()["title"] == "Default Project Renamed"
 
-    # 4. Delete project
-    response = client.delete("/projects/project-alpha")
+    # 4. Delete default project (should succeed because project-alpha exists)
+    response = client.delete("/projects/default")
     assert response.status_code == 200
     assert response.json()["status"] == "success"
 
-    # Verify gone
+    # Verify default is gone, only project-alpha remains
     response = client.get("/projects")
-    assert len(response.json()) == 1
+    projects = response.json()
+    assert len(projects) == 1
+    assert projects[0]["id"] == "project-alpha"
+
+    # Try to delete project-alpha when it is the last remaining project - should fail
+    response = client.delete("/projects/project-alpha")
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Cannot delete the last remaining project."
 
 
 def test_crud_flow():
