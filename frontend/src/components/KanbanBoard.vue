@@ -132,8 +132,11 @@ const fetchProjects = async () => {
     projects.value = await getProjects();
     // Fallback if active project no longer exists
     if (!projects.value.find((p) => p.id === activeProjectId.value)) {
-      activeProjectId.value = 'default';
-      localStorage.setItem('jotter-active-project-id', 'default');
+      if (projects.value.length > 0) {
+        selectProject(projects.value[0].id);
+      } else {
+        selectProject('default');
+      }
     }
   } catch (err: any) {
     error.value = err.message || 'Failed to fetch projects';
@@ -168,14 +171,6 @@ const handleRenameProject = async ({ id, title }: { id: string; title: string })
 };
 
 const handleDeleteProject = async (project: Project) => {
-  if (project.id === 'default') {
-    await showDialog({
-      title: t('projects.sidebarTitle'),
-      message: t('projects.deleteProjectDefaultError'),
-      type: 'error',
-    });
-    return;
-  }
   const confirmed = await showDialog({
     title: t('buttons.delete'),
     message: t('projects.deleteProjectConfirm', { title: project.title }),
@@ -189,9 +184,6 @@ const handleDeleteProject = async (project: Project) => {
   try {
     await deleteProject(project.id);
     await fetchProjects();
-    if (activeProjectId.value === project.id) {
-      selectProject('default');
-    }
   } catch (err: any) {
     error.value = err.message || 'Failed to delete project';
   }

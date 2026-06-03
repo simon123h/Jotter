@@ -195,7 +195,7 @@ const saveRenameProject = () => {
 
           <!-- Rename / Delete Icons -->
           <div
-            v-if="editingProjectId !== project.id && project.id !== 'default'"
+            v-if="editingProjectId !== project.id"
             class="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity"
           >
             <!-- Rename Icon -->

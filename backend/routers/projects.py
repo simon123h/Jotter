@@ -102,13 +102,14 @@ def update_project(project_id: str, project_update: ProjectUpdate):
 
 @router.delete("/{project_id}")
 def delete_project(project_id: str):
-    if project_id == "default":
+    projects = load_projects_file()
+
+    if len(projects) <= 1:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The default project cannot be deleted.",
+            detail="Cannot delete the last remaining project.",
         )
 
-    projects = load_projects_file()
     filtered_projects = [p for p in projects if p["id"] != project_id]
 
     if len(filtered_projects) == len(projects):
