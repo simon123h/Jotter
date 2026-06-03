@@ -680,10 +680,6 @@ const formatDateISO = (d: Date): string => {
         >
           <Plus class="w-3.5 h-3.5 shrink-0" />
           <span class="hidden sm:inline">{{ t('addTaskButton') }}</span>
-          <kbd
-            class="hidden md:inline-block px-1.5 py-0.5 bg-white/20 border border-white/30 text-[9px] font-mono text-white rounded select-none uppercase tracking-wider font-bold"
-            >q</kbd
-          >
         </button>
       </div>
     </header>
