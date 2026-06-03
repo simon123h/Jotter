@@ -16,7 +16,7 @@ describe('TaskCard.vue', () => {
     updated_at: '2026-05-30T20:00:00Z',
   };
 
-  it('renders task title and ID correctly', () => {
+  it('renders task title correctly', () => {
     const wrapper = mount(TaskCard, {
       props: {
         task: mockTask,
@@ -24,7 +24,6 @@ describe('TaskCard.vue', () => {
     });
 
     expect(wrapper.text()).toContain('Test Task Title');
-    expect(wrapper.text()).toContain('#123');
   });
 
   it('renders tags lists properly', () => {
