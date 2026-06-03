@@ -97,12 +97,12 @@ const handleCancelAddColumn = () => {
         </button>
       </div>
       <div v-else class="space-y-2.5 flex-grow">
-        <h4 class="font-bold text-[10px] uppercase tracking-wider text-theme-text-muted">{{ t('newColumnTitle') }}</h4>
+        <h4 class="font-bold text-xs uppercase tracking-wider text-theme-text-muted">{{ t('newColumnTitle') }}</h4>
         <input
           v-model="newColumnTitle"
           type="text"
           :placeholder="t('columnTitlePlaceholder')"
-          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary"
+          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary"
           @keyup.enter="handleAddColumn"
           @keyup.esc="handleCancelAddColumn"
           autofocus
@@ -111,20 +111,20 @@ const handleCancelAddColumn = () => {
           v-model="newColumnSubtitle"
           type="text"
           placeholder="Column description/subtitle (optional)"
-          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary font-sans italic"
+          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary font-sans italic"
           @keyup.enter="handleAddColumn"
           @keyup.esc="handleCancelAddColumn"
         />
         <div class="flex gap-1.5 justify-end">
           <button
             @click="handleCancelAddColumn"
-            class="text-[10px] font-semibold px-2 py-1 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded cursor-pointer"
+            class="text-xs font-semibold px-2 py-1 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded cursor-pointer"
           >
             {{ t('buttons.cancel') }}
           </button>
           <button
             @click="handleAddColumn"
-            class="text-[10px] font-semibold px-2 py-1 bg-theme-primary hover:bg-theme-primary-hover text-white rounded cursor-pointer"
+            class="text-xs font-semibold px-2 py-1 bg-theme-primary hover:bg-theme-primary-hover text-white rounded cursor-pointer"
           >
             {{ t('buttons.add') }}
           </button>

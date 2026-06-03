@@ -92,7 +92,7 @@ const formatDate = (dateStr: string) => {
   <div class="flex flex-col h-full overflow-hidden select-none w-full gap-3.5">
     <!-- Adjust Threshold Controls -->
     <div class="flex items-center justify-between bg-theme-card/35 border border-theme-border/60 rounded px-4 py-2.5 shrink-0">
-      <div class="flex items-center gap-2 text-xs font-semibold text-theme-text-card">
+      <div class="flex items-center gap-2 text-sm font-semibold text-theme-text-card">
         <Clock class="w-4 h-4 text-theme-accent" />
         <span>{{ t('matrix.thresholdLabel', { days: thresholdDays }) }}</span>
       </div>
@@ -127,15 +127,15 @@ const formatDate = (dateStr: string) => {
         <div class="px-3.5 py-2.5 border-b border-theme-border bg-red-500/5 flex items-center gap-2 shrink-0">
           <AlertCircle class="w-4.5 h-4.5 text-red-400 shrink-0" />
           <div class="min-w-0">
-            <h4 class="font-bold text-xs uppercase tracking-wider text-red-400 truncate">{{ t('matrix.q1Title') }}</h4>
-            <p class="text-[9px] text-theme-text-muted leading-tight truncate">{{ t('matrix.q1Desc') }}</p>
+            <h4 class="font-bold text-sm uppercase tracking-wider text-red-400 truncate">{{ t('matrix.q1Title') }}</h4>
+            <p class="text-xs text-theme-text-muted leading-tight truncate">{{ t('matrix.q1Desc') }}</p>
           </div>
-          <span class="ml-auto px-2 py-0.25 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold rounded">
+          <span class="ml-auto px-2 py-0.25 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold rounded">
             {{ quadrants.q1.length }}
           </span>
         </div>
         <div class="flex-grow p-3 overflow-y-auto space-y-2 scroller-thin">
-          <div v-if="!quadrants.q1.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-[11px]">
+          <div v-if="!quadrants.q1.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-xs">
             {{ t('matrix.emptyQuadrant') }}
           </div>
           <div
@@ -146,16 +146,16 @@ const formatDate = (dateStr: string) => {
             class="bg-theme-card border border-theme-border/60 hover:border-red-500/40 p-2.5 rounded shadow-sm hover:shadow-theme-ring transition-all duration-150 cursor-pointer flex flex-col gap-1.5"
           >
             <div class="flex justify-between items-start gap-2">
-              <span class="text-xs font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
+              <span class="text-sm font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
             </div>
-            <div class="flex items-center gap-2 mt-0.5 text-[9px]">
+            <div class="flex items-center gap-2 mt-0.5 text-xs">
               <span v-if="task.due_date" class="flex items-center gap-1 text-red-400 font-medium">
                 <Calendar class="w-3 h-3" />
                 <span>{{ formatDate(task.due_date) }}</span>
               </span>
               <span
                 v-if="task.priority"
-                class="px-1.5 py-0.25 rounded border text-[8px] font-extrabold uppercase"
+                class="px-1.5 py-0.25 rounded border text-[10px] font-extrabold uppercase"
                 :class="getPriorityClasses(task.priority)"
               >
                 {{ task.priority }}
@@ -170,15 +170,15 @@ const formatDate = (dateStr: string) => {
         <div class="px-3.5 py-2.5 border-b border-theme-border bg-blue-500/5 flex items-center gap-2 shrink-0">
           <ArrowRight class="w-4.5 h-4.5 text-blue-400 shrink-0" />
           <div class="min-w-0">
-            <h4 class="font-bold text-xs uppercase tracking-wider text-blue-400 truncate">{{ t('matrix.q2Title') }}</h4>
-            <p class="text-[9px] text-theme-text-muted leading-tight truncate">{{ t('matrix.q2Desc') }}</p>
+            <h4 class="font-bold text-sm uppercase tracking-wider text-blue-400 truncate">{{ t('matrix.q2Title') }}</h4>
+            <p class="text-xs text-theme-text-muted leading-tight truncate">{{ t('matrix.q2Desc') }}</p>
           </div>
-          <span class="ml-auto px-2 py-0.25 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold rounded">
+          <span class="ml-auto px-2 py-0.25 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold rounded">
             {{ quadrants.q2.length }}
           </span>
         </div>
         <div class="flex-grow p-3 overflow-y-auto space-y-2 scroller-thin">
-          <div v-if="!quadrants.q2.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-[11px]">
+          <div v-if="!quadrants.q2.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-xs">
             {{ t('matrix.emptyQuadrant') }}
           </div>
           <div
@@ -189,16 +189,16 @@ const formatDate = (dateStr: string) => {
             class="bg-theme-card border border-theme-border/60 hover:border-blue-500/40 p-2.5 rounded shadow-sm hover:shadow-theme-ring transition-all duration-150 cursor-pointer flex flex-col gap-1.5"
           >
             <div class="flex justify-between items-start gap-2">
-              <span class="text-xs font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
+              <span class="text-sm font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
             </div>
-            <div class="flex items-center gap-2 mt-0.5 text-[9px]">
+            <div class="flex items-center gap-2 mt-0.5 text-xs">
               <span v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
                 <Calendar class="w-3 h-3" />
                 <span>{{ formatDate(task.due_date) }}</span>
               </span>
               <span
                 v-if="task.priority"
-                class="px-1.5 py-0.25 rounded border text-[8px] font-extrabold uppercase"
+                class="px-1.5 py-0.25 rounded border text-[10px] font-extrabold uppercase"
                 :class="getPriorityClasses(task.priority)"
               >
                 {{ task.priority }}
@@ -213,15 +213,15 @@ const formatDate = (dateStr: string) => {
         <div class="px-3.5 py-2.5 border-b border-theme-border bg-orange-500/5 flex items-center gap-2 shrink-0">
           <UserCheck class="w-4.5 h-4.5 text-orange-400 shrink-0" />
           <div class="min-w-0">
-            <h4 class="font-bold text-xs uppercase tracking-wider text-orange-400 truncate">{{ t('matrix.q3Title') }}</h4>
-            <p class="text-[9px] text-theme-text-muted leading-tight truncate">{{ t('matrix.q3Desc') }}</p>
+            <h4 class="font-bold text-sm uppercase tracking-wider text-orange-400 truncate">{{ t('matrix.q3Title') }}</h4>
+            <p class="text-xs text-theme-text-muted leading-tight truncate">{{ t('matrix.q3Desc') }}</p>
           </div>
-          <span class="ml-auto px-2 py-0.25 bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[10px] font-bold rounded">
+          <span class="ml-auto px-2 py-0.25 bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold rounded">
             {{ quadrants.q3.length }}
           </span>
         </div>
         <div class="flex-grow p-3 overflow-y-auto space-y-2 scroller-thin">
-          <div v-if="!quadrants.q3.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-[11px]">
+          <div v-if="!quadrants.q3.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-xs">
             {{ t('matrix.emptyQuadrant') }}
           </div>
           <div
@@ -232,16 +232,16 @@ const formatDate = (dateStr: string) => {
             class="bg-theme-card border border-theme-border/60 hover:border-orange-500/40 p-2.5 rounded shadow-sm hover:shadow-theme-ring transition-all duration-150 cursor-pointer flex flex-col gap-1.5"
           >
             <div class="flex justify-between items-start gap-2">
-              <span class="text-xs font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
+              <span class="text-sm font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
             </div>
-            <div class="flex items-center gap-2 mt-0.5 text-[9px]">
+            <div class="flex items-center gap-2 mt-0.5 text-xs">
               <span v-if="task.due_date" class="flex items-center gap-1 text-red-400 font-medium">
                 <Calendar class="w-3 h-3" />
                 <span>{{ formatDate(task.due_date) }}</span>
               </span>
               <span
                 v-if="task.priority"
-                class="px-1.5 py-0.25 rounded border text-[8px] font-extrabold uppercase"
+                class="px-1.5 py-0.25 rounded border text-[10px] font-extrabold uppercase"
                 :class="getPriorityClasses(task.priority)"
               >
                 {{ task.priority }}
@@ -256,15 +256,15 @@ const formatDate = (dateStr: string) => {
         <div class="px-3.5 py-2.5 border-b border-theme-border bg-slate-500/5 flex items-center gap-2 shrink-0">
           <Trash class="w-4.5 h-4.5 text-slate-400 shrink-0" />
           <div class="min-w-0">
-            <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 truncate">{{ t('matrix.q4Title') }}</h4>
-            <p class="text-[9px] text-theme-text-muted leading-tight truncate">{{ t('matrix.q4Desc') }}</p>
+            <h4 class="font-bold text-sm uppercase tracking-wider text-slate-400 truncate">{{ t('matrix.q4Title') }}</h4>
+            <p class="text-xs text-theme-text-muted leading-tight truncate">{{ t('matrix.q4Desc') }}</p>
           </div>
-          <span class="ml-auto px-2 py-0.25 bg-slate-500/10 border border-slate-500/20 text-slate-400 text-[10px] font-bold rounded">
+          <span class="ml-auto px-2 py-0.25 bg-slate-500/10 border border-slate-500/20 text-slate-400 text-xs font-bold rounded">
             {{ quadrants.q4.length }}
           </span>
         </div>
         <div class="flex-grow p-3 overflow-y-auto space-y-2 scroller-thin">
-          <div v-if="!quadrants.q4.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-[11px]">
+          <div v-if="!quadrants.q4.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-xs">
             {{ t('matrix.emptyQuadrant') }}
           </div>
           <div
@@ -275,16 +275,16 @@ const formatDate = (dateStr: string) => {
             class="bg-theme-card border border-theme-border/60 hover:border-slate-500/40 p-2.5 rounded shadow-sm hover:shadow-theme-ring transition-all duration-150 cursor-pointer flex flex-col gap-1.5"
           >
             <div class="flex justify-between items-start gap-2">
-              <span class="text-xs font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
+              <span class="text-sm font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
             </div>
-            <div class="flex items-center gap-2 mt-0.5 text-[9px]">
+            <div class="flex items-center gap-2 mt-0.5 text-xs">
               <span v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
                 <Calendar class="w-3 h-3" />
                 <span>{{ formatDate(task.due_date) }}</span>
               </span>
               <span
                 v-if="task.priority"
-                class="px-1.5 py-0.25 rounded border text-[8px] font-extrabold uppercase"
+                class="px-1.5 py-0.25 rounded border text-[10px] font-extrabold uppercase"
                 :class="getPriorityClasses(task.priority)"
               >
                 {{ task.priority }}

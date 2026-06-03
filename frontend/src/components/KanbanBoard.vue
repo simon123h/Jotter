@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watchEffect } from 'vue';
 import type { Task, Bucket, BucketName, Project } from '../types';
 import {
   getTasks,
@@ -108,6 +108,16 @@ const setTheme = (theme: string) => {
   }
   isThemeDropdownOpen.value = false;
 };
+
+// Update document title dynamically based on active project
+watchEffect(() => {
+  const currentProj = projects.value.find((p) => p.id === activeProjectId.value);
+  if (currentProj) {
+    document.title = `Jotter / ${currentProj.title}`;
+  } else {
+    document.title = 'Jotter';
+  }
+});
 
 // Projects management
 const fetchProjects = async () => {

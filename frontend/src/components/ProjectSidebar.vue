@@ -135,14 +135,14 @@ const saveRenameProject = () => {
   <aside class="w-64 border-r border-theme-border flex flex-col shrink-0 bg-theme-card">
     <!-- Sidebar Header -->
     <div class="p-4 border-b border-theme-border flex items-center justify-between shrink-0">
-      <h2 class="text-xs font-bold uppercase tracking-wider text-theme-text-main flex items-center gap-1.5">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-theme-text-main flex items-center gap-1.5">
         <Folder class="w-4 h-4 text-theme-accent shrink-0" /> {{ t('projects.sidebarTitle') }}
       </h2>
 
       <!-- Sort Order Toggle Badge Button -->
       <button
         @click="toggleSortOrder"
-        class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-theme-border/50 bg-theme-column/30 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main transition-colors cursor-pointer"
+        class="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-theme-border/50 bg-theme-column/30 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main transition-colors cursor-pointer"
         :title="sortBy === 'alpha' ? t('projects.sortTooltipAlpha') : t('projects.sortTooltipMru')"
       >
         {{ sortBy === 'alpha' ? 'A-Z' : 'MRU' }}
@@ -154,7 +154,7 @@ const saveRenameProject = () => {
       <div
         v-for="project in sortedProjects"
         :key="project.id"
-        class="group relative flex items-center justify-between px-3 py-1.5 rounded text-xs transition-all cursor-pointer font-medium"
+        class="group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all cursor-pointer font-medium"
         :class="
           project.id === activeProjectId
             ? 'bg-theme-primary/10 text-theme-accent border border-theme-primary/15'
@@ -170,11 +170,11 @@ const saveRenameProject = () => {
             :id="`rename-${project.id}`"
             v-model="editingProjectTitle"
             type="text"
-            class="w-full bg-theme-base border border-theme-border rounded px-1.5 py-0.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+            class="w-full bg-theme-base border border-theme-border rounded px-1.5 py-0.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary"
             @keydown.enter="saveRenameProject"
             @blur="saveRenameProject"
           />
-          <span v-else class="truncate text-[11px] font-sans">{{ project.title }}</span>
+          <span v-else class="truncate font-sans">{{ project.title }}</span>
         </div>
 
         <!-- Project Actions -->
@@ -227,7 +227,7 @@ const saveRenameProject = () => {
           ref="addProjectInput"
           type="text"
           :placeholder="t('projects.newProjectPlaceholder')"
-          class="w-full bg-theme-base border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+          class="w-full bg-theme-base border border-theme-border rounded px-2.5 py-1 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary"
           @keydown.enter="handleCreateProject"
           @blur="handleCreateProject"
         />
@@ -235,7 +235,7 @@ const saveRenameProject = () => {
       <button
         v-else
         @click="triggerAddProject"
-        class="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold border border-dashed border-theme-border text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary hover:bg-theme-column/30 rounded transition-all cursor-pointer"
+        class="w-full flex items-center justify-center gap-1.5 py-1.5 text-sm font-semibold border border-dashed border-theme-border text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary hover:bg-theme-column/30 rounded transition-all cursor-pointer"
       >
         <Plus class="w-3.5 h-3.5 shrink-0" /> {{ t('projects.newProject') }}
       </button>

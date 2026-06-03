@@ -114,14 +114,14 @@ onMounted(() => {
         <div v-if="!isEditing" class="flex flex-col gap-0.5 overflow-hidden">
           <div class="flex items-center gap-1.5 overflow-hidden">
             <h3
-              class="font-bold text-xs uppercase tracking-wider text-theme-text-main truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
+              class="font-bold text-sm uppercase tracking-wider text-theme-text-main truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
               @dblclick="startEditing"
               :title="t('doubleClickToRename')"
             >
               {{ displayTitle }}
             </h3>
             <span
-              class="text-[9px] px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0"
+              class="text-xs px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0"
             >
               {{ tasks.length }}
             </span>
@@ -129,7 +129,7 @@ onMounted(() => {
           <!-- Subtitle / Description -->
           <span
             v-if="subtitle"
-            class="text-[10px] text-theme-text-muted truncate cursor-pointer font-sans italic hover:text-theme-accent leading-normal"
+            class="text-xs text-theme-text-muted truncate cursor-pointer font-sans italic hover:text-theme-accent leading-normal"
             @dblclick="startEditing"
             :title="t('doubleClickToRename')"
           >
@@ -142,7 +142,7 @@ onMounted(() => {
             v-model="editTitle"
             type="text"
             placeholder="Column Title"
-            class="bg-theme-card border border-theme-primary/60 rounded px-1.5 py-0.5 text-xs font-bold text-theme-text-input focus:outline-none w-full"
+            class="bg-theme-card border border-theme-primary/60 rounded px-1.5 py-0.5 text-sm font-bold text-theme-text-input focus:outline-none w-full"
             @keyup.enter="saveTitle"
             @keyup.esc="cancelEditing"
           />
@@ -150,7 +150,7 @@ onMounted(() => {
             v-model="editSubtitle"
             type="text"
             placeholder="Add description..."
-            class="bg-theme-card border border-theme-border rounded px-1.5 py-0.5 text-[9px] text-theme-text-input focus:outline-none w-full font-sans italic"
+            class="bg-theme-card border border-theme-border rounded px-1.5 py-0.5 text-xs text-theme-text-input focus:outline-none w-full font-sans italic"
             @keyup.enter="saveTitle"
             @keyup.esc="cancelEditing"
           />
@@ -216,7 +216,7 @@ onMounted(() => {
       <!-- Add Task Button inside scroll area, below the last card -->
       <button
         @click="emit('add-task-click', bucketName)"
-        class="add-task-btn w-full flex items-center justify-center gap-1.5 py-2 px-3 border border-dashed border-theme-border hover:border-theme-accent hover:bg-theme-card text-theme-text-muted hover:text-theme-accent rounded text-xs font-semibold transition-all cursor-pointer shadow-sm group/btn mt-2.5"
+        class="add-task-btn w-full flex items-center justify-center gap-1.5 py-2 px-3 border border-dashed border-theme-border hover:border-theme-accent hover:bg-theme-card text-theme-text-muted hover:text-theme-accent rounded text-sm font-semibold transition-all cursor-pointer shadow-sm group/btn mt-2.5"
       >
         <Plus class="w-4 h-4 shrink-0 transition-transform group-hover/btn:scale-110" />
         {{ t('addTaskButton') }}

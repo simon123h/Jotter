@@ -172,241 +172,243 @@ const getPriorityClasses = (prio: string) => {
 </script>
 
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-    <!-- Backdrop -->
-    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
+  <transition name="modal">
+    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <!-- Backdrop -->
+      <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
 
-    <!-- Modal Content -->
-    <div
-      class="relative bg-theme-base border border-theme-border w-full max-w-3xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
-    >
-      <!-- Header -->
-      <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
-        <div class="flex items-center gap-3">
-          <span class="text-[10px] font-mono px-2 py-0.5 bg-theme-card text-slate-400 rounded border border-theme-border">
-            {{ t('detailModalTitle', { id: taskId || '' }) }}
-          </span>
-          <span
-            v-if="task && !isEditing"
-            class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-theme-primary/10 text-theme-accent border border-theme-accent/20"
-          >
-            {{ t('buckets.' + task.bucket) }}
-          </span>
-        </div>
-        <button
-          @click="emit('close')"
-          class="text-slate-400 hover:text-white transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
-        >
-          <X class="w-4 h-4 shrink-0" />
-        </button>
-      </div>
-
-      <!-- Error alert -->
-      <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
-        {{ error }}
-      </div>
-
-      <!-- Main Body -->
-      <div class="p-4 overflow-y-auto flex-grow scroller-thin">
-        <!-- Loading State -->
-        <div v-if="loading && !task" class="flex flex-col items-center justify-center py-12 gap-3">
-          <div class="w-8 h-8 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
-          <span class="text-slate-400 text-xs">{{ t('loadingTask') }}</span>
-        </div>
-
-        <div v-else-if="task">
-          <!-- View Mode -->
-          <div v-if="!isEditing" class="space-y-4">
-            <div>
-              <h2 class="text-xl font-bold text-theme-text-main mb-1.5 leading-snug">
-                {{ task.title }}
-              </h2>
-
-              <!-- Tags -->
-              <div v-if="task.tags.length" class="flex flex-wrap gap-1 mt-2">
-                <span
-                  v-for="tag in task.tags"
-                  :key="tag"
-                  class="text-[10px] font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded"
-                >
-                  {{ tag }}
-                </span>
-              </div>
-
-              <!-- Due Date & Priority Info -->
-              <div v-if="task.due_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
-                <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-[9px] font-bold uppercase tracking-wider text-theme-text-muted">Due:</span>
-                  <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-[10px] font-semibold text-theme-text-card">
-                    {{ new Date(task.due_date).toLocaleDateString() }}
-                  </span>
-                </div>
-                <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-[9px] font-bold uppercase tracking-wider text-theme-text-muted">Priority:</span>
-                  <span
-                    class="px-2 py-0.5 rounded border text-[9px] font-extrabold uppercase tracking-wider"
-                    :class="getPriorityClasses(task.priority)"
-                  >
-                    {{ t('priorityOptions.' + task.priority) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div class="border-t border-theme-border pt-4">
-              <h4 class="text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-2">{{ t('notesLabel') }}</h4>
-
-              <!-- Rendered Markdown -->
-              <div
-                v-if="task.body"
-                class="markdown-content text-theme-text-card prose prose-invert max-w-none space-y-3 break-all"
-                v-html="parsedMarkdown"
-              ></div>
-              <div v-else class="text-theme-text-muted italic text-xs py-2">{{ t('noDescription') }}</div>
-            </div>
-
-            <div class="text-[9px] text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono">
-              <span>{{ t('timestampCreated', { date: new Date(task.created_at).toLocaleString() }) }}</span>
-              <span>{{ t('timestampUpdated', { date: new Date(task.updated_at).toLocaleString() }) }}</span>
-            </div>
+      <!-- Modal Content -->
+      <div
+        class="relative bg-theme-base border border-theme-border w-full max-w-3xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
+      >
+        <!-- Header -->
+        <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-mono px-2 py-0.5 bg-theme-card text-slate-400 rounded border border-theme-border">
+              {{ t('detailModalTitle', { id: taskId || '' }) }}
+            </span>
+            <span
+              v-if="task && !isEditing"
+              class="text-xs uppercase font-bold px-2 py-0.5 rounded bg-theme-primary/10 text-theme-accent border border-theme-accent/20"
+            >
+              {{ t('buckets.' + task.bucket) }}
+            </span>
           </div>
-
-          <!-- Edit Mode -->
-          <div v-else class="space-y-3">
-            <!-- Title -->
-            <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                t('form.titleLabel')
-              }}</label>
-              <input
-                v-model="editTitle"
-                type="text"
-                class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                :placeholder="t('form.titlePlaceholder')"
-              />
-            </div>
-
-            <!-- Bucket & Tags Row -->
-            <div class="grid grid-cols-2 gap-3.5">
-              <div>
-                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                  t('form.columnLabel')
-                }}</label>
-                <select
-                  v-model="editBucket"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                >
-                  <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                  t('form.tagsLabel')
-                }}</label>
-                <input
-                  v-model="editTags"
-                  type="text"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                  :placeholder="t('form.tagsPlaceholderEdit')"
-                />
-              </div>
-            </div>
-
-            <!-- Due Date & Priority Row -->
-            <div class="grid grid-cols-2 gap-3.5">
-              <div>
-                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                  t('form.dueDateLabel')
-                }}</label>
-                <input
-                  v-model="editDueDate"
-                  type="date"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                />
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                  t('form.priorityLabel')
-                }}</label>
-                <select
-                  v-model="editPriority"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                >
-                  <option value="">{{ t('priorityOptions.none') }}</option>
-                  <option value="low">{{ t('priorityOptions.low') }}</option>
-                  <option value="medium">{{ t('priorityOptions.medium') }}</option>
-                  <option value="high">{{ t('priorityOptions.high') }}</option>
-                  <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Body (Markdown Textarea) -->
-            <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                {{ t('form.markdownLabelEdit') }}
-              </label>
-              <textarea
-                v-model="editBody"
-                rows="10"
-                class="w-full bg-theme-base/60 border border-theme-border rounded p-3 text-xs text-theme-text-input font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring scroller-thin"
-                :placeholder="t('form.markdownPlaceholderEdit')"
-              ></textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer Buttons -->
-      <div class="px-4 py-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
-        <div>
           <button
-            v-if="task && !isEditing"
-            @click="handleDelete"
-            class="text-xs font-semibold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors cursor-pointer"
+            @click="emit('close')"
+            class="text-slate-400 hover:text-white transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
           >
-            {{ t('buttons.delete') }}
+            <X class="w-4 h-4 shrink-0" />
           </button>
         </div>
-        <div class="flex gap-2">
-          <!-- View mode buttons -->
-          <template v-if="!isEditing">
-            <button
-              @click="isEditing = true"
-              class="text-xs font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
-            >
-              {{ t('buttons.edit') }}
-            </button>
-            <button
-              @click="emit('close')"
-              class="text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all cursor-pointer"
-            >
-              {{ t('buttons.close') }}
-            </button>
-          </template>
 
-          <!-- Edit mode buttons -->
-          <template v-else>
+        <!-- Error alert -->
+        <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
+          {{ error }}
+        </div>
+
+        <!-- Main Body -->
+        <div class="p-4 overflow-y-auto flex-grow scroller-thin">
+          <!-- Loading State -->
+          <div v-if="loading && !task" class="flex flex-col items-center justify-center py-12 gap-3">
+            <div class="w-8 h-8 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-slate-400 text-xs">{{ t('loadingTask') }}</span>
+          </div>
+
+          <div v-else-if="task">
+            <!-- View Mode -->
+            <div v-if="!isEditing" class="space-y-4">
+              <div>
+                <h2 class="text-xl font-bold text-theme-text-main mb-1.5 leading-snug">
+                  {{ task.title }}
+                </h2>
+
+                <!-- Tags -->
+                <div v-if="task.tags.length" class="flex flex-wrap gap-1 mt-2">
+                  <span
+                    v-for="tag in task.tags"
+                    :key="tag"
+                    class="text-xs font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded"
+                  >
+                    {{ tag }}
+                  </span>
+                </div>
+
+                <!-- Due Date & Priority Info -->
+                <div v-if="task.due_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
+                  <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Due:</span>
+                    <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
+                      {{ new Date(task.due_date).toLocaleDateString() }}
+                    </span>
+                  </div>
+                  <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Priority:</span>
+                    <span
+                      class="px-2 py-0.5 rounded border text-xs font-extrabold uppercase tracking-wider"
+                      :class="getPriorityClasses(task.priority)"
+                    >
+                      {{ t('priorityOptions.' + task.priority) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-t border-theme-border pt-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-2">{{ t('notesLabel') }}</h4>
+
+                <!-- Rendered Markdown -->
+                <div
+                  v-if="task.body"
+                  class="markdown-content text-theme-text-card prose prose-invert max-w-none space-y-3 break-all"
+                  v-html="parsedMarkdown"
+                ></div>
+                <div v-else class="text-theme-text-muted italic text-xs py-2">{{ t('noDescription') }}</div>
+              </div>
+
+              <div class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono">
+                <span>{{ t('timestampCreated', { date: new Date(task.created_at).toLocaleString() }) }}</span>
+                <span>{{ t('timestampUpdated', { date: new Date(task.updated_at).toLocaleString() }) }}</span>
+              </div>
+            </div>
+
+            <!-- Edit Mode -->
+            <div v-else class="space-y-3">
+              <!-- Title -->
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                  t('form.titleLabel')
+                }}</label>
+                <input
+                  v-model="editTitle"
+                  type="text"
+                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                  :placeholder="t('form.titlePlaceholder')"
+                />
+              </div>
+
+              <!-- Bucket & Tags Row -->
+              <div class="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                    t('form.columnLabel')
+                  }}</label>
+                  <select
+                    v-model="editBucket"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                  >
+                    <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                    t('form.tagsLabel')
+                  }}</label>
+                  <input
+                    v-model="editTags"
+                    type="text"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                    :placeholder="t('form.tagsPlaceholderEdit')"
+                  />
+                </div>
+              </div>
+
+              <!-- Due Date & Priority Row -->
+              <div class="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                    t('form.dueDateLabel')
+                  }}</label>
+                  <input
+                    v-model="editDueDate"
+                    type="date"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                    t('form.priorityLabel')
+                  }}</label>
+                  <select
+                    v-model="editPriority"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                  >
+                    <option value="">{{ t('priorityOptions.none') }}</option>
+                    <option value="low">{{ t('priorityOptions.low') }}</option>
+                    <option value="medium">{{ t('priorityOptions.medium') }}</option>
+                    <option value="high">{{ t('priorityOptions.high') }}</option>
+                    <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Body (Markdown Textarea) -->
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
+                  {{ t('form.markdownLabelEdit') }}
+                </label>
+                <textarea
+                  v-model="editBody"
+                  rows="10"
+                  class="w-full bg-theme-base/60 border border-theme-border rounded p-3 text-sm text-theme-text-input font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring scroller-thin"
+                  :placeholder="t('form.markdownPlaceholderEdit')"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="px-4 py-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
+          <div>
             <button
-              @click="cancelEdit"
-              class="text-xs font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
-              :disabled="loading"
+              v-if="task && !isEditing"
+              @click="handleDelete"
+              class="text-sm font-semibold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors cursor-pointer"
             >
-              {{ t('buttons.cancel') }}
+              {{ t('buttons.delete') }}
             </button>
-            <button
-              @click="handleSave"
-              class="text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-              :disabled="loading"
-            >
-              <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              {{ t('buttons.save') }}
-            </button>
-          </template>
+          </div>
+          <div class="flex gap-2">
+            <!-- View mode buttons -->
+            <template v-if="!isEditing">
+              <button
+                @click="isEditing = true"
+                class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+              >
+                {{ t('buttons.edit') }}
+              </button>
+              <button
+                @click="emit('close')"
+                class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all cursor-pointer"
+              >
+                {{ t('buttons.close') }}
+              </button>
+            </template>
+
+            <!-- Edit mode buttons -->
+            <template v-else>
+              <button
+                @click="cancelEdit"
+                class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+                :disabled="loading"
+              >
+                {{ t('buttons.cancel') }}
+              </button>
+              <button
+                @click="handleSave"
+                class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                :disabled="loading"
+              >
+                <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                {{ t('buttons.save') }}
+              </button>
+            </template>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <style>
