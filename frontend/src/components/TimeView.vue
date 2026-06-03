@@ -156,12 +156,10 @@ onBeforeUnmount(() => {
         :class="col.bgClass"
       >
         <div class="flex items-center gap-2 min-w-0">
-          <h3 class="font-bold text-xs uppercase tracking-wider text-theme-text-main truncate">
+          <h3 class="font-bold text-sm uppercase tracking-wider text-theme-text-main truncate">
             {{ col.title }}
           </h3>
-          <span
-            class="text-[10px] px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0"
-          >
+          <span class="text-xs px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0">
             {{ col.tasks.length }}
           </span>
         </div>
@@ -178,7 +176,7 @@ onBeforeUnmount(() => {
         <!-- Empty state overlay (positioned on top, pointer-events-none so drops pass through) -->
         <div
           v-if="!col.tasks.length"
-          class="absolute inset-0 flex items-center justify-center text-theme-text-muted italic text-[11px] pointer-events-none z-0"
+          class="absolute inset-0 flex items-center justify-center text-theme-text-muted italic text-xs pointer-events-none z-0"
         >
           {{ t('timeView.emptyColumn') }}
         </div>

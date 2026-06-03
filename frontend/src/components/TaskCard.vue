@@ -99,7 +99,7 @@ const getPriorityClasses = (prio: string) => {
   >
     <!-- Title & ID -->
     <div class="flex justify-between items-start gap-2">
-      <h4 class="text-xs font-bold text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2">
+      <h4 class="text-sm font-bold text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2">
         {{ task.title }}
       </h4>
       <div v-if="task.bucket !== 'done'" class="flex items-center gap-1.5 shrink-0">
@@ -119,7 +119,7 @@ const getPriorityClasses = (prio: string) => {
       <span
         v-for="tag in task.tags"
         :key="tag"
-        class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded border"
+        class="text-xs uppercase font-bold tracking-wider px-1.5 py-0.5 rounded border"
         :class="getTagClasses(tag)"
       >
         {{ tag }}
@@ -127,14 +127,14 @@ const getPriorityClasses = (prio: string) => {
     </div>
 
     <!-- Due Date & Priority on Card -->
-    <div v-if="task.due_date || task.priority" class="flex flex-wrap gap-2.5 items-center text-[9px] mt-0.5 select-none">
+    <div v-if="task.due_date || task.priority" class="flex flex-wrap gap-2.5 items-center text-xs mt-0.5 select-none">
       <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
         <Calendar class="w-3 h-3 shrink-0" />
         <span>{{ formatDate(task.due_date) }}</span>
       </div>
       <div
         v-if="task.priority"
-        class="px-1.5 py-0.25 rounded border text-[8px] font-extrabold uppercase tracking-wider leading-none"
+        class="px-1.5 py-0.25 rounded border text-[10px] font-extrabold uppercase tracking-wider leading-none"
         :class="getPriorityClasses(task.priority)"
       >
         {{ task.priority }}
@@ -146,10 +146,10 @@ const getPriorityClasses = (prio: string) => {
       <!-- Snippet / Expand Toggle Row -->
       <div class="flex items-center justify-between gap-2">
         <!-- Note Snippet -->
-        <span v-if="!isExpanded" class="text-[11px] text-theme-text-muted line-clamp-1 break-all flex-grow font-sans italic">
+        <span v-if="!isExpanded" class="text-xs text-theme-text-muted line-clamp-1 break-all flex-grow font-sans italic">
           {{ notesSnippet }}
         </span>
-        <span v-else class="text-[10px] font-bold uppercase tracking-wider text-theme-accent font-sans"> Notes Detail </span>
+        <span v-else class="text-xs font-bold uppercase tracking-wider text-theme-accent font-sans"> Notes Detail </span>
 
         <!-- Inline Toggle Button -->
         <button
@@ -164,7 +164,7 @@ const getPriorityClasses = (prio: string) => {
       <!-- Expanded Markdown Content -->
       <div
         v-if="isExpanded"
-        class="text-[11px] text-theme-text-card max-h-40 overflow-y-auto scroller-thin p-2 bg-theme-column/30 border border-theme-border/50 rounded prose prose-invert max-w-none break-all"
+        class="text-xs text-theme-text-card max-h-40 overflow-y-auto scroller-thin p-2 bg-theme-column/30 border border-theme-border/50 rounded prose prose-invert max-w-none break-all"
         @click.stop
         v-html="parsedMarkdown"
       ></div>
@@ -173,7 +173,7 @@ const getPriorityClasses = (prio: string) => {
     <!-- Meta Information Footer (Checklist Stats only) -->
     <div
       v-if="checklistStats"
-      class="flex justify-between items-center text-[10px] text-theme-text-muted mt-1 pt-1 border-t border-theme-border/40"
+      class="flex justify-between items-center text-xs text-theme-text-muted mt-1 pt-1 border-t border-theme-border/40"
     >
       <!-- Checklist Stats -->
       <div

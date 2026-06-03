@@ -127,13 +127,13 @@ const handleSubmit = async () => {
       <form @submit.prevent="handleSubmit" class="p-4 overflow-y-auto flex-grow space-y-3.5 scroller-thin">
         <!-- Title -->
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.titleLabel') }}</label>
+          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.titleLabel') }}</label>
           <input
             ref="titleInput"
             v-model="title"
             type="text"
             required
-            class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+            class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
             :placeholder="t('form.titlePlaceholder')"
           />
         </div>
@@ -141,22 +141,20 @@ const handleSubmit = async () => {
         <!-- Bucket & Tags Row -->
         <div class="grid grid-cols-2 gap-3.5">
           <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-              t('form.columnLabel')
-            }}</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.columnLabel') }}</label>
             <select
               v-model="bucket"
-              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
             >
               <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.tagsLabel') }}</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.tagsLabel') }}</label>
             <input
               v-model="tags"
               type="text"
-              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
               :placeholder="t('form.tagsPlaceholder')"
             />
           </div>
@@ -165,22 +163,18 @@ const handleSubmit = async () => {
         <!-- Due Date & Priority Row -->
         <div class="grid grid-cols-2 gap-3.5">
           <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-              t('form.dueDateLabel')
-            }}</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.dueDateLabel') }}</label>
             <input
               v-model="dueDate"
               type="date"
-              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
             />
           </div>
           <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-              t('form.priorityLabel')
-            }}</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.priorityLabel') }}</label>
             <select
               v-model="priority"
-              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
             >
               <option value="">{{ t('priorityOptions.none') }}</option>
               <option value="low">{{ t('priorityOptions.low') }}</option>
@@ -193,13 +187,13 @@ const handleSubmit = async () => {
 
         <!-- Body (Markdown Textarea) -->
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">
+          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
             {{ t('form.markdownLabel') }}
           </label>
           <textarea
             v-model="body"
             rows="8"
-            class="w-full bg-theme-base/60 border border-theme-border rounded p-3 text-xs text-theme-text-input font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring scroller-thin"
+            class="w-full bg-theme-base/60 border border-theme-border rounded p-3 text-sm text-theme-text-input font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring scroller-thin"
             :placeholder="t('form.markdownPlaceholder')"
           ></textarea>
         </div>
@@ -210,7 +204,7 @@ const handleSubmit = async () => {
         <button
           type="button"
           @click="emit('close')"
-          class="text-xs font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+          class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
           :disabled="loading"
         >
           {{ t('buttons.cancel') }}
@@ -218,7 +212,7 @@ const handleSubmit = async () => {
         <button
           type="submit"
           @click="handleSubmit"
-          class="text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+          class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           :disabled="loading"
         >
           <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
