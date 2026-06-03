@@ -99,7 +99,7 @@ const getPriorityClasses = (prio: string) => {
   >
     <!-- Title & ID -->
     <div class="flex justify-between items-start gap-2">
-      <h4 class="text-sm font-bold text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2">
+      <h4 class="text-sm text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2">
         {{ task.title }}
       </h4>
       <div v-if="task.bucket !== 'done'" class="flex items-center gap-1.5 shrink-0">

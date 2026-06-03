@@ -99,126 +99,132 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-    <!-- Backdrop -->
-    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
+  <transition name="modal">
+    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <!-- Backdrop -->
+      <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
 
-    <!-- Modal Content -->
-    <div
-      class="relative bg-theme-base border border-theme-border w-full max-w-2xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
-    >
-      <!-- Header -->
-      <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
-        <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">{{ t('createModalTitle') }}</h3>
-        <button
-          @click="emit('close')"
-          class="text-theme-text-muted hover:text-theme-text-main transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
-        >
-          <X class="w-4 h-4 shrink-0" />
-        </button>
-      </div>
-
-      <!-- Error Alert -->
-      <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
-        {{ error }}
-      </div>
-
-      <!-- Form Body -->
-      <form @submit.prevent="handleSubmit" class="p-4 overflow-y-auto flex-grow space-y-3.5 scroller-thin">
-        <!-- Title -->
-        <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.titleLabel') }}</label>
-          <input
-            ref="titleInput"
-            v-model="title"
-            type="text"
-            required
-            class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            :placeholder="t('form.titlePlaceholder')"
-          />
+      <!-- Modal Content -->
+      <div
+        class="relative bg-theme-base border border-theme-border w-full max-w-2xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
+      >
+        <!-- Header -->
+        <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
+          <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">{{ t('createModalTitle') }}</h3>
+          <button
+            @click="emit('close')"
+            class="text-theme-text-muted hover:text-theme-text-main transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
+          >
+            <X class="w-4 h-4 shrink-0" />
+          </button>
         </div>
 
-        <!-- Bucket & Tags Row -->
-        <div class="grid grid-cols-2 gap-3.5">
+        <!-- Error Alert -->
+        <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
+          {{ error }}
+        </div>
+
+        <!-- Form Body -->
+        <form @submit.prevent="handleSubmit" class="p-4 overflow-y-auto flex-grow space-y-3.5 scroller-thin">
+          <!-- Title -->
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.columnLabel') }}</label>
-            <select
-              v-model="bucket"
-              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            >
-              <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.tagsLabel') }}</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.titleLabel') }}</label>
             <input
-              v-model="tags"
+              ref="titleInput"
+              v-model="title"
               type="text"
+              required
               class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-              :placeholder="t('form.tagsPlaceholder')"
+              :placeholder="t('form.titlePlaceholder')"
             />
           </div>
-        </div>
 
-        <!-- Due Date & Priority Row -->
-        <div class="grid grid-cols-2 gap-3.5">
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.dueDateLabel') }}</label>
-            <input
-              v-model="dueDate"
-              type="date"
-              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            />
+          <!-- Bucket & Tags Row -->
+          <div class="grid grid-cols-2 gap-3.5">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.columnLabel') }}</label>
+              <select
+                v-model="bucket"
+                class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              >
+                <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.tagsLabel') }}</label>
+              <input
+                v-model="tags"
+                type="text"
+                class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                :placeholder="t('form.tagsPlaceholder')"
+              />
+            </div>
           </div>
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.priorityLabel') }}</label>
-            <select
-              v-model="priority"
-              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            >
-              <option value="">{{ t('priorityOptions.none') }}</option>
-              <option value="low">{{ t('priorityOptions.low') }}</option>
-              <option value="medium">{{ t('priorityOptions.medium') }}</option>
-              <option value="high">{{ t('priorityOptions.high') }}</option>
-              <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
-            </select>
+
+          <!-- Due Date & Priority Row -->
+          <div class="grid grid-cols-2 gap-3.5">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                t('form.dueDateLabel')
+              }}</label>
+              <input
+                v-model="dueDate"
+                type="date"
+                class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                t('form.priorityLabel')
+              }}</label>
+              <select
+                v-model="priority"
+                class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              >
+                <option value="">{{ t('priorityOptions.none') }}</option>
+                <option value="low">{{ t('priorityOptions.low') }}</option>
+                <option value="medium">{{ t('priorityOptions.medium') }}</option>
+                <option value="high">{{ t('priorityOptions.high') }}</option>
+                <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <!-- Body (Markdown Textarea) -->
-        <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-            {{ t('form.markdownLabel') }}
-          </label>
-          <textarea
-            v-model="body"
-            rows="8"
-            class="w-full bg-theme-base/60 border border-theme-border rounded p-3 text-sm text-theme-text-input font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring scroller-thin"
-            :placeholder="t('form.markdownPlaceholder')"
-          ></textarea>
-        </div>
-      </form>
+          <!-- Body (Markdown Textarea) -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
+              {{ t('form.markdownLabel') }}
+            </label>
+            <textarea
+              v-model="body"
+              rows="8"
+              class="w-full bg-theme-base/60 border border-theme-border rounded p-3 text-sm text-theme-text-input font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring scroller-thin"
+              :placeholder="t('form.markdownPlaceholder')"
+            ></textarea>
+          </div>
+        </form>
 
-      <!-- Footer Buttons -->
-      <div class="px-4 py-3 border-t border-theme-border flex justify-end gap-2 bg-theme-card/30 shrink-0">
-        <button
-          type="button"
-          @click="emit('close')"
-          class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
-          :disabled="loading"
-        >
-          {{ t('buttons.cancel') }}
-        </button>
-        <button
-          type="submit"
-          @click="handleSubmit"
-          class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-          :disabled="loading"
-        >
-          <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          {{ t('buttons.create') }}
-        </button>
+        <!-- Footer Buttons -->
+        <div class="px-4 py-3 border-t border-theme-border flex justify-end gap-2 bg-theme-card/30 shrink-0">
+          <button
+            type="button"
+            @click="emit('close')"
+            class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+            :disabled="loading"
+          >
+            {{ t('buttons.cancel') }}
+          </button>
+          <button
+            type="submit"
+            @click="handleSubmit"
+            class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+            :disabled="loading"
+          >
+            <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            {{ t('buttons.create') }}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
+  </transition>
 </template>
