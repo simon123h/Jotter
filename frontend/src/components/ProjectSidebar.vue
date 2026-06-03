@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue';
-import { Folder, Hash, Pencil, Trash2, Plus } from '@lucide/vue';
+import { ref, nextTick, computed, watch, onMounted } from 'vue';
+import { Folder, Hash, Pencil, Trash2, Plus, Pin } from '@lucide/vue';
 import type { Project } from '../types';
 import { useI18n } from '../composables/useI18n';
 
 const { t } = useI18n();
 
-defineProps<{
+const props = defineProps<{
   projects: Project[];
   activeProjectId: string;
 }>();
@@ -17,6 +17,70 @@ const emit = defineEmits<{
   (e: 'rename-project', payload: { id: string; title: string }): void;
   (e: 'delete-project', project: Project): void;
 }>();
+
+// Pinning state (loaded from / saved to localStorage)
+const pinnedProjectIds = ref<string[]>(JSON.parse(localStorage.getItem('jotter-pinned-projects') || '[]'));
+
+const togglePin = (projectId: string, event: Event) => {
+  event.stopPropagation();
+  const idx = pinnedProjectIds.value.indexOf(projectId);
+  if (idx === -1) {
+    pinnedProjectIds.value.push(projectId);
+  } else {
+    pinnedProjectIds.value.splice(idx, 1);
+  }
+  localStorage.setItem('jotter-pinned-projects', JSON.stringify(pinnedProjectIds.value));
+};
+
+// Sorting state (loaded from / saved to localStorage)
+const sortBy = ref<'alpha' | 'mru'>((localStorage.getItem('jotter-projects-sort') as 'alpha' | 'mru') || 'alpha');
+
+const toggleSortOrder = () => {
+  sortBy.value = sortBy.value === 'alpha' ? 'mru' : 'alpha';
+  localStorage.setItem('jotter-projects-sort', sortBy.value);
+};
+
+// Most Recently Used (MRU) tracking via access timestamps
+const updateMru = (id: string) => {
+  if (id) {
+    localStorage.setItem(`jotter-project-mru-${id}`, String(Date.now()));
+  }
+};
+
+watch(
+  () => props.activeProjectId,
+  (newId) => {
+    updateMru(newId);
+  }
+);
+
+onMounted(() => {
+  updateMru(props.activeProjectId);
+});
+
+// Computed sorted and pinned projects list
+const sortedProjects = computed(() => {
+  return [...props.projects].sort((a, b) => {
+    const aPinned = pinnedProjectIds.value.includes(a.id);
+    const bPinned = pinnedProjectIds.value.includes(b.id);
+
+    // 1. Pinned projects are always displayed first at the top
+    if (aPinned && !bPinned) return -1;
+    if (!aPinned && bPinned) return 1;
+
+    // 2. Sort by the user's selected sorting order
+    if (sortBy.value === 'mru') {
+      const aMru = Number(localStorage.getItem(`jotter-project-mru-${a.id}`) || '0');
+      const bMru = Number(localStorage.getItem(`jotter-project-mru-${b.id}`) || '0');
+      if (aMru !== bMru) {
+        return bMru - aMru; // descending: recently active project first
+      }
+    }
+
+    // Fallback/Default: Alphabetical sorting
+    return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+  });
+});
 
 // Add project input states
 const showAddProjectInput = ref(false);
@@ -74,14 +138,23 @@ const saveRenameProject = () => {
       <h2 class="text-xs font-bold uppercase tracking-wider text-theme-text-main flex items-center gap-1.5">
         <Folder class="w-4 h-4 text-theme-accent shrink-0" /> {{ t('projects.sidebarTitle') }}
       </h2>
+
+      <!-- Sort Order Toggle Badge Button -->
+      <button
+        @click="toggleSortOrder"
+        class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-theme-border/50 bg-theme-column/30 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main transition-colors cursor-pointer"
+        :title="sortBy === 'alpha' ? t('projects.sortTooltipAlpha') : t('projects.sortTooltipMru')"
+      >
+        {{ sortBy === 'alpha' ? 'A-Z' : 'MRU' }}
+      </button>
     </div>
 
     <!-- Projects List -->
     <div class="flex-grow overflow-y-auto p-2 space-y-1 scroller-thin">
       <div
-        v-for="project in projects"
+        v-for="project in sortedProjects"
         :key="project.id"
-        class="group relative flex items-center justify-between px-3 py-2 rounded text-xs transition-all cursor-pointer font-medium"
+        class="group relative flex items-center justify-between px-3 py-1.5 rounded text-xs transition-all cursor-pointer font-medium"
         :class="
           project.id === activeProjectId
             ? 'bg-theme-primary/10 text-theme-accent border border-theme-primary/15'
@@ -104,27 +177,44 @@ const saveRenameProject = () => {
           <span v-else class="truncate text-[11px] font-sans">{{ project.title }}</span>
         </div>
 
-        <!-- Project Actions (Rename, Delete) visible on hover -->
-        <div
-          v-if="editingProjectId !== project.id && project.id !== 'default'"
-          class="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity"
-        >
-          <!-- Rename Icon -->
+        <!-- Project Actions -->
+        <div class="flex items-center gap-1 shrink-0">
+          <!-- Pin Toggle Button -->
           <button
-            @click.stop="startRenameProject(project)"
-            class="p-0.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-colors cursor-pointer"
-            :title="t('projects.renameProject')"
+            @click.stop="togglePin(project.id, $event)"
+            class="p-0.5 rounded transition-all cursor-pointer"
+            :class="
+              pinnedProjectIds.includes(project.id)
+                ? 'text-theme-accent opacity-100'
+                : 'text-theme-text-muted hover:text-theme-text-main opacity-0 group-hover:opacity-100'
+            "
+            :title="pinnedProjectIds.includes(project.id) ? t('projects.unpinProject') : t('projects.pinProject')"
           >
-            <Pencil class="w-3 h-3" />
+            <Pin class="w-3 h-3" :class="{ 'fill-theme-accent': pinnedProjectIds.includes(project.id) }" />
           </button>
-          <!-- Delete Icon -->
-          <button
-            @click.stop="emit('delete-project', project)"
-            class="p-0.5 text-red-400 hover:text-red-300 hover:bg-theme-column rounded transition-colors cursor-pointer"
-            :title="t('buttons.delete')"
+
+          <!-- Rename / Delete Icons -->
+          <div
+            v-if="editingProjectId !== project.id && project.id !== 'default'"
+            class="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity"
           >
-            <Trash2 class="w-3 h-3" />
-          </button>
+            <!-- Rename Icon -->
+            <button
+              @click.stop="startRenameProject(project)"
+              class="p-0.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-colors cursor-pointer"
+              :title="t('projects.renameProject')"
+            >
+              <Pencil class="w-3 h-3" />
+            </button>
+            <!-- Delete Icon -->
+            <button
+              @click.stop="emit('delete-project', project)"
+              class="p-0.5 text-red-400 hover:text-red-300 hover:bg-theme-column rounded transition-colors cursor-pointer"
+              :title="t('buttons.delete')"
+            >
+              <Trash2 class="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

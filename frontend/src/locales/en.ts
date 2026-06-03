@@ -106,6 +106,10 @@ export const en = {
     renameProject: 'Rename Project',
     deleteProjectConfirm: 'Are you sure you want to delete the project "{title}" and all its tasks? This action cannot be undone.',
     deleteProjectDefaultError: 'The default project cannot be deleted.',
+    sortTooltipAlpha: 'Sorting alphabetically. Click to sort by most recently used.',
+    sortTooltipMru: 'Sorting by most recently used. Click to sort alphabetically.',
+    pinProject: 'Pin project',
+    unpinProject: 'Unpin project',
   },
   language: {
     label: 'Language',
