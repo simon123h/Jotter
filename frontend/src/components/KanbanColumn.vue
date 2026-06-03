@@ -80,6 +80,9 @@ onMounted(() => {
       ghostClass: 'opacity-40',
       chosenClass: 'scale-[1.02]',
       dragClass: 'rotate-1',
+      draggable: '.task-card',
+      filter: '.add-task-btn',
+      preventOnFilter: true,
       // Triggered when dragging finishes
       onEnd: (evt) => {
         const { item, to, oldIndex, newIndex } = evt;
@@ -201,6 +204,7 @@ onMounted(() => {
       class="flex-grow p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] scroller-thin"
     >
       <TaskCard
+        class="task-card"
         v-for="task in tasks"
         :key="task.id"
         :task="task"
@@ -208,6 +212,15 @@ onMounted(() => {
         @click="emit('task-click', task)"
         @mark-done="emit('mark-done', $event)"
       />
+
+      <!-- Add Task Button inside scroll area, below the last card -->
+      <button
+        @click="emit('add-task-click', bucketName)"
+        class="add-task-btn w-full flex items-center justify-center gap-1.5 py-2 px-3 border border-dashed border-theme-border hover:border-theme-accent hover:bg-theme-card text-theme-text-muted hover:text-theme-accent rounded text-xs font-semibold transition-all cursor-pointer shadow-sm group/btn mt-2.5"
+      >
+        <Plus class="w-4 h-4 shrink-0 transition-transform group-hover/btn:scale-110" />
+        {{ t('addTaskButton') }}
+      </button>
     </div>
   </div>
 </template>
