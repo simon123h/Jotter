@@ -154,4 +154,7 @@ export const de = {
     progress: 'Fortschritt',
     updated: 'Aktualisiert',
   },
+  shortcuts: {
+    createTask: 'Taste Q drücken, um eine neue Aufgabe hinzuzufügen',
+  },
 };
