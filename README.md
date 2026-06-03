@@ -38,6 +38,7 @@ You can customize how Jotter runs (such as changing the port or where your tasks
 | **Host** | `--host <address>` | `host: "<address>"` | `127.0.0.1` | The host IP address to bind to (e.g. `0.0.0.0` to allow local network access). |
 | **Data Directory** | `--data-dir <path>` | `data_dir: "<path>"` | `./tasks` | The folder where your markdown task files are stored. |
 | **Disable Browser** | `--no-browser` | `no_browser: true` | `false` | If set, Jotter will not open your web browser automatically on launch. |
+| **Log Level** | `--log-level <level>` | `log_level: "<level>"` | `info` | The logging verbosity level (`debug`, `info`, `warning`, `error`, `critical`). |
 | **Config File** | `--config <path>` / `-c` | *N/A* | *See below* | Path to a custom YAML/JSON configuration file. |
 
 #### Using a Configuration File

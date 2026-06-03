@@ -1,3 +1,5 @@
+import logging
+import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -14,14 +16,32 @@ from routers.system import router as system_router
 from routers.tasks import router as tasks_router
 from storage import sync_db_with_files
 
+# Configure logging using environment variable JOTTER_LOG_LEVEL
+log_level_env = os.environ.get("JOTTER_LOG_LEVEL", "INFO")
+logging.basicConfig(
+    level=getattr(logging, log_level_env, logging.INFO),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("jotter")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from database import DB_PATH
+    from storage import TASKS_DIR
+
+    logger.info(f"Using database file: {DB_PATH}")
+    logger.info(f"Using tasks markdown directory: {TASKS_DIR}")
+
     # Initialize SQLite database and populate from Markdown files if DB is empty
+    logger.info("Initializing database schema...")
     init_db()
 
     # Sync database with existing markdown files automatically on startup
-    sync_db_with_files()
+    logger.info("Synchronizing database with markdown files...")
+    count = sync_db_with_files()
+    logger.info(f"Database synchronization complete. Indexed {count} tasks.")
     yield
 
 

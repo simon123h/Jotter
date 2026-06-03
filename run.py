@@ -77,6 +77,13 @@ def main():
         default=None,
         help="Do not open the web browser automatically",
     )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default=None,
+        choices=["debug", "info", "warning", "error", "critical"],
+        help="Set the logging level",
+    )
 
     args = parser.parse_args()
 
@@ -117,10 +124,23 @@ def main():
     if no_browser is None:
         no_browser = False
 
+    log_level = args.log_level
+    if log_level is None:
+        log_level = config.get("log_level") or config.get("log-level")
+    if log_level is None:
+        log_level = "info"
+
     # Set data dir env var if resolved
     if data_dir:
         os.environ["JOTTER_DATA_DIR"] = os.path.abspath(data_dir)
 
+    # Set log level env var for the backend
+    os.environ["JOTTER_LOG_LEVEL"] = log_level.upper()
+
+    # Print ASCII Art logo and basic startup info
+    print(ASCII_LOGO)
+    print("Jotter - Local-first Markdown Kanban Board")
+    print("==========================================")
     print(f"Starting Jotter on http://{host}:{port}")
 
     # Start browser in a background thread after a short delay
@@ -128,7 +148,7 @@ def main():
         Timer(1.5, open_browser, args=[host, port]).start()
 
     # Run uvicorn server
-    uvicorn.run(app, host=host, port=port, log_level="info")
+    uvicorn.run(app, host=host, port=port, log_level=log_level.lower())
 
 
 if __name__ == "__main__":

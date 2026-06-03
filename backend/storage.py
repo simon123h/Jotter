@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 import shutil
@@ -11,6 +12,8 @@ from typing import Any, Dict, Optional, Tuple
 import frontmatter
 
 from database import db_session
+
+logger = logging.getLogger("jotter.storage")
 
 data_dir_env = os.environ.get("JOTTER_DATA_DIR")
 if data_dir_env:
@@ -59,7 +62,7 @@ def migrate_legacy_layout():
                     os.path.join(default_dir, "buckets.json"),
                 )
             except Exception as e:
-                print(f"Error migrating buckets.json: {e}")
+                logger.error(f"Error migrating buckets.json: {e}")
         # Move task files
         for filename in legacy_files:
             try:
@@ -68,7 +71,7 @@ def migrate_legacy_layout():
                     os.path.join(default_dir, filename),
                 )
             except Exception as e:
-                print(f"Error migrating task file {filename}: {e}")
+                logger.error(f"Error migrating task file {filename}: {e}")
 
         # Initialize projects.json if not present
         if not os.path.exists(PROJECTS_FILE):
@@ -427,7 +430,7 @@ def sync_db_with_files() -> int:
                             )
                             count += 1
                         except Exception as e:
-                            print(f"Error syncing file {filename} in project {p['id']}: {e}")
+                            logger.error(f"Error syncing file {filename} in project {p['id']}: {e}")
 
             if buckets_modified:
                 write_buckets_file(p["id"], buckets)
