@@ -18,6 +18,16 @@ sys.path.insert(0, str(backend_dir))
 from main import app
 import uvicorn
 
+ASCII_LOGO = r"""
+   ___       _   _            
+  |_  |     | | | |           
+    | | ___ | |_| |_ ___ _ __ 
+    | |/ _ \| __| __/ _ \ '__|
+/\__/ / (_) | |_| ||  __/ |   
+\____/ \___/ \__|\__\___|_|   
+                              
+"""
+
 
 def open_browser(host: str, port: int):
     url = f"http://localhost:{port}" if host == "127.0.0.1" else f"http://{host}:{port}"
