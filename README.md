@@ -1,5 +1,8 @@
 # Jotter - Local-First Markdown Kanban App
 
+[![CI Pipeline](https://github.com/simon123h/jotter/actions/workflows/ci.yml/badge.svg)](https://github.com/simon123h/jotter/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/simon123h/jotter/graph/badge.svg?token=ZLMIMRRLEF)](https://codecov.io/gh/simon123h/jotter)
+
 ## Project Overview
 
 A custom, local-first, non-commercial task management application designed to replace MS Planner. The primary goal is to combat "task flooding" through aggressive filtering and bulk operations, while maintaining strict data ownership and compliance through a local plain-text storage model.
