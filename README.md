@@ -1,7 +1,7 @@
 # Jotter - Local-First Markdown Kanban App
 
-[![GitLab CI](https://gitlab.com/simon123h/jotter/badges/main/pipeline.svg)](https://gitlab.com/simon123h/jotter/-/pipelines)
-[![codecov](https://codecov.io/gh/simon123h/jotter/branch/main/graph/badge.svg?token=YOUR_CODECOV_TOKEN)](https://codecov.io/gh/simon123h/jotter)
+[![CI Pipeline](https://github.com/simon123h/jotter/actions/workflows/ci.yml/badge.svg)](https://github.com/simon123h/jotter/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/simon123h/jotter/graph/badge.svg)](https://codecov.io/gh/simon123h/jotter)
 
 ## Project Overview
 

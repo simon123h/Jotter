@@ -11,7 +11,7 @@
     "test:backend": "cd backend && PYTHONPATH=. .venv/bin/pytest -v test_main.py",
     "test:frontend": "cd frontend && npm run test",
     "test": "npm run test:backend && npm run test:frontend",
-    "test:coverage": "cd backend && PYTHONPATH=. .venv/bin/pytest --cov=. --cov-report=json test_main.py && cd ../frontend && npx vitest run --coverage && cd .. && node scripts/combine-coverage.js",
+    "test:coverage": "cd backend && PYTHONPATH=. .venv/bin/pytest --cov=. --cov-report=json --cov-report=xml test_main.py && cd ../frontend && npx vitest run --coverage && cd .. && node scripts/combine-coverage.js",
     "lint:backend": "cd backend && .venv/bin/ruff check .",
     "lint:backend:fix": "cd backend && .venv/bin/ruff check . --fix",
     "lint:frontend": "cd frontend && npm run lint",
