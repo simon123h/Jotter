@@ -81,7 +81,7 @@ const getChecklistStats = (body: string) => {
           >
             <!-- Task Title + Note snippet -->
             <div class="flex-grow min-w-0 flex items-baseline gap-2 overflow-hidden">
-              <span class="font-bold text-theme-text-card group-hover:text-theme-accent transition-colors truncate">
+              <span class="text-theme-text-card group-hover:text-theme-accent transition-colors truncate">
                 {{ task.title }}
               </span>
               <!-- Sneak peak of markdown body if available -->
