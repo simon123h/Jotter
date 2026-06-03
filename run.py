@@ -4,6 +4,7 @@ import argparse
 import webbrowser
 from threading import Timer
 from pathlib import Path
+import yaml
 
 # Add backend directory to sys.path so backend imports work
 if getattr(sys, "frozen", False):
@@ -17,31 +18,108 @@ sys.path.insert(0, str(backend_dir))
 from main import app
 import uvicorn
 
+
 def open_browser(host: str, port: int):
     url = f"http://localhost:{port}" if host == "127.0.0.1" else f"http://{host}:{port}"
     webbrowser.open(url)
 
+
+def load_config(config_path: str) -> dict:
+    """Loads configuration settings from a YAML or JSON file."""
+    if not os.path.exists(config_path):
+        return {}
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+            if isinstance(data, dict):
+                return data
+    except Exception as e:
+        print(
+            f"Warning: Failed to load configuration file '{config_path}': {e}",
+            file=sys.stderr,
+        )
+    return {}
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Jotter - Local-first Markdown Kanban Board")
-    parser.add_argument("--port", type=int, default=8000, help="Port to run the server on")
-    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host address to bind to")
-    parser.add_argument("--data-dir", type=str, default=None, help="Directory to store markdown tasks (defaults to './tasks' in current directory)")
-    parser.add_argument("--no-browser", action="store_true", help="Do not open the web browser automatically")
+    parser = argparse.ArgumentParser(
+        description="Jotter - Local-first Markdown Kanban Board"
+    )
+    parser.add_argument(
+        "--config",
+        "-c",
+        type=str,
+        default=None,
+        help="Path to YAML/JSON configuration file",
+    )
+    parser.add_argument(
+        "--port", type=int, default=None, help="Port to run the server on"
+    )
+    parser.add_argument(
+        "--host", type=str, default=None, help="Host address to bind to"
+    )
+    parser.add_argument(
+        "--data-dir", type=str, default=None, help="Directory to store markdown tasks"
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        default=None,
+        help="Do not open the web browser automatically",
+    )
 
     args = parser.parse_args()
 
-    # Set data dir env var if provided
-    if args.data_dir:
-        os.environ["JOTTER_DATA_DIR"] = os.path.abspath(args.data_dir)
+    # Determine which config file to load
+    config_file = args.config
+    if not config_file:
+        # Check default files in the current working directory
+        for default_name in ("jotter.yaml", "jotter.yml", "jotter.json"):
+            if os.path.exists(default_name):
+                config_file = default_name
+                break
 
-    print(f"Starting Jotter on http://{args.host}:{args.port}")
-    
+    config = {}
+    if config_file:
+        config = load_config(config_file)
+        print(f"Loaded configuration from '{config_file}'")
+
+    # Resolve settings with precedence: CLI Arguments > Config File > Defaults
+    port = args.port
+    if port is None:
+        port = config.get("port")
+    if port is None:
+        port = 8000
+
+    host = args.host
+    if host is None:
+        host = config.get("host")
+    if host is None:
+        host = "127.0.0.1"
+
+    data_dir = args.data_dir
+    if data_dir is None:
+        data_dir = config.get("data_dir") or config.get("data-dir")
+
+    no_browser = args.no_browser
+    if no_browser is None:
+        no_browser = config.get("no_browser") or config.get("no-browser")
+    if no_browser is None:
+        no_browser = False
+
+    # Set data dir env var if resolved
+    if data_dir:
+        os.environ["JOTTER_DATA_DIR"] = os.path.abspath(data_dir)
+
+    print(f"Starting Jotter on http://{host}:{port}")
+
     # Start browser in a background thread after a short delay
-    if not args.no_browser:
-        Timer(1.5, open_browser, args=[args.host, args.port]).start()
+    if not no_browser:
+        Timer(1.5, open_browser, args=[host, port]).start()
 
     # Run uvicorn server
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+    uvicorn.run(app, host=host, port=port, log_level="info")
+
 
 if __name__ == "__main__":
     main()
