@@ -108,6 +108,10 @@ export const de = {
     deleteProjectConfirm:
       'Bist du sicher, dass du das Projekt "{title}" und all seine Aufgaben löschen möchtest? Dies kann nicht rückgängig gemacht werden.',
     deleteProjectDefaultError: 'Das Standardprojekt kann nicht gelöscht werden.',
+    sortTooltipAlpha: 'Alphabetisch sortiert. Klicken, um nach zuletzt verwendet zu sortieren.',
+    sortTooltipMru: 'Nach zuletzt verwendet sortiert. Klicken, um alphabetisch zu sortieren.',
+    pinProject: 'Projekt anheften',
+    unpinProject: 'Projekt lösen',
   },
   language: {
     label: 'Sprache',
