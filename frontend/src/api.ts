@@ -49,7 +49,7 @@ export async function deleteProject(id: string): Promise<void> {
 
 // Scoped Task API calls
 export async function getTasks(projectId: string, bucket?: string, tag?: string): Promise<Task[]> {
-  const url = new URL(`${API_BASE}/projects/${projectId}/tasks`);
+  const url = new URL(`${API_BASE}/projects/${projectId}/tasks`, window.location.origin);
   if (bucket) url.searchParams.append('bucket', bucket);
   if (tag) url.searchParams.append('tag', tag);
 
