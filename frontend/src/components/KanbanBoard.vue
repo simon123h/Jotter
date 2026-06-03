@@ -24,10 +24,11 @@ import TimeView from './TimeView.vue';
 import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { Globe, LayoutGrid, List, ChevronDown, RefreshCw, Plus, X, ClipboardList, Menu, Eye, EyeOff, Grid, Clock } from '@lucide/vue';
 
 const { locale, t } = useI18n();
-const { showDialog } = useDialog();
+const { showDialog, isOpen: dialogIsOpen } = useDialog();
 
 const tasks = ref<Task[]>([]);
 const buckets = ref<Bucket[]>([]);
@@ -267,6 +268,17 @@ const openCreateModal = (bucket: BucketName) => {
   createDefaultBucket.value = bucket;
   isCreateOpen.value = true;
 };
+
+useKeyboardShortcuts([
+  {
+    key: 'q',
+    callback: () => {
+      if (!isCreateOpen.value && !isDetailOpen.value && !dialogIsOpen.value) {
+        openCreateModal(buckets.value[0]?.name || 'todo');
+      }
+    },
+  },
+]);
 
 const handleCardDropped = async ({
   taskId,
@@ -663,9 +675,10 @@ const formatDateISO = (d: Date): string => {
         <!-- New Task Button -->
         <button
           @click="openCreateModal(buckets[0]?.name || 'todo')"
-          class="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm hover:shadow-theme-ring/10 transition-all cursor-pointer shrink-0"
+          class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm hover:shadow-theme-ring/10 transition-all cursor-pointer shrink-0"
+          :title="t('shortcuts.createTask')"
         >
-          <Plus class="w-3.5 h-3.5" />
+          <Plus class="w-3.5 h-3.5 shrink-0" />
           <span class="hidden sm:inline">{{ t('addTaskButton') }}</span>
         </button>
       </div>

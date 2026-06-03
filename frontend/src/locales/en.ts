@@ -152,4 +152,7 @@ export const en = {
     progress: 'Progress',
     updated: 'Updated',
   },
+  shortcuts: {
+    createTask: 'Press Q to add a new task',
+  },
 };

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, nextTick, onUnmounted } from 'vue';
 import { X } from '@lucide/vue';
 import type { BucketName } from '../types';
 import { createTask } from '../api';
@@ -28,6 +28,14 @@ const priority = ref('');
 const loading = ref(false);
 const error = ref<string | null>(null);
 
+const titleInput = ref<HTMLInputElement | null>(null);
+
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' || event.key === 'Esc') {
+    emit('close');
+  }
+};
+
 // Reset form when modal opens
 watch(
   () => props.isOpen,
@@ -40,9 +48,22 @@ watch(
       dueDate.value = '';
       priority.value = '';
       error.value = null;
+
+      window.addEventListener('keydown', handleKeyDown);
+
+      nextTick(() => {
+        titleInput.value?.focus();
+      });
+    } else {
+      window.removeEventListener('keydown', handleKeyDown);
     }
-  }
+  },
+  { immediate: true }
 );
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
 
 const handleSubmit = async () => {
   if (!title.value.trim()) {
@@ -108,6 +129,7 @@ const handleSubmit = async () => {
         <div>
           <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.titleLabel') }}</label>
           <input
+            ref="titleInput"
             v-model="title"
             type="text"
             required
