@@ -2,6 +2,7 @@ import json
 import os
 import re
 import shutil
+import sys
 import tempfile
 import unicodedata
 from datetime import datetime, timezone
@@ -11,7 +12,13 @@ import frontmatter
 
 from database import db_session
 
-TASKS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tasks")
+data_dir_env = os.environ.get("JOTTER_DATA_DIR")
+if data_dir_env:
+    TASKS_DIR = os.path.abspath(data_dir_env)
+elif getattr(sys, "frozen", False):
+    TASKS_DIR = os.path.abspath(os.path.join(os.getcwd(), "tasks"))
+else:
+    TASKS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tasks")
 
 # Ensure the tasks directory exists
 os.makedirs(TASKS_DIR, exist_ok=True)

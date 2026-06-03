@@ -385,7 +385,7 @@ const handleColumnReordered = async ({ oldIndex, newIndex }: { oldIndex: number;
 
   try {
     await updateBucket(activeProjectId.value, draggedCol.name, { position: newPosition });
-  } catch (err) {
+  } catch {
     error.value = 'Failed to reorder columns. Reverting changes.';
     draggedCol.position = originalPosition;
     buckets.value.sort((a, b) => a.position - b.position);
@@ -417,7 +417,7 @@ const handleTimeViewDueDateUpdate = async ({ taskId, columnId }: { taskId: numbe
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  let newDueDate: string | null = null;
+  let newDueDate: string | null;
 
   switch (columnId) {
     case 'today':

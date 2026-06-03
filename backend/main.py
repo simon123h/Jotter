@@ -1,8 +1,11 @@
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from database import init_db
 from routers.buckets import router as buckets_router
@@ -39,14 +42,26 @@ app.add_middleware(
 )
 
 
-@app.get("/", include_in_schema=False)
-def root():
-    """Redirect to OpenAPI documentation (Swagger UI)."""
-    return RedirectResponse(url="/docs")
-
-
 # Include routers
 app.include_router(projects_router)
 app.include_router(tasks_router)
 app.include_router(buckets_router)
 app.include_router(system_router)
+
+
+def get_frontend_dist_dir() -> Path:
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "frontend" / "dist"
+    return Path(__file__).resolve().parent.parent / "frontend" / "dist"
+
+
+frontend_dist = get_frontend_dist_dir()
+
+if frontend_dist.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="static")
+else:
+
+    @app.get("/", include_in_schema=False)
+    def root():
+        """Redirect to OpenAPI documentation (Swagger UI)."""
+        return RedirectResponse(url="/docs")

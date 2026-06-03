@@ -1,8 +1,15 @@
 import os
 import sqlite3
+import sys
 from contextlib import contextmanager
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.db")
+data_dir_env = os.environ.get("JOTTER_DATA_DIR")
+if data_dir_env:
+    DB_PATH = os.path.abspath(os.path.join(data_dir_env, "tasks.db"))
+elif getattr(sys, "frozen", False):
+    DB_PATH = os.path.abspath(os.path.join(os.getcwd(), "tasks.db"))
+else:
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.db")
 
 
 def get_db_connection():

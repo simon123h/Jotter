@@ -1,6 +1,6 @@
 import type { Task, Bucket, Project } from './types';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.DEV ? 'http://localhost:8000' : '';
 
 // Project Management API calls
 export async function getProjects(): Promise<Project[]> {
