@@ -33,6 +33,9 @@ const titleInput = ref<HTMLInputElement | null>(null);
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Escape' || event.key === 'Esc') {
     emit('close');
+  } else if (event.ctrlKey && event.key === 'Enter') {
+    event.preventDefault();
+    handleSubmit();
   }
 };
 
@@ -66,6 +69,7 @@ onUnmounted(() => {
 });
 
 const handleSubmit = async () => {
+  if (loading.value) return;
   if (!title.value.trim()) {
     error.value = t('errors.titleRequired');
     return;

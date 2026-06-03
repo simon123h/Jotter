@@ -146,7 +146,7 @@ const formatDate = (dateStr: string) => {
             class="bg-theme-card border border-theme-border/60 hover:border-red-500/40 p-2.5 rounded shadow-sm hover:shadow-theme-ring transition-all duration-150 cursor-pointer flex flex-col gap-1.5"
           >
             <div class="flex justify-between items-start gap-2">
-              <span class="text-sm font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
+              <span class="text-sm text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
             </div>
             <div class="flex items-center gap-2 mt-0.5 text-xs">
               <span v-if="task.due_date" class="flex items-center gap-1 text-red-400 font-medium">
@@ -189,7 +189,7 @@ const formatDate = (dateStr: string) => {
             class="bg-theme-card border border-theme-border/60 hover:border-blue-500/40 p-2.5 rounded shadow-sm hover:shadow-theme-ring transition-all duration-150 cursor-pointer flex flex-col gap-1.5"
           >
             <div class="flex justify-between items-start gap-2">
-              <span class="text-sm font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
+              <span class="text-sm text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
             </div>
             <div class="flex items-center gap-2 mt-0.5 text-xs">
               <span v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
@@ -232,7 +232,7 @@ const formatDate = (dateStr: string) => {
             class="bg-theme-card border border-theme-border/60 hover:border-orange-500/40 p-2.5 rounded shadow-sm hover:shadow-theme-ring transition-all duration-150 cursor-pointer flex flex-col gap-1.5"
           >
             <div class="flex justify-between items-start gap-2">
-              <span class="text-sm font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
+              <span class="text-sm text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
             </div>
             <div class="flex items-center gap-2 mt-0.5 text-xs">
               <span v-if="task.due_date" class="flex items-center gap-1 text-red-400 font-medium">
@@ -275,7 +275,7 @@ const formatDate = (dateStr: string) => {
             class="bg-theme-card border border-theme-border/60 hover:border-slate-500/40 p-2.5 rounded shadow-sm hover:shadow-theme-ring transition-all duration-150 cursor-pointer flex flex-col gap-1.5"
           >
             <div class="flex justify-between items-start gap-2">
-              <span class="text-sm font-bold text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
+              <span class="text-sm text-theme-text-card line-clamp-2 leading-tight">{{ task.title }}</span>
             </div>
             <div class="flex items-center gap-2 mt-0.5 text-xs">
               <span v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
