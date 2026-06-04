@@ -109,15 +109,15 @@ def create_task(project_id: str, task: TaskCreate):
         now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         new_id = generate_next_id()
 
-        # Calculate position: max position in current bucket + 1000.0 (or default to 1000.0)
+        # Calculate position: min position in current bucket - 1000.0 (or default to 1000.0)
         cursor = conn.execute(
-            "SELECT MAX(position) as max_pos FROM tasks WHERE project_id = ? AND bucket = ?",
+            "SELECT MIN(position) as min_pos FROM tasks WHERE project_id = ? AND bucket = ?",
             (project_id, task.bucket),
         )
         row = cursor.fetchone()
         new_position = 1000.0
-        if row and row["max_pos"] is not None:
-            new_position = float(row["max_pos"]) + 1000.0
+        if row and row["min_pos"] is not None:
+            new_position = float(row["min_pos"]) - 1000.0
 
         task_tags = [t.lower() for t in task.tags]
         task_data = {
