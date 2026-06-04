@@ -14,9 +14,7 @@ else:
 
 sys.path.insert(0, str(backend_dir))
 
-# Now we can import the FastAPI app
-from main import app
-import uvicorn
+# FastAPI app and uvicorn are imported inside main() to ensure configuration env vars are set first
 
 ASCII_LOGO = r"""
    ___       _   _            
@@ -128,11 +126,11 @@ def main():
     if log_level is None:
         log_level = config.get("log_level") or config.get("log-level")
     if log_level is None:
-        log_level = "info"
+        log_level = "warning" if getattr(sys, "frozen", False) else "info"
 
     # Set data dir env var if resolved
     if data_dir:
-        os.environ["JOTTER_DATA_DIR"] = os.path.abspath(data_dir)
+        os.environ["JOTTER_DATA_DIR"] = os.path.abspath(os.path.expanduser(data_dir))
 
     # Set log level env var for the backend
     os.environ["JOTTER_LOG_LEVEL"] = log_level.upper()
@@ -148,6 +146,8 @@ def main():
         Timer(1.5, open_browser, args=[host, port]).start()
 
     # Run uvicorn server
+    from main import app
+    import uvicorn
     uvicorn.run(app, host=host, port=port, log_level=log_level.lower())
 
 
