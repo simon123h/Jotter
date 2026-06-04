@@ -18,6 +18,7 @@ export const en = {
   sync: {
     button: 'Sync Index',
     syncing: 'Syncing...',
+    synced: 'Synced',
     tooltip: 'Rebuild database index from Markdown files',
     success: 'Index synchronized successfully! Loaded {count} tasks from markdown files.',
     error: 'Failed to sync index: {message}',

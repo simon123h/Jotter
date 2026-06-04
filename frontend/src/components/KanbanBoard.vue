@@ -29,7 +29,22 @@ import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
-import { Globe, LayoutGrid, List, ChevronDown, RefreshCw, Plus, X, ClipboardList, Menu, Eye, EyeOff, Grid, Clock } from '@lucide/vue';
+import {
+  Globe,
+  LayoutGrid,
+  List,
+  ChevronDown,
+  RefreshCw,
+  Plus,
+  X,
+  ClipboardList,
+  Menu,
+  Eye,
+  EyeOff,
+  Grid,
+  Clock,
+  Check,
+} from '@lucide/vue';
 
 const { locale, t } = useI18n();
 const { showDialog, isOpen: dialogIsOpen } = useDialog();
@@ -67,6 +82,7 @@ const projects = ref<Project[]>([]);
 
 const loading = ref(false);
 const syncLoading = ref(false);
+const syncSuccess = ref(false);
 const error = ref<string | null>(null);
 
 // Filter state
@@ -513,18 +529,24 @@ const handleColumnReordered = async ({ oldIndex, newIndex }: { oldIndex: number;
 
 const triggerSync = async () => {
   syncLoading.value = true;
+  syncSuccess.value = false;
   error.value = null;
   try {
-    const result = await syncSystem();
-    await showDialog({
-      title: t('sync.button'),
-      message: t('sync.success', { count: result.synchronized_tasks }),
-      type: 'success',
-    });
+    await syncSystem();
+    syncSuccess.value = true;
+    setTimeout(() => {
+      syncSuccess.value = false;
+    }, 2000);
     await fetchProjects();
     await fetchAllData();
   } catch (err: any) {
-    error.value = t('sync.error', { message: err.message || err });
+    const msg = err.message || err;
+    error.value = t('sync.error', { message: msg });
+    await showDialog({
+      title: t('sync.button'),
+      message: t('sync.error', { message: msg }),
+      type: 'error',
+    });
   } finally {
     syncLoading.value = false;
   }
@@ -768,13 +790,19 @@ const formatDateISO = (d: Date): string => {
         <!-- Sync Button -->
         <button
           @click="triggerSync"
-          class="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer shrink-0"
+          class="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 border rounded transition-all duration-300 shadow-sm cursor-pointer shrink-0"
+          :class="
+            syncSuccess
+              ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 scale-105'
+              : 'bg-theme-card hover:bg-theme-column/80 text-theme-text-card border-theme-border'
+          "
           :disabled="syncLoading"
           :title="t('sync.tooltip')"
         >
-          <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" />
+          <Check v-if="syncSuccess" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-bounce" />
+          <RefreshCw v-else class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" />
           <span class="hidden lg:inline">
-            {{ syncLoading ? t('sync.syncing') : t('sync.button') }}
+            {{ syncSuccess ? t('sync.synced') : syncLoading ? t('sync.syncing') : t('sync.button') }}
           </span>
         </button>
 

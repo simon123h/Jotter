@@ -18,6 +18,7 @@ export const de = {
   sync: {
     button: 'Index synchronisieren',
     syncing: 'Synchronisiere...',
+    synced: 'Synchronisiert',
     tooltip: 'Datenbankindex aus Markdown-Dateien neu aufbauen',
     success: 'Index erfolgreich synchronisiert! {count} Aufgaben aus Markdown-Dateien geladen.',
     error: 'Fehler beim Synchronisieren des Index: {message}',
