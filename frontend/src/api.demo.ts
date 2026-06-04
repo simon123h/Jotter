@@ -4,19 +4,100 @@ import type { Task, Bucket, Project } from './types';
 // LOCAL STORAGE MOCK CLIENT (DEMO MODE)
 // ==========================================
 
-function getDemoProjects(): Project[] {
-  const data = localStorage.getItem('jotter_demo_projects');
-  if (!data) {
-    const defaultProject: Project = {
-      id: 'default',
-      title: 'Default Project',
-      created_at: new Date().toISOString(),
+function seedDemoData() {
+  if (localStorage.getItem('jotter_demo_projects')) return;
+
+  const now = new Date().toISOString();
+
+  const projects: Project[] = [
+    {
+      id: 'demo-project',
+      title: 'Jotter Demo 🚀',
+      created_at: now,
       done_clean_period: null,
-    };
-    saveDemoProjects([defaultProject]);
-    return [defaultProject];
-  }
-  return JSON.parse(data);
+    },
+  ];
+  localStorage.setItem('jotter_demo_projects', JSON.stringify(projects));
+
+  const bucketsMap: Record<string, Bucket[]> = {
+    'demo-project': [
+      { name: 'backlog', title: 'Backlog', subtitle: 'Ideas and incoming items', position: 1000.0, is_default: true },
+      { name: 'todo', title: 'To Do', subtitle: 'Ready to work on', position: 2000.0, is_default: false },
+      { name: 'in-progress', title: 'In Progress', subtitle: 'Work in progress', position: 3000.0, is_default: false },
+      { name: 'done', title: 'Done', subtitle: 'Completed tasks', position: 4000.0, is_default: false, color: 'green' },
+    ],
+  };
+  localStorage.setItem('jotter_demo_buckets', JSON.stringify(bucketsMap));
+
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+  const tasksMap: Record<string, Task[]> = {
+    'demo-project': [
+      {
+        id: 1,
+        project_id: 'demo-project',
+        title: 'Welcome to Jotter! 👋',
+        bucket: 'todo',
+        position: 1000.0,
+        tags: ['demo', 'guide'],
+        body: 'Welcome to your local-first Markdown Kanban board!\n\nThis is a static demo running entirely in your browser using `localStorage`.\n\n### Key Features:\n- 📝 **Markdown support** in descriptions (checklists, headers, bold text).\n- 🏷️ **Custom Tags** & Filtering.\n- 📅 **Due Dates** & Prioritization.\n- 🔄 **Local-first synchronization** (in the desktop app, files are synced as `.md` text files directly on your computer!).',
+        due_date: nextWeekStr,
+        priority: 'medium',
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 2,
+        project_id: 'demo-project',
+        title: 'Try drag-and-drop 🚀',
+        bucket: 'todo',
+        position: 2000.0,
+        tags: ['interactive'],
+        body: 'Grab this card and move it over to the **In Progress** or **Done** columns!\n\nAll movements are persisted instantly.',
+        due_date: tomorrowStr,
+        priority: 'high',
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 3,
+        project_id: 'demo-project',
+        title: 'Create a new column or project 🛠️',
+        bucket: 'backlog',
+        position: 1000.0,
+        tags: ['settings'],
+        body: 'Use the **New Project** button at the bottom of the sidebar to add another workspace, or double-click column headers to rename them/add new ones!',
+        priority: 'low',
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 4,
+        project_id: 'demo-project',
+        title: 'Explore done task auto-pruning 🧹',
+        bucket: 'done',
+        position: 1000.0,
+        tags: ['new-feature'],
+        body: 'We recently added a settings modal for projects. Click the **Pencil icon** next to the project name in the sidebar to configure the **Done Tasks Deletion Period**! Tasks left in the Done column will be cleaned up automatically after that period.',
+        priority: 'medium',
+        created_at: now,
+        updated_at: now,
+      },
+    ],
+  };
+  localStorage.setItem('jotter_demo_tasks', JSON.stringify(tasksMap));
+}
+
+function getDemoProjects(): Project[] {
+  seedDemoData();
+  const data = localStorage.getItem('jotter_demo_projects');
+  return data ? JSON.parse(data) : [];
 }
 
 function saveDemoProjects(projects: Project[]) {
@@ -24,6 +105,7 @@ function saveDemoProjects(projects: Project[]) {
 }
 
 function getDemoBucketsMap(): Record<string, Bucket[]> {
+  seedDemoData();
   const data = localStorage.getItem('jotter_demo_buckets');
   return data ? JSON.parse(data) : {};
 }
@@ -33,6 +115,7 @@ function saveDemoBucketsMap(map: Record<string, Bucket[]>) {
 }
 
 function getDemoTasksMap(): Record<string, Task[]> {
+  seedDemoData();
   const data = localStorage.getItem('jotter_demo_tasks');
   return data ? JSON.parse(data) : {};
 }
