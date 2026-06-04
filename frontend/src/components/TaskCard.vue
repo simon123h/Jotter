@@ -168,51 +168,46 @@ const cardStyle = computed(() => {
     </div>
 
     <!-- Notes Preview Snippet / Expanded Content -->
-    <div v-if="hasNotes" class="mt-1 border-t border-theme-border/40 pt-1.5 flex flex-col gap-1.5">
+    <div v-if="hasNotes" class="flex flex-col">
       <!-- Snippet / Expand Toggle Row -->
       <div class="flex items-center justify-between gap-2">
-        <!-- Note Snippet -->
-        <span v-if="!isExpanded" class="text-xs text-theme-text-muted line-clamp-1 break-all flex-grow font-sans italic">
-          {{ notesSnippet }}
-        </span>
-        <span v-else class="text-xs font-bold uppercase tracking-wider text-theme-accent font-sans"> Notes Detail </span>
+        <!-- Meta Information Footer (Checklist Stats only) -->
+        <div
+          v-if="checklistStats"
+          class="flex justify-between items-center text-xs text-theme-text-muted mt-1 pt-1 border-t border-theme-border/40"
+        >
+          <!-- Checklist Stats -->
+          <div
+            class="flex items-center gap-1 font-semibold"
+            :class="
+              checklistStats.checked === checklistStats.total
+                ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
+                : 'text-theme-text-muted'
+            "
+          >
+            <ClipboardList class="w-3 h-3 shrink-0" />
+            <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
+          </div>
+        </div>
+        <div />
 
         <!-- Inline Toggle Button -->
         <button
           @click="toggleExpand"
-          class="shrink-0 p-0.5 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer"
+          class="shrink-0 p-1 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer"
           :title="isExpanded ? 'Collapse notes' : 'Expand notes'"
         >
-          <ChevronDown class="w-3.5 h-3.5 transform transition-transform animate-duration-150" :class="{ 'rotate-180': isExpanded }" />
+          <ChevronDown class="w-4 h-4 transform transition-transform animate-duration-150" :class="{ 'rotate-180': isExpanded }" />
         </button>
       </div>
 
       <!-- Expanded Markdown Content -->
       <div
         v-if="isExpanded"
-        class="text-xs text-theme-text-card max-h-40 overflow-y-auto scroller-thin p-2 bg-theme-column/30 border border-theme-border/50 rounded prose prose-invert max-w-none break-all"
+        class="text-xs max-h-40 overflow-y-auto scroller-thin p-2 rounded max-w-none"
         @click.stop
         v-html="parsedMarkdown"
       ></div>
-    </div>
-
-    <!-- Meta Information Footer (Checklist Stats only) -->
-    <div
-      v-if="checklistStats"
-      class="flex justify-between items-center text-xs text-theme-text-muted mt-1 pt-1 border-t border-theme-border/40"
-    >
-      <!-- Checklist Stats -->
-      <div
-        class="flex items-center gap-1 font-semibold"
-        :class="
-          checklistStats.checked === checklistStats.total
-            ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
-            : 'text-theme-text-muted'
-        "
-      >
-        <ClipboardList class="w-3 h-3 shrink-0" />
-        <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
-      </div>
     </div>
   </div>
 </template>
