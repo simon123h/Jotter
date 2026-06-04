@@ -1,0 +1,97 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-binaries:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Frontend Dependencies & Build
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: 'backend/requirements.txt'
+
+      - name: Install Python Dependencies & PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt pyinstaller
+
+      - name: Inject Version from Tag
+        shell: bash
+        run: |
+          echo "__version__ = \"${{ github.ref_name }}\"" > backend/version.py
+
+      - name: Build with PyInstaller
+        run: pyinstaller jotter.spec
+
+      - name: Package (Unix)
+        if: matrix.platform != 'windows'
+        run: |
+          cd dist
+          tar -czf jotter-${{ github.ref_name }}-${{ matrix.platform }}.tar.gz jotter
+          
+      - name: Package (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          cd dist
+          Compress-Archive -Path jotter.exe -DestinationPath jotter-${{ github.ref_name }}-windows.zip
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jotter-binaries-${{ matrix.platform }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+          retention-days: 1
+
+  release:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: jotter-binaries-*
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/jotter-*.tar.gz
+            dist/jotter-*.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
