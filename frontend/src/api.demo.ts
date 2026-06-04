@@ -1,0 +1,340 @@
+import type { Task, Bucket, Project } from './types';
+
+// ==========================================
+// LOCAL STORAGE MOCK CLIENT (DEMO MODE)
+// ==========================================
+
+function getDemoProjects(): Project[] {
+  const data = localStorage.getItem('jotter_demo_projects');
+  if (!data) {
+    const defaultProject: Project = {
+      id: 'default',
+      title: 'Default Project',
+      created_at: new Date().toISOString(),
+      done_clean_period: null,
+    };
+    saveDemoProjects([defaultProject]);
+    return [defaultProject];
+  }
+  return JSON.parse(data);
+}
+
+function saveDemoProjects(projects: Project[]) {
+  localStorage.setItem('jotter_demo_projects', JSON.stringify(projects));
+}
+
+function getDemoBucketsMap(): Record<string, Bucket[]> {
+  const data = localStorage.getItem('jotter_demo_buckets');
+  return data ? JSON.parse(data) : {};
+}
+
+function saveDemoBucketsMap(map: Record<string, Bucket[]>) {
+  localStorage.setItem('jotter_demo_buckets', JSON.stringify(map));
+}
+
+function getDemoTasksMap(): Record<string, Task[]> {
+  const data = localStorage.getItem('jotter_demo_tasks');
+  return data ? JSON.parse(data) : {};
+}
+
+function saveDemoTasksMap(map: Record<string, Task[]>) {
+  localStorage.setItem('jotter_demo_tasks', JSON.stringify(map));
+}
+
+function pruneDemoTasks(projectId: string) {
+  const projects = getDemoProjects();
+  const proj = projects.find((p) => p.id === projectId);
+  if (!proj || !proj.done_clean_period) return;
+
+  const cleanPeriod = proj.done_clean_period;
+  const tasksMap = getDemoTasksMap();
+  const projectTasks = tasksMap[projectId] || [];
+
+  const prunedTasks: Task[] = [];
+  const now = new Date();
+
+  for (const t of projectTasks) {
+    if (t.bucket === 'done') {
+      const dateToCheckStr = t.updated_at || t.created_at;
+      if (dateToCheckStr) {
+        try {
+          const updatedDate = new Date(dateToCheckStr);
+          const diffTime = Math.abs(now.getTime() - updatedDate.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays >= cleanPeriod) {
+            continue;
+          }
+        } catch {
+          // ignore date parsing error
+        }
+      }
+    }
+    prunedTasks.push(t);
+  }
+
+  tasksMap[projectId] = prunedTasks;
+  saveDemoTasksMap(tasksMap);
+}
+
+export async function getProjects(): Promise<Project[]> {
+  return getDemoProjects();
+}
+
+export async function createProject(title: string): Promise<Project> {
+  const id = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  const newProj: Project = {
+    id: id || 'project-' + Date.now(),
+    title,
+    created_at: new Date().toISOString(),
+    done_clean_period: null,
+  };
+  const projects = getDemoProjects();
+  if (projects.some((p) => p.id === newProj.id)) {
+    throw new Error(`Project with ID '${newProj.id}' already exists.`);
+  }
+  projects.push(newProj);
+  saveDemoProjects(projects);
+
+  const bucketsMap = getDemoBucketsMap();
+  bucketsMap[newProj.id] = [
+    { name: 'backlog', title: 'Backlog', subtitle: '', position: 1000.0, is_default: true },
+    { name: 'todo', title: 'To Do', subtitle: '', position: 2000.0, is_default: false },
+    { name: 'in-progress', title: 'In Progress', subtitle: '', position: 3000.0, is_default: false },
+    { name: 'done', title: 'Done', subtitle: '', position: 4000.0, is_default: false },
+  ];
+  saveDemoBucketsMap(bucketsMap);
+
+  return newProj;
+}
+
+export async function updateProject(id: string, updates: { title?: string; done_clean_period?: number | null }): Promise<Project> {
+  const projects = getDemoProjects();
+  const idx = projects.findIndex((p) => p.id === id);
+  if (idx !== -1) {
+    projects[idx] = { ...projects[idx], ...updates };
+    saveDemoProjects(projects);
+    return projects[idx];
+  }
+  throw new Error('Project not found');
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  const projects = getDemoProjects();
+  if (projects.length <= 1) {
+    throw new Error('Cannot delete the last remaining project.');
+  }
+  const filtered = projects.filter((p) => p.id !== id);
+  saveDemoProjects(filtered);
+
+  const bucketsMap = getDemoBucketsMap();
+  delete bucketsMap[id];
+  saveDemoBucketsMap(bucketsMap);
+
+  const tasksMap = getDemoTasksMap();
+  delete tasksMap[id];
+  saveDemoTasksMap(tasksMap);
+}
+
+export async function getTasks(projectId: string, bucket?: string, tag?: string, excludeBucket?: string): Promise<Task[]> {
+  pruneDemoTasks(projectId);
+  let list = getDemoTasksMap()[projectId] || [];
+
+  if (bucket) {
+    list = list.filter((t) => t.bucket === bucket);
+  } else if (excludeBucket) {
+    list = list.filter((t) => t.bucket !== excludeBucket);
+  }
+
+  if (tag) {
+    list = list.filter((t) => t.tags.includes(tag.toLowerCase()));
+  }
+
+  return [...list].sort((a, b) => a.position - b.position);
+}
+
+export async function getTask(projectId: string, id: number): Promise<Task> {
+  const list = getDemoTasksMap()[projectId] || [];
+  const t = list.find((x) => x.id === id);
+  if (t) return t;
+  throw new Error(`Task with ID ${id} not found in project '${projectId}'`);
+}
+
+export async function createTask(
+  projectId: string,
+  task: { title: string; bucket: string; tags: string[]; body: string; due_date?: string; priority?: string }
+): Promise<Task> {
+  const tasksMap = getDemoTasksMap();
+  const list = tasksMap[projectId] || [];
+
+  let maxId = 0;
+  Object.values(tasksMap).forEach((arr) => {
+    arr.forEach((t) => {
+      if (t.id > maxId) maxId = t.id;
+    });
+  });
+
+  const now = new Date().toISOString();
+
+  const bucketTasks = list.filter((t) => t.bucket === task.bucket);
+  let pos = 1000.0;
+  if (bucketTasks.length > 0) {
+    pos = Math.max(...bucketTasks.map((t) => t.position)) + 1000.0;
+  }
+
+  const newTask: Task = {
+    id: maxId + 1,
+    project_id: projectId,
+    title: task.title,
+    bucket: task.bucket,
+    position: pos,
+    tags: task.tags.map((t) => t.toLowerCase()),
+    body: task.body,
+    due_date: task.due_date,
+    priority: task.priority,
+    created_at: now,
+    updated_at: now,
+  };
+
+  list.push(newTask);
+  tasksMap[projectId] = list;
+  saveDemoTasksMap(tasksMap);
+
+  return newTask;
+}
+
+export async function updateTask(projectId: string, id: number, task: Partial<Task>): Promise<Task> {
+  const tasksMap = getDemoTasksMap();
+  const list = tasksMap[projectId] || [];
+  const idx = list.findIndex((t) => t.id === id);
+  if (idx !== -1) {
+    const now = new Date().toISOString();
+    list[idx] = {
+      ...list[idx],
+      ...task,
+      updated_at: now,
+      tags: task.tags ? task.tags.map((t) => t.toLowerCase()) : list[idx].tags,
+    };
+    tasksMap[projectId] = list;
+    saveDemoTasksMap(tasksMap);
+    return list[idx];
+  }
+  throw new Error('Task not found');
+}
+
+export async function moveTask(projectId: string, id: number, bucket: string, position: number): Promise<Task> {
+  const tasksMap = getDemoTasksMap();
+  const list = tasksMap[projectId] || [];
+  const idx = list.findIndex((t) => t.id === id);
+  if (idx !== -1) {
+    const now = new Date().toISOString();
+    list[idx].bucket = bucket;
+    list[idx].position = position;
+    list[idx].updated_at = now;
+    tasksMap[projectId] = list;
+    saveDemoTasksMap(tasksMap);
+    return list[idx];
+  }
+  throw new Error('Task not found');
+}
+
+export async function deleteTask(projectId: string, id: number): Promise<void> {
+  const tasksMap = getDemoTasksMap();
+  const list = tasksMap[projectId] || [];
+  tasksMap[projectId] = list.filter((t) => t.id !== id);
+  saveDemoTasksMap(tasksMap);
+}
+
+export async function getBuckets(projectId: string): Promise<Bucket[]> {
+  const bucketsMap = getDemoBucketsMap();
+  if (!bucketsMap[projectId]) {
+    bucketsMap[projectId] = [
+      { name: 'backlog', title: 'Backlog', subtitle: '', position: 1000.0, is_default: true },
+      { name: 'todo', title: 'To Do', subtitle: '', position: 2000.0, is_default: false },
+      { name: 'in-progress', title: 'In Progress', subtitle: '', position: 3000.0, is_default: false },
+      { name: 'done', title: 'Done', subtitle: '', position: 4000.0, is_default: false },
+    ];
+    saveDemoBucketsMap(bucketsMap);
+  }
+  return [...bucketsMap[projectId]].sort((a, b) => a.position - b.position);
+}
+
+export async function createBucket(
+  projectId: string,
+  title: string,
+  subtitle?: string,
+  color?: string | null,
+  layout?: 'list' | 'grid-2' | 'grid-3',
+  max_tasks?: number | null
+): Promise<Bucket> {
+  if (!title) {
+    throw new Error('Title is required');
+  }
+  const bucketsMap = getDemoBucketsMap();
+  const list = bucketsMap[projectId] || [];
+
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  const name = slug || 'column-' + Date.now();
+
+  if (list.some((b) => b.name === name)) {
+    throw new Error(`A column with a similar name '${name}' already exists.`);
+  }
+
+  let pos = 1000.0;
+  if (list.length > 0) {
+    pos = Math.max(...list.map((b) => b.position)) + 1000.0;
+  }
+
+  const newBucket: Bucket = {
+    name,
+    title,
+    subtitle: subtitle || '',
+    position: pos,
+    color: color || null,
+    layout: layout || 'list',
+    max_tasks: max_tasks || null,
+    is_default: false,
+  };
+
+  list.push(newBucket);
+  bucketsMap[projectId] = list;
+  saveDemoBucketsMap(bucketsMap);
+
+  return newBucket;
+}
+
+export async function updateBucket(projectId: string, name: string, bucketUpdates: Partial<Bucket>): Promise<Bucket> {
+  const bucketsMap = getDemoBucketsMap();
+  const list = bucketsMap[projectId] || [];
+  const idx = list.findIndex((b) => b.name === name);
+  if (idx !== -1) {
+    if (bucketUpdates.is_default) {
+      list.forEach((b) => (b.is_default = false));
+    }
+    list[idx] = { ...list[idx], ...bucketUpdates };
+    bucketsMap[projectId] = list;
+    saveDemoBucketsMap(bucketsMap);
+    return list[idx];
+  }
+  throw new Error('Column not found');
+}
+
+export async function deleteBucket(projectId: string, name: string): Promise<void> {
+  const bucketsMap = getDemoBucketsMap();
+  const list = bucketsMap[projectId] || [];
+  bucketsMap[projectId] = list.filter((b) => b.name !== name);
+  saveDemoBucketsMap(bucketsMap);
+}
+
+export async function syncSystem(): Promise<{ status: string; synchronized_tasks: number }> {
+  const projects = getDemoProjects();
+  projects.forEach((p) => {
+    pruneDemoTasks(p.id);
+  });
+  return { status: 'success', synchronized_tasks: 0 };
+}

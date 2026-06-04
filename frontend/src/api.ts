@@ -1,15 +1,24 @@
 import { ref } from 'vue';
 import type { Task, Bucket, Project } from './types';
+import * as demoApi from './api.demo';
 
 const API_BASE = import.meta.env.DEV ? 'http://localhost:8000' : '';
 
 // Shared reactive connection state
 export const isServerOnline = ref(true);
 
+// Auto-detect Demo Mode
+export const IS_DEMO_MODE =
+  import.meta.env.VITE_DEMO_MODE === 'true' ||
+  window.location.hostname.endsWith('github.io') ||
+  window.location.hostname.includes('githubpreview.dev');
+
 // Helper to update server online status based on HTTP response status
 function updateStatusFromResponse(response: Response) {
-  // 502 Bad Gateway, 503 Service Unavailable, and 504 Gateway Timeout
-  // indicate the backend is unreachable or down behind a gateway/proxy.
+  if (IS_DEMO_MODE) {
+    isServerOnline.value = true;
+    return;
+  }
   if ([502, 503, 504].includes(response.status)) {
     isServerOnline.value = false;
   } else {
@@ -19,6 +28,10 @@ function updateStatusFromResponse(response: Response) {
 
 // Centralized status checker using raw fetch to avoid loop overhead
 export async function checkServerStatus(): Promise<boolean> {
+  if (IS_DEMO_MODE) {
+    isServerOnline.value = true;
+    return true;
+  }
   try {
     const response = await fetch(`${API_BASE}/projects`, { method: 'GET' });
     updateStatusFromResponse(response);
@@ -41,8 +54,14 @@ async function customFetch(input: RequestInfo | URL, init?: RequestInit): Promis
   }
 }
 
-// Project Management API calls
+// ==========================================
+// PROJECT MANAGEMENT API
+// ==========================================
+
 export async function getProjects(): Promise<Project[]> {
+  if (IS_DEMO_MODE) {
+    return demoApi.getProjects();
+  }
   const response = await customFetch(`${API_BASE}/projects`);
   if (!response.ok) {
     throw new Error(`Failed to fetch projects: ${response.statusText}`);
@@ -51,6 +70,9 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function createProject(title: string): Promise<Project> {
+  if (IS_DEMO_MODE) {
+    return demoApi.createProject(title);
+  }
   const response = await customFetch(`${API_BASE}/projects`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -64,6 +86,9 @@ export async function createProject(title: string): Promise<Project> {
 }
 
 export async function updateProject(id: string, updates: { title?: string; done_clean_period?: number | null }): Promise<Project> {
+  if (IS_DEMO_MODE) {
+    return demoApi.updateProject(id, updates);
+  }
   const response = await customFetch(`${API_BASE}/projects/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -77,6 +102,9 @@ export async function updateProject(id: string, updates: { title?: string; done_
 }
 
 export async function deleteProject(id: string): Promise<void> {
+  if (IS_DEMO_MODE) {
+    return demoApi.deleteProject(id);
+  }
   const response = await customFetch(`${API_BASE}/projects/${id}`, {
     method: 'DELETE',
   });
@@ -86,8 +114,14 @@ export async function deleteProject(id: string): Promise<void> {
   }
 }
 
-// Scoped Task API calls
+// ==========================================
+// SCOPED TASK API
+// ==========================================
+
 export async function getTasks(projectId: string, bucket?: string, tag?: string, excludeBucket?: string): Promise<Task[]> {
+  if (IS_DEMO_MODE) {
+    return demoApi.getTasks(projectId, bucket, tag, excludeBucket);
+  }
   const url = new URL(`${API_BASE}/projects/${projectId}/tasks`, window.location.origin);
   if (bucket) url.searchParams.append('bucket', bucket);
   if (tag) url.searchParams.append('tag', tag);
@@ -101,6 +135,9 @@ export async function getTasks(projectId: string, bucket?: string, tag?: string,
 }
 
 export async function getTask(projectId: string, id: number): Promise<Task> {
+  if (IS_DEMO_MODE) {
+    return demoApi.getTask(projectId, id);
+  }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/tasks/${id}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch task ${id}: ${response.statusText}`);
@@ -112,6 +149,9 @@ export async function createTask(
   projectId: string,
   task: { title: string; bucket: string; tags: string[]; body: string; due_date?: string; priority?: string }
 ): Promise<Task> {
+  if (IS_DEMO_MODE) {
+    return demoApi.createTask(projectId, task);
+  }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -124,6 +164,9 @@ export async function createTask(
 }
 
 export async function updateTask(projectId: string, id: number, task: Partial<Task>): Promise<Task> {
+  if (IS_DEMO_MODE) {
+    return demoApi.updateTask(projectId, id, task);
+  }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/tasks/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -136,6 +179,9 @@ export async function updateTask(projectId: string, id: number, task: Partial<Ta
 }
 
 export async function moveTask(projectId: string, id: number, bucket: string, position: number): Promise<Task> {
+  if (IS_DEMO_MODE) {
+    return demoApi.moveTask(projectId, id, bucket, position);
+  }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/tasks/${id}/move`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -148,16 +194,25 @@ export async function moveTask(projectId: string, id: number, bucket: string, po
 }
 
 export async function deleteTask(projectId: string, id: number): Promise<void> {
+  if (IS_DEMO_MODE) {
+    return demoApi.deleteTask(projectId, id);
+  }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/tasks/${id}`, {
     method: 'DELETE',
   });
   if (!response.ok) {
-    throw new Error(`Failed to delete task ${id}: ${response.statusText}`);
+    throw new Error(`Failed to delete task: ${response.statusText}`);
   }
 }
 
-// Scoped Buckets API calls
+// ==========================================
+// COLUMN (BUCKETS) API
+// ==========================================
+
 export async function getBuckets(projectId: string): Promise<Bucket[]> {
+  if (IS_DEMO_MODE) {
+    return demoApi.getBuckets(projectId);
+  }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/buckets`);
   if (!response.ok) {
     throw new Error(`Failed to fetch columns: ${response.statusText}`);
@@ -173,6 +228,9 @@ export async function createBucket(
   layout?: 'list' | 'grid-2' | 'grid-3',
   max_tasks?: number | null
 ): Promise<Bucket> {
+  if (IS_DEMO_MODE) {
+    return demoApi.createBucket(projectId, title, subtitle, color, layout, max_tasks);
+  }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/buckets`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -185,23 +243,14 @@ export async function createBucket(
   return response.json();
 }
 
-export async function updateBucket(
-  projectId: string,
-  name: string,
-  payload: {
-    title?: string;
-    subtitle?: string;
-    position?: number;
-    color?: string | null;
-    layout?: 'list' | 'grid-2' | 'grid-3';
-    max_tasks?: number | null;
-    is_default?: boolean;
+export async function updateBucket(projectId: string, name: string, bucketUpdates: Partial<Bucket>): Promise<Bucket> {
+  if (IS_DEMO_MODE) {
+    return demoApi.updateBucket(projectId, name, bucketUpdates);
   }
-): Promise<Bucket> {
   const response = await customFetch(`${API_BASE}/projects/${projectId}/buckets/${name}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(bucketUpdates),
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -211,6 +260,9 @@ export async function updateBucket(
 }
 
 export async function deleteBucket(projectId: string, name: string): Promise<void> {
+  if (IS_DEMO_MODE) {
+    return demoApi.deleteBucket(projectId, name);
+  }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/buckets/${name}`, {
     method: 'DELETE',
   });
@@ -220,13 +272,20 @@ export async function deleteBucket(projectId: string, name: string): Promise<voi
   }
 }
 
-// System endpoints
-export async function syncSystem(): Promise<{ synchronized_tasks: number }> {
+// ==========================================
+// SYSTEM ROUTER API
+// ==========================================
+
+export async function syncSystem(): Promise<{ status: string; synchronized_tasks: number }> {
+  if (IS_DEMO_MODE) {
+    return demoApi.syncSystem();
+  }
   const response = await customFetch(`${API_BASE}/system/sync`, {
     method: 'POST',
   });
   if (!response.ok) {
-    throw new Error(`Failed to sync database: ${response.statusText}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to synchronize: ${response.statusText}`);
   }
   return response.json();
 }
