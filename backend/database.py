@@ -57,12 +57,13 @@ def init_db():
                 color TEXT,
                 layout TEXT NOT NULL DEFAULT 'list',
                 max_tasks INTEGER,
+                is_default INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (project_id, name),
                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
             )
         """)
 
-        # Check if buckets table has subtitle, color, layout, or max_tasks columns (migration check)
+        # Check if buckets table has subtitle, color, layout, max_tasks, or is_default columns (migration check)
         cursor = conn.execute("PRAGMA table_info(buckets)")
         bucket_columns = [row["name"] for row in cursor.fetchall()]
         if bucket_columns and "subtitle" not in bucket_columns:
@@ -73,6 +74,10 @@ def init_db():
             conn.execute("ALTER TABLE buckets ADD COLUMN layout TEXT NOT NULL DEFAULT 'list'")
         if bucket_columns and "max_tasks" not in bucket_columns:
             conn.execute("ALTER TABLE buckets ADD COLUMN max_tasks INTEGER")
+        if bucket_columns and "is_default" not in bucket_columns:
+            conn.execute("ALTER TABLE buckets ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0")
+            # Backlog is the default column for existing projects
+            conn.execute("UPDATE buckets SET is_default = 1 WHERE name = 'backlog'")
 
         # Check if tasks table has due_date and priority columns (migration check)
         cursor = conn.execute("PRAGMA table_info(tasks)")

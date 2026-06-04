@@ -128,6 +128,7 @@ export const de = {
     layoutGrid3: 'Raster (3 Spalten)',
     maxTasksLabel: 'Max. Anzahl an Aufgaben',
     maxTasksPlaceholder: 'z.B. 5 (leer für kein Limit)',
+    defaultLabel: 'Standardspalte für neue Aufgaben',
     saveButton: 'Änderungen speichern',
   },
   language: {

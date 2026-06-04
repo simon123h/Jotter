@@ -21,11 +21,17 @@ def get_buckets(project_id: str):
             )
 
         cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout, max_tasks FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position, color, layout, max_tasks, is_default FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
         rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+        # Convert sqlite integer 1/0 to boolean for Pydantic coercion
+        result = []
+        for r in rows:
+            d = dict(r)
+            d["is_default"] = bool(d["is_default"])
+            result.append(d)
+        return result
 
 
 @router.post("", response_model=BucketResponse, status_code=status.HTTP_201_CREATED)
@@ -64,17 +70,25 @@ def create_bucket(project_id: str, bucket: BucketCreate):
         if row and row["max_pos"] is not None:
             new_position = float(row["max_pos"]) + 1000.0
 
+        is_default_val = 1 if bucket.is_default else 0
+        if is_default_val == 1:
+            conn.execute("UPDATE buckets SET is_default = 0 WHERE project_id = ?", (project_id,))
+
         conn.execute(
-            "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (project_id, name, bucket.title, bucket.subtitle or "", new_position, bucket.color, bucket.layout or "list", bucket.max_tasks),
+            "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (project_id, name, bucket.title, bucket.subtitle or "", new_position, bucket.color, bucket.layout or "list", bucket.max_tasks, is_default_val),
         )
 
         # Sync to project's buckets.json file
         cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout, max_tasks FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position, color, layout, max_tasks, is_default FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
-        all_buckets = [dict(r) for r in cursor.fetchall()]
+        all_buckets = []
+        for r in cursor.fetchall():
+            d = dict(r)
+            d["is_default"] = bool(d["is_default"])
+            all_buckets.append(d)
         write_buckets_file(project_id, all_buckets)
 
         return BucketResponse(
@@ -85,6 +99,7 @@ def create_bucket(project_id: str, bucket: BucketCreate):
             color=bucket.color,
             layout=bucket.layout or "list",
             max_tasks=bucket.max_tasks,
+            is_default=bool(is_default_val),
         )
 
 
@@ -101,7 +116,7 @@ def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
 
         # Check if bucket exists in this project
         cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout, max_tasks FROM buckets WHERE project_id = ? AND name = ?",
+            "SELECT name, title, subtitle, position, color, layout, max_tasks, is_default FROM buckets WHERE project_id = ? AND name = ?",
             (project_id, name),
         )
         existing = cursor.fetchone()
@@ -117,21 +132,29 @@ def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
         updated_color = bucket_update.color if "color" in bucket_update.model_fields_set else existing["color"]
         updated_layout = bucket_update.layout if bucket_update.layout is not None else existing["layout"]
         updated_max_tasks = bucket_update.max_tasks if "max_tasks" in bucket_update.model_fields_set else existing["max_tasks"]
+        updated_is_default = bucket_update.is_default if bucket_update.is_default is not None else bool(existing["is_default"])
+
+        if updated_is_default:
+            conn.execute("UPDATE buckets SET is_default = 0 WHERE project_id = ?", (project_id,))
 
         conn.execute(
             """
             UPDATE buckets
-            SET title = ?, subtitle = ?, position = ?, color = ?, layout = ?, max_tasks = ? WHERE project_id = ? AND name = ?
+            SET title = ?, subtitle = ?, position = ?, color = ?, layout = ?, max_tasks = ?, is_default = ? WHERE project_id = ? AND name = ?
             """,
-            (updated_title, updated_subtitle, updated_position, updated_color, updated_layout, updated_max_tasks, project_id, name),
+            (updated_title, updated_subtitle, updated_position, updated_color, updated_layout, updated_max_tasks, 1 if updated_is_default else 0, project_id, name),
         )
 
         # Sync to project's buckets.json file
         cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout, max_tasks FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position, color, layout, max_tasks, is_default FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
-        all_buckets = [dict(r) for r in cursor.fetchall()]
+        all_buckets = []
+        for r in cursor.fetchall():
+            d = dict(r)
+            d["is_default"] = bool(d["is_default"])
+            all_buckets.append(d)
         write_buckets_file(project_id, all_buckets)
 
         return BucketResponse(
@@ -142,6 +165,7 @@ def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
             color=updated_color,
             layout=updated_layout,
             max_tasks=updated_max_tasks,
+            is_default=updated_is_default,
         )
 
 
@@ -185,10 +209,14 @@ def delete_bucket(project_id: str, name: str):
 
         # Sync to project's buckets.json file
         cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout, max_tasks FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position, color, layout, max_tasks, is_default FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
-        all_buckets = [dict(r) for r in cursor.fetchall()]
+        all_buckets = []
+        for r in cursor.fetchall():
+            d = dict(r)
+            d["is_default"] = bool(d["is_default"])
+            all_buckets.append(d)
         write_buckets_file(project_id, all_buckets)
 
         return {"status": "success", "detail": f"Column '{name}' deleted"}

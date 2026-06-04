@@ -28,4 +28,5 @@ export interface Bucket {
   color?: string | null;
   layout?: 'list' | 'grid-2' | 'grid-3';
   max_tasks?: number | null;
+  is_default?: boolean;
 }

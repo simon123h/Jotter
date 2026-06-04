@@ -16,6 +16,7 @@ const props = defineProps<{
   color?: string | null;
   layout?: 'list' | 'grid-2' | 'grid-3';
   maxTasks?: number | null;
+  isDefault?: boolean;
   tasks: Task[];
   isFirst: boolean;
   isLast: boolean;
@@ -34,6 +35,7 @@ const emit = defineEmits<{
       newColor?: string | null;
       newLayout?: 'list' | 'grid-2' | 'grid-3';
       newMaxTasks?: number | null;
+      newIsDefault?: boolean;
     }
   ): void;
   (e: 'delete-column', bucketName: string): void;
@@ -97,6 +99,7 @@ const onSaveColumn = (payload: {
   color: string | null;
   layout: 'list' | 'grid-2' | 'grid-3';
   max_tasks: number | null;
+  is_default: boolean;
 }) => {
   if (
     payload.title &&
@@ -104,7 +107,8 @@ const onSaveColumn = (payload: {
       payload.subtitle !== props.subtitle ||
       payload.color !== props.color ||
       payload.layout !== props.layout ||
-      payload.max_tasks !== props.maxTasks)
+      payload.max_tasks !== props.maxTasks ||
+      payload.is_default !== props.isDefault)
   ) {
     emit('rename-column', {
       bucketName: props.bucketName,
@@ -113,6 +117,7 @@ const onSaveColumn = (payload: {
       newColor: payload.color,
       newLayout: payload.layout,
       newMaxTasks: payload.max_tasks,
+      newIsDefault: payload.is_default,
     });
   }
 };
@@ -388,6 +393,7 @@ watch(
       :initial-color="color"
       :initial-layout="layout"
       :initial-max-tasks="maxTasks"
+      :initial-is-default="isDefault"
       :tasks-count="tasks.length"
       @close="isEditModalOpen = false"
       @save="onSaveColumn"

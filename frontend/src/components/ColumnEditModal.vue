@@ -14,6 +14,7 @@ const props = defineProps<{
   initialLayout?: 'list' | 'grid-2' | 'grid-3';
   initialMaxTasks?: number | null;
   tasksCount?: number;
+  initialIsDefault?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -28,6 +29,7 @@ const emit = defineEmits<{
       color: string | null;
       layout: 'list' | 'grid-2' | 'grid-3';
       max_tasks: number | null;
+      is_default: boolean;
     }
   ): void;
 }>();
@@ -37,6 +39,7 @@ const subtitle = ref('');
 const color = ref<string | null>(null);
 const layout = ref<'list' | 'grid-2' | 'grid-3'>('list');
 const maxTasks = ref<number | null>(null);
+const isDefault = ref(false);
 const titleInput = ref<HTMLInputElement | null>(null);
 
 const handleDelete = () => {
@@ -65,6 +68,7 @@ watch(
       color.value = props.initialColor || null;
       layout.value = props.initialLayout || 'list';
       maxTasks.value = props.initialMaxTasks !== undefined ? props.initialMaxTasks : null;
+      isDefault.value = props.initialIsDefault || false;
       nextTick(() => {
         titleInput.value?.focus();
       });
@@ -96,6 +100,7 @@ const handleSave = () => {
     color: color.value,
     layout: layout.value,
     max_tasks: parsedMaxTasks,
+    is_default: isDefault.value,
   });
   emit('close');
 };
@@ -259,6 +264,19 @@ onUnmounted(() => {
                   <span>{{ t('columnEdit.layoutGrid3') }}</span>
                 </button>
               </div>
+            </div>
+
+            <!-- Default Column Checkbox -->
+            <div class="flex items-center gap-2 pt-1">
+              <input
+                id="isDefaultColumn"
+                v-model="isDefault"
+                type="checkbox"
+                class="w-4 h-4 rounded border-theme-border text-theme-primary focus:ring-theme-ring focus:ring-opacity-25 bg-theme-base/60 cursor-pointer accent-theme-primary"
+              />
+              <label for="isDefaultColumn" class="text-xs font-bold uppercase tracking-wider text-theme-text-muted cursor-pointer select-none hover:text-theme-text-main transition-colors">
+                {{ t('columnEdit.defaultLabel') }}
+              </label>
             </div>
           </form>
 

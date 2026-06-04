@@ -126,6 +126,7 @@ export const en = {
     layoutGrid3: 'Grid (3 Cols)',
     maxTasksLabel: 'Max Tasks Limit',
     maxTasksPlaceholder: 'e.g. 5 (empty for no limit)',
+    defaultLabel: 'Default column for new tasks',
     saveButton: 'Save Changes',
   },
   language: {

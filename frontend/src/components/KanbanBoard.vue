@@ -315,6 +315,11 @@ watch(
   }
 );
 
+const defaultBucketName = computed(() => {
+  const defCol = buckets.value.find((b) => b.is_default);
+  return defCol?.name || buckets.value[0]?.name || 'todo';
+});
+
 const openCreateModal = (bucket: BucketName) => {
   createDefaultBucket.value = bucket;
   isCreateOpen.value = true;
@@ -325,7 +330,7 @@ useKeyboardShortcuts([
     key: 'q',
     callback: () => {
       if (!isCreateOpen.value && !isDetailOpen.value && !dialogIsOpen.value) {
-        openCreateModal(buckets.value[0]?.name || 'todo');
+        openCreateModal(defaultBucketName.value);
       }
     },
   },
@@ -409,6 +414,7 @@ const handleRenameColumn = async ({
   newColor,
   newLayout,
   newMaxTasks,
+  newIsDefault,
 }: {
   bucketName: string;
   newTitle: string;
@@ -416,6 +422,7 @@ const handleRenameColumn = async ({
   newColor?: string | null;
   newLayout?: 'list' | 'grid-2' | 'grid-3';
   newMaxTasks?: number | null;
+  newIsDefault?: boolean;
 }) => {
   if (!newTitle.trim()) return;
   try {
@@ -425,6 +432,7 @@ const handleRenameColumn = async ({
       color: newColor,
       layout: newLayout,
       max_tasks: newMaxTasks,
+      is_default: newIsDefault,
     });
     await fetchBuckets();
   } catch (err: any) {
@@ -762,7 +770,7 @@ const formatDateISO = (d: Date): string => {
 
         <!-- New Task Button -->
         <button
-          @click="openCreateModal(buckets[0]?.name || 'todo')"
+          @click="openCreateModal(defaultBucketName)"
           class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm hover:shadow-theme-ring/10 transition-all cursor-pointer shrink-0"
           :title="t('shortcuts.createTask')"
         >
@@ -850,7 +858,7 @@ const formatDateISO = (d: Date): string => {
               {{ t('emptyStateText') }}
             </p>
             <button
-              @click="openCreateModal(buckets[0]?.name || 'todo')"
+              @click="openCreateModal(defaultBucketName)"
               class="mt-4 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow transition-all cursor-pointer"
             >
               {{ t('createFirstTaskButton') }}

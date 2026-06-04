@@ -26,6 +26,7 @@ const emit = defineEmits<{
       newColor?: string | null;
       newLayout?: 'list' | 'grid-2' | 'grid-3';
       newMaxTasks?: number | null;
+      newIsDefault?: boolean;
     }
   ): void;
   (e: 'delete-column', bucketName: string): void;
@@ -85,6 +86,7 @@ const handleCancelAddColumn = () => {
       :color="b.color"
       :layout="b.layout"
       :max-tasks="b.max_tasks"
+      :is-default="b.is_default"
       :tasks="tasksByBucket[b.name] || []"
       :is-first="idx === 0"
       :is-last="idx === buckets.length - 1"
