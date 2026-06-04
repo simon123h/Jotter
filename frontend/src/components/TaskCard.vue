@@ -27,18 +27,6 @@ const checklistStats = computed(() => {
 
 const hasNotes = computed(() => !!props.task.body);
 
-// Strip markdown tags to show a clean plain text preview snippet
-const notesSnippet = computed(() => {
-  if (!props.task.body) return '';
-  return props.task.body
-    .replace(/#+\s+/g, '') // remove headings
-    .replace(/[-*]\s+\[[ xX]\]/g, '') // remove checkboxes
-    .replace(/[-*]\s+/g, '') // remove bullet points
-    .replace(/[`*_]/g, '') // remove bold/italic/code formatting
-    .replace(/\s+/g, ' ')
-    .trim();
-});
-
 const parsedMarkdown = computed(() => {
   if (!props.task.body) return '';
   try {
@@ -152,63 +140,61 @@ const cardStyle = computed(() => {
       </span>
     </div>
 
-    <!-- Due Date & Priority on Card -->
-    <div v-if="task.due_date || task.priority" class="flex flex-wrap gap-2.5 items-center text-xs mt-0.5 select-none">
-      <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
-        <Calendar class="w-3 h-3 shrink-0" />
-        <span>{{ formatDate(task.due_date) }}</span>
+    <!-- Combined Footer Row: Due Date, Priority, Checklist, and Chevron -->
+    <div
+      v-if="task.due_date || task.priority || checklistStats || hasNotes"
+      class="flex justify-between items-center text-xs text-theme-text-muted mt-1.5 pt-1.5 select-none"
+    >
+      <!-- Left side: Due Date & Priority -->
+      <div class="flex items-center gap-2.5">
+        <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
+          <Calendar class="w-3.5 h-3.5 shrink-0" />
+          <span>{{ formatDate(task.due_date) }}</span>
+        </div>
+        <div
+          v-if="task.priority"
+          class="px-1.5 py-0.25 rounded border text-[10px] font-extrabold uppercase tracking-wider leading-none"
+          :class="getPriorityClasses(task.priority)"
+        >
+          {{ task.priority }}
+        </div>
       </div>
-      <div
-        v-if="task.priority"
-        class="px-1.5 py-0.25 rounded border text-[10px] font-extrabold uppercase tracking-wider leading-none"
-        :class="getPriorityClasses(task.priority)"
-      >
-        {{ task.priority }}
-      </div>
-    </div>
 
-    <!-- Notes Preview Snippet / Expanded Content -->
-    <div v-if="hasNotes" class="flex flex-col">
-      <!-- Snippet / Expand Toggle Row -->
-      <div class="flex items-center justify-between gap-2">
-        <!-- Meta Information Footer (Checklist Stats only) -->
+      <!-- Right side: Checklist & Chevron -->
+      <div class="flex items-center gap-2.5">
+        <!-- Checklist Stats -->
         <div
           v-if="checklistStats"
-          class="flex justify-between items-center text-xs text-theme-text-muted mt-1 pt-1 border-t border-theme-border/40"
+          class="flex items-center gap-1 font-semibold"
+          :class="
+            checklistStats.checked === checklistStats.total
+              ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
+              : 'text-theme-text-muted'
+          "
         >
-          <!-- Checklist Stats -->
-          <div
-            class="flex items-center gap-1 font-semibold"
-            :class="
-              checklistStats.checked === checklistStats.total
-                ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
-                : 'text-theme-text-muted'
-            "
-          >
-            <ClipboardList class="w-3 h-3 shrink-0" />
-            <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
-          </div>
+          <ClipboardList class="w-3.5 h-3.5 shrink-0" />
+          <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
         </div>
-        <div />
 
         <!-- Inline Toggle Button -->
         <button
-          @click="toggleExpand"
-          class="shrink-0 p-1 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer"
+          v-if="hasNotes"
+          @click.stop="toggleExpand"
+          class="p-0.5 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer"
           :title="isExpanded ? 'Collapse notes' : 'Expand notes'"
         >
           <ChevronDown class="w-4 h-4 transform transition-transform animate-duration-150" :class="{ 'rotate-180': isExpanded }" />
         </button>
       </div>
-
-      <!-- Expanded Markdown Content -->
-      <div
-        v-if="isExpanded"
-        class="text-xs max-h-40 overflow-y-auto scroller-thin p-2 rounded max-w-none"
-        @click.stop
-        v-html="parsedMarkdown"
-      ></div>
     </div>
+
+    <!-- Expanded Markdown Content -->
+    <div
+      v-if="hasNotes && isExpanded"
+      class="text-xs max-h-40 overflow-y-auto scroller-thin p-0.5 pt-2 border-t border-theme-border/40"
+      @click.stop
+      v-html="parsedMarkdown"
+    ></div>
   </div>
 </template>
 
