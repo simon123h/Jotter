@@ -71,6 +71,14 @@ We require all tests to pass before merging. You can run all backend (Pytest) an
 npm run test
 ```
 
+#### Testing Philosophy: Sociable over Solitary
+
+We advocate for **sociable unit and integration tests** over solitary testing styles that mock internal collaborators:
+
+* **Mock ONLY External Boundaries**: Only mock boundaries that are slow, stateful, or outside our control. Examples include HTTP requests (`fetch`), direct filesystem access, and specific browser-only APIs.
+* **Keep Internal Collaborators Live**: Do not mock internal application code (e.g., Pinia stores, helper functions, data parsers, utility classes). Use them live in your tests.
+* **Why**: This prevents fragile tests that break during internal refactorings, ensures genuine integration safety, and keeps test code readable and clear of setup boilerplate.
+
 ---
 
 ## Pull Request Process
