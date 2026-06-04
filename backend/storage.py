@@ -359,7 +359,11 @@ def sync_db_with_files() -> int:
 
             for b in buckets:
                 conn.execute(
-                    "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    """
+                    INSERT INTO buckets
+                    (project_id, name, title, subtitle, position, color, layout)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
                     (p["id"], b["name"], b["title"], b.get("subtitle", ""), b["position"], b.get("color", None), b.get("layout", "list")),
                 )
                 bucket_names.add(b["name"])
@@ -396,7 +400,11 @@ def sync_db_with_files() -> int:
                                 new_title = bucket.replace("-", " ").title()
                                 new_pos = max_bucket_position + 1000.0
                                 conn.execute(
-                                    "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                    """
+                                    INSERT INTO buckets
+                                    (project_id, name, title, subtitle, position, color, layout)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                    """,
                                     (p["id"], bucket, new_title, "", new_pos, None, "list"),
                                 )
                                 buckets.append(
