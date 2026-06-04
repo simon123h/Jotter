@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 from yoyo import get_backend, read_migrations
+import yoyo.backends.sqlite  # Explicit import for PyInstaller discovery
 
 from config import IS_PRODUCTION, get_data_dir
 
