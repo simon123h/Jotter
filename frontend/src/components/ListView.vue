@@ -70,7 +70,7 @@ const getChecklistStats = (body: string) => {
         <!-- Group Rows -->
         <div v-show="!collapsedColumns[b.name]" class="divide-y divide-theme-border/30 bg-theme-card/10">
           <div v-if="!tasksByBucket[b.name] || !tasksByBucket[b.name].length" class="px-8 py-2 text-theme-text-muted italic text-xs">
-            No tasks in this column.
+            {{ t('emptyColumnText') }}
           </div>
           <div
             v-else

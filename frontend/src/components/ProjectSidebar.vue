@@ -135,7 +135,7 @@ const handleCreateProject = () => {
       <span class="text-[10px] uppercase font-bold tracking-wider text-red-400/80">{{ t('projects.serverStatus') }}</span>
       <div class="flex items-center gap-1.5">
         <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-        <span class="text-[11px] font-semibold font-mono text-red-400"> OFFLINE </span>
+        <span class="text-[11px] font-semibold font-mono text-red-400"> {{ t('projects.offline') }} </span>
       </div>
     </div>
 

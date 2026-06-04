@@ -40,7 +40,7 @@ const setTheme = (theme: string) => {
         <Settings class="w-5 h-5 text-theme-accent" />
         {{ t('views.settings') }}
       </h2>
-      <p class="text-xs text-theme-text-muted mt-1">Configure your personal preferences, theme aesthetics, and system language.</p>
+      <p class="text-xs text-theme-text-muted mt-1">{{ t('settingsView.subtitle') }}</p>
     </div>
 
     <div class="border-t border-theme-border/30"></div>

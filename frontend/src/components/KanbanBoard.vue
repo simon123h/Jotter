@@ -612,7 +612,7 @@ const formatDateISO = (d: Date): string => {
         <button
           @click="toggleSidebar"
           class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-all cursor-pointer shrink-0"
-          :title="isSidebarOpen ? 'Collapse Sidebar' : 'Expand Sidebar'"
+          :title="isSidebarOpen ? t('sidebar.collapse') : t('sidebar.expand')"
         >
           <Menu class="w-4 h-4 shrink-0" />
         </button>

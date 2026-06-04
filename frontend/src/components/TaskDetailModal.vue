@@ -59,12 +59,6 @@ const lastMatchedKeyword = ref<string | null>(null);
 const lastMatchedPriority = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
-/** Translate the bucket name, if possible */
-const bucketTitle = (bucketName: string, bucketTitle: string) => {
-  const translated = t('buckets.' + bucketName);
-  return translated !== 'buckets.' + bucketName ? translated : bucketTitle;
-};
-
 const isTagDropdownOpen = ref(false);
 const titleInput = ref<HTMLInputElement | null>(null);
 

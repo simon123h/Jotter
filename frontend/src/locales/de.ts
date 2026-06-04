@@ -117,6 +117,7 @@ export const de = {
     pinProject: 'Projekt anheften',
     unpinProject: 'Projekt lösen',
     editProject: 'Projekt bearbeiten',
+    offline: 'OFFLINE',
   },
   columnEdit: {
     title: 'Spaltendetails bearbeiten',
@@ -153,6 +154,7 @@ export const de = {
     general: 'Allgemeine Einstellungen',
     hideAddTask: 'Schaltfläche "+ Aufgabe hinzufügen" ausblenden',
     hideAddTaskDesc: 'Blendet die Schaltfläche zum schnellen Hinzufügen oben in jeder Spalte aus.',
+    subtitle: 'Passe deine persönlichen Einstellungen, das visuelle Farbschema und die Systemsprache an.',
   },
   views: {
     board: 'Board',
@@ -193,4 +195,14 @@ export const de = {
   shortcuts: {
     createTask: 'Taste Q drücken, um eine neue Aufgabe hinzuzufügen',
   },
+  sidebar: {
+    collapse: 'Seitenleiste einklappen',
+    expand: 'Seitenleiste ausklappen',
+  },
+  taskCard: {
+    markDone: 'Als erledigt markieren',
+    collapseNotes: 'Notizen zuklappen',
+    expandNotes: 'Notizen aufklappen',
+  },
+  emptyColumnText: 'Keine Aufgaben in dieser Spalte.',
 };

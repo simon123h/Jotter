@@ -3,6 +3,9 @@ import { ref, computed } from 'vue';
 import { marked } from 'marked';
 import { ChevronDown, ClipboardList, Check, Calendar } from '@lucide/vue';
 import type { Task } from '../types';
+import { useI18n } from '../composables/useI18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   task: Task;
@@ -121,7 +124,7 @@ const cardStyle = computed(() => {
         <button
           @click.stop="emit('mark-done', task)"
           class="p-1 text-theme-text-muted hover:text-emerald-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
-          title="Mark as done"
+          :title="t('taskCard.markDone')"
         >
           <Check class="w-4.5 h-4.5 shrink-0" />
         </button>
@@ -182,7 +185,7 @@ const cardStyle = computed(() => {
           v-if="hasNotes"
           @click.stop="toggleExpand"
           class="p-0.5 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer"
-          :title="isExpanded ? 'Collapse notes' : 'Expand notes'"
+          :title="isExpanded ? t('taskCard.collapseNotes') : t('taskCard.expandNotes')"
         >
           <ChevronDown class="w-4 h-4 transform transition-transform animate-duration-150" :class="{ 'rotate-180': isExpanded }" />
         </button>

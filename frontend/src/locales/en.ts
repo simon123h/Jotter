@@ -115,6 +115,7 @@ export const en = {
     pinProject: 'Pin project',
     unpinProject: 'Unpin project',
     editProject: 'Edit Project',
+    offline: 'OFFLINE',
   },
   columnEdit: {
     title: 'Edit Column Details',
@@ -151,6 +152,7 @@ export const en = {
     general: 'General Preferences',
     hideAddTask: 'Hide "+ Add Task" button',
     hideAddTaskDesc: 'Remove the quick-add button from the top of all columns on the board.',
+    subtitle: 'Configure your personal preferences, theme aesthetics, and system language.',
   },
   views: {
     board: 'Board',
@@ -191,4 +193,14 @@ export const en = {
   shortcuts: {
     createTask: 'Press Q to add a new task',
   },
+  sidebar: {
+    collapse: 'Collapse Sidebar',
+    expand: 'Expand Sidebar',
+  },
+  taskCard: {
+    markDone: 'Mark as done',
+    collapseNotes: 'Collapse notes',
+    expandNotes: 'Expand notes',
+  },
+  emptyColumnText: 'No tasks in this column.',
 };
