@@ -427,7 +427,7 @@ watch(
   pointer-events: auto;
 }
 
- /* NOTE: hiding of add-task button reverted, the button is always visible */
+/* NOTE: hiding of add-task button reverted, the button is always visible */
 
 /* Expand columns and make them stretch to full available height to provide a massive drop target area during drags */
 :global(body.dragging-active) .subcolumn-wrap {
