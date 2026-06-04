@@ -148,7 +148,7 @@ onBeforeUnmount(() => {
     <div
       v-for="col in timeColumns"
       :key="col.id"
-      class="flex flex-col bg-theme-column border border-theme-border rounded w-72 shrink-0 md:w-80 group/col h-full"
+      class="flex flex-col bg-theme-column border border-theme-border rounded w-72 shrink-0 md:w-80 group/col h-fit max-h-full"
     >
       <!-- Column Header -->
       <div

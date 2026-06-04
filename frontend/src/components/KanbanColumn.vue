@@ -226,7 +226,7 @@ watch(
 <template>
   <div
     :style="columnStyle"
-    class="kanban-column flex flex-col bg-theme-column border border-theme-border rounded h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
+    class="kanban-column flex flex-col bg-theme-column border border-theme-border rounded h-fit max-h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
     :class="[
       layout === 'grid-3'
         ? 'min-w-[840px] w-[864px] md:w-[960px]'
@@ -291,7 +291,7 @@ watch(
       <!-- "+ Add Task" Card-style Button at the top of the column -->
       <button
         @click="emit('add-task-click', bucketName)"
-        class="w-full flex items-center justify-center gap-1.5 py-2 px-3 mb-2.5 border border-dashed border-theme-border/60 hover:border-theme-accent bg-theme-card/20 hover:bg-theme-card/60 text-theme-text-muted hover:text-theme-text-main rounded transition-all cursor-pointer shadow-sm group/btn shrink-0"
+        class="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 mb-2.5 bg-theme-card/35 hover:bg-theme-accent/10 text-theme-text-muted hover:text-theme-accent border border-transparent rounded transition-all cursor-pointer group/btn shrink-0"
       >
         <Plus class="w-3.5 h-3.5 shrink-0 transition-transform group-hover/btn:scale-110" />
         <span class="text-sm font-semibold">{{ t('addTaskButton') }}</span>
