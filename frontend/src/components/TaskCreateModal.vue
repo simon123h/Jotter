@@ -112,6 +112,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 const lastMatchedKeyword = ref<string | null>(null);
+const lastMatchedPriority = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
 // Autocomplete State
@@ -209,6 +210,7 @@ watch(
       priority.value = '';
       error.value = null;
       lastMatchedKeyword.value = null;
+      lastMatchedPriority.value = null;
       lastExtractedTags.value = [];
       showAutocomplete.value = false;
       autocompleteIndex.value = 0;
@@ -270,6 +272,16 @@ watch(title, (newTitle) => {
   // 3. Bucket/Column Sync
   if (result.bucket) {
     bucket.value = result.bucket as BucketName;
+  }
+
+  // 4. Priority Sync
+  if (result.matchedPriority) {
+    if (result.matchedPriority !== lastMatchedPriority.value) {
+      priority.value = result.priority || '';
+      lastMatchedPriority.value = result.matchedPriority;
+    }
+  } else {
+    lastMatchedPriority.value = null;
   }
 });
 
@@ -376,7 +388,7 @@ const handleSubmit = async () => {
                 >
                   <div class="flex items-center gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-theme-accent" :class="index === autocompleteIndex ? 'bg-white' : ''"></span>
-                    <span>{{ t('buckets.' + b.name) }}</span>
+                    <span>{{ bucketTitle(b.name, b.title) }}</span>
                   </div>
                   <span class="text-xs font-mono" :class="index === autocompleteIndex ? 'text-white/80' : 'text-theme-text-muted'"
                     >/{{ b.name }}</span

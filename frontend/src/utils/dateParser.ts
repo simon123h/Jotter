@@ -206,6 +206,34 @@ export function extractBucketFromTitle(title: string, bucketNames: string[]): { 
   return { cleanTitle, bucket: foundBucket };
 }
 
+export function extractPriorityFromTitle(title: string): { cleanTitle: string; priority: string | null; matchedPriority: string | null } {
+  if (!title) {
+    return { cleanTitle: title, priority: null, matchedPriority: null };
+  }
+
+  // Matches p0, p1, p2, p3, p4 (case-insensitive) optionally slash-prefixed as a standalone word
+  const priorityRegex = /(?:^|\s)\/?([pP]([0-4]))\b/;
+  const match = priorityRegex.exec(title);
+
+  if (match) {
+    const matchedPriority = match[1]; // e.g. "p1"
+    const level = match[2]; // e.g. "1"
+    let priorityVal = '';
+    if (level === '1') priorityVal = 'low';
+    else if (level === '2') priorityVal = 'medium';
+    else if (level === '3') priorityVal = 'high';
+    else if (level === '4') priorityVal = 'urgent';
+
+    // Remove the keyword from the title
+    let cleanTitle = title.replace(priorityRegex, ' ');
+    cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
+
+    return { cleanTitle, priority: priorityVal, matchedPriority };
+  }
+
+  return { cleanTitle: title, priority: null, matchedPriority: null };
+}
+
 export function parseTitleState(
   title: string,
   locale: string,
@@ -216,10 +244,13 @@ export function parseTitleState(
   matchedKeyword: string | null;
   tags: string[];
   bucket: string | null;
+  priority: string | null;
+  matchedPriority: string | null;
 } {
   const tagsResult = extractTagsFromTitle(title);
   const bucketResult = extractBucketFromTitle(tagsResult.cleanTitle, bucketNames || []);
-  const dateResult = parseDateFromTitle(bucketResult.cleanTitle, locale);
+  const priorityResult = extractPriorityFromTitle(bucketResult.cleanTitle);
+  const dateResult = parseDateFromTitle(priorityResult.cleanTitle, locale);
 
   return {
     cleanTitle: dateResult.cleanTitle,
@@ -227,5 +258,7 @@ export function parseTitleState(
     matchedKeyword: dateResult.matchedKeyword,
     tags: tagsResult.tags,
     bucket: bucketResult.bucket,
+    priority: priorityResult.priority,
+    matchedPriority: priorityResult.matchedPriority,
   };
 }

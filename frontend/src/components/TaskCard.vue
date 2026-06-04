@@ -165,6 +165,7 @@ const cardStyle = computed(() => {
         <!-- Checklist Stats -->
         <div
           v-if="checklistStats"
+          @click.stop="toggleExpand"
           class="flex items-center gap-1 font-semibold"
           :class="
             checklistStats.checked === checklistStats.total

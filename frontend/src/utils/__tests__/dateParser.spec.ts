@@ -202,22 +202,44 @@ describe('dateParser', () => {
     });
   });
 
+  describe('Priority extraction', () => {
+    it('should extract priority keywords correctly', () => {
+      const result1 = parseTitleState('buy milk p1', 'en');
+      expect(result1.priority).toBe('low');
+      expect(result1.cleanTitle).toBe('buy milk');
+
+      const result2 = parseTitleState('p4 urgent task', 'en');
+      expect(result2.priority).toBe('urgent');
+      expect(result2.cleanTitle).toBe('urgent task');
+
+      const result3 = parseTitleState('task with /p2 priority', 'en');
+      expect(result3.priority).toBe('medium');
+      expect(result3.cleanTitle).toBe('task with priority');
+
+      const result4 = parseTitleState('task with p0 priority', 'en');
+      expect(result4.priority).toBe('');
+      expect(result4.cleanTitle).toBe('task with priority');
+    });
+  });
+
   describe('Unified parseTitleState', () => {
     const buckets = ['todo', 'in-progress', 'done'];
 
-    it('should extract tags, dates and bucket correctly', () => {
-      const result = parseTitleState('today buy groceries #food #shopping /done', 'en', buckets);
+    it('should extract tags, dates, priority and bucket correctly', () => {
+      const result = parseTitleState('today buy groceries #food #shopping /done p3', 'en', buckets);
       expect(result.dueDate).toBe('2026-06-03');
       expect(result.tags).toEqual(['food', 'shopping']);
       expect(result.bucket).toBe('done');
+      expect(result.priority).toBe('high');
       expect(result.cleanTitle).toBe('buy groceries');
     });
 
     it('should handle parseTitleState when no bucketNames are provided', () => {
-      const result = parseTitleState('today buy groceries #food /done', 'en');
+      const result = parseTitleState('today buy groceries #food /done p3', 'en');
       expect(result.dueDate).toBe('2026-06-03');
       expect(result.tags).toEqual(['food']);
       expect(result.bucket).toBeNull();
+      expect(result.priority).toBe('high');
       expect(result.cleanTitle).toBe('buy groceries /done');
     });
   });

@@ -56,6 +56,7 @@ const colors = [
 ];
 
 const lastMatchedKeyword = ref<string | null>(null);
+const lastMatchedPriority = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
 const isTagDropdownOpen = ref(false);
@@ -258,6 +259,7 @@ const fetchTaskDetail = async (id: number) => {
     editPriority.value = fetchedTask.priority || '';
     editColor.value = fetchedTask.color || null;
     lastMatchedKeyword.value = null;
+    lastMatchedPriority.value = null;
     lastExtractedTags.value = [];
   } catch (err: any) {
     error.value = t('errors.loadTask', { message: err.message || err });
@@ -308,6 +310,16 @@ watch(editTitle, (newTitle) => {
   // 3. Bucket/Column Sync
   if (result.bucket) {
     editBucket.value = result.bucket;
+  }
+
+  // 4. Priority Sync
+  if (result.matchedPriority) {
+    if (result.matchedPriority !== lastMatchedPriority.value) {
+      editPriority.value = result.priority || '';
+      lastMatchedPriority.value = result.matchedPriority;
+    }
+  } else {
+    lastMatchedPriority.value = null;
   }
 });
 
@@ -447,6 +459,7 @@ const cancelEdit = () => {
     editPriority.value = task.value.priority || '';
     editColor.value = task.value.color || null;
     lastMatchedKeyword.value = null;
+    lastMatchedPriority.value = null;
     lastExtractedTags.value = [];
   }
   isEditing.value = false;
