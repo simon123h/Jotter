@@ -116,6 +116,12 @@ export const de = {
     pinProject: 'Projekt anheften',
     unpinProject: 'Projekt lösen',
   },
+  columnEdit: {
+    title: 'Spaltendetails bearbeiten',
+    titleLabel: 'Spaltentitel *',
+    subtitleLabel: 'Beschreibung / Untertitel',
+    saveButton: 'Änderungen speichern',
+  },
   language: {
     label: 'Sprache',
     choose: 'Sprache auswählen',

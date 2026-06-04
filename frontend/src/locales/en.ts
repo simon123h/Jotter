@@ -114,6 +114,12 @@ export const en = {
     pinProject: 'Pin project',
     unpinProject: 'Unpin project',
   },
+  columnEdit: {
+    title: 'Edit Column Details',
+    titleLabel: 'Column Title *',
+    subtitleLabel: 'Description / Subtitle',
+    saveButton: 'Save Changes',
+  },
   language: {
     label: 'Language',
     choose: 'Choose language',

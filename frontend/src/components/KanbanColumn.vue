@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import Sortable from 'sortablejs';
 import type { Task, BucketName } from '../types';
 import TaskCard from './TaskCard.vue';
+import ColumnEditModal from './ColumnEditModal.vue';
 import { useI18n } from '../composables/useI18n';
 import { Pencil, Trash2, Plus } from '@lucide/vue';
 
@@ -27,49 +28,22 @@ const emit = defineEmits<{
 }>();
 
 const cardsContainer = ref<HTMLElement | null>(null);
-const isEditing = ref(false);
-const editTitle = ref('');
-const editSubtitle = ref('');
-const titleInputRef = ref<HTMLInputElement | null>(null);
-
-const startEditing = () => {
-  editTitle.value = props.title;
-  editSubtitle.value = props.subtitle || '';
-  isEditing.value = true;
-  nextTick(() => {
-    titleInputRef.value?.focus();
-  });
-};
-
-const saveTitle = () => {
-  const cleanTitle = editTitle.value.trim();
-  const cleanSubtitle = editSubtitle.value.trim();
-  if (cleanTitle && (cleanTitle !== props.title || cleanSubtitle !== props.subtitle)) {
-    emit('rename-column', {
-      bucketName: props.bucketName,
-      newTitle: cleanTitle,
-      newSubtitle: cleanSubtitle,
-    });
-  }
-  isEditing.value = false;
-};
-
-const cancelEditing = () => {
-  isEditing.value = false;
-};
-
-const handleFocusOut = (event: FocusEvent) => {
-  const container = event.currentTarget as HTMLElement;
-  const relatedTarget = event.relatedTarget as HTMLElement | null;
-  if (!relatedTarget || !container.contains(relatedTarget)) {
-    saveTitle();
-  }
-};
+const isEditModalOpen = ref(false);
 
 const displayTitle = computed(() => {
   const translated = t('buckets.' + props.bucketName);
   return translated !== 'buckets.' + props.bucketName ? translated : props.title;
 });
+
+const onSaveColumn = (payload: { bucketName: string; title: string; subtitle: string }) => {
+  if (payload.title && (payload.title !== props.title || payload.subtitle !== props.subtitle)) {
+    emit('rename-column', {
+      bucketName: props.bucketName,
+      newTitle: payload.title,
+      newSubtitle: payload.subtitle,
+    });
+  }
+};
 
 onMounted(() => {
   if (cardsContainer.value) {
@@ -109,13 +83,13 @@ onMounted(() => {
     <div
       class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t shrink-0 min-h-[48px] cursor-grab active:cursor-grabbing column-drag-handle"
     >
-      <!-- Title Area (Normal or Edit Mode) -->
+      <!-- Title Area -->
       <div class="flex-grow flex flex-col justify-center overflow-hidden mr-1">
-        <div v-if="!isEditing" class="flex flex-col gap-0.5 overflow-hidden">
+        <div class="flex flex-col gap-0.5 overflow-hidden">
           <div class="flex items-center gap-1.5 overflow-hidden">
             <h3
               class="font-bold text-sm uppercase tracking-wider text-theme-text-main truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
-              @dblclick="startEditing"
+              @dblclick="isEditModalOpen = true"
               :title="t('doubleClickToRename')"
             >
               {{ displayTitle }}
@@ -130,30 +104,11 @@ onMounted(() => {
           <span
             v-if="subtitle"
             class="text-xs text-theme-text-muted truncate cursor-pointer font-sans italic hover:text-theme-accent leading-normal"
-            @dblclick="startEditing"
+            @dblclick="isEditModalOpen = true"
             :title="t('doubleClickToRename')"
           >
             {{ subtitle }}
           </span>
-        </div>
-        <div v-else class="flex flex-col gap-1 w-full pr-1 py-0.5" @focusout="handleFocusOut">
-          <input
-            ref="titleInputRef"
-            v-model="editTitle"
-            type="text"
-            placeholder="Column Title"
-            class="bg-theme-card border border-theme-primary/60 rounded px-1.5 py-0.5 text-sm font-bold text-theme-text-input focus:outline-none w-full"
-            @keyup.enter="saveTitle"
-            @keyup.esc="cancelEditing"
-          />
-          <input
-            v-model="editSubtitle"
-            type="text"
-            placeholder="Add description..."
-            class="bg-theme-card border border-theme-border rounded px-1.5 py-0.5 text-xs text-theme-text-input focus:outline-none w-full font-sans italic"
-            @keyup.enter="saveTitle"
-            @keyup.esc="cancelEditing"
-          />
         </div>
       </div>
 
@@ -161,8 +116,7 @@ onMounted(() => {
       <div class="flex items-center gap-0.5 shrink-0">
         <!-- Rename Column -->
         <button
-          v-if="!isEditing"
-          @click="startEditing"
+          @click="isEditModalOpen = true"
           class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card rounded transition-colors cursor-pointer"
           :title="t('renameColumnTooltip')"
         >
@@ -171,7 +125,6 @@ onMounted(() => {
 
         <!-- Delete Column -->
         <button
-          v-if="!isEditing"
           @click="emit('delete-column', bucketName)"
           :disabled="tasks.length > 0"
           class="p-1 rounded transition-colors cursor-pointer"
@@ -187,7 +140,6 @@ onMounted(() => {
 
         <!-- Add Task -->
         <button
-          v-if="!isEditing"
           @click="emit('add-task-click', bucketName)"
           class="text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card p-1 rounded transition-colors cursor-pointer border border-theme-border/20 shadow-sm"
           :title="t('colAddTooltip')"
@@ -222,5 +174,15 @@ onMounted(() => {
         {{ t('addTaskButton') }}
       </button>
     </div>
+
+    <!-- Edit Column Details Modal -->
+    <ColumnEditModal
+      :is-open="isEditModalOpen"
+      :bucket-name="bucketName"
+      :initial-title="title"
+      :initial-subtitle="subtitle"
+      @close="isEditModalOpen = false"
+      @save="onSaveColumn"
+    />
   </div>
 </template>
