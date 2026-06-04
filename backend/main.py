@@ -26,11 +26,18 @@ logging.basicConfig(
 logger = logging.getLogger("jotter")
 
 
+try:
+    from version import __version__
+except ImportError:
+    __version__ = "[dev mode]"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from database import DB_PATH
     from storage import TASKS_DIR
 
+    print(f"Jotter version: {app.version}")
     print(f"Using database file: {DB_PATH}")
     print(f"Using tasks markdown directory: {TASKS_DIR}")
 
@@ -48,7 +55,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Jotter API",
     description="Backend REST API for Jotter - a local-first markdown Kanban board with an ephemeral SQLite database index.",
-    version="1.0.0",
+    version=__version__,
     lifespan=lifespan,
 )
 
