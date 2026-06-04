@@ -27,4 +27,5 @@ export interface Bucket {
   position: number;
   color?: string | null;
   layout?: 'list' | 'grid-2' | 'grid-3';
+  max_tasks?: number | null;
 }

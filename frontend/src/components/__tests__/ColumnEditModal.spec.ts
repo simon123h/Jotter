@@ -95,6 +95,7 @@ describe('ColumnEditModal.vue', () => {
       subtitle: 'Tasks ready for sprint',
       color: null,
       layout: 'list',
+      max_tasks: null,
     });
   });
 
@@ -156,6 +157,7 @@ describe('ColumnEditModal.vue', () => {
       subtitle: 'Tasks that need to be done',
       color: 'red',
       layout: 'list',
+      max_tasks: null,
     });
   });
 
@@ -187,6 +189,7 @@ describe('ColumnEditModal.vue', () => {
       subtitle: 'Tasks that need to be done',
       color: null,
       layout: 'grid-2',
+      max_tasks: null,
     });
   });
 
@@ -216,6 +219,40 @@ describe('ColumnEditModal.vue', () => {
       subtitle: 'Tasks that need to be done',
       color: null,
       layout: 'grid-3',
+      max_tasks: null,
+    });
+  });
+
+  it('emits save event with parsed max_tasks when max tasks limit is entered', async () => {
+    wrapper = mount(ColumnEditModal, {
+      props: {
+        ...defaultProps,
+        initialMaxTasks: 3,
+      },
+    });
+
+    const maxTasksInput = document.body.querySelector('input[type="number"]') as HTMLInputElement;
+    expect(maxTasksInput).not.toBeNull();
+    expect(maxTasksInput.value).toBe('3');
+
+    maxTasksInput.value = '7';
+    maxTasksInput.dispatchEvent(new Event('input'));
+    await nextTick();
+
+    const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Save Changes')
+    ) as HTMLButtonElement;
+    expect(saveBtn).not.toBeNull();
+    saveBtn.click();
+
+    expect(wrapper.emitted('save')).toBeTruthy();
+    expect(wrapper.emitted('save')?.[0][0]).toEqual({
+      bucketName: 'todo',
+      title: 'To Do',
+      subtitle: 'Tasks that need to be done',
+      color: null,
+      layout: 'list',
+      max_tasks: 7,
     });
   });
 });

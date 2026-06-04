@@ -124,6 +124,8 @@ export const en = {
     layoutList: 'List (1 Col)',
     layoutGrid2: 'Grid (2 Cols)',
     layoutGrid3: 'Grid (3 Cols)',
+    maxTasksLabel: 'Max Tasks Limit',
+    maxTasksPlaceholder: 'e.g. 5 (empty for no limit)',
     saveButton: 'Save Changes',
   },
   language: {

@@ -15,6 +15,7 @@ const props = defineProps<{
   subtitle: string;
   color?: string | null;
   layout?: 'list' | 'grid-2' | 'grid-3';
+  maxTasks?: number | null;
   tasks: Task[];
   isFirst: boolean;
   isLast: boolean;
@@ -32,11 +33,16 @@ const emit = defineEmits<{
       newSubtitle: string;
       newColor?: string | null;
       newLayout?: 'list' | 'grid-2' | 'grid-3';
+      newMaxTasks?: number | null;
     }
   ): void;
   (e: 'delete-column', bucketName: string): void;
   (e: 'mark-done', task: Task): void;
 }>();
+
+const isLimitExceeded = computed(() => {
+  return props.maxTasks !== null && props.maxTasks !== undefined && props.maxTasks > 0 && props.tasks.length > props.maxTasks;
+});
 
 const cardsContainer = ref<HTMLElement | null>(null);
 const leftContainer = ref<HTMLElement | null>(null);
@@ -69,13 +75,19 @@ const colorMap: Record<string, string> = {
 };
 
 const columnStyle = computed(() => {
-  if (!props.color || !colorMap[props.color]) return {};
-  const hexColor = colorMap[props.color];
-  return {
-    '--column-tint': hexColor,
-    'background-color': `color-mix(in srgb, ${hexColor} 3%, var(--theme-bg-column))`,
-    'border-color': `color-mix(in srgb, ${hexColor} 25%, var(--theme-border))`,
-  };
+  const styles: Record<string, string> = {};
+  if (isLimitExceeded.value) {
+    styles['--column-tint'] = '#ef4444';
+    styles['background-color'] = 'color-mix(in srgb, #ef4444 8%, var(--theme-bg-column))';
+    styles['border-color'] = 'color-mix(in srgb, #ef4444 50%, var(--theme-border))';
+    styles['box-shadow'] = '0 0 12px rgba(239, 68, 68, 0.15)';
+  } else if (props.color && colorMap[props.color]) {
+    const hexColor = colorMap[props.color];
+    styles['--column-tint'] = hexColor;
+    styles['background-color'] = `color-mix(in srgb, ${hexColor} 3%, var(--theme-bg-column))`;
+    styles['border-color'] = `color-mix(in srgb, ${hexColor} 25%, var(--theme-border))`;
+  }
+  return styles;
 });
 
 const onSaveColumn = (payload: {
@@ -84,13 +96,15 @@ const onSaveColumn = (payload: {
   subtitle: string;
   color: string | null;
   layout: 'list' | 'grid-2' | 'grid-3';
+  max_tasks: number | null;
 }) => {
   if (
     payload.title &&
     (payload.title !== props.title ||
       payload.subtitle !== props.subtitle ||
       payload.color !== props.color ||
-      payload.layout !== props.layout)
+      payload.layout !== props.layout ||
+      payload.max_tasks !== props.maxTasks)
   ) {
     emit('rename-column', {
       bucketName: props.bucketName,
@@ -98,6 +112,7 @@ const onSaveColumn = (payload: {
       newSubtitle: payload.subtitle,
       newColor: payload.color,
       newLayout: payload.layout,
+      newMaxTasks: payload.max_tasks,
     });
   }
 };
@@ -219,9 +234,14 @@ watch(
               {{ displayTitle }}
             </h3>
             <span
-              class="text-xs px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0"
+              class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0 transition-all duration-300"
+              :class="[
+                isLimitExceeded
+                  ? 'bg-rose-500/20 border border-rose-500/50 text-rose-400 animate-pulse'
+                  : 'bg-theme-card border border-theme-border/60 text-theme-text-muted',
+              ]"
             >
-              {{ tasks.length }}
+              {{ maxTasks ? `${tasks.length}/${maxTasks}` : tasks.length }}
             </span>
           </div>
           <!-- Subtitle / Description -->
@@ -377,6 +397,7 @@ watch(
       :initial-subtitle="subtitle"
       :initial-color="color"
       :initial-layout="layout"
+      :initial-max-tasks="maxTasks"
       @close="isEditModalOpen = false"
       @save="onSaveColumn"
     />

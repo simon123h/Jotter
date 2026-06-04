@@ -72,6 +72,7 @@ class BucketBase(BaseModel):
     subtitle: str = Field("", description="A short subtitle/description of the column")
     color: Optional[str] = Field(None, description="Optional color highlight/tint for the column")
     layout: str = Field("list", description="Column layout style: list, grid-2, or grid-3")
+    max_tasks: Optional[int] = Field(None, description="Optional maximum number of tasks for this column")
 
 
 class BucketCreate(BaseModel):
@@ -79,6 +80,7 @@ class BucketCreate(BaseModel):
     subtitle: Optional[str] = Field("", description="A short subtitle/description of the column")
     color: Optional[str] = Field(None, description="Optional color highlight/tint for the column")
     layout: Optional[str] = Field("list", description="Column layout style: list, grid-2, or grid-3")
+    max_tasks: Optional[int] = Field(None, description="Optional maximum number of tasks for this column")
 
 
 class BucketUpdate(BaseModel):
@@ -87,6 +89,7 @@ class BucketUpdate(BaseModel):
     position: Optional[float] = None
     color: Optional[str] = None
     layout: Optional[str] = None
+    max_tasks: Optional[int] = None
 
 
 class BucketResponse(BucketBase):
