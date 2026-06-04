@@ -31,10 +31,10 @@ BUCKETS_FILE = os.path.join(TASKS_DIR, "buckets.json")
 PROJECTS_FILE = os.path.join(TASKS_DIR, "projects.json")
 
 DEFAULT_BUCKETS = [
-    {"name": "backlog", "title": "Backlog", "subtitle": "", "position": 1000.0},
-    {"name": "todo", "title": "To Do", "subtitle": "", "position": 2000.0},
-    {"name": "in-progress", "title": "In Progress", "subtitle": "", "position": 3000.0},
-    {"name": "done", "title": "Done", "subtitle": "", "position": 4000.0},
+    {"name": "backlog", "title": "Backlog", "subtitle": "", "position": 1000.0, "is_default": True},
+    {"name": "todo", "title": "To Do", "subtitle": "", "position": 2000.0, "is_default": False},
+    {"name": "in-progress", "title": "In Progress", "subtitle": "", "position": 3000.0, "is_default": False},
+    {"name": "done", "title": "Done", "subtitle": "", "position": 4000.0, "is_default": False},
 ]
 
 

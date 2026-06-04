@@ -66,8 +66,8 @@ def create_project(project: ProjectCreate):
         # Also sync buckets in database for this project
         for b in DEFAULT_BUCKETS:
             conn.execute(
-                "INSERT INTO buckets (project_id, name, title, position) VALUES (?, ?, ?, ?)",
-                (project_id, b["name"], b["title"], b["position"]),
+                "INSERT INTO buckets (project_id, name, title, position, is_default) VALUES (?, ?, ?, ?, ?)",
+                (project_id, b["name"], b["title"], b["position"], 1 if b.get("is_default", False) else 0),
             )
 
     return ProjectResponse(**new_project)

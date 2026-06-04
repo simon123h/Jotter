@@ -5,7 +5,7 @@ import type { Task, BucketName } from '../types';
 import TaskCard from './TaskCard.vue';
 import ColumnEditModal from './ColumnEditModal.vue';
 import { useI18n } from '../composables/useI18n';
-import { Pencil, Trash2, Plus } from '@lucide/vue';
+import { MoreHorizontal, Plus } from '@lucide/vue';
 
 const { t } = useI18n();
 
@@ -16,6 +16,7 @@ const props = defineProps<{
   color?: string | null;
   layout?: 'list' | 'grid-2' | 'grid-3';
   maxTasks?: number | null;
+  isDefault?: boolean;
   tasks: Task[];
   isFirst: boolean;
   isLast: boolean;
@@ -34,6 +35,7 @@ const emit = defineEmits<{
       newColor?: string | null;
       newLayout?: 'list' | 'grid-2' | 'grid-3';
       newMaxTasks?: number | null;
+      newIsDefault?: boolean;
     }
   ): void;
   (e: 'delete-column', bucketName: string): void;
@@ -97,6 +99,7 @@ const onSaveColumn = (payload: {
   color: string | null;
   layout: 'list' | 'grid-2' | 'grid-3';
   max_tasks: number | null;
+  is_default: boolean;
 }) => {
   if (
     payload.title &&
@@ -104,7 +107,8 @@ const onSaveColumn = (payload: {
       payload.subtitle !== props.subtitle ||
       payload.color !== props.color ||
       payload.layout !== props.layout ||
-      payload.max_tasks !== props.maxTasks)
+      payload.max_tasks !== props.maxTasks ||
+      payload.is_default !== props.isDefault)
   ) {
     emit('rename-column', {
       bucketName: props.bucketName,
@@ -113,8 +117,17 @@ const onSaveColumn = (payload: {
       newColor: payload.color,
       newLayout: payload.layout,
       newMaxTasks: payload.max_tasks,
+      newIsDefault: payload.is_default,
     });
   }
+};
+
+const onContainerDblClick = (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+  if (target.closest('.task-card') || target.closest('button') || target.closest('a')) {
+    return;
+  }
+  emit('add-task-click', props.bucketName);
 };
 
 const sortableInstances = ref<Sortable[]>([]);
@@ -138,7 +151,11 @@ const setupSortables = () => {
       draggable: '.task-card',
       filter: '.add-task-btn',
       preventOnFilter: true,
+      onStart: () => {
+        document.body.classList.add('dragging-active');
+      },
       onEnd: (evt: any) => {
+        document.body.classList.remove('dragging-active');
         const { item, to } = evt;
         const taskId = Number(item.getAttribute('data-task-id'));
         const toBucket = to.getAttribute('data-bucket-name') as BucketName;
@@ -209,7 +226,7 @@ watch(
 <template>
   <div
     :style="columnStyle"
-    class="flex flex-col bg-theme-column border border-theme-border rounded h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
+    class="kanban-column flex flex-col bg-theme-column border border-theme-border rounded h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
     :class="[
       layout === 'grid-3'
         ? 'min-w-[840px] w-[864px] md:w-[960px]'
@@ -257,48 +274,32 @@ watch(
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex items-center gap-0.5 shrink-0">
-        <!-- Rename Column -->
+      <div class="flex items-center shrink-0">
+        <!-- Edit Column Details -->
         <button
           @click="isEditModalOpen = true"
-          class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card rounded transition-colors cursor-pointer"
+          class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
           :title="t('renameColumnTooltip')"
         >
-          <Pencil class="w-3.5 h-3.5 shrink-0" />
-        </button>
-
-        <!-- Delete Column -->
-        <button
-          @click="emit('delete-column', bucketName)"
-          :disabled="tasks.length > 0"
-          class="p-1 rounded transition-colors cursor-pointer"
-          :class="
-            tasks.length > 0
-              ? 'text-theme-text-muted/30 cursor-not-allowed opacity-40'
-              : 'text-red-400/70 hover:text-red-400 hover:bg-red-500/10'
-          "
-          :title="tasks.length > 0 ? t('deleteColumnDisabledTooltip') : t('deleteColumnTooltip')"
-        >
-          <Trash2 class="w-3.5 h-3.5 shrink-0" />
-        </button>
-
-        <!-- Add Task -->
-        <button
-          @click="emit('add-task-click', bucketName)"
-          class="text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card p-1 rounded transition-colors cursor-pointer border border-theme-border/20 shadow-sm"
-          :title="t('colAddTooltip')"
-        >
-          <Plus class="w-3.5 h-3.5 shrink-0" />
+          <MoreHorizontal class="w-4 h-4 shrink-0" />
         </button>
       </div>
     </div>
 
     <!-- Cards Container -->
-    <div class="flex-grow p-2.5 overflow-y-auto min-h-[150px] scroller-thin animate-fade-in">
+    <div @dblclick="onContainerDblClick" class="flex-grow flex flex-col p-2.5 overflow-y-auto scroller-thin animate-fade-in">
+      <!-- "+ Add Task" Card-style Button at the top of the column -->
+      <button
+        @click="emit('add-task-click', bucketName)"
+        class="w-full flex items-center justify-center gap-1.5 py-2 px-3 mb-2.5 border border-dashed border-theme-border/60 hover:border-theme-accent bg-theme-card/20 hover:bg-theme-card/60 text-theme-text-muted hover:text-theme-text-main rounded transition-all cursor-pointer shadow-sm group/btn shrink-0"
+      >
+        <Plus class="w-3.5 h-3.5 shrink-0 transition-transform group-hover/btn:scale-110" />
+        <span class="text-sm font-semibold">{{ t('addTaskButton') }}</span>
+      </button>
       <!-- Grid 3x Masonry-style subcolumns -->
-      <div v-if="layout === 'grid-3'" class="flex gap-2.5 items-start min-h-[120px]">
+      <div v-if="layout === 'grid-3'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow">
         <!-- Col 1 -->
-        <div ref="col1Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
+        <div ref="col1Container" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/3 flex-grow">
           <TaskCard
             class="task-card"
             v-for="task in col1Tasks"
@@ -311,7 +312,7 @@ watch(
         </div>
 
         <!-- Col 2 -->
-        <div ref="col2Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
+        <div ref="col2Container" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/3 flex-grow">
           <TaskCard
             class="task-card"
             v-for="task in col2Tasks"
@@ -324,7 +325,7 @@ watch(
         </div>
 
         <!-- Col 3 -->
-        <div ref="col3Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
+        <div ref="col3Container" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/3 flex-grow">
           <TaskCard
             class="task-card"
             v-for="task in col3Tasks"
@@ -338,9 +339,9 @@ watch(
       </div>
 
       <!-- Grid 2x Masonry-style subcolumns -->
-      <div v-else-if="layout === 'grid-2'" class="flex gap-2.5 items-start min-h-[120px]">
+      <div v-else-if="layout === 'grid-2'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow">
         <!-- Left Subcolumn -->
-        <div ref="leftContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/2 min-h-[120px]">
+        <div ref="leftContainer" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/2 flex-grow">
           <TaskCard
             class="task-card"
             v-for="task in leftTasks"
@@ -353,7 +354,7 @@ watch(
         </div>
 
         <!-- Right Subcolumn -->
-        <div ref="rightContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/2 min-h-[120px]">
+        <div ref="rightContainer" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/2 flex-grow">
           <TaskCard
             class="task-card"
             v-for="task in rightTasks"
@@ -367,7 +368,7 @@ watch(
       </div>
 
       <!-- Single Column List -->
-      <div v-else ref="cardsContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 min-h-[120px]">
+      <div v-else ref="cardsContainer" :data-bucket-name="bucketName" class="cards-container-list flex flex-col gap-2.5 flex-grow">
         <TaskCard
           class="task-card"
           v-for="task in tasks"
@@ -378,15 +379,6 @@ watch(
           @mark-done="emit('mark-done', $event)"
         />
       </div>
-
-      <!-- Add Task Button inside scroll area, below the last card -->
-      <button
-        @click="emit('add-task-click', bucketName)"
-        class="add-task-btn w-full flex items-center justify-center gap-1.5 py-2 px-3 border border-dashed border-theme-border hover:border-theme-accent hover:bg-theme-card text-theme-text-muted hover:text-theme-accent rounded text-sm font-semibold transition-all cursor-pointer shadow-sm group/btn mt-2.5"
-      >
-        <Plus class="w-4 h-4 shrink-0 transition-transform group-hover/btn:scale-110" />
-        {{ t('addTaskButton') }}
-      </button>
     </div>
 
     <!-- Edit Column Details Modal -->
@@ -398,8 +390,21 @@ watch(
       :initial-color="color"
       :initial-layout="layout"
       :initial-max-tasks="maxTasks"
+      :initial-is-default="isDefault"
+      :tasks-count="tasks.length"
       @close="isEditModalOpen = false"
       @save="onSaveColumn"
+      @delete-column="emit('delete-column', bucketName)"
     />
   </div>
 </template>
+
+<style scoped>
+/* Make subcolumns and lists fill the vertical space to serve as reliable drop zones */
+.subcolumn-wrap,
+.subcolumn,
+.cards-container-list {
+  flex-grow: 1;
+  min-height: 120px;
+}
+</style>

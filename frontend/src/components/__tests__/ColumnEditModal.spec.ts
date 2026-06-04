@@ -96,6 +96,7 @@ describe('ColumnEditModal.vue', () => {
       color: null,
       layout: 'list',
       max_tasks: null,
+      is_default: false,
     });
   });
 
@@ -158,6 +159,7 @@ describe('ColumnEditModal.vue', () => {
       color: 'red',
       layout: 'list',
       max_tasks: null,
+      is_default: false,
     });
   });
 
@@ -190,6 +192,7 @@ describe('ColumnEditModal.vue', () => {
       color: null,
       layout: 'grid-2',
       max_tasks: null,
+      is_default: false,
     });
   });
 
@@ -220,6 +223,7 @@ describe('ColumnEditModal.vue', () => {
       color: null,
       layout: 'grid-3',
       max_tasks: null,
+      is_default: false,
     });
   });
 
@@ -253,6 +257,7 @@ describe('ColumnEditModal.vue', () => {
       color: null,
       layout: 'list',
       max_tasks: 7,
+      is_default: false,
     });
   });
 });

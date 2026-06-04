@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { X, Slash } from '@lucide/vue';
+import { X, Slash, Trash2 } from '@lucide/vue';
 import { useI18n } from '../composables/useI18n';
 
 const { t } = useI18n();
@@ -13,10 +13,13 @@ const props = defineProps<{
   initialColor?: string | null;
   initialLayout?: 'list' | 'grid-2' | 'grid-3';
   initialMaxTasks?: number | null;
+  tasksCount?: number;
+  initialIsDefault?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
+  (e: 'delete-column'): void;
   (
     e: 'save',
     payload: {
@@ -26,6 +29,7 @@ const emit = defineEmits<{
       color: string | null;
       layout: 'list' | 'grid-2' | 'grid-3';
       max_tasks: number | null;
+      is_default: boolean;
     }
   ): void;
 }>();
@@ -35,7 +39,14 @@ const subtitle = ref('');
 const color = ref<string | null>(null);
 const layout = ref<'list' | 'grid-2' | 'grid-3'>('list');
 const maxTasks = ref<number | null>(null);
+const isDefault = ref(false);
 const titleInput = ref<HTMLInputElement | null>(null);
+
+const handleDelete = () => {
+  if ((props.tasksCount ?? 0) > 0) return;
+  emit('delete-column');
+  emit('close');
+};
 
 const colors = [
   { id: 'red', name: 'Red', bg: 'bg-rose-500', ring: 'ring-rose-500' },
@@ -57,6 +68,7 @@ watch(
       color.value = props.initialColor || null;
       layout.value = props.initialLayout || 'list';
       maxTasks.value = props.initialMaxTasks !== undefined ? props.initialMaxTasks : null;
+      isDefault.value = props.initialIsDefault || false;
       nextTick(() => {
         titleInput.value?.focus();
       });
@@ -88,6 +100,7 @@ const handleSave = () => {
     color: color.value,
     layout: layout.value,
     max_tasks: parsedMaxTasks,
+    is_default: isDefault.value,
   });
   emit('close');
 };
@@ -252,25 +265,63 @@ onUnmounted(() => {
                 </button>
               </div>
             </div>
+
+            <!-- Default Column Checkbox -->
+            <div class="flex items-center gap-2 pt-1">
+              <input
+                id="isDefaultColumn"
+                v-model="isDefault"
+                type="checkbox"
+                class="w-4 h-4 rounded border-theme-border text-theme-primary focus:ring-theme-ring focus:ring-opacity-25 bg-theme-base/60 cursor-pointer accent-theme-primary"
+              />
+              <label
+                for="isDefaultColumn"
+                class="text-xs font-bold uppercase tracking-wider text-theme-text-muted cursor-pointer select-none hover:text-theme-text-main transition-colors"
+              >
+                {{ t('columnEdit.defaultLabel') }}
+              </label>
+            </div>
           </form>
 
           <!-- Footer Buttons -->
-          <div class="px-4 py-3 border-t border-theme-border flex justify-end gap-2 bg-theme-card/30 shrink-0">
-            <button
-              type="button"
-              @click="emit('close')"
-              class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
-            >
-              {{ t('buttons.cancel') }}
-            </button>
-            <button
-              type="submit"
-              @click="handleSave"
-              class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all cursor-pointer"
-              :disabled="!title.trim()"
-            >
-              {{ t('columnEdit.saveButton') }}
-            </button>
+          <div class="px-4 py-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
+            <!-- Left Side: Delete Button -->
+            <div>
+              <button
+                type="button"
+                @click="handleDelete"
+                :disabled="(tasksCount ?? 0) > 0"
+                class="text-xs font-semibold px-2.5 py-1.5 rounded border flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95"
+                :class="
+                  (tasksCount ?? 0) > 0
+                    ? 'text-theme-text-muted/30 border-theme-border/30 cursor-not-allowed opacity-40'
+                    : 'text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border-red-500/20'
+                "
+                :title="(tasksCount ?? 0) > 0 ? t('deleteColumnDisabledTooltip') : t('deleteColumnTooltip')"
+              >
+                <Trash2 class="w-3.5 h-3.5 shrink-0" />
+                {{ t('deleteColumnTooltip') }}
+              </button>
+            </div>
+
+            <!-- Right Side: Cancel & Save Buttons -->
+            <div class="flex gap-2">
+              <button
+                type="button"
+                @click="emit('close')"
+                class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+              >
+                {{ t('buttons.cancel') }}
+              </button>
+              <button
+                type="submit"
+                @click="handleSave"
+                class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all cursor-pointer"
+                :disabled="!title.trim()"
+              >
+                {{ t('columnEdit.saveButton') }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
