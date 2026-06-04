@@ -427,20 +427,19 @@ watch(
   pointer-events: auto;
 }
 
-/* Hide add button globally during active drag-and-drop operations */
-:global(body.dragging-active) .add-task-btn {
-  display: none !important;
-}
+ /* NOTE: hiding of add-task button reverted, the button is always visible */
 
 /* Expand columns and make them stretch to full available height to provide a massive drop target area during drags */
 :global(body.dragging-active) .subcolumn-wrap {
-  align-items: stretch !important;
-  flex-grow: 1 !important;
+  align-items: stretch !important; /* ERROR: this does not seem to work/apply */
+  flex-grow: 1 !important; /* ERROR: this does not seem to work/apply */
+  background-color: red !important; /* NOTE: for debugging purposes, color does not show at the moment */
 }
 
 :global(body.dragging-active) .subcolumn,
 :global(body.dragging-active) .cards-container-list {
-  flex-grow: 1 !important;
-  min-height: 250px !important;
+  flex-grow: 1 !important; /* ERROR: this does not seem to work/apply */
+  min-height: 250px !important; /* ERROR: this does not seem to work/apply */
+  background-color: red !important; /* NOTE: for debugging purposes, color does not show at the moment */
 }
 </style>
