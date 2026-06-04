@@ -390,10 +390,24 @@ const handleCreateColumn = async (title: string, subtitle: string) => {
   }
 };
 
-const handleRenameColumn = async ({ bucketName, newTitle, newSubtitle }: { bucketName: string; newTitle: string; newSubtitle: string }) => {
+const handleRenameColumn = async ({
+  bucketName,
+  newTitle,
+  newSubtitle,
+  newColor,
+}: {
+  bucketName: string;
+  newTitle: string;
+  newSubtitle: string;
+  newColor?: string | null;
+}) => {
   if (!newTitle.trim()) return;
   try {
-    await updateBucket(activeProjectId.value, bucketName, { title: newTitle.trim(), subtitle: newSubtitle });
+    await updateBucket(activeProjectId.value, bucketName, {
+      title: newTitle.trim(),
+      subtitle: newSubtitle,
+      color: newColor,
+    });
     await fetchBuckets();
   } catch (err: any) {
     error.value = err.message || 'Failed to rename column';

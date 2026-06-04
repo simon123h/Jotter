@@ -186,13 +186,14 @@ def test_buckets_flow():
     assert buckets[2]["name"] == "in-progress"
     assert buckets[3]["name"] == "done"
 
-    # 2. Create bucket with subtitle
-    response = client.post("/projects/default/buckets", json={"title": "QA Test", "subtitle": "Quality assurance tasks"})
+    # 2. Create bucket with subtitle and color
+    response = client.post("/projects/default/buckets", json={"title": "QA Test", "subtitle": "Quality assurance tasks", "color": "red"})
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "qa-test"
     assert data["title"] == "QA Test"
     assert data["subtitle"] == "Quality assurance tasks"
+    assert data["color"] == "red"
     assert data["position"] == 5000.0
 
     # Verify buckets.json was updated
@@ -201,14 +202,24 @@ def test_buckets_flow():
     assert len(buckets_list) == 5
     assert buckets_list[-1]["name"] == "qa-test"
     assert buckets_list[-1]["subtitle"] == "Quality assurance tasks"
+    assert buckets_list[-1]["color"] == "red"
 
-    # 3. Update bucket title and subtitle
-    response = client.put("/projects/default/buckets/qa-test", json={"title": "Quality Assurance", "subtitle": "QA & Testing"})
+    # 3. Update bucket title, subtitle, and color
+    response = client.put(
+        "/projects/default/buckets/qa-test", json={"title": "Quality Assurance", "subtitle": "QA & Testing", "color": "green"}
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "qa-test"
     assert data["title"] == "Quality Assurance"
     assert data["subtitle"] == "QA & Testing"
+    assert data["color"] == "green"
+
+    # 3b. Update bucket color to None (clear it)
+    response = client.put("/projects/default/buckets/qa-test", json={"color": None})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["color"] is None
 
     # 4. Try deleting a bucket that has tasks
     # Create a task in "qa-test"

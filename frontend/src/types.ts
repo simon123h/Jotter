@@ -25,4 +25,5 @@ export interface Bucket {
   title: string;
   subtitle: string;
   position: number;
+  color?: string | null;
 }

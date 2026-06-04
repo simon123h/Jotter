@@ -148,7 +148,7 @@ onBeforeUnmount(() => {
     <div
       v-for="col in timeColumns"
       :key="col.id"
-      class="flex flex-col bg-theme-column border border-theme-border rounded w-72 shrink-0 md:w-80 group/col"
+      class="flex flex-col bg-theme-column border border-theme-border rounded w-72 shrink-0 md:w-80 group/col h-full"
     >
       <!-- Column Header -->
       <div
@@ -172,7 +172,7 @@ onBeforeUnmount(() => {
         contain ONLY TaskCard elements, never a placeholder div, otherwise
         Sortable cannot detect it as a valid drop zone when it's empty.
       -->
-      <div class="flex-grow relative">
+      <div class="flex-grow relative flex flex-col min-h-0">
         <!-- Empty state overlay (positioned on top, pointer-events-none so drops pass through) -->
         <div
           v-if="!col.tasks.length"
@@ -182,7 +182,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Sortable drop zone: contains ONLY TaskCards, never placeholder elements -->
-        <div :data-column-id="col.id" class="p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] h-full scroller-thin relative z-10">
+        <div :data-column-id="col.id" class="p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] flex-grow scroller-thin relative z-10">
           <TaskCard
             v-for="task in col.tasks"
             :key="task.id"
