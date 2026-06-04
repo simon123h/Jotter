@@ -148,6 +148,7 @@ def main():
     # Run uvicorn server
     from main import app
     import uvicorn
+
     uvicorn.run(app, host=host, port=port, log_level=log_level.lower())
 
 

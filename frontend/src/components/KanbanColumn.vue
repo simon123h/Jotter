@@ -287,10 +287,7 @@ watch(
     </div>
 
     <!-- Cards Container -->
-    <div
-      @dblclick="onContainerDblClick"
-      class="flex-grow flex flex-col p-2.5 overflow-y-auto scroller-thin animate-fade-in"
-    >
+    <div @dblclick="onContainerDblClick" class="flex-grow flex flex-col p-2.5 overflow-y-auto scroller-thin animate-fade-in">
       <!-- "+ Add Task" Card-style Button at the top of the column -->
       <button
         @click="emit('add-task-click', bucketName)"

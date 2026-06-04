@@ -274,7 +274,10 @@ onUnmounted(() => {
                 type="checkbox"
                 class="w-4 h-4 rounded border-theme-border text-theme-primary focus:ring-theme-ring focus:ring-opacity-25 bg-theme-base/60 cursor-pointer accent-theme-primary"
               />
-              <label for="isDefaultColumn" class="text-xs font-bold uppercase tracking-wider text-theme-text-muted cursor-pointer select-none hover:text-theme-text-main transition-colors">
+              <label
+                for="isDefaultColumn"
+                class="text-xs font-bold uppercase tracking-wider text-theme-text-muted cursor-pointer select-none hover:text-theme-text-main transition-colors"
+              >
                 {{ t('columnEdit.defaultLabel') }}
               </label>
             </div>
