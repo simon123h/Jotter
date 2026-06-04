@@ -71,10 +71,13 @@ const handleSave = () => {
   if (!cleanTitle) return;
 
   let parsedMaxTasks: number | null = null;
-  if (maxTasks.value !== null && maxTasks.value !== undefined && maxTasks.value !== '') {
-    const parsed = parseInt(String(maxTasks.value), 10);
-    if (!isNaN(parsed) && parsed > 0) {
-      parsedMaxTasks = parsed;
+  if (maxTasks.value !== null && maxTasks.value !== undefined) {
+    const valStr = String(maxTasks.value).trim();
+    if (valStr !== '') {
+      const parsed = parseInt(valStr, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        parsedMaxTasks = parsed;
+      }
     }
   }
 
