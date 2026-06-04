@@ -149,6 +149,11 @@ export const de = {
     en: 'English',
     de: 'Deutsch',
   },
+  settingsView: {
+    general: 'Allgemeine Einstellungen',
+    hideAddTask: 'Schaltfläche "+ Aufgabe hinzufügen" ausblenden',
+    hideAddTaskDesc: 'Blendet die Schaltfläche zum schnellen Hinzufügen oben in jeder Spalte aus.',
+  },
   views: {
     board: 'Board',
     list: 'Listenansicht',

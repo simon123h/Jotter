@@ -56,6 +56,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const thresholdDays = useLocalStorageRef('jotter-matrix-threshold', 7);
   const pinnedProjectIds = useLocalStorageRef<string[]>('jotter-pinned-projects', []);
   const sortBy = useLocalStorageRef<SortBy>('jotter-projects-sort', 'alpha');
+  const hideAddTaskButton = useLocalStorageRef('jotter-hide-add-task-button', false);
 
   // Action methods to change states directly or let views change refs
   const toggleHideDoneColumn = () => {
@@ -104,6 +105,10 @@ export const useSettingsStore = defineStore('settings', () => {
     return Number(localStorage.getItem(`jotter-project-mru-${projectId}`) || '0');
   };
 
+  const toggleHideAddTaskButton = () => {
+    hideAddTaskButton.value = !hideAddTaskButton.value;
+  };
+
   return {
     hideDoneColumn,
     isSidebarOpen,
@@ -113,6 +118,7 @@ export const useSettingsStore = defineStore('settings', () => {
     thresholdDays,
     pinnedProjectIds,
     sortBy,
+    hideAddTaskButton,
     toggleHideDoneColumn,
     toggleSidebar,
     setTheme,
@@ -124,5 +130,6 @@ export const useSettingsStore = defineStore('settings', () => {
     setSortBy,
     updateProjectMru,
     getProjectMru,
+    toggleHideAddTaskButton,
   };
 });

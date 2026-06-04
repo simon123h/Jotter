@@ -147,6 +147,11 @@ export const en = {
     en: 'English',
     de: 'Deutsch',
   },
+  settingsView: {
+    general: 'General Preferences',
+    hideAddTask: 'Hide "+ Add Task" button',
+    hideAddTaskDesc: 'Remove the quick-add button from the top of all columns on the board.',
+  },
   views: {
     board: 'Board',
     list: 'List View',

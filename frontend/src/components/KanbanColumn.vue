@@ -5,9 +5,11 @@ import type { Task, BucketName } from '../types';
 import TaskCard from './TaskCard.vue';
 import ColumnEditModal from './ColumnEditModal.vue';
 import { useI18n } from '../composables/useI18n';
+import { useSettingsStore } from '../stores/settings';
 import { MoreHorizontal, Plus } from '@lucide/vue';
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
 
 const props = defineProps<{
   bucketName: BucketName;
@@ -274,7 +276,16 @@ watch(
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex items-center shrink-0">
+      <div class="flex items-center shrink-0 gap-1">
+        <!-- Quick Add Task (only shown when the big button in the column body is hidden) -->
+        <button
+          v-if="settingsStore.hideAddTaskButton"
+          @click="emit('add-task-click', bucketName)"
+          class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
+          :title="t('addTaskButton')"
+        >
+          <Plus class="w-4 h-4 shrink-0" />
+        </button>
         <!-- Edit Column Details -->
         <button
           @click="isEditModalOpen = true"
@@ -290,6 +301,7 @@ watch(
     <div @dblclick="onContainerDblClick" class="flex-grow flex flex-col p-2.5 overflow-y-auto scroller-thin animate-fade-in">
       <!-- "+ Add Task" Card-style Button at the top of the column -->
       <button
+        v-if="!settingsStore.hideAddTaskButton"
         @click="emit('add-task-click', bucketName)"
         class="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 mb-2.5 bg-theme-card/35 hover:bg-theme-accent/10 text-theme-text-muted hover:text-theme-accent border border-transparent rounded transition-all cursor-pointer group/btn shrink-0"
       >
@@ -297,7 +309,7 @@ watch(
         <span class="text-sm font-semibold">{{ t('addTaskButton') }}</span>
       </button>
       <!-- Grid 3x Masonry-style subcolumns -->
-      <div v-if="layout === 'grid-3'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow">
+      <div v-if="layout === 'grid-3'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow pb-6">
         <!-- Col 1 -->
         <div ref="col1Container" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/3 flex-grow">
           <TaskCard
@@ -339,7 +351,7 @@ watch(
       </div>
 
       <!-- Grid 2x Masonry-style subcolumns -->
-      <div v-else-if="layout === 'grid-2'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow">
+      <div v-else-if="layout === 'grid-2'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow pb-6">
         <!-- Left Subcolumn -->
         <div ref="leftContainer" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/2 flex-grow">
           <TaskCard
@@ -368,7 +380,7 @@ watch(
       </div>
 
       <!-- Single Column List -->
-      <div v-else ref="cardsContainer" :data-bucket-name="bucketName" class="cards-container-list flex flex-col gap-2.5 flex-grow">
+      <div v-else ref="cardsContainer" :data-bucket-name="bucketName" class="cards-container-list flex flex-col gap-2.5 flex-grow pb-6">
         <TaskCard
           class="task-card"
           v-for="task in tasks"

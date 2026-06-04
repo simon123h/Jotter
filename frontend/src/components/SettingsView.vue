@@ -6,7 +6,7 @@ import { Settings, Check, Globe } from '@lucide/vue';
 
 const { locale, t } = useI18n();
 const settingsStore = useSettingsStore();
-const { currentTheme } = storeToRefs(settingsStore);
+const { currentTheme, hideAddTaskButton } = storeToRefs(settingsStore);
 
 const themes = [
   { id: 'midnight', name: 'Midnight Violet', color: 'bg-violet-500' },
@@ -99,6 +99,28 @@ const setTheme = (theme: string) => {
           <Globe class="w-4 h-4" />
           <span>Deutsch</span>
         </button>
+      </div>
+    </div>
+
+    <div class="border-t border-theme-border/30"></div>
+
+    <!-- General Preferences Section -->
+    <div class="flex flex-col gap-4">
+      <h3 class="text-xs font-bold text-theme-text-main uppercase tracking-wider">{{ t('settingsView.general') }}</h3>
+      <div class="flex flex-col gap-3">
+        <label
+          class="flex items-start gap-3 p-4 bg-theme-card/60 border border-theme-border/60 rounded-xl cursor-pointer hover:bg-theme-column/30 transition-all select-none"
+        >
+          <input
+            type="checkbox"
+            v-model="hideAddTaskButton"
+            class="mt-1 w-4 h-4 rounded text-theme-primary border border-theme-border/60 focus:ring-theme-ring focus:ring-2 focus:ring-offset-0 bg-theme-card/60"
+          />
+          <div class="flex flex-col">
+            <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.hideAddTask') }}</span>
+            <span class="text-xs text-theme-text-muted mt-0.5">{{ t('settingsView.hideAddTaskDesc') }}</span>
+          </div>
+        </label>
       </div>
     </div>
   </div>
