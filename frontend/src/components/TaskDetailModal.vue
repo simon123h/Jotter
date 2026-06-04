@@ -776,15 +776,9 @@ const getPriorityClasses = (prio: string) => {
               </button>
               <button
                 @click="isEditing = true"
-                class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+                class="text-sm font-semibold px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/25 rounded transition-all cursor-pointer"
               >
                 {{ t('buttons.edit') }}
-              </button>
-              <button
-                @click="emit('close')"
-                class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all cursor-pointer"
-              >
-                {{ t('buttons.close') }}
               </button>
             </template>
 

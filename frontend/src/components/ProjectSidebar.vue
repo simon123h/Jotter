@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Folder, Hash, MoreHorizontal, Plus, Pin } from '@lucide/vue';
+import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
-import { useSettingsStore } from '../stores/settings';
+import { useSettingsStore, type ViewMode } from '../stores/settings';
 import type { Project } from '../types';
 import { useI18n } from '../composables/useI18n';
 import { isServerOnline, checkServerStatus } from '../api';
@@ -12,12 +12,17 @@ const { t } = useI18n();
 const props = defineProps<{
   projects: Project[];
   activeProjectId: string;
+  syncLoading?: boolean;
+  syncSuccess?: boolean;
+  viewMode?: ViewMode;
 }>();
 
 const emit = defineEmits<{
   (e: 'select-project', id: string): void;
   (e: 'create-project', title: string): void;
   (e: 'edit-project', project: Project): void;
+  (e: 'sync'): void;
+  (e: 'select-view', view: ViewMode): void;
 }>();
 
 const settingsStore = useSettingsStore();
@@ -201,7 +206,7 @@ const handleCreateProject = () => {
     </div>
 
     <!-- Add Project Action at Bottom of Sidebar -->
-    <div class="p-3 border-t border-theme-border shrink-0">
+    <div class="p-3 shrink-0">
       <div v-if="showAddProjectInput" class="flex flex-col gap-2">
         <input
           v-model="newProjectTitle"
@@ -219,6 +224,43 @@ const handleCreateProject = () => {
         class="w-full flex items-center justify-center gap-1.5 py-1.5 text-sm font-semibold border border-dashed border-theme-border text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary hover:bg-theme-column/30 rounded transition-all cursor-pointer"
       >
         <Plus class="w-3.5 h-3.5 shrink-0" /> {{ t('projects.newProject') }}
+      </button>
+    </div>
+
+    <!-- Sidebar Footer Actions -->
+    <div class="p-3 border-t border-theme-border flex flex-col gap-1.5 shrink-0 bg-transparent">
+      <!-- Sync Index Button -->
+      <button
+        @click="emit('sync')"
+        class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded border transition-all duration-300 cursor-pointer"
+        :class="
+          syncSuccess
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 dark:text-emerald-400'
+            : syncLoading
+              ? 'bg-theme-column/20 border-transparent text-theme-text-main'
+              : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
+        "
+        :disabled="syncLoading"
+      >
+        <Check v-if="syncSuccess" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 animate-bounce" />
+        <RefreshCw v-else class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" />
+        <span>
+          {{ syncSuccess ? t('sync.synced') : syncLoading ? t('sync.syncing') : t('sync.button') }}
+        </span>
+      </button>
+
+      <!-- Settings Button -->
+      <button
+        @click="emit('select-view', 'settings')"
+        class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded border transition-all cursor-pointer"
+        :class="
+          viewMode === 'settings'
+            ? 'bg-theme-primary/10 border-theme-primary/15 text-theme-accent'
+            : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
+        "
+      >
+        <Settings class="w-3.5 h-3.5" />
+        <span>{{ t('views.settings') }}</span>
       </button>
     </div>
   </aside>

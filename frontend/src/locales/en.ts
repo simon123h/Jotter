@@ -152,6 +152,7 @@ export const en = {
     list: 'List View',
     matrix: 'Matrix',
     time: 'Time View',
+    settings: 'Settings',
   },
   matrix: {
     thresholdLabel: 'Urgency Threshold: {days} days or less',

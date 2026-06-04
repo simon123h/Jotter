@@ -4,7 +4,7 @@ export const de = {
     subtitle: 'Einzige Quelle der Wahrheit: Einfache Markdown-Dateien. SQLite Ephemeral Index.',
   },
   searchPlaceholder: 'Aufgaben suchen...',
-  themeLabel: 'Farben',
+  themeLabel: 'Farbschema',
   themeChoose: 'Farbschema auswählen',
   themeNames: {
     midnight: 'Midnight Violet',
@@ -154,6 +154,7 @@ export const de = {
     list: 'Listenansicht',
     matrix: 'Matrix',
     time: 'Zeitansicht',
+    settings: 'Einstellungen',
   },
   matrix: {
     thresholdLabel: 'Dringlichkeitsschwelle: {days} Tage oder weniger',

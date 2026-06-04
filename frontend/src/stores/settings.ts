@@ -1,7 +1,7 @@
 import { ref, watch, type Ref } from 'vue';
 import { defineStore } from 'pinia';
 
-export type ViewMode = 'board' | 'list' | 'matrix' | 'time';
+export type ViewMode = 'board' | 'list' | 'matrix' | 'time' | 'settings';
 export type SortBy = 'alpha' | 'mru';
 
 /**

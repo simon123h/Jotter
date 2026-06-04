@@ -25,28 +25,14 @@ import BoardView from './BoardView.vue';
 import ListView from './ListView.vue';
 import MatrixView from './MatrixView.vue';
 import TimeView from './TimeView.vue';
+import SettingsView from './SettingsView.vue';
 import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
-import {
-  Globe,
-  LayoutGrid,
-  List,
-  ChevronDown,
-  RefreshCw,
-  Plus,
-  X,
-  ClipboardList,
-  Menu,
-  Eye,
-  EyeOff,
-  Grid,
-  Clock,
-  Check,
-} from '@lucide/vue';
+import { LayoutGrid, List, ChevronDown, Plus, X, ClipboardList, Menu, Eye, EyeOff, Grid, Clock, Check, Tag } from '@lucide/vue';
 
-const { locale, t } = useI18n();
+const { t } = useI18n();
 const { showDialog, isOpen: dialogIsOpen } = useDialog();
 
 const route = useRoute();
@@ -87,7 +73,17 @@ const error = ref<string | null>(null);
 
 // Filter state
 const searchQuery = ref('');
-const selectedTag = ref<string | null>(null);
+const selectedTags = ref<string[]>([]);
+const isTagDropdownOpen = ref(false);
+
+const toggleTagSelection = (tag: string) => {
+  const index = selectedTags.value.indexOf(tag);
+  if (index > -1) {
+    selectedTags.value.splice(index, 1);
+  } else {
+    selectedTags.value.push(tag);
+  }
+};
 
 const setViewMode = (mode: ViewMode) => {
   settingsStore.setViewMode(mode);
@@ -110,19 +106,6 @@ const createDefaultBucket = ref<BucketName>('todo');
 const isProjectEditModalOpen = ref(false);
 const editingProject = ref<Project | null>(null);
 
-const isThemeDropdownOpen = ref(false);
-const isLanguageDropdownOpen = ref(false);
-
-const themes = [
-  { id: 'midnight', name: 'Midnight Violet', color: 'bg-violet-500' },
-  { id: 'forest', name: 'Emerald Forest', color: 'bg-emerald-500' },
-  { id: 'frost', name: 'Nordic Frost', color: 'bg-sky-500' },
-  { id: 'cyberpunk', name: 'Cyberpunk Neon', color: 'bg-pink-500' },
-  { id: 'sakura', name: 'Sakura Rose', color: 'bg-rose-500' },
-  { id: 'nordic-light', name: 'Nordic Light', color: 'bg-blue-600' },
-  { id: 'desert-light', name: 'Desert Amber', color: 'bg-orange-600' },
-];
-
 const setTheme = (theme: string) => {
   settingsStore.setTheme(theme);
   const docClasses = document.documentElement.classList;
@@ -135,7 +118,6 @@ const setTheme = (theme: string) => {
   if (theme !== 'nordic-light') {
     docClasses.add('theme-' + theme);
   }
-  isThemeDropdownOpen.value = false;
 };
 
 // Update document title dynamically based on active project
@@ -166,9 +148,10 @@ const fetchProjects = async () => {
 };
 
 const selectProject = (projectId: string) => {
+  const targetMode = viewMode.value === 'settings' ? 'board' : viewMode.value;
   router.push({
     name: 'project-view',
-    params: { projectId, viewMode: viewMode.value },
+    params: { projectId, viewMode: targetMode },
     query: route.query,
   });
 };
@@ -264,12 +247,14 @@ const allTags = computed(() => {
   return Array.from(tagsSet).sort();
 });
 
-// Filter tasks based on Search query (title + body) & selected tag (case-insensitively)
+// Filter tasks based on Search query (title + body) & selected tags (case-insensitively)
 const filteredTasks = computed(() => {
   const query = searchQuery.value.toLowerCase();
   return tasks.value.filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(query) || (task.body && task.body.toLowerCase().includes(query));
-    const matchesTag = !selectedTag.value || (task.tags && task.tags.some((tag) => tag.toLowerCase() === selectedTag.value!.toLowerCase()));
+    const matchesTag =
+      selectedTags.value.length === 0 ||
+      (task.tags && selectedTags.value.every((t) => task.tags.some((tt) => tt.toLowerCase() === t.toLowerCase())));
     return matchesSearch && matchesTag;
   });
 });
@@ -321,7 +306,7 @@ watch(
     if (newProjectId && newProjectId !== activeProjectId.value) {
       activeProjectId.value = newProjectId as string;
       error.value = null;
-      selectedTag.value = null;
+      selectedTags.value = [];
       await fetchAllData();
     }
 
@@ -621,9 +606,8 @@ const formatDateISO = (d: Date): string => {
 
 <template>
   <div class="h-screen w-full flex flex-col overflow-hidden bg-theme-base">
-    <!-- Header Controls (Navigation Bar spans full width) -->
     <header class="flex items-center justify-between gap-3 border-b border-theme-border px-4 py-3 shrink-0 bg-theme-card z-10">
-      <div class="flex items-center gap-2.5 overflow-hidden mr-2">
+      <div class="flex items-center gap-2.5 overflow-hidden mr-2 shrink-0">
         <!-- Hamburger Menu Button -->
         <button
           @click="toggleSidebar"
@@ -632,7 +616,7 @@ const formatDateISO = (d: Date): string => {
         >
           <Menu class="w-4 h-4 shrink-0" />
         </button>
-        <h1 class="text-base font-bold tracking-tight text-theme-text-main truncate flex items-center gap-1.5">
+        <h1 class="text-base font-bold tracking-tight text-theme-text-main truncate flex items-baseline gap-1.5">
           {{ t('brand.title') }}
           <span class="text-xs font-semibold text-theme-text-muted opacity-80" v-if="projects.find((p) => p.id === activeProjectId)">
             / {{ projects.find((p) => p.id === activeProjectId)?.title }}
@@ -640,26 +624,78 @@ const formatDateISO = (d: Date): string => {
         </h1>
       </div>
 
+      <!-- Search (Flex-grow to fill remaining space) -->
+      <div class="flex-grow mx-3 relative">
+        <input
+          v-model="searchQuery"
+          type="text"
+          :placeholder="t('searchPlaceholder')"
+          class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+        />
+      </div>
+
       <!-- Toolbar Actions -->
       <div class="flex items-center gap-2 shrink-0">
-        <!-- Search -->
-        <div class="relative w-32 sm:w-44 md:w-56">
-          <input
-            v-model="searchQuery"
-            type="text"
-            :placeholder="t('searchPlaceholder')"
-            class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-          />
+        <!-- Tag Filter Dropdown -->
+        <div class="relative shrink-0" v-if="allTags.length">
+          <div v-if="isTagDropdownOpen" class="fixed inset-0 z-10" @click="isTagDropdownOpen = false"></div>
+
+          <button
+            @click="isTagDropdownOpen = !isTagDropdownOpen"
+            class="relative z-20 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border transition-all cursor-pointer"
+            :class="
+              selectedTags.length > 0
+                ? 'bg-theme-primary/10 border-theme-primary/15 text-theme-accent font-bold shadow-none'
+                : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
+            "
+            :title="t('tagsLabel')"
+          >
+            <Tag class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
+            <span class="hidden md:inline">
+              {{ selectedTags.length === 0 ? t('tagsAll') : `${selectedTags.length} Selected` }}
+            </span>
+            <span class="md:hidden">
+              {{ selectedTags.length === 0 ? t('tagsAll') : selectedTags.length }}
+            </span>
+            <ChevronDown class="w-3 h-3 text-theme-text-muted" />
+          </button>
+
+          <div
+            v-if="isTagDropdownOpen"
+            class="absolute right-0 mt-1 w-48 max-h-60 overflow-y-auto bg-theme-card border border-theme-border rounded shadow-xl z-20 p-1 space-y-0.5 scroller-thin"
+          >
+            <button
+              @click="selectedTags = []"
+              class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/20': selectedTags.length === 0 }"
+            >
+              <span>{{ t('tagsAll') }}</span>
+              <Check v-if="selectedTags.length === 0" class="w-3.5 h-3.5 text-theme-primary" />
+            </button>
+
+            <div class="border-t border-theme-border/30 my-1"></div>
+
+            <button
+              v-for="tag in allTags"
+              :key="tag"
+              @click="toggleTagSelection(tag)"
+              class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
+              :class="{ 'bg-theme-column/50 border border-theme-border/20': selectedTags.includes(tag) }"
+            >
+              <span class="truncate uppercase font-bold tracking-wider text-[10px]">{{ tag }}</span>
+              <Check v-if="selectedTags.includes(tag)" class="w-3.5 h-3.5 text-theme-primary" />
+            </button>
+          </div>
         </div>
 
         <!-- View Mode Toggle -->
-        <div class="flex items-center bg-theme-card border border-theme-border rounded p-0.5 shadow-sm shrink-0">
+        <div class="flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
           <button
             @click="setViewMode('board')"
             class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
             :class="
               viewMode === 'board'
-                ? 'bg-theme-primary text-white'
+                ? 'bg-theme-primary text-white shadow-none'
                 : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
             "
           >
@@ -671,7 +707,7 @@ const formatDateISO = (d: Date): string => {
             class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
             :class="
               viewMode === 'list'
-                ? 'bg-theme-primary text-white'
+                ? 'bg-theme-primary text-white shadow-none'
                 : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
             "
           >
@@ -683,7 +719,7 @@ const formatDateISO = (d: Date): string => {
             class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
             :class="
               viewMode === 'matrix'
-                ? 'bg-theme-primary text-white'
+                ? 'bg-theme-primary text-white shadow-none'
                 : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
             "
           >
@@ -695,7 +731,7 @@ const formatDateISO = (d: Date): string => {
             class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
             :class="
               viewMode === 'time'
-                ? 'bg-theme-primary text-white'
+                ? 'bg-theme-primary text-white shadow-none'
                 : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
             "
           >
@@ -707,109 +743,17 @@ const formatDateISO = (d: Date): string => {
         <!-- Hide Done Column Toggle -->
         <button
           @click="toggleHideDoneColumn"
-          class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer shrink-0"
+          class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded transition-all border border-transparent cursor-pointer shrink-0 text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main"
           :title="hideDoneColumn ? t('doneBucket.show') : t('doneBucket.hide')"
         >
           <component :is="hideDoneColumn ? EyeOff : Eye" class="w-3.5 h-3.5 text-theme-text-muted" />
           <span class="hidden md:inline">{{ hideDoneColumn ? t('doneBucket.showText') : t('doneBucket.hideText') }}</span>
         </button>
 
-        <!-- Theme Selector Dropdown -->
-        <div class="relative shrink-0">
-          <div v-if="isThemeDropdownOpen" class="fixed inset-0 z-10" @click="isThemeDropdownOpen = false"></div>
-
-          <button
-            @click="isThemeDropdownOpen = !isThemeDropdownOpen"
-            class="relative z-20 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer"
-            :title="t('themeChoose')"
-          >
-            <span class="w-3 h-3 rounded-full" :class="themes.find((t) => t.id === currentTheme)?.color"></span>
-            <span class="hidden lg:inline">{{ t('themeLabel') }}</span>
-            <ChevronDown class="w-3 h-3 text-theme-text-muted" />
-          </button>
-
-          <div
-            v-if="isThemeDropdownOpen"
-            class="absolute right-0 mt-1 w-44 bg-theme-card border border-theme-border rounded shadow-xl z-20 p-1 space-y-0.5"
-          >
-            <button
-              v-for="th in themes"
-              :key="th.id"
-              @click="setTheme(th.id)"
-              class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
-              :class="{ 'bg-theme-column/50 border border-theme-border/20': currentTheme === th.id }"
-            >
-              <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="th.color"></span>
-              {{ t('themeNames.' + th.id) }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Language Selector Dropdown -->
-        <div class="relative shrink-0">
-          <div v-if="isLanguageDropdownOpen" class="fixed inset-0 z-10" @click="isLanguageDropdownOpen = false"></div>
-
-          <button
-            @click="isLanguageDropdownOpen = !isLanguageDropdownOpen"
-            class="relative z-20 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 bg-theme-card hover:bg-theme-column/80 text-theme-text-card border border-theme-border rounded transition-all shadow-sm cursor-pointer"
-            :title="t('language.choose')"
-          >
-            <Globe class="w-3.5 h-3.5 text-theme-text-muted shrink-0 mr-0.5" />
-            <span class="hidden lg:inline">{{ t('language.' + locale) }}</span>
-            <span class="lg:hidden uppercase">{{ locale }}</span>
-            <ChevronDown class="w-3 h-3 text-theme-text-muted" />
-          </button>
-
-          <div
-            v-if="isLanguageDropdownOpen"
-            class="absolute right-0 mt-1 w-28 bg-theme-card border border-theme-border rounded shadow-xl z-20 p-1 space-y-0.5"
-          >
-            <button
-              @click="
-                locale = 'en';
-                isLanguageDropdownOpen = false;
-              "
-              class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
-              :class="{ 'bg-theme-column/50 border border-theme-border/20': locale === 'en' }"
-            >
-              English
-            </button>
-            <button
-              @click="
-                locale = 'de';
-                isLanguageDropdownOpen = false;
-              "
-              class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
-              :class="{ 'bg-theme-column/50 border border-theme-border/20': locale === 'de' }"
-            >
-              Deutsch
-            </button>
-          </div>
-        </div>
-
-        <!-- Sync Button -->
-        <button
-          @click="triggerSync"
-          class="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 border rounded transition-all duration-300 shadow-sm cursor-pointer shrink-0"
-          :class="
-            syncSuccess
-              ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 scale-105'
-              : 'bg-theme-card hover:bg-theme-column/80 text-theme-text-card border-theme-border'
-          "
-          :disabled="syncLoading"
-          :title="t('sync.tooltip')"
-        >
-          <Check v-if="syncSuccess" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-bounce" />
-          <RefreshCw v-else class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" />
-          <span class="hidden lg:inline">
-            {{ syncSuccess ? t('sync.synced') : syncLoading ? t('sync.syncing') : t('sync.button') }}
-          </span>
-        </button>
-
         <!-- New Task Button -->
         <button
           @click="openCreateModal(defaultBucketName)"
-          class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm hover:shadow-theme-ring/10 transition-all cursor-pointer shrink-0"
+          class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded transition-all cursor-pointer shrink-0"
           :title="t('shortcuts.createTask')"
         >
           <Plus class="w-3.5 h-3.5 shrink-0" />
@@ -826,9 +770,14 @@ const formatDateISO = (d: Date): string => {
           v-show="isSidebarOpen"
           :projects="projects"
           :active-project-id="activeProjectId"
+          :sync-loading="syncLoading"
+          :sync-success="syncSuccess"
+          :view-mode="viewMode"
           @select-project="selectProject"
           @create-project="handleCreateProject"
           @edit-project="handleEditProject"
+          @sync="triggerSync"
+          @select-view="setViewMode"
         />
       </transition>
 
@@ -842,35 +791,6 @@ const formatDateISO = (d: Date): string => {
           <span>{{ error }}</span>
           <button @click="error = null" class="hover:text-white cursor-pointer">
             <X class="w-4 h-4" />
-          </button>
-        </div>
-
-        <!-- Horizontal Tag Filter List -->
-        <div v-if="allTags.length" class="flex items-center gap-1.5 overflow-x-auto pb-1.5 mt-2.5 shrink-0 scroller-thin">
-          <span class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider shrink-0 mr-1">{{ t('tagsLabel') }}</span>
-          <button
-            @click="selectedTag = null"
-            class="text-[10px] font-semibold px-2 py-0.5 rounded border transition-all shrink-0 cursor-pointer"
-            :class="
-              !selectedTag
-                ? 'bg-theme-primary/15 border-theme-accent text-theme-accent font-bold shadow-sm'
-                : 'bg-theme-card border-theme-border/60 text-theme-text-muted hover:text-theme-text-main'
-            "
-          >
-            {{ t('tagsAll') }}
-          </button>
-          <button
-            v-for="tag in allTags"
-            :key="tag"
-            @click="selectedTag = tag === selectedTag ? null : tag"
-            class="text-[10px] font-semibold px-2 py-0.5 rounded border transition-all shrink-0 cursor-pointer"
-            :class="
-              tag === selectedTag
-                ? 'bg-theme-primary/15 border-theme-accent text-theme-accent font-bold shadow-sm'
-                : 'bg-theme-card border-theme-border/60 text-theme-text-muted hover:text-theme-text-main'
-            "
-          >
-            {{ tag }}
           </button>
         </div>
 
@@ -936,6 +856,9 @@ const formatDateISO = (d: Date): string => {
             @mark-done="handleMarkTaskDone"
             @update-due-date="handleTimeViewDueDateUpdate"
           />
+
+          <!-- Settings View Mode -->
+          <SettingsView v-else-if="viewMode === 'settings'" />
         </div>
 
         <!-- Task Detail Modal -->
