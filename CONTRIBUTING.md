@@ -31,7 +31,14 @@ feat(frontend): support keyboard autocomplete tags list in details modal
 fix(backend): expand home user path in config data directory resolution
 ```
 
-### 2. Development Setup
+### 2. Semi-Linear Git History
+
+We prefer a **semi-linear git history with merge commits** for features.
+
+- Keep your feature branch updated by **rebasing** it onto the latest `main` branch. Bypassing this with a reverse merge (`git merge main` inside your feature branch) is discouraged as it creates messy commit loops.
+- Pull requests will be integrated using a merge commit (`git merge --no-ff`) to ensure feature boundaries are cleanly documented in the commit graph, while keeping the history clean and readable.
+
+### 3. Development Setup
 
 Please refer to the [Development Setup Guide](docs/installation/development.md) for instructions on setting up your local environment, installing dependencies, and running the dev servers.
 
