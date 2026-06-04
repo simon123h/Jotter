@@ -1,0 +1,18 @@
+# # # # # # # # # # # # # # # # #
+# Jotter configuration options  #
+# # # # # # # # # # # # # # # # #
+
+# HTTP port of the web application
+port: 9000
+
+# Host IP address
+# host: "127.0.0.1"
+
+# Custom user data storage dir (where the markdown files and sqlite database will be stored)
+# data_dir: "~/Documents/my-jotter-data/
+
+# Do not open the browser upon application launch
+# no_browser: true
+
+# Custom the log level ("info", "warning", "error")
+# log_level: "warning"

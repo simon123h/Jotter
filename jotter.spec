@@ -60,7 +60,7 @@ exe = EXE(
     a.datas,
     [],
     name='jotter',
-    icon='icon.ico',
+    icon='docs/assets/icon.ico',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

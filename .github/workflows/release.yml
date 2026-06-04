@@ -52,17 +52,27 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller jotter.spec
 
+      - name: Prepare Release Files
+        shell: bash
+        run: |
+          cp README.md dist/
+          cp LICENSE.md dist/
+          cp docs/assets/jotter.sample.yaml dist/jotter.yaml
+          mkdir -p dist/icons
+          cp docs/assets/icon.ico dist/icons/
+          cp docs/assets/icon.png dist/icons/
+
       - name: Package (Unix)
         if: matrix.platform != 'windows'
         run: |
           cd dist
-          tar -czf jotter-${{ github.ref_name }}-${{ matrix.platform }}.tar.gz jotter
+          tar -czf jotter-${{ github.ref_name }}-${{ matrix.platform }}.tar.gz jotter README.md LICENSE.md jotter.yaml icon.ico icon.png
           
       - name: Package (Windows)
         if: matrix.platform == 'windows'
         run: |
           cd dist
-          Compress-Archive -Path jotter.exe -DestinationPath jotter-${{ github.ref_name }}-windows.zip
+          Compress-Archive -Path jotter.exe, README.md, LICENSE.md, jotter.yaml, icon.ico, icon.png -DestinationPath jotter-${{ github.ref_name }}-windows.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
