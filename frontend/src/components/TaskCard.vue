@@ -112,7 +112,7 @@ const getPriorityClasses = (prio: string) => {
           class="p-1 text-theme-text-muted hover:text-emerald-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
           title="Mark as done"
         >
-          <Check class="w-3.5 h-3.5 shrink-0" />
+          <Check class="w-4.5 h-4.5 shrink-0" />
         </button>
       </div>
     </div>
