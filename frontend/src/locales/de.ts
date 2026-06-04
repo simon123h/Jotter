@@ -47,6 +47,7 @@ export const de = {
     markdownPlaceholderEdit: 'Markdown-Details kommen hierhin...',
     dueDateLabel: 'Fälligkeitsdatum',
     priorityLabel: 'Priorität',
+    noBucketsFound: 'Keine Spalten gefunden',
   },
   buttons: {
     cancel: 'Abbrechen',

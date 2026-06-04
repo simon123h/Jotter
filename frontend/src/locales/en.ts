@@ -46,6 +46,7 @@ export const en = {
     markdownPlaceholderEdit: 'Markdown details go here...',
     dueDateLabel: 'Due Date',
     priorityLabel: 'Priority',
+    noBucketsFound: 'No columns found',
   },
   buttons: {
     cancel: 'Cancel',

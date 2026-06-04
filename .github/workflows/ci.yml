@@ -20,6 +20,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: 'backend/requirements.txt'
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -35,14 +37,6 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-
-      - name: Cache Python Venv
-        uses: actions/cache@v4
-        with:
-          path: backend/.venv
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
 
       - name: Install All Dependencies
         run: |

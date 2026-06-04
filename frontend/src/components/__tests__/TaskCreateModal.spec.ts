@@ -63,4 +63,58 @@ describe('TaskCreateModal.vue', () => {
 
     expect(wrapper.emitted('close')).toBeTruthy();
   });
+
+  it('shows autocomplete popup when typing "/"', async () => {
+    const wrapper = mount(TaskCreateModal, {
+      props: defaultProps,
+    });
+
+    const titleInput = wrapper.find('input[type="text"]');
+    await titleInput.setValue('/');
+    await titleInput.trigger('input');
+    await nextTick();
+
+    // Check if the autocomplete list is shown
+    expect(wrapper.text()).toContain('To Do');
+    expect(wrapper.text()).toContain('/todo');
+    expect(wrapper.text()).toContain('Done');
+    expect(wrapper.text()).toContain('/done');
+  });
+
+  it('filters autocomplete list by input search text', async () => {
+    const wrapper = mount(TaskCreateModal, {
+      props: defaultProps,
+    });
+
+    const titleInput = wrapper.find('input[type="text"]');
+    await titleInput.setValue('/don');
+    await titleInput.trigger('input');
+    await nextTick();
+
+    expect(wrapper.text()).not.toContain('/todo');
+    expect(wrapper.text()).toContain('/done');
+  });
+
+  it('selects autocomplete item on click/mousedown', async () => {
+    const wrapper = mount(TaskCreateModal, {
+      props: defaultProps,
+    });
+
+    const titleInput = wrapper.find('input[type="text"]');
+    await titleInput.setValue('/don');
+    // Set selectionStart to simulate caret position
+    const inputEl = titleInput.element as HTMLInputElement;
+    inputEl.selectionStart = 4;
+    inputEl.selectionEnd = 4;
+
+    await titleInput.trigger('input');
+    await nextTick();
+
+    const options = wrapper.findAll('div[class*="cursor-pointer"]');
+    // Click on the first option (which should be /done because of filtering)
+    await options[0].trigger('mousedown');
+    await nextTick();
+
+    expect(inputEl.value).toBe('/done ');
+  });
 });

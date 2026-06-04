@@ -108,6 +108,88 @@ const handleKeyDown = (event: KeyboardEvent) => {
 const lastMatchedKeyword = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
+// Autocomplete State
+const showAutocomplete = ref(false);
+const autocompleteSearch = ref('');
+const autocompleteIndex = ref(0);
+
+const filteredBuckets = computed(() => {
+  if (!showAutocomplete.value) return [];
+  const search = autocompleteSearch.value.toLowerCase();
+  return props.buckets.filter(
+    (b) =>
+      b.name.toLowerCase().includes(search) ||
+      t('buckets.' + b.name)
+        .toLowerCase()
+        .includes(search)
+  );
+});
+
+const checkAutocomplete = () => {
+  const input = titleInput.value;
+  if (!input) {
+    showAutocomplete.value = false;
+    return;
+  }
+
+  const value = title.value;
+  const cursor = input.selectionStart || 0;
+  const textBeforeCursor = value.substring(0, cursor);
+
+  const match = textBeforeCursor.match(/(?:^|\s)\/([a-zA-Z0-9\u00C0-\u017F_-]*)$/);
+  if (match) {
+    showAutocomplete.value = true;
+    autocompleteSearch.value = match[1];
+    if (autocompleteIndex.value >= filteredBuckets.value.length) {
+      autocompleteIndex.value = 0;
+    }
+  } else {
+    showAutocomplete.value = false;
+  }
+};
+
+const selectAutocompleteItem = (bucketName: string) => {
+  const input = titleInput.value;
+  if (!input) return;
+
+  const value = title.value;
+  const cursor = input.selectionStart || 0;
+  const slashIndex = cursor - autocompleteSearch.value.length - 1;
+
+  if (slashIndex >= 0) {
+    title.value = value.substring(0, slashIndex) + '/' + bucketName + ' ' + value.substring(cursor);
+    const newCursor = slashIndex + bucketName.length + 2;
+    nextTick(() => {
+      input.setSelectionRange(newCursor, newCursor);
+      input.focus();
+      checkAutocomplete();
+    });
+  }
+  showAutocomplete.value = false;
+};
+
+const handleTitleKeyDown = (event: KeyboardEvent) => {
+  if (showAutocomplete.value && filteredBuckets.value.length > 0) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      event.stopPropagation();
+      autocompleteIndex.value = (autocompleteIndex.value + 1) % filteredBuckets.value.length;
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      event.stopPropagation();
+      autocompleteIndex.value = (autocompleteIndex.value - 1 + filteredBuckets.value.length) % filteredBuckets.value.length;
+    } else if (event.key === 'Enter' || event.key === 'Tab') {
+      event.preventDefault();
+      event.stopPropagation();
+      selectAutocompleteItem(filteredBuckets.value[autocompleteIndex.value].name);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      showAutocomplete.value = false;
+    }
+  }
+};
+
 // Reset form when modal opens
 watch(
   () => props.isOpen,
@@ -122,6 +204,8 @@ watch(
       error.value = null;
       lastMatchedKeyword.value = null;
       lastExtractedTags.value = [];
+      showAutocomplete.value = false;
+      autocompleteIndex.value = 0;
 
       window.addEventListener('keydown', handleKeyDown);
 
@@ -139,9 +223,10 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
 });
 
-// Watch for date keywords and hashtags in the title in real-time
+// Watch for date keywords, hashtags, and bucket routing in the title in real-time
 watch(title, (newTitle) => {
-  const result = parseTitleState(newTitle, locale.value);
+  const bucketNames = props.buckets.map((b) => b.name);
+  const result = parseTitleState(newTitle, locale.value, bucketNames);
 
   // 1. Due Date Sync
   if (result.matchedKeyword) {
@@ -175,12 +260,18 @@ watch(title, (newTitle) => {
     tags.value = updatedTags.join(', ');
     lastExtractedTags.value = [...currentTags];
   }
+
+  // 3. Bucket/Column Sync
+  if (result.bucket) {
+    bucket.value = result.bucket as BucketName;
+  }
 });
 
 const handleSubmit = async () => {
   if (loading.value) return;
 
-  const parseResult = parseTitleState(title.value, locale.value);
+  const bucketNames = props.buckets.map((b) => b.name);
+  const parseResult = parseTitleState(title.value, locale.value, bucketNames);
   const finalTitle = parseResult.cleanTitle;
 
   if (!finalTitle) {
@@ -246,14 +337,50 @@ const handleSubmit = async () => {
           <!-- Title -->
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.titleLabel') }}</label>
-            <input
-              ref="titleInput"
-              v-model="title"
-              type="text"
-              required
-              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-              :placeholder="t('form.titlePlaceholder')"
-            />
+            <div class="relative">
+              <input
+                ref="titleInput"
+                v-model="title"
+                type="text"
+                required
+                class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                :placeholder="t('form.titlePlaceholder')"
+                @input="checkAutocomplete"
+                @click="checkAutocomplete"
+                @keyup="checkAutocomplete"
+                @keydown="handleTitleKeyDown"
+                @blur="showAutocomplete = false"
+              />
+              <!-- Autocomplete Popup -->
+              <div
+                v-if="showAutocomplete"
+                class="absolute left-0 right-0 top-full mt-1 z-50 bg-theme-base border border-theme-border rounded shadow-xl max-h-48 overflow-y-auto py-1 scroller-thin"
+              >
+                <div
+                  v-for="(b, index) in filteredBuckets"
+                  :key="b.name"
+                  @mousedown.prevent="selectAutocompleteItem(b.name)"
+                  @mouseenter="autocompleteIndex = index"
+                  class="px-3 py-1.5 text-sm flex items-center justify-between cursor-pointer transition-colors"
+                  :class="
+                    index === autocompleteIndex
+                      ? 'bg-theme-primary text-white font-semibold'
+                      : 'text-theme-text-main hover:bg-theme-card/60'
+                  "
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-theme-accent" :class="index === autocompleteIndex ? 'bg-white' : ''"></span>
+                    <span>{{ t('buckets.' + b.name) }}</span>
+                  </div>
+                  <span class="text-xs font-mono" :class="index === autocompleteIndex ? 'text-white/80' : 'text-theme-text-muted'"
+                    >/{{ b.name }}</span
+                  >
+                </div>
+                <div v-if="filteredBuckets.length === 0" class="px-3 py-2 text-xs text-theme-text-muted italic">
+                  {{ t('form.noBucketsFound') }}
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Bucket & Tags Row -->

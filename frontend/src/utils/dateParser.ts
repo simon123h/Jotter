@@ -183,17 +183,49 @@ export function extractTagsFromTitle(title: string): { cleanTitle: string; tags:
   return { cleanTitle, tags };
 }
 
+export function extractBucketFromTitle(title: string, bucketNames: string[]): { cleanTitle: string; bucket: string | null } {
+  if (!title || !bucketNames || bucketNames.length === 0) {
+    return { cleanTitle: title, bucket: null };
+  }
+
+  const bucketRegex = /(?:^|\s)\/([a-zA-Z0-9\u00C0-\u017F_-]+)/g;
+  let foundBucket: string | null = null;
+
+  let cleanTitle = title.replace(bucketRegex, (fullMatch, name) => {
+    const matchedName = name.toLowerCase();
+    const matchedBucket = bucketNames.find((b) => b.toLowerCase() === matchedName);
+    if (matchedBucket) {
+      foundBucket = matchedBucket;
+      return fullMatch.startsWith(' ') ? ' ' : '';
+    }
+    return fullMatch;
+  });
+
+  cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
+
+  return { cleanTitle, bucket: foundBucket };
+}
+
 export function parseTitleState(
   title: string,
-  locale: string
-): { cleanTitle: string; dueDate: string | null; matchedKeyword: string | null; tags: string[] } {
+  locale: string,
+  bucketNames?: string[]
+): {
+  cleanTitle: string;
+  dueDate: string | null;
+  matchedKeyword: string | null;
+  tags: string[];
+  bucket: string | null;
+} {
   const tagsResult = extractTagsFromTitle(title);
-  const dateResult = parseDateFromTitle(tagsResult.cleanTitle, locale);
+  const bucketResult = extractBucketFromTitle(tagsResult.cleanTitle, bucketNames || []);
+  const dateResult = parseDateFromTitle(bucketResult.cleanTitle, locale);
 
   return {
     cleanTitle: dateResult.cleanTitle,
     dueDate: dateResult.dueDate,
     matchedKeyword: dateResult.matchedKeyword,
     tags: tagsResult.tags,
+    bucket: bucketResult.bucket,
   };
 }
