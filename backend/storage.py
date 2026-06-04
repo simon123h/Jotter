@@ -366,7 +366,16 @@ def sync_db_with_files() -> int:
                     (project_id, name, title, subtitle, position, color, layout, max_tasks)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (p["id"], b["name"], b["title"], b.get("subtitle", ""), b["position"], b.get("color", None), b.get("layout", "list"), b.get("max_tasks", None)),
+                    (
+                        p["id"],
+                        b["name"],
+                        b["title"],
+                        b.get("subtitle", ""),
+                        b["position"],
+                        b.get("color", None),
+                        b.get("layout", "list"),
+                        b.get("max_tasks", None),
+                    ),
                 )
                 bucket_names.add(b["name"])
                 max_bucket_position = max(max_bucket_position, b["position"])

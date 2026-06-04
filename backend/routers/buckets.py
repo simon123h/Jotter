@@ -77,7 +77,15 @@ def create_bucket(project_id: str, bucket: BucketCreate):
         all_buckets = [dict(r) for r in cursor.fetchall()]
         write_buckets_file(project_id, all_buckets)
 
-        return BucketResponse(name=name, title=bucket.title, subtitle=bucket.subtitle or "", position=new_position, color=bucket.color, layout=bucket.layout or "list", max_tasks=bucket.max_tasks)
+        return BucketResponse(
+            name=name,
+            title=bucket.title,
+            subtitle=bucket.subtitle or "",
+            position=new_position,
+            color=bucket.color,
+            layout=bucket.layout or "list",
+            max_tasks=bucket.max_tasks,
+        )
 
 
 @router.put("/{name}", response_model=BucketResponse)
@@ -111,7 +119,10 @@ def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
         updated_max_tasks = bucket_update.max_tasks if "max_tasks" in bucket_update.model_fields_set else existing["max_tasks"]
 
         conn.execute(
-            "UPDATE buckets SET title = ?, subtitle = ?, position = ?, color = ?, layout = ?, max_tasks = ? WHERE project_id = ? AND name = ?",
+            """
+            UPDATE buckets
+            SET title = ?, subtitle = ?, position = ?, color = ?, layout = ?, max_tasks = ? WHERE project_id = ? AND name = ?
+            """,
             (updated_title, updated_subtitle, updated_position, updated_color, updated_layout, updated_max_tasks, project_id, name),
         )
 
@@ -123,7 +134,15 @@ def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
         all_buckets = [dict(r) for r in cursor.fetchall()]
         write_buckets_file(project_id, all_buckets)
 
-        return BucketResponse(name=name, title=updated_title, subtitle=updated_subtitle, position=updated_position, color=updated_color, layout=updated_layout, max_tasks=updated_max_tasks)
+        return BucketResponse(
+            name=name,
+            title=updated_title,
+            subtitle=updated_subtitle,
+            position=updated_position,
+            color=updated_color,
+            layout=updated_layout,
+            max_tasks=updated_max_tasks,
+        )
 
 
 @router.delete("/{name}")

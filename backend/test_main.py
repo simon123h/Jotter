@@ -209,7 +209,10 @@ def test_buckets_flow():
     assert buckets_list[-1]["max_tasks"] is None
 
     # 3. Update bucket title, subtitle, color, layout, and max_tasks
-    response = client.put("/projects/default/buckets/qa-test", json={"title": "Quality Assurance", "subtitle": "QA & Testing", "color": "green", "layout": "grid", "max_tasks": 5})
+    response = client.put(
+        "/projects/default/buckets/qa-test",
+        json={"title": "Quality Assurance", "subtitle": "QA & Testing", "color": "green", "layout": "grid", "max_tasks": 5},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "qa-test"
