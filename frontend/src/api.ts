@@ -147,7 +147,7 @@ export async function getTask(projectId: string, id: number): Promise<Task> {
 
 export async function createTask(
   projectId: string,
-  task: { title: string; bucket: string; tags: string[]; body: string; due_date?: string; priority?: string }
+  task: { title: string; bucket: string; tags: string[]; body: string; due_date?: string; priority?: string; color?: string | null }
 ): Promise<Task> {
   if (IS_DEMO_MODE) {
     return demoApi.createTask(projectId, task);

@@ -90,11 +90,34 @@ const getPriorityClasses = (prio: string) => {
       return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
   }
 };
+
+const colorMap: Record<string, string> = {
+  red: '#ef4444',
+  orange: '#f97316',
+  yellow: '#eab308',
+  green: '#22c55e',
+  blue: '#3b82f6',
+  purple: '#a855f7',
+  pink: '#ec4899',
+};
+
+const cardStyle = computed(() => {
+  const styles: Record<string, string> = {};
+  if (props.task.color && colorMap[props.task.color]) {
+    const hexColor = colorMap[props.task.color];
+    styles['--card-tint'] = hexColor;
+    styles['background-color'] = `color-mix(in srgb, ${hexColor} 20%, var(--theme-bg-card))`;
+    styles['border-color'] = `color-mix(in srgb, ${hexColor} 40%, var(--theme-border))`;
+  }
+  return styles;
+});
 </script>
 
 <template>
   <div
     class="bg-theme-card border border-theme-border p-3 rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col gap-2 select-none"
+    :class="{ 'colored-card': task.color }"
+    :style="cardStyle"
     @click="emit('click', task)"
   >
     <!-- Title & ID -->
@@ -195,6 +218,11 @@ const getPriorityClasses = (prio: string) => {
 </template>
 
 <style scoped>
+.colored-card:hover {
+  border-color: var(--card-tint) !important;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--card-tint) 30%, transparent) !important;
+}
+
 /* Inline markdown rendering tweaks inside card */
 :deep(ul) {
   list-style-type: disc;

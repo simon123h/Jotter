@@ -222,6 +222,7 @@ def read_task_file(task_id: int) -> Optional[Dict[str, Any]]:
         "tags": [t.lower() for t in metadata.get("tags", [])],
         "due_date": metadata.get("due_date", None),
         "priority": metadata.get("priority", None),
+        "color": metadata.get("color", None),
         "body": post.content,
         "created_at": metadata.get("created_at", ""),
         "updated_at": metadata.get("updated_at", ""),
@@ -255,6 +256,7 @@ def write_task_file(task_id: int, task_data: Dict[str, Any]) -> str:
         tags=[t.lower() for t in task_data["tags"]],
         due_date=task_data.get("due_date", None),
         priority=task_data.get("priority", None),
+        color=task_data.get("color", None),
         created_at=task_data["created_at"],
         updated_at=task_data["updated_at"],
     )
@@ -361,6 +363,7 @@ def sync_db_with_files() -> int:
                             tags = [t.lower() for t in metadata.get("tags", [])]
                             due_date = metadata.get("due_date", None)
                             priority = metadata.get("priority", None)
+                            color = metadata.get("color", None)
                             created_at = metadata.get("created_at", "")
                             updated_at = metadata.get("updated_at", "")
 
@@ -425,6 +428,7 @@ def sync_db_with_files() -> int:
                                 filename=filename,
                                 due_date=due_date,
                                 priority=priority,
+                                color=color,
                                 created_at=created_at,
                                 updated_at=updated_at,
                             )

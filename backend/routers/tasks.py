@@ -58,6 +58,7 @@ def get_tasks(
                 body="",  # Do not return full body in listing for efficiency
                 due_date=t.due_date,
                 priority=t.priority,
+                color=t.color,
                 created_at=t.created_at,
                 updated_at=t.updated_at,
             )
@@ -113,6 +114,7 @@ def create_task(project_id: str, task: TaskCreate):
             "body": task.body,
             "due_date": task.due_date,
             "priority": task.priority,
+            "color": task.color,
             "created_at": now_str,
             "updated_at": now_str,
         }
@@ -131,6 +133,7 @@ def create_task(project_id: str, task: TaskCreate):
             filename=filename,
             due_date=task.due_date,
             priority=task.priority,
+            color=task.color,
             created_at=now_str,
             updated_at=now_str,
         )
@@ -161,6 +164,7 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
     # due_date and priority support explicit null to clear the field
     updated_due_date = task_update.due_date if "due_date" in task_update.model_fields_set else existing.get("due_date")
     updated_priority = task_update.priority if "priority" in task_update.model_fields_set else existing.get("priority")
+    updated_color = task_update.color if "color" in task_update.model_fields_set else existing.get("color")
 
     updated_data = {
         "id": task_id,
@@ -172,6 +176,7 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
         "body": updated_body,
         "due_date": updated_due_date,
         "priority": updated_priority,
+        "color": updated_color,
         "created_at": existing["created_at"],
         "updated_at": now_str,
     }
@@ -232,6 +237,7 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
             db_task.filename = new_filename
             db_task.due_date = updated_due_date
             db_task.priority = updated_priority
+            db_task.color = updated_color
             db_task.updated_at = now_str
             session.flush()
 

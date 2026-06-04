@@ -247,7 +247,7 @@ export async function getTask(projectId: string, id: number): Promise<Task> {
 
 export async function createTask(
   projectId: string,
-  task: { title: string; bucket: string; tags: string[]; body: string; due_date?: string; priority?: string }
+  task: { title: string; bucket: string; tags: string[]; body: string; due_date?: string; priority?: string; color?: string | null }
 ): Promise<Task> {
   const tasksMap = getDemoTasksMap();
   const list = tasksMap[projectId] || [];
@@ -277,6 +277,7 @@ export async function createTask(
     body: task.body,
     due_date: task.due_date,
     priority: task.priority,
+    color: task.color || null,
     created_at: now,
     updated_at: now,
   };

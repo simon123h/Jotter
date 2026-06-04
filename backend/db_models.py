@@ -75,6 +75,7 @@ class Task(Base):
     filename: Mapped[str] = mapped_column(String, nullable=False)
     due_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     priority: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    color: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[str] = mapped_column(String, nullable=False)
     updated_at: Mapped[str] = mapped_column(String, nullable=False)
 

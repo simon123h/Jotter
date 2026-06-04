@@ -15,6 +15,7 @@ export interface Task {
   body: string;
   due_date?: string;
   priority?: string;
+  color?: string | null;
   created_at: string;
   updated_at: string;
 }

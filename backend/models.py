@@ -32,6 +32,7 @@ class TaskBase(BaseModel):
     body: str = Field("", description="Markdown content of the task")
     due_date: Optional[str] = Field(None, description="Optional due date in YYYY-MM-DD format")
     priority: Optional[str] = Field(None, description="Optional priority level: low, medium, high, urgent")
+    color: Optional[str] = Field(None, description="Optional color highlight/tint for the card")
 
 
 class TaskCreate(TaskBase):
@@ -46,6 +47,7 @@ class TaskUpdate(BaseModel):
     position: Optional[float] = None
     due_date: Optional[str] = None
     priority: Optional[str] = None
+    color: Optional[str] = None
 
 
 class TaskMove(BaseModel):
@@ -63,6 +65,7 @@ class TaskResponse(BaseModel):
     body: str
     due_date: Optional[str] = None
     priority: Optional[str] = None
+    color: Optional[str] = None
     created_at: str
     updated_at: str
 

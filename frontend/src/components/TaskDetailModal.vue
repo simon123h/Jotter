@@ -5,7 +5,7 @@ import type { Task, BucketName } from '../types';
 import { getTask, updateTask, deleteTask } from '../api';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
-import { X } from '@lucide/vue';
+import { X, Slash } from '@lucide/vue';
 import { parseTitleState } from '../utils/dateParser';
 
 const { locale, t } = useI18n();
@@ -43,6 +43,17 @@ const editTags = ref('');
 const editBody = ref('');
 const editDueDate = ref('');
 const editPriority = ref('');
+const editColor = ref<string | null>(null);
+
+const colors = [
+  { id: 'red', name: 'Red', bg: 'bg-rose-500', ring: 'ring-rose-500' },
+  { id: 'orange', name: 'Orange', bg: 'bg-amber-600', ring: 'ring-amber-600' },
+  { id: 'yellow', name: 'Yellow', bg: 'bg-yellow-500', ring: 'ring-yellow-500' },
+  { id: 'green', name: 'Green', bg: 'bg-emerald-500', ring: 'ring-emerald-500' },
+  { id: 'blue', name: 'Blue', bg: 'bg-blue-500', ring: 'ring-blue-500' },
+  { id: 'purple', name: 'Purple', bg: 'bg-purple-500', ring: 'ring-purple-500' },
+  { id: 'pink', name: 'Pink', bg: 'bg-pink-500', ring: 'ring-pink-500' },
+];
 
 const lastMatchedKeyword = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
@@ -245,6 +256,7 @@ const fetchTaskDetail = async (id: number) => {
     editBody.value = fetchedTask.body;
     editDueDate.value = fetchedTask.due_date || '';
     editPriority.value = fetchedTask.priority || '';
+    editColor.value = fetchedTask.color || null;
     lastMatchedKeyword.value = null;
     lastExtractedTags.value = [];
   } catch (err: any) {
@@ -337,6 +349,7 @@ const handleSave = async () => {
       body: editBody.value,
       due_date: editDueDate.value,
       priority: editPriority.value,
+      color: editColor.value,
     });
 
     task.value = updated;
@@ -387,6 +400,7 @@ const cancelEdit = () => {
     editBody.value = task.value.body;
     editDueDate.value = task.value.due_date || '';
     editPriority.value = task.value.priority || '';
+    editColor.value = task.value.color || null;
     lastMatchedKeyword.value = null;
     lastExtractedTags.value = [];
   }
@@ -640,6 +654,40 @@ const getPriorityClasses = (prio: string) => {
                     <option value="high">{{ t('priorityOptions.high') }}</option>
                     <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
                   </select>
+                </div>
+              </div>
+
+              <!-- Highlight Color Selector -->
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+                  {{ t('columnEdit.colorLabel') }}
+                </label>
+                <div class="flex flex-wrap gap-2.5 items-center">
+                  <!-- None Option -->
+                  <button
+                    type="button"
+                    @click="editColor = null"
+                    class="w-7 h-7 rounded-full border border-theme-border flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 text-theme-text-muted hover:text-theme-text-main"
+                    :class="[
+                      editColor === null
+                        ? 'ring-2 ring-theme-accent ring-offset-2 ring-offset-theme-base bg-theme-card/80 border-theme-accent/60'
+                        : 'bg-theme-card/30 hover:bg-theme-card',
+                    ]"
+                    :title="t('columnEdit.colorNone')"
+                  >
+                    <Slash class="w-3 h-3 shrink-0 rotate-90" />
+                  </button>
+
+                  <!-- Colors -->
+                  <button
+                    v-for="c in colors"
+                    :key="c.id"
+                    type="button"
+                    @click="editColor = c.id"
+                    class="w-7 h-7 rounded-full cursor-pointer transition-all hover:scale-110 active:scale-95"
+                    :class="[c.bg, editColor === c.id ? `ring-2 ring-offset-2 ring-offset-theme-base ${c.ring}` : '']"
+                    :title="c.name"
+                  />
                 </div>
               </div>
 
