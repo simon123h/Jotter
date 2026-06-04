@@ -364,6 +364,7 @@ def sync_db_with_files() -> int:
                             due_date = metadata.get("due_date", None)
                             priority = metadata.get("priority", None)
                             color = metadata.get("color", None)
+                            body = post.content
                             created_at = metadata.get("created_at", "")
                             updated_at = metadata.get("updated_at", "")
 
@@ -426,6 +427,7 @@ def sync_db_with_files() -> int:
                                 position=position,
                                 tags=tags,
                                 filename=filename,
+                                body=body,
                                 due_date=due_date,
                                 priority=priority,
                                 color=color,

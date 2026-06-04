@@ -55,7 +55,7 @@ def get_tasks(
                 bucket=t.bucket,
                 position=t.position,
                 tags=t.tags,
-                body="",  # Do not return full body in listing for efficiency
+                body=t.body,
                 due_date=t.due_date,
                 priority=t.priority,
                 color=t.color,

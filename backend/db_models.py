@@ -73,6 +73,7 @@ class Task(Base):
     position: Mapped[float] = mapped_column(Float, nullable=False)
     tags: Mapped[List[str]] = mapped_column(JSON, default=list)
     filename: Mapped[str] = mapped_column(String, nullable=False)
+    body: Mapped[str] = mapped_column(String, default="", server_default="")
     due_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     priority: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     color: Mapped[Optional[str]] = mapped_column(String, nullable=True)
