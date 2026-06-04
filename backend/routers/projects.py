@@ -48,6 +48,7 @@ def create_project(project: ProjectCreate):
         "id": project_id,
         "title": project.title,
         "created_at": now_str,
+        "done_clean_period": project.done_clean_period,
     }
 
     # Write registry file
@@ -59,7 +60,12 @@ def create_project(project: ProjectCreate):
 
     # Insert into database
     with db_session() as session:
-        db_project = Project(id=project_id, title=project.title, created_at=now_str)
+        db_project = Project(
+            id=project_id,
+            title=project.title,
+            created_at=now_str,
+            done_clean_period=project.done_clean_period,
+        )
         session.add(db_project)
         # Also sync buckets in database for this project
         for b in DEFAULT_BUCKETS:
@@ -81,7 +87,10 @@ def update_project(project_id: str, project_update: ProjectUpdate):
     project_found = None
     for p in projects:
         if p["id"] == project_id:
-            p["title"] = project_update.title
+            if project_update.title is not None:
+                p["title"] = project_update.title
+            if "done_clean_period" in project_update.model_fields_set:
+                p["done_clean_period"] = project_update.done_clean_period
             project_found = p
             break
 
@@ -96,7 +105,10 @@ def update_project(project_id: str, project_update: ProjectUpdate):
     with db_session() as session:
         db_project = session.query(Project).filter(Project.id == project_id).first()
         if db_project:
-            db_project.title = project_update.title
+            if project_update.title is not None:
+                db_project.title = project_update.title
+            if "done_clean_period" in project_update.model_fields_set:
+                db_project.done_clean_period = project_update.done_clean_period
 
     return ProjectResponse(**project_found)
 

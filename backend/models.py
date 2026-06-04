@@ -5,16 +5,19 @@ from pydantic import BaseModel, Field
 
 class ProjectCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=100)
+    done_clean_period: Optional[int] = Field(None, ge=0, description="Done task deletion period in days")
 
 
 class ProjectUpdate(BaseModel):
-    title: str = Field(..., min_length=1, max_length=100)
+    title: Optional[str] = Field(None, min_length=1, max_length=100)
+    done_clean_period: Optional[int] = Field(None, ge=0, description="Done task deletion period in days")
 
 
 class ProjectResponse(BaseModel):
     id: str
     title: str
     created_at: str
+    done_clean_period: Optional[int] = None
 
     model_config = {"from_attributes": True}
 

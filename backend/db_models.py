@@ -22,6 +22,7 @@ class Project(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
     title: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[str] = mapped_column(String, nullable=False)
+    done_clean_period: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     buckets: Mapped[List["Bucket"]] = relationship(
         "Bucket",

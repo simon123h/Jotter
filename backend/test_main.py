@@ -387,3 +387,86 @@ def test_tag_case_insensitivity():
     response = client.get(f"/projects/{project_id}/tasks?tag=bug-fix")
     assert response.status_code == 200
     assert len(response.json()) == 1
+
+
+def test_done_task_pruning():
+    # 1. Create a project with done task deletion period of 2 days
+    response = client.post("/projects", json={"title": "Prune Project", "done_clean_period": 2})
+    assert response.status_code == 201
+    project_data = response.json()
+    project_id = project_data["id"]
+    assert project_data["done_clean_period"] == 2
+
+    # 2. Write markdown task files: safe done task, old done task, and old todo task
+    from datetime import datetime, timedelta, timezone
+
+    import frontmatter
+
+    project_dir = os.path.join(storage.TASKS_DIR, project_id)
+
+    # Safe done task (updated 1 hour ago)
+    new_time = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+    new_post = frontmatter.Post(
+        "I am safe",
+        id=100,
+        project_id=project_id,
+        title="Safe Task",
+        bucket="done",
+        position=1000.0,
+        tags=[],
+        created_at=new_time,
+        updated_at=new_time,
+    )
+    with open(os.path.join(project_dir, "000100-safe-task.md"), "w", encoding="utf-8") as f:
+        frontmatter.dump(new_post, f)
+
+    # Old done task (updated 3 days ago)
+    old_time = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat().replace("+00:00", "Z")
+    old_post = frontmatter.Post(
+        "I should be pruned",
+        id=101,
+        project_id=project_id,
+        title="Old Task",
+        bucket="done",
+        position=2000.0,
+        tags=[],
+        created_at=old_time,
+        updated_at=old_time,
+    )
+    with open(os.path.join(project_dir, "000101-old-task.md"), "w", encoding="utf-8") as f:
+        frontmatter.dump(old_post, f)
+
+    # Old todo task (updated 3 days ago, should not be pruned because bucket is 'todo')
+    todo_post = frontmatter.Post(
+        "I should be safe because I am in todo",
+        id=102,
+        project_id=project_id,
+        title="Safe Todo Task",
+        bucket="todo",
+        position=3000.0,
+        tags=[],
+        created_at=old_time,
+        updated_at=old_time,
+    )
+    with open(os.path.join(project_dir, "000102-safe-todo-task.md"), "w", encoding="utf-8") as f:
+        frontmatter.dump(todo_post, f)
+
+    # 3. Synchronize database (which triggers pruning)
+    response = client.post("/system/sync")
+    assert response.status_code == 200
+
+    # 4. Verify results
+    # Safe Task (id 100) and Safe Todo Task (id 102) should still exist
+    assert os.path.exists(os.path.join(project_dir, "000100-safe-task.md"))
+    assert os.path.exists(os.path.join(project_dir, "000102-safe-todo-task.md"))
+    # Old Task (id 101) should have been deleted from disk
+    assert not os.path.exists(os.path.join(project_dir, "000101-old-task.md"))
+
+    # Verify database state (only 100 and 102 are present, 101 is not)
+    response = client.get(f"/projects/{project_id}/tasks")
+    assert response.status_code == 200
+    tasks = response.json()
+    task_ids = {t["id"] for t in tasks}
+    assert 100 in task_ids
+    assert 102 in task_ids
+    assert 101 not in task_ids

@@ -49,6 +49,7 @@ def load_projects_file() -> list:
                 "id": "default",
                 "title": "Default Project",
                 "created_at": now_str,
+                "done_clean_period": None,
             }
         ]
         os.makedirs(os.path.join(TASKS_DIR, "default"), exist_ok=True)
@@ -56,7 +57,11 @@ def load_projects_file() -> list:
         return default_project
     try:
         with open(PROJECTS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            for item in data:
+                if "done_clean_period" not in item:
+                    item["done_clean_period"] = None
+            return data
     except Exception as e:
         logger.error(f"Error loading projects registry: {e}")
         return []
@@ -304,7 +309,12 @@ def sync_db_with_files() -> int:
         # Load projects registry
         projects = load_projects_file()
         for p in projects:
-            db_project = Project(id=p["id"], title=p["title"], created_at=p["created_at"])
+            db_project = Project(
+                id=p["id"],
+                title=p["title"],
+                created_at=p["created_at"],
+                done_clean_period=p.get("done_clean_period"),
+            )
             session.add(db_project)
 
             # Sync buckets for this project
@@ -353,6 +363,25 @@ def sync_db_with_files() -> int:
                             priority = metadata.get("priority", None)
                             created_at = metadata.get("created_at", "")
                             updated_at = metadata.get("updated_at", "")
+
+                            # Check if task is done and old, and should be pruned
+                            done_clean_period = p.get("done_clean_period")
+                            if done_clean_period and done_clean_period > 0 and bucket == "done":
+                                check_date = updated_at or created_at
+                                if check_date:
+                                    try:
+                                        updated_dt = datetime.fromisoformat(check_date.replace("Z", "+00:00"))
+                                        now = datetime.now(timezone.utc)
+                                        age_days = (now - updated_dt).days
+                                        if age_days >= done_clean_period:
+                                            os.remove(filepath)
+                                            logger.info(
+                                                f"Pruned old done task file {filename} in project '{p['id']}' "
+                                                f"(age: {age_days} days, limit: {done_clean_period})"
+                                            )
+                                            continue
+                                    except Exception as ex:
+                                        logger.error(f"Error checking pruning status for {filename} in project '{p['id']}': {ex}")
 
                             # Auto-create column if it doesn't exist in the project
                             if bucket not in bucket_names:
