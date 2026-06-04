@@ -57,7 +57,8 @@ def load_projects_file() -> list:
     try:
         with open(PROJECTS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error loading projects registry: {e}")
         return []
 
 
@@ -68,7 +69,8 @@ def write_projects_file(projects: list):
         with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
             json.dump(projects, f, indent=2)
         os.replace(temp_path, PROJECTS_FILE)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error writing projects file: {e}")
         if os.path.exists(temp_path):
             os.remove(temp_path)
         raise
@@ -103,7 +105,8 @@ def load_buckets_file(project_id: str = "default") -> list:
                 if "max_tasks" not in item:
                     item["max_tasks"] = None
             return data
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error loading buckets file for project '{project_id}': {e}")
         return DEFAULT_BUCKETS
 
 
@@ -121,7 +124,8 @@ def write_buckets_file(project_id: str = "default", buckets: list = None):
         with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
             json.dump(buckets, f, indent=2)
         os.replace(temp_path, buckets_file)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error writing buckets file for project '{project_id}': {e}")
         if os.path.exists(temp_path):
             os.remove(temp_path)
         raise
@@ -258,7 +262,8 @@ def write_task_file(task_id: int, task_data: Dict[str, Any]) -> str:
 
         # Rename temp file to target path
         os.replace(temp_path, new_filepath)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error writing task file for task {task_id}: {e}")
         if os.path.exists(temp_path):
             os.remove(temp_path)
         raise
