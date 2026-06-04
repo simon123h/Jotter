@@ -5,6 +5,8 @@
 
 Jotter is a **local-first, privacy-focused task management application** designed to help you organize tasks without losing data ownership. Modeled as a Markdown Kanban board, Jotter helps combat "task flooding" through aggressive filtering, all while keeping your data stored locally in simple, plain-text files on your own machine.
 
+![Jotter Kanban Board Screenshot](docs/assets/screenshot.png)
+
 ---
 
 ## 🌟 Key Features
