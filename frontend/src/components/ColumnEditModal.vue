@@ -11,18 +11,18 @@ const props = defineProps<{
   initialTitle: string;
   initialSubtitle?: string | null;
   initialColor?: string | null;
-  initialLayout?: 'list' | 'grid';
+  initialLayout?: 'list' | 'grid-2' | 'grid-3';
 }>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'save', payload: { bucketName: string; title: string; subtitle: string; color: string | null; layout: 'list' | 'grid' }): void;
+  (e: 'save', payload: { bucketName: string; title: string; subtitle: string; color: string | null; layout: 'list' | 'grid-2' | 'grid-3' }): void;
 }>();
 
 const title = ref('');
 const subtitle = ref('');
 const color = ref<string | null>(null);
-const layout = ref<'list' | 'grid'>('list');
+const layout = ref<'list' | 'grid-2' | 'grid-3'>('list');
 const titleInput = ref<HTMLInputElement | null>(null);
 
 const colors = [
@@ -173,11 +173,11 @@ onUnmounted(() => {
               <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
                 {{ t('columnEdit.layoutLabel') }}
               </label>
-              <div class="grid grid-cols-2 gap-2 bg-theme-base/40 border border-theme-border rounded p-1">
+              <div class="grid grid-cols-3 gap-2 bg-theme-base/40 border border-theme-border rounded p-1">
                 <button
                   type="button"
                   @click="layout = 'list'"
-                  class="px-3 py-1.5 rounded text-xs font-semibold cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                  class="px-2 py-1.5 rounded text-xs font-semibold cursor-pointer transition-all flex items-center justify-center gap-1.5"
                   :class="[
                     layout === 'list'
                       ? 'bg-theme-primary text-white shadow-sm font-bold'
@@ -188,15 +188,27 @@ onUnmounted(() => {
                 </button>
                 <button
                   type="button"
-                  @click="layout = 'grid'"
-                  class="px-3 py-1.5 rounded text-xs font-semibold cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                  @click="layout = 'grid-2'"
+                  class="px-2 py-1.5 rounded text-xs font-semibold cursor-pointer transition-all flex items-center justify-center gap-1.5"
                   :class="[
-                    layout === 'grid'
+                    layout === 'grid-2'
                       ? 'bg-theme-primary text-white shadow-sm font-bold'
                       : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/30'
                   ]"
                 >
-                  <span>{{ t('columnEdit.layoutGrid') }}</span>
+                  <span>{{ t('columnEdit.layoutGrid2') }}</span>
+                </button>
+                <button
+                  type="button"
+                  @click="layout = 'grid-3'"
+                  class="px-2 py-1.5 rounded text-xs font-semibold cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                  :class="[
+                    layout === 'grid-3'
+                      ? 'bg-theme-primary text-white shadow-sm font-bold'
+                      : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/30'
+                  ]"
+                >
+                  <span>{{ t('columnEdit.layoutGrid3') }}</span>
                 </button>
               </div>
             </div>

@@ -123,8 +123,9 @@ export const de = {
     colorLabel: 'Hervorhebungsfarbe',
     colorNone: 'Keine',
     layoutLabel: 'Layout-Stil',
-    layoutList: 'Einspaltig (Liste)',
-    layoutGrid: 'Zweispaltig (Raster)',
+    layoutList: 'Liste (1 Spalte)',
+    layoutGrid2: 'Raster (2 Spalten)',
+    layoutGrid3: 'Raster (3 Spalten)',
     saveButton: 'Änderungen speichern',
   },
   language: {

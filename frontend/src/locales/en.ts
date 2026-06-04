@@ -121,8 +121,9 @@ export const en = {
     colorLabel: 'Highlight Color',
     colorNone: 'None',
     layoutLabel: 'Layout Style',
-    layoutList: 'Single Column (List)',
-    layoutGrid: 'Double Column (Grid)',
+    layoutList: 'List (1 Col)',
+    layoutGrid2: 'Grid (2 Cols)',
+    layoutGrid3: 'Grid (3 Cols)',
     saveButton: 'Save Changes',
   },
   language: {

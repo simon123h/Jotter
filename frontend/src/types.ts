@@ -26,5 +26,5 @@ export interface Bucket {
   subtitle: string;
   position: number;
   color?: string | null;
-  layout?: 'list' | 'grid';
+  layout?: 'list' | 'grid-2' | 'grid-3';
 }

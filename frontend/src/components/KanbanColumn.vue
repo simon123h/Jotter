@@ -14,7 +14,7 @@ const props = defineProps<{
   title: string;
   subtitle: string;
   color?: string | null;
-  layout?: 'list' | 'grid';
+  layout?: 'list' | 'grid-2' | 'grid-3';
   tasks: Task[];
   isFirst: boolean;
   isLast: boolean;
@@ -24,7 +24,7 @@ const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
   (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; prevTaskId: number | null; nextTaskId: number | null }): void;
-  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string; newColor?: string | null; newLayout?: 'list' | 'grid' }): void;
+  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string; newColor?: string | null; newLayout?: 'list' | 'grid-2' | 'grid-3' }): void;
   (e: 'delete-column', bucketName: string): void;
   (e: 'mark-done', task: Task): void;
 }>();
@@ -32,6 +32,9 @@ const emit = defineEmits<{
 const cardsContainer = ref<HTMLElement | null>(null);
 const leftContainer = ref<HTMLElement | null>(null);
 const rightContainer = ref<HTMLElement | null>(null);
+const col1Container = ref<HTMLElement | null>(null);
+const col2Container = ref<HTMLElement | null>(null);
+const col3Container = ref<HTMLElement | null>(null);
 const isEditModalOpen = ref(false);
 
 const displayTitle = computed(() => {
@@ -41,6 +44,10 @@ const displayTitle = computed(() => {
 
 const leftTasks = computed(() => props.tasks.filter((_, idx) => idx % 2 === 0));
 const rightTasks = computed(() => props.tasks.filter((_, idx) => idx % 2 === 1));
+
+const col1Tasks = computed(() => props.tasks.filter((_, idx) => idx % 3 === 0));
+const col2Tasks = computed(() => props.tasks.filter((_, idx) => idx % 3 === 1));
+const col3Tasks = computed(() => props.tasks.filter((_, idx) => idx % 3 === 2));
 
 const colorMap: Record<string, string> = {
   red: '#ef4444',
@@ -62,7 +69,7 @@ const columnStyle = computed(() => {
   };
 });
 
-const onSaveColumn = (payload: { bucketName: string; title: string; subtitle: string; color: string | null; layout: 'list' | 'grid' }) => {
+const onSaveColumn = (payload: { bucketName: string; title: string; subtitle: string; color: string | null; layout: 'list' | 'grid-2' | 'grid-3' }) => {
   if (payload.title && (payload.title !== props.title || payload.subtitle !== props.subtitle || payload.color !== props.color || payload.layout !== props.layout)) {
     emit('rename-column', {
       bucketName: props.bucketName,
@@ -122,7 +129,17 @@ const setupSortables = () => {
       },
     });
 
-    if (props.layout === 'grid') {
+    if (props.layout === 'grid-3') {
+      if (col1Container.value) {
+        sortableInstances.value.push(Sortable.create(col1Container.value, createSortableOptions()));
+      }
+      if (col2Container.value) {
+        sortableInstances.value.push(Sortable.create(col2Container.value, createSortableOptions()));
+      }
+      if (col3Container.value) {
+        sortableInstances.value.push(Sortable.create(col3Container.value, createSortableOptions()));
+      }
+    } else if (props.layout === 'grid-2') {
       if (leftContainer.value) {
         sortableInstances.value.push(Sortable.create(leftContainer.value, createSortableOptions()));
       }
@@ -158,9 +175,11 @@ watch(
     :style="columnStyle"
     class="flex flex-col bg-theme-column border border-theme-border rounded h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
     :class="[
-      layout === 'grid'
-        ? 'min-w-[560px] w-[576px] md:w-[640px]'
-        : 'min-w-[280px] w-72 md:w-80'
+      layout === 'grid-3'
+        ? 'min-w-[840px] w-[864px] md:w-[960px]'
+        : layout === 'grid-2'
+          ? 'min-w-[560px] w-[576px] md:w-[640px]'
+          : 'min-w-[280px] w-72 md:w-80'
     ]"
   >
     <!-- Column Header -->
@@ -237,8 +256,62 @@ watch(
     <div
       class="flex-grow p-2.5 overflow-y-auto min-h-[150px] scroller-thin animate-fade-in"
     >
-      <!-- Grid Masonry-style subcolumns -->
-      <div v-if="layout === 'grid'" class="flex gap-2.5 items-start min-h-[120px]">
+      <!-- Grid 3x Masonry-style subcolumns -->
+      <div v-if="layout === 'grid-3'" class="flex gap-2.5 items-start min-h-[120px]">
+        <!-- Col 1 -->
+        <div
+          ref="col1Container"
+          :data-bucket-name="bucketName"
+          class="flex flex-col gap-2.5 w-1/3 min-h-[120px]"
+        >
+          <TaskCard
+            class="task-card"
+            v-for="task in col1Tasks"
+            :key="task.id"
+            :task="task"
+            :data-task-id="task.id"
+            @click="emit('task-click', task)"
+            @mark-done="emit('mark-done', $event)"
+          />
+        </div>
+
+        <!-- Col 2 -->
+        <div
+          ref="col2Container"
+          :data-bucket-name="bucketName"
+          class="flex flex-col gap-2.5 w-1/3 min-h-[120px]"
+        >
+          <TaskCard
+            class="task-card"
+            v-for="task in col2Tasks"
+            :key="task.id"
+            :task="task"
+            :data-task-id="task.id"
+            @click="emit('task-click', task)"
+            @mark-done="emit('mark-done', $event)"
+          />
+        </div>
+
+        <!-- Col 3 -->
+        <div
+          ref="col3Container"
+          :data-bucket-name="bucketName"
+          class="flex flex-col gap-2.5 w-1/3 min-h-[120px]"
+        >
+          <TaskCard
+            class="task-card"
+            v-for="task in col3Tasks"
+            :key="task.id"
+            :task="task"
+            :data-task-id="task.id"
+            @click="emit('task-click', task)"
+            @mark-done="emit('mark-done', $event)"
+          />
+        </div>
+      </div>
+
+      <!-- Grid 2x Masonry-style subcolumns -->
+      <div v-else-if="layout === 'grid-2'" class="flex gap-2.5 items-start min-h-[120px]">
         <!-- Left Subcolumn -->
         <div
           ref="leftContainer"

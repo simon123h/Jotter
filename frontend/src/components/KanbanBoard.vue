@@ -413,7 +413,7 @@ const handleRenameColumn = async ({
   newTitle: string;
   newSubtitle: string;
   newColor?: string | null;
-  newLayout?: 'list' | 'grid';
+  newLayout?: 'list' | 'grid-2' | 'grid-3';
 }) => {
   if (!newTitle.trim()) return;
   try {

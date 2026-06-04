@@ -167,12 +167,11 @@ describe('ColumnEditModal.vue', () => {
       },
     });
 
-    // Find layout grid button in segmented control. The button text contains the translation or text, but in our mocked setup we look for the button content or simply the second button in the segmented control container.
-    // In template: The grid buttons are inside a div of class "grid grid-cols-2..."
-    const segmentedButtons = document.body.querySelectorAll('.grid-cols-2 button');
-    expect(segmentedButtons.length).toBe(2);
-    const gridBtn = segmentedButtons[1] as HTMLButtonElement;
-    gridBtn.click();
+    // In template: The grid buttons are inside a div of class "grid grid-cols-3..."
+    const segmentedButtons = document.body.querySelectorAll('.grid-cols-3 button');
+    expect(segmentedButtons.length).toBe(3);
+    const grid2Btn = segmentedButtons[1] as HTMLButtonElement; // grid-2
+    grid2Btn.click();
     await nextTick();
 
     const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
@@ -187,7 +186,36 @@ describe('ColumnEditModal.vue', () => {
       title: 'To Do',
       subtitle: 'Tasks that need to be done',
       color: null,
-      layout: 'grid',
+      layout: 'grid-2',
+    });
+  });
+
+  it('emits save event with grid-3 layout when the third layout button is clicked', async () => {
+    wrapper = mount(ColumnEditModal, {
+      props: {
+        ...defaultProps,
+        initialLayout: 'list',
+      },
+    });
+
+    const segmentedButtons = document.body.querySelectorAll('.grid-cols-3 button');
+    const grid3Btn = segmentedButtons[2] as HTMLButtonElement; // grid-3
+    grid3Btn.click();
+    await nextTick();
+
+    const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Save Changes')
+    ) as HTMLButtonElement;
+    expect(saveBtn).not.toBeNull();
+    saveBtn.click();
+
+    expect(wrapper.emitted('save')).toBeTruthy();
+    expect(wrapper.emitted('save')?.[0][0]).toEqual({
+      bucketName: 'todo',
+      title: 'To Do',
+      subtitle: 'Tasks that need to be done',
+      color: null,
+      layout: 'grid-3',
     });
   });
 });

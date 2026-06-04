@@ -71,14 +71,14 @@ class BucketBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=100)
     subtitle: str = Field("", description="A short subtitle/description of the column")
     color: Optional[str] = Field(None, description="Optional color highlight/tint for the column")
-    layout: str = Field("list", description="Column layout style: list or grid")
+    layout: str = Field("list", description="Column layout style: list, grid-2, or grid-3")
 
 
 class BucketCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=100)
     subtitle: Optional[str] = Field("", description="A short subtitle/description of the column")
     color: Optional[str] = Field(None, description="Optional color highlight/tint for the column")
-    layout: Optional[str] = Field("list", description="Column layout style: list or grid")
+    layout: Optional[str] = Field("list", description="Column layout style: list, grid-2, or grid-3")
 
 
 class BucketUpdate(BaseModel):
