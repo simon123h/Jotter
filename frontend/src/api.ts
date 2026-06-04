@@ -165,11 +165,11 @@ export async function getBuckets(projectId: string): Promise<Bucket[]> {
   return response.json();
 }
 
-export async function createBucket(projectId: string, title: string, subtitle?: string, color?: string | null): Promise<Bucket> {
+export async function createBucket(projectId: string, title: string, subtitle?: string, color?: string | null, layout?: 'list' | 'grid'): Promise<Bucket> {
   const response = await customFetch(`${API_BASE}/projects/${projectId}/buckets`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, subtitle, color }),
+    body: JSON.stringify({ title, subtitle, color, layout }),
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -181,7 +181,7 @@ export async function createBucket(projectId: string, title: string, subtitle?: 
 export async function updateBucket(
   projectId: string,
   name: string,
-  payload: { title?: string; subtitle?: string; position?: number; color?: string | null }
+  payload: { title?: string; subtitle?: string; position?: number; color?: string | null; layout?: 'list' | 'grid' }
 ): Promise<Bucket> {
   const response = await customFetch(`${API_BASE}/projects/${projectId}/buckets/${name}`, {
     method: 'PUT',

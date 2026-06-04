@@ -94,6 +94,7 @@ describe('ColumnEditModal.vue', () => {
       title: 'Refined To Do',
       subtitle: 'Tasks ready for sprint',
       color: null,
+      layout: 'list',
     });
   });
 
@@ -154,6 +155,39 @@ describe('ColumnEditModal.vue', () => {
       title: 'To Do',
       subtitle: 'Tasks that need to be done',
       color: 'red',
+      layout: 'list',
+    });
+  });
+
+  it('emits save event with selected layout when a layout segmented button is clicked', async () => {
+    wrapper = mount(ColumnEditModal, {
+      props: {
+        ...defaultProps,
+        initialLayout: 'list',
+      },
+    });
+
+    // Find layout grid button in segmented control. The button text contains the translation or text, but in our mocked setup we look for the button content or simply the second button in the segmented control container.
+    // In template: The grid buttons are inside a div of class "grid grid-cols-2..."
+    const segmentedButtons = document.body.querySelectorAll('.grid-cols-2 button');
+    expect(segmentedButtons.length).toBe(2);
+    const gridBtn = segmentedButtons[1] as HTMLButtonElement;
+    gridBtn.click();
+    await nextTick();
+
+    const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Save Changes')
+    ) as HTMLButtonElement;
+    expect(saveBtn).not.toBeNull();
+    saveBtn.click();
+
+    expect(wrapper.emitted('save')).toBeTruthy();
+    expect(wrapper.emitted('save')?.[0][0]).toEqual({
+      bucketName: 'todo',
+      title: 'To Do',
+      subtitle: 'Tasks that need to be done',
+      color: null,
+      layout: 'grid',
     });
   });
 });

@@ -16,8 +16,8 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
-  (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; oldIndex: number; newIndex: number }): void;
-  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string; newColor?: string | null }): void;
+  (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; prevTaskId: number | null; nextTaskId: number | null }): void;
+  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string; newColor?: string | null; newLayout?: 'list' | 'grid' }): void;
   (e: 'delete-column', bucketName: string): void;
   (e: 'create-column', title: string, subtitle: string): void;
   (e: 'mark-done', task: Task): void;
@@ -73,6 +73,7 @@ const handleCancelAddColumn = () => {
       :title="b.title"
       :subtitle="b.subtitle"
       :color="b.color"
+      :layout="b.layout"
       :tasks="tasksByBucket[b.name] || []"
       :is-first="idx === 0"
       :is-last="idx === buckets.length - 1"

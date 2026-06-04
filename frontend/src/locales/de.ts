@@ -122,6 +122,9 @@ export const de = {
     subtitleLabel: 'Beschreibung / Untertitel',
     colorLabel: 'Hervorhebungsfarbe',
     colorNone: 'Keine',
+    layoutLabel: 'Layout-Stil',
+    layoutList: 'Einspaltig (Liste)',
+    layoutGrid: 'Zweispaltig (Raster)',
     saveButton: 'Änderungen speichern',
   },
   language: {
