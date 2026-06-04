@@ -252,7 +252,7 @@ def read_task_file(task_id: int) -> Optional[Dict[str, Any]]:
         "title": metadata.get("title", ""),
         "bucket": metadata.get("bucket", "todo"),
         "position": float(metadata.get("position", 1000.0)),
-        "tags": metadata.get("tags", []),
+        "tags": [t.lower() for t in metadata.get("tags", [])],
         "due_date": metadata.get("due_date", None),
         "priority": metadata.get("priority", None),
         "body": post.content,
@@ -285,7 +285,7 @@ def write_task_file(task_id: int, task_data: Dict[str, Any]) -> str:
         title=task_data["title"],
         bucket=task_data["bucket"],
         position=task_data["position"],
-        tags=task_data["tags"],
+        tags=[t.lower() for t in task_data["tags"]],
         due_date=task_data.get("due_date", None),
         priority=task_data.get("priority", None),
         created_at=task_data["created_at"],
@@ -381,7 +381,7 @@ def sync_db_with_files() -> int:
                             title = metadata.get("title", filename[:-3])
                             bucket = metadata.get("bucket", "todo")
                             position = float(metadata.get("position", 1000.0))
-                            tags = metadata.get("tags", [])
+                            tags = [t.lower() for t in metadata.get("tags", [])]
                             due_date = metadata.get("due_date", None)
                             priority = metadata.get("priority", None)
                             created_at = metadata.get("created_at", "")

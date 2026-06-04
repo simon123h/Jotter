@@ -174,7 +174,7 @@ export function extractTagsFromTitle(title: string): { cleanTitle: string; tags:
   let match;
 
   while ((match = tagRegex.exec(title)) !== null) {
-    tags.push(match[1]);
+    tags.push(match[1].toLowerCase());
   }
 
   let cleanTitle = title.replace(tagRegex, ' ');

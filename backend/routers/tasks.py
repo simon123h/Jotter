@@ -50,8 +50,8 @@ def get_tasks(
             except Exception:
                 row_tags = []
 
-            # Skip if filtering by tag and tag not in list (done in Python for max compatibility)
-            if tag and tag not in row_tags:
+            # Skip if filtering by tag and tag not in list (done in Python for max compatibility, case-insensitively)
+            if tag and not any(t.lower() == tag.lower() for t in row_tags):
                 continue
 
             tasks.append(
@@ -119,13 +119,14 @@ def create_task(project_id: str, task: TaskCreate):
         if row and row["max_pos"] is not None:
             new_position = float(row["max_pos"]) + 1000.0
 
+        task_tags = [t.lower() for t in task.tags]
         task_data = {
             "id": new_id,
             "project_id": project_id,
             "title": task.title,
             "bucket": task.bucket,
             "position": new_position,
-            "tags": task.tags,
+            "tags": task_tags,
             "body": task.body,
             "due_date": task.due_date,
             "priority": task.priority,
@@ -148,7 +149,7 @@ def create_task(project_id: str, task: TaskCreate):
                 task.title,
                 task.bucket,
                 new_position,
-                json.dumps(task.tags),
+                json.dumps(task_tags),
                 filename,
                 task.due_date,
                 task.priority,
@@ -176,7 +177,7 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
     updated_title = task_update.title if task_update.title is not None else existing["title"]
     updated_bucket = task_update.bucket if task_update.bucket is not None else existing["bucket"]
     updated_position = task_update.position if task_update.position is not None else existing["position"]
-    updated_tags = task_update.tags if task_update.tags is not None else existing["tags"]
+    updated_tags = [t.lower() for t in task_update.tags] if task_update.tags is not None else [t.lower() for t in existing["tags"]]
     updated_body = task_update.body if task_update.body is not None else existing["body"]
     # due_date and priority support explicit null to clear the field
     updated_due_date = task_update.due_date if "due_date" in task_update.model_fields_set else existing.get("due_date")

@@ -227,23 +227,23 @@ onMounted(async () => {
   setTheme(currentTheme.value);
 });
 
-// Compute unique list of tags across all tasks
+// Compute unique list of tags across all tasks (case-insensitively grouped as lowercase)
 const allTags = computed(() => {
   const tagsSet = new Set<string>();
   tasks.value.forEach((t) => {
     if (t.tags) {
-      t.tags.forEach((tag) => tagsSet.add(tag));
+      t.tags.forEach((tag) => tagsSet.add(tag.toLowerCase()));
     }
   });
   return Array.from(tagsSet).sort();
 });
 
-// Filter tasks based on Search query (title + body) & selected tag
+// Filter tasks based on Search query (title + body) & selected tag (case-insensitively)
 const filteredTasks = computed(() => {
   const query = searchQuery.value.toLowerCase();
   return tasks.value.filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(query) || (task.body && task.body.toLowerCase().includes(query));
-    const matchesTag = !selectedTag.value || (task.tags && task.tags.includes(selectedTag.value));
+    const matchesTag = !selectedTag.value || (task.tags && task.tags.some((tag) => tag.toLowerCase() === selectedTag.value!.toLowerCase()));
     return matchesSearch && matchesTag;
   });
 });

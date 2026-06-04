@@ -151,7 +151,7 @@ const handleSave = async () => {
     // Process tags (split by comma and trim)
     const tagArray = editTags.value
       .split(',')
-      .map((t) => t.trim())
+      .map((t) => t.trim().toLowerCase())
       .filter((t) => t.length > 0);
 
     const updated = await updateTask(props.projectId, task.value.id, {

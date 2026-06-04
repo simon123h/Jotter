@@ -330,3 +330,34 @@ def test_exclude_bucket():
     assert len(tasks_only_done) == 1
     assert tasks_only_done[0]["title"] == "Task Done"
     assert tasks_only_done[0]["bucket"] == "done"
+
+
+def test_tag_case_insensitivity():
+    # 1. Create a project
+    project_payload = {"title": "Tag Test Project"}
+    response = client.post("/projects", json=project_payload)
+    assert response.status_code == 201
+    project_id = response.json()["id"]
+
+    # 2. Create task with mixed-case tags
+    task_payload = {
+        "title": "Task Tag Case",
+        "bucket": "todo",
+        "tags": ["Urgent", "Bug-FIX"],
+        "body": "Body text",
+    }
+    response = client.post(f"/projects/{project_id}/tasks", json=task_payload)
+    assert response.status_code == 201
+    task_data = response.json()
+
+    # 3. Verify tags are normalized to lowercase
+    assert task_data["tags"] == ["urgent", "bug-fix"]
+
+    # 4. Search by tag with different case
+    response = client.get(f"/projects/{project_id}/tasks?tag=URGENT")
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    response = client.get(f"/projects/{project_id}/tasks?tag=bug-fix")
+    assert response.status_code == 200
+    assert len(response.json()) == 1

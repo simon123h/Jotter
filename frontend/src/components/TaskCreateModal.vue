@@ -128,7 +128,7 @@ const handleSubmit = async () => {
   try {
     const tagArray = tags.value
       .split(',')
-      .map((t) => t.trim())
+      .map((t) => t.trim().toLowerCase())
       .filter((t) => t.length > 0);
 
     await createTask(props.projectId, {
