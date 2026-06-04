@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { parseDateFromTitle, extractTagsFromTitle, parseTitleState } from '../dateParser';
+import { parseDateFromTitle, extractTagsFromTitle, extractBucketFromTitle, parseTitleState } from '../dateParser';
 
 describe('dateParser', () => {
   beforeEach(() => {
@@ -168,12 +168,57 @@ describe('dateParser', () => {
     });
   });
 
+  describe('Bucket extraction', () => {
+    const buckets = ['todo', 'in-progress', 'done', 'backlog'];
+
+    it('should extract valid bucket command correctly at the end of the title', () => {
+      const result = extractBucketFromTitle('buy groceries /todo', buckets);
+      expect(result.bucket).toBe('todo');
+      expect(result.cleanTitle).toBe('buy groceries');
+    });
+
+    it('should extract valid bucket command at the beginning of the title', () => {
+      const result = extractBucketFromTitle('/done call John', buckets);
+      expect(result.bucket).toBe('done');
+      expect(result.cleanTitle).toBe('call John');
+    });
+
+    it('should ignore non-matching bucket commands', () => {
+      const result = extractBucketFromTitle('buy groceries /missing', buckets);
+      expect(result.bucket).toBeNull();
+      expect(result.cleanTitle).toBe('buy groceries /missing');
+    });
+
+    it('should ignore bucket command inside a path or url', () => {
+      const result = extractBucketFromTitle('check site at localhost/todo', buckets);
+      expect(result.bucket).toBeNull();
+      expect(result.cleanTitle).toBe('check site at localhost/todo');
+    });
+
+    it('should be case-insensitive but return the correctly cased bucket name from the list', () => {
+      const result = extractBucketFromTitle('submit report /IN-PROGRESS', buckets);
+      expect(result.bucket).toBe('in-progress');
+      expect(result.cleanTitle).toBe('submit report');
+    });
+  });
+
   describe('Unified parseTitleState', () => {
-    it('should extract both tags and dates correctly', () => {
-      const result = parseTitleState('today buy groceries #food #shopping', 'en');
+    const buckets = ['todo', 'in-progress', 'done'];
+
+    it('should extract tags, dates and bucket correctly', () => {
+      const result = parseTitleState('today buy groceries #food #shopping /done', 'en', buckets);
       expect(result.dueDate).toBe('2026-06-03');
       expect(result.tags).toEqual(['food', 'shopping']);
+      expect(result.bucket).toBe('done');
       expect(result.cleanTitle).toBe('buy groceries');
+    });
+
+    it('should handle parseTitleState when no bucketNames are provided', () => {
+      const result = parseTitleState('today buy groceries #food /done', 'en');
+      expect(result.dueDate).toBe('2026-06-03');
+      expect(result.tags).toEqual(['food']);
+      expect(result.bucket).toBeNull();
+      expect(result.cleanTitle).toBe('buy groceries /done');
     });
   });
 });
