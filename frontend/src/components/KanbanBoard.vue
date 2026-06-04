@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { useSettingsStore, type ViewMode } from '../stores/settings';
 import type { Task, Bucket, BucketName, Project } from '../types';
 import {
   getTasks,
@@ -34,14 +36,23 @@ const { showDialog, isOpen: dialogIsOpen } = useDialog();
 const route = useRoute();
 const router = useRouter();
 
+const settingsStore = useSettingsStore();
+
+// Sync initial route params to store if present
+if (route.params.projectId) {
+  settingsStore.setActiveProjectId(route.params.projectId as string);
+}
+if (route.params.viewMode) {
+  settingsStore.setViewMode(route.params.viewMode as ViewMode);
+}
+
+const { hideDoneColumn, isSidebarOpen, currentTheme, viewMode, activeProjectId } = storeToRefs(settingsStore);
+
 const tasks = ref<Task[]>([]);
 const buckets = ref<Bucket[]>([]);
 
-// Hide "Done" column state
-const hideDoneColumn = ref(localStorage.getItem('jotter-hide-done-column') === 'true');
 const toggleHideDoneColumn = () => {
-  hideDoneColumn.value = !hideDoneColumn.value;
-  localStorage.setItem('jotter-hide-done-column', String(hideDoneColumn.value));
+  settingsStore.toggleHideDoneColumn();
   fetchAllTasks();
 };
 
@@ -52,7 +63,6 @@ const displayedBuckets = computed(() => {
   return buckets.value;
 });
 const projects = ref<Project[]>([]);
-const activeProjectId = ref<string>((route.params.projectId as string) || localStorage.getItem('jotter-active-project-id') || 'default');
 
 const loading = ref(false);
 const syncLoading = ref(false);
@@ -62,10 +72,8 @@ const error = ref<string | null>(null);
 const searchQuery = ref('');
 const selectedTag = ref<string | null>(null);
 
-// View Mode state (board, list, matrix, or time)
-type ViewMode = 'board' | 'list' | 'matrix' | 'time';
-const viewMode = ref<ViewMode>((route.params.viewMode as ViewMode) || (localStorage.getItem('jotter-view-mode') as ViewMode) || 'board');
 const setViewMode = (mode: ViewMode) => {
+  settingsStore.setViewMode(mode);
   router.push({
     name: 'project-view',
     params: { projectId: activeProjectId.value, viewMode: mode },
@@ -73,11 +81,8 @@ const setViewMode = (mode: ViewMode) => {
   });
 };
 
-// Sidebar visibility state
-const isSidebarOpen = ref(localStorage.getItem('jotter-sidebar-open') !== 'false');
 const toggleSidebar = () => {
-  isSidebarOpen.value = !isSidebarOpen.value;
-  localStorage.setItem('jotter-sidebar-open', String(isSidebarOpen.value));
+  settingsStore.toggleSidebar();
 };
 
 // Modal state
@@ -86,8 +91,6 @@ const isDetailOpen = ref(!!route.params.taskId);
 const isCreateOpen = ref(false);
 const createDefaultBucket = ref<BucketName>('todo');
 
-// Theme state
-const currentTheme = ref(localStorage.getItem('jotter-theme') || 'nordic-light');
 const isThemeDropdownOpen = ref(false);
 const isLanguageDropdownOpen = ref(false);
 
@@ -102,8 +105,7 @@ const themes = [
 ];
 
 const setTheme = (theme: string) => {
-  currentTheme.value = theme;
-  localStorage.setItem('jotter-theme', theme);
+  settingsStore.setTheme(theme);
   const docClasses = document.documentElement.classList;
   // Remove existing themes
   docClasses.forEach((c) => {
@@ -292,7 +294,6 @@ watch(
     // 1. Project ID Sync
     if (newProjectId && newProjectId !== activeProjectId.value) {
       activeProjectId.value = newProjectId as string;
-      localStorage.setItem('jotter-active-project-id', newProjectId as string);
       error.value = null;
       selectedTag.value = null;
       await fetchAllData();
@@ -301,7 +302,6 @@ watch(
     // 2. View Mode Sync
     if (newViewMode && newViewMode !== viewMode.value) {
       viewMode.value = newViewMode as ViewMode;
-      localStorage.setItem('jotter-view-mode', newViewMode as ViewMode);
     }
 
     // 3. Task ID Sync

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useSettingsStore } from '../stores/settings';
+import { computed } from 'vue';
 import { Calendar, Clock, AlertCircle, ArrowRight, UserCheck, Trash } from '@lucide/vue';
 import type { Task } from '../types';
 import { useI18n } from '../composables/useI18n';
@@ -14,13 +16,12 @@ const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
 }>();
 
-// Threshold days state (persisted in localStorage)
-const thresholdDays = ref(Number(localStorage.getItem('jotter-matrix-threshold') || '7'));
+const settingsStore = useSettingsStore();
+const { thresholdDays } = storeToRefs(settingsStore);
 
 const updateThreshold = (val: number) => {
   if (val < 1) val = 1;
-  thresholdDays.value = val;
-  localStorage.setItem('jotter-matrix-threshold', String(val));
+  settingsStore.setThresholdDays(val);
 };
 
 // Check if task is urgent

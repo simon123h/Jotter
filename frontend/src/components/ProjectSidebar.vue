@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted } from 'vue';
 import { Folder, Hash, Pencil, Trash2, Plus, Pin } from '@lucide/vue';
+import { storeToRefs } from 'pinia';
+import { useSettingsStore } from '../stores/settings';
 import type { Project } from '../types';
 import { useI18n } from '../composables/useI18n';
 
@@ -18,32 +20,25 @@ const emit = defineEmits<{
   (e: 'delete-project', project: Project): void;
 }>();
 
-// Pinning state (loaded from / saved to localStorage)
-const pinnedProjectIds = ref<string[]>(JSON.parse(localStorage.getItem('jotter-pinned-projects') || '[]'));
+const settingsStore = useSettingsStore();
+const { pinnedProjectIds, sortBy } = storeToRefs(settingsStore);
 
 const togglePin = (projectId: string, event: Event) => {
   event.stopPropagation();
-  const idx = pinnedProjectIds.value.indexOf(projectId);
-  if (idx === -1) {
-    pinnedProjectIds.value.push(projectId);
+  if (pinnedProjectIds.value.includes(projectId)) {
+    settingsStore.unpinProject(projectId);
   } else {
-    pinnedProjectIds.value.splice(idx, 1);
+    settingsStore.pinProject(projectId);
   }
-  localStorage.setItem('jotter-pinned-projects', JSON.stringify(pinnedProjectIds.value));
 };
-
-// Sorting state (loaded from / saved to localStorage)
-const sortBy = ref<'alpha' | 'mru'>((localStorage.getItem('jotter-projects-sort') as 'alpha' | 'mru') || 'alpha');
 
 const toggleSortOrder = () => {
-  sortBy.value = sortBy.value === 'alpha' ? 'mru' : 'alpha';
-  localStorage.setItem('jotter-projects-sort', sortBy.value);
+  settingsStore.setSortBy(sortBy.value === 'alpha' ? 'mru' : 'alpha');
 };
 
-// Most Recently Used (MRU) tracking via access timestamps
 const updateMru = (id: string) => {
   if (id) {
-    localStorage.setItem(`jotter-project-mru-${id}`, String(Date.now()));
+    settingsStore.updateProjectMru(id);
   }
 };
 
@@ -70,8 +65,8 @@ const sortedProjects = computed(() => {
 
     // 2. Sort by the user's selected sorting order
     if (sortBy.value === 'mru') {
-      const aMru = Number(localStorage.getItem(`jotter-project-mru-${a.id}`) || '0');
-      const bMru = Number(localStorage.getItem(`jotter-project-mru-${b.id}`) || '0');
+      const aMru = settingsStore.getProjectMru(a.id);
+      const bMru = settingsStore.getProjectMru(b.id);
       if (aMru !== bMru) {
         return bMru - aMru; // descending: recently active project first
       }
