@@ -4,6 +4,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException, status
 
 from database import db_session
+from db_models import Bucket, Project
 from models import ProjectCreate, ProjectResponse, ProjectUpdate
 from storage import (
     DEFAULT_BUCKETS,
@@ -19,10 +20,9 @@ router = APIRouter(prefix="/projects", tags=["Projects"])
 
 @router.get("", response_model=List[ProjectResponse])
 def get_projects():
-    with db_session() as conn:
-        cursor = conn.execute("SELECT id, title, created_at FROM projects ORDER BY created_at ASC")
-        rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+    with db_session() as session:
+        projects = session.query(Project).order_by(Project.created_at.asc()).all()
+        return projects
 
 
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
@@ -58,17 +58,19 @@ def create_project(project: ProjectCreate):
     write_buckets_file(project_id)
 
     # Insert into database
-    with db_session() as conn:
-        conn.execute(
-            "INSERT INTO projects (id, title, created_at) VALUES (?, ?, ?)",
-            (project_id, project.title, now_str),
-        )
+    with db_session() as session:
+        db_project = Project(id=project_id, title=project.title, created_at=now_str)
+        session.add(db_project)
         # Also sync buckets in database for this project
         for b in DEFAULT_BUCKETS:
-            conn.execute(
-                "INSERT INTO buckets (project_id, name, title, position, is_default) VALUES (?, ?, ?, ?, ?)",
-                (project_id, b["name"], b["title"], b["position"], 1 if b.get("is_default", False) else 0),
+            db_bucket = Bucket(
+                project_id=project_id,
+                name=b["name"],
+                title=b["title"],
+                position=b["position"],
+                is_default=b.get("is_default", False),
             )
+            session.add(db_bucket)
 
     return ProjectResponse(**new_project)
 
@@ -91,11 +93,10 @@ def update_project(project_id: str, project_update: ProjectUpdate):
 
     write_projects_file(projects)
 
-    with db_session() as conn:
-        conn.execute(
-            "UPDATE projects SET title = ? WHERE id = ?",
-            (project_update.title, project_id),
-        )
+    with db_session() as session:
+        db_project = session.query(Project).filter(Project.id == project_id).first()
+        if db_project:
+            db_project.title = project_update.title
 
     return ProjectResponse(**project_found)
 
@@ -125,7 +126,9 @@ def delete_project(project_id: str):
     delete_project_dir(project_id)
 
     # Update database
-    with db_session() as conn:
-        conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+    with db_session() as session:
+        db_project = session.query(Project).filter(Project.id == project_id).first()
+        if db_project:
+            session.delete(db_project)
 
     return {"status": "success", "detail": f"Project '{project_id}' deleted"}

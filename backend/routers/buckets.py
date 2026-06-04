@@ -1,8 +1,10 @@
 from typing import List
 
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import func
 
 from database import db_session
+from db_models import Bucket, Project
 from models import BucketCreate, BucketResponse, BucketUpdate
 from storage import slugify, write_buckets_file
 
@@ -11,28 +13,17 @@ router = APIRouter(prefix="/projects/{project_id}/buckets", tags=["Buckets"])
 
 @router.get("", response_model=List[BucketResponse])
 def get_buckets(project_id: str):
-    with db_session() as conn:
+    with db_session() as session:
         # Verify project exists
-        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
-        if not cursor.fetchone():
+        project = session.query(Project).filter(Project.id == project_id).first()
+        if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found.",
             )
 
-        cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout, max_tasks, is_default "
-            "FROM buckets WHERE project_id = ? ORDER BY position ASC",
-            (project_id,),
-        )
-        rows = cursor.fetchall()
-        # Convert sqlite integer 1/0 to boolean for Pydantic coercion
-        result = []
-        for r in rows:
-            d = dict(r)
-            d["is_default"] = bool(d["is_default"])
-            result.append(d)
-        return result
+        buckets = session.query(Bucket).filter(Bucket.project_id == project_id).order_by(Bucket.position.asc()).all()
+        return buckets
 
 
 @router.post("", response_model=BucketResponse, status_code=status.HTTP_201_CREATED)
@@ -44,67 +35,32 @@ def create_bucket(project_id: str, bucket: BucketCreate):
             detail="Invalid title. Could not generate a bucket name slug.",
         )
 
-    with db_session() as conn:
+    with db_session() as session:
         # Verify project exists
-        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
-        if not cursor.fetchone():
+        project = session.query(Project).filter(Project.id == project_id).first()
+        if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found.",
             )
 
         # Check if bucket name already exists in this project
-        cursor = conn.execute(
-            "SELECT 1 FROM buckets WHERE project_id = ? AND name = ?",
-            (project_id, name),
-        )
-        if cursor.fetchone():
+        existing = session.query(Bucket).filter(Bucket.project_id == project_id, Bucket.name == name).first()
+        if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"A column with a similar name '{name}' already exists in project '{project_id}'.",
             )
 
         # Calculate position: max position + 1000.0
-        cursor = conn.execute("SELECT MAX(position) as max_pos FROM buckets WHERE project_id = ?", (project_id,))
-        row = cursor.fetchone()
-        new_position = 1000.0
-        if row and row["max_pos"] is not None:
-            new_position = float(row["max_pos"]) + 1000.0
+        max_pos = session.query(func.max(Bucket.position)).filter(Bucket.project_id == project_id).scalar()
+        new_position = 1000.0 if max_pos is None else float(max_pos) + 1000.0
 
-        is_default_val = 1 if bucket.is_default else 0
-        if is_default_val == 1:
-            conn.execute("UPDATE buckets SET is_default = 0 WHERE project_id = ?", (project_id,))
+        if bucket.is_default:
+            session.query(Bucket).filter(Bucket.project_id == project_id).update({Bucket.is_default: False})
 
-        conn.execute(
-            "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (
-                project_id,
-                name,
-                bucket.title,
-                bucket.subtitle or "",
-                new_position,
-                bucket.color,
-                bucket.layout or "list",
-                bucket.max_tasks,
-                is_default_val,
-            ),
-        )
-
-        # Sync to project's buckets.json file
-        cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout, max_tasks, is_default "
-            "FROM buckets WHERE project_id = ? ORDER BY position ASC",
-            (project_id,),
-        )
-        all_buckets = []
-        for r in cursor.fetchall():
-            d = dict(r)
-            d["is_default"] = bool(d["is_default"])
-            all_buckets.append(d)
-        write_buckets_file(project_id, all_buckets)
-
-        return BucketResponse(
+        db_bucket = Bucket(
+            project_id=project_id,
             name=name,
             title=bucket.title,
             subtitle=bucket.subtitle or "",
@@ -112,137 +68,142 @@ def create_bucket(project_id: str, bucket: BucketCreate):
             color=bucket.color,
             layout=bucket.layout or "list",
             max_tasks=bucket.max_tasks,
-            is_default=bool(is_default_val),
+            is_default=bool(bucket.is_default),
         )
+        session.add(db_bucket)
+        session.flush()
+
+        # Sync to project's buckets.json file
+        all_buckets = session.query(Bucket).filter(Bucket.project_id == project_id).order_by(Bucket.position.asc()).all()
+        all_buckets_dict = []
+        for b in all_buckets:
+            all_buckets_dict.append(
+                {
+                    "name": b.name,
+                    "title": b.title,
+                    "subtitle": b.subtitle,
+                    "position": b.position,
+                    "color": b.color,
+                    "layout": b.layout,
+                    "max_tasks": b.max_tasks,
+                    "is_default": b.is_default,
+                }
+            )
+        write_buckets_file(project_id, all_buckets_dict)
+
+        return db_bucket
 
 
 @router.put("/{name}", response_model=BucketResponse)
 def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
-    with db_session() as conn:
+    with db_session() as session:
         # Verify project exists
-        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
-        if not cursor.fetchone():
+        project = session.query(Project).filter(Project.id == project_id).first()
+        if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found.",
             )
 
         # Check if bucket exists in this project
-        cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout, max_tasks, is_default FROM buckets WHERE project_id = ? AND name = ?",
-            (project_id, name),
-        )
-        existing = cursor.fetchone()
+        existing = session.query(Bucket).filter(Bucket.project_id == project_id, Bucket.name == name).first()
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Column '{name}' not found in project '{project_id}'.",
             )
 
-        updated_title = bucket_update.title if bucket_update.title is not None else existing["title"]
-        updated_subtitle = bucket_update.subtitle if bucket_update.subtitle is not None else existing["subtitle"]
-        updated_position = bucket_update.position if bucket_update.position is not None else existing["position"]
-        updated_color = bucket_update.color if "color" in bucket_update.model_fields_set else existing["color"]
-        updated_layout = bucket_update.layout if bucket_update.layout is not None else existing["layout"]
-        updated_max_tasks = bucket_update.max_tasks if "max_tasks" in bucket_update.model_fields_set else existing["max_tasks"]
-        updated_is_default = bucket_update.is_default if bucket_update.is_default is not None else bool(existing["is_default"])
+        # Update properties if set
+        if bucket_update.title is not None:
+            existing.title = bucket_update.title
+        if bucket_update.subtitle is not None:
+            existing.subtitle = bucket_update.subtitle
+        if bucket_update.position is not None:
+            existing.position = bucket_update.position
+        if "color" in bucket_update.model_fields_set:
+            existing.color = bucket_update.color
+        if bucket_update.layout is not None:
+            existing.layout = bucket_update.layout
+        if "max_tasks" in bucket_update.model_fields_set:
+            existing.max_tasks = bucket_update.max_tasks
+        if bucket_update.is_default is not None:
+            if bucket_update.is_default:
+                session.query(Bucket).filter(Bucket.project_id == project_id).update({Bucket.is_default: False})
+            existing.is_default = bucket_update.is_default
 
-        if updated_is_default:
-            conn.execute("UPDATE buckets SET is_default = 0 WHERE project_id = ?", (project_id,))
-
-        conn.execute(
-            """
-            UPDATE buckets
-            SET title = ?, subtitle = ?, position = ?, color = ?, layout = ?, max_tasks = ?, is_default = ?
-            WHERE project_id = ? AND name = ?
-            """,
-            (
-                updated_title,
-                updated_subtitle,
-                updated_position,
-                updated_color,
-                updated_layout,
-                updated_max_tasks,
-                1 if updated_is_default else 0,
-                project_id,
-                name,
-            ),
-        )
+        session.flush()
 
         # Sync to project's buckets.json file
-        cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout, max_tasks, is_default "
-            "FROM buckets WHERE project_id = ? ORDER BY position ASC",
-            (project_id,),
-        )
-        all_buckets = []
-        for r in cursor.fetchall():
-            d = dict(r)
-            d["is_default"] = bool(d["is_default"])
-            all_buckets.append(d)
-        write_buckets_file(project_id, all_buckets)
+        all_buckets = session.query(Bucket).filter(Bucket.project_id == project_id).order_by(Bucket.position.asc()).all()
+        all_buckets_dict = []
+        for b in all_buckets:
+            all_buckets_dict.append(
+                {
+                    "name": b.name,
+                    "title": b.title,
+                    "subtitle": b.subtitle,
+                    "position": b.position,
+                    "color": b.color,
+                    "layout": b.layout,
+                    "max_tasks": b.max_tasks,
+                    "is_default": b.is_default,
+                }
+            )
+        write_buckets_file(project_id, all_buckets_dict)
 
-        return BucketResponse(
-            name=name,
-            title=updated_title,
-            subtitle=updated_subtitle,
-            position=updated_position,
-            color=updated_color,
-            layout=updated_layout,
-            max_tasks=updated_max_tasks,
-            is_default=updated_is_default,
-        )
+        return existing
 
 
 @router.delete("/{name}")
 def delete_bucket(project_id: str, name: str):
-    with db_session() as conn:
+    with db_session() as session:
         # Verify project exists
-        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
-        if not cursor.fetchone():
+        project = session.query(Project).filter(Project.id == project_id).first()
+        if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found.",
             )
 
         # Check if bucket exists in this project
-        cursor = conn.execute(
-            "SELECT 1 FROM buckets WHERE project_id = ? AND name = ?",
-            (project_id, name),
-        )
-        if not cursor.fetchone():
+        existing = session.query(Bucket).filter(Bucket.project_id == project_id, Bucket.name == name).first()
+        if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Column '{name}' not found in project '{project_id}'.",
             )
 
         # Check if there are tasks in this bucket in this project
-        cursor = conn.execute(
-            "SELECT COUNT(*) as count FROM tasks WHERE project_id = ? AND bucket = ?",
-            (project_id, name),
-        )
-        row = cursor.fetchone()
-        if row and row["count"] > 0:
+        from db_models import Task
+
+        task_count = session.query(Task).filter(Task.project_id == project_id, Task.bucket == name).count()
+        if task_count > 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
-                    f"Cannot delete column '{name}' because it contains {row['count']} task(s). Please move or delete these tasks first."
+                    f"Cannot delete column '{name}' because it contains {task_count} task(s). Please move or delete these tasks first."
                 ),
             )
 
-        conn.execute("DELETE FROM buckets WHERE project_id = ? AND name = ?", (project_id, name))
+        session.delete(existing)
+        session.flush()
 
         # Sync to project's buckets.json file
-        cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout, max_tasks, is_default "
-            "FROM buckets WHERE project_id = ? ORDER BY position ASC",
-            (project_id,),
-        )
-        all_buckets = []
-        for r in cursor.fetchall():
-            d = dict(r)
-            d["is_default"] = bool(d["is_default"])
-            all_buckets.append(d)
-        write_buckets_file(project_id, all_buckets)
+        all_buckets = session.query(Bucket).filter(Bucket.project_id == project_id).order_by(Bucket.position.asc()).all()
+        all_buckets_dict = []
+        for b in all_buckets:
+            all_buckets_dict.append(
+                {
+                    "name": b.name,
+                    "title": b.title,
+                    "subtitle": b.subtitle,
+                    "position": b.position,
+                    "color": b.color,
+                    "layout": b.layout,
+                    "max_tasks": b.max_tasks,
+                    "is_default": b.is_default,
+                }
+            )
+        write_buckets_file(project_id, all_buckets_dict)
 
         return {"status": "success", "detail": f"Column '{name}' deleted"}
