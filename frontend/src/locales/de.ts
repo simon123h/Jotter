@@ -115,6 +115,7 @@ export const de = {
     sortTooltipMru: 'Nach zuletzt verwendet sortiert. Klicken, um alphabetisch zu sortieren.',
     pinProject: 'Projekt anheften',
     unpinProject: 'Projekt lösen',
+    editProject: 'Projekt bearbeiten',
   },
   columnEdit: {
     title: 'Spaltendetails bearbeiten',
@@ -130,6 +131,16 @@ export const de = {
     maxTasksPlaceholder: 'z.B. 5 (leer für kein Limit)',
     defaultLabel: 'Standardspalte für neue Aufgaben',
     saveButton: 'Änderungen speichern',
+  },
+  projectEdit: {
+    title: 'Projekteinstellungen bearbeiten',
+    titleLabel: 'Projekttitel *',
+    prunePeriodLabel: 'Aufbewahrungsfrist für erledigte Aufgaben (Tage)',
+    prunePeriodPlaceholder: 'z. B. 30 (leer lassen für nie löschen)',
+    prunePeriodHelp:
+      'Aufgaben in der Spalte "Erledigt" werden nach dieser Anzahl von Tagen automatisch gelöscht. Leer lassen oder auf 0 setzen, um das automatische Löschen zu deaktivieren.',
+    saveButton: 'Speichern',
+    deleteButton: 'Projekt Löschen',
   },
   language: {
     label: 'Sprache',

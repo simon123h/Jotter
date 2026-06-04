@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Folder, Hash, Pencil, Trash2, Plus, Pin } from '@lucide/vue';
+import { Folder, Hash, MoreHorizontal, Plus, Pin } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '../stores/settings';
 import type { Project } from '../types';
@@ -17,8 +17,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'select-project', id: string): void;
   (e: 'create-project', title: string): void;
-  (e: 'rename-project', payload: { id: string; title: string }): void;
-  (e: 'delete-project', project: Project): void;
+  (e: 'edit-project', project: Project): void;
 }>();
 
 const settingsStore = useSettingsStore();
@@ -119,31 +118,6 @@ const handleCreateProject = () => {
   newProjectTitle.value = '';
   showAddProjectInput.value = false;
 };
-
-// Rename project input states
-const editingProjectId = ref<string | null>(null);
-const editingProjectTitle = ref('');
-
-const startRenameProject = (project: Project) => {
-  editingProjectId.value = project.id;
-  editingProjectTitle.value = project.title;
-  nextTick(() => {
-    const input = document.getElementById(`rename-${project.id}`) as HTMLInputElement;
-    input?.focus();
-  });
-};
-
-const saveRenameProject = () => {
-  const projId = editingProjectId.value;
-  const newTitle = editingProjectTitle.value.trim();
-  if (!projId) return;
-  if (!newTitle) {
-    editingProjectId.value = null;
-    return;
-  }
-  emit('rename-project', { id: projId, title: newTitle });
-  editingProjectId.value = null;
-};
 </script>
 
 <template>
@@ -189,46 +163,14 @@ const saveRenameProject = () => {
         "
         @click="emit('select-project', project.id)"
       >
-        <!-- Project Title / Inline Rename Input -->
+        <!-- Project Title -->
         <div class="flex items-center gap-2 overflow-hidden flex-grow mr-2">
           <Hash class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
-          <input
-            v-if="editingProjectId === project.id"
-            :id="`rename-${project.id}`"
-            v-model="editingProjectTitle"
-            type="text"
-            class="w-full bg-theme-base border border-theme-border rounded px-1.5 py-0.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary"
-            @keydown.enter="saveRenameProject"
-            @blur="saveRenameProject"
-          />
-          <span v-else class="truncate font-sans">{{ project.title }}</span>
+          <span class="truncate font-sans">{{ project.title }}</span>
         </div>
 
         <!-- Project Actions -->
         <div class="flex items-center gap-1 shrink-0">
-          <!-- Rename / Delete Icons -->
-          <div
-            v-if="editingProjectId !== project.id"
-            class="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity"
-          >
-            <!-- Rename Icon -->
-            <button
-              @click.stop="startRenameProject(project)"
-              class="p-0.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-colors cursor-pointer"
-              :title="t('projects.renameProject')"
-            >
-              <Pencil class="w-3 h-3" />
-            </button>
-            <!-- Delete Icon -->
-            <button
-              @click.stop="emit('delete-project', project)"
-              class="p-0.5 text-red-400 hover:text-red-300 hover:bg-theme-column rounded transition-colors cursor-pointer"
-              :title="t('buttons.delete')"
-            >
-              <Trash2 class="w-3 h-3" />
-            </button>
-          </div>
-
           <!-- Pin Toggle Button -->
           <button
             @click.stop="togglePin(project.id, $event)"
@@ -242,6 +184,18 @@ const saveRenameProject = () => {
           >
             <Pin class="w-3 h-3" :class="{ 'fill-theme-accent': pinnedProjectIds.includes(project.id) }" />
           </button>
+
+          <!-- Edit Icon -->
+          <div class="flex items-center gap-1 shrink-0 transition-opacity">
+            <!-- Edit Project Button -->
+            <button
+              @click.stop="emit('edit-project', project)"
+              class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-colors cursor-pointer"
+              :title="t('projects.editProject')"
+            >
+              <MoreHorizontal class="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -113,6 +113,7 @@ export const en = {
     sortTooltipMru: 'Sorting by most recently used. Click to sort alphabetically.',
     pinProject: 'Pin project',
     unpinProject: 'Unpin project',
+    editProject: 'Edit Project',
   },
   columnEdit: {
     title: 'Edit Column Details',
@@ -128,6 +129,16 @@ export const en = {
     maxTasksPlaceholder: 'e.g. 5 (empty for no limit)',
     defaultLabel: 'Default column for new tasks',
     saveButton: 'Save Changes',
+  },
+  projectEdit: {
+    title: 'Edit Project Settings',
+    titleLabel: 'Project Title *',
+    prunePeriodLabel: 'Done Tasks Deletion Period (Days)',
+    prunePeriodPlaceholder: 'e.g. 30 (empty for never delete)',
+    prunePeriodHelp:
+      'Automatically delete tasks in the "Done" column after this many days. Leave empty or set to 0 to disable auto-deletion.',
+    saveButton: 'Save',
+    deleteButton: 'Delete project',
   },
   language: {
     label: 'Language',

@@ -2,6 +2,7 @@ export interface Project {
   id: string;
   title: string;
   created_at: string;
+  done_clean_period?: number | null;
 }
 
 export interface Task {

@@ -20,6 +20,7 @@ import {
 } from '../api';
 import TaskDetailModal from './TaskDetailModal.vue';
 import TaskCreateModal from './TaskCreateModal.vue';
+import ProjectEditModal from './ProjectEditModal.vue';
 import BoardView from './BoardView.vue';
 import ListView from './ListView.vue';
 import MatrixView from './MatrixView.vue';
@@ -90,6 +91,8 @@ const selectedTaskId = ref<number | null>(route.params.taskId ? Number(route.par
 const isDetailOpen = ref(!!route.params.taskId);
 const isCreateOpen = ref(false);
 const createDefaultBucket = ref<BucketName>('todo');
+const isProjectEditModalOpen = ref(false);
+const editingProject = ref<Project | null>(null);
 
 const isThemeDropdownOpen = ref(false);
 const isLanguageDropdownOpen = ref(false);
@@ -164,16 +167,22 @@ const handleCreateProject = async (title: string) => {
   }
 };
 
-const handleRenameProject = async ({ id, title }: { id: string; title: string }) => {
+const handleEditProject = (project: Project) => {
+  editingProject.value = project;
+  isProjectEditModalOpen.value = true;
+};
+
+const handleSaveProject = async ({ id, title, done_clean_period }: { id: string; title: string; done_clean_period: number | null }) => {
   try {
-    await updateProject(id, title);
+    await updateProject(id, { title, done_clean_period });
     await fetchProjects();
   } catch (err: any) {
-    error.value = err.message || 'Failed to rename project';
+    error.value = err.message || 'Failed to update project';
   }
 };
 
-const handleDeleteProject = async (project: Project) => {
+const handleDeleteProject = async (project: Project | null) => {
+  if (!project) return;
   const confirmed = await showDialog({
     title: t('buttons.delete'),
     message: t('projects.deleteProjectConfirm', { title: project.title }),
@@ -186,6 +195,7 @@ const handleDeleteProject = async (project: Project) => {
 
   try {
     await deleteProject(project.id);
+    isProjectEditModalOpen.value = false;
     await fetchProjects();
   } catch (err: any) {
     error.value = err.message || 'Failed to delete project';
@@ -790,8 +800,7 @@ const formatDateISO = (d: Date): string => {
           :active-project-id="activeProjectId"
           @select-project="selectProject"
           @create-project="handleCreateProject"
-          @rename-project="handleRenameProject"
-          @delete-project="handleDeleteProject"
+          @edit-project="handleEditProject"
         />
       </transition>
 
@@ -923,6 +932,15 @@ const formatDateISO = (d: Date): string => {
           :existing-tags="allTags"
           @close="isCreateOpen = false"
           @created="fetchAllTasks"
+        />
+
+        <!-- Project Edit Modal -->
+        <ProjectEditModal
+          :is-open="isProjectEditModalOpen"
+          :project="editingProject"
+          @close="isProjectEditModalOpen = false"
+          @save="handleSaveProject"
+          @delete-project="handleDeleteProject(editingProject)"
         />
       </div>
     </div>
