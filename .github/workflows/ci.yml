@@ -64,7 +64,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: backend/coverage.xml
           flags: backend
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
       - name: Upload Frontend Coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -72,7 +72,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: frontend/coverage/lcov.info
           flags: frontend
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   build-binaries:
     needs: build-and-test
