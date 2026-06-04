@@ -104,6 +104,7 @@ export const de = {
   },
   projects: {
     sidebarTitle: 'Projekte',
+    serverStatus: 'Server-Status',
     newProject: 'Neues Projekt',
     newProjectPlaceholder: 'Projekttitel...',
     renameProject: 'Projekt umbenennen',

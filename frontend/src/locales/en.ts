@@ -103,6 +103,7 @@ export const en = {
   },
   projects: {
     sidebarTitle: 'Projects',
+    serverStatus: 'Server Status',
     newProject: 'New Project',
     newProjectPlaceholder: 'Project title...',
     renameProject: 'Rename Project',

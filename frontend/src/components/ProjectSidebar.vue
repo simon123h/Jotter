@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '../stores/settings';
 import type { Project } from '../types';
 import { useI18n } from '../composables/useI18n';
+import { isServerOnline, checkServerStatus } from '../api';
 
 const { t } = useI18n();
 
@@ -50,27 +51,26 @@ watch(
 );
 
 // Server Status Checking
-const isServerOnline = ref(true);
 let pingInterval: any = null;
 
-const checkServerStatus = async () => {
-  try {
-    const apiBase = import.meta.env.DEV ? 'http://localhost:8000' : '';
-    const response = await fetch(`${apiBase}/projects`, { method: 'GET' });
-    isServerOnline.value = response.ok;
-  } catch {
-    isServerOnline.value = false;
+const handleFocusOrVisible = () => {
+  if (document.visibilityState === 'visible') {
+    checkServerStatus();
   }
 };
 
 onMounted(() => {
   updateMru(props.activeProjectId);
   checkServerStatus();
-  pingInterval = setInterval(checkServerStatus, 5000);
+  pingInterval = setInterval(checkServerStatus, 30000);
+  window.addEventListener('focus', checkServerStatus);
+  document.addEventListener('visibilitychange', handleFocusOrVisible);
 });
 
 onUnmounted(() => {
   if (pingInterval) clearInterval(pingInterval);
+  window.removeEventListener('focus', checkServerStatus);
+  document.removeEventListener('visibilitychange', handleFocusOrVisible);
 });
 
 // Computed sorted and pinned projects list
@@ -148,6 +148,18 @@ const saveRenameProject = () => {
 
 <template>
   <aside class="w-64 border-r border-theme-border flex flex-col shrink-0 bg-theme-card">
+    <!-- Server Status Indicator (Only visible when offline) -->
+    <div
+      v-if="!isServerOnline"
+      class="px-4 py-2.5 border-b border-red-500/20 flex items-center justify-between shrink-0 bg-red-500/10 text-red-400"
+    >
+      <span class="text-[10px] uppercase font-bold tracking-wider text-red-400/80">{{ t('projects.serverStatus') }}</span>
+      <div class="flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+        <span class="text-[11px] font-semibold font-mono text-red-400"> OFFLINE </span>
+      </div>
+    </div>
+
     <!-- Sidebar Header -->
     <div class="p-4 border-b border-theme-border flex items-center justify-between shrink-0">
       <h2 class="text-sm font-bold uppercase tracking-wider text-theme-text-main flex items-center gap-1.5">
@@ -254,18 +266,6 @@ const saveRenameProject = () => {
       >
         <Plus class="w-3.5 h-3.5 shrink-0" /> {{ t('projects.newProject') }}
       </button>
-    </div>
-
-    <!-- Server Status Indicator (Only visible when offline) -->
-    <div
-      v-if="!isServerOnline"
-      class="px-4 py-2 border-t border-theme-border flex items-center justify-between shrink-0 bg-red-500/10 text-red-400"
-    >
-      <span class="text-[10px] uppercase font-bold tracking-wider text-red-400/80">Server Status</span>
-      <div class="flex items-center gap-1.5">
-        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-        <span class="text-[11px] font-semibold font-mono text-red-400"> OFFLINE </span>
-      </div>
     </div>
   </aside>
 </template>
