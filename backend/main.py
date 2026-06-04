@@ -31,8 +31,8 @@ async def lifespan(app: FastAPI):
     from database import DB_PATH
     from storage import TASKS_DIR
 
-    logger.info(f"Using database file: {DB_PATH}")
-    logger.info(f"Using tasks markdown directory: {TASKS_DIR}")
+    print(f"Using database file: {DB_PATH}")
+    print(f"Using tasks markdown directory: {TASKS_DIR}")
 
     # Initialize SQLite database and populate from Markdown files if DB is empty
     logger.info("Initializing database schema...")

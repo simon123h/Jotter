@@ -8,9 +8,9 @@ data_dir = get_data_dir()
 if data_dir:
     DB_PATH = os.path.abspath(os.path.join(data_dir, "tasks.db"))
 elif IS_PRODUCTION:
-    DB_PATH = os.path.abspath(os.path.join(os.getcwd(), "tasks.db"))
+    DB_PATH = os.path.abspath(os.path.join(os.getcwd(), "tasks/tasks.db"))
 else:
-    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.db")
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks/tasks.db")
 
 
 def get_db_connection():
