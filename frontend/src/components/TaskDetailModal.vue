@@ -315,11 +315,56 @@ watch(editTitle, (newTitle) => {
 const parsedMarkdown = computed(() => {
   if (!task.value || !task.value.body) return '';
   try {
-    return marked.parse(task.value.body);
+    let checkboxIndex = 0;
+    const renderer = new marked.Renderer();
+    renderer.checkbox = ({ checked }) => {
+      const idx = checkboxIndex++;
+      return `<input type="checkbox" data-checkbox-index="${idx}" ${checked ? 'checked' : ''} />`;
+    };
+    return marked.parse(task.value.body, { renderer });
   } catch {
     return task.value.body;
   }
 });
+
+const toggleCheckboxInBody = async (targetIndex: number, isChecked: boolean) => {
+  if (!task.value) return;
+
+  let currentIndex = 0;
+  const regex = /(^|\n)(\s*[-*+]\s+\[)([ xX])(\])/g;
+
+  const newBody = task.value.body.replace(regex, (match, p1, p2, p3, p4) => {
+    if (currentIndex === targetIndex) {
+      currentIndex++;
+      const newChar = isChecked ? 'x' : ' ';
+      return p1 + p2 + newChar + p4;
+    }
+    currentIndex++;
+    return match;
+  });
+
+  try {
+    const updated = await updateTask(props.projectId, task.value.id, {
+      body: newBody,
+    });
+    task.value = updated;
+    emit('updated');
+  } catch (err: any) {
+    error.value = t('errors.updateTask', { message: err.message || err });
+  }
+};
+
+const handleMarkdownClick = async (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (target && target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+    const dataIndex = target.getAttribute('data-checkbox-index');
+    if (dataIndex !== null) {
+      const idx = parseInt(dataIndex, 10);
+      const isChecked = (target as HTMLInputElement).checked;
+      await toggleCheckboxInBody(idx, isChecked);
+    }
+  }
+};
 
 const handleSave = async () => {
   if (!task.value) return;
@@ -516,6 +561,7 @@ const getPriorityClasses = (prio: string) => {
                   v-if="task.body"
                   class="markdown-content text-theme-text-card prose prose-invert max-w-none space-y-3 break-all"
                   v-html="parsedMarkdown"
+                  @click="handleMarkdownClick"
                 ></div>
                 <div v-else class="text-theme-text-muted italic text-xs py-2">{{ t('noDescription') }}</div>
               </div>
@@ -774,21 +820,18 @@ const getPriorityClasses = (prio: string) => {
   font-weight: 700;
   margin-top: 1.25rem;
   margin-bottom: 0.5rem;
-  color: #f8fafc;
 }
 .markdown-content h2 {
   font-size: 1.2rem;
   font-weight: 600;
   margin-top: 1rem;
   margin-bottom: 0.5rem;
-  color: #f8fafc;
 }
 .markdown-content h3 {
   font-size: 1.05rem;
   font-weight: 600;
   margin-top: 0.75rem;
   margin-bottom: 0.25rem;
-  color: #f1f5f9;
 }
 .markdown-content ul {
   list-style-type: disc;
@@ -844,5 +887,6 @@ const getPriorityClasses = (prio: string) => {
   accent-color: var(--theme-primary);
   margin-right: 0.5rem;
   border-radius: 0.25rem;
+  cursor: pointer;
 }
 </style>
