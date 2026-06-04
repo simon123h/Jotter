@@ -37,6 +37,12 @@ const error = ref<string | null>(null);
 
 const titleInput = ref<HTMLInputElement | null>(null);
 
+/** Translate the bucket name, if possible */
+const bucketTitle = (bucketName: string, bucketTitle: string) => {
+  const translated = t('buckets.' + bucketName);
+  return translated !== 'buckets.' + bucketName ? translated : bucketTitle;
+};
+
 const isTagDropdownOpen = ref(false);
 
 const activeTagQuery = computed(() => {
@@ -391,7 +397,7 @@ const handleSubmit = async () => {
                 v-model="bucket"
                 class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
               >
-                <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
+                <option v-for="b in buckets" :key="b.name" :value="b.name">{{ bucketTitle(b.name, b.title) }}</option>
               </select>
             </div>
             <div class="relative">
