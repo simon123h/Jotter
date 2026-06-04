@@ -16,6 +16,7 @@ def get_tasks(
     project_id: str,
     bucket: Optional[str] = Query(None, description="Filter by bucket (column) name"),
     tag: Optional[str] = Query(None, description="Filter by tag name"),
+    exclude_bucket: Optional[str] = Query(None, description="Exclude tasks from this bucket name"),
 ):
     with db_session() as conn:
         # Verify project exists
@@ -32,6 +33,9 @@ def get_tasks(
         if bucket:
             query += " AND bucket = ?"
             params.append(bucket)
+        elif exclude_bucket:
+            query += " AND bucket != ?"
+            params.append(exclude_bucket)
 
         # Order by position ascending
         query += " ORDER BY position ASC"

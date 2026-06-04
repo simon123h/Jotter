@@ -280,3 +280,53 @@ def test_done_bucket_auto_creation():
     assert done_bucket["title"] == "Done"
     other_max = max(b["position"] for b in buckets if b["name"] != "done")
     assert done_bucket["position"] == other_max + 1000.0
+
+
+def test_exclude_bucket():
+    # 1. Create a project
+    project_payload = {"title": "Exclude Test Project"}
+    response = client.post("/projects", json=project_payload)
+    assert response.status_code == 201
+    project_id = response.json()["id"]
+
+    # 2. Create a task in "todo"
+    t1_payload = {
+        "title": "Task Todo",
+        "bucket": "todo",
+        "tags": [],
+        "body": "Body 1",
+    }
+    r1 = client.post(f"/projects/{project_id}/tasks", json=t1_payload)
+    assert r1.status_code == 201
+
+    # 3. Create a task in "done"
+    t2_payload = {
+        "title": "Task Done",
+        "bucket": "done",
+        "tags": [],
+        "body": "Body 2",
+    }
+    r2 = client.post(f"/projects/{project_id}/tasks", json=t2_payload)
+    assert r2.status_code == 201
+
+    # 4. Fetch all tasks
+    response = client.get(f"/projects/{project_id}/tasks")
+    assert response.status_code == 200
+    tasks = response.json()
+    assert len(tasks) == 2
+
+    # 5. Fetch excluding "done"
+    response = client.get(f"/projects/{project_id}/tasks?exclude_bucket=done")
+    assert response.status_code == 200
+    tasks_filtered = response.json()
+    assert len(tasks_filtered) == 1
+    assert tasks_filtered[0]["title"] == "Task Todo"
+    assert tasks_filtered[0]["bucket"] == "todo"
+
+    # 6. Fetch filtering to "done"
+    response = client.get(f"/projects/{project_id}/tasks?bucket=done")
+    assert response.status_code == 200
+    tasks_only_done = response.json()
+    assert len(tasks_only_done) == 1
+    assert tasks_only_done[0]["title"] == "Task Done"
+    assert tasks_only_done[0]["bucket"] == "done"

@@ -42,6 +42,7 @@ const hideDoneColumn = ref(localStorage.getItem('jotter-hide-done-column') === '
 const toggleHideDoneColumn = () => {
   hideDoneColumn.value = !hideDoneColumn.value;
   localStorage.setItem('jotter-hide-done-column', String(hideDoneColumn.value));
+  fetchAllTasks();
 };
 
 const displayedBuckets = computed(() => {
@@ -199,7 +200,7 @@ const fetchBuckets = async () => {
 
 const fetchAllTasks = async () => {
   try {
-    tasks.value = await getTasks(activeProjectId.value);
+    tasks.value = await getTasks(activeProjectId.value, undefined, undefined, hideDoneColumn.value ? 'done' : undefined);
   } catch (err: any) {
     error.value = t('errors.fetchTasks', { message: err.message || err });
   }
