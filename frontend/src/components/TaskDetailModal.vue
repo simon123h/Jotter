@@ -59,6 +59,12 @@ const lastMatchedKeyword = ref<string | null>(null);
 const lastMatchedPriority = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
+/** Translate the bucket name, if possible */
+const bucketTitle = (bucketName: string, bucketTitle: string) => {
+  const translated = t('buckets.' + bucketName);
+  return translated !== 'buckets.' + bucketName ? translated : bucketTitle;
+};
+
 const isTagDropdownOpen = ref(false);
 const titleInput = ref<HTMLInputElement | null>(null);
 
@@ -493,27 +499,13 @@ const getPriorityClasses = (prio: string) => {
       <div
         class="relative bg-theme-base border border-theme-border w-full max-w-3xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
       >
-        <!-- Header -->
-        <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
-          <div class="flex items-center gap-3">
-            <span class="text-xs font-mono px-2 py-0.5 bg-theme-card text-slate-400 rounded border border-theme-border">
-              {{ t('detailModalTitle', { id: taskId || '' }) }}
-            </span>
-            <span
-              v-if="task && !isEditing"
-              class="text-xs uppercase font-bold px-2 py-0.5 rounded bg-theme-primary/10 text-theme-accent border border-theme-accent/20"
-            >
-              {{ t('buckets.' + task.bucket) }}
-            </span>
-          </div>
-          <button
-            @click="emit('close')"
-            class="text-slate-400 hover:text-white transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
-          >
-            <X class="w-4 h-4 shrink-0" />
-          </button>
-        </div>
-
+        <button
+          @click="emit('close')"
+          class="text-slate-400 transition-colors p-1 rounded cursor-pointer"
+          style="position: absolute; top: 10px; right: 10px"
+        >
+          <X class="w-4 h-4 shrink-0" />
+        </button>
         <!-- Error alert -->
         <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
           {{ error }}
