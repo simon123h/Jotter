@@ -252,7 +252,7 @@ export async function createTask(
   const tasksMap = getDemoTasksMap();
   const list = tasksMap[projectId] || [];
 
-  const ENCODING = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
   let ts = Date.now();
   let tsStr = '';
   for (let i = 0; i < 10; i++) {
