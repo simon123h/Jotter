@@ -107,6 +107,13 @@ def test_crud_flow():
     assert data["due_date"] == "2026-06-15"
     assert data["priority"] == "high"
 
+    # Verify database list includes body
+    list_response = client.get("/projects/default/tasks")
+    assert list_response.status_code == 200
+    list_data = list_response.json()
+    assert len(list_data) == 1
+    assert list_data[0]["body"] == task_payload["body"]
+
     # Verify file was created in test default project directory
     expected_filename = "000001-test-task-1.md"
     assert os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))
@@ -133,6 +140,13 @@ def test_crud_flow():
     assert updated_data["body"] == "Updated markdown content"
     assert updated_data["due_date"] == "2026-06-20"
     assert updated_data["priority"] == "urgent"
+
+    # Verify database list includes updated body
+    list_response_updated = client.get("/projects/default/tasks")
+    assert list_response_updated.status_code == 200
+    list_data_updated = list_response_updated.json()
+    assert len(list_data_updated) == 1
+    assert list_data_updated[0]["body"] == "Updated markdown content"
 
     # Verify old file was deleted and new file was created
     assert not os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))

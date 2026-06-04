@@ -131,6 +131,7 @@ def create_task(project_id: str, task: TaskCreate):
             position=new_position,
             tags=task_tags,
             filename=filename,
+            body=task.body,
             due_date=task.due_date,
             priority=task.priority,
             color=task.color,
@@ -235,6 +236,7 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
             db_task.position = updated_position
             db_task.tags = updated_tags
             db_task.filename = new_filename
+            db_task.body = updated_body
             db_task.due_date = updated_due_date
             db_task.priority = updated_priority
             db_task.color = updated_color
