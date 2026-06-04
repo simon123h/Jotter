@@ -205,7 +205,9 @@ def test_buckets_flow():
     assert buckets_list[-1]["color"] == "red"
 
     # 3. Update bucket title, subtitle, and color
-    response = client.put("/projects/default/buckets/qa-test", json={"title": "Quality Assurance", "subtitle": "QA & Testing", "color": "green"})
+    response = client.put(
+        "/projects/default/buckets/qa-test", json={"title": "Quality Assurance", "subtitle": "QA & Testing", "color": "green"}
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "qa-test"

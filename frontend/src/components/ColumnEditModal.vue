@@ -30,7 +30,7 @@ const colors = [
   { id: 'green', name: 'Green', bg: 'bg-emerald-500', ring: 'ring-emerald-500' },
   { id: 'blue', name: 'Blue', bg: 'bg-blue-500', ring: 'ring-blue-500' },
   { id: 'purple', name: 'Purple', bg: 'bg-purple-500', ring: 'ring-purple-500' },
-  { id: 'pink', name: 'Pink', bg: 'bg-pink-500', ring: 'ring-pink-500' }
+  { id: 'pink', name: 'Pink', bg: 'bg-pink-500', ring: 'ring-pink-500' },
 ];
 
 // Watch for modal open and initialize values
@@ -144,7 +144,7 @@ onUnmounted(() => {
                   :class="[
                     color === null
                       ? 'ring-2 ring-theme-accent ring-offset-2 ring-offset-theme-base bg-theme-card/80 border-theme-accent/60'
-                      : 'bg-theme-card/30 hover:bg-theme-card'
+                      : 'bg-theme-card/30 hover:bg-theme-card',
                   ]"
                   :title="t('columnEdit.colorNone')"
                 >
@@ -158,10 +158,7 @@ onUnmounted(() => {
                   type="button"
                   @click="color = c.id"
                   class="w-7 h-7 rounded-full cursor-pointer transition-all hover:scale-110 active:scale-95"
-                  :class="[
-                    c.bg,
-                    color === c.id ? `ring-2 ring-offset-2 ring-offset-theme-base ${c.ring}` : ''
-                  ]"
+                  :class="[c.bg, color === c.id ? `ring-2 ring-offset-2 ring-offset-theme-base ${c.ring}` : '']"
                   :title="c.name"
                 />
               </div>
