@@ -256,14 +256,15 @@ const saveRenameProject = () => {
       </button>
     </div>
 
-    <!-- Server Status Indicator -->
-    <div class="px-4 py-2 border-t border-theme-border flex items-center justify-between shrink-0 bg-theme-column/10">
-      <span class="text-[10px] uppercase font-bold tracking-wider text-theme-text-muted">Server Status</span>
+    <!-- Server Status Indicator (Only visible when offline) -->
+    <div
+      v-if="!isServerOnline"
+      class="px-4 py-2 border-t border-theme-border flex items-center justify-between shrink-0 bg-red-500/10 text-red-400"
+    >
+      <span class="text-[10px] uppercase font-bold tracking-wider text-red-400/80">Server Status</span>
       <div class="flex items-center gap-1.5">
-        <span class="w-1.5 h-1.5 rounded-full" :class="isServerOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'"></span>
-        <span class="text-[11px] font-semibold font-mono" :class="isServerOnline ? 'text-emerald-400' : 'text-red-400'">
-          {{ isServerOnline ? 'ONLINE' : 'OFFLINE' }}
-        </span>
+        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+        <span class="text-[11px] font-semibold font-mono text-red-400"> OFFLINE </span>
       </div>
     </div>
   </aside>
