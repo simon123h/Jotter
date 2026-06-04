@@ -206,20 +206,6 @@ const saveRenameProject = () => {
 
         <!-- Project Actions -->
         <div class="flex items-center gap-1 shrink-0">
-          <!-- Pin Toggle Button -->
-          <button
-            @click.stop="togglePin(project.id, $event)"
-            class="p-0.5 rounded transition-all cursor-pointer"
-            :class="
-              pinnedProjectIds.includes(project.id)
-                ? 'text-theme-accent opacity-100'
-                : 'text-theme-text-muted hover:text-theme-text-main opacity-0 group-hover:opacity-100'
-            "
-            :title="pinnedProjectIds.includes(project.id) ? t('projects.unpinProject') : t('projects.pinProject')"
-          >
-            <Pin class="w-3 h-3" :class="{ 'fill-theme-accent': pinnedProjectIds.includes(project.id) }" />
-          </button>
-
           <!-- Rename / Delete Icons -->
           <div
             v-if="editingProjectId !== project.id"
@@ -242,6 +228,20 @@ const saveRenameProject = () => {
               <Trash2 class="w-3 h-3" />
             </button>
           </div>
+
+          <!-- Pin Toggle Button -->
+          <button
+            @click.stop="togglePin(project.id, $event)"
+            class="p-0.5 rounded transition-all cursor-pointer"
+            :class="
+              pinnedProjectIds.includes(project.id)
+                ? 'text-theme-accent opacity-100'
+                : 'text-theme-text-muted hover:text-theme-text-main opacity-0 group-hover:opacity-100'
+            "
+            :title="pinnedProjectIds.includes(project.id) ? t('projects.unpinProject') : t('projects.pinProject')"
+          >
+            <Pin class="w-3 h-3" :class="{ 'fill-theme-accent': pinnedProjectIds.includes(project.id) }" />
+          </button>
         </div>
       </div>
     </div>
