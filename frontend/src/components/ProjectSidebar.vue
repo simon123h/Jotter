@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, nextTick, computed, watch, onMounted } from 'vue';
+import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Folder, Hash, Pencil, Trash2, Plus, Pin } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '../stores/settings';
 import type { Project } from '../types';
 import { useI18n } from '../composables/useI18n';
+import { isServerOnline, checkServerStatus } from '../api';
 
 const { t } = useI18n();
 
@@ -49,8 +50,27 @@ watch(
   }
 );
 
+// Server Status Checking
+let pingInterval: any = null;
+
+const handleFocusOrVisible = () => {
+  if (document.visibilityState === 'visible') {
+    checkServerStatus();
+  }
+};
+
 onMounted(() => {
   updateMru(props.activeProjectId);
+  checkServerStatus();
+  pingInterval = setInterval(checkServerStatus, 30000);
+  window.addEventListener('focus', checkServerStatus);
+  document.addEventListener('visibilitychange', handleFocusOrVisible);
+});
+
+onUnmounted(() => {
+  if (pingInterval) clearInterval(pingInterval);
+  window.removeEventListener('focus', checkServerStatus);
+  document.removeEventListener('visibilitychange', handleFocusOrVisible);
 });
 
 // Computed sorted and pinned projects list
@@ -128,6 +148,18 @@ const saveRenameProject = () => {
 
 <template>
   <aside class="w-64 border-r border-theme-border flex flex-col shrink-0 bg-theme-card">
+    <!-- Server Status Indicator (Only visible when offline) -->
+    <div
+      v-if="!isServerOnline"
+      class="px-4 py-2.5 border-b border-red-500/20 flex items-center justify-between shrink-0 bg-red-500/10 text-red-400"
+    >
+      <span class="text-[10px] uppercase font-bold tracking-wider text-red-400/80">{{ t('projects.serverStatus') }}</span>
+      <div class="flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+        <span class="text-[11px] font-semibold font-mono text-red-400"> OFFLINE </span>
+      </div>
+    </div>
+
     <!-- Sidebar Header -->
     <div class="p-4 border-b border-theme-border flex items-center justify-between shrink-0">
       <h2 class="text-sm font-bold uppercase tracking-wider text-theme-text-main flex items-center gap-1.5">
@@ -174,20 +206,6 @@ const saveRenameProject = () => {
 
         <!-- Project Actions -->
         <div class="flex items-center gap-1 shrink-0">
-          <!-- Pin Toggle Button -->
-          <button
-            @click.stop="togglePin(project.id, $event)"
-            class="p-0.5 rounded transition-all cursor-pointer"
-            :class="
-              pinnedProjectIds.includes(project.id)
-                ? 'text-theme-accent opacity-100'
-                : 'text-theme-text-muted hover:text-theme-text-main opacity-0 group-hover:opacity-100'
-            "
-            :title="pinnedProjectIds.includes(project.id) ? t('projects.unpinProject') : t('projects.pinProject')"
-          >
-            <Pin class="w-3 h-3" :class="{ 'fill-theme-accent': pinnedProjectIds.includes(project.id) }" />
-          </button>
-
           <!-- Rename / Delete Icons -->
           <div
             v-if="editingProjectId !== project.id"
@@ -210,6 +228,20 @@ const saveRenameProject = () => {
               <Trash2 class="w-3 h-3" />
             </button>
           </div>
+
+          <!-- Pin Toggle Button -->
+          <button
+            @click.stop="togglePin(project.id, $event)"
+            class="p-0.5 rounded transition-all cursor-pointer"
+            :class="
+              pinnedProjectIds.includes(project.id)
+                ? 'text-theme-accent opacity-100'
+                : 'text-theme-text-muted hover:text-theme-text-main opacity-0 group-hover:opacity-100'
+            "
+            :title="pinnedProjectIds.includes(project.id) ? t('projects.unpinProject') : t('projects.pinProject')"
+          >
+            <Pin class="w-3 h-3" :class="{ 'fill-theme-accent': pinnedProjectIds.includes(project.id) }" />
+          </button>
         </div>
       </div>
     </div>
