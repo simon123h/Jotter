@@ -66,13 +66,13 @@ jobs:
         if: matrix.platform != 'windows'
         run: |
           cd dist
-          tar -czf jotter-${{ github.ref_name }}-${{ matrix.platform }}.tar.gz jotter README.md LICENSE.md jotter.yaml icon.ico icon.png
+          tar -czf jotter-${{ github.ref_name }}-${{ matrix.platform }}.tar.gz jotter README.md LICENSE.md jotter.yaml icons
           
       - name: Package (Windows)
         if: matrix.platform == 'windows'
         run: |
           cd dist
-          Compress-Archive -Path jotter.exe, README.md, LICENSE.md, jotter.yaml, icon.ico, icon.png -DestinationPath jotter-${{ github.ref_name }}-windows.zip
+          Compress-Archive -Path jotter.exe, README.md, LICENSE.md, jotter.yaml, icons -DestinationPath jotter-${{ github.ref_name }}-windows.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
