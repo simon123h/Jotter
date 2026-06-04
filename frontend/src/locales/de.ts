@@ -122,6 +122,10 @@ export const de = {
     subtitleLabel: 'Beschreibung / Untertitel',
     colorLabel: 'Hervorhebungsfarbe',
     colorNone: 'Keine',
+    layoutLabel: 'Layout-Stil',
+    layoutList: 'Liste (1 Spalte)',
+    layoutGrid2: 'Raster (2 Spalten)',
+    layoutGrid3: 'Raster (3 Spalten)',
     saveButton: 'Änderungen speichern',
   },
   language: {

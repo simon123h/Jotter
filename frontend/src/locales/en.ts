@@ -120,6 +120,10 @@ export const en = {
     subtitleLabel: 'Description / Subtitle',
     colorLabel: 'Highlight Color',
     colorNone: 'None',
+    layoutLabel: 'Layout Style',
+    layoutList: 'List (1 Col)',
+    layoutGrid2: 'Grid (2 Cols)',
+    layoutGrid3: 'Grid (3 Cols)',
     saveButton: 'Save Changes',
   },
   language: {

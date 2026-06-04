@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue';
 import Sortable from 'sortablejs';
 import type { Task, BucketName } from '../types';
 import TaskCard from './TaskCard.vue';
@@ -14,6 +14,7 @@ const props = defineProps<{
   title: string;
   subtitle: string;
   color?: string | null;
+  layout?: 'list' | 'grid-2' | 'grid-3';
   tasks: Task[];
   isFirst: boolean;
   isLast: boolean;
@@ -22,19 +23,40 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
-  (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; oldIndex: number; newIndex: number }): void;
-  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string; newColor?: string | null }): void;
+  (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; prevTaskId: number | null; nextTaskId: number | null }): void;
+  (
+    e: 'rename-column',
+    payload: {
+      bucketName: string;
+      newTitle: string;
+      newSubtitle: string;
+      newColor?: string | null;
+      newLayout?: 'list' | 'grid-2' | 'grid-3';
+    }
+  ): void;
   (e: 'delete-column', bucketName: string): void;
   (e: 'mark-done', task: Task): void;
 }>();
 
 const cardsContainer = ref<HTMLElement | null>(null);
+const leftContainer = ref<HTMLElement | null>(null);
+const rightContainer = ref<HTMLElement | null>(null);
+const col1Container = ref<HTMLElement | null>(null);
+const col2Container = ref<HTMLElement | null>(null);
+const col3Container = ref<HTMLElement | null>(null);
 const isEditModalOpen = ref(false);
 
 const displayTitle = computed(() => {
   const translated = t('buckets.' + props.bucketName);
   return translated !== 'buckets.' + props.bucketName ? translated : props.title;
 });
+
+const leftTasks = computed(() => props.tasks.filter((_, idx) => idx % 2 === 0));
+const rightTasks = computed(() => props.tasks.filter((_, idx) => idx % 2 === 1));
+
+const col1Tasks = computed(() => props.tasks.filter((_, idx) => idx % 3 === 0));
+const col2Tasks = computed(() => props.tasks.filter((_, idx) => idx % 3 === 1));
+const col3Tasks = computed(() => props.tasks.filter((_, idx) => idx % 3 === 2));
 
 const colorMap: Record<string, string> = {
   red: '#ef4444',
@@ -56,20 +78,42 @@ const columnStyle = computed(() => {
   };
 });
 
-const onSaveColumn = (payload: { bucketName: string; title: string; subtitle: string; color: string | null }) => {
-  if (payload.title && (payload.title !== props.title || payload.subtitle !== props.subtitle || payload.color !== props.color)) {
+const onSaveColumn = (payload: {
+  bucketName: string;
+  title: string;
+  subtitle: string;
+  color: string | null;
+  layout: 'list' | 'grid-2' | 'grid-3';
+}) => {
+  if (
+    payload.title &&
+    (payload.title !== props.title ||
+      payload.subtitle !== props.subtitle ||
+      payload.color !== props.color ||
+      payload.layout !== props.layout)
+  ) {
     emit('rename-column', {
       bucketName: props.bucketName,
       newTitle: payload.title,
       newSubtitle: payload.subtitle,
       newColor: payload.color,
+      newLayout: payload.layout,
     });
   }
 };
 
-onMounted(() => {
-  if (cardsContainer.value) {
-    Sortable.create(cardsContainer.value, {
+const sortableInstances = ref<Sortable[]>([]);
+
+const destroySortables = () => {
+  sortableInstances.value.forEach((inst) => inst.destroy());
+  sortableInstances.value = [];
+};
+
+const setupSortables = () => {
+  destroySortables();
+
+  nextTick(() => {
+    const createSortableOptions = () => ({
       group: 'kanban-board',
       animation: 180,
       delay: 0,
@@ -79,30 +123,85 @@ onMounted(() => {
       draggable: '.task-card',
       filter: '.add-task-btn',
       preventOnFilter: true,
-      // Triggered when dragging finishes
-      onEnd: (evt) => {
-        const { item, to, oldIndex, newIndex } = evt;
-        if (oldIndex === undefined || newIndex === undefined) return;
-
+      onEnd: (evt: any) => {
+        const { item, to } = evt;
         const taskId = Number(item.getAttribute('data-task-id'));
         const toBucket = to.getAttribute('data-bucket-name') as BucketName;
+
+        let prevEl = item.previousElementSibling;
+        let nextEl = item.nextElementSibling;
+
+        while (prevEl && !prevEl.classList.contains('task-card')) {
+          prevEl = prevEl.previousElementSibling;
+        }
+        while (nextEl && !nextEl.classList.contains('task-card')) {
+          nextEl = nextEl.nextElementSibling;
+        }
+
+        const prevTaskId = prevEl ? Number(prevEl.getAttribute('data-task-id')) : null;
+        const nextTaskId = nextEl ? Number(nextEl.getAttribute('data-task-id')) : null;
 
         emit('card-dropped', {
           taskId,
           toBucket,
-          oldIndex,
-          newIndex,
+          prevTaskId,
+          nextTaskId,
         });
       },
     });
-  }
+
+    if (props.layout === 'grid-3') {
+      if (col1Container.value) {
+        sortableInstances.value.push(Sortable.create(col1Container.value, createSortableOptions()));
+      }
+      if (col2Container.value) {
+        sortableInstances.value.push(Sortable.create(col2Container.value, createSortableOptions()));
+      }
+      if (col3Container.value) {
+        sortableInstances.value.push(Sortable.create(col3Container.value, createSortableOptions()));
+      }
+    } else if (props.layout === 'grid-2') {
+      if (leftContainer.value) {
+        sortableInstances.value.push(Sortable.create(leftContainer.value, createSortableOptions()));
+      }
+      if (rightContainer.value) {
+        sortableInstances.value.push(Sortable.create(rightContainer.value, createSortableOptions()));
+      }
+    } else {
+      if (cardsContainer.value) {
+        sortableInstances.value.push(Sortable.create(cardsContainer.value, createSortableOptions()));
+      }
+    }
+  });
+};
+
+onMounted(() => {
+  setupSortables();
 });
+
+onBeforeUnmount(() => {
+  destroySortables();
+});
+
+watch(
+  () => props.layout,
+  () => {
+    setupSortables();
+  }
+);
 </script>
 
 <template>
   <div
     :style="columnStyle"
-    class="flex flex-col bg-theme-column border border-theme-border rounded w-full h-full min-w-[280px] w-72 shrink-0 md:w-80 group/col relative overflow-hidden"
+    class="flex flex-col bg-theme-column border border-theme-border rounded h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
+    :class="[
+      layout === 'grid-3'
+        ? 'min-w-[840px] w-[864px] md:w-[960px]'
+        : layout === 'grid-2'
+          ? 'min-w-[560px] w-[576px] md:w-[640px]'
+          : 'min-w-[280px] w-72 md:w-80',
+    ]"
   >
     <!-- Column Header -->
     <div
@@ -175,20 +274,90 @@ onMounted(() => {
     </div>
 
     <!-- Cards Container -->
-    <div
-      ref="cardsContainer"
-      :data-bucket-name="bucketName"
-      class="flex-grow p-2.5 overflow-y-auto space-y-2.5 min-h-[150px] scroller-thin"
-    >
-      <TaskCard
-        class="task-card"
-        v-for="task in tasks"
-        :key="task.id"
-        :task="task"
-        :data-task-id="task.id"
-        @click="emit('task-click', task)"
-        @mark-done="emit('mark-done', $event)"
-      />
+    <div class="flex-grow p-2.5 overflow-y-auto min-h-[150px] scroller-thin animate-fade-in">
+      <!-- Grid 3x Masonry-style subcolumns -->
+      <div v-if="layout === 'grid-3'" class="flex gap-2.5 items-start min-h-[120px]">
+        <!-- Col 1 -->
+        <div ref="col1Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
+          <TaskCard
+            class="task-card"
+            v-for="task in col1Tasks"
+            :key="task.id"
+            :task="task"
+            :data-task-id="task.id"
+            @click="emit('task-click', task)"
+            @mark-done="emit('mark-done', $event)"
+          />
+        </div>
+
+        <!-- Col 2 -->
+        <div ref="col2Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
+          <TaskCard
+            class="task-card"
+            v-for="task in col2Tasks"
+            :key="task.id"
+            :task="task"
+            :data-task-id="task.id"
+            @click="emit('task-click', task)"
+            @mark-done="emit('mark-done', $event)"
+          />
+        </div>
+
+        <!-- Col 3 -->
+        <div ref="col3Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
+          <TaskCard
+            class="task-card"
+            v-for="task in col3Tasks"
+            :key="task.id"
+            :task="task"
+            :data-task-id="task.id"
+            @click="emit('task-click', task)"
+            @mark-done="emit('mark-done', $event)"
+          />
+        </div>
+      </div>
+
+      <!-- Grid 2x Masonry-style subcolumns -->
+      <div v-else-if="layout === 'grid-2'" class="flex gap-2.5 items-start min-h-[120px]">
+        <!-- Left Subcolumn -->
+        <div ref="leftContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/2 min-h-[120px]">
+          <TaskCard
+            class="task-card"
+            v-for="task in leftTasks"
+            :key="task.id"
+            :task="task"
+            :data-task-id="task.id"
+            @click="emit('task-click', task)"
+            @mark-done="emit('mark-done', $event)"
+          />
+        </div>
+
+        <!-- Right Subcolumn -->
+        <div ref="rightContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/2 min-h-[120px]">
+          <TaskCard
+            class="task-card"
+            v-for="task in rightTasks"
+            :key="task.id"
+            :task="task"
+            :data-task-id="task.id"
+            @click="emit('task-click', task)"
+            @mark-done="emit('mark-done', $event)"
+          />
+        </div>
+      </div>
+
+      <!-- Single Column List -->
+      <div v-else ref="cardsContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 min-h-[120px]">
+        <TaskCard
+          class="task-card"
+          v-for="task in tasks"
+          :key="task.id"
+          :task="task"
+          :data-task-id="task.id"
+          @click="emit('task-click', task)"
+          @mark-done="emit('mark-done', $event)"
+        />
+      </div>
 
       <!-- Add Task Button inside scroll area, below the last card -->
       <button
@@ -207,6 +376,7 @@ onMounted(() => {
       :initial-title="title"
       :initial-subtitle="subtitle"
       :initial-color="color"
+      :initial-layout="layout"
       @close="isEditModalOpen = false"
       @save="onSaveColumn"
     />

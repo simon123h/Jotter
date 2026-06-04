@@ -55,18 +55,21 @@ def init_db():
                 subtitle TEXT NOT NULL DEFAULT '',
                 position REAL NOT NULL,
                 color TEXT,
+                layout TEXT NOT NULL DEFAULT 'list',
                 PRIMARY KEY (project_id, name),
                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
             )
         """)
 
-        # Check if buckets table has subtitle or color columns (migration check)
+        # Check if buckets table has subtitle, color, or layout columns (migration check)
         cursor = conn.execute("PRAGMA table_info(buckets)")
         bucket_columns = [row["name"] for row in cursor.fetchall()]
         if bucket_columns and "subtitle" not in bucket_columns:
             conn.execute("ALTER TABLE buckets ADD COLUMN subtitle TEXT NOT NULL DEFAULT ''")
         if bucket_columns and "color" not in bucket_columns:
             conn.execute("ALTER TABLE buckets ADD COLUMN color TEXT")
+        if bucket_columns and "layout" not in bucket_columns:
+            conn.execute("ALTER TABLE buckets ADD COLUMN layout TEXT NOT NULL DEFAULT 'list'")
 
         # Check if tasks table has due_date and priority columns (migration check)
         cursor = conn.execute("PRAGMA table_info(tasks)")

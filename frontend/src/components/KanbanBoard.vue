@@ -334,31 +334,43 @@ useKeyboardShortcuts([
 const handleCardDropped = async ({
   taskId,
   toBucket,
-  newIndex,
+  prevTaskId,
+  nextTaskId,
 }: {
   taskId: number;
   toBucket: BucketName;
-  oldIndex: number;
-  newIndex: number;
+  prevTaskId: number | null;
+  nextTaskId: number | null;
 }) => {
-  // Find other tasks in the target bucket
-  const targetBucketTasks = tasks.value.filter((t) => t.bucket === toBucket).sort((a, b) => a.position - b.position);
-
-  // Exclude the dragged task itself (for intra-column reordering)
-  const otherTasks = targetBucketTasks.filter((t) => t.id !== taskId);
-
-  // Calculate new position
+  // Calculate new position using sibling tasks
   let newPosition: number;
-  if (otherTasks.length === 0) {
-    newPosition = 1000.0;
-  } else if (newIndex === 0) {
-    newPosition = otherTasks[0].position - 1000.0;
-  } else if (newIndex >= otherTasks.length) {
-    newPosition = otherTasks[otherTasks.length - 1].position + 1000.0;
+
+  if (prevTaskId === null && nextTaskId === null) {
+    const targetBucketTasks = tasks.value.filter((t) => t.bucket === toBucket).sort((a, b) => a.position - b.position);
+    const otherTasks = targetBucketTasks.filter((t) => t.id !== taskId);
+    if (otherTasks.length === 0) {
+      newPosition = 1000.0;
+    } else {
+      newPosition = otherTasks[otherTasks.length - 1].position + 1000.0;
+    }
+  } else if (prevTaskId === null) {
+    const nextTask = tasks.value.find((t) => t.id === nextTaskId);
+    newPosition = nextTask ? nextTask.position - 1000.0 : 1000.0;
+  } else if (nextTaskId === null) {
+    const prevTask = tasks.value.find((t) => t.id === prevTaskId);
+    newPosition = prevTask ? prevTask.position + 1000.0 : 1000.0;
   } else {
-    const prevTask = otherTasks[newIndex - 1];
-    const nextTask = otherTasks[newIndex];
-    newPosition = (prevTask.position + nextTask.position) / 2.0;
+    const prevTask = tasks.value.find((t) => t.id === prevTaskId);
+    const nextTask = tasks.value.find((t) => t.id === nextTaskId);
+    if (prevTask && nextTask) {
+      newPosition = (prevTask.position + nextTask.position) / 2.0;
+    } else if (prevTask) {
+      newPosition = prevTask.position + 1000.0;
+    } else if (nextTask) {
+      newPosition = nextTask.position - 1000.0;
+    } else {
+      newPosition = 1000.0;
+    }
   }
 
   // Optimistic UI updates: update local state immediately
@@ -395,11 +407,13 @@ const handleRenameColumn = async ({
   newTitle,
   newSubtitle,
   newColor,
+  newLayout,
 }: {
   bucketName: string;
   newTitle: string;
   newSubtitle: string;
   newColor?: string | null;
+  newLayout?: 'list' | 'grid-2' | 'grid-3';
 }) => {
   if (!newTitle.trim()) return;
   try {
@@ -407,6 +421,7 @@ const handleRenameColumn = async ({
       title: newTitle.trim(),
       subtitle: newSubtitle,
       color: newColor,
+      layout: newLayout,
     });
     await fetchBuckets();
   } catch (err: any) {
