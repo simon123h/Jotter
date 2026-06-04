@@ -19,5 +19,31 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Eisenhower Matrix",
+      "short_name": "Matrix",
+      "description": "View tasks grouped by priority matrix",
+      "url": "/#/projects/default/matrix",
+      "icons": [
+        {
+          "src": "/pwa-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Time View",
+      "short_name": "Time",
+      "description": "View tasks grouped by due date calendar",
+      "url": "/#/projects/default/time",
+      "icons": [
+        {
+          "src": "/pwa-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

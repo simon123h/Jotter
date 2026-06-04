@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, computed, watch, onMounted } from 'vue';
+import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Folder, Hash, Pencil, Trash2, Plus, Pin } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '../stores/settings';
@@ -49,8 +49,28 @@ watch(
   }
 );
 
+// Server Status Checking
+const isServerOnline = ref(true);
+let pingInterval: any = null;
+
+const checkServerStatus = async () => {
+  try {
+    const apiBase = import.meta.env.DEV ? 'http://localhost:8000' : '';
+    const response = await fetch(`${apiBase}/projects`, { method: 'GET' });
+    isServerOnline.value = response.ok;
+  } catch {
+    isServerOnline.value = false;
+  }
+};
+
 onMounted(() => {
   updateMru(props.activeProjectId);
+  checkServerStatus();
+  pingInterval = setInterval(checkServerStatus, 5000);
+});
+
+onUnmounted(() => {
+  if (pingInterval) clearInterval(pingInterval);
 });
 
 // Computed sorted and pinned projects list
@@ -234,6 +254,17 @@ const saveRenameProject = () => {
       >
         <Plus class="w-3.5 h-3.5 shrink-0" /> {{ t('projects.newProject') }}
       </button>
+    </div>
+
+    <!-- Server Status Indicator -->
+    <div class="px-4 py-2 border-t border-theme-border flex items-center justify-between shrink-0 bg-theme-column/10">
+      <span class="text-[10px] uppercase font-bold tracking-wider text-theme-text-muted">Server Status</span>
+      <div class="flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full" :class="isServerOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'"></span>
+        <span class="text-[11px] font-semibold font-mono" :class="isServerOnline ? 'text-emerald-400' : 'text-red-400'">
+          {{ isServerOnline ? 'ONLINE' : 'OFFLINE' }}
+        </span>
+      </div>
     </div>
   </aside>
 </template>
