@@ -52,6 +52,32 @@ const col2Container = ref<HTMLElement | null>(null);
 const col3Container = ref<HTMLElement | null>(null);
 const isEditModalOpen = ref(false);
 
+const isDragOver = ref(false);
+const dragCounter = ref(0);
+
+const onDragEnter = () => {
+  isDragOver.value = true;
+  dragCounter.value++;
+};
+
+const onDragLeave = () => {
+  dragCounter.value--;
+  if (dragCounter.value <= 0) {
+    dragCounter.value = 0;
+    isDragOver.value = false;
+  }
+};
+
+const onDrop = () => {
+  dragCounter.value = 0;
+  isDragOver.value = false;
+};
+
+const handleDragEndGlobal = () => {
+  isDragOver.value = false;
+  dragCounter.value = 0;
+};
+
 const displayTitle = computed(() => {
   const translated = t('buckets.' + props.bucketName);
   return translated !== 'buckets.' + props.bucketName ? translated : props.title;
@@ -196,10 +222,14 @@ const setupSortables = () => {
 
 onMounted(() => {
   setupSortables();
+  window.addEventListener('dragend', handleDragEndGlobal);
+  window.addEventListener('drop', handleDragEndGlobal);
 });
 
 onBeforeUnmount(() => {
   destroySortables();
+  window.removeEventListener('dragend', handleDragEndGlobal);
+  window.removeEventListener('drop', handleDragEndGlobal);
 });
 
 watch(
@@ -213,14 +243,18 @@ watch(
 <template>
   <div
     :style="columnStyle"
-    class="flex flex-col bg-theme-column border border-theme-border rounded h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
+    class="kanban-column flex flex-col bg-theme-column border border-theme-border rounded h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
     :class="[
       layout === 'grid-3'
         ? 'min-w-[840px] w-[864px] md:w-[960px]'
         : layout === 'grid-2'
           ? 'min-w-[560px] w-[576px] md:w-[640px]'
           : 'min-w-[280px] w-72 md:w-80',
+      isDragOver ? 'drag-hovered' : '',
     ]"
+    @dragenter="onDragEnter"
+    @dragleave="onDragLeave"
+    @drop="onDrop"
   >
     <!-- Column Header -->
     <div
@@ -409,37 +443,14 @@ watch(
 </template>
 
 <style scoped>
-/* Add Task button hidden by default, visible on column hover */
-.add-task-btn {
-  opacity: 0.4;
-  pointer-events: none;
-  transition:
-    opacity 0.15s ease-in-out,
-    background-color 0.15s ease-in-out;
+/* Expand columns and make them stretch to serve as drop targets only when hovered during drags */
+:global(body.dragging-active .kanban-column.drag-hovered .subcolumn-wrap) {
+  align-items: stretch !important;
+  flex-grow: 1 !important;
 }
 
-.group\/col:hover .add-task-btn {
-  pointer-events: auto;
-}
-
-.group\/col:hover .add-task-btn:hover {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* NOTE: hiding of add-task button reverted, the button is always visible */
-
-/* Expand columns and make them stretch to full available height to provide a massive drop target area during drags */
-:global(body.dragging-active) .subcolumn-wrap {
-  align-items: stretch !important; /* ERROR: this does not seem to work/apply */
-  flex-grow: 1 !important; /* ERROR: this does not seem to work/apply */
-  background-color: red !important; /* NOTE: for debugging purposes, color does not show at the moment */
-}
-
-:global(body.dragging-active) .subcolumn,
-:global(body.dragging-active) .cards-container-list {
-  flex-grow: 1 !important; /* ERROR: this does not seem to work/apply */
-  min-height: 250px !important; /* ERROR: this does not seem to work/apply */
-  background-color: red !important; /* NOTE: for debugging purposes, color does not show at the moment */
+:global(body.dragging-active .kanban-column.drag-hovered .subcolumn),
+:global(body.dragging-active .kanban-column.drag-hovered .cards-container-list) {
+  flex-grow: 1 !important;
 }
 </style>
