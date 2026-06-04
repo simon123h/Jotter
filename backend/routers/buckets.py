@@ -77,7 +77,14 @@ def create_bucket(project_id: str, bucket: BucketCreate):
         all_buckets = [dict(r) for r in cursor.fetchall()]
         write_buckets_file(project_id, all_buckets)
 
-        return BucketResponse(name=name, title=bucket.title, subtitle=bucket.subtitle or "", position=new_position, color=bucket.color, layout=bucket.layout or "list")
+        return BucketResponse(
+            name=name,
+            title=bucket.title,
+            subtitle=bucket.subtitle or "",
+            position=new_position,
+            color=bucket.color,
+            layout=bucket.layout or "list",
+        )
 
 
 @router.put("/{name}", response_model=BucketResponse)
@@ -122,7 +129,9 @@ def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
         all_buckets = [dict(r) for r in cursor.fetchall()]
         write_buckets_file(project_id, all_buckets)
 
-        return BucketResponse(name=name, title=updated_title, subtitle=updated_subtitle, position=updated_position, color=updated_color, layout=updated_layout)
+        return BucketResponse(
+            name=name, title=updated_title, subtitle=updated_subtitle, position=updated_position, color=updated_color, layout=updated_layout
+        )
 
 
 @router.delete("/{name}")

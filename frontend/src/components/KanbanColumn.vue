@@ -24,7 +24,16 @@ const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
   (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; prevTaskId: number | null; nextTaskId: number | null }): void;
-  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string; newColor?: string | null; newLayout?: 'list' | 'grid-2' | 'grid-3' }): void;
+  (
+    e: 'rename-column',
+    payload: {
+      bucketName: string;
+      newTitle: string;
+      newSubtitle: string;
+      newColor?: string | null;
+      newLayout?: 'list' | 'grid-2' | 'grid-3';
+    }
+  ): void;
   (e: 'delete-column', bucketName: string): void;
   (e: 'mark-done', task: Task): void;
 }>();
@@ -69,8 +78,20 @@ const columnStyle = computed(() => {
   };
 });
 
-const onSaveColumn = (payload: { bucketName: string; title: string; subtitle: string; color: string | null; layout: 'list' | 'grid-2' | 'grid-3' }) => {
-  if (payload.title && (payload.title !== props.title || payload.subtitle !== props.subtitle || payload.color !== props.color || payload.layout !== props.layout)) {
+const onSaveColumn = (payload: {
+  bucketName: string;
+  title: string;
+  subtitle: string;
+  color: string | null;
+  layout: 'list' | 'grid-2' | 'grid-3';
+}) => {
+  if (
+    payload.title &&
+    (payload.title !== props.title ||
+      payload.subtitle !== props.subtitle ||
+      payload.color !== props.color ||
+      payload.layout !== props.layout)
+  ) {
     emit('rename-column', {
       bucketName: props.bucketName,
       newTitle: payload.title,
@@ -179,7 +200,7 @@ watch(
         ? 'min-w-[840px] w-[864px] md:w-[960px]'
         : layout === 'grid-2'
           ? 'min-w-[560px] w-[576px] md:w-[640px]'
-          : 'min-w-[280px] w-72 md:w-80'
+          : 'min-w-[280px] w-72 md:w-80',
     ]"
   >
     <!-- Column Header -->
@@ -253,17 +274,11 @@ watch(
     </div>
 
     <!-- Cards Container -->
-    <div
-      class="flex-grow p-2.5 overflow-y-auto min-h-[150px] scroller-thin animate-fade-in"
-    >
+    <div class="flex-grow p-2.5 overflow-y-auto min-h-[150px] scroller-thin animate-fade-in">
       <!-- Grid 3x Masonry-style subcolumns -->
       <div v-if="layout === 'grid-3'" class="flex gap-2.5 items-start min-h-[120px]">
         <!-- Col 1 -->
-        <div
-          ref="col1Container"
-          :data-bucket-name="bucketName"
-          class="flex flex-col gap-2.5 w-1/3 min-h-[120px]"
-        >
+        <div ref="col1Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
           <TaskCard
             class="task-card"
             v-for="task in col1Tasks"
@@ -276,11 +291,7 @@ watch(
         </div>
 
         <!-- Col 2 -->
-        <div
-          ref="col2Container"
-          :data-bucket-name="bucketName"
-          class="flex flex-col gap-2.5 w-1/3 min-h-[120px]"
-        >
+        <div ref="col2Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
           <TaskCard
             class="task-card"
             v-for="task in col2Tasks"
@@ -293,11 +304,7 @@ watch(
         </div>
 
         <!-- Col 3 -->
-        <div
-          ref="col3Container"
-          :data-bucket-name="bucketName"
-          class="flex flex-col gap-2.5 w-1/3 min-h-[120px]"
-        >
+        <div ref="col3Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
           <TaskCard
             class="task-card"
             v-for="task in col3Tasks"
@@ -313,11 +320,7 @@ watch(
       <!-- Grid 2x Masonry-style subcolumns -->
       <div v-else-if="layout === 'grid-2'" class="flex gap-2.5 items-start min-h-[120px]">
         <!-- Left Subcolumn -->
-        <div
-          ref="leftContainer"
-          :data-bucket-name="bucketName"
-          class="flex flex-col gap-2.5 w-1/2 min-h-[120px]"
-        >
+        <div ref="leftContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/2 min-h-[120px]">
           <TaskCard
             class="task-card"
             v-for="task in leftTasks"
@@ -330,11 +333,7 @@ watch(
         </div>
 
         <!-- Right Subcolumn -->
-        <div
-          ref="rightContainer"
-          :data-bucket-name="bucketName"
-          class="flex flex-col gap-2.5 w-1/2 min-h-[120px]"
-        >
+        <div ref="rightContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/2 min-h-[120px]">
           <TaskCard
             class="task-card"
             v-for="task in rightTasks"
@@ -348,12 +347,7 @@ watch(
       </div>
 
       <!-- Single Column List -->
-      <div
-        v-else
-        ref="cardsContainer"
-        :data-bucket-name="bucketName"
-        class="flex flex-col gap-2.5 min-h-[120px]"
-      >
+      <div v-else ref="cardsContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 min-h-[120px]">
         <TaskCard
           class="task-card"
           v-for="task in tasks"

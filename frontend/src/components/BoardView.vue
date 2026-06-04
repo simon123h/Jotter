@@ -17,7 +17,16 @@ const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
   (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; prevTaskId: number | null; nextTaskId: number | null }): void;
-  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string; newColor?: string | null; newLayout?: 'list' | 'grid-2' | 'grid-3' }): void;
+  (
+    e: 'rename-column',
+    payload: {
+      bucketName: string;
+      newTitle: string;
+      newSubtitle: string;
+      newColor?: string | null;
+      newLayout?: 'list' | 'grid-2' | 'grid-3';
+    }
+  ): void;
   (e: 'delete-column', bucketName: string): void;
   (e: 'create-column', title: string, subtitle: string): void;
   (e: 'mark-done', task: Task): void;

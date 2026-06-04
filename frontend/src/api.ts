@@ -165,7 +165,13 @@ export async function getBuckets(projectId: string): Promise<Bucket[]> {
   return response.json();
 }
 
-export async function createBucket(projectId: string, title: string, subtitle?: string, color?: string | null, layout?: 'list' | 'grid-2' | 'grid-3'): Promise<Bucket> {
+export async function createBucket(
+  projectId: string,
+  title: string,
+  subtitle?: string,
+  color?: string | null,
+  layout?: 'list' | 'grid-2' | 'grid-3'
+): Promise<Bucket> {
   const response = await customFetch(`${API_BASE}/projects/${projectId}/buckets`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

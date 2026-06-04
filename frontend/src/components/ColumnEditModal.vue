@@ -16,7 +16,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'save', payload: { bucketName: string; title: string; subtitle: string; color: string | null; layout: 'list' | 'grid-2' | 'grid-3' }): void;
+  (
+    e: 'save',
+    payload: { bucketName: string; title: string; subtitle: string; color: string | null; layout: 'list' | 'grid-2' | 'grid-3' }
+  ): void;
 }>();
 
 const title = ref('');
@@ -181,7 +184,7 @@ onUnmounted(() => {
                   :class="[
                     layout === 'list'
                       ? 'bg-theme-primary text-white shadow-sm font-bold'
-                      : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/30'
+                      : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/30',
                   ]"
                 >
                   <span>{{ t('columnEdit.layoutList') }}</span>
@@ -193,7 +196,7 @@ onUnmounted(() => {
                   :class="[
                     layout === 'grid-2'
                       ? 'bg-theme-primary text-white shadow-sm font-bold'
-                      : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/30'
+                      : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/30',
                   ]"
                 >
                   <span>{{ t('columnEdit.layoutGrid2') }}</span>
@@ -205,7 +208,7 @@ onUnmounted(() => {
                   :class="[
                     layout === 'grid-3'
                       ? 'bg-theme-primary text-white shadow-sm font-bold'
-                      : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/30'
+                      : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/30',
                   ]"
                 >
                   <span>{{ t('columnEdit.layoutGrid3') }}</span>
