@@ -13,6 +13,7 @@ const props = defineProps<{
   bucketName: BucketName;
   title: string;
   subtitle: string;
+  color?: string | null;
   tasks: Task[];
   isFirst: boolean;
   isLast: boolean;
@@ -22,7 +23,7 @@ const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
   (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; oldIndex: number; newIndex: number }): void;
-  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string }): void;
+  (e: 'rename-column', payload: { bucketName: string; newTitle: string; newSubtitle: string; newColor?: string | null }): void;
   (e: 'delete-column', bucketName: string): void;
   (e: 'mark-done', task: Task): void;
 }>();
@@ -35,12 +36,33 @@ const displayTitle = computed(() => {
   return translated !== 'buckets.' + props.bucketName ? translated : props.title;
 });
 
-const onSaveColumn = (payload: { bucketName: string; title: string; subtitle: string }) => {
-  if (payload.title && (payload.title !== props.title || payload.subtitle !== props.subtitle)) {
+const colorMap: Record<string, string> = {
+  red: '#ef4444',
+  orange: '#f97316',
+  yellow: '#eab308',
+  green: '#22c55e',
+  blue: '#3b82f6',
+  purple: '#a855f7',
+  pink: '#ec4899',
+};
+
+const columnStyle = computed(() => {
+  if (!props.color || !colorMap[props.color]) return {};
+  const hexColor = colorMap[props.color];
+  return {
+    '--column-tint': hexColor,
+    'background-color': `color-mix(in srgb, ${hexColor} 3%, var(--theme-bg-column))`,
+    'border-color': `color-mix(in srgb, ${hexColor} 25%, var(--theme-border))`,
+  };
+});
+
+const onSaveColumn = (payload: { bucketName: string; title: string; subtitle: string; color: string | null }) => {
+  if (payload.title && (payload.title !== props.title || payload.subtitle !== props.subtitle || payload.color !== props.color)) {
     emit('rename-column', {
       bucketName: props.bucketName,
       newTitle: payload.title,
       newSubtitle: payload.subtitle,
+      newColor: payload.color,
     });
   }
 };
@@ -78,7 +100,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col bg-theme-column border border-theme-border rounded w-full h-full min-w-[280px] w-72 shrink-0 md:w-80 group/col">
+  <div
+    :style="columnStyle"
+    class="flex flex-col bg-theme-column border border-theme-border rounded w-full h-full min-w-[280px] w-72 shrink-0 md:w-80 group/col relative overflow-hidden"
+  >
     <!-- Column Header -->
     <div
       class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t shrink-0 min-h-[48px] cursor-grab active:cursor-grabbing column-drag-handle"
@@ -181,6 +206,7 @@ onMounted(() => {
       :bucket-name="bucketName"
       :initial-title="title"
       :initial-subtitle="subtitle"
+      :initial-color="color"
       @close="isEditModalOpen = false"
       @save="onSaveColumn"
     />

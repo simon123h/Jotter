@@ -144,6 +144,8 @@ def load_buckets_file(project_id: str = "default") -> list:
             for item in data:
                 if "subtitle" not in item:
                     item["subtitle"] = ""
+                if "color" not in item:
+                    item["color"] = None
             return data
     except Exception:
         return DEFAULT_BUCKETS
@@ -355,8 +357,8 @@ def sync_db_with_files() -> int:
 
             for b in buckets:
                 conn.execute(
-                    "INSERT INTO buckets (project_id, name, title, subtitle, position) VALUES (?, ?, ?, ?, ?)",
-                    (p["id"], b["name"], b["title"], b.get("subtitle", ""), b["position"]),
+                    "INSERT INTO buckets (project_id, name, title, subtitle, position, color) VALUES (?, ?, ?, ?, ?, ?)",
+                    (p["id"], b["name"], b["title"], b.get("subtitle", ""), b["position"], b.get("color", None)),
                 )
                 bucket_names.add(b["name"])
                 max_bucket_position = max(max_bucket_position, b["position"])
@@ -392,8 +394,8 @@ def sync_db_with_files() -> int:
                                 new_title = bucket.replace("-", " ").title()
                                 new_pos = max_bucket_position + 1000.0
                                 conn.execute(
-                                    "INSERT INTO buckets (project_id, name, title, subtitle, position) VALUES (?, ?, ?, ?, ?)",
-                                    (p["id"], bucket, new_title, "", new_pos),
+                                    "INSERT INTO buckets (project_id, name, title, subtitle, position, color) VALUES (?, ?, ?, ?, ?, ?)",
+                                    (p["id"], bucket, new_title, "", new_pos, None),
                                 )
                                 buckets.append(
                                     {
@@ -401,6 +403,7 @@ def sync_db_with_files() -> int:
                                         "title": new_title,
                                         "subtitle": "",
                                         "position": new_pos,
+                                        "color": None,
                                     }
                                 )
                                 bucket_names.add(bucket)

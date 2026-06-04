@@ -118,6 +118,8 @@ export const en = {
     title: 'Edit Column Details',
     titleLabel: 'Column Title *',
     subtitleLabel: 'Description / Subtitle',
+    colorLabel: 'Highlight Color',
+    colorNone: 'None',
     saveButton: 'Save Changes',
   },
   language: {

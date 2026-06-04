@@ -93,6 +93,7 @@ describe('ColumnEditModal.vue', () => {
       bucketName: 'todo',
       title: 'Refined To Do',
       subtitle: 'Tasks ready for sprint',
+      color: null,
     });
   });
 
@@ -125,5 +126,34 @@ describe('ColumnEditModal.vue', () => {
     expect(titleInput).not.toBeNull();
     const subtitleInput = document.body.querySelectorAll('input[type="text"]')[1] as HTMLInputElement;
     expect(subtitleInput.value).toBe('');
+  });
+
+  it('emits save event with selected color when a color swatch is clicked', async () => {
+    wrapper = mount(ColumnEditModal, {
+      props: {
+        ...defaultProps,
+        initialColor: null,
+      },
+    });
+
+    // Find the red color swatch button (the bg-rose-500 one)
+    const colorBtn = document.body.querySelector('button.bg-rose-500') as HTMLButtonElement;
+    expect(colorBtn).not.toBeNull();
+    colorBtn.click();
+    await nextTick();
+
+    const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Save Changes')
+    ) as HTMLButtonElement;
+    expect(saveBtn).not.toBeNull();
+    saveBtn.click();
+
+    expect(wrapper.emitted('save')).toBeTruthy();
+    expect(wrapper.emitted('save')?.[0][0]).toEqual({
+      bucketName: 'todo',
+      title: 'To Do',
+      subtitle: 'Tasks that need to be done',
+      color: 'red',
+    });
   });
 });

@@ -120,6 +120,8 @@ export const de = {
     title: 'Spaltendetails bearbeiten',
     titleLabel: 'Spaltentitel *',
     subtitleLabel: 'Beschreibung / Untertitel',
+    colorLabel: 'Hervorhebungsfarbe',
+    colorNone: 'Keine',
     saveButton: 'Änderungen speichern',
   },
   language: {
