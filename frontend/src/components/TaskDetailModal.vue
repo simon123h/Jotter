@@ -22,6 +22,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'updated'): void;
   (e: 'deleted'): void;
+  (e: 'mark-done', task: Task): void;
 }>();
 
 const task = ref<Task | null>(null);
@@ -193,6 +194,12 @@ const handleDelete = async () => {
   } catch (err: any) {
     error.value = t('errors.deleteTask', { message: err.message || err });
     loading.value = false;
+  }
+};
+
+const handleMarkDone = () => {
+  if (task.value) {
+    emit('mark-done', task.value);
   }
 };
 
@@ -427,6 +434,13 @@ const getPriorityClasses = (prio: string) => {
           <div class="flex gap-2">
             <!-- View mode buttons -->
             <template v-if="!isEditing">
+              <button
+                v-if="task && task.bucket !== 'done'"
+                @click="handleMarkDone"
+                class="text-sm font-semibold px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all cursor-pointer"
+              >
+                {{ t('buttons.markDone') }}
+              </button>
               <button
                 @click="isEditing = true"
                 class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"

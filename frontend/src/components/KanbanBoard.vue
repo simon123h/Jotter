@@ -413,6 +413,11 @@ const handleMarkTaskDone = async (task: Task) => {
   }
 };
 
+const handleDetailMarkTaskDone = async (task: Task) => {
+  await handleMarkTaskDone(task);
+  closeDetailModal();
+};
+
 const handleDeleteColumn = async (bucketName: string) => {
   try {
     await deleteBucket(activeProjectId.value, bucketName);
@@ -865,6 +870,7 @@ const formatDateISO = (d: Date): string => {
           @close="closeDetailModal"
           @updated="fetchAllTasks"
           @deleted="fetchAllTasks"
+          @mark-done="handleDetailMarkTaskDone"
         />
 
         <!-- Task Create Modal -->

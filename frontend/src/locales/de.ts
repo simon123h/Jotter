@@ -57,6 +57,7 @@ export const de = {
     close: 'Schließen',
     addColumn: 'Spalte hinzufügen',
     add: 'Hinzufügen',
+    markDone: 'Als erledigt markieren',
   },
   errors: {
     titleRequired: 'Titel ist erforderlich',

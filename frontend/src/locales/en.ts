@@ -56,6 +56,7 @@ export const en = {
     close: 'Close',
     addColumn: 'Add Column',
     add: 'Add',
+    markDone: 'Mark Done',
   },
   errors: {
     titleRequired: 'Title is required',

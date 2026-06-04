@@ -102,14 +102,17 @@ const getPriorityClasses = (prio: string) => {
       <h4 class="text-sm text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2">
         {{ task.title }}
       </h4>
-      <div v-if="task.bucket !== 'done'" class="flex items-center gap-1.5 shrink-0">
+      <div
+        v-if="task.bucket !== 'done'"
+        class="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+      >
         <!-- Mark Done Button -->
         <button
           @click.stop="emit('mark-done', task)"
-          class="p-0.5 text-theme-text-muted hover:text-emerald-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
+          class="p-1 text-theme-text-muted hover:text-emerald-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
           title="Mark as done"
         >
-          <Check class="w-3 h-3 shrink-0" />
+          <Check class="w-3.5 h-3.5 shrink-0" />
         </button>
       </div>
     </div>
