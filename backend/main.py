@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -9,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from config import IS_PRODUCTION, get_log_level
 from database import init_db
 from routers.buckets import router as buckets_router
 from routers.projects import router as projects_router
@@ -16,8 +16,8 @@ from routers.system import router as system_router
 from routers.tasks import router as tasks_router
 from storage import sync_db_with_files
 
-# Configure logging using environment variable JOTTER_LOG_LEVEL
-log_level_env = os.environ.get("JOTTER_LOG_LEVEL", "INFO")
+# Configure logging using environment variable or config file
+log_level_env = get_log_level()
 logging.basicConfig(
     level=getattr(logging, log_level_env, logging.INFO),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -70,7 +70,7 @@ app.include_router(system_router)
 
 
 def get_frontend_dist_dir() -> Path:
-    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    if IS_PRODUCTION and hasattr(sys, "_MEIPASS"):
         return Path(sys._MEIPASS) / "frontend" / "dist"
     return Path(__file__).resolve().parent.parent / "frontend" / "dist"
 
