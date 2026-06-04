@@ -138,7 +138,11 @@ const setupSortables = () => {
       draggable: '.task-card',
       filter: '.add-task-btn',
       preventOnFilter: true,
+      onStart: () => {
+        document.body.classList.add('dragging-active');
+      },
       onEnd: (evt: any) => {
+        document.body.classList.remove('dragging-active');
         const { item, to } = evt;
         const taskId = Number(item.getAttribute('data-task-id'));
         const toBucket = to.getAttribute('data-bucket-name') as BucketName;
@@ -294,11 +298,11 @@ watch(
     </div>
 
     <!-- Cards Container -->
-    <div class="flex-grow p-2.5 overflow-y-auto min-h-[150px] scroller-thin animate-fade-in">
+    <div class="flex-grow flex flex-col p-2.5 overflow-y-auto scroller-thin animate-fade-in">
       <!-- Grid 3x Masonry-style subcolumns -->
-      <div v-if="layout === 'grid-3'" class="flex gap-2.5 items-start min-h-[120px]">
+      <div v-if="layout === 'grid-3'" class="subcolumn-wrap flex gap-2.5 items-start">
         <!-- Col 1 -->
-        <div ref="col1Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
+        <div ref="col1Container" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/3">
           <TaskCard
             class="task-card"
             v-for="task in col1Tasks"
@@ -311,7 +315,7 @@ watch(
         </div>
 
         <!-- Col 2 -->
-        <div ref="col2Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
+        <div ref="col2Container" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/3">
           <TaskCard
             class="task-card"
             v-for="task in col2Tasks"
@@ -324,7 +328,7 @@ watch(
         </div>
 
         <!-- Col 3 -->
-        <div ref="col3Container" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/3 min-h-[120px]">
+        <div ref="col3Container" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/3">
           <TaskCard
             class="task-card"
             v-for="task in col3Tasks"
@@ -338,9 +342,9 @@ watch(
       </div>
 
       <!-- Grid 2x Masonry-style subcolumns -->
-      <div v-else-if="layout === 'grid-2'" class="flex gap-2.5 items-start min-h-[120px]">
+      <div v-else-if="layout === 'grid-2'" class="subcolumn-wrap flex gap-2.5 items-start">
         <!-- Left Subcolumn -->
-        <div ref="leftContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/2 min-h-[120px]">
+        <div ref="leftContainer" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/2">
           <TaskCard
             class="task-card"
             v-for="task in leftTasks"
@@ -353,7 +357,7 @@ watch(
         </div>
 
         <!-- Right Subcolumn -->
-        <div ref="rightContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 w-1/2 min-h-[120px]">
+        <div ref="rightContainer" :data-bucket-name="bucketName" class="subcolumn flex flex-col gap-2.5 w-1/2">
           <TaskCard
             class="task-card"
             v-for="task in rightTasks"
@@ -367,7 +371,7 @@ watch(
       </div>
 
       <!-- Single Column List -->
-      <div v-else ref="cardsContainer" :data-bucket-name="bucketName" class="flex flex-col gap-2.5 min-h-[120px]">
+      <div v-else ref="cardsContainer" :data-bucket-name="bucketName" class="cards-container-list flex flex-col gap-2.5">
         <TaskCard
           class="task-card"
           v-for="task in tasks"
@@ -382,7 +386,7 @@ watch(
       <!-- Add Task Button inside scroll area, below the last card -->
       <button
         @click="emit('add-task-click', bucketName)"
-        class="add-task-btn w-full flex items-center justify-center gap-1.5 py-2 px-3 border border-dashed border-theme-border hover:border-theme-accent hover:bg-theme-card text-theme-text-muted hover:text-theme-accent rounded text-sm font-semibold transition-all cursor-pointer shadow-sm group/btn mt-2.5"
+        class="add-task-btn w-full flex items-center justify-center gap-1.5 py-2 px-3 border border-theme-border hover:border-theme-accent hover:bg-theme-card text-theme-text-muted rounded text-sm font-semibold transition-all cursor-pointer shadow-sm group/btn mt-2.5"
       >
         <Plus class="w-4 h-4 shrink-0 transition-transform group-hover/btn:scale-110" />
         {{ t('addTaskButton') }}
@@ -403,3 +407,40 @@ watch(
     />
   </div>
 </template>
+
+<style scoped>
+/* Add Task button hidden by default, visible on column hover */
+.add-task-btn {
+  opacity: 0.4;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease-in-out,
+    background-color 0.15s ease-in-out;
+}
+
+.group\/col:hover .add-task-btn {
+  pointer-events: auto;
+}
+
+.group\/col:hover .add-task-btn:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Hide add button globally during active drag-and-drop operations */
+:global(body.dragging-active) .add-task-btn {
+  display: none !important;
+}
+
+/* Expand columns and make them stretch to full available height to provide a massive drop target area during drags */
+:global(body.dragging-active) .subcolumn-wrap {
+  align-items: stretch !important;
+  flex-grow: 1 !important;
+}
+
+:global(body.dragging-active) .subcolumn,
+:global(body.dragging-active) .cards-container-list {
+  flex-grow: 1 !important;
+  min-height: 250px !important;
+}
+</style>
