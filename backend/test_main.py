@@ -195,6 +195,7 @@ def test_buckets_flow():
     assert data["subtitle"] == "Quality assurance tasks"
     assert data["color"] == "red"
     assert data["layout"] == "list"
+    assert data["max_tasks"] is None
     assert data["position"] == 5000.0
 
     # Verify buckets.json was updated
@@ -205,11 +206,12 @@ def test_buckets_flow():
     assert buckets_list[-1]["subtitle"] == "Quality assurance tasks"
     assert buckets_list[-1]["color"] == "red"
     assert buckets_list[-1]["layout"] == "list"
+    assert buckets_list[-1]["max_tasks"] is None
 
-    # 3. Update bucket title, subtitle, color, and layout
+    # 3. Update bucket title, subtitle, color, layout, and max_tasks
     response = client.put(
         "/projects/default/buckets/qa-test",
-        json={"title": "Quality Assurance", "subtitle": "QA & Testing", "color": "green", "layout": "grid"},
+        json={"title": "Quality Assurance", "subtitle": "QA & Testing", "color": "green", "layout": "grid", "max_tasks": 5},
     )
     assert response.status_code == 200
     data = response.json()
@@ -218,12 +220,14 @@ def test_buckets_flow():
     assert data["subtitle"] == "QA & Testing"
     assert data["color"] == "green"
     assert data["layout"] == "grid"
+    assert data["max_tasks"] == 5
 
-    # 3b. Update bucket color to None (clear it)
-    response = client.put("/projects/default/buckets/qa-test", json={"color": None})
+    # 3b. Update bucket color to None (clear it) and max_tasks to None
+    response = client.put("/projects/default/buckets/qa-test", json={"color": None, "max_tasks": None})
     assert response.status_code == 200
     data = response.json()
     assert data["color"] is None
+    assert data["max_tasks"] is None
     assert data["layout"] == "grid"
 
     # 4. Try deleting a bucket that has tasks

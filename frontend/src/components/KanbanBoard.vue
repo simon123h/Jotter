@@ -408,12 +408,14 @@ const handleRenameColumn = async ({
   newSubtitle,
   newColor,
   newLayout,
+  newMaxTasks,
 }: {
   bucketName: string;
   newTitle: string;
   newSubtitle: string;
   newColor?: string | null;
   newLayout?: 'list' | 'grid-2' | 'grid-3';
+  newMaxTasks?: number | null;
 }) => {
   if (!newTitle.trim()) return;
   try {
@@ -422,6 +424,7 @@ const handleRenameColumn = async ({
       subtitle: newSubtitle,
       color: newColor,
       layout: newLayout,
+      max_tasks: newMaxTasks,
     });
     await fetchBuckets();
   } catch (err: any) {

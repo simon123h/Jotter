@@ -12,13 +12,21 @@ const props = defineProps<{
   initialSubtitle?: string | null;
   initialColor?: string | null;
   initialLayout?: 'list' | 'grid-2' | 'grid-3';
+  initialMaxTasks?: number | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
   (
     e: 'save',
-    payload: { bucketName: string; title: string; subtitle: string; color: string | null; layout: 'list' | 'grid-2' | 'grid-3' }
+    payload: {
+      bucketName: string;
+      title: string;
+      subtitle: string;
+      color: string | null;
+      layout: 'list' | 'grid-2' | 'grid-3';
+      max_tasks: number | null;
+    }
   ): void;
 }>();
 
@@ -26,6 +34,7 @@ const title = ref('');
 const subtitle = ref('');
 const color = ref<string | null>(null);
 const layout = ref<'list' | 'grid-2' | 'grid-3'>('list');
+const maxTasks = ref<number | null>(null);
 const titleInput = ref<HTMLInputElement | null>(null);
 
 const colors = [
@@ -47,6 +56,7 @@ watch(
       subtitle.value = props.initialSubtitle || '';
       color.value = props.initialColor || null;
       layout.value = props.initialLayout || 'list';
+      maxTasks.value = props.initialMaxTasks !== undefined ? props.initialMaxTasks : null;
       nextTick(() => {
         titleInput.value?.focus();
       });
@@ -60,12 +70,24 @@ const handleSave = () => {
   const cleanSubtitle = (subtitle.value || '').trim();
   if (!cleanTitle) return;
 
+  let parsedMaxTasks: number | null = null;
+  if (maxTasks.value !== null && maxTasks.value !== undefined) {
+    const valStr = String(maxTasks.value).trim();
+    if (valStr !== '') {
+      const parsed = parseInt(valStr, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        parsedMaxTasks = parsed;
+      }
+    }
+  }
+
   emit('save', {
     bucketName: props.bucketName,
     title: cleanTitle,
     subtitle: cleanSubtitle,
     color: color.value,
     layout: layout.value,
+    max_tasks: parsedMaxTasks,
   });
   emit('close');
 };
@@ -134,6 +156,21 @@ onUnmounted(() => {
                 type="text"
                 class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring font-sans italic"
                 placeholder="Add description..."
+              />
+            </div>
+
+            <!-- Max Tasks Limit Input -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
+                {{ t('columnEdit.maxTasksLabel') }}
+              </label>
+              <input
+                v-model.number="maxTasks"
+                type="number"
+                min="1"
+                step="1"
+                class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                :placeholder="t('columnEdit.maxTasksPlaceholder')"
               />
             </div>
 

@@ -21,7 +21,7 @@ def get_buckets(project_id: str):
             )
 
         cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position, color, layout, max_tasks FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
         rows = cursor.fetchall()
@@ -65,13 +65,13 @@ def create_bucket(project_id: str, bucket: BucketCreate):
             new_position = float(row["max_pos"]) + 1000.0
 
         conn.execute(
-            "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (project_id, name, bucket.title, bucket.subtitle or "", new_position, bucket.color, bucket.layout or "list"),
+            "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (project_id, name, bucket.title, bucket.subtitle or "", new_position, bucket.color, bucket.layout or "list", bucket.max_tasks),
         )
 
         # Sync to project's buckets.json file
         cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position, color, layout, max_tasks FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
         all_buckets = [dict(r) for r in cursor.fetchall()]
@@ -84,6 +84,7 @@ def create_bucket(project_id: str, bucket: BucketCreate):
             position=new_position,
             color=bucket.color,
             layout=bucket.layout or "list",
+            max_tasks=bucket.max_tasks,
         )
 
 
@@ -100,7 +101,7 @@ def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
 
         # Check if bucket exists in this project
         cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout FROM buckets WHERE project_id = ? AND name = ?",
+            "SELECT name, title, subtitle, position, color, layout, max_tasks FROM buckets WHERE project_id = ? AND name = ?",
             (project_id, name),
         )
         existing = cursor.fetchone()
@@ -115,22 +116,32 @@ def update_bucket(project_id: str, name: str, bucket_update: BucketUpdate):
         updated_position = bucket_update.position if bucket_update.position is not None else existing["position"]
         updated_color = bucket_update.color if "color" in bucket_update.model_fields_set else existing["color"]
         updated_layout = bucket_update.layout if bucket_update.layout is not None else existing["layout"]
+        updated_max_tasks = bucket_update.max_tasks if "max_tasks" in bucket_update.model_fields_set else existing["max_tasks"]
 
         conn.execute(
-            "UPDATE buckets SET title = ?, subtitle = ?, position = ?, color = ?, layout = ? WHERE project_id = ? AND name = ?",
-            (updated_title, updated_subtitle, updated_position, updated_color, updated_layout, project_id, name),
+            """
+            UPDATE buckets
+            SET title = ?, subtitle = ?, position = ?, color = ?, layout = ?, max_tasks = ? WHERE project_id = ? AND name = ?
+            """,
+            (updated_title, updated_subtitle, updated_position, updated_color, updated_layout, updated_max_tasks, project_id, name),
         )
 
         # Sync to project's buckets.json file
         cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position, color, layout, max_tasks FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
         all_buckets = [dict(r) for r in cursor.fetchall()]
         write_buckets_file(project_id, all_buckets)
 
         return BucketResponse(
-            name=name, title=updated_title, subtitle=updated_subtitle, position=updated_position, color=updated_color, layout=updated_layout
+            name=name,
+            title=updated_title,
+            subtitle=updated_subtitle,
+            position=updated_position,
+            color=updated_color,
+            layout=updated_layout,
+            max_tasks=updated_max_tasks,
         )
 
 
@@ -174,7 +185,7 @@ def delete_bucket(project_id: str, name: str):
 
         # Sync to project's buckets.json file
         cursor = conn.execute(
-            "SELECT name, title, subtitle, position, color, layout FROM buckets WHERE project_id = ? ORDER BY position ASC",
+            "SELECT name, title, subtitle, position, color, layout, max_tasks FROM buckets WHERE project_id = ? ORDER BY position ASC",
             (project_id,),
         )
         all_buckets = [dict(r) for r in cursor.fetchall()]

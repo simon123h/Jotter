@@ -126,6 +126,8 @@ export const de = {
     layoutList: 'Liste (1 Spalte)',
     layoutGrid2: 'Raster (2 Spalten)',
     layoutGrid3: 'Raster (3 Spalten)',
+    maxTasksLabel: 'Max. Anzahl an Aufgaben',
+    maxTasksPlaceholder: 'z.B. 5 (leer für kein Limit)',
     saveButton: 'Änderungen speichern',
   },
   language: {

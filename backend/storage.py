@@ -148,6 +148,8 @@ def load_buckets_file(project_id: str = "default") -> list:
                     item["color"] = None
                 if "layout" not in item:
                     item["layout"] = "list"
+                if "max_tasks" not in item:
+                    item["max_tasks"] = None
             return data
     except Exception:
         return DEFAULT_BUCKETS
@@ -361,10 +363,19 @@ def sync_db_with_files() -> int:
                 conn.execute(
                     """
                     INSERT INTO buckets
-                    (project_id, name, title, subtitle, position, color, layout)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (project_id, name, title, subtitle, position, color, layout, max_tasks)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (p["id"], b["name"], b["title"], b.get("subtitle", ""), b["position"], b.get("color", None), b.get("layout", "list")),
+                    (
+                        p["id"],
+                        b["name"],
+                        b["title"],
+                        b.get("subtitle", ""),
+                        b["position"],
+                        b.get("color", None),
+                        b.get("layout", "list"),
+                        b.get("max_tasks", None),
+                    ),
                 )
                 bucket_names.add(b["name"])
                 max_bucket_position = max(max_bucket_position, b["position"])
@@ -402,10 +413,10 @@ def sync_db_with_files() -> int:
                                 conn.execute(
                                     """
                                     INSERT INTO buckets
-                                    (project_id, name, title, subtitle, position, color, layout)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                    (project_id, name, title, subtitle, position, color, layout, max_tasks)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                                     """,
-                                    (p["id"], bucket, new_title, "", new_pos, None, "list"),
+                                    (p["id"], bucket, new_title, "", new_pos, None, "list", None),
                                 )
                                 buckets.append(
                                     {
@@ -415,6 +426,7 @@ def sync_db_with_files() -> int:
                                         "position": new_pos,
                                         "color": None,
                                         "layout": "list",
+                                        "max_tasks": None,
                                     }
                                 )
                                 bucket_names.add(bucket)
