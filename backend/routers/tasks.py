@@ -1,12 +1,18 @@
-import json
 from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import func
 
 from database import db_session
+from db_models import Bucket, Project, Task
 from models import TaskCreate, TaskMove, TaskResponse, TaskUpdate
-from storage import delete_task_file, generate_next_id, read_task_file, write_task_file
+from storage import (
+    delete_task_file,
+    generate_next_id,
+    read_task_file,
+    write_task_file,
+)
 
 router = APIRouter(prefix="/projects/{project_id}/tasks", tags=["Tasks"])
 
@@ -18,59 +24,45 @@ def get_tasks(
     tag: Optional[str] = Query(None, description="Filter by tag name"),
     exclude_bucket: Optional[str] = Query(None, description="Exclude tasks from this bucket name"),
 ):
-    with db_session() as conn:
+    with db_session() as session:
         # Verify project exists
-        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
-        if not cursor.fetchone():
+        project = session.query(Project).filter(Project.id == project_id).first()
+        if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found.",
             )
 
-        query = "SELECT * FROM tasks WHERE project_id = ?"
-        params = [project_id]
+        query = session.query(Task).filter(Task.project_id == project_id)
 
         if bucket:
-            query += " AND bucket = ?"
-            params.append(bucket)
+            query = query.filter(Task.bucket == bucket)
         elif exclude_bucket:
-            query += " AND bucket != ?"
-            params.append(exclude_bucket)
+            query = query.filter(Task.bucket != exclude_bucket)
 
-        # Order by position ascending
-        query += " ORDER BY position ASC"
+        query = query.order_by(Task.position.asc())
+        tasks = query.all()
 
-        cursor = conn.execute(query, params)
-        rows = cursor.fetchall()
+        if tag:
+            # Filter by tag case-insensitively in Python for full compatibility
+            tasks = [t for t in tasks if any(tg.lower() == tag.lower() for tg in t.tags)]
 
-        tasks = []
-        for row in rows:
-            try:
-                row_tags = json.loads(row["tags"])
-            except Exception:
-                row_tags = []
-
-            # Skip if filtering by tag and tag not in list (done in Python for max compatibility, case-insensitively)
-            if tag and not any(t.lower() == tag.lower() for t in row_tags):
-                continue
-
-            tasks.append(
-                TaskResponse(
-                    id=row["id"],
-                    project_id=row["project_id"],
-                    title=row["title"],
-                    bucket=row["bucket"],
-                    position=row["position"],
-                    tags=row_tags,
-                    body="",  # Do not return full body in listing for efficiency
-                    due_date=row["due_date"],
-                    priority=row["priority"],
-                    created_at=row["created_at"],
-                    updated_at=row["updated_at"],
-                )
+        return [
+            TaskResponse(
+                id=t.id,
+                project_id=t.project_id,
+                title=t.title,
+                bucket=t.bucket,
+                position=t.position,
+                tags=t.tags,
+                body="",  # Do not return full body in listing for efficiency
+                due_date=t.due_date,
+                priority=t.priority,
+                created_at=t.created_at,
+                updated_at=t.updated_at,
             )
-
-        return tasks
+            for t in tasks
+        ]
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
@@ -86,21 +78,18 @@ def get_task(project_id: str, task_id: int):
 
 @router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 def create_task(project_id: str, task: TaskCreate):
-    with db_session() as conn:
+    with db_session() as session:
         # Verify project exists
-        cursor = conn.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
-        if not cursor.fetchone():
+        project = session.query(Project).filter(Project.id == project_id).first()
+        if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found.",
             )
 
         # Verify bucket exists for this project
-        cursor = conn.execute(
-            "SELECT 1 FROM buckets WHERE project_id = ? AND name = ?",
-            (project_id, task.bucket),
-        )
-        if not cursor.fetchone():
+        db_bucket = session.query(Bucket).filter(Bucket.project_id == project_id, Bucket.name == task.bucket).first()
+        if not db_bucket:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Bucket '{task.bucket}' does not exist in project '{project_id}'.",
@@ -110,14 +99,8 @@ def create_task(project_id: str, task: TaskCreate):
         new_id = generate_next_id()
 
         # Calculate position: min position in current bucket - 1000.0 (or default to 1000.0)
-        cursor = conn.execute(
-            "SELECT MIN(position) as min_pos FROM tasks WHERE project_id = ? AND bucket = ?",
-            (project_id, task.bucket),
-        )
-        row = cursor.fetchone()
-        new_position = 1000.0
-        if row and row["min_pos"] is not None:
-            new_position = float(row["min_pos"]) - 1000.0
+        min_pos = session.query(func.min(Task.position)).filter(Task.project_id == project_id, Task.bucket == task.bucket).scalar()
+        new_position = 1000.0 if min_pos is None else float(min_pos) - 1000.0
 
         task_tags = [t.lower() for t in task.tags]
         task_data = {
@@ -138,25 +121,21 @@ def create_task(project_id: str, task: TaskCreate):
         filename = write_task_file(new_id, task_data)
 
         # Insert into SQLite index
-        conn.execute(
-            """
-            INSERT INTO tasks (id, project_id, title, bucket, position, tags, filename, due_date, priority, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-            (
-                new_id,
-                project_id,
-                task.title,
-                task.bucket,
-                new_position,
-                json.dumps(task_tags),
-                filename,
-                task.due_date,
-                task.priority,
-                now_str,
-                now_str,
-            ),
+        db_task = Task(
+            id=new_id,
+            project_id=project_id,
+            title=task.title,
+            bucket=task.bucket,
+            position=new_position,
+            tags=task_tags,
+            filename=filename,
+            due_date=task.due_date,
+            priority=task.priority,
+            created_at=now_str,
+            updated_at=now_str,
         )
+        session.add(db_task)
+        session.flush()
 
         return TaskResponse(**task_data)
 
@@ -197,34 +176,43 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
         "updated_at": now_str,
     }
 
-    with db_session() as conn:
+    with db_session() as session:
         # Verify new bucket exists if changed
         if task_update.bucket is not None:
-            cursor = conn.execute(
-                "SELECT 1 FROM buckets WHERE project_id = ? AND name = ?",
-                (project_id, updated_bucket),
-            )
-            if not cursor.fetchone():
+            bucket_exists = session.query(Bucket).filter(Bucket.project_id == project_id, Bucket.name == updated_bucket).first()
+            if not bucket_exists:
                 if updated_bucket == "done":
-                    cursor_pos = conn.execute("SELECT MAX(position) as max_pos FROM buckets WHERE project_id = ?", (project_id,))
-                    row_pos = cursor_pos.fetchone()
-                    new_position = 1000.0
-                    if row_pos and row_pos["max_pos"] is not None:
-                        new_position = float(row_pos["max_pos"]) + 1000.0
+                    max_pos = session.query(func.max(Bucket.position)).filter(Bucket.project_id == project_id).scalar()
+                    new_position = 1000.0 if max_pos is None else float(max_pos) + 1000.0
 
-                    conn.execute(
-                        "INSERT INTO buckets (project_id, name, title, subtitle, position) VALUES (?, ?, ?, ?, ?)",
-                        (project_id, "done", "Done", "", new_position),
+                    db_bucket = Bucket(
+                        project_id=project_id,
+                        name="done",
+                        title="Done",
+                        subtitle="",
+                        position=new_position,
                     )
+                    session.add(db_bucket)
+                    session.flush()
 
-                    cursor_sync = conn.execute(
-                        "SELECT name, title, subtitle, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
-                        (project_id,),
-                    )
+                    all_buckets = session.query(Bucket).filter(Bucket.project_id == project_id).order_by(Bucket.position.asc()).all()
                     from storage import write_buckets_file
 
-                    all_buckets = [dict(r) for r in cursor_sync.fetchall()]
-                    write_buckets_file(project_id, all_buckets)
+                    all_buckets_dict = []
+                    for b in all_buckets:
+                        all_buckets_dict.append(
+                            {
+                                "name": b.name,
+                                "title": b.title,
+                                "subtitle": b.subtitle,
+                                "position": b.position,
+                                "color": b.color,
+                                "layout": b.layout,
+                                "max_tasks": b.max_tasks,
+                                "is_default": b.is_default,
+                            }
+                        )
+                    write_buckets_file(project_id, all_buckets_dict)
                 else:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
@@ -235,25 +223,17 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
         new_filename = write_task_file(task_id, updated_data)
 
         # Update SQLite index
-        conn.execute(
-            """
-            UPDATE tasks
-            SET title = ?, bucket = ?, position = ?, tags = ?, filename = ?, due_date = ?, priority = ?, updated_at = ?
-            WHERE id = ? AND project_id = ?
-        """,
-            (
-                updated_title,
-                updated_bucket,
-                updated_position,
-                json.dumps(updated_tags),
-                new_filename,
-                updated_due_date,
-                updated_priority,
-                now_str,
-                task_id,
-                project_id,
-            ),
-        )
+        db_task = session.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
+        if db_task:
+            db_task.title = updated_title
+            db_task.bucket = updated_bucket
+            db_task.position = updated_position
+            db_task.tags = updated_tags
+            db_task.filename = new_filename
+            db_task.due_date = updated_due_date
+            db_task.priority = updated_priority
+            db_task.updated_at = now_str
+            session.flush()
 
     return TaskResponse(**updated_data)
 
@@ -277,33 +257,42 @@ def move_task(project_id: str, task_id: int, task_move: TaskMove):
         "updated_at": now_str,
     }
 
-    with db_session() as conn:
+    with db_session() as session:
         # Verify target bucket exists for this project
-        cursor = conn.execute(
-            "SELECT 1 FROM buckets WHERE project_id = ? AND name = ?",
-            (project_id, task_move.bucket),
-        )
-        if not cursor.fetchone():
+        bucket_exists = session.query(Bucket).filter(Bucket.project_id == project_id, Bucket.name == task_move.bucket).first()
+        if not bucket_exists:
             if task_move.bucket == "done":
-                cursor_pos = conn.execute("SELECT MAX(position) as max_pos FROM buckets WHERE project_id = ?", (project_id,))
-                row_pos = cursor_pos.fetchone()
-                new_position = 1000.0
-                if row_pos and row_pos["max_pos"] is not None:
-                    new_position = float(row_pos["max_pos"]) + 1000.0
+                max_pos = session.query(func.max(Bucket.position)).filter(Bucket.project_id == project_id).scalar()
+                new_position = 1000.0 if max_pos is None else float(max_pos) + 1000.0
 
-                conn.execute(
-                    "INSERT INTO buckets (project_id, name, title, subtitle, position) VALUES (?, ?, ?, ?, ?)",
-                    (project_id, "done", "Done", "", new_position),
+                db_bucket = Bucket(
+                    project_id=project_id,
+                    name="done",
+                    title="Done",
+                    subtitle="",
+                    position=new_position,
                 )
+                session.add(db_bucket)
+                session.flush()
 
-                cursor_sync = conn.execute(
-                    "SELECT name, title, subtitle, position FROM buckets WHERE project_id = ? ORDER BY position ASC",
-                    (project_id,),
-                )
+                all_buckets = session.query(Bucket).filter(Bucket.project_id == project_id).order_by(Bucket.position.asc()).all()
                 from storage import write_buckets_file
 
-                all_buckets = [dict(r) for r in cursor_sync.fetchall()]
-                write_buckets_file(project_id, all_buckets)
+                all_buckets_dict = []
+                for b in all_buckets:
+                    all_buckets_dict.append(
+                        {
+                            "name": b.name,
+                            "title": b.title,
+                            "subtitle": b.subtitle,
+                            "position": b.position,
+                            "color": b.color,
+                            "layout": b.layout,
+                            "max_tasks": b.max_tasks,
+                            "is_default": b.is_default,
+                        }
+                    )
+                write_buckets_file(project_id, all_buckets_dict)
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -314,14 +303,13 @@ def move_task(project_id: str, task_id: int, task_move: TaskMove):
         new_filename = write_task_file(task_id, updated_data)
 
         # Update SQLite index
-        conn.execute(
-            """
-            UPDATE tasks
-            SET bucket = ?, position = ?, filename = ?, updated_at = ?
-            WHERE id = ? AND project_id = ?
-        """,
-            (task_move.bucket, task_move.position, new_filename, now_str, task_id, project_id),
-        )
+        db_task = session.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
+        if db_task:
+            db_task.bucket = task_move.bucket
+            db_task.position = task_move.position
+            db_task.filename = new_filename
+            db_task.updated_at = now_str
+            session.flush()
 
     return TaskResponse(**updated_data)
 
@@ -340,7 +328,10 @@ def delete_task(project_id: str, task_id: int):
     delete_task_file(task_id)
 
     # Delete from SQLite
-    with db_session() as conn:
-        conn.execute("DELETE FROM tasks WHERE id = ? AND project_id = ?", (task_id, project_id))
+    with db_session() as session:
+        db_task = session.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
+        if db_task:
+            session.delete(db_task)
+            session.flush()
 
     return {"status": "success", "detail": f"Task {task_id} deleted"}

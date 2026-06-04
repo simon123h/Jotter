@@ -29,7 +29,8 @@ def setup_and_teardown():
 
     yield
 
-    # Teardown: delete the entire test data folder
+    # Teardown: close engine and delete the entire test data folder
+    db.dispose_engine()
     if os.path.exists(TEST_DATA_DIR):
         shutil.rmtree(TEST_DATA_DIR)
 
@@ -147,9 +148,14 @@ def test_crud_flow():
     assert moved_data["position"] == 500.0
 
     # 6. Test sync system (reconstruct DB)
-    os.remove(db.DB_PATH)
+    db.dispose_engine()
+    if os.path.exists(db.DB_PATH):
+        os.remove(db.DB_PATH)
+    for suffix in ("-wal", "-shm"):
+        wal_path = db.DB_PATH + suffix
+        if os.path.exists(wal_path):
+            os.remove(wal_path)
     db.init_db()  # Recreate empty DB
-
     # DB is now empty, GET /tasks should return 404 since project doesn't exist
     response = client.get("/projects/default/tasks")
     assert response.status_code == 404

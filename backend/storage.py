@@ -12,6 +12,7 @@ import frontmatter
 
 from config import IS_PRODUCTION, get_data_dir
 from database import db_session
+from db_models import Bucket, Project, Task
 
 logger = logging.getLogger("jotter.storage")
 
@@ -38,58 +39,9 @@ DEFAULT_BUCKETS = [
 ]
 
 
-def migrate_legacy_layout():
-    """Migrates a single-project flat layout to multi-project directory layout."""
-    default_dir = os.path.join(TASKS_DIR, "default")
-
-    # Check if there are any flat task files or a buckets.json directly in TASKS_DIR
-    legacy_files = []
-    has_legacy_buckets = os.path.exists(os.path.join(TASKS_DIR, "buckets.json"))
-
-    for filename in os.listdir(TASKS_DIR):
-        filepath = os.path.join(TASKS_DIR, filename)
-        if os.path.isfile(filepath):
-            if filename.endswith(".md") and filename.split("-", 1)[0].isdigit():
-                legacy_files.append(filename)
-
-    if has_legacy_buckets or legacy_files:
-        os.makedirs(default_dir, exist_ok=True)
-        # Move buckets.json
-        if has_legacy_buckets:
-            try:
-                os.replace(
-                    os.path.join(TASKS_DIR, "buckets.json"),
-                    os.path.join(default_dir, "buckets.json"),
-                )
-            except Exception as e:
-                logger.error(f"Error migrating buckets.json: {e}")
-        # Move task files
-        for filename in legacy_files:
-            try:
-                os.replace(
-                    os.path.join(TASKS_DIR, filename),
-                    os.path.join(default_dir, filename),
-                )
-            except Exception as e:
-                logger.error(f"Error migrating task file {filename}: {e}")
-
-        # Initialize projects.json if not present
-        if not os.path.exists(PROJECTS_FILE):
-            now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-            default_project = [
-                {
-                    "id": "default",
-                    "title": "Default Project",
-                    "created_at": now_str,
-                }
-            ]
-            with open(PROJECTS_FILE, "w", encoding="utf-8") as f:
-                json.dump(default_project, f, indent=2)
-
-
 def load_projects_file() -> list:
     """Loads projects from the projects.json file. If it doesn't exist, initializes default and returns it."""
-    migrate_legacy_layout()
+
     if not os.path.exists(PROJECTS_FILE):
         now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         default_project = [
@@ -336,23 +288,19 @@ def sync_db_with_files() -> int:
     Auto-creates missing buckets referenced by task markdown files.
     Returns the count of successfully synchronized tasks.
     """
-    # First, run the migration to move flat files if any exist
-    migrate_legacy_layout()
-
     count = 0
-    with db_session() as conn:
+    with db_session() as session:
         # Clear existing tables data
-        conn.execute("DELETE FROM tasks")
-        conn.execute("DELETE FROM buckets")
-        conn.execute("DELETE FROM projects")
+        session.query(Task).delete()
+        session.query(Bucket).delete()
+        session.query(Project).delete()
+        session.flush()
 
         # Load projects registry
         projects = load_projects_file()
         for p in projects:
-            conn.execute(
-                "INSERT INTO projects (id, title, created_at) VALUES (?, ?, ?)",
-                (p["id"], p["title"], p["created_at"]),
-            )
+            db_project = Project(id=p["id"], title=p["title"], created_at=p["created_at"])
+            session.add(db_project)
 
             # Sync buckets for this project
             buckets = load_buckets_file(p["id"])
@@ -360,23 +308,18 @@ def sync_db_with_files() -> int:
             max_bucket_position = 0.0
 
             for b in buckets:
-                conn.execute(
-                    """
-                    INSERT INTO buckets
-                    (project_id, name, title, subtitle, position, color, layout, max_tasks)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        p["id"],
-                        b["name"],
-                        b["title"],
-                        b.get("subtitle", ""),
-                        b["position"],
-                        b.get("color", None),
-                        b.get("layout", "list"),
-                        b.get("max_tasks", None),
-                    ),
+                db_bucket = Bucket(
+                    project_id=p["id"],
+                    name=b["name"],
+                    title=b["title"],
+                    subtitle=b.get("subtitle", ""),
+                    position=b["position"],
+                    color=b.get("color", None),
+                    layout=b.get("layout", "list"),
+                    max_tasks=b.get("max_tasks", None),
+                    is_default=b.get("is_default", False),
                 )
+                session.add(db_bucket)
                 bucket_names.add(b["name"])
                 max_bucket_position = max(max_bucket_position, b["position"])
 
@@ -410,14 +353,18 @@ def sync_db_with_files() -> int:
                             if bucket not in bucket_names:
                                 new_title = bucket.replace("-", " ").title()
                                 new_pos = max_bucket_position + 1000.0
-                                conn.execute(
-                                    """
-                                    INSERT INTO buckets
-                                    (project_id, name, title, subtitle, position, color, layout, max_tasks)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                                    """,
-                                    (p["id"], bucket, new_title, "", new_pos, None, "list", None),
+                                db_bucket = Bucket(
+                                    project_id=p["id"],
+                                    name=bucket,
+                                    title=new_title,
+                                    subtitle="",
+                                    position=new_pos,
+                                    color=None,
+                                    layout="list",
+                                    max_tasks=None,
+                                    is_default=False,
                                 )
+                                session.add(db_bucket)
                                 buckets.append(
                                     {
                                         "name": bucket,
@@ -427,33 +374,27 @@ def sync_db_with_files() -> int:
                                         "color": None,
                                         "layout": "list",
                                         "max_tasks": None,
+                                        "is_default": False,
                                     }
                                 )
                                 bucket_names.add(bucket)
                                 max_bucket_position = new_pos
                                 buckets_modified = True
 
-                            conn.execute(
-                                """
-                                INSERT INTO tasks (
-                                    id, project_id, title, bucket, position, tags, filename, due_date, priority, created_at, updated_at
-                                )
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            """,
-                                (
-                                    id_val,
-                                    p["id"],
-                                    title,
-                                    bucket,
-                                    position,
-                                    json.dumps(tags),
-                                    filename,
-                                    due_date,
-                                    priority,
-                                    created_at,
-                                    updated_at,
-                                ),
+                            db_task = Task(
+                                id=id_val,
+                                project_id=p["id"],
+                                title=title,
+                                bucket=bucket,
+                                position=position,
+                                tags=tags,
+                                filename=filename,
+                                due_date=due_date,
+                                priority=priority,
+                                created_at=created_at,
+                                updated_at=updated_at,
                             )
+                            session.add(db_task)
                             count += 1
                         except Exception as e:
                             logger.error(f"Error syncing file {filename} in project {p['id']}: {e}")
@@ -461,4 +402,5 @@ def sync_db_with_files() -> int:
             if buckets_modified:
                 write_buckets_file(p["id"], buckets)
 
+        session.flush()
     return count

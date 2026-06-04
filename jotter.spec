@@ -4,8 +4,11 @@ import os
 
 block_cipher = None
 
-# Include frontend/dist static files
-datas = [('frontend/dist', 'frontend/dist')]
+# Include frontend/dist static files and migrations
+datas = [
+    ('frontend/dist', 'frontend/dist'),
+    ('backend/migrations', 'backend/migrations')
+]
 
 a = Analysis(
     ['run.py'],

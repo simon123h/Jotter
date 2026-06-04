@@ -7,3 +7,6 @@ pytest-cov
 ruff
 httpx
 PyYAML>=6.0
+yoyo-migrations>=8.2.0
+SQLAlchemy>=2.0.0
+
