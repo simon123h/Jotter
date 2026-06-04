@@ -867,6 +867,7 @@ const formatDateISO = (d: Date): string => {
           :project-id="activeProjectId"
           :task-id="selectedTaskId"
           :buckets="buckets"
+          :existing-tags="allTags"
           @close="closeDetailModal"
           @updated="fetchAllTasks"
           @deleted="fetchAllTasks"
@@ -879,6 +880,7 @@ const formatDateISO = (d: Date): string => {
           :project-id="activeProjectId"
           :default-bucket="createDefaultBucket"
           :buckets="buckets"
+          :existing-tags="allTags"
           @close="isCreateOpen = false"
           @created="fetchAllTasks"
         />

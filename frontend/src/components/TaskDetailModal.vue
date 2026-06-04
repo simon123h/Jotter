@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onUnmounted } from 'vue';
 import { marked } from 'marked';
 import type { Task, BucketName } from '../types';
 import { getTask, updateTask, deleteTask } from '../api';
@@ -11,12 +11,18 @@ import { parseTitleState } from '../utils/dateParser';
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();
 
-const props = defineProps<{
-  isOpen: boolean;
-  projectId: string;
-  taskId: number | null;
-  buckets: { name: BucketName; title: string }[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    isOpen: boolean;
+    projectId: string;
+    taskId: number | null;
+    buckets: { name: BucketName; title: string }[];
+    existingTags?: string[];
+  }>(),
+  {
+    existingTags: () => [],
+  }
+);
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -41,6 +47,76 @@ const editPriority = ref('');
 const lastMatchedKeyword = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
+const isTagDropdownOpen = ref(false);
+
+const activeTagQuery = computed(() => {
+  const parts = editTags.value.split(',');
+  return parts[parts.length - 1].trim().toLowerCase();
+});
+
+const currentTagsSet = computed(() => {
+  return new Set(
+    editTags.value
+      .split(',')
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean)
+  );
+});
+
+const tagSuggestions = computed(() => {
+  const query = activeTagQuery.value;
+  return props.existingTags.filter((tag) => {
+    const normalizedTag = tag.toLowerCase();
+    if (currentTagsSet.value.has(normalizedTag)) return false;
+    return normalizedTag.includes(query);
+  });
+});
+
+const selectTagSuggestion = (suggestion: string) => {
+  const parts = editTags.value.split(',');
+  parts[parts.length - 1] = ' ' + suggestion;
+  editTags.value = parts.join(',').trim() + ', ';
+  isTagDropdownOpen.value = true;
+};
+
+const activeSuggestionIndex = ref(0);
+
+// Reset active index when suggestions change
+watch(tagSuggestions, () => {
+  activeSuggestionIndex.value = 0;
+});
+
+const handleKeyDown = (event: KeyboardEvent) => {
+  // If dropdown is open and has suggestions, handle keyboard navigation
+  if (isEditing.value && isTagDropdownOpen.value && tagSuggestions.value.length > 0) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      activeSuggestionIndex.value = (activeSuggestionIndex.value + 1) % tagSuggestions.value.length;
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      activeSuggestionIndex.value = (activeSuggestionIndex.value - 1 + tagSuggestions.value.length) % tagSuggestions.value.length;
+      return;
+    }
+    if (event.key === 'Enter' || event.key === 'Tab') {
+      event.preventDefault();
+      selectTagSuggestion(tagSuggestions.value[activeSuggestionIndex.value]);
+      isTagDropdownOpen.value = false;
+      return;
+    }
+  }
+
+  if (event.key === 'Escape' || event.key === 'Esc') {
+    emit('close');
+  } else if (event.ctrlKey && event.key === 'Enter') {
+    if (isEditing.value) {
+      event.preventDefault();
+      handleSave();
+    }
+  }
+};
+
 // Fetch task detail when modal opens or taskId changes
 watch(
   () => props.taskId,
@@ -57,11 +133,21 @@ watch(
 watch(
   () => props.isOpen,
   async (open) => {
-    if (open && props.taskId !== null) {
-      await fetchTaskDetail(props.taskId);
+    if (open) {
+      window.addEventListener('keydown', handleKeyDown);
+      if (props.taskId !== null) {
+        await fetchTaskDetail(props.taskId);
+      }
+    } else {
+      window.removeEventListener('keydown', handleKeyDown);
     }
-  }
+  },
+  { immediate: true }
 );
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
 
 const fetchTaskDetail = async (id: number) => {
   loading.value = true;
@@ -362,16 +448,37 @@ const getPriorityClasses = (prio: string) => {
                     <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
                   </select>
                 </div>
-                <div>
+                <div class="relative">
                   <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
                     t('form.tagsLabel')
                   }}</label>
                   <input
                     v-model="editTags"
                     type="text"
+                    @focus="isTagDropdownOpen = true"
+                    @blur="isTagDropdownOpen = false"
                     class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
                     :placeholder="t('form.tagsPlaceholderEdit')"
                   />
+                  <div
+                    v-if="isTagDropdownOpen && tagSuggestions.length"
+                    class="absolute left-0 right-0 mt-1 max-h-40 overflow-y-auto bg-theme-card border border-theme-border rounded shadow-xl z-30 p-1 space-y-0.5 scroller-thin"
+                  >
+                    <button
+                      v-for="(suggestion, idx) in tagSuggestions"
+                      :key="suggestion"
+                      type="button"
+                      @mousedown.prevent="selectTagSuggestion(suggestion)"
+                      class="w-full text-left px-2.5 py-1.5 text-xs rounded transition-colors cursor-pointer font-medium"
+                      :class="
+                        idx === activeSuggestionIndex
+                          ? 'bg-theme-column text-theme-text-main font-semibold'
+                          : 'text-theme-text-card hover:bg-theme-column/80 hover:text-theme-text-main'
+                      "
+                    >
+                      {{ suggestion }}
+                    </button>
+                  </div>
                 </div>
               </div>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onUnmounted } from 'vue';
+import { ref, watch, nextTick, onUnmounted, computed } from 'vue';
 import { X } from '@lucide/vue';
 import type { BucketName } from '../types';
 import { createTask } from '../api';
@@ -8,12 +8,18 @@ import { parseTitleState } from '../utils/dateParser';
 
 const { locale, t } = useI18n();
 
-const props = defineProps<{
-  isOpen: boolean;
-  projectId: string;
-  defaultBucket: BucketName;
-  buckets: { name: BucketName; title: string }[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    isOpen: boolean;
+    projectId: string;
+    defaultBucket: BucketName;
+    buckets: { name: BucketName; title: string }[];
+    existingTags?: string[];
+  }>(),
+  {
+    existingTags: () => [],
+  }
+);
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -31,7 +37,66 @@ const error = ref<string | null>(null);
 
 const titleInput = ref<HTMLInputElement | null>(null);
 
+const isTagDropdownOpen = ref(false);
+
+const activeTagQuery = computed(() => {
+  const parts = tags.value.split(',');
+  return parts[parts.length - 1].trim().toLowerCase();
+});
+
+const currentTagsSet = computed(() => {
+  return new Set(
+    tags.value
+      .split(',')
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean)
+  );
+});
+
+const tagSuggestions = computed(() => {
+  const query = activeTagQuery.value;
+  return props.existingTags.filter((tag) => {
+    const normalizedTag = tag.toLowerCase();
+    if (currentTagsSet.value.has(normalizedTag)) return false;
+    return normalizedTag.includes(query);
+  });
+});
+
+const selectTagSuggestion = (suggestion: string) => {
+  const parts = tags.value.split(',');
+  parts[parts.length - 1] = ' ' + suggestion;
+  tags.value = parts.join(',').trim() + ', ';
+  isTagDropdownOpen.value = true;
+};
+
+const activeSuggestionIndex = ref(0);
+
+// Reset active index when suggestions change
+watch(tagSuggestions, () => {
+  activeSuggestionIndex.value = 0;
+});
+
 const handleKeyDown = (event: KeyboardEvent) => {
+  // If dropdown is open and has suggestions, handle keyboard navigation
+  if (isTagDropdownOpen.value && tagSuggestions.value.length > 0) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      activeSuggestionIndex.value = (activeSuggestionIndex.value + 1) % tagSuggestions.value.length;
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      activeSuggestionIndex.value = (activeSuggestionIndex.value - 1 + tagSuggestions.value.length) % tagSuggestions.value.length;
+      return;
+    }
+    if (event.key === 'Enter' || event.key === 'Tab') {
+      event.preventDefault();
+      selectTagSuggestion(tagSuggestions.value[activeSuggestionIndex.value]);
+      isTagDropdownOpen.value = false;
+      return;
+    }
+  }
+
   if (event.key === 'Escape' || event.key === 'Esc') {
     emit('close');
   } else if (event.ctrlKey && event.key === 'Enter') {
@@ -202,14 +267,35 @@ const handleSubmit = async () => {
                 <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
               </select>
             </div>
-            <div>
+            <div class="relative">
               <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.tagsLabel') }}</label>
               <input
                 v-model="tags"
                 type="text"
+                @focus="isTagDropdownOpen = true"
+                @blur="isTagDropdownOpen = false"
                 class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
                 :placeholder="t('form.tagsPlaceholder')"
               />
+              <div
+                v-if="isTagDropdownOpen && tagSuggestions.length"
+                class="absolute left-0 right-0 mt-1 max-h-40 overflow-y-auto bg-theme-card border border-theme-border rounded shadow-xl z-30 p-1 space-y-0.5 scroller-thin"
+              >
+                <button
+                  v-for="(suggestion, idx) in tagSuggestions"
+                  :key="suggestion"
+                  type="button"
+                  @mousedown.prevent="selectTagSuggestion(suggestion)"
+                  class="w-full text-left px-2.5 py-1.5 text-xs rounded transition-colors cursor-pointer font-medium"
+                  :class="
+                    idx === activeSuggestionIndex
+                      ? 'bg-theme-column text-theme-text-main font-semibold'
+                      : 'text-theme-text-card hover:bg-theme-column/80 hover:text-theme-text-main'
+                  "
+                >
+                  {{ suggestion }}
+                </button>
+              </div>
             </div>
           </div>
 
