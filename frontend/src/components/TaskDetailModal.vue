@@ -15,7 +15,7 @@ const props = withDefaults(
   defineProps<{
     isOpen: boolean;
     projectId: string;
-    taskId: number | null;
+    taskId: string | null;
     buckets: { name: BucketName; title: string }[];
     existingTags?: string[];
   }>(),
@@ -244,7 +244,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
 });
 
-const fetchTaskDetail = async (id: number) => {
+const fetchTaskDetail = async (id: string) => {
   loading.value = true;
   error.value = null;
   try {
@@ -345,7 +345,7 @@ const toggleCheckboxInBody = async (targetIndex: number, isChecked: boolean) => 
   let currentIndex = 0;
   const regex = /(^|\n)(\s*[-*+]\s+\[)([ xX])(\])/g;
 
-  const newBody = task.value.body.replace(regex, (match, p1, p2, p3, p4) => {
+  const newBody = task.value.body.replace(regex, (match, p1, p2, _p3, p4) => {
     if (currentIndex === targetIndex) {
       currentIndex++;
       const newChar = isChecked ? 'x' : ' ';

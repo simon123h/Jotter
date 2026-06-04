@@ -134,7 +134,7 @@ export async function getTasks(projectId: string, bucket?: string, tag?: string,
   return response.json();
 }
 
-export async function getTask(projectId: string, id: number): Promise<Task> {
+export async function getTask(projectId: string, id: string): Promise<Task> {
   if (IS_DEMO_MODE) {
     return demoApi.getTask(projectId, id);
   }
@@ -163,7 +163,7 @@ export async function createTask(
   return response.json();
 }
 
-export async function updateTask(projectId: string, id: number, task: Partial<Task>): Promise<Task> {
+export async function updateTask(projectId: string, id: string, task: Partial<Task>): Promise<Task> {
   if (IS_DEMO_MODE) {
     return demoApi.updateTask(projectId, id, task);
   }
@@ -178,7 +178,7 @@ export async function updateTask(projectId: string, id: number, task: Partial<Ta
   return response.json();
 }
 
-export async function moveTask(projectId: string, id: number, bucket: string, position: number): Promise<Task> {
+export async function moveTask(projectId: string, id: string, bucket: string, position: number): Promise<Task> {
   if (IS_DEMO_MODE) {
     return demoApi.moveTask(projectId, id, bucket, position);
   }
@@ -193,7 +193,7 @@ export async function moveTask(projectId: string, id: number, bucket: string, po
   return response.json();
 }
 
-export async function deleteTask(projectId: string, id: number): Promise<void> {
+export async function deleteTask(projectId: string, id: string): Promise<void> {
   if (IS_DEMO_MODE) {
     return demoApi.deleteTask(projectId, id);
   }

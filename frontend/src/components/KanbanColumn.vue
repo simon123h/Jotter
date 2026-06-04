@@ -27,7 +27,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
-  (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; prevTaskId: number | null; nextTaskId: number | null }): void;
+  (e: 'card-dropped', payload: { taskId: string; toBucket: BucketName; prevTaskId: string | null; nextTaskId: string | null }): void;
   (
     e: 'rename-column',
     payload: {
@@ -159,7 +159,7 @@ const setupSortables = () => {
       onEnd: (evt: any) => {
         document.body.classList.remove('dragging-active');
         const { item, to } = evt;
-        const taskId = Number(item.getAttribute('data-task-id'));
+        const taskId = item.getAttribute('data-task-id') || '';
         const toBucket = to.getAttribute('data-bucket-name') as BucketName;
 
         let prevEl = item.previousElementSibling;
@@ -172,8 +172,8 @@ const setupSortables = () => {
           nextEl = nextEl.nextElementSibling;
         }
 
-        const prevTaskId = prevEl ? Number(prevEl.getAttribute('data-task-id')) : null;
-        const nextTaskId = nextEl ? Number(nextEl.getAttribute('data-task-id')) : null;
+        const prevTaskId = prevEl ? prevEl.getAttribute('data-task-id') : null;
+        const nextTaskId = nextEl ? nextEl.getAttribute('data-task-id') : null;
 
         emit('card-dropped', {
           taskId,

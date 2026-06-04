@@ -66,7 +66,7 @@ class Bucket(Base):
 class Task(Base):
     __tablename__ = "tasks"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[str] = mapped_column(String, primary_key=True)
     project_id: Mapped[str] = mapped_column(String, nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=False)
     bucket: Mapped[str] = mapped_column(String, nullable=False)

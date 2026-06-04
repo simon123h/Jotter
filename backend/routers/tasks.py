@@ -67,7 +67,7 @@ def get_tasks(
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
-def get_task(project_id: str, task_id: int):
+def get_task(project_id: str, task_id: str):
     task_data = read_task_file(task_id)
     if not task_data or task_data["project_id"] != project_id:
         raise HTTPException(
@@ -145,7 +145,7 @@ def create_task(project_id: str, task: TaskCreate):
 
 
 @router.put("/{task_id}", response_model=TaskResponse)
-def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
+def update_task(project_id: str, task_id: str, task_update: TaskUpdate):
     # Fetch existing task from Markdown
     existing = read_task_file(task_id)
     if not existing or existing["project_id"] != project_id:
@@ -247,7 +247,7 @@ def update_task(project_id: str, task_id: int, task_update: TaskUpdate):
 
 
 @router.patch("/{task_id}/move", response_model=TaskResponse)
-def move_task(project_id: str, task_id: int, task_move: TaskMove):
+def move_task(project_id: str, task_id: str, task_move: TaskMove):
     # Fetch existing task from Markdown
     existing = read_task_file(task_id)
     if not existing or existing["project_id"] != project_id:
@@ -323,7 +323,7 @@ def move_task(project_id: str, task_id: int, task_move: TaskMove):
 
 
 @router.delete("/{task_id}")
-def delete_task(project_id: str, task_id: int):
+def delete_task(project_id: str, task_id: str):
     # Verify task exists in the project
     existing = read_task_file(task_id)
     if not existing or existing["project_id"] != project_id:

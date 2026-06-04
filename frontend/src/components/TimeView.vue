@@ -14,7 +14,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'mark-done', task: Task): void;
-  (e: 'update-due-date', payload: { taskId: number; columnId: string }): void;
+  (e: 'update-due-date', payload: { taskId: string; columnId: string }): void;
 }>();
 
 export type TimeColumnId = 'noDate' | 'today' | 'tomorrow' | 'thisWeek' | 'thisMonth' | 'thisYear';
@@ -99,7 +99,7 @@ const initSortable = () => {
         // Skip if dropped back in the same column (just reordering within)
         if (from === to) return;
 
-        const taskId = Number(item.getAttribute('data-task-id'));
+        const taskId = item.getAttribute('data-task-id') || '';
         const columnId = to.getAttribute('data-column-id') as string;
 
         if (!taskId || !columnId) return;

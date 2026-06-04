@@ -16,7 +16,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
-  (e: 'card-dropped', payload: { taskId: number; toBucket: BucketName; prevTaskId: number | null; nextTaskId: number | null }): void;
+  (e: 'card-dropped', payload: { taskId: string; toBucket: BucketName; prevTaskId: string | null; nextTaskId: string | null }): void;
   (
     e: 'rename-column',
     payload: {

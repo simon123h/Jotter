@@ -56,7 +56,7 @@ class TaskMove(BaseModel):
 
 
 class TaskResponse(BaseModel):
-    id: int
+    id: str
     project_id: str
     title: str
     bucket: str

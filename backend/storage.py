@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import tempfile
+import time
 import unicodedata
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
@@ -13,6 +14,33 @@ import frontmatter
 from config import IS_PRODUCTION, get_data_dir
 from database import db_session
 from db_models import Bucket, Project, Task
+
+ENCODING = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+
+
+def encode_base32(value: int, length: int) -> str:
+    chars = []
+    for _ in range(length):
+        chars.append(ENCODING[value % 32])
+        value //= 32
+    return "".join(reversed(chars))
+
+
+def generate_ulid() -> str:
+    # 48-bit timestamp in milliseconds
+    timestamp = int(time.time() * 1000)
+    # 80-bit randomness (10 bytes)
+    random_bytes = os.urandom(10)
+
+    # Encode timestamp to 10 chars
+    ts_str = encode_base32(timestamp, 10)
+
+    # Encode random bytes (10 bytes = 80 bits = 16 base32 chars)
+    rand_val = int.from_bytes(random_bytes, byteorder="big")
+    rand_str = encode_base32(rand_val, 16)
+
+    return ts_str + rand_str
+
 
 logger = logging.getLogger("jotter.storage")
 
@@ -143,22 +171,42 @@ def slugify(value: str) -> str:
     return re.sub(r"[-\s]+", "-", value).strip("-_")
 
 
-def get_task_file_path(task_id: int) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+def get_task_file_path(task_id: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     """
     Finds the file path and project ID for a task ID by scanning directories.
-    Supports both 6-digit zero-padded prefixes and legacy numeric prefixes.
+    Supports both ULID ({task_id}.md) and legacy numeric prefixes ({padded}-* or {task_id}-*).
     Returns (absolute_file_path, filename, project_id) if found, else (None, None, None).
     """
-    prefix_padded = f"{task_id:06d}-"
-    prefix_legacy = f"{task_id}-"
+    ulid_filename = f"{task_id}.md"
+
+    try:
+        task_int = int(task_id)
+        prefix_padded = f"{task_int:06d}-"
+        prefix_legacy = f"{task_int}-"
+    except ValueError:
+        prefix_padded = None
+        prefix_legacy = None
+
     if not os.path.exists(TASKS_DIR):
         return None, None, None
 
     def search_in_dir(directory: str) -> Tuple[Optional[str], Optional[str]]:
+        # 1. Try direct file lookup first (for ULID/predictable name)
+        direct_path = os.path.join(directory, ulid_filename)
+        if os.path.exists(direct_path) and os.path.isfile(direct_path):
+            return direct_path, ulid_filename
+
+        # 2. Case-insensitive direct check
         for filename in os.listdir(directory):
-            if filename.endswith(".md"):
-                if filename.startswith(prefix_padded) or filename.startswith(prefix_legacy):
-                    return os.path.join(directory, filename), filename
+            if filename.lower() == ulid_filename.lower():
+                return os.path.join(directory, filename), filename
+
+        # 3. Fallback to legacy prefix check
+        if prefix_padded or prefix_legacy:
+            for filename in os.listdir(directory):
+                if filename.endswith(".md"):
+                    if filename.startswith(prefix_padded) or filename.startswith(prefix_legacy):
+                        return os.path.join(directory, filename), filename
         return None, None
 
     # Check root TASKS_DIR first (for testing/legacy)
@@ -177,34 +225,12 @@ def get_task_file_path(task_id: int) -> Tuple[Optional[str], Optional[str], Opti
     return None, None, None
 
 
-def generate_next_id() -> int:
-    """Finds the maximum task ID from all project files and returns max + 1 (starts at 1)."""
-    max_id = 0
-    if not os.path.exists(TASKS_DIR):
-        return max_id + 1
-
-    # Check flat root directory
-    for filename in os.listdir(TASKS_DIR):
-        filepath = os.path.join(TASKS_DIR, filename)
-        if os.path.isfile(filepath) and filename.endswith(".md"):
-            parts = filename.split("-", 1)
-            if parts[0].isdigit():
-                max_id = max(max_id, int(parts[0]))
-
-    # Check subdirectories
-    for item in os.listdir(TASKS_DIR):
-        project_dir = os.path.join(TASKS_DIR, item)
-        if os.path.isdir(project_dir) and not item.startswith("."):
-            for filename in os.listdir(project_dir):
-                if filename.endswith(".md"):
-                    parts = filename.split("-", 1)
-                    if parts[0].isdigit():
-                        max_id = max(max_id, int(parts[0]))
-
-    return max_id + 1
+def generate_next_id() -> str:
+    """Generates a new ULID string."""
+    return generate_ulid()
 
 
-def read_task_file(task_id: int) -> Optional[Dict[str, Any]]:
+def read_task_file(task_id: str) -> Optional[Dict[str, Any]]:
     """Reads a task file and returns a dictionary of its metadata and body."""
     file_path, _, project_id = get_task_file_path(task_id)
     if not file_path or not os.path.exists(file_path):
@@ -229,18 +255,17 @@ def read_task_file(task_id: int) -> Optional[Dict[str, Any]]:
     }
 
 
-def write_task_file(task_id: int, task_data: Dict[str, Any]) -> str:
+def write_task_file(task_id: str, task_data: Dict[str, Any]) -> str:
     """
     Writes a task file atomically using a temporary file.
-    If the title or project changes, deletes the old file.
+    If the project changes, deletes the old file.
     Returns the new filename.
     """
     project_id = task_data.get("project_id", "default")
     project_dir = os.path.join(TASKS_DIR, project_id)
     os.makedirs(project_dir, exist_ok=True)
 
-    slug = slugify(task_data["title"])
-    new_filename = f"{task_id:06d}-{slug}.md"
+    new_filename = f"{task_id}.md"
     new_filepath = os.path.join(project_dir, new_filename)
 
     old_filepath, old_filename, old_project_id = get_task_file_path(task_id)
@@ -283,7 +308,7 @@ def write_task_file(task_id: int, task_data: Dict[str, Any]) -> str:
     return new_filename
 
 
-def delete_task_file(task_id: int) -> bool:
+def delete_task_file(task_id: str) -> bool:
     """Deletes a task file. Returns True if deleted, False otherwise."""
     file_path, _, _ = get_task_file_path(task_id)
     if file_path and os.path.exists(file_path):
@@ -346,17 +371,26 @@ def sync_db_with_files() -> int:
             if os.path.exists(project_dir) and os.path.isdir(project_dir):
                 for filename in os.listdir(project_dir):
                     if filename.endswith(".md"):
-                        parts = filename.split("-", 1)
-                        if not parts[0].isdigit():
-                            continue
-                        task_id = int(parts[0])
+                        name_without_ext = filename[:-3]
+
+                        # Check if it matches a 26-char Base32 ULID
+                        is_ulid = bool(re.match(r"^[0-9A-HJKMNP-TV-Z]{26}$", name_without_ext, re.IGNORECASE))
+                        if is_ulid:
+                            task_id = name_without_ext.upper()
+                        else:
+                            # Try legacy numeric format: {digits}-{slug}
+                            parts = name_without_ext.split("-", 1)
+                            if parts[0].isdigit():
+                                task_id = str(int(parts[0]))
+                            else:
+                                continue
 
                         filepath = os.path.join(project_dir, filename)
                         try:
                             post = frontmatter.load(filepath)
                             metadata = post.metadata
 
-                            id_val = int(metadata.get("id", task_id))
+                            id_val = str(metadata.get("id", task_id))
                             title = metadata.get("title", filename[:-3])
                             bucket = metadata.get("bucket", "todo")
                             position = float(metadata.get("position", 1000.0))

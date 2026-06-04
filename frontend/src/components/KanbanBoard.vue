@@ -99,7 +99,7 @@ const toggleSidebar = () => {
 };
 
 // Modal state
-const selectedTaskId = ref<number | null>(route.params.taskId ? Number(route.params.taskId) : null);
+const selectedTaskId = ref<string | null>(route.params.taskId ? String(route.params.taskId) : null);
 const isDetailOpen = ref(!!route.params.taskId);
 const isCreateOpen = ref(false);
 const createDefaultBucket = ref<BucketName>('todo');
@@ -317,7 +317,7 @@ watch(
 
     // 3. Task ID Sync
     if (newTaskId) {
-      selectedTaskId.value = Number(newTaskId);
+      selectedTaskId.value = String(newTaskId);
       isDetailOpen.value = true;
     } else {
       isDetailOpen.value = false;
@@ -353,10 +353,10 @@ const handleCardDropped = async ({
   prevTaskId,
   nextTaskId,
 }: {
-  taskId: number;
+  taskId: string;
   toBucket: BucketName;
-  prevTaskId: number | null;
-  nextTaskId: number | null;
+  prevTaskId: string | null;
+  nextTaskId: string | null;
 }) => {
   // Calculate new position using sibling tasks
   let newPosition: number;
@@ -538,7 +538,7 @@ const triggerSync = async () => {
 };
 
 /** Compute a due-date string for a time-view column and persist it. */
-const handleTimeViewDueDateUpdate = async ({ taskId, columnId }: { taskId: number; columnId: string }) => {
+const handleTimeViewDueDateUpdate = async ({ taskId, columnId }: { taskId: string; columnId: string }) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

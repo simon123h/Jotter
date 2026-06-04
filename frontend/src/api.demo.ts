@@ -40,7 +40,7 @@ function seedDemoData() {
   const tasksMap: Record<string, Task[]> = {
     'demo-project': [
       {
-        id: 1,
+        id: '1',
         project_id: 'demo-project',
         title: 'Welcome to Jotter! 👋',
         bucket: 'todo',
@@ -53,7 +53,7 @@ function seedDemoData() {
         updated_at: now,
       },
       {
-        id: 2,
+        id: '2',
         project_id: 'demo-project',
         title: 'Try drag-and-drop 🚀',
         bucket: 'todo',
@@ -66,7 +66,7 @@ function seedDemoData() {
         updated_at: now,
       },
       {
-        id: 3,
+        id: '3',
         project_id: 'demo-project',
         title: 'Create a new column or project 🛠️',
         bucket: 'backlog',
@@ -78,7 +78,7 @@ function seedDemoData() {
         updated_at: now,
       },
       {
-        id: 4,
+        id: '4',
         project_id: 'demo-project',
         title: 'Explore done task auto-pruning 🧹',
         bucket: 'done',
@@ -238,7 +238,7 @@ export async function getTasks(projectId: string, bucket?: string, tag?: string,
   return [...list].sort((a, b) => a.position - b.position);
 }
 
-export async function getTask(projectId: string, id: number): Promise<Task> {
+export async function getTask(projectId: string, id: string): Promise<Task> {
   const list = getDemoTasksMap()[projectId] || [];
   const t = list.find((x) => x.id === id);
   if (t) return t;
@@ -252,12 +252,18 @@ export async function createTask(
   const tasksMap = getDemoTasksMap();
   const list = tasksMap[projectId] || [];
 
-  let maxId = 0;
-  Object.values(tasksMap).forEach((arr) => {
-    arr.forEach((t) => {
-      if (t.id > maxId) maxId = t.id;
-    });
-  });
+  const ENCODING = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  let ts = Date.now();
+  let tsStr = '';
+  for (let i = 0; i < 10; i++) {
+    tsStr = ENCODING[ts % 32] + tsStr;
+    ts = Math.floor(ts / 32);
+  }
+  let randStr = '';
+  for (let i = 0; i < 16; i++) {
+    randStr += ENCODING[Math.floor(Math.random() * 32)];
+  }
+  const newId = tsStr + randStr;
 
   const now = new Date().toISOString();
 
@@ -268,7 +274,7 @@ export async function createTask(
   }
 
   const newTask: Task = {
-    id: maxId + 1,
+    id: newId,
     project_id: projectId,
     title: task.title,
     bucket: task.bucket,
@@ -289,7 +295,7 @@ export async function createTask(
   return newTask;
 }
 
-export async function updateTask(projectId: string, id: number, task: Partial<Task>): Promise<Task> {
+export async function updateTask(projectId: string, id: string, task: Partial<Task>): Promise<Task> {
   const tasksMap = getDemoTasksMap();
   const list = tasksMap[projectId] || [];
   const idx = list.findIndex((t) => t.id === id);
@@ -308,7 +314,7 @@ export async function updateTask(projectId: string, id: number, task: Partial<Ta
   throw new Error('Task not found');
 }
 
-export async function moveTask(projectId: string, id: number, bucket: string, position: number): Promise<Task> {
+export async function moveTask(projectId: string, id: string, bucket: string, position: number): Promise<Task> {
   const tasksMap = getDemoTasksMap();
   const list = tasksMap[projectId] || [];
   const idx = list.findIndex((t) => t.id === id);
@@ -324,7 +330,7 @@ export async function moveTask(projectId: string, id: number, bucket: string, po
   throw new Error('Task not found');
 }
 
-export async function deleteTask(projectId: string, id: number): Promise<void> {
+export async function deleteTask(projectId: string, id: string): Promise<void> {
   const tasksMap = getDemoTasksMap();
   const list = tasksMap[projectId] || [];
   tasksMap[projectId] = list.filter((t) => t.id !== id);

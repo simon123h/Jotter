@@ -99,7 +99,8 @@ def test_crud_flow():
     response = client.post("/projects/default/tasks", json=task_payload)
     assert response.status_code == 201
     data = response.json()
-    assert data["id"] == 1
+    assert isinstance(data["id"], str)
+    assert len(data["id"]) == 26
     assert data["project_id"] == "default"
     assert data["title"] == "Test Task 1"
     assert data["bucket"] == "todo"
@@ -115,7 +116,7 @@ def test_crud_flow():
     assert list_data[0]["body"] == task_payload["body"]
 
     # Verify file was created in test default project directory
-    expected_filename = "000001-test-task-1.md"
+    expected_filename = f"{data['id']}.md"
     assert os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))
 
     # 3. Read specific task (should include body)
@@ -126,7 +127,7 @@ def test_crud_flow():
     assert task_detail["due_date"] == "2026-06-15"
     assert task_detail["priority"] == "high"
 
-    # 4. Update task (title change -> filename should change)
+    # 4. Update task (title change -> filename should NOT change anymore)
     update_payload = {
         "title": "Test Task 1 Updated",
         "body": "Updated markdown content",
@@ -148,10 +149,8 @@ def test_crud_flow():
     assert len(list_data_updated) == 1
     assert list_data_updated[0]["body"] == "Updated markdown content"
 
-    # Verify old file was deleted and new file was created
-    assert not os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))
-    new_expected_filename = "000001-test-task-1-updated.md"
-    assert os.path.exists(os.path.join(storage.TASKS_DIR, "default", new_expected_filename))
+    # Verify filename remains the same since slugs are not in the filename anymore
+    assert os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))
 
     # 5. Move task (change bucket and position)
     move_payload = {"bucket": "in-progress", "position": 500.0}
@@ -187,7 +186,7 @@ def test_crud_flow():
     # 7. Delete task
     response = client.delete(f"/projects/default/tasks/{data['id']}")
     assert response.status_code == 200
-    assert not os.path.exists(os.path.join(storage.TASKS_DIR, "default", new_expected_filename))
+    assert not os.path.exists(os.path.join(storage.TASKS_DIR, "default", expected_filename))
 
     # Check it's gone from database listing
     response = client.get("/projects/default/tasks")
@@ -422,7 +421,7 @@ def test_done_task_pruning():
     new_time = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
     new_post = frontmatter.Post(
         "I am safe",
-        id=100,
+        id="01H36K5EDKTSV4RRFFQ61S5JV0",
         project_id=project_id,
         title="Safe Task",
         bucket="done",
@@ -431,14 +430,14 @@ def test_done_task_pruning():
         created_at=new_time,
         updated_at=new_time,
     )
-    with open(os.path.join(project_dir, "000100-safe-task.md"), "w", encoding="utf-8") as f:
+    with open(os.path.join(project_dir, "01H36K5EDKTSV4RRFFQ61S5JV0.md"), "w", encoding="utf-8") as f:
         frontmatter.dump(new_post, f)
 
     # Old done task (updated 3 days ago)
     old_time = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat().replace("+00:00", "Z")
     old_post = frontmatter.Post(
         "I should be pruned",
-        id=101,
+        id="01H36K5EDKTSV4RRFFQ61S5JV1",
         project_id=project_id,
         title="Old Task",
         bucket="done",
@@ -447,13 +446,13 @@ def test_done_task_pruning():
         created_at=old_time,
         updated_at=old_time,
     )
-    with open(os.path.join(project_dir, "000101-old-task.md"), "w", encoding="utf-8") as f:
+    with open(os.path.join(project_dir, "01H36K5EDKTSV4RRFFQ61S5JV1.md"), "w", encoding="utf-8") as f:
         frontmatter.dump(old_post, f)
 
     # Old todo task (updated 3 days ago, should not be pruned because bucket is 'todo')
     todo_post = frontmatter.Post(
         "I should be safe because I am in todo",
-        id=102,
+        id="01H36K5EDKTSV4RRFFQ61S5JV2",
         project_id=project_id,
         title="Safe Todo Task",
         bucket="todo",
@@ -462,7 +461,7 @@ def test_done_task_pruning():
         created_at=old_time,
         updated_at=old_time,
     )
-    with open(os.path.join(project_dir, "000102-safe-todo-task.md"), "w", encoding="utf-8") as f:
+    with open(os.path.join(project_dir, "01H36K5EDKTSV4RRFFQ61S5JV2.md"), "w", encoding="utf-8") as f:
         frontmatter.dump(todo_post, f)
 
     # 3. Synchronize database (which triggers pruning)
@@ -470,17 +469,17 @@ def test_done_task_pruning():
     assert response.status_code == 200
 
     # 4. Verify results
-    # Safe Task (id 100) and Safe Todo Task (id 102) should still exist
-    assert os.path.exists(os.path.join(project_dir, "000100-safe-task.md"))
-    assert os.path.exists(os.path.join(project_dir, "000102-safe-todo-task.md"))
-    # Old Task (id 101) should have been deleted from disk
-    assert not os.path.exists(os.path.join(project_dir, "000101-old-task.md"))
+    # Safe Task and Safe Todo Task should still exist
+    assert os.path.exists(os.path.join(project_dir, "01H36K5EDKTSV4RRFFQ61S5JV0.md"))
+    assert os.path.exists(os.path.join(project_dir, "01H36K5EDKTSV4RRFFQ61S5JV2.md"))
+    # Old Task should have been deleted from disk
+    assert not os.path.exists(os.path.join(project_dir, "01H36K5EDKTSV4RRFFQ61S5JV1.md"))
 
-    # Verify database state (only 100 and 102 are present, 101 is not)
+    # Verify database state (only 01H36K5EDKTSV4RRFFQ61S5JV0 and 01H36K5EDKTSV4RRFFQ61S5JV2 are present)
     response = client.get(f"/projects/{project_id}/tasks")
     assert response.status_code == 200
     tasks = response.json()
     task_ids = {t["id"] for t in tasks}
-    assert 100 in task_ids
-    assert 102 in task_ids
-    assert 101 not in task_ids
+    assert "01H36K5EDKTSV4RRFFQ61S5JV0" in task_ids
+    assert "01H36K5EDKTSV4RRFFQ61S5JV2" in task_ids
+    assert "01H36K5EDKTSV4RRFFQ61S5JV1" not in task_ids

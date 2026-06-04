@@ -5,7 +5,7 @@ import type { Task } from '../../types';
 
 describe('TaskCard.vue', () => {
   const mockTask: Task = {
-    id: 123,
+    id: '123',
     project_id: 'default',
     title: 'Test Task Title',
     body: 'Test Task Body',
