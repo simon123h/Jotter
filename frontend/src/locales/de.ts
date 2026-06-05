@@ -16,7 +16,7 @@ export const de = {
     'desert-light': 'Desert Amber',
   },
   sync: {
-    button: 'Index synchronisieren',
+    button: 'Synchronisieren',
     syncing: 'Synchronisiere...',
     synced: 'Synchronisiert',
     tooltip: 'Datenbankindex aus Markdown-Dateien neu aufbauen',
