@@ -15,6 +15,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 
 	"jotter/backend/config"
 	"jotter/backend/db"
@@ -36,10 +37,11 @@ func getWailsLogLevel(level string) logger.LogLevel {
 	}
 }
 
-
-
 //go:embed all:frontend/dist
 var assets embed.FS
+
+//go:embed docs/assets/icon.png
+var icon []byte
 
 // App struct
 type App struct {
@@ -115,6 +117,9 @@ func main() {
 		OnStartup:        app.startup,
 		Bind: []interface{}{
 			app,
+		},
+		Linux: &linux.Options{
+			Icon: icon,
 		},
 	})
 
