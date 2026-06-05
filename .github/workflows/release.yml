@@ -83,7 +83,7 @@ jobs:
           fi
           cp README.md dist/
           cp LICENSE.md dist/
-          cp docs/assets/jotter.sample.yaml dist/jotter.yaml
+          cp docs/assets/jotter.sample.yaml dist/jotter.yaml.example
 
       - name: Package (Linux)
         if: matrix.platform == 'linux'

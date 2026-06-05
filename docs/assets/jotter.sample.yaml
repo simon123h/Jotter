@@ -11,8 +11,5 @@ port: 9000
 # Custom user data storage dir (where the markdown files and sqlite database will be stored)
 # data_dir: "~/Documents/my-jotter-data/
 
-# Do not open the browser upon application launch
-# no_browser: true
-
 # Custom the log level ("info", "warning", "error")
 # log_level: "warning"
