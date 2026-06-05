@@ -5,9 +5,15 @@ const routes = [
   {
     path: '/',
     redirect: () => {
-      const activeProj = localStorage.getItem('jotter-active-project-id') || 'default';
+      const activeProj = localStorage.getItem('jotter-active-project-id');
       const activeView = localStorage.getItem('jotter-view-mode') || 'board';
-      return `/projects/${activeProj}/${activeView}`;
+
+      if (activeProj) {
+        return `/projects/${activeProj}/${activeView}`;
+      }
+
+      // If no project is known, let the component handle selection after fetching
+      return `/projects/init/${activeView}`;
     },
   },
   {

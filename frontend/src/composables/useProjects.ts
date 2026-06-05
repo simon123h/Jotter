@@ -16,11 +16,15 @@ export function useProjects(activeProjectId: Ref<string>, onSelectProject: (id: 
   const fetchProjects = async () => {
     try {
       projects.value = await getProjects();
+
+      // If the current active project isn't in the list anymore (or never was)
       if (!projects.value.find((p) => p.id === activeProjectId.value)) {
         if (projects.value.length > 0) {
+          // Select the first available project
           onSelectProject(projects.value[0].id);
         } else {
-          onSelectProject('default');
+          // No projects exist at all. Set ID to empty to trigger "no project" UI states
+          onSelectProject('');
         }
       }
     } catch (err: any) {

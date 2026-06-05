@@ -116,6 +116,10 @@ const { searchQuery, taskFilters, hasActiveFilters, filteredTasks, applyFilters,
 
 // Fetch all tasks using getTasks
 const fetchAllTasks = async () => {
+  if (!activeProjectId.value || activeProjectId.value === '' || activeProjectId.value === 'init') {
+    tasks.value = [];
+    return;
+  }
   try {
     tasks.value = await getTasks(activeProjectId.value, { exclude_bucket: hideDoneColumn.value ? 'done' : undefined });
   } catch (err: any) {
