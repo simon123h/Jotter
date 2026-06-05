@@ -39,7 +39,7 @@ a = Analysis(
         'routers.system',
         'routers.tasks',
         'main',
-        'yoyo.backends.sqlite'
+        'yoyo.backends.core.sqlite3'
     ],
     hookspath=[],
     hooksconfig={},

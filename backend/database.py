@@ -1,7 +1,11 @@
 import os
 from contextlib import contextmanager
 
-import yoyo.backends.sqlite  # noqa: F401  # Explicit import for PyInstaller discovery
+try:
+    import yoyo.backends.core.sqlite3  # noqa: F401
+except ImportError:
+    pass
+
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -58,7 +62,17 @@ def run_migrations():
     """Applies database migrations using Yoyo."""
     db_uri = f"sqlite:///{DB_PATH}"
     migrations_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "migrations")
-    backend = get_backend(db_uri)
+
+    try:
+        backend = get_backend(db_uri)
+    except Exception:
+        # Fallback for PyInstaller bundles where yoyo entry_points are missing
+        from yoyo.backends.core.sqlite3 import SQLiteBackend
+        from yoyo.connections import parse_uri
+
+        backend = SQLiteBackend(parse_uri(db_uri), "_yoyo_migration")
+        backend.init_database()
+
     migrations = read_migrations(migrations_dir)
     try:
         with backend.lock():
