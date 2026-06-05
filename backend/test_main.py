@@ -483,3 +483,91 @@ def test_done_task_pruning():
     assert "01H36K5EDKTSV4RRFFQ61S5JV0" in task_ids
     assert "01H36K5EDKTSV4RRFFQ61S5JV2" in task_ids
     assert "01H36K5EDKTSV4RRFFQ61S5JV1" not in task_ids
+
+
+def test_tasks_filtering():
+    # 1. Create a project
+    response = client.post("/projects", json={"title": "Filter Test Project"})
+    assert response.status_code == 201
+    project_id = response.json()["id"]
+
+    # 2. Create tasks
+    task_a = {
+        "title": "Buy groceries",
+        "bucket": "todo",
+        "tags": ["home", "food"],
+        "body": "Apples, bananas, and milk",
+        "due_date": "2026-06-10",
+        "priority": "high",
+    }
+    task_b = {
+        "title": "Finish project tasks",
+        "bucket": "in-progress",
+        "tags": ["work", "code"],
+        "body": "Implement dynamic filtering",
+        "due_date": "2026-06-15",
+        "priority": "urgent",
+    }
+    task_c = {
+        "title": "Read a book",
+        "bucket": "backlog",
+        "tags": ["home", "reading"],
+        "body": "Sci-fi novel",
+        "due_date": None,
+        "priority": "low",
+    }
+
+    assert client.post(f"/projects/{project_id}/tasks", json=task_a).status_code == 201
+    assert client.post(f"/projects/{project_id}/tasks", json=task_b).status_code == 201
+    assert client.post(f"/projects/{project_id}/tasks", json=task_c).status_code == 201
+
+    # 3. Test Search
+    response = client.get(f"/projects/{project_id}/tasks?search=groceries")
+    assert len(response.json()) == 1
+    assert response.json()[0]["title"] == "Buy groceries"
+
+    response = client.get(f"/projects/{project_id}/tasks?search=dynamic")
+    assert len(response.json()) == 1
+    assert response.json()[0]["title"] == "Finish project tasks"
+
+    # 4. Test Buckets (Comma-separated)
+    response = client.get(f"/projects/{project_id}/tasks?buckets=todo,backlog")
+    assert len(response.json()) == 2
+    titles = {t["title"] for t in response.json()}
+    assert "Buy groceries" in titles
+    assert "Read a book" in titles
+
+    # 5. Test Priorities (Comma-separated)
+    response = client.get(f"/projects/{project_id}/tasks?priorities=high,urgent")
+    assert len(response.json()) == 2
+    titles = {t["title"] for t in response.json()}
+    assert "Buy groceries" in titles
+    assert "Finish project tasks" in titles
+
+    # 6. Test Tags & Tag Matching Modes
+    response = client.get(f"/projects/{project_id}/tasks?tags=home")
+    assert len(response.json()) == 2
+
+    response = client.get(f"/projects/{project_id}/tasks?tags=home,food&tag_mode=all")
+    assert len(response.json()) == 1
+    assert response.json()[0]["title"] == "Buy groceries"
+
+    response = client.get(f"/projects/{project_id}/tasks?tags=home,food&tag_mode=any")
+    assert len(response.json()) == 2
+
+    # 7. Test Due Dates Range
+    response = client.get(f"/projects/{project_id}/tasks?due_before=2026-06-12")
+    assert len(response.json()) == 1
+    assert response.json()[0]["title"] == "Buy groceries"
+
+    response = client.get(f"/projects/{project_id}/tasks?due_after=2026-06-12")
+    assert len(response.json()) == 1
+    assert response.json()[0]["title"] == "Finish project tasks"
+
+    # 8. Test Has Due Date flag
+    response = client.get(f"/projects/{project_id}/tasks?has_due_date=true")
+    assert len(response.json()) == 2
+
+    response = client.get(f"/projects/{project_id}/tasks?has_due_date=false")
+    assert len(response.json()) == 1
+    assert response.json()[0]["title"] == "Read a book"

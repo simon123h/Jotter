@@ -21,8 +21,16 @@ router = APIRouter(prefix="/projects/{project_id}/tasks", tags=["Tasks"])
 def get_tasks(
     project_id: str,
     bucket: Optional[str] = Query(None, description="Filter by bucket (column) name"),
+    buckets: Optional[str] = Query(None, description="Comma-separated list of bucket names to include"),
     tag: Optional[str] = Query(None, description="Filter by tag name"),
+    tags: Optional[str] = Query(None, description="Comma-separated list of tags to filter by"),
+    tag_mode: Optional[str] = Query("any", description="Tag matching mode: 'any' (default) or 'all'"),
     exclude_bucket: Optional[str] = Query(None, description="Exclude tasks from this bucket name"),
+    priorities: Optional[str] = Query(None, description="Comma-separated list of priorities (low, medium, high, urgent, none)"),
+    search: Optional[str] = Query(None, description="Case-insensitive search in task title and body"),
+    due_before: Optional[str] = Query(None, description="Filter tasks due on or before this date (YYYY-MM-DD)"),
+    due_after: Optional[str] = Query(None, description="Filter tasks due on or after this date (YYYY-MM-DD)"),
+    has_due_date: Optional[bool] = Query(None, description="Filter tasks that have a due date (True) or don't (False)"),
 ):
     with db_session() as session:
         # Verify project exists
@@ -35,17 +43,70 @@ def get_tasks(
 
         query = session.query(Task).filter(Task.project_id == project_id)
 
-        if bucket:
+        # 1. Bucket filtering
+        if buckets:
+            bucket_list = [b.strip() for b in buckets.split(",") if b.strip()]
+            if bucket_list:
+                query = query.filter(Task.bucket.in_(bucket_list))
+        elif bucket:
             query = query.filter(Task.bucket == bucket)
         elif exclude_bucket:
             query = query.filter(Task.bucket != exclude_bucket)
 
+        # 2. Priority filtering
+        if priorities:
+            priority_list = [p.strip().lower() for p in priorities.split(",") if p.strip()]
+            if priority_list:
+                conds = []
+                if "none" in priority_list:
+                    conds.append(Task.priority.is_(None))
+                    conds.append(Task.priority == "")
+                    priority_list = [p for p in priority_list if p != "none"]
+                if priority_list:
+                    conds.append(Task.priority.in_(priority_list))
+
+                from sqlalchemy import or_
+
+                query = query.filter(or_(*conds))
+
+        # 3. Search filtering
+        if search:
+            search_pattern = f"%{search}%"
+            from sqlalchemy import or_
+
+            query = query.filter(or_(Task.title.ilike(search_pattern), Task.body.ilike(search_pattern)))
+
+        # 4. Due Date filtering
+        if has_due_date is not None:
+            if has_due_date:
+                query = query.filter(Task.due_date.isnot(None)).filter(Task.due_date != "")
+            else:
+                from sqlalchemy import or_
+
+                query = query.filter(or_(Task.due_date.is_(None), Task.due_date == ""))
+
+        if due_before:
+            query = query.filter(Task.due_date.isnot(None)).filter(Task.due_date != "").filter(Task.due_date <= due_before)
+
+        if due_after:
+            query = query.filter(Task.due_date.isnot(None)).filter(Task.due_date != "").filter(Task.due_date >= due_after)
+
         query = query.order_by(Task.position.asc())
         tasks = query.all()
 
-        if tag:
-            # Filter by tag case-insensitively in Python for full compatibility
-            tasks = [t for t in tasks if any(tg.lower() == tag.lower() for tg in t.tags)]
+        # 5. Tag filtering
+        filter_tags = []
+        if tags:
+            filter_tags = [t.strip().lower() for t in tags.split(",") if t.strip()]
+        elif tag:
+            filter_tags = [tag.strip().lower()]
+
+        if filter_tags:
+            mode = tag_mode.strip().lower() if tag_mode else "any"
+            if mode == "all":
+                tasks = [t for t in tasks if all(any(tg.lower() == ft for tg in t.tags) for ft in filter_tags)]
+            else:
+                tasks = [t for t in tasks if any(any(tg.lower() == ft for tg in t.tags) for ft in filter_tags)]
 
         return [
             TaskResponse(
