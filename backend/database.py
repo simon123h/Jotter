@@ -6,6 +6,8 @@ try:
 except ImportError:
     pass
 
+import sys
+
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -60,8 +62,23 @@ def dispose_engine():
 
 def run_migrations():
     """Applies database migrations using Yoyo."""
+    import logging
+
+    logger = logging.getLogger("jotter.database")
     db_uri = f"sqlite:///{DB_PATH}"
-    migrations_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "migrations")
+
+    if IS_PRODUCTION and hasattr(sys, "_MEIPASS"):
+        # In PyInstaller bundle, use sys._MEIPASS to find bundled migrations
+        # Based on jotter.spec, they are in backend/migrations
+        migrations_dir = os.path.join(sys._MEIPASS, "backend", "migrations")
+    else:
+        migrations_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "migrations")
+
+    logger.info(f"Using migrations directory: {migrations_dir}")
+
+    if not os.path.exists(migrations_dir):
+        logger.error(f"Migrations directory not found: {migrations_dir}")
+        return
 
     try:
         backend = get_backend(db_uri)
@@ -74,6 +91,10 @@ def run_migrations():
         backend.init_database()
 
     migrations = read_migrations(migrations_dir)
+    if not migrations:
+        logger.warning(f"No migrations found in {migrations_dir}")
+        return
+
     try:
         with backend.lock():
             backend.apply_migrations(backend.to_apply(migrations))
