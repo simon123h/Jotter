@@ -89,7 +89,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           cd dist
-          tar -czf jotter-${{ github.ref_name }}-linux.tar.gz jotter-server jotter-desktop README.md LICENSE.md jotter.yaml
+          tar -czf jotter-${{ github.ref_name }}-linux.tar.gz jotter-server jotter-desktop README.md LICENSE.md jotter.yaml.example
 
       - name: Package (macOS)
         if: matrix.platform == 'macos'
@@ -97,13 +97,13 @@ jobs:
           cd build/bin
           # For macOS, we zip the .app bundle and the CLI binary separately or together. 
           # Convention is usually to have the CLI inside or alongside.
-          zip -r ../../dist/jotter-${{ github.ref_name }}-macos.zip jotter-desktop.app jotter-server
+          zip -r ../../dist/jotter-${{ github.ref_name }}-macos.zip jotter-desktop.app jotter-server README.md LICENSE.md jotter.yaml.example
 
       - name: Package (Windows)
         if: matrix.platform == 'windows'
         run: |
           cd dist
-          Compress-Archive -Path jotter-server.exe, jotter-desktop.exe, README.md, LICENSE.md, jotter.yaml -DestinationPath jotter-${{ github.ref_name }}-windows.zip
+          Compress-Archive -Path jotter-server.exe, jotter-desktop.exe, README.md, LICENSE.md, jotter.yaml.example -DestinationPath jotter-${{ github.ref_name }}-windows.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
