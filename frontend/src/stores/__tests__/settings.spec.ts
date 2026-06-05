@@ -10,7 +10,7 @@ describe('Settings Store', () => {
 
   it('initializes with default values', () => {
     const store = useSettingsStore();
-    expect(store.hideDoneColumn).toBe(false);
+    expect(store.hideDoneColumn).toBe(true);
     expect(store.isSidebarOpen).toBe(true);
     expect(store.currentTheme).toBe('nordic-light');
     expect(store.viewMode).toBe('board');
@@ -22,9 +22,10 @@ describe('Settings Store', () => {
 
   it('can toggle hideDoneColumn', () => {
     const store = useSettingsStore();
-    store.toggleHideDoneColumn();
     expect(store.hideDoneColumn).toBe(true);
-    expect(localStorage.getItem('jotter-hide-done-column')).toBe('true');
+    store.toggleHideDoneColumn();
+    expect(store.hideDoneColumn).toBe(false);
+    expect(localStorage.getItem('jotter-hide-done-column')).toBe('false');
   });
 
   it('can pin and unpin projects', () => {

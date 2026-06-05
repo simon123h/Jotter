@@ -40,6 +40,7 @@ export interface TaskFilterParams {
   tags?: string; // Comma-separated list of tags
   tag_mode?: 'any' | 'all';
   exclude_bucket?: string;
+  show_done?: boolean;
   priorities?: string; // Comma-separated list of priorities (low, medium, high, urgent, none)
   search?: string;
   due_before?: string; // YYYY-MM-DD

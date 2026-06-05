@@ -66,6 +66,7 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
       priorities: (q.priorities as string) || undefined,
       tags: (q.tags as string) || undefined,
       tag_mode: (q.tag_mode as 'any' | 'all') || undefined,
+      show_done: q.show_done === 'true' ? true : undefined,
       has_due_date,
       due_after: (q.due_after as string) || undefined,
       due_before: (q.due_before as string) || undefined,
@@ -111,6 +112,9 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
 
       if (newFilters.tag_mode) query.tag_mode = newFilters.tag_mode;
       else delete query.tag_mode;
+
+      if (newFilters.show_done) query.show_done = 'true';
+      else delete query.show_done;
 
       if (newFilters.has_due_date !== undefined && newFilters.has_due_date !== null) {
         query.has_due_date = String(newFilters.has_due_date);

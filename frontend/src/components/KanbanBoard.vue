@@ -56,10 +56,6 @@ const { hideDoneColumn, isSidebarOpen, currentTheme, viewMode, activeProjectId }
 const tasks = ref<Task[]>([]);
 const buckets = ref<Bucket[]>([]);
 
-watch(hideDoneColumn, () => {
-  fetchAllTasks();
-});
-
 const displayedBuckets = computed(() => {
   if (hideDoneColumn.value) {
     return buckets.value.filter((b) => b.name !== 'done');
@@ -76,6 +72,26 @@ const error = ref<string | null>(null);
 // Filter state & logic
 const isFilterModalOpen = ref(false);
 const { searchQuery, taskFilters, hasActiveFilters, filteredTasks, applyFilters, clearFilters } = useTaskFilters(tasks);
+
+// Sync taskFilters.show_done and hideDoneColumn
+watch(
+  () => taskFilters.value.show_done,
+  (newVal) => {
+    const shouldHide = !newVal;
+    if (hideDoneColumn.value !== shouldHide) {
+      hideDoneColumn.value = shouldHide;
+    }
+  },
+  { immediate: true }
+);
+
+watch(hideDoneColumn, (newVal) => {
+  const showDoneTarget = newVal ? undefined : true;
+  if (taskFilters.value.show_done !== showDoneTarget) {
+    taskFilters.value.show_done = showDoneTarget;
+  }
+  fetchAllTasks();
+});
 
 const setViewMode = (mode: ViewMode) => {
   settingsStore.setViewMode(mode);
