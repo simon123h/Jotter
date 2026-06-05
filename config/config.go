@@ -10,10 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	IsProduction = false // Set to true for compiled releases
-)
-
 type UserConfig struct {
 	DataDir  string `yaml:"data_dir" json:"data_dir"`
 	Host     string `yaml:"host" json:"host"`
@@ -22,15 +18,6 @@ type UserConfig struct {
 }
 
 var cachedConfig *UserConfig
-
-func init() {
-	// Simple auto-detection: check if running from a tmp directory or if some production indicators are met
-	if exePath, err := os.Executable(); err == nil {
-		if strings.Contains(exePath, "AppImage") || strings.Contains(exePath, "tmp") {
-			IsProduction = true
-		}
-	}
-}
 
 func GetConfig(configPathFlag string) *UserConfig {
 	if cachedConfig != nil {
@@ -114,14 +101,9 @@ func GetDataDir(configPathFlag string, cliDataDir string) string {
 		return cfg.DataDir
 	}
 
-	// 4. Default
+	// 4. Default: always default to "tasks" folder in the current working directory ($CWD/tasks)
 	cwd, _ := os.Getwd()
-	if IsProduction {
-		return filepath.Join(cwd, "tasks")
-	}
-	// Dev mode default (parent of backend folder)
-	exe, _ := os.Executable()
-	return filepath.Clean(filepath.Join(filepath.Dir(exe), "..", "tasks"))
+	return filepath.Join(cwd, "tasks")
 }
 
 func GetDBPath(configPathFlag string, cliDataDir string) string {
@@ -139,8 +121,10 @@ func GetLogLevel(configPathFlag string) string {
 		return strings.ToUpper(cfg.LogLevel)
 	}
 
-	if IsProduction {
-		return "WARNING"
+	// Default: INFO in local development (if go.mod is present in CWD), WARNING in production
+	cwd, _ := os.Getwd()
+	if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err == nil {
+		return "INFO"
 	}
-	return "INFO"
+	return "WARNING"
 }
