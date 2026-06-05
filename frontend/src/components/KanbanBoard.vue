@@ -3,27 +3,13 @@ import { ref, onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore, type ViewMode } from '../stores/settings';
-import type { Task, Bucket, BucketName, Project, TaskFilterParams } from '../types';
-import {
-  getTasks,
-  moveTask,
-  updateTask,
-  syncSystem,
-  getBuckets,
-  createBucket,
-  updateBucket,
-  deleteBucket,
-  getProjects,
-  createProject,
-  updateProject,
-  deleteProject,
-} from '../api';
+import type { Task, BucketName, TaskFilterParams } from '../types';
+import { getTasks, syncSystem } from '../api';
 import TaskDetailModal from './TaskDetailModal.vue';
 import TaskCreateModal from './TaskCreateModal.vue';
 import ProjectEditModal from './ProjectEditModal.vue';
 import FilterModal from './FilterModal.vue';
 import NavigationBar from './NavigationBar.vue';
-import { useTaskFilters } from '../composables/useTaskFilters';
 import BoardView from './BoardView.vue';
 import ListView from './ListView.vue';
 import MatrixView from './MatrixView.vue';
@@ -34,6 +20,10 @@ import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { X, ClipboardList } from '@lucide/vue';
+import { useTaskFilters } from '../composables/useTaskFilters';
+import { useProjects } from '../composables/useProjects';
+import { useBuckets } from '../composables/useBuckets';
+import { useTaskMutations } from '../composables/useTaskMutations';
 
 const { t } = useI18n();
 const { showDialog, isOpen: dialogIsOpen } = useDialog();
@@ -54,24 +44,107 @@ if (route.params.viewMode) {
 const { hideDoneColumn, isSidebarOpen, currentTheme, viewMode, activeProjectId } = storeToRefs(settingsStore);
 
 const tasks = ref<Task[]>([]);
-const buckets = ref<Bucket[]>([]);
-
-const displayedBuckets = computed(() => {
-  if (hideDoneColumn.value) {
-    return buckets.value.filter((b) => b.name !== 'done');
-  }
-  return buckets.value;
-});
-const projects = ref<Project[]>([]);
-
 const loading = ref(false);
 const syncLoading = ref(false);
 const syncSuccess = ref(false);
-const error = ref<string | null>(null);
+const localError = ref<string | null>(null);
+
+// Routing & View Mode
+const selectProject = (projectId: string) => {
+  const targetMode = viewMode.value === 'settings' ? 'board' : viewMode.value;
+  router.push({
+    name: 'project-view',
+    params: { projectId, viewMode: targetMode },
+  });
+};
+
+const setViewMode = (mode: ViewMode) => {
+  settingsStore.setViewMode(mode);
+  router.push({
+    name: 'project-view',
+    params: { projectId: activeProjectId.value, viewMode: mode },
+    query: route.query,
+  });
+};
+
+const toggleSidebar = () => {
+  settingsStore.toggleSidebar();
+};
+
+const setTheme = (theme: string) => {
+  settingsStore.setTheme(theme);
+  const docClasses = document.documentElement.classList;
+  // Remove existing themes
+  docClasses.forEach((c) => {
+    if (c.startsWith('theme-')) {
+      docClasses.remove(c);
+    }
+  });
+  if (theme !== 'nordic-light') {
+    docClasses.add('theme-' + theme);
+  }
+};
+
+// Composable: Projects Management
+const {
+  projects,
+  editingProject,
+  isProjectEditModalOpen,
+  error: projectsError,
+  fetchProjects,
+  handleCreateProject,
+  handleEditProject,
+  handleSaveProject,
+  handleDeleteProject,
+} = useProjects(activeProjectId, selectProject);
+
+// Composable: Buckets/Columns Management
+const {
+  buckets,
+  displayedBuckets,
+  error: bucketsError,
+  fetchBuckets,
+  handleCreateColumn,
+  handleRenameColumn,
+  handleDeleteColumn,
+  handleColumnReordered,
+} = useBuckets(activeProjectId, hideDoneColumn);
 
 // Filter state & logic
 const isFilterModalOpen = ref(false);
 const { searchQuery, taskFilters, hasActiveFilters, filteredTasks, applyFilters, clearFilters } = useTaskFilters(tasks);
+
+// Fetch all tasks using getTasks
+const fetchAllTasks = async () => {
+  try {
+    tasks.value = await getTasks(activeProjectId.value, { exclude_bucket: hideDoneColumn.value ? 'done' : undefined });
+  } catch (err: any) {
+    localError.value = t('errors.fetchTasks', { message: err.message || err });
+  }
+};
+
+// Composable: Tasks Mutations
+const {
+  error: taskMutationError,
+  handleCardDropped,
+  handleMarkTaskDone,
+  handleTimeViewDueDateUpdate,
+} = useTaskMutations(tasks, activeProjectId, fetchBuckets, fetchAllTasks);
+
+// Synchronized computed error across all composables and local errors
+const error = computed({
+  get() {
+    return localError.value || projectsError.value || bucketsError.value || taskMutationError.value;
+  },
+  set(val) {
+    localError.value = val;
+    if (!val) {
+      projectsError.value = null;
+      bucketsError.value = null;
+      taskMutationError.value = null;
+    }
+  },
+});
 
 // Sync taskFilters.show_done and hideDoneColumn
 watch(
@@ -93,40 +166,11 @@ watch(hideDoneColumn, (newVal) => {
   fetchAllTasks();
 });
 
-const setViewMode = (mode: ViewMode) => {
-  settingsStore.setViewMode(mode);
-  router.push({
-    name: 'project-view',
-    params: { projectId: activeProjectId.value, viewMode: mode },
-    query: route.query,
-  });
-};
-
-const toggleSidebar = () => {
-  settingsStore.toggleSidebar();
-};
-
 // Modal state
 const selectedTaskId = ref<string | null>(route.params.taskId ? String(route.params.taskId) : null);
 const isDetailOpen = ref(!!route.params.taskId);
 const isCreateOpen = ref(false);
 const createDefaultBucket = ref<BucketName>('todo');
-const isProjectEditModalOpen = ref(false);
-const editingProject = ref<Project | null>(null);
-
-const setTheme = (theme: string) => {
-  settingsStore.setTheme(theme);
-  const docClasses = document.documentElement.classList;
-  // Remove existing themes
-  docClasses.forEach((c) => {
-    if (c.startsWith('theme-')) {
-      docClasses.remove(c);
-    }
-  });
-  if (theme !== 'nordic-light') {
-    docClasses.add('theme-' + theme);
-  }
-};
 
 // Update document title dynamically based on active project
 watchEffect(() => {
@@ -138,100 +182,14 @@ watchEffect(() => {
   }
 });
 
-// Projects management
-const fetchProjects = async () => {
-  try {
-    projects.value = await getProjects();
-    // Fallback if active project no longer exists
-    if (!projects.value.find((p) => p.id === activeProjectId.value)) {
-      if (projects.value.length > 0) {
-        selectProject(projects.value[0].id);
-      } else {
-        selectProject('default');
-      }
-    }
-  } catch (err: any) {
-    error.value = err.message || 'Failed to fetch projects';
-  }
-};
-
-const selectProject = (projectId: string) => {
-  const targetMode = viewMode.value === 'settings' ? 'board' : viewMode.value;
-  router.push({
-    name: 'project-view',
-    params: { projectId, viewMode: targetMode },
-  });
-};
-
-const handleCreateProject = async (title: string) => {
-  try {
-    const created = await createProject(title);
-    await fetchProjects();
-    selectProject(created.id);
-  } catch (err: any) {
-    error.value = err.message || 'Failed to create project';
-  }
-};
-
-const handleEditProject = (project: Project) => {
-  editingProject.value = project;
-  isProjectEditModalOpen.value = true;
-};
-
-const handleSaveProject = async ({ id, title, done_clean_period }: { id: string; title: string; done_clean_period: number | null }) => {
-  try {
-    await updateProject(id, { title, done_clean_period });
-    await fetchProjects();
-  } catch (err: any) {
-    error.value = err.message || 'Failed to update project';
-  }
-};
-
-const handleDeleteProject = async (project: Project | null) => {
-  if (!project) return;
-  const confirmed = await showDialog({
-    title: t('buttons.delete'),
-    message: t('projects.deleteProjectConfirm', { title: project.title }),
-    type: 'warning',
-    showCancel: true,
-    confirmText: t('buttons.delete'),
-    cancelText: t('buttons.cancel'),
-  });
-  if (!confirmed) return;
-
-  try {
-    await deleteProject(project.id);
-    isProjectEditModalOpen.value = false;
-    await fetchProjects();
-  } catch (err: any) {
-    error.value = err.message || 'Failed to delete project';
-  }
-};
-
-const fetchBuckets = async () => {
-  try {
-    buckets.value = await getBuckets(activeProjectId.value);
-  } catch (err: any) {
-    error.value = err.message || 'Failed to fetch columns';
-  }
-};
-
-const fetchAllTasks = async () => {
-  try {
-    tasks.value = await getTasks(activeProjectId.value, { exclude_bucket: hideDoneColumn.value ? 'done' : undefined });
-  } catch (err: any) {
-    error.value = t('errors.fetchTasks', { message: err.message || err });
-  }
-};
-
 const fetchAllData = async () => {
   loading.value = true;
-  error.value = null;
+  localError.value = null;
   try {
     await fetchBuckets();
     await fetchAllTasks();
   } catch (err: any) {
-    error.value = t('errors.fetchData', { message: err.message || err });
+    localError.value = t('errors.fetchData', { message: err.message || err });
   } finally {
     loading.value = false;
   }
@@ -300,7 +258,7 @@ watch(
     // 1. Project ID Sync
     if (newProjectId && newProjectId !== activeProjectId.value) {
       activeProjectId.value = newProjectId as string;
-      error.value = null;
+      localError.value = null;
       clearFilters();
       await fetchAllData();
     }
@@ -342,175 +300,15 @@ useKeyboardShortcuts([
   },
 ]);
 
-const handleCardDropped = async ({
-  taskId,
-  toBucket,
-  prevTaskId,
-  nextTaskId,
-}: {
-  taskId: string;
-  toBucket: BucketName;
-  prevTaskId: string | null;
-  nextTaskId: string | null;
-}) => {
-  // Calculate new position using sibling tasks
-  let newPosition: number;
-
-  if (prevTaskId === null && nextTaskId === null) {
-    const targetBucketTasks = tasks.value.filter((t) => t.bucket === toBucket).sort((a, b) => a.position - b.position);
-    const otherTasks = targetBucketTasks.filter((t) => t.id !== taskId);
-    if (otherTasks.length === 0) {
-      newPosition = 1000.0;
-    } else {
-      newPosition = otherTasks[otherTasks.length - 1].position + 1000.0;
-    }
-  } else if (prevTaskId === null) {
-    const nextTask = tasks.value.find((t) => t.id === nextTaskId);
-    newPosition = nextTask ? nextTask.position - 1000.0 : 1000.0;
-  } else if (nextTaskId === null) {
-    const prevTask = tasks.value.find((t) => t.id === prevTaskId);
-    newPosition = prevTask ? prevTask.position + 1000.0 : 1000.0;
-  } else {
-    const prevTask = tasks.value.find((t) => t.id === prevTaskId);
-    const nextTask = tasks.value.find((t) => t.id === nextTaskId);
-    if (prevTask && nextTask) {
-      newPosition = (prevTask.position + nextTask.position) / 2.0;
-    } else if (prevTask) {
-      newPosition = prevTask.position + 1000.0;
-    } else if (nextTask) {
-      newPosition = nextTask.position - 1000.0;
-    } else {
-      newPosition = 1000.0;
-    }
-  }
-
-  // Optimistic UI updates: update local state immediately
-  const movedTask = tasks.value.find((t) => t.id === taskId);
-  if (movedTask) {
-    const originalBucket = movedTask.bucket;
-    const originalPosition = movedTask.position;
-
-    movedTask.bucket = toBucket;
-    movedTask.position = newPosition;
-
-    try {
-      await moveTask(activeProjectId.value, taskId, toBucket, newPosition);
-    } catch {
-      // Revert if API call fails
-      movedTask.bucket = originalBucket;
-      movedTask.position = originalPosition;
-      error.value = t('errors.moveTask');
-    }
-  }
-};
-
-const handleCreateColumn = async (title: string, subtitle: string) => {
-  try {
-    await createBucket(activeProjectId.value, title, subtitle);
-    await fetchBuckets();
-  } catch (err: any) {
-    error.value = err.message || 'Failed to create column';
-  }
-};
-
-const handleRenameColumn = async ({
-  bucketName,
-  newTitle,
-  newSubtitle,
-  newColor,
-  newLayout,
-  newMaxTasks,
-  newIsDefault,
-}: {
-  bucketName: string;
-  newTitle: string;
-  newSubtitle: string;
-  newColor?: string | null;
-  newLayout?: 'list' | 'grid-2' | 'grid-3';
-  newMaxTasks?: number | null;
-  newIsDefault?: boolean;
-}) => {
-  if (!newTitle.trim()) return;
-  try {
-    await updateBucket(activeProjectId.value, bucketName, {
-      title: newTitle.trim(),
-      subtitle: newSubtitle,
-      color: newColor,
-      layout: newLayout,
-      max_tasks: newMaxTasks,
-      is_default: newIsDefault,
-    });
-    await fetchBuckets();
-  } catch (err: any) {
-    error.value = err.message || 'Failed to rename column';
-  }
-};
-
-const handleMarkTaskDone = async (task: Task) => {
-  try {
-    const targetBucketTasks = tasks.value.filter((t) => t.bucket === 'done').sort((a, b) => a.position - b.position);
-    const newPosition = targetBucketTasks.length > 0 ? targetBucketTasks[targetBucketTasks.length - 1].position + 1000.0 : 1000.0;
-
-    await moveTask(activeProjectId.value, task.id, 'done', newPosition);
-    await fetchBuckets();
-    await fetchAllTasks();
-  } catch (err: any) {
-    error.value = err.message || 'Failed to mark task as done';
-  }
-};
-
 const handleDetailMarkTaskDone = async (task: Task) => {
   await handleMarkTaskDone(task);
   closeDetailModal();
 };
 
-const handleDeleteColumn = async (bucketName: string) => {
-  try {
-    await deleteBucket(activeProjectId.value, bucketName);
-    await fetchBuckets();
-  } catch (err: any) {
-    error.value = err.message || 'Failed to delete column';
-  }
-};
-
-const handleColumnReordered = async ({ oldIndex, newIndex }: { oldIndex: number; newIndex: number }) => {
-  const visibleCols = [...displayedBuckets.value];
-  if (oldIndex < 0 || oldIndex >= visibleCols.length || newIndex < 0 || newIndex >= visibleCols.length) return;
-  if (oldIndex === newIndex) return;
-
-  const [draggedCol] = visibleCols.splice(oldIndex, 1);
-  visibleCols.splice(newIndex, 0, draggedCol);
-
-  let newPosition: number;
-  if (newIndex === 0) {
-    newPosition = visibleCols[1].position - 1000.0;
-  } else if (newIndex === visibleCols.length - 1) {
-    newPosition = visibleCols[visibleCols.length - 2].position + 1000.0;
-  } else {
-    const prevCol = visibleCols[newIndex - 1];
-    const nextCol = visibleCols[newIndex + 1];
-    newPosition = (prevCol.position + nextCol.position) / 2.0;
-  }
-
-  // Optimistic local update
-  const originalPosition = draggedCol.position;
-  draggedCol.position = newPosition;
-  buckets.value.sort((a, b) => a.position - b.position);
-
-  try {
-    await updateBucket(activeProjectId.value, draggedCol.name, { position: newPosition });
-  } catch {
-    error.value = 'Failed to reorder columns. Reverting changes.';
-    draggedCol.position = originalPosition;
-    buckets.value.sort((a, b) => a.position - b.position);
-    await fetchBuckets();
-  }
-};
-
 const triggerSync = async () => {
   syncLoading.value = true;
   syncSuccess.value = false;
-  error.value = null;
+  localError.value = null;
   try {
     await syncSystem();
     syncSuccess.value = true;
@@ -521,7 +319,7 @@ const triggerSync = async () => {
     await fetchAllData();
   } catch (err: any) {
     const msg = err.message || err;
-    error.value = t('sync.error', { message: msg });
+    localError.value = t('sync.error', { message: msg });
     await showDialog({
       title: t('sync.button'),
       message: t('sync.error', { message: msg }),
@@ -530,72 +328,6 @@ const triggerSync = async () => {
   } finally {
     syncLoading.value = false;
   }
-};
-
-/** Compute a due-date string for a time-view column and persist it. */
-const handleTimeViewDueDateUpdate = async ({ taskId, columnId }: { taskId: string; columnId: string }) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  let newDueDate: string | null;
-
-  switch (columnId) {
-    case 'today':
-      newDueDate = formatDateISO(today);
-      break;
-    case 'tomorrow': {
-      const d = new Date(today);
-      d.setDate(d.getDate() + 1);
-      newDueDate = formatDateISO(d);
-      break;
-    }
-    case 'thisWeek': {
-      // End of current ISO week (Sunday)
-      const d = new Date(today);
-      const dayOfWeek = d.getDay(); // 0=Sun
-      const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
-      d.setDate(d.getDate() + daysUntilSunday);
-      newDueDate = formatDateISO(d);
-      break;
-    }
-    case 'thisMonth': {
-      const d = new Date(today);
-      d.setDate(d.getDate() + 30);
-      newDueDate = formatDateISO(d);
-      break;
-    }
-    case 'thisYear': {
-      const d = new Date(today.getFullYear(), 11, 31); // Dec 31
-      newDueDate = formatDateISO(d);
-      break;
-    }
-    case 'noDate':
-    default:
-      newDueDate = null;
-      break;
-  }
-
-  // Optimistic local update
-  const task = tasks.value.find((t) => t.id === taskId);
-  if (!task) return;
-
-  const originalDueDate = task.due_date;
-  task.due_date = newDueDate ?? undefined;
-
-  try {
-    await updateTask(activeProjectId.value, taskId, { due_date: newDueDate as any });
-  } catch (err: any) {
-    // Revert on failure
-    task.due_date = originalDueDate;
-    error.value = err.message || 'Failed to update due date';
-  }
-};
-
-const formatDateISO = (d: Date): string => {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 };
 </script>
 
