@@ -1,9 +1,13 @@
 # Jotter
 
-[![CI Pipeline](https://github.com/simon123h/jotter/actions/workflows/ci.yml/badge.svg)](https://github.com/simon123h/jotter/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/simon123h/jotter/graph/badge.svg?token=ZLMIMRRLEF)](https://codecov.io/gh/simon123h/jotter)
-[![Latest Release](https://img.shields.io/github/v/release/simon123h/jotter)](https://github.com/simon123h/jotter/releases)
-[![Go Version](https://img.shields.io/badge/go-1.25.0-blue.svg)](https://go.dev/)
+<p align="center">
+  <img src="https://img.shields.io/github/actions/workflow/status/simon123h/jotter/ci.yml?branch=main&style=flat-square&label=build" alt="Build Status">
+  <img src="https://img.shields.io/codecov/c/github/simon123h/jotter?style=flat-square&logo=codecov&label=coverage" alt="Coverage">
+  <img src="https://img.shields.io/github/go-mod/go-version/simon123h/jotter?style=flat-square&logo=go&logoColor=white&color=00ADD8" alt="Go Version">
+  <img src="https://img.shields.io/badge/Vue.js-3.5+-4FC08D?style=flat-square&logo=vue.js&logoColor=white" alt="Vue Version">
+  <img src="https://img.shields.io/github/v/release/simon123h/jotter?style=flat-square&color=orange" alt="Latest Release">
+  <img src="https://img.shields.io/github/license/simon123h/jotter?style=flat-square&color=blue" alt="License">
+</p>
 
 🚀 **Try the Online Demo**: [simon123h.github.io/Jotter](https://simon123h.github.io/Jotter/)
 
@@ -31,7 +35,7 @@ Jotter is provided as a portable tool with two distinct versions. No dependencie
 1. Download the package for your operating system from the [Latest Releases](https://github.com/simon123h/jotter/releases).
 2. Extract the archive.
 3. Choose your preferred way to run Jotter:
-   - **Standalone Desktop App (Recommended)**: Double-click `jotter-desktop` (or `.exe` on Windows). This opens Jotter in its own dedicated window.
+   - **Standalone Desktop App**: Double-click `jotter-desktop` (or `.exe` on Windows). This opens Jotter in its own dedicated window.
    - **Headless Server**: Run `jotter-server` from your terminal. This starts a web server (default: `http://localhost:8000`) that you can access with your preferred browser.
 
    **Example (Linux / macOS terminal):**
