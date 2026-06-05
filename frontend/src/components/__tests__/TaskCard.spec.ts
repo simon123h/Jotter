@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import TaskCard from '../TaskCard.vue';
+import TaskCard from '../ui/TaskCard.vue';
 import type { Task } from '../../types';
 
 describe('TaskCard.vue', () => {

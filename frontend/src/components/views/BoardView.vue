@@ -2,9 +2,9 @@
 import { ref, onMounted } from 'vue';
 import { Plus } from '@lucide/vue';
 import Sortable from 'sortablejs';
-import type { Task, Bucket, BucketName } from '../types';
-import KanbanColumn from './KanbanColumn.vue';
-import { useI18n } from '../composables/useI18n';
+import type { Task, Bucket, BucketName } from '../../types';
+import KanbanColumn from '../ui/KanbanColumn.vue';
+import { useI18n } from '../../composables/useI18n';
 
 const { t } = useI18n();
 

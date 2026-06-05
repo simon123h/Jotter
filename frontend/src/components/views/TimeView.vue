@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue';
 import Sortable from 'sortablejs';
-import type { Task } from '../types';
-import TaskCard from './TaskCard.vue';
-import { useI18n } from '../composables/useI18n';
+import type { Task } from '../../types';
+import TaskCard from '../ui/TaskCard.vue';
+import { useI18n } from '../../composables/useI18n';
 
 const { t } = useI18n();
 

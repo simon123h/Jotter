@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus } from '@lucide/vue';
-import { useI18n } from '../composables/useI18n';
-import type { Project, BucketName } from '../types';
-import type { ViewMode } from '../stores/settings';
+import { useI18n } from '../../composables/useI18n';
+import type { Project, BucketName } from '../../types';
+import type { ViewMode } from '../../stores/settings';
 
 const { t } = useI18n();
 

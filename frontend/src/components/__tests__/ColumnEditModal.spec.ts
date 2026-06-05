@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { nextTick } from 'vue';
-import ColumnEditModal from '../ColumnEditModal.vue';
+import ColumnEditModal from '../modals/ColumnEditModal.vue';
 
 describe('ColumnEditModal.vue', () => {
   const defaultProps = {

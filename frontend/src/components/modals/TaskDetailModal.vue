@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, computed, onUnmounted, nextTick } from 'vue';
 import { marked } from 'marked';
-import type { Task, BucketName } from '../types';
-import { getTask, updateTask, deleteTask } from '../api';
-import { useI18n } from '../composables/useI18n';
-import { useDialog } from '../composables/useDialog';
+import type { Task, BucketName } from '../../types';
+import { getTask, updateTask, deleteTask } from '../../api';
+import { useI18n } from '../../composables/useI18n';
+import { useDialog } from '../../composables/useDialog';
 import { X, Slash } from '@lucide/vue';
-import { parseTitleState } from '../utils/dateParser';
+import { parseTitleState } from '../../utils/dateParser';
 
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();

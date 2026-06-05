@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { useSettingsStore } from '../stores/settings';
-import { useI18n } from '../composables/useI18n';
+import { useSettingsStore } from '../../stores/settings';
+import { useI18n } from '../../composables/useI18n';
 import { Settings, Check, Globe } from '@lucide/vue';
 
 const { locale, t } = useI18n();

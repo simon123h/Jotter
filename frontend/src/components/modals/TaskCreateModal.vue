@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onUnmounted, computed } from 'vue';
 import { X } from '@lucide/vue';
-import type { BucketName } from '../types';
-import { createTask } from '../api';
-import { useI18n } from '../composables/useI18n';
-import { parseTitleState } from '../utils/dateParser';
+import type { BucketName } from '../../types';
+import { createTask } from '../../api';
+import { useI18n } from '../../composables/useI18n';
+import { parseTitleState } from '../../utils/dateParser';
 
 const { locale, t } = useI18n();
 

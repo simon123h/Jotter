@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
 import { X, SlidersHorizontal, Calendar, Tag, Trash2 } from '@lucide/vue';
-import { useI18n } from '../composables/useI18n';
-import { useSettingsStore } from '../stores/settings';
-import type { Bucket, TaskFilterParams } from '../types';
+import { useI18n } from '../../composables/useI18n';
+import { useSettingsStore } from '../../stores/settings';
+import type { Bucket, TaskFilterParams } from '../../types';
 
 const { t } = useI18n();
 

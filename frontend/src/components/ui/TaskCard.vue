@@ -2,8 +2,8 @@
 import { ref, computed } from 'vue';
 import { marked } from 'marked';
 import { ChevronDown, ClipboardList, Check, Calendar } from '@lucide/vue';
-import type { Task } from '../types';
-import { useI18n } from '../composables/useI18n';
+import type { Task } from '../../types';
+import { useI18n } from '../../composables/useI18n';
 
 const { t } = useI18n();
 

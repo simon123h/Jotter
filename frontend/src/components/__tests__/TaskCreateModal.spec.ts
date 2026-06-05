@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
-import TaskCreateModal from '../TaskCreateModal.vue';
+import TaskCreateModal from '../modals/TaskCreateModal.vue';
 
 describe('TaskCreateModal.vue', () => {
   const defaultProps = {
