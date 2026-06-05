@@ -71,7 +71,8 @@ var icon []byte
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx     context.Context
+	apiUrl  string
 }
 
 // NewApp creates a new App struct
@@ -79,11 +80,16 @@ func NewApp() *App {
 	return &App{}
 }
 
+func (a *App) GetAPIUrl() string {
+	return a.apiUrl
+}
+
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
+
 
 func main() {
 	configFlag := flag.String("config", "", "Path to YAML/JSON configuration file")
@@ -186,17 +192,19 @@ func main() {
 		fileServer.ServeHTTP(w, req)
 	}))
 
+	// Start a real background HTTP server so browsers can connect to localhost:port
 	addr := fmt.Sprintf("%s:%d", host, port)
+	
+	apiAddr := fmt.Sprintf("http://%s:%d", host, port)
+	if host == "0.0.0.0" {
+		apiAddr = fmt.Sprintf("http://localhost:%d", port)
+	}
 
+	// Automatically open browser if configured
 	if launch == "browser" {
-		// Start background browser opener
 		time.AfterFunc(1000*time.Millisecond, func() {
-			url := fmt.Sprintf("http://%s:%d", host, port)
-			if host == "127.0.0.1" || host == "0.0.0.0" {
-				url = fmt.Sprintf("http://localhost:%d", port)
-			}
-			log.Printf("Opening browser at %s", url)
-			openBrowser(url)
+			log.Printf("Opening browser at %s", apiAddr)
+			openBrowser(apiAddr)
 		})
 
 		log.Printf("Starting in browser mode on %s", addr)
@@ -207,7 +215,6 @@ func main() {
 	}
 
 	// Default: Normal Wails mode (window)
-	// Start HTTP server in background so browser access is still supported
 	go func() {
 		log.Printf("Starting background REST/Static server on %s", addr)
 		if err := http.ListenAndServe(addr, r); err != nil {
@@ -217,6 +224,7 @@ func main() {
 
 	// Run Wails application
 	app := NewApp()
+	app.apiUrl = apiAddr
 	err := wails.Run(&options.App{
 		Title:  "Jotter",
 		Width:  1024,

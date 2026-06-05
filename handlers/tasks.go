@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -243,8 +246,24 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 	r.Post("/projects/{project_id}/tasks", func(w http.ResponseWriter, r *http.Request) {
 		projectID := chi.URLParam(r, "project_id")
 
+		if r.Body == nil {
+			log.Printf("ERROR: POST /tasks - Request body is nil")
+			SendError(w, http.StatusBadRequest, "Request body is missing")
+			return
+		}
+
 		var req models.TaskCreate
+		bodyBytes, _ := io.ReadAll(r.Body)
+		if len(bodyBytes) == 0 {
+			log.Printf("ERROR: POST /tasks - Request body is empty")
+			SendError(w, http.StatusBadRequest, "Request body is empty")
+			return
+		}
+		// Restore body for decoding
+		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			log.Printf("ERROR: POST /tasks - Failed to decode JSON: %v", err)
 			SendError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}

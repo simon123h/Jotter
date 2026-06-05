@@ -2,7 +2,24 @@ import { ref } from 'vue';
 import type { Task, Bucket, Project, TaskFilterParams } from '@/types';
 import * as demoApi from '@/api.demo';
 
-const API_BASE = '';
+let API_BASE = '';
+
+// Check if we are running inside Wails and try to get the actual API URL
+if (window.location.origin.includes('wails.localhost') || window.location.protocol === 'wails:') {
+  // We check for the bound method. Since it's async, we might need a better way, 
+  // but for now, we'll try to use the known default or wait for it.
+  // @ts-ignore
+  if (window.go && window.go.main && window.go.main.App) {
+     // @ts-ignore
+     window.go.main.App.GetAPIUrl().then((url: string) => {
+        API_BASE = url;
+        console.log('Wails detected: using API base', API_BASE);
+     });
+  } else {
+     // Fallback to default port if bindings are not yet ready
+     API_BASE = 'http://localhost:8000';
+  }
+}
 
 // Shared reactive connection state
 export const isServerOnline = ref(true);
