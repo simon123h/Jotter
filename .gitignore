@@ -6,21 +6,20 @@ tasks
 node_modules/
 dist/
 
-# Pytest & Coverage
+# Test Coverage
 .coverage
 coverage.json
 coverage.xml
 coverage.out
-.pytest_cache/
-__pycache__/
-**/__pycache__/
 
 .antigravitycli
 build/
 
+# config files
 jotter.yaml
-jotter-backend
-backend
-main_cli
+
+# binaries
+jotter-desktop
+jotter-server
 main_server
 main_desktop

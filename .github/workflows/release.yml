@@ -65,9 +65,9 @@ jobs:
         run: |
           # The frontend was already built by wails build above
           if [ "${{ matrix.platform }}" = "windows" ]; then
-            go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter.exe main_server.go shared_assets.go
+            go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter-server.exe main_server.go shared_assets.go
           else
-            go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter main_server.go shared_assets.go
+            go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter-server main_server.go shared_assets.go
           fi
 
       - name: Prepare Release Files
@@ -76,10 +76,10 @@ jobs:
           mkdir -p dist
           if [ "${{ matrix.platform }}" = "windows" ]; then
             cp build/bin/jotter-desktop.exe dist/
-            cp build/bin/jotter.exe dist/
+            cp build/bin/jotter-server.exe dist/
           elif [ "${{ matrix.platform }}" = "linux" ]; then
             cp build/bin/jotter-desktop dist/
-            cp build/bin/jotter dist/
+            cp build/bin/jotter-server dist/
           fi
           cp README.md dist/
           cp LICENSE.md dist/
@@ -89,7 +89,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           cd dist
-          tar -czf jotter-${{ github.ref_name }}-linux.tar.gz jotter jotter-desktop README.md LICENSE.md jotter.yaml
+          tar -czf jotter-${{ github.ref_name }}-linux.tar.gz jotter-server jotter-desktop README.md LICENSE.md jotter.yaml
 
       - name: Package (macOS)
         if: matrix.platform == 'macos'
@@ -97,13 +97,13 @@ jobs:
           cd build/bin
           # For macOS, we zip the .app bundle and the CLI binary separately or together. 
           # Convention is usually to have the CLI inside or alongside.
-          zip -r ../../dist/jotter-${{ github.ref_name }}-macos.zip jotter-desktop.app jotter
+          zip -r ../../dist/jotter-${{ github.ref_name }}-macos.zip jotter-desktop.app jotter-server
 
       - name: Package (Windows)
         if: matrix.platform == 'windows'
         run: |
           cd dist
-          Compress-Archive -Path jotter.exe, jotter-desktop.exe, README.md, LICENSE.md, jotter.yaml -DestinationPath jotter-${{ github.ref_name }}-windows.zip
+          Compress-Archive -Path jotter-server.exe, jotter-desktop.exe, README.md, LICENSE.md, jotter.yaml -DestinationPath jotter-${{ github.ref_name }}-windows.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
