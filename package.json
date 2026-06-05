@@ -22,7 +22,7 @@
     "lint": "npm run lint:backend && npm run lint:frontend",
     "lint:fix": "npm run lint:backend:fix && npm run lint:frontend:fix",
     "format:backend": "go fmt ./...",
-    "format:backend:check": "test -z $(gofmt -l .)",
+    "format:backend:check": "test -z \"$(gofmt -l cmd internal assets.go)\"",
     "format:frontend": "cd frontend && npm run format",
     "format:frontend:check": "cd frontend && npm run format:check",
     "format": "npm run format:backend && npm run format:frontend",
