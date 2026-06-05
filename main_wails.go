@@ -5,9 +5,7 @@ package main
 import (
 	"context"
 	"embed"
-	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -65,27 +63,19 @@ func main() {
 		log.Fatalf("Initial sync failed: %v", err)
 	}
 
-	// Start Go HTTP Server in a background goroutine
-	go func() {
-		r := chi.NewRouter()
-		r.Use(middleware.RequestID)
-		r.Use(middleware.RealIP)
-		r.Use(middleware.Logger)
-		r.Use(middleware.Recoverer)
-		r.Use(handlers.CORSMiddleware)
+	// Setup Chi Router to serve as local Wails AssetServer Handler (no TCP listening port)
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(handlers.CORSMiddleware)
 
-		// Register REST routes
-		handlers.RegisterProjectRoutes(r, dataDir)
-		handlers.RegisterBucketRoutes(r, dataDir)
-		handlers.RegisterTaskRoutes(r, dataDir)
-		handlers.RegisterSystemRoutes(r, dataDir)
-
-		addr := fmt.Sprintf("%s:%d", host, port)
-		log.Printf("Starting background REST server on %s", addr)
-		if err := http.ListenAndServe(addr, r); err != nil {
-			log.Printf("Background server error: %v", err)
-		}
-	}()
+	// Register REST routes
+	handlers.RegisterProjectRoutes(r, dataDir)
+	handlers.RegisterBucketRoutes(r, dataDir)
+	handlers.RegisterTaskRoutes(r, dataDir)
+	handlers.RegisterSystemRoutes(r, dataDir)
 
 	// Run Wails application
 	app := NewApp()
@@ -94,7 +84,8 @@ func main() {
 		Width:  1024,
 		Height: 768,
 		AssetServer: &assetserver.Options{
-			Assets: assets,
+			Assets:  assets,
+			Handler: r,
 		},
 		BackgroundColour: &options.RGBA{R: 30, G: 41, B: 59, A: 1}, // Slate dark color
 		OnStartup:        app.startup,

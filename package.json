@@ -4,10 +4,11 @@
   "private": true,
   "description": "Jotter - Local-First Markdown Kanban App with Ephemeral Index",
   "scripts": {
+    "dev:desktop": "wails dev",
     "dev:backend": "go run main.go",
     "dev:frontend": "cd frontend && npm run dev",
-    "dev": "concurrently --kill-others-on-fail --names \"backend,frontend\" --prefix-colors \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "build": "cd frontend && npm run build",
+    "dev": "npm run dev:desktop",
+    "build": "wails build",
     "test:backend": "go test -v ./...",
     "test:frontend": "cd frontend && npm run test",
     "test": "npm run test:backend && npm run test:frontend",
