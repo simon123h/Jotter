@@ -105,7 +105,7 @@ sequenceDiagram
     participant DB as internal/db/db.go
     participant Storage as internal/storage/storage.go
     participant Disk as Local Disk (.md)
-```
+
     Main->>DB: InitDB()
     DB->>DB: Create SQLite tables and indexes
     Main->>Storage: SyncDBWithFiles()
@@ -121,8 +121,8 @@ sequenceDiagram
 
 Jotter is packaged into two separate native binaries:
 
-1.  **`jotter-desktop` (GUI)**: A full desktop application bundled using **Wails**. It opens a native webview window and runs the embedded frontend.
-2.  **`jotter` (Server)**: A lightweight CLI binary that starts a standard HTTP server and serves the frontend to any modern web browser.
+1. **`jotter-desktop` (GUI)**: A full desktop application bundled using **Wails**. It opens a native webview window and runs the embedded frontend.
+2. **`jotter` (Server)**: A lightweight CLI binary that starts a standard HTTP server and serves the frontend to any modern web browser.
 
 ### Shared Packaging Features:
 
