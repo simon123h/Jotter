@@ -1,4 +1,4 @@
-//go:build wails
+//go:build wails || bindings
 
 package main
 
@@ -11,5 +11,5 @@ func main() {
 	}
 
 	cfg := app.LoadConfig()
-	app.RunDesktop(cfg)
+	app.RunDesktop(cfg, Assets, Icon)
 }

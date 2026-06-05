@@ -65,9 +65,9 @@ jobs:
         run: |
           # The frontend was already built by wails build above
           if [ "${{ matrix.platform }}" = "windows" ]; then
-            go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter.exe cmd/jotter/main.go
+            go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter.exe main_server.go shared_assets.go
           else
-            go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter cmd/jotter/main.go
+            go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter main_server.go shared_assets.go
           fi
 
       - name: Prepare Release Files

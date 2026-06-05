@@ -1,6 +1,7 @@
 package app
 
 import (
+	"embed"
 	"io/fs"
 	"net/http"
 	"os"
@@ -10,11 +11,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"jotter/backend"
 	"jotter/backend/internal/handlers"
 )
 
-func BuildRouter(logLevel, dataDir string, serveStatic bool) *chi.Mux {
+func BuildRouter(logLevel, dataDir string, serveStatic bool, assets embed.FS) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -30,7 +30,7 @@ func BuildRouter(logLevel, dataDir string, serveStatic bool) *chi.Mux {
 	handlers.RegisterSystemRoutes(r, dataDir)
 
 	if serveStatic {
-		assetsSub, errFs := fs.Sub(backend.Assets, "frontend/dist")
+		assetsSub, errFs := fs.Sub(assets, "frontend/dist")
 		var useEmbedded bool
 		if errFs == nil {
 			if data, err := fs.ReadFile(assetsSub, "index.html"); err == nil && len(data) > 30 {

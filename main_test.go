@@ -11,10 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
-
+	"jotter/backend/internal/app"
 	"jotter/backend/internal/db"
-	"jotter/backend/internal/handlers"
 	"jotter/backend/internal/models"
 	"jotter/backend/internal/storage"
 )
@@ -42,12 +40,9 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to run initial sync: %v", err)
 	}
 
-	// Initialize router
-	r := chi.NewRouter()
-	handlers.RegisterProjectRoutes(r, tasksDir)
-	handlers.RegisterBucketRoutes(r, tasksDir)
-	handlers.RegisterTaskRoutes(r, tasksDir)
-	handlers.RegisterSystemRoutes(r, tasksDir)
+	// Initialize router using the same logic as the real app
+	// Note: We don't serve static files in tests (false)
+	r := app.BuildRouter("ERROR", tasksDir, false, Assets)
 
 	var projectID string
 

@@ -1,9 +1,10 @@
-//go:build wails
+//go:build wails || bindings
 
 package app
 
 import (
 	"context"
+	"embed"
 	"io/fs"
 	"log"
 	"net/http"
@@ -15,8 +16,6 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
-
-	"jotter/backend"
 )
 
 type DesktopApp struct {
@@ -32,12 +31,12 @@ func (a *DesktopApp) GetAPIUrl() string {
 	return a.cfg.APIAddr
 }
 
-func (a *DesktopApp) startup(ctx context.Context) {
+func (a *DesktopApp) startup(ctx context.Context, assets embed.FS) {
 	a.ctx = ctx
 	Bootstrap(a.cfg.DataDir, a.cfg.DBPath)
 
 	// Start background HTTP server
-	r := BuildRouter(a.cfg.LogLevel, a.cfg.DataDir, true)
+	r := BuildRouter(a.cfg.LogLevel, a.cfg.DataDir, true, assets)
 	go func() {
 		log.Printf("Starting background REST/Static server on %s", a.cfg.Addr)
 		if err := http.ListenAndServe(a.cfg.Addr, r); err != nil {
@@ -51,7 +50,9 @@ func IsWailsProbing() bool {
 		return true
 	}
 	for _, arg := range os.Args {
-		if strings.Contains(arg, "generate") || arg == "-v" || arg == "-h" || arg == "--help" {
+		if strings.Contains(arg, "generate") ||
+			strings.HasPrefix(arg, "-ts") ||
+			arg == "-v" || arg == "-h" || arg == "--help" {
 			return true
 		}
 	}
@@ -64,11 +65,11 @@ func RunWailsProbing() {
 	})
 }
 
-func RunDesktop(cfg *AppConfig) {
+func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
 	// Window Mode (Wails)
-	apiRouter := BuildRouter(cfg.LogLevel, cfg.DataDir, false) // API only for handler
+	apiRouter := BuildRouter(cfg.LogLevel, cfg.DataDir, false, assets) // API only for handler
 
-	assetsSub, _ := fs.Sub(backend.Assets, "frontend/dist")
+	assetsSub, _ := fs.Sub(assets, "frontend/dist")
 
 	app := NewDesktopApp(cfg)
 
@@ -96,12 +97,14 @@ func RunDesktop(cfg *AppConfig) {
 		},
 		BackgroundColour: &options.RGBA{R: 30, G: 41, B: 59, A: 1},
 		LogLevel:         wailsLogLevel,
-		OnStartup:        app.startup,
+		OnStartup: func(ctx context.Context) {
+			app.startup(ctx, assets)
+		},
 		Bind: []interface{}{
 			app,
 		},
 		Linux: &linux.Options{
-			Icon: backend.Icon,
+			Icon: icon,
 		},
 	})
 

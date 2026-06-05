@@ -21,3 +21,6 @@ build/
 jotter.yaml
 jotter-backend
 backend
+main_cli
+main_server
+main_desktop

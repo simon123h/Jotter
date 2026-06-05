@@ -66,9 +66,9 @@ jobs:
       - name: Verify Binary Compilation
         run: |
           # Verify server binary
-          go build -v -o /dev/null cmd/jotter/main.go
+          go build -v -o /dev/null main_server.go shared_assets.go
           # Verify desktop binary (using wails tags)
-          go build -v -tags wails -o /dev/null cmd/jotter-desktop/main.go
+          go build -v -tags wails -o /dev/null main_desktop.go shared_assets.go
 
       - name: Upload Backend Coverage to Codecov
         uses: codecov/codecov-action@v4
