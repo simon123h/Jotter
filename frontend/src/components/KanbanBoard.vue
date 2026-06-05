@@ -22,6 +22,8 @@ import TaskDetailModal from './TaskDetailModal.vue';
 import TaskCreateModal from './TaskCreateModal.vue';
 import ProjectEditModal from './ProjectEditModal.vue';
 import FilterModal from './FilterModal.vue';
+import NavigationBar from './NavigationBar.vue';
+import { useTaskFilters } from '../composables/useTaskFilters';
 import BoardView from './BoardView.vue';
 import ListView from './ListView.vue';
 import MatrixView from './MatrixView.vue';
@@ -31,7 +33,7 @@ import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
-import { LayoutGrid, List, Plus, X, ClipboardList, Menu, Eye, EyeOff, Grid, Clock, SlidersHorizontal } from '@lucide/vue';
+import { X, ClipboardList } from '@lucide/vue';
 
 const { t } = useI18n();
 const { showDialog, isOpen: dialogIsOpen } = useDialog();
@@ -72,128 +74,9 @@ const syncLoading = ref(false);
 const syncSuccess = ref(false);
 const error = ref<string | null>(null);
 
-// Filter state
-const searchQuery = ref('');
-const selectedTags = ref<string[]>([]);
-
+// Filter state & logic
 const isFilterModalOpen = ref(false);
-const taskFilters = ref<TaskFilterParams>({});
-
-const hasActiveFilters = computed(() => {
-  const f = taskFilters.value;
-  return !!(
-    f.buckets ||
-    f.priorities ||
-    f.tags ||
-    f.search ||
-    f.due_after ||
-    f.due_before ||
-    (f.has_due_date !== undefined && f.has_due_date !== null)
-  );
-});
-
-const applyFilters = (filters: TaskFilterParams) => {
-  taskFilters.value = filters;
-
-  // Sync the quick filters in the header
-  searchQuery.value = filters.search || '';
-  selectedTags.value = filters.tags
-    ? filters.tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean)
-    : [];
-};
-
-watch(searchQuery, (newVal) => {
-  taskFilters.value.search = newVal.trim() || undefined;
-});
-
-watch(
-  selectedTags,
-  (newVal) => {
-    taskFilters.value.tags = newVal.length ? newVal.join(',') : undefined;
-  },
-  { deep: true }
-);
-
-const parseFiltersFromQuery = (q: any) => {
-  let has_due_date: boolean | null = null;
-  if (q.has_due_date === 'true') has_due_date = true;
-  else if (q.has_due_date === 'false') has_due_date = false;
-
-  const filters: TaskFilterParams = {
-    search: (q.search as string) || undefined,
-    buckets: (q.buckets as string) || undefined,
-    priorities: (q.priorities as string) || undefined,
-    tags: (q.tags as string) || undefined,
-    tag_mode: (q.tag_mode as 'any' | 'all') || undefined,
-    has_due_date,
-    due_after: (q.due_after as string) || undefined,
-    due_before: (q.due_before as string) || undefined,
-  };
-
-  // Compare and update if changed
-  if (JSON.stringify(taskFilters.value) !== JSON.stringify(filters)) {
-    taskFilters.value = filters;
-
-    // Sync quick filters in header
-    searchQuery.value = filters.search || '';
-    selectedTags.value = filters.tags
-      ? filters.tags
-          .split(',')
-          .map((t) => t.trim())
-          .filter(Boolean)
-      : [];
-  }
-};
-
-watch(
-  () => route.query,
-  (newQuery) => {
-    parseFiltersFromQuery(newQuery);
-  },
-  { immediate: true }
-);
-
-watch(
-  taskFilters,
-  (newFilters) => {
-    const query = { ...route.query };
-
-    if (newFilters.search) query.search = newFilters.search;
-    else delete query.search;
-
-    if (newFilters.buckets) query.buckets = newFilters.buckets;
-    else delete query.buckets;
-
-    if (newFilters.priorities) query.priorities = newFilters.priorities;
-    else delete query.priorities;
-
-    if (newFilters.tags) query.tags = newFilters.tags;
-    else delete query.tags;
-
-    if (newFilters.tag_mode) query.tag_mode = newFilters.tag_mode;
-    else delete query.tag_mode;
-
-    if (newFilters.has_due_date !== undefined && newFilters.has_due_date !== null) {
-      query.has_due_date = String(newFilters.has_due_date);
-    } else {
-      delete query.has_due_date;
-    }
-
-    if (newFilters.due_after) query.due_after = newFilters.due_after;
-    else delete query.due_after;
-
-    if (newFilters.due_before) query.due_before = newFilters.due_before;
-    else delete query.due_before;
-
-    if (JSON.stringify(route.query) !== JSON.stringify(query)) {
-      router.replace({ query });
-    }
-  },
-  { deep: true }
-);
+const { searchQuery, taskFilters, hasActiveFilters, filteredTasks, applyFilters, clearFilters } = useTaskFilters(tasks);
 
 const setViewMode = (mode: ViewMode) => {
   settingsStore.setViewMode(mode);
@@ -356,81 +239,6 @@ const allTags = computed(() => {
   return Array.from(tagsSet).sort();
 });
 
-// Filter tasks based on Search query, tags, buckets, priorities, due dates
-const filteredTasks = computed(() => {
-  let list = tasks.value;
-
-  // 1. Search Query
-  const searchVal = (taskFilters.value.search || searchQuery.value || '').trim().toLowerCase();
-  if (searchVal) {
-    list = list.filter((task) => {
-      return task.title.toLowerCase().includes(searchVal) || (task.body && task.body.toLowerCase().includes(searchVal));
-    });
-  }
-
-  // 2. Column / Bucket Filter
-  if (taskFilters.value.buckets) {
-    const bucketList = taskFilters.value.buckets
-      .split(',')
-      .map((b) => b.trim().toLowerCase())
-      .filter(Boolean);
-    if (bucketList.length) {
-      list = list.filter((t) => bucketList.includes(t.bucket.toLowerCase()));
-    }
-  }
-
-  // 3. Priorities Filter
-  if (taskFilters.value.priorities) {
-    const priorityList = taskFilters.value.priorities
-      .split(',')
-      .map((p) => p.trim().toLowerCase())
-      .filter(Boolean);
-    if (priorityList.length) {
-      list = list.filter((t) => {
-        const priority = (t.priority || 'none').toLowerCase();
-        return priorityList.includes(priority);
-      });
-    }
-  }
-
-  // 4. Tags Filter (incorporating both quick tags and modal tags)
-  const modalTags = taskFilters.value.tags
-    ? taskFilters.value.tags
-        .split(',')
-        .map((t) => t.trim().toLowerCase())
-        .filter(Boolean)
-    : [];
-  const combinedTags = Array.from(new Set([...selectedTags.value.map((t) => t.toLowerCase()), ...modalTags]));
-
-  if (combinedTags.length > 0) {
-    const mode = taskFilters.value.tag_mode || 'any';
-    if (mode === 'all') {
-      list = list.filter((t) => combinedTags.every((ft) => t.tags.some((tg) => tg.toLowerCase() === ft)));
-    } else {
-      list = list.filter((t) => combinedTags.some((ft) => t.tags.some((tg) => tg.toLowerCase() === ft)));
-    }
-  }
-
-  // 5. Due Date Status
-  if (taskFilters.value.has_due_date !== undefined && taskFilters.value.has_due_date !== null) {
-    if (taskFilters.value.has_due_date) {
-      list = list.filter((t) => !!t.due_date);
-    } else {
-      list = list.filter((t) => !t.due_date);
-    }
-  }
-
-  // 6. Due Date Range
-  if (taskFilters.value.due_before) {
-    list = list.filter((t) => !!t.due_date && t.due_date <= taskFilters.value.due_before!);
-  }
-  if (taskFilters.value.due_after) {
-    list = list.filter((t) => !!t.due_date && t.due_date >= taskFilters.value.due_after!);
-  }
-
-  return list;
-});
-
 // Group tasks by bucket name
 const tasksByBucket = computed(() => {
   const groups: Record<string, Task[]> = {};
@@ -478,9 +286,7 @@ watch(
     if (newProjectId && newProjectId !== activeProjectId.value) {
       activeProjectId.value = newProjectId as string;
       error.value = null;
-      selectedTags.value = [];
-      searchQuery.value = '';
-      taskFilters.value = {};
+      clearFilters();
       await fetchAllData();
     }
 
@@ -780,132 +586,21 @@ const formatDateISO = (d: Date): string => {
 
 <template>
   <div class="h-screen w-full flex flex-col overflow-hidden bg-theme-base">
-    <header class="flex items-center justify-between gap-3 border-b border-theme-border px-4 py-3 shrink-0 bg-theme-card z-10">
-      <div class="flex items-center gap-2.5 overflow-hidden mr-2 shrink-0">
-        <!-- Hamburger Menu Button -->
-        <button
-          @click="toggleSidebar"
-          class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-all cursor-pointer shrink-0"
-          :title="isSidebarOpen ? t('sidebar.collapse') : t('sidebar.expand')"
-        >
-          <Menu class="w-4 h-4 shrink-0" />
-        </button>
-        <h1 class="text-base font-bold tracking-tight text-theme-text-main truncate flex items-baseline gap-1.5">
-          {{ t('brand.title') }}
-          <span class="text-xs font-semibold text-theme-text-muted opacity-80" v-if="projects.find((p) => p.id === activeProjectId)">
-            / {{ projects.find((p) => p.id === activeProjectId)?.title }}
-          </span>
-        </h1>
-      </div>
-
-      <!-- Search (Flex-grow to fill remaining space) -->
-      <div class="flex-grow mx-3 relative">
-        <input
-          v-model="searchQuery"
-          type="text"
-          :placeholder="t('searchPlaceholder')"
-          class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-        />
-      </div>
-
-      <!-- Toolbar Actions -->
-      <div class="flex items-center gap-2 shrink-0">
-        <!-- Advanced Filter Button -->
-        <button
-          @click="isFilterModalOpen = true"
-          class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border transition-all cursor-pointer"
-          :class="
-            hasActiveFilters
-              ? 'bg-theme-primary/10 border-theme-primary/15 text-theme-accent font-bold shadow-none'
-              : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
-          "
-          :title="t('filterModal.buttonTooltip')"
-        >
-          <SlidersHorizontal class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
-          <span class="hidden md:inline">
-            {{ t('filterModal.title') }}
-          </span>
-          <span
-            v-if="hasActiveFilters"
-            class="ml-0.5 px-1 bg-theme-primary text-white text-[9px] font-bold rounded-full min-w-[14px] text-center"
-          >
-            !
-          </span>
-        </button>
-
-        <!-- View Mode Toggle -->
-        <div class="flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
-          <button
-            @click="setViewMode('board')"
-            class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
-            :class="
-              viewMode === 'board'
-                ? 'bg-theme-primary text-white shadow-none'
-                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
-            "
-          >
-            <LayoutGrid class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">{{ t('views.board') }}</span>
-          </button>
-          <button
-            @click="setViewMode('list')"
-            class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
-            :class="
-              viewMode === 'list'
-                ? 'bg-theme-primary text-white shadow-none'
-                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
-            "
-          >
-            <List class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">{{ t('views.list') }}</span>
-          </button>
-          <button
-            @click="setViewMode('matrix')"
-            class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
-            :class="
-              viewMode === 'matrix'
-                ? 'bg-theme-primary text-white shadow-none'
-                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
-            "
-          >
-            <Grid class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">{{ t('views.matrix') }}</span>
-          </button>
-          <button
-            @click="setViewMode('time')"
-            class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
-            :class="
-              viewMode === 'time'
-                ? 'bg-theme-primary text-white shadow-none'
-                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
-            "
-          >
-            <Clock class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">{{ t('views.time') }}</span>
-          </button>
-        </div>
-
-        <!-- Hide Done Column Toggle -->
-        <button
-          @click="toggleHideDoneColumn"
-          class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded transition-all border border-transparent cursor-pointer shrink-0 text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main"
-          :title="hideDoneColumn ? t('doneBucket.show') : t('doneBucket.hide')"
-        >
-          <component :is="hideDoneColumn ? EyeOff : Eye" class="w-3.5 h-3.5 text-theme-text-muted" />
-          <span class="hidden md:inline">{{ hideDoneColumn ? t('doneBucket.showText') : t('doneBucket.hideText') }}</span>
-        </button>
-
-        <!-- New Task Button -->
-        <button
-          @click="openCreateModal(defaultBucketName)"
-          class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded transition-all cursor-pointer shrink-0"
-          :title="t('shortcuts.createTask')"
-        >
-          <Plus class="w-3.5 h-3.5 shrink-0" />
-          <span class="hidden sm:inline">{{ t('addTaskButton') }}</span>
-        </button>
-      </div>
-    </header>
+    <NavigationBar
+      v-model="searchQuery"
+      :is-sidebar-open="isSidebarOpen"
+      :projects="projects"
+      :active-project-id="activeProjectId"
+      :has-active-filters="hasActiveFilters"
+      :view-mode="viewMode"
+      :hide-done-column="hideDoneColumn"
+      :default-bucket-name="defaultBucketName"
+      @toggle-sidebar="toggleSidebar"
+      @open-filter="isFilterModalOpen = true"
+      @set-view-mode="setViewMode"
+      @toggle-hide-done="toggleHideDoneColumn"
+      @create-task="openCreateModal"
+    />
 
     <!-- Main Layout Area (Below Header) -->
     <div class="flex-grow flex overflow-hidden w-full relative">
