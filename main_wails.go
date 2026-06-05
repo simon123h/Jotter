@@ -6,10 +6,12 @@ import (
 	"context"
 	"embed"
 	"log"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 
@@ -17,6 +19,21 @@ import (
 	"jotter/backend/db"
 	"jotter/backend/handlers"
 )
+
+func getWailsLogLevel(level string) logger.LogLevel {
+	switch strings.ToUpper(level) {
+	case "DEBUG":
+		return logger.DEBUG
+	case "INFO":
+		return logger.INFO
+	case "WARNING", "WARN":
+		return logger.WARNING
+	case "ERROR", "ERR":
+		return logger.ERROR
+	default:
+		return logger.INFO
+	}
+}
 
 
 
@@ -61,7 +78,12 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
+
+	logLevel := config.GetLogLevel("")
+	if logLevel == "INFO" || logLevel == "DEBUG" {
+		r.Use(middleware.Logger)
+	}
+
 	r.Use(middleware.Recoverer)
 	r.Use(handlers.CORSMiddleware)
 
@@ -82,6 +104,7 @@ func main() {
 			Handler: r,
 		},
 		BackgroundColour: &options.RGBA{R: 30, G: 41, B: 59, A: 1}, // Slate dark color
+		LogLevel:         getWailsLogLevel(logLevel),
 		OnStartup:        app.startup,
 		Bind: []interface{}{
 			app,

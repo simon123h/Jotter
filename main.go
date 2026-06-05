@@ -151,7 +151,9 @@ func main() {
 	// Middlewares
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
+	if logLevel == "INFO" || logLevel == "DEBUG" {
+		r.Use(middleware.Logger)
+	}
 	r.Use(middleware.Recoverer)
 	r.Use(handlers.CORSMiddleware)
 
