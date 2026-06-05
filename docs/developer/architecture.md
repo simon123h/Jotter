@@ -101,11 +101,11 @@ When Jotter starts, it goes through a synchronization phase to align the databas
 
 ```mermaid
 sequenceDiagram
-    participant Main as cmd/jotter or cmd/jotter-desktop
+    participant Main as main_server.go or main_desktop.go
     participant DB as internal/db/db.go
     participant Storage as internal/storage/storage.go
     participant Disk as Local Disk (.md)
-
+```
     Main->>DB: InitDB()
     DB->>DB: Create SQLite tables and indexes
     Main->>Storage: SyncDBWithFiles()
