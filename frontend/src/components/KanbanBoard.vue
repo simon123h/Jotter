@@ -31,22 +31,7 @@ import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
-import {
-  LayoutGrid,
-  List,
-  ChevronDown,
-  Plus,
-  X,
-  ClipboardList,
-  Menu,
-  Eye,
-  EyeOff,
-  Grid,
-  Clock,
-  Check,
-  Tag,
-  SlidersHorizontal,
-} from '@lucide/vue';
+import { LayoutGrid, List, Plus, X, ClipboardList, Menu, Eye, EyeOff, Grid, Clock, SlidersHorizontal } from '@lucide/vue';
 
 const { t } = useI18n();
 const { showDialog, isOpen: dialogIsOpen } = useDialog();
@@ -90,7 +75,6 @@ const error = ref<string | null>(null);
 // Filter state
 const searchQuery = ref('');
 const selectedTags = ref<string[]>([]);
-const isTagDropdownOpen = ref(false);
 
 const isFilterModalOpen = ref(false);
 const taskFilters = ref<TaskFilterParams>({});
@@ -132,15 +116,6 @@ watch(
   },
   { deep: true }
 );
-
-const toggleTagSelection = (tag: string) => {
-  const index = selectedTags.value.indexOf(tag);
-  if (index > -1) {
-    selectedTags.value.splice(index, 1);
-  } else {
-    selectedTags.value.push(tag);
-  }
-};
 
 const setViewMode = (mode: ViewMode) => {
   settingsStore.setViewMode(mode);
@@ -780,58 +755,6 @@ const formatDateISO = (d: Date): string => {
             !
           </span>
         </button>
-
-        <!-- Tag Filter Dropdown -->
-        <div class="relative shrink-0" v-if="allTags.length">
-          <div v-if="isTagDropdownOpen" class="fixed inset-0 z-10" @click="isTagDropdownOpen = false"></div>
-
-          <button
-            @click="isTagDropdownOpen = !isTagDropdownOpen"
-            class="relative z-20 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border transition-all cursor-pointer"
-            :class="
-              selectedTags.length > 0
-                ? 'bg-theme-primary/10 border-theme-primary/15 text-theme-accent font-bold shadow-none'
-                : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
-            "
-            :title="t('tagsLabel')"
-          >
-            <Tag class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
-            <span class="hidden md:inline">
-              {{ selectedTags.length === 0 ? t('tagsAll') : `${selectedTags.length} Selected` }}
-            </span>
-            <span class="md:hidden">
-              {{ selectedTags.length === 0 ? t('tagsAll') : selectedTags.length }}
-            </span>
-            <ChevronDown class="w-3 h-3 text-theme-text-muted" />
-          </button>
-
-          <div
-            v-if="isTagDropdownOpen"
-            class="absolute right-0 mt-1 w-48 max-h-60 overflow-y-auto bg-theme-card border border-theme-border rounded shadow-xl z-20 p-1 space-y-0.5 scroller-thin"
-          >
-            <button
-              @click="selectedTags = []"
-              class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
-              :class="{ 'bg-theme-column/50 border border-theme-border/20': selectedTags.length === 0 }"
-            >
-              <span>{{ t('tagsAll') }}</span>
-              <Check v-if="selectedTags.length === 0" class="w-3.5 h-3.5 text-theme-primary" />
-            </button>
-
-            <div class="border-t border-theme-border/30 my-1"></div>
-
-            <button
-              v-for="tag in allTags"
-              :key="tag"
-              @click="toggleTagSelection(tag)"
-              class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-theme-text-card hover:bg-theme-column hover:text-theme-text-main rounded transition-colors text-left font-medium cursor-pointer"
-              :class="{ 'bg-theme-column/50 border border-theme-border/20': selectedTags.includes(tag) }"
-            >
-              <span class="truncate uppercase font-bold tracking-wider text-[10px]">{{ tag }}</span>
-              <Check v-if="selectedTags.includes(tag)" class="w-3.5 h-3.5 text-theme-primary" />
-            </button>
-          </div>
-        </div>
 
         <!-- View Mode Toggle -->
         <div class="flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
