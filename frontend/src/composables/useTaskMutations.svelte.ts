@@ -1,16 +1,15 @@
-import { ref, type Ref } from 'vue';
 import type { Task, BucketName } from '@/types';
 import { moveTask, updateTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
+import { settingsStore } from '@/stores/settings';
 
 export function useTaskMutations(
-  tasks: Ref<Task[]>,
-  activeProjectId: Ref<string>,
+  getTasks: () => Task[],
   fetchBuckets: () => Promise<void>,
   fetchAllTasks: () => Promise<void>
 ) {
   const { t } = useI18n();
-  const error = ref<string | null>(null);
+  let errorVal = $state<string | null>(null);
 
   const handleCardDropped = async ({
     taskId,
@@ -23,11 +22,11 @@ export function useTaskMutations(
     prevTaskId: string | null;
     nextTaskId: string | null;
   }) => {
-    // Calculate new position using sibling tasks
+    const tasksList = getTasks();
     let newPosition: number;
 
     if (prevTaskId === null && nextTaskId === null) {
-      const targetBucketTasks = tasks.value.filter((t) => t.bucket === toBucket).sort((a, b) => a.position - b.position);
+      const targetBucketTasks = tasksList.filter((t) => t.bucket === toBucket).sort((a, b) => a.position - b.position);
       const otherTasks = targetBucketTasks.filter((t) => t.id !== taskId);
       if (otherTasks.length === 0) {
         newPosition = 1000.0;
@@ -35,14 +34,14 @@ export function useTaskMutations(
         newPosition = otherTasks[otherTasks.length - 1].position + 1000.0;
       }
     } else if (prevTaskId === null) {
-      const nextTask = tasks.value.find((t) => t.id === nextTaskId);
+      const nextTask = tasksList.find((t) => t.id === nextTaskId);
       newPosition = nextTask ? nextTask.position - 1000.0 : 1000.0;
     } else if (nextTaskId === null) {
-      const prevTask = tasks.value.find((t) => t.id === prevTaskId);
+      const prevTask = tasksList.find((t) => t.id === prevTaskId);
       newPosition = prevTask ? prevTask.position + 1000.0 : 1000.0;
     } else {
-      const prevTask = tasks.value.find((t) => t.id === prevTaskId);
-      const nextTask = tasks.value.find((t) => t.id === nextTaskId);
+      const prevTask = tasksList.find((t) => t.id === prevTaskId);
+      const nextTask = tasksList.find((t) => t.id === nextTaskId);
       if (prevTask && nextTask) {
         newPosition = (prevTask.position + nextTask.position) / 2.0;
       } else if (prevTask) {
@@ -54,8 +53,7 @@ export function useTaskMutations(
       }
     }
 
-    // Optimistic UI updates
-    const movedTask = tasks.value.find((t) => t.id === taskId);
+    const movedTask = tasksList.find((t) => t.id === taskId);
     if (movedTask) {
       const originalBucket = movedTask.bucket;
       const originalPosition = movedTask.position;
@@ -64,26 +62,26 @@ export function useTaskMutations(
       movedTask.position = newPosition;
 
       try {
-        await moveTask(activeProjectId.value, taskId, toBucket, newPosition);
+        await moveTask(settingsStore.activeProjectId, taskId, toBucket, newPosition);
       } catch {
-        // Revert if API call fails
         movedTask.bucket = originalBucket;
         movedTask.position = originalPosition;
-        error.value = t('errors.moveTask');
+        errorVal = t('errors.moveTask');
       }
     }
   };
 
   const handleMarkTaskDone = async (task: Task) => {
     try {
-      const targetBucketTasks = tasks.value.filter((t) => t.bucket === 'done').sort((a, b) => a.position - b.position);
+      const tasksList = getTasks();
+      const targetBucketTasks = tasksList.filter((t) => t.bucket === 'done').sort((a, b) => a.position - b.position);
       const newPosition = targetBucketTasks.length > 0 ? targetBucketTasks[targetBucketTasks.length - 1].position + 1000.0 : 1000.0;
 
-      await moveTask(activeProjectId.value, task.id, 'done', newPosition);
+      await moveTask(settingsStore.activeProjectId, task.id, 'done', newPosition);
       await fetchBuckets();
       await fetchAllTasks();
     } catch (err: any) {
-      error.value = err.message || 'Failed to mark task as done';
+      errorVal = err.message || 'Failed to mark task as done';
     }
   };
 
@@ -128,18 +126,18 @@ export function useTaskMutations(
         break;
     }
 
-    // Optimistic local update
-    const task = tasks.value.find((t) => t.id === taskId);
+    const tasksList = getTasks();
+    const task = tasksList.find((t) => t.id === taskId);
     if (!task) return;
 
     const originalDueDate = task.due_date;
     task.due_date = newDueDate ?? undefined;
 
     try {
-      await updateTask(activeProjectId.value, taskId, { due_date: newDueDate as any });
+      await updateTask(settingsStore.activeProjectId, taskId, { due_date: newDueDate as any });
     } catch (err: any) {
       task.due_date = originalDueDate;
-      error.value = err.message || 'Failed to update due date';
+      errorVal = err.message || 'Failed to update due date';
     }
   };
 
@@ -151,7 +149,8 @@ export function useTaskMutations(
   };
 
   return {
-    error,
+    get error() { return errorVal; },
+    set error(v) { errorVal = v; },
     handleCardDropped,
     handleMarkTaskDone,
     handleTimeViewDueDateUpdate,

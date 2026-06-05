@@ -1,32 +1,32 @@
-import { ref, computed, type Ref } from 'vue';
 import type { Bucket } from '@/types';
 import { getBuckets, createBucket, updateBucket, deleteBucket } from '@/api';
+import { settingsStore } from '@/stores/settings';
 
-export function useBuckets(activeProjectId: Ref<string>, hideDoneColumn: Ref<boolean>) {
-  const buckets = ref<Bucket[]>([]);
-  const error = ref<string | null>(null);
+export function useBuckets() {
+  let bucketsVal = $state<Bucket[]>([]);
+  let errorVal = $state<string | null>(null);
 
   const fetchBuckets = async () => {
     try {
-      buckets.value = await getBuckets(activeProjectId.value);
+      bucketsVal = await getBuckets(settingsStore.activeProjectId);
     } catch (err: any) {
-      error.value = err.message || 'Failed to fetch columns';
+      errorVal = err.message || 'Failed to fetch columns';
     }
   };
 
-  const displayedBuckets = computed(() => {
-    if (hideDoneColumn.value) {
-      return buckets.value.filter((b) => b.name !== 'done');
+  const displayedBuckets = $derived.by(() => {
+    if (settingsStore.hideDoneColumn) {
+      return bucketsVal.filter((b) => b.name !== 'done');
     }
-    return buckets.value;
+    return bucketsVal;
   });
 
   const handleCreateColumn = async (title: string, subtitle: string) => {
     try {
-      await createBucket(activeProjectId.value, title, subtitle);
+      await createBucket(settingsStore.activeProjectId, title, subtitle);
       await fetchBuckets();
     } catch (err: any) {
-      error.value = err.message || 'Failed to create column';
+      errorVal = err.message || 'Failed to create column';
     }
   };
 
@@ -49,7 +49,7 @@ export function useBuckets(activeProjectId: Ref<string>, hideDoneColumn: Ref<boo
   }) => {
     if (!newTitle.trim()) return;
     try {
-      await updateBucket(activeProjectId.value, bucketName, {
+      await updateBucket(settingsStore.activeProjectId, bucketName, {
         title: newTitle.trim(),
         subtitle: newSubtitle,
         color: newColor,
@@ -59,21 +59,21 @@ export function useBuckets(activeProjectId: Ref<string>, hideDoneColumn: Ref<boo
       });
       await fetchBuckets();
     } catch (err: any) {
-      error.value = err.message || 'Failed to rename column';
+      errorVal = err.message || 'Failed to rename column';
     }
   };
 
   const handleDeleteColumn = async (bucketName: string) => {
     try {
-      await deleteBucket(activeProjectId.value, bucketName);
+      await deleteBucket(settingsStore.activeProjectId, bucketName);
       await fetchBuckets();
     } catch (err: any) {
-      error.value = err.message || 'Failed to delete column';
+      errorVal = err.message || 'Failed to delete column';
     }
   };
 
   const handleColumnReordered = async ({ oldIndex, newIndex }: { oldIndex: number; newIndex: number }) => {
-    const visibleCols = [...displayedBuckets.value];
+    const visibleCols = [...displayedBuckets];
     if (oldIndex < 0 || oldIndex >= visibleCols.length || newIndex < 0 || newIndex >= visibleCols.length) return;
     if (oldIndex === newIndex) return;
 
@@ -94,22 +94,27 @@ export function useBuckets(activeProjectId: Ref<string>, hideDoneColumn: Ref<boo
     // Optimistic local update
     const originalPosition = draggedCol.position;
     draggedCol.position = newPosition;
-    buckets.value.sort((a, b) => a.position - b.position);
+    bucketsVal.sort((a, b) => a.position - b.position);
 
     try {
-      await updateBucket(activeProjectId.value, draggedCol.name, { position: newPosition });
+      await updateBucket(settingsStore.activeProjectId, draggedCol.name, { position: newPosition });
     } catch {
-      error.value = 'Failed to reorder columns. Reverting changes.';
+      errorVal = 'Failed to reorder columns. Reverting changes.';
       draggedCol.position = originalPosition;
-      buckets.value.sort((a, b) => a.position - b.position);
+      bucketsVal.sort((a, b) => a.position - b.position);
       await fetchBuckets();
     }
   };
 
   return {
-    buckets,
-    displayedBuckets,
-    error,
+    get buckets() { return bucketsVal; },
+    set buckets(v) { bucketsVal = v; },
+
+    get displayedBuckets() { return displayedBuckets; },
+
+    get error() { return errorVal; },
+    set error(v) { errorVal = v; },
+
     fetchBuckets,
     handleCreateColumn,
     handleRenameColumn,

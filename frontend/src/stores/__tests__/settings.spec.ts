@@ -1,49 +1,52 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { setActivePinia, createPinia } from 'pinia';
-import { useSettingsStore } from '@/stores/settings';
+import { settingsStore } from '@/stores/settings';
 
 describe('Settings Store', () => {
   beforeEach(() => {
     localStorage.clear();
-    setActivePinia(createPinia());
+    // Reset singleton settingsStore properties to defaults for test isolation
+    settingsStore.hideDoneColumn = true;
+    settingsStore.isSidebarOpen = true;
+    settingsStore.currentTheme = 'nordic-light';
+    settingsStore.viewMode = 'board';
+    settingsStore.activeProjectId = 'default';
+    settingsStore.thresholdDays = 7;
+    settingsStore.pinnedProjectIds = [];
+    settingsStore.sortBy = 'alpha';
   });
 
   it('initializes with default values', () => {
-    const store = useSettingsStore();
-    expect(store.hideDoneColumn).toBe(true);
-    expect(store.isSidebarOpen).toBe(true);
-    expect(store.currentTheme).toBe('nordic-light');
-    expect(store.viewMode).toBe('board');
-    expect(store.activeProjectId).toBe('default');
-    expect(store.thresholdDays).toBe(7);
-    expect(store.pinnedProjectIds).toEqual([]);
-    expect(store.sortBy).toBe('alpha');
+    expect(settingsStore.hideDoneColumn).toBe(true);
+    expect(settingsStore.isSidebarOpen).toBe(true);
+    expect(settingsStore.currentTheme).toBe('nordic-light');
+    expect(settingsStore.viewMode).toBe('board');
+    expect(settingsStore.activeProjectId).toBe('default');
+    expect(settingsStore.thresholdDays).toBe(7);
+    expect(settingsStore.pinnedProjectIds).toEqual([]);
+    expect(settingsStore.sortBy).toBe('alpha');
   });
 
   it('can toggle hideDoneColumn', () => {
-    const store = useSettingsStore();
-    expect(store.hideDoneColumn).toBe(true);
-    store.toggleHideDoneColumn();
-    expect(store.hideDoneColumn).toBe(false);
+    expect(settingsStore.hideDoneColumn).toBe(true);
+    settingsStore.toggleHideDoneColumn();
+    expect(settingsStore.hideDoneColumn).toBe(false);
     expect(localStorage.getItem('jotter-hide-done-column')).toBe('false');
   });
 
   it('can pin and unpin projects', () => {
-    const store = useSettingsStore();
-    store.pinProject('project-1');
-    expect(store.pinnedProjectIds).toEqual(['project-1']);
+    settingsStore.pinProject('project-1');
+    expect(settingsStore.pinnedProjectIds).toEqual(['project-1']);
     expect(JSON.parse(localStorage.getItem('jotter-pinned-projects') || '[]')).toEqual(['project-1']);
 
-    store.unpinProject('project-1');
-    expect(store.pinnedProjectIds).toEqual([]);
+    settingsStore.unpinProject('project-1');
+    expect(settingsStore.pinnedProjectIds).toEqual([]);
     expect(JSON.parse(localStorage.getItem('jotter-pinned-projects') || '[]')).toEqual([]);
   });
 
   it('can set and retrieve MRU project active timestamp', () => {
-    const store = useSettingsStore();
     const before = Date.now();
-    store.updateProjectMru('project-2');
-    const mru = store.getProjectMru('project-2');
+    settingsStore.updateProjectMru('project-2');
+    const mru = settingsStore.getProjectMru('project-2');
     expect(mru).toBeGreaterThanOrEqual(before);
   });
 });

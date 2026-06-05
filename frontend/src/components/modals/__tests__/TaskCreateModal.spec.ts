@@ -1,9 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
-import TaskCreateModal from '@/components/modals/TaskCreateModal.vue';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, fireEvent } from '@testing-library/svelte';
+import TaskCreateModal from '@/components/modals/TaskCreateModal.svelte';
 
-describe('TaskCreateModal.vue', () => {
+describe('TaskCreateModal.svelte', () => {
   const defaultProps = {
     isOpen: true,
     projectId: 'test-project',
@@ -14,107 +13,112 @@ describe('TaskCreateModal.vue', () => {
     ],
   };
 
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
   it('renders correctly when isOpen is true', () => {
-    const wrapper = mount(TaskCreateModal, {
+    const { container } = render(TaskCreateModal, {
       props: defaultProps,
     });
 
-    expect(wrapper.find('input[type="text"]').exists()).toBe(true);
-    expect(wrapper.text()).toContain('Create New Task');
+    const titleInput = container.querySelector('input[type="text"]');
+    expect(titleInput).not.toBeNull();
+    expect(container.textContent).toContain('Create New Task');
   });
 
   it('does not render when isOpen is false', () => {
-    const wrapper = mount(TaskCreateModal, {
+    const { container } = render(TaskCreateModal, {
       props: {
         ...defaultProps,
         isOpen: false,
       },
     });
 
-    expect(wrapper.find('input[type="text"]').exists()).toBe(false);
+    const titleInput = container.querySelector('input[type="text"]');
+    expect(titleInput).toBeNull();
   });
 
   it('focuses the title input field when opened', async () => {
-    const el = document.createElement('div');
-    document.body.appendChild(el);
-
-    const wrapper = mount(TaskCreateModal, {
+    const { container, unmount } = render(TaskCreateModal, {
       props: defaultProps,
-      attachTo: el,
     });
 
-    await nextTick();
-    await new Promise((resolve) => setTimeout(resolve, 0)); // wait for focus tick
+    // Wait for the focus tick in onMount/tick
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
-    const titleInput = wrapper.find('input[type="text"]').element as HTMLInputElement;
+    const titleInput = container.querySelector('input[type="text"]') as HTMLInputElement;
     expect(document.activeElement).toBe(titleInput);
 
-    wrapper.unmount();
-    el.remove();
+    unmount();
   });
 
-  it('emits close event when pressing Escape key', () => {
-    const wrapper = mount(TaskCreateModal, {
-      props: defaultProps,
+  it('invokes onclose callback when pressing Escape key', () => {
+    const onclose = vi.fn();
+    render(TaskCreateModal, {
+      props: {
+        ...defaultProps,
+        onclose,
+      },
     });
 
     const event = new KeyboardEvent('keydown', { key: 'Escape' });
     window.dispatchEvent(event);
 
-    expect(wrapper.emitted('close')).toBeTruthy();
+    expect(onclose).toHaveBeenCalled();
   });
 
   it('shows autocomplete popup when typing "/"', async () => {
-    const wrapper = mount(TaskCreateModal, {
+    const { container } = render(TaskCreateModal, {
       props: defaultProps,
     });
 
-    const titleInput = wrapper.find('input[type="text"]');
-    await titleInput.setValue('/');
-    await titleInput.trigger('input');
-    await nextTick();
+    const titleInput = container.querySelector('input[type="text"]') as HTMLInputElement;
+    expect(titleInput).not.toBeNull();
+
+    titleInput.value = '/';
+    await fireEvent.input(titleInput);
 
     // Check if the autocomplete list is shown
-    expect(wrapper.text()).toContain('To Do');
-    expect(wrapper.text()).toContain('/todo');
-    expect(wrapper.text()).toContain('Done');
-    expect(wrapper.text()).toContain('/done');
+    expect(container.textContent).toContain('To Do');
+    expect(container.textContent).toContain('/todo');
+    expect(container.textContent).toContain('Done');
+    expect(container.textContent).toContain('/done');
   });
 
   it('filters autocomplete list by input search text', async () => {
-    const wrapper = mount(TaskCreateModal, {
+    const { container } = render(TaskCreateModal, {
       props: defaultProps,
     });
 
-    const titleInput = wrapper.find('input[type="text"]');
-    await titleInput.setValue('/don');
-    await titleInput.trigger('input');
-    await nextTick();
+    const titleInput = container.querySelector('input[type="text"]') as HTMLInputElement;
+    expect(titleInput).not.toBeNull();
 
-    expect(wrapper.text()).not.toContain('/todo');
-    expect(wrapper.text()).toContain('/done');
+    titleInput.value = '/don';
+    await fireEvent.input(titleInput);
+
+    expect(container.textContent).not.toContain('/todo');
+    expect(container.textContent).toContain('/done');
   });
 
-  it('selects autocomplete item on click/mousedown', async () => {
-    const wrapper = mount(TaskCreateModal, {
+  it('selects autocomplete item on mousedown', async () => {
+    const { container } = render(TaskCreateModal, {
       props: defaultProps,
     });
 
-    const titleInput = wrapper.find('input[type="text"]');
-    await titleInput.setValue('/don');
-    // Set selectionStart to simulate caret position
-    const inputEl = titleInput.element as HTMLInputElement;
-    inputEl.selectionStart = 4;
-    inputEl.selectionEnd = 4;
+    const titleInput = container.querySelector('input[type="text"]') as HTMLInputElement;
+    expect(titleInput).not.toBeNull();
 
-    await titleInput.trigger('input');
-    await nextTick();
+    titleInput.value = '/don';
+    titleInput.selectionStart = 4;
+    titleInput.selectionEnd = 4;
+    await fireEvent.input(titleInput);
 
-    const options = wrapper.findAll('div[class*="cursor-pointer"]');
-    // Click on the first option (which should be /done because of filtering)
-    await options[0].trigger('mousedown');
-    await nextTick();
+    // Click/mousedown on the autocomplete option
+    const option = container.querySelector('div[class*="cursor-pointer"]') as HTMLDivElement;
+    expect(option).not.toBeNull();
+    await fireEvent.mouseDown(option);
 
-    expect(inputEl.value).toBe('/done ');
+    expect(titleInput.value).toBe('/done ');
   });
 });

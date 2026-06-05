@@ -1,9 +1,8 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import { mount, VueWrapper } from '@vue/test-utils';
-import { nextTick } from 'vue';
-import ColumnEditModal from '@/components/modals/ColumnEditModal.vue';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, fireEvent } from '@testing-library/svelte';
+import ColumnEditModal from '@/components/modals/ColumnEditModal.svelte';
 
-describe('ColumnEditModal.vue', () => {
+describe('ColumnEditModal.svelte', () => {
   const defaultProps = {
     isOpen: true,
     bucketName: 'todo',
@@ -11,19 +10,13 @@ describe('ColumnEditModal.vue', () => {
     initialSubtitle: 'Tasks that need to be done',
   };
 
-  let wrapper: VueWrapper<any> | null = null;
-
   afterEach(() => {
-    if (wrapper) {
-      wrapper.unmount();
-      wrapper = null;
-    }
     // Clean up JSDOM body to avoid leakage between tests
     document.body.innerHTML = '';
   });
 
   it('renders correctly when isOpen is true', () => {
-    wrapper = mount(ColumnEditModal, {
+    render(ColumnEditModal, {
       props: defaultProps,
     });
 
@@ -33,7 +26,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('does not render when isOpen is false', () => {
-    wrapper = mount(ColumnEditModal, {
+    render(ColumnEditModal, {
       props: {
         ...defaultProps,
         isOpen: false,
@@ -44,32 +37,44 @@ describe('ColumnEditModal.vue', () => {
     expect(titleInput).toBeNull();
   });
 
-  it('emits close event when close button is clicked', async () => {
-    wrapper = mount(ColumnEditModal, {
-      props: defaultProps,
+  it('invokes onclose callback when close button is clicked', async () => {
+    const onclose = vi.fn();
+    render(ColumnEditModal, {
+      props: {
+        ...defaultProps,
+        onclose,
+      },
     });
 
     const closeBtn = document.body.querySelector('button[class*="text-theme-text-muted"]') as HTMLButtonElement;
     expect(closeBtn).not.toBeNull();
-    closeBtn.click();
+    await fireEvent.click(closeBtn);
 
-    expect(wrapper.emitted('close')).toBeTruthy();
+    expect(onclose).toHaveBeenCalled();
   });
 
-  it('emits close event when pressing Escape key', () => {
-    wrapper = mount(ColumnEditModal, {
-      props: defaultProps,
+  it('invokes onclose callback when pressing Escape key', () => {
+    const onclose = vi.fn();
+    render(ColumnEditModal, {
+      props: {
+        ...defaultProps,
+        onclose,
+      },
     });
 
     const event = new KeyboardEvent('keydown', { key: 'Escape' });
     window.dispatchEvent(event);
 
-    expect(wrapper.emitted('close')).toBeTruthy();
+    expect(onclose).toHaveBeenCalled();
   });
 
-  it('emits save event with updated title and subtitle when saved', async () => {
-    wrapper = mount(ColumnEditModal, {
-      props: defaultProps,
+  it('invokes onsave callback with updated title and subtitle when saved', async () => {
+    const onsave = vi.fn();
+    render(ColumnEditModal, {
+      props: {
+        ...defaultProps,
+        onsave,
+      },
     });
 
     const inputs = document.body.querySelectorAll('input[type="text"]');
@@ -77,19 +82,18 @@ describe('ColumnEditModal.vue', () => {
     const subtitleInput = inputs[1] as HTMLInputElement;
 
     titleInput.value = 'Refined To Do';
-    titleInput.dispatchEvent(new Event('input'));
+    await fireEvent.input(titleInput);
     subtitleInput.value = 'Tasks ready for sprint';
-    subtitleInput.dispatchEvent(new Event('input'));
-    await nextTick();
+    await fireEvent.input(subtitleInput);
 
     const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Save Changes')
     ) as HTMLButtonElement;
     expect(saveBtn).not.toBeNull();
-    saveBtn.click();
+    await fireEvent.click(saveBtn);
 
-    expect(wrapper.emitted('save')).toBeTruthy();
-    expect(wrapper.emitted('save')?.[0][0]).toEqual({
+    expect(onsave).toHaveBeenCalled();
+    expect(onsave).toHaveBeenCalledWith({
       bucketName: 'todo',
       title: 'Refined To Do',
       subtitle: 'Tasks ready for sprint',
@@ -101,14 +105,13 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('disables save button if title is empty', async () => {
-    wrapper = mount(ColumnEditModal, {
+    render(ColumnEditModal, {
       props: defaultProps,
     });
 
     const titleInput = document.body.querySelectorAll('input[type="text"]')[0] as HTMLInputElement;
     titleInput.value = '';
-    titleInput.dispatchEvent(new Event('input'));
-    await nextTick();
+    await fireEvent.input(titleInput);
 
     const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Save Changes')
@@ -118,7 +121,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('handles null or undefined initialSubtitle without throwing errors', () => {
-    wrapper = mount(ColumnEditModal, {
+    render(ColumnEditModal, {
       props: {
         ...defaultProps,
         initialSubtitle: null,
@@ -131,28 +134,29 @@ describe('ColumnEditModal.vue', () => {
     expect(subtitleInput.value).toBe('');
   });
 
-  it('emits save event with selected color when a color swatch is clicked', async () => {
-    wrapper = mount(ColumnEditModal, {
+  it('invokes onsave callback with selected color when a color swatch is clicked', async () => {
+    const onsave = vi.fn();
+    render(ColumnEditModal, {
       props: {
         ...defaultProps,
         initialColor: null,
+        onsave,
       },
     });
 
     // Find the red color swatch button (the bg-rose-500 one)
     const colorBtn = document.body.querySelector('button.bg-rose-500') as HTMLButtonElement;
     expect(colorBtn).not.toBeNull();
-    colorBtn.click();
-    await nextTick();
+    await fireEvent.click(colorBtn);
 
     const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Save Changes')
     ) as HTMLButtonElement;
     expect(saveBtn).not.toBeNull();
-    saveBtn.click();
+    await fireEvent.click(saveBtn);
 
-    expect(wrapper.emitted('save')).toBeTruthy();
-    expect(wrapper.emitted('save')?.[0][0]).toEqual({
+    expect(onsave).toHaveBeenCalled();
+    expect(onsave).toHaveBeenCalledWith({
       bucketName: 'todo',
       title: 'To Do',
       subtitle: 'Tasks that need to be done',
@@ -163,11 +167,13 @@ describe('ColumnEditModal.vue', () => {
     });
   });
 
-  it('emits save event with selected layout when a layout segmented button is clicked', async () => {
-    wrapper = mount(ColumnEditModal, {
+  it('invokes onsave callback with selected layout when a layout segmented button is clicked', async () => {
+    const onsave = vi.fn();
+    render(ColumnEditModal, {
       props: {
         ...defaultProps,
         initialLayout: 'list',
+        onsave,
       },
     });
 
@@ -175,17 +181,16 @@ describe('ColumnEditModal.vue', () => {
     const segmentedButtons = document.body.querySelectorAll('.grid-cols-3 button');
     expect(segmentedButtons.length).toBe(3);
     const grid2Btn = segmentedButtons[1] as HTMLButtonElement; // grid-2
-    grid2Btn.click();
-    await nextTick();
+    await fireEvent.click(grid2Btn);
 
     const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Save Changes')
     ) as HTMLButtonElement;
     expect(saveBtn).not.toBeNull();
-    saveBtn.click();
+    await fireEvent.click(saveBtn);
 
-    expect(wrapper.emitted('save')).toBeTruthy();
-    expect(wrapper.emitted('save')?.[0][0]).toEqual({
+    expect(onsave).toHaveBeenCalled();
+    expect(onsave).toHaveBeenCalledWith({
       bucketName: 'todo',
       title: 'To Do',
       subtitle: 'Tasks that need to be done',
@@ -196,27 +201,28 @@ describe('ColumnEditModal.vue', () => {
     });
   });
 
-  it('emits save event with grid-3 layout when the third layout button is clicked', async () => {
-    wrapper = mount(ColumnEditModal, {
+  it('invokes onsave callback with grid-3 layout when the third layout button is clicked', async () => {
+    const onsave = vi.fn();
+    render(ColumnEditModal, {
       props: {
         ...defaultProps,
         initialLayout: 'list',
+        onsave,
       },
     });
 
     const segmentedButtons = document.body.querySelectorAll('.grid-cols-3 button');
     const grid3Btn = segmentedButtons[2] as HTMLButtonElement; // grid-3
-    grid3Btn.click();
-    await nextTick();
+    await fireEvent.click(grid3Btn);
 
     const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Save Changes')
     ) as HTMLButtonElement;
     expect(saveBtn).not.toBeNull();
-    saveBtn.click();
+    await fireEvent.click(saveBtn);
 
-    expect(wrapper.emitted('save')).toBeTruthy();
-    expect(wrapper.emitted('save')?.[0][0]).toEqual({
+    expect(onsave).toHaveBeenCalled();
+    expect(onsave).toHaveBeenCalledWith({
       bucketName: 'todo',
       title: 'To Do',
       subtitle: 'Tasks that need to be done',
@@ -227,11 +233,13 @@ describe('ColumnEditModal.vue', () => {
     });
   });
 
-  it('emits save event with parsed max_tasks when max tasks limit is entered', async () => {
-    wrapper = mount(ColumnEditModal, {
+  it('invokes onsave callback with parsed max_tasks when max tasks limit is entered', async () => {
+    const onsave = vi.fn();
+    render(ColumnEditModal, {
       props: {
         ...defaultProps,
         initialMaxTasks: 3,
+        onsave,
       },
     });
 
@@ -240,17 +248,16 @@ describe('ColumnEditModal.vue', () => {
     expect(maxTasksInput.value).toBe('3');
 
     maxTasksInput.value = '7';
-    maxTasksInput.dispatchEvent(new Event('input'));
-    await nextTick();
+    await fireEvent.input(maxTasksInput);
 
     const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Save Changes')
     ) as HTMLButtonElement;
     expect(saveBtn).not.toBeNull();
-    saveBtn.click();
+    await fireEvent.click(saveBtn);
 
-    expect(wrapper.emitted('save')).toBeTruthy();
-    expect(wrapper.emitted('save')?.[0][0]).toEqual({
+    expect(onsave).toHaveBeenCalled();
+    expect(onsave).toHaveBeenCalledWith({
       bucketName: 'todo',
       title: 'To Do',
       subtitle: 'Tasks that need to be done',

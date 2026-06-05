@@ -1,17 +1,26 @@
-import { beforeAll, describe, it, expect, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
-import { createPinia, setActivePinia } from 'pinia';
-import FilterModal from '@/components/modals/FilterModal.vue';
-import { useSettingsStore } from '@/stores/settings';
+import { beforeAll, beforeEach, describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/svelte';
+import FilterModal from '@/components/modals/FilterModal.svelte';
+import { settingsStore } from '@/stores/settings';
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = vi.fn();
   HTMLDialogElement.prototype.close = vi.fn();
-  setActivePinia(createPinia());
 });
 
-describe('FilterModal.vue', () => {
+beforeEach(() => {
+  localStorage.clear();
+  settingsStore.hideDoneColumn = true;
+  settingsStore.isSidebarOpen = true;
+  settingsStore.currentTheme = 'nordic-light';
+  settingsStore.viewMode = 'board';
+  settingsStore.activeProjectId = 'default';
+  settingsStore.thresholdDays = 7;
+  settingsStore.pinnedProjectIds = [];
+  settingsStore.sortBy = 'alpha';
+});
+
+describe('FilterModal.svelte', () => {
   const defaultProps = {
     isOpen: true,
     buckets: [
@@ -24,46 +33,55 @@ describe('FilterModal.vue', () => {
   };
 
   it('renders correctly when isOpen is true', () => {
-    const wrapper = mount(FilterModal, {
+    const { getByPlaceholderText, container } = render(FilterModal, {
       props: defaultProps,
     });
 
-    expect(wrapper.text()).toContain('Filter Tasks');
-    expect(wrapper.find('input[placeholder="Search in title and description..."]').exists()).toBe(true);
-    expect(wrapper.text()).toContain('To Do');
-    expect(wrapper.text()).toContain('In Progress');
-    expect(wrapper.text()).toContain('bug');
-    expect(wrapper.text()).toContain('ui');
+    expect(container.textContent).toContain('Filter Tasks');
+    expect(getByPlaceholderText('Search in title and description...')).toBeDefined();
+    expect(container.textContent).toContain('To Do');
+    expect(container.textContent).toContain('In Progress');
+    expect(container.textContent).toContain('bug');
+    expect(container.textContent).toContain('ui');
   });
 
-  it('emits close event when clicking close button', async () => {
-    const wrapper = mount(FilterModal, {
-      props: defaultProps,
+  it('invokes onclose callback when clicking close button', async () => {
+    const onclose = vi.fn();
+    render(FilterModal, {
+      props: {
+        ...defaultProps,
+        onclose,
+      },
     });
 
     // Find the button inside the header that handles close
-    const closeBtn = wrapper.find('button[class*="text-theme-text-muted"]');
-    expect(closeBtn.exists()).toBe(true);
-    await closeBtn.trigger('click');
-    expect(wrapper.emitted('close')).toBeTruthy();
+    const closeBtn = document.body.querySelector('button[class*="text-theme-text-muted"]') as HTMLButtonElement;
+    expect(closeBtn).not.toBeNull();
+    await fireEvent.click(closeBtn);
+    expect(onclose).toHaveBeenCalled();
   });
 
-  it('emits apply event with selected filters', async () => {
-    const wrapper = mount(FilterModal, {
-      props: defaultProps,
+  it('invokes onapply callback with selected filters', async () => {
+    const onapply = vi.fn();
+    const { getByPlaceholderText, getByText } = render(FilterModal, {
+      props: {
+        ...defaultProps,
+        onapply,
+      },
     });
 
     // Enter search text
-    const searchInput = wrapper.find('input[placeholder="Search in title and description..."]');
-    await searchInput.setValue('Refactor code');
+    const searchInput = getByPlaceholderText('Search in title and description...') as HTMLInputElement;
+    searchInput.value = 'Refactor code';
+    await fireEvent.input(searchInput);
 
     // Click Apply button
-    const applyBtn = wrapper.findAll('button').find((b) => b.text().includes('Apply Filters'));
+    const applyBtn = getByText('Apply Filters');
     expect(applyBtn).toBeDefined();
-    await applyBtn!.trigger('click');
-    expect(wrapper.emitted('apply')).toBeTruthy();
-    const applyEvent = wrapper.emitted('apply')![0][0];
-    expect(applyEvent).toEqual({
+    await fireEvent.click(applyBtn);
+
+    expect(onapply).toHaveBeenCalled();
+    expect(onapply).toHaveBeenCalledWith({
       search: 'Refactor code',
       buckets: undefined,
       priorities: undefined,
@@ -76,7 +94,7 @@ describe('FilterModal.vue', () => {
   });
 
   it('clears all filters when clicking clear button', async () => {
-    const wrapper = mount(FilterModal, {
+    const { getByPlaceholderText, getByText } = render(FilterModal, {
       props: {
         ...defaultProps,
         currentFilters: {
@@ -87,35 +105,35 @@ describe('FilterModal.vue', () => {
       },
     });
 
-    const searchInput = wrapper.find('input[placeholder="Search in title and description..."]').element as HTMLInputElement;
+    const searchInput = getByPlaceholderText('Search in title and description...') as HTMLInputElement;
     expect(searchInput.value).toBe('Some search');
 
     // Trigger clear
-    const clearBtn = wrapper.findAll('button').find((b) => b.text().includes('Clear Filters'));
+    const clearBtn = getByText('Clear Filters');
     expect(clearBtn).toBeDefined();
-    await clearBtn!.trigger('click');
-    await nextTick();
+    await fireEvent.click(clearBtn);
+
     expect(searchInput.value).toBe('');
   });
 
   it('updates settingsStore.hideDoneColumn when applied', async () => {
-    const store = useSettingsStore();
-    store.hideDoneColumn = false;
+    settingsStore.hideDoneColumn = false;
 
-    const wrapper = mount(FilterModal, {
+    const { getByText } = render(FilterModal, {
       props: defaultProps,
     });
 
-    const checkbox = wrapper.find('#hide-done-column-checkbox');
-    expect(checkbox.exists()).toBe(true);
-    expect((checkbox.element as HTMLInputElement).checked).toBe(false);
+    const checkbox = document.getElementById('hide-done-column-checkbox') as HTMLInputElement;
+    expect(checkbox).not.toBeNull();
+    expect(checkbox.checked).toBe(false);
 
-    await checkbox.setValue(true);
+    checkbox.checked = true;
+    await fireEvent.change(checkbox);
 
-    const applyBtn = wrapper.findAll('button').find((b) => b.text().includes('Apply Filters'));
+    const applyBtn = getByText('Apply Filters');
     expect(applyBtn).toBeDefined();
-    await applyBtn!.trigger('click');
+    await fireEvent.click(applyBtn);
 
-    expect(store.hideDoneColumn).toBe(true);
+    expect(settingsStore.hideDoneColumn).toBe(true);
   });
 });

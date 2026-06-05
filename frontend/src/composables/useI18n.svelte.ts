@@ -1,4 +1,3 @@
-import { ref, computed } from 'vue';
 import { en } from '@/locales/en';
 import { de } from '@/locales/de';
 
@@ -14,22 +13,24 @@ const getBrowserLocale = (): Locale => {
 };
 
 const savedLocale = typeof localStorage !== 'undefined' ? (localStorage.getItem('jotter-lang') as Locale | null) : null;
-const currentLocale = ref<Locale>(savedLocale && (savedLocale === 'en' || savedLocale === 'de') ? savedLocale : getBrowserLocale());
+let currentLocaleVal = $state<Locale>(savedLocale && (savedLocale === 'en' || savedLocale === 'de') ? savedLocale : getBrowserLocale());
+
+const localeObj = {
+  get value(): Locale {
+    return currentLocaleVal;
+  },
+  set value(v: Locale) {
+    currentLocaleVal = v;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('jotter-lang', v);
+    }
+  }
+};
 
 export function useI18n() {
-  const locale = computed({
-    get: () => currentLocale.value,
-    set: (value: Locale) => {
-      currentLocale.value = value;
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('jotter-lang', value);
-      }
-    },
-  });
-
   const t = (key: string, params?: Record<string, string | number>): string => {
     const keys = key.split('.');
-    let value: any = messages[currentLocale.value];
+    let value: any = messages[currentLocaleVal];
 
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
@@ -63,7 +64,7 @@ export function useI18n() {
   };
 
   return {
-    locale,
+    locale: localeObj,
     t,
   };
 }

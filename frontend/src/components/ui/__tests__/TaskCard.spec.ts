@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { mount } from '@vue/test-utils';
-import TaskCard from '@/components/ui/TaskCard.vue';
+import { describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/svelte';
+import TaskCard from '@/components/ui/TaskCard.svelte';
 import type { Task } from '@/types';
 
-describe('TaskCard.vue', () => {
+describe('TaskCard.svelte', () => {
   const mockTask: Task = {
     id: '123',
     project_id: 'default',
@@ -17,66 +17,70 @@ describe('TaskCard.vue', () => {
   };
 
   it('renders task title correctly', () => {
-    const wrapper = mount(TaskCard, {
+    const { getByText } = render(TaskCard, {
       props: {
         task: mockTask,
       },
     });
 
-    expect(wrapper.text()).toContain('Test Task Title');
+    expect(getByText('Test Task Title')).toBeDefined();
   });
 
   it('renders tags lists properly', () => {
-    const wrapper = mount(TaskCard, {
+    const { container } = render(TaskCard, {
       props: {
         task: mockTask,
       },
     });
 
-    const tags = wrapper.findAll('span.border');
+    const tags = container.querySelectorAll('span.border');
     expect(tags).toHaveLength(2);
-    expect(tags[0].text()).toBe('bug');
-    expect(tags[1].text()).toBe('frontend');
+    expect(tags[0].textContent?.trim()).toBe('bug');
+    expect(tags[1].textContent?.trim()).toBe('frontend');
   });
 
-  it('emits click event on click', async () => {
-    const wrapper = mount(TaskCard, {
+  it('invokes onclick callback when card is clicked', async () => {
+    const onclick = vi.fn();
+    const { getByText } = render(TaskCard, {
       props: {
         task: mockTask,
+        onclick,
       },
     });
 
-    await wrapper.trigger('click');
+    await fireEvent.click(getByText('Test Task Title'));
 
-    expect(wrapper.emitted('click')).toBeTruthy();
-    expect(wrapper.emitted('click')?.[0]).toEqual([mockTask]);
+    expect(onclick).toHaveBeenCalled();
+    expect(onclick).toHaveBeenCalledWith(mockTask);
   });
 
-  it('emits mark-done event when the checkmark button is clicked', async () => {
-    const wrapper = mount(TaskCard, {
+  it('invokes onmarkdone callback when the checkmark button is clicked', async () => {
+    const onmarkdone = vi.fn();
+    const { getByTitle } = render(TaskCard, {
       props: {
         task: mockTask,
+        onmarkdone,
       },
     });
 
-    const markDoneBtn = wrapper.find('button[title="Mark as done"]');
-    expect(markDoneBtn.exists()).toBe(true);
+    const markDoneBtn = getByTitle('Mark as done');
+    expect(markDoneBtn).toBeDefined();
 
-    await markDoneBtn.trigger('click');
+    await fireEvent.click(markDoneBtn);
 
-    expect(wrapper.emitted('mark-done')).toBeTruthy();
-    expect(wrapper.emitted('mark-done')?.[0]).toEqual([mockTask]);
+    expect(onmarkdone).toHaveBeenCalled();
+    expect(onmarkdone).toHaveBeenCalledWith(mockTask);
   });
 
   it('does not render checkmark button if task is in the done bucket', () => {
     const doneTask = { ...mockTask, bucket: 'done' };
-    const wrapper = mount(TaskCard, {
+    const { queryByTitle } = render(TaskCard, {
       props: {
         task: doneTask,
       },
     });
 
-    const markDoneBtn = wrapper.find('button[title="Mark as done"]');
-    expect(markDoneBtn.exists()).toBe(false);
+    const markDoneBtn = queryByTitle('Mark as done');
+    expect(markDoneBtn).toBeNull();
   });
 });

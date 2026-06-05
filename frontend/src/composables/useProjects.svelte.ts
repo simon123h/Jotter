@@ -1,30 +1,30 @@
-import { ref, type Ref } from 'vue';
 import type { Project } from '@/types';
 import { getProjects, createProject, updateProject, deleteProject } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
+import { settingsStore } from '@/stores/settings';
 
-export function useProjects(activeProjectId: Ref<string>, onSelectProject: (id: string) => void) {
+export function useProjects(onSelectProject: (id: string) => void) {
   const { t } = useI18n();
   const { showDialog } = useDialog();
 
-  const projects = ref<Project[]>([]);
-  const editingProject = ref<Project | null>(null);
-  const isProjectEditModalOpen = ref(false);
-  const error = ref<string | null>(null);
+  let projectsVal = $state<Project[]>([]);
+  let editingProjectVal = $state<Project | null>(null);
+  let isProjectEditModalOpenVal = $state(false);
+  let errorVal = $state<string | null>(null);
 
   const fetchProjects = async () => {
     try {
-      projects.value = await getProjects();
-      if (!projects.value.find((p) => p.id === activeProjectId.value)) {
-        if (projects.value.length > 0) {
-          onSelectProject(projects.value[0].id);
+      projectsVal = await getProjects();
+      if (!projectsVal.find((p) => p.id === settingsStore.activeProjectId)) {
+        if (projectsVal.length > 0) {
+          onSelectProject(projectsVal[0].id);
         } else {
           onSelectProject('default');
         }
       }
     } catch (err: any) {
-      error.value = err.message || 'Failed to fetch projects';
+      errorVal = err.message || 'Failed to fetch projects';
     }
   };
 
@@ -34,13 +34,13 @@ export function useProjects(activeProjectId: Ref<string>, onSelectProject: (id: 
       await fetchProjects();
       onSelectProject(created.id);
     } catch (err: any) {
-      error.value = err.message || 'Failed to create project';
+      errorVal = err.message || 'Failed to create project';
     }
   };
 
   const handleEditProject = (project: Project) => {
-    editingProject.value = project;
-    isProjectEditModalOpen.value = true;
+    editingProjectVal = project;
+    isProjectEditModalOpenVal = true;
   };
 
   const handleSaveProject = async ({ id, title, done_clean_period }: { id: string; title: string; done_clean_period: number | null }) => {
@@ -48,7 +48,7 @@ export function useProjects(activeProjectId: Ref<string>, onSelectProject: (id: 
       await updateProject(id, { title, done_clean_period });
       await fetchProjects();
     } catch (err: any) {
-      error.value = err.message || 'Failed to update project';
+      errorVal = err.message || 'Failed to update project';
     }
   };
 
@@ -66,18 +66,26 @@ export function useProjects(activeProjectId: Ref<string>, onSelectProject: (id: 
 
     try {
       await deleteProject(project.id);
-      isProjectEditModalOpen.value = false;
+      isProjectEditModalOpenVal = false;
       await fetchProjects();
     } catch (err: any) {
-      error.value = err.message || 'Failed to delete project';
+      errorVal = err.message || 'Failed to delete project';
     }
   };
 
   return {
-    projects,
-    editingProject,
-    isProjectEditModalOpen,
-    error,
+    get projects() { return projectsVal; },
+    set projects(v) { projectsVal = v; },
+
+    get editingProject() { return editingProjectVal; },
+    set editingProject(v) { editingProjectVal = v; },
+
+    get isProjectEditModalOpen() { return isProjectEditModalOpenVal; },
+    set isProjectEditModalOpen(v) { isProjectEditModalOpenVal = v; },
+
+    get error() { return errorVal; },
+    set error(v) { errorVal = v; },
+
     fetchProjects,
     handleCreateProject,
     handleEditProject,

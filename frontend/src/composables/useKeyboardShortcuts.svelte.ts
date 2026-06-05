@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted } from 'vue';
+import { onMount, onDestroy } from 'svelte';
 
 export interface ShortcutHandler {
   key: string;
@@ -43,11 +43,11 @@ export function useKeyboardShortcuts(shortcuts: ShortcutHandler[]) {
     }
   };
 
-  onMounted(() => {
+  onMount(() => {
     window.addEventListener('keydown', handleKeyDown);
   });
 
-  onUnmounted(() => {
+  onDestroy(() => {
     window.removeEventListener('keydown', handleKeyDown);
   });
 }
