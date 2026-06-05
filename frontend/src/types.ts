@@ -32,3 +32,17 @@ export interface Bucket {
   max_tasks?: number | null;
   is_default?: boolean;
 }
+
+export interface TaskFilterParams {
+  bucket?: string;
+  buckets?: string; // Comma-separated list of bucket names
+  tag?: string;
+  tags?: string; // Comma-separated list of tags
+  tag_mode?: 'any' | 'all';
+  exclude_bucket?: string;
+  priorities?: string; // Comma-separated list of priorities (low, medium, high, urgent, none)
+  search?: string;
+  due_before?: string; // YYYY-MM-DD
+  due_after?: string; // YYYY-MM-DD
+  has_due_date?: boolean | null;
+}

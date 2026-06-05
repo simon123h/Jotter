@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import type { Task, Bucket, Project } from './types';
+import type { Task, Bucket, Project, TaskFilterParams } from './types';
 import * as demoApi from './api.demo';
 
 const API_BASE = import.meta.env.DEV ? 'http://localhost:8000' : '';
@@ -118,14 +118,26 @@ export async function deleteProject(id: string): Promise<void> {
 // SCOPED TASK API
 // ==========================================
 
-export async function getTasks(projectId: string, bucket?: string, tag?: string, excludeBucket?: string): Promise<Task[]> {
+export async function getTasks(projectId: string, filters?: TaskFilterParams): Promise<Task[]> {
   if (IS_DEMO_MODE) {
-    return demoApi.getTasks(projectId, bucket, tag, excludeBucket);
+    return demoApi.getTasks(projectId, filters);
   }
   const url = new URL(`${API_BASE}/projects/${projectId}/tasks`, window.location.origin);
-  if (bucket) url.searchParams.append('bucket', bucket);
-  if (tag) url.searchParams.append('tag', tag);
-  if (excludeBucket) url.searchParams.append('exclude_bucket', excludeBucket);
+  if (filters) {
+    if (filters.bucket) url.searchParams.append('bucket', filters.bucket);
+    if (filters.buckets) url.searchParams.append('buckets', filters.buckets);
+    if (filters.tag) url.searchParams.append('tag', filters.tag);
+    if (filters.tags) url.searchParams.append('tags', filters.tags);
+    if (filters.tag_mode) url.searchParams.append('tag_mode', filters.tag_mode);
+    if (filters.exclude_bucket) url.searchParams.append('exclude_bucket', filters.exclude_bucket);
+    if (filters.priorities) url.searchParams.append('priorities', filters.priorities);
+    if (filters.search) url.searchParams.append('search', filters.search);
+    if (filters.due_before) url.searchParams.append('due_before', filters.due_before);
+    if (filters.due_after) url.searchParams.append('due_after', filters.due_after);
+    if (filters.has_due_date !== undefined && filters.has_due_date !== null) {
+      url.searchParams.append('has_due_date', String(filters.has_due_date));
+    }
+  }
 
   const response = await customFetch(url.toString());
   if (!response.ok) {

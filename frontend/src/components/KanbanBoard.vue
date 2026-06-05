@@ -3,7 +3,7 @@ import { ref, onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore, type ViewMode } from '../stores/settings';
-import type { Task, Bucket, BucketName, Project } from '../types';
+import type { Task, Bucket, BucketName, Project, TaskFilterParams } from '../types';
 import {
   getTasks,
   moveTask,
@@ -21,6 +21,7 @@ import {
 import TaskDetailModal from './TaskDetailModal.vue';
 import TaskCreateModal from './TaskCreateModal.vue';
 import ProjectEditModal from './ProjectEditModal.vue';
+import FilterModal from './FilterModal.vue';
 import BoardView from './BoardView.vue';
 import ListView from './ListView.vue';
 import MatrixView from './MatrixView.vue';
@@ -30,7 +31,22 @@ import ProjectSidebar from './ProjectSidebar.vue';
 import { useI18n } from '../composables/useI18n';
 import { useDialog } from '../composables/useDialog';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
-import { LayoutGrid, List, ChevronDown, Plus, X, ClipboardList, Menu, Eye, EyeOff, Grid, Clock, Check, Tag } from '@lucide/vue';
+import {
+  LayoutGrid,
+  List,
+  ChevronDown,
+  Plus,
+  X,
+  ClipboardList,
+  Menu,
+  Eye,
+  EyeOff,
+  Grid,
+  Clock,
+  Check,
+  Tag,
+  SlidersHorizontal,
+} from '@lucide/vue';
 
 const { t } = useI18n();
 const { showDialog, isOpen: dialogIsOpen } = useDialog();
@@ -75,6 +91,47 @@ const error = ref<string | null>(null);
 const searchQuery = ref('');
 const selectedTags = ref<string[]>([]);
 const isTagDropdownOpen = ref(false);
+
+const isFilterModalOpen = ref(false);
+const taskFilters = ref<TaskFilterParams>({});
+
+const hasActiveFilters = computed(() => {
+  const f = taskFilters.value;
+  return !!(
+    f.buckets ||
+    f.priorities ||
+    f.tags ||
+    f.search ||
+    f.due_after ||
+    f.due_before ||
+    (f.has_due_date !== undefined && f.has_due_date !== null)
+  );
+});
+
+const applyFilters = (filters: TaskFilterParams) => {
+  taskFilters.value = filters;
+
+  // Sync the quick filters in the header
+  searchQuery.value = filters.search || '';
+  selectedTags.value = filters.tags
+    ? filters.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : [];
+};
+
+watch(searchQuery, (newVal) => {
+  taskFilters.value.search = newVal.trim() || undefined;
+});
+
+watch(
+  selectedTags,
+  (newVal) => {
+    taskFilters.value.tags = newVal.length ? newVal.join(',') : undefined;
+  },
+  { deep: true }
+);
 
 const toggleTagSelection = (tag: string) => {
   const index = selectedTags.value.indexOf(tag);
@@ -211,7 +268,7 @@ const fetchBuckets = async () => {
 
 const fetchAllTasks = async () => {
   try {
-    tasks.value = await getTasks(activeProjectId.value, undefined, undefined, hideDoneColumn.value ? 'done' : undefined);
+    tasks.value = await getTasks(activeProjectId.value, { exclude_bucket: hideDoneColumn.value ? 'done' : undefined });
   } catch (err: any) {
     error.value = t('errors.fetchTasks', { message: err.message || err });
   }
@@ -247,16 +304,79 @@ const allTags = computed(() => {
   return Array.from(tagsSet).sort();
 });
 
-// Filter tasks based on Search query (title + body) & selected tags (case-insensitively)
+// Filter tasks based on Search query, tags, buckets, priorities, due dates
 const filteredTasks = computed(() => {
-  const query = searchQuery.value.toLowerCase();
-  return tasks.value.filter((task) => {
-    const matchesSearch = task.title.toLowerCase().includes(query) || (task.body && task.body.toLowerCase().includes(query));
-    const matchesTag =
-      selectedTags.value.length === 0 ||
-      (task.tags && selectedTags.value.every((t) => task.tags.some((tt) => tt.toLowerCase() === t.toLowerCase())));
-    return matchesSearch && matchesTag;
-  });
+  let list = tasks.value;
+
+  // 1. Search Query
+  const searchVal = (taskFilters.value.search || searchQuery.value || '').trim().toLowerCase();
+  if (searchVal) {
+    list = list.filter((task) => {
+      return task.title.toLowerCase().includes(searchVal) || (task.body && task.body.toLowerCase().includes(searchVal));
+    });
+  }
+
+  // 2. Column / Bucket Filter
+  if (taskFilters.value.buckets) {
+    const bucketList = taskFilters.value.buckets
+      .split(',')
+      .map((b) => b.trim().toLowerCase())
+      .filter(Boolean);
+    if (bucketList.length) {
+      list = list.filter((t) => bucketList.includes(t.bucket.toLowerCase()));
+    }
+  }
+
+  // 3. Priorities Filter
+  if (taskFilters.value.priorities) {
+    const priorityList = taskFilters.value.priorities
+      .split(',')
+      .map((p) => p.trim().toLowerCase())
+      .filter(Boolean);
+    if (priorityList.length) {
+      list = list.filter((t) => {
+        const priority = (t.priority || 'none').toLowerCase();
+        return priorityList.includes(priority);
+      });
+    }
+  }
+
+  // 4. Tags Filter (incorporating both quick tags and modal tags)
+  const modalTags = taskFilters.value.tags
+    ? taskFilters.value.tags
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean)
+    : [];
+  const combinedTags = Array.from(new Set([...selectedTags.value.map((t) => t.toLowerCase()), ...modalTags]));
+
+  if (combinedTags.length > 0) {
+    const mode = taskFilters.value.tag_mode || 'any';
+    if (mode === 'all') {
+      list = list.filter((t) => combinedTags.every((ft) => t.tags.some((tg) => tg.toLowerCase() === ft)));
+    } else {
+      list = list.filter((t) => combinedTags.some((ft) => t.tags.some((tg) => tg.toLowerCase() === ft)));
+    }
+  }
+
+  // 5. Due Date Status
+  if (taskFilters.value.has_due_date !== undefined && taskFilters.value.has_due_date !== null) {
+    if (taskFilters.value.has_due_date) {
+      list = list.filter((t) => !!t.due_date);
+    } else {
+      list = list.filter((t) => !t.due_date);
+    }
+  }
+
+  // 6. Due Date Range
+  if (taskFilters.value.due_before) {
+    list = list.filter((t) => !!t.due_date && t.due_date <= taskFilters.value.due_before!);
+  }
+  if (taskFilters.value.due_after) {
+    list = list.filter((t) => !!t.due_date && t.due_date >= taskFilters.value.due_after!);
+  }
+
+  return list;
 });
 
 // Group tasks by bucket name
@@ -307,6 +427,8 @@ watch(
       activeProjectId.value = newProjectId as string;
       error.value = null;
       selectedTags.value = [];
+      searchQuery.value = '';
+      taskFilters.value = {};
       await fetchAllData();
     }
 
@@ -636,6 +758,29 @@ const formatDateISO = (d: Date): string => {
 
       <!-- Toolbar Actions -->
       <div class="flex items-center gap-2 shrink-0">
+        <!-- Advanced Filter Button -->
+        <button
+          @click="isFilterModalOpen = true"
+          class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border transition-all cursor-pointer"
+          :class="
+            hasActiveFilters
+              ? 'bg-theme-primary/10 border-theme-primary/15 text-theme-accent font-bold shadow-none'
+              : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
+          "
+          :title="t('filterModal.buttonTooltip')"
+        >
+          <SlidersHorizontal class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
+          <span class="hidden md:inline">
+            {{ t('filterModal.title') }}
+          </span>
+          <span
+            v-if="hasActiveFilters"
+            class="ml-0.5 px-1 bg-theme-primary text-white text-[9px] font-bold rounded-full min-w-[14px] text-center"
+          >
+            !
+          </span>
+        </button>
+
         <!-- Tag Filter Dropdown -->
         <div class="relative shrink-0" v-if="allTags.length">
           <div v-if="isTagDropdownOpen" class="fixed inset-0 z-10" @click="isTagDropdownOpen = false"></div>
@@ -892,6 +1037,16 @@ const formatDateISO = (d: Date): string => {
           @close="isProjectEditModalOpen = false"
           @save="handleSaveProject"
           @delete-project="handleDeleteProject(editingProject)"
+        />
+
+        <!-- Filter Modal -->
+        <FilterModal
+          :is-open="isFilterModalOpen"
+          :buckets="buckets"
+          :all-tags="allTags"
+          :current-filters="taskFilters"
+          @close="isFilterModalOpen = false"
+          @apply="applyFilters"
         />
       </div>
     </div>

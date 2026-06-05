@@ -1,4 +1,4 @@
-import type { Task, Bucket, Project } from './types';
+import type { Task, Bucket, Project, TaskFilterParams } from './types';
 
 // ==========================================
 // LOCAL STORAGE MOCK CLIENT (DEMO MODE)
@@ -221,18 +221,72 @@ export async function deleteProject(id: string): Promise<void> {
   saveDemoTasksMap(tasksMap);
 }
 
-export async function getTasks(projectId: string, bucket?: string, tag?: string, excludeBucket?: string): Promise<Task[]> {
+export async function getTasks(projectId: string, filters?: TaskFilterParams): Promise<Task[]> {
   pruneDemoTasks(projectId);
   let list = getDemoTasksMap()[projectId] || [];
 
-  if (bucket) {
-    list = list.filter((t) => t.bucket === bucket);
-  } else if (excludeBucket) {
-    list = list.filter((t) => t.bucket !== excludeBucket);
-  }
-
-  if (tag) {
-    list = list.filter((t) => t.tags.includes(tag.toLowerCase()));
+  if (filters) {
+    if (filters.bucket) {
+      list = list.filter((t) => t.bucket === filters.bucket);
+    }
+    if (filters.buckets) {
+      const bucketList = filters.buckets
+        .split(',')
+        .map((b) => b.trim().toLowerCase())
+        .filter(Boolean);
+      if (bucketList.length) {
+        list = list.filter((t) => bucketList.includes(t.bucket.toLowerCase()));
+      }
+    }
+    if (filters.exclude_bucket) {
+      list = list.filter((t) => t.bucket !== filters.exclude_bucket);
+    }
+    if (filters.tag) {
+      list = list.filter((t) => t.tags.some((tg) => tg.toLowerCase() === filters.tag!.toLowerCase()));
+    }
+    if (filters.tags) {
+      const tagList = filters.tags
+        .split(',')
+        .map((tg) => tg.trim().toLowerCase())
+        .filter(Boolean);
+      if (tagList.length) {
+        const mode = filters.tag_mode || 'any';
+        if (mode === 'all') {
+          list = list.filter((t) => tagList.every((ft) => t.tags.some((tg) => tg.toLowerCase() === ft)));
+        } else {
+          list = list.filter((t) => tagList.some((ft) => t.tags.some((tg) => tg.toLowerCase() === ft)));
+        }
+      }
+    }
+    if (filters.priorities) {
+      const priorityList = filters.priorities
+        .split(',')
+        .map((p) => p.trim().toLowerCase())
+        .filter(Boolean);
+      if (priorityList.length) {
+        list = list.filter((t) => {
+          const priority = (t.priority || 'none').toLowerCase();
+          return priorityList.includes(priority);
+        });
+      }
+    }
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      list = list.filter((t) => t.title.toLowerCase().includes(searchLower) || (t.body && t.body.toLowerCase().includes(searchLower)));
+    }
+    if (filters.has_due_date !== undefined && filters.has_due_date !== null) {
+      if (filters.has_due_date) {
+        list = list.filter((t) => !!t.due_date);
+      } else {
+        list = list.filter((t) => !t.due_date);
+      }
+    }
+    if (filters.due_before) {
+      list = list.filter((t) => !!t.due_date && t.due_date <= filters.due_before!);
+    }
+    if (filters.due_after) {
+      list = list.filter((t) => !!t.due_date && t.due_date >= filters.due_after!);
+    }
   }
 
   return [...list].sort((a, b) => a.position - b.position);
