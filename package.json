@@ -7,7 +7,7 @@
     "dev:desktop": "wails dev",
     "dev:backend": "go run main_server.go shared_assets.go",
     "dev:frontend": "cd frontend && npm run dev",
-    "dev": "npm run dev:desktop",
+    "dev": "concurrently --kill-others-on-fail --names \"Backend,Frontend\" --prefix-colors \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:desktop": "wails build",
     "build:server": "cd frontend && npm run build && cd .. && go build -o build/bin/jotter-server main_server.go shared_assets.go",
     "build": "npm run build:desktop && npm run build:server",
