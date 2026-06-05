@@ -15,7 +15,6 @@ type UserConfig struct {
 	Host     string `yaml:"host" json:"host"`
 	Port     int    `yaml:"port" json:"port"`
 	LogLevel string `yaml:"log_level" json:"log_level"`
-	Launch   string `yaml:"launch" json:"launch"`
 }
 
 var cachedConfig *UserConfig
