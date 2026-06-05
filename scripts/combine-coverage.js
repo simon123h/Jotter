@@ -2,16 +2,29 @@ const fs = require('fs');
 const path = require('path');
 
 try {
-  // Read Backend Coverage
-  const backendCovPath = path.join(__dirname, '../backend/coverage.json');
+  // Read Backend Coverage (Go coverage.out)
+  const backendCovPath = path.join(__dirname, '../coverage.out');
   let backendTotal = 0;
   let backendCovered = 0;
   let backendPct = 0;
   
   if (fs.existsSync(backendCovPath)) {
-    const data = JSON.parse(fs.readFileSync(backendCovPath, 'utf8'));
-    backendTotal = data.totals.num_statements || 0;
-    backendCovered = data.totals.covered_lines || 0;
+    const lines = fs.readFileSync(backendCovPath, 'utf8').split('\n');
+    for (const line of lines) {
+      if (!line || line.startsWith('mode:')) continue;
+      
+      // Format: path/file.go:line.col,line.col num_statements count
+      const parts = line.split(' ');
+      if (parts.length === 3) {
+        const numStatements = parseInt(parts[1], 10);
+        const count = parseInt(parts[2], 10);
+        
+        backendTotal += numStatements;
+        if (count > 0) {
+          backendCovered += numStatements;
+        }
+      }
+    }
     backendPct = backendTotal > 0 ? (backendCovered / backendTotal) * 100 : 0;
   }
 
@@ -39,7 +52,7 @@ try {
 
 | Suite | Covered Statements | Total Statements | Coverage % |
 | :--- | :---: | :---: | :---: |
-| **Backend (Python)** | ${backendCovered} | ${backendTotal} | **${backendPct.toFixed(2)}%** |
+| **Backend (Go)** | ${backendCovered} | ${backendTotal} | **${backendPct.toFixed(2)}%** |
 | **Frontend (Vitest)** | ${frontendCovered} | ${frontendTotal} | **${frontendPct.toFixed(2)}%** |
 | **Overall Combined** | ${combinedCovered} | ${combinedTotal} | **${combinedPct.toFixed(2)}%** |
 
