@@ -45,6 +45,8 @@ You may customize the configuration e.g. by placing a `jotter.yaml` next to the 
 ```yaml
 # customize the port
 port: 9000
+# customize the launch mode (window or browser)
+launch: window
 # customize the user data directory
 data_dir: "~/Documents/my-jotter-data"
 ```
