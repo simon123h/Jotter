@@ -71,8 +71,8 @@ var icon []byte
 
 // App struct
 type App struct {
-	ctx     context.Context
-	apiUrl  string
+	ctx    context.Context
+	apiUrl string
 }
 
 // NewApp creates a new App struct
@@ -90,8 +90,8 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-
 func main() {
+
 	configFlag := flag.String("config", "", "Path to YAML/JSON configuration file")
 	portFlag := flag.Int("port", 0, "Port to run the server on")
 	hostFlag := flag.String("host", "", "Host address to bind to")
@@ -103,7 +103,7 @@ func main() {
 
 	// Load config
 	cfg := config.GetConfig(*configFlag)
-	
+
 	port := *portFlag
 	if port == 0 {
 		port = cfg.Port
@@ -194,14 +194,14 @@ func main() {
 
 	// Start a real background HTTP server so browsers can connect to localhost:port
 	addr := fmt.Sprintf("%s:%d", host, port)
-	
+
 	apiAddr := fmt.Sprintf("http://%s:%d", host, port)
 	if host == "0.0.0.0" {
 		apiAddr = fmt.Sprintf("http://localhost:%d", port)
 	}
 
 	// Automatically open browser if configured
-	if launch == "browser" {
+	if launch == "browser" && !isGeneratingBindings {
 		time.AfterFunc(1000*time.Millisecond, func() {
 			log.Printf("Opening browser at %s", apiAddr)
 			openBrowser(apiAddr)
@@ -248,5 +248,3 @@ func main() {
 		log.Fatalf("Wails launch failed: %v", err)
 	}
 }
-
-
