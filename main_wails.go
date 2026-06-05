@@ -16,8 +16,9 @@ import (
 	"jotter/backend/config"
 	"jotter/backend/db"
 	"jotter/backend/handlers"
-	"jotter/backend/storage"
 )
+
+
 
 //go:embed all:frontend/dist
 var assets embed.FS
@@ -52,16 +53,9 @@ func main() {
 	dataDir := config.GetDataDir("", "")
 	dbPath := config.GetDBPath("", "")
 
-	// Initialize SQLite Database
-	if err := db.InitDB(dbPath); err != nil {
-		log.Fatalf("Database initialization failed: %v", err)
-	}
+	// Bootstrap application settings and database
+	bootstrap(dataDir, dbPath)
 	defer db.CloseDB()
-
-	// Sync database with markdown files automatically on startup
-	if _, err := storage.SyncDBWithFiles(dataDir); err != nil {
-		log.Fatalf("Initial sync failed: %v", err)
-	}
 
 	// Setup Chi Router to serve as local Wails AssetServer Handler (no TCP listening port)
 	r := chi.NewRouter()

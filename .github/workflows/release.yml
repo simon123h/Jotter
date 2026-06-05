@@ -55,9 +55,9 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "linux" ]; then
-            wails build -tags webkit2_41
+            wails build -tags webkit2_41 -ldflags "-X main.Version=${{ github.ref_name }}"
           else
-            wails build
+            wails build -ldflags "-X main.Version=${{ github.ref_name }}"
           fi
 
       - name: Prepare Release Files

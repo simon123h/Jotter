@@ -20,18 +20,9 @@ import (
 	"jotter/backend/config"
 	"jotter/backend/db"
 	"jotter/backend/handlers"
-	"jotter/backend/storage"
 )
 
-const asciiLogo = `
-   ___       _   _            
-  |_  |     | | | |           
-    | | ___ | |_| |_ ___ _ __ 
-    | |/ _ \| __| __/ _ \ '__|
-/\__/ / (_) | |_| ||  __/ |   
-\____/ \___/ \__|\__\___|_|   
-                              
-`
+
 
 func openBrowser(url string) {
 	var cmd string
@@ -137,28 +128,11 @@ func main() {
 	// Set up database path
 	dbPath := config.GetDBPath(*configFlag, *dataDirFlag)
 
-	// Print ASCII Art logo and basic startup info
-	fmt.Print(asciiLogo)
-	fmt.Println("Jotter - Local-first Markdown Kanban Board")
-	fmt.Println("==========================================")
-	fmt.Printf("Starting Jotter on http://%s:%d\n", host, port)
-	fmt.Printf("Using database file: %s\n", dbPath)
-	fmt.Printf("Using tasks markdown directory: %s\n", dataDir)
-
-	// Initialize SQLite Database and run schemas
-	log.Println("Initializing database schema...")
-	if err := db.InitDB(dbPath); err != nil {
-		log.Fatalf("Database initialization failed: %v", err)
-	}
+	// Bootstrap application settings and database
+	bootstrap(dataDir, dbPath)
 	defer db.CloseDB()
 
-	// Sync database with markdown files automatically on startup
-	log.Println("Synchronizing database with markdown files...")
-	syncCount, err := storage.SyncDBWithFiles(dataDir)
-	if err != nil {
-		log.Fatalf("Initial sync failed: %v", err)
-	}
-	log.Printf("Database synchronization complete. Indexed %d tasks.\n", syncCount)
+	fmt.Printf("Starting Jotter on http://%s:%d\n", host, port)
 
 	// Start browser in a background thread after a short delay
 	if !*noBrowserFlag {
