@@ -14,7 +14,7 @@
     "test:backend": "go test -v ./internal/... ./tests/...",
     "test:frontend": "cd frontend && npm run test",
     "test": "npm run test:backend && npm run test:frontend",
-    "test:coverage": "go test -coverprofile=coverage.out -coverpkg=./internal/... ./tests/... && cd frontend && npm run test:coverage && cd .. && node scripts/combine-coverage.js",
+    "test:coverage": "go test -coverprofile=coverage.out -coverpkg=./internal/... ./internal/storage ./internal/config ./internal/db ./internal/app ./tests/... && cd frontend && npm run test:coverage && cd .. && node scripts/combine-coverage.js",
     "lint:backend": "go vet ./...",
     "lint:backend:fix": "echo \"No automatic linter fix for Go backend\"",
     "lint:frontend": "cd frontend && npm run lint",
