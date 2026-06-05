@@ -18,9 +18,13 @@ func BuildRouter(logLevel, dataDir string, serveStatic bool, assets embed.FS) *c
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	if logLevel == "INFO" || logLevel == "DEBUG" {
+
+	// Only enable request logging if log level is INFO or DEBUG
+	logLvl := strings.ToUpper(logLevel)
+	if logLvl == "INFO" || logLvl == "DEBUG" {
 		r.Use(middleware.Logger)
 	}
+
 	r.Use(middleware.Recoverer)
 	r.Use(handlers.CORSMiddleware)
 
