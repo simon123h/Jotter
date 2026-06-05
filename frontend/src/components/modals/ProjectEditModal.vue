@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { X, Trash2 } from '@lucide/vue';
-import { useI18n } from '../../composables/useI18n';
-import type { Project } from '../../types';
+import { useI18n } from '@/composables/useI18n';
+import type { Project } from '@/types';
 
 const { t } = useI18n();
 

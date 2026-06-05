@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
-import { en } from '../locales/en';
-import { de } from '../locales/de';
+import { en } from '@/locales/en';
+import { de } from '@/locales/de';
 
 export type Locale = 'en' | 'de';
 

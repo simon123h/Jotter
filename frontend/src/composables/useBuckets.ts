@@ -1,6 +1,6 @@
 import { ref, computed, type Ref } from 'vue';
-import type { Bucket } from '../types';
-import { getBuckets, createBucket, updateBucket, deleteBucket } from '../api';
+import type { Bucket } from '@/types';
+import { getBuckets, createBucket, updateBucket, deleteBucket } from '@/api';
 
 export function useBuckets(activeProjectId: Ref<string>, hideDoneColumn: Ref<boolean>) {
   const buckets = ref<Bucket[]>([]);

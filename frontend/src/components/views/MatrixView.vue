@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { useSettingsStore } from '../../stores/settings';
+import { useSettingsStore } from '@/stores/settings';
 import { computed } from 'vue';
 import { Calendar, Clock, AlertCircle, ArrowRight, UserCheck, Trash } from '@lucide/vue';
-import type { Task } from '../../types';
-import { useI18n } from '../../composables/useI18n';
+import type { Task } from '@/types';
+import { useI18n } from '@/composables/useI18n';
 
 const { t } = useI18n();
 

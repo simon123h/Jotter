@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
-import KanbanBoard from './components/KanbanBoard.vue';
+import KanbanBoard from '@/components/KanbanBoard.vue';
 
 const routes = [
   {

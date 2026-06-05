@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useDialog } from '../../composables/useDialog';
+import { useDialog } from '@/composables/useDialog';
 import { CheckCircle2, AlertOctagon, AlertTriangle, Info } from '@lucide/vue';
 
 const { isOpen, title, message, type, confirmText, cancelText, showCancel, handleConfirm, handleCancel } = useDialog();

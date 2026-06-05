@@ -1,7 +1,7 @@
 import { defineComponent } from 'vue';
 import { mount } from '@vue/test-utils';
 import { describe, it, expect, vi } from 'vitest';
-import { useKeyboardShortcuts } from '../useKeyboardShortcuts';
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 
 describe('useKeyboardShortcuts composable', () => {
   it('registers keydown event listener and invokes callback on key match', () => {

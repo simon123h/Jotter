@@ -1,6 +1,6 @@
 import { ref, computed, watch, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import type { Task, TaskFilterParams } from '../types';
+import type { Task, TaskFilterParams } from '@/types';
 
 export function useTaskFilters(tasks: Ref<Task[]>) {
   const route = useRoute();

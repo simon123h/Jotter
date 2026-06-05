@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { ChevronDown, ClipboardList } from '@lucide/vue';
-import type { Task, Bucket } from '../../types';
-import { useI18n } from '../../composables/useI18n';
+import type { Task, Bucket } from '@/types';
+import { useI18n } from '@/composables/useI18n';
 
 const { t } = useI18n();
 

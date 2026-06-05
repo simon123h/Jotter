@@ -1,4 +1,4 @@
-import type { Task, Bucket, Project, TaskFilterParams } from './types';
+import type { Task, Bucket, Project, TaskFilterParams } from '@/types';
 
 // ==========================================
 // LOCAL STORAGE MOCK CLIENT (DEMO MODE)

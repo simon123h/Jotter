@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import TaskCard from '../ui/TaskCard.vue';
-import type { Task } from '../../types';
+import TaskCard from '@/components/ui/TaskCard.vue';
+import type { Task } from '@/types';
 
 describe('TaskCard.vue', () => {
   const mockTask: Task = {

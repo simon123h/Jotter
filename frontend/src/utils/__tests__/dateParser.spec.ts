@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { parseDateFromTitle, extractTagsFromTitle, extractBucketFromTitle, parseTitleState } from '../dateParser';
+import { parseDateFromTitle, extractTagsFromTitle, extractBucketFromTitle, parseTitleState } from '@/utils/dateParser';
 
 describe('dateParser', () => {
   beforeEach(() => {

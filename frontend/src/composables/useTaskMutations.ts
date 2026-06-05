@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue';
-import type { Task, BucketName } from '../types';
-import { moveTask, updateTask } from '../api';
-import { useI18n } from './useI18n';
+import type { Task, BucketName } from '@/types';
+import { moveTask, updateTask } from '@/api';
+import { useI18n } from '@/composables/useI18n';
 
 export function useTaskMutations(
   tasks: Ref<Task[]>,

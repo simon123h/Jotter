@@ -1,8 +1,8 @@
 import { ref, type Ref } from 'vue';
-import type { Project } from '../types';
-import { getProjects, createProject, updateProject, deleteProject } from '../api';
-import { useI18n } from './useI18n';
-import { useDialog } from './useDialog';
+import type { Project } from '@/types';
+import { getProjects, createProject, updateProject, deleteProject } from '@/api';
+import { useI18n } from '@/composables/useI18n';
+import { useDialog } from '@/composables/useDialog';
 
 export function useProjects(activeProjectId: Ref<string>, onSelectProject: (id: string) => void) {
   const { t } = useI18n();

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue';
 import Sortable from 'sortablejs';
-import type { Task, BucketName } from '../../types';
-import TaskCard from './TaskCard.vue';
-import ColumnEditModal from '../modals/ColumnEditModal.vue';
-import { useI18n } from '../../composables/useI18n';
-import { useSettingsStore } from '../../stores/settings';
+import type { Task, BucketName } from '@/types';
+import TaskCard from '@/components/ui/TaskCard.vue';
+import ColumnEditModal from '@/components/modals/ColumnEditModal.vue';
+import { useI18n } from '@/composables/useI18n';
+import { useSettingsStore } from '@/stores/settings';
 import { MoreHorizontal, Plus } from '@lucide/vue';
 
 const { t } = useI18n();

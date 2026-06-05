@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useI18n } from '../useI18n';
+import { useI18n } from '@/composables/useI18n';
 
 describe('useI18n composable', () => {
   beforeEach(() => {

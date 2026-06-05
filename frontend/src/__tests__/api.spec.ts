@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isServerOnline, checkServerStatus, getProjects } from '../api';
+import { isServerOnline, checkServerStatus, getProjects } from '@/api';
 
 describe('api.ts - Connection Status Detection and Fetch Wrapper', () => {
   let fetchMock: any;

@@ -2,10 +2,10 @@
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
-import { useSettingsStore, type ViewMode } from '../../stores/settings';
-import type { Project } from '../../types';
-import { useI18n } from '../../composables/useI18n';
-import { isServerOnline, checkServerStatus } from '../../api';
+import { useSettingsStore, type ViewMode } from '@/stores/settings';
+import type { Project } from '@/types';
+import { useI18n } from '@/composables/useI18n';
+import { isServerOnline, checkServerStatus } from '@/api';
 
 const { t } = useI18n();
 

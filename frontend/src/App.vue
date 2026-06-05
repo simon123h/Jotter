@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import GlobalDialog from './components/ui/GlobalDialog.vue';
+import GlobalDialog from '@/components/ui/GlobalDialog.vue';
 </script>
 
 <template>
