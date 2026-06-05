@@ -122,7 +122,7 @@ sequenceDiagram
 Jotter is packaged into two separate native binaries:
 
 1. **`jotter-desktop` (GUI)**: A full desktop application bundled using **Wails**. It opens a native webview window and runs the embedded frontend.
-2. **`jotter` (Server)**: A lightweight CLI binary that starts a standard HTTP server and serves the frontend to any modern web browser.
+2. **`jotter-server` (Server)**: A lightweight CLI binary that starts a standard HTTP server and serves the frontend to any modern web browser.
 
 ### Shared Packaging Features:
 
