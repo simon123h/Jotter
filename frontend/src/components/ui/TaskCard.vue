@@ -5,7 +5,7 @@ import { ChevronDown, ClipboardList, Check, Calendar } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const props = defineProps<{
   task: Task;
@@ -61,7 +61,7 @@ const getTagClasses = (tag: string) => {
 const formatDate = (dateStr: string) => {
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' });
   } catch {
     return dateStr;
   }
