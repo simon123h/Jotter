@@ -117,6 +117,84 @@ watch(
   { deep: true }
 );
 
+const parseFiltersFromQuery = (q: any) => {
+  let has_due_date: boolean | null = null;
+  if (q.has_due_date === 'true') has_due_date = true;
+  else if (q.has_due_date === 'false') has_due_date = false;
+
+  const filters: TaskFilterParams = {
+    search: (q.search as string) || undefined,
+    buckets: (q.buckets as string) || undefined,
+    priorities: (q.priorities as string) || undefined,
+    tags: (q.tags as string) || undefined,
+    tag_mode: (q.tag_mode as 'any' | 'all') || undefined,
+    has_due_date,
+    due_after: (q.due_after as string) || undefined,
+    due_before: (q.due_before as string) || undefined,
+  };
+
+  // Compare and update if changed
+  if (JSON.stringify(taskFilters.value) !== JSON.stringify(filters)) {
+    taskFilters.value = filters;
+
+    // Sync quick filters in header
+    searchQuery.value = filters.search || '';
+    selectedTags.value = filters.tags
+      ? filters.tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean)
+      : [];
+  }
+};
+
+watch(
+  () => route.query,
+  (newQuery) => {
+    parseFiltersFromQuery(newQuery);
+  },
+  { immediate: true }
+);
+
+watch(
+  taskFilters,
+  (newFilters) => {
+    const query = { ...route.query };
+
+    if (newFilters.search) query.search = newFilters.search;
+    else delete query.search;
+
+    if (newFilters.buckets) query.buckets = newFilters.buckets;
+    else delete query.buckets;
+
+    if (newFilters.priorities) query.priorities = newFilters.priorities;
+    else delete query.priorities;
+
+    if (newFilters.tags) query.tags = newFilters.tags;
+    else delete query.tags;
+
+    if (newFilters.tag_mode) query.tag_mode = newFilters.tag_mode;
+    else delete query.tag_mode;
+
+    if (newFilters.has_due_date !== undefined && newFilters.has_due_date !== null) {
+      query.has_due_date = String(newFilters.has_due_date);
+    } else {
+      delete query.has_due_date;
+    }
+
+    if (newFilters.due_after) query.due_after = newFilters.due_after;
+    else delete query.due_after;
+
+    if (newFilters.due_before) query.due_before = newFilters.due_before;
+    else delete query.due_before;
+
+    if (JSON.stringify(route.query) !== JSON.stringify(query)) {
+      router.replace({ query });
+    }
+  },
+  { deep: true }
+);
+
 const setViewMode = (mode: ViewMode) => {
   settingsStore.setViewMode(mode);
   router.push({
@@ -184,7 +262,6 @@ const selectProject = (projectId: string) => {
   router.push({
     name: 'project-view',
     params: { projectId, viewMode: targetMode },
-    query: route.query,
   });
 };
 
