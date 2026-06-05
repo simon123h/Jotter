@@ -26,19 +26,20 @@ Jotter is a **local-first, privacy-focused task management application** designe
 
 ## ▶️ Installation
 
-Jotter is compiled as a portable binary, available for Windows, MacOS and Linux. No dependencies required.
+Jotter is provided as a portable tool with two distinct versions. No dependencies required.
 
 1. Download the package for your operating system from the [Latest Releases](https://github.com/simon123h/jotter/releases).
 2. Extract the archive.
-3. Launch the app:
-   - **Windows**: Double-click `jotter.exe`
-   - **macOS / Linux**: Open a terminal in the folder and run:
+3. Choose your preferred way to run Jotter:
+   - **Standalone Desktop App (Recommended)**: Double-click `jotter-desktop` (or `.exe` on Windows). This opens Jotter in its own dedicated window.
+   - **Headless Server**: Run `jotter-server` from your terminal. This starts a web server (default: `http://localhost:8000`) that you can access with your preferred browser.
 
-     ```bash
-     chmod +x jotter && ./jotter
-     ```
+   **Example (Linux / macOS terminal):**
 
-4. The application will start and **automatically open in your default browser** (usually at `http://127.0.0.1:8000`).
+   ```bash
+   chmod +x jotter-*
+   ./jotter-desktop
+   ```
 
 You may customize the configuration e.g. by placing a `jotter.yaml` next to the binary:
 

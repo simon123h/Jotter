@@ -62,5 +62,5 @@ log_level: "warning"
 
 - **Use a specific config file in another location:**
   ```bash
-  ./jotter --config /etc/jotter/config.yaml
+  ./jotter-server --config /etc/jotter/config.yaml
   ```
