@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Eye, EyeOff, Plus } from '@lucide/vue';
+import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus } from '@lucide/vue';
 import { useI18n } from '../composables/useI18n';
 import type { Project, BucketName } from '../types';
 import type { ViewMode } from '../stores/settings';
@@ -13,7 +13,6 @@ defineProps<{
   activeProjectId: string;
   hasActiveFilters: boolean;
   viewMode: ViewMode;
-  hideDoneColumn: boolean;
   defaultBucketName: BucketName;
 }>();
 
@@ -22,7 +21,6 @@ const emit = defineEmits<{
   (e: 'toggle-sidebar'): void;
   (e: 'open-filter'): void;
   (e: 'set-view-mode', mode: ViewMode): void;
-  (e: 'toggle-hide-done'): void;
   (e: 'create-task', defaultBucket: BucketName): void;
 }>();
 </script>
@@ -134,15 +132,7 @@ const emit = defineEmits<{
         </button>
       </div>
 
-      <!-- Hide Done Column Toggle -->
-      <button
-        @click="emit('toggle-hide-done')"
-        class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded transition-all border border-transparent cursor-pointer shrink-0 text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main"
-        :title="hideDoneColumn ? t('doneBucket.show') : t('doneBucket.hide')"
-      >
-        <component :is="hideDoneColumn ? EyeOff : Eye" class="w-3.5 h-3.5 text-theme-text-muted" />
-        <span class="hidden md:inline">{{ hideDoneColumn ? t('doneBucket.showText') : t('doneBucket.hideText') }}</span>
-      </button>
+
 
       <!-- New Task Button -->
       <button

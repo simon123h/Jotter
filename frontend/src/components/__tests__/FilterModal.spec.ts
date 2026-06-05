@@ -1,11 +1,13 @@
 import { beforeAll, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import FilterModal from '../FilterModal.vue';
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = vi.fn();
   HTMLDialogElement.prototype.close = vi.fn();
+  setActivePinia(createPinia());
 });
 
 describe('FilterModal.vue', () => {

@@ -2,6 +2,7 @@
 import { ref, watch, nextTick } from 'vue';
 import { X, SlidersHorizontal, Calendar, Tag, Trash2 } from '@lucide/vue';
 import { useI18n } from '../composables/useI18n';
+import { useSettingsStore } from '../stores/settings';
 import type { Bucket, TaskFilterParams } from '../types';
 
 const { t } = useI18n();
@@ -20,6 +21,8 @@ const emit = defineEmits<{
 
 const dialogRef = ref<HTMLDialogElement | null>(null);
 
+const settingsStore = useSettingsStore();
+
 // Local state for filters
 const search = ref('');
 const selectedBuckets = ref<string[]>([]);
@@ -29,6 +32,7 @@ const tagMode = ref<'any' | 'all'>('any');
 const dueDateStatus = ref<'all' | 'has' | 'none'>('all');
 const dueAfter = ref('');
 const dueBefore = ref('');
+const hideDoneColumnLocal = ref(false);
 
 // Watch for isOpen changes to call showModal() / close()
 watch(
@@ -71,6 +75,7 @@ watch(
 
       dueAfter.value = props.currentFilters.due_after || '';
       dueBefore.value = props.currentFilters.due_before || '';
+      hideDoneColumnLocal.value = settingsStore.hideDoneColumn;
 
       await nextTick();
       if (dialogRef.value && !dialogRef.value.open) {
@@ -99,6 +104,7 @@ const handleClear = () => {
   dueDateStatus.value = 'all';
   dueAfter.value = '';
   dueBefore.value = '';
+  hideDoneColumnLocal.value = false;
 };
 
 const handleApply = () => {
@@ -116,6 +122,8 @@ const handleApply = () => {
     due_after: dueDateStatus.value !== 'none' && dueAfter.value ? dueAfter.value : undefined,
     due_before: dueDateStatus.value !== 'none' && dueBefore.value ? dueBefore.value : undefined,
   };
+
+  settingsStore.hideDoneColumn = hideDoneColumnLocal.value;
 
   emit('apply', filters);
   emit('close');
@@ -305,6 +313,21 @@ const handleDialogClick = (event: MouseEvent) => {
             />
           </div>
         </div>
+      </div>
+
+      <!-- Layout Options -->
+      <div class="border-t border-theme-border/30 pt-3">
+        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+          {{ t('settingsView.general') }}
+        </label>
+        <label class="flex items-center gap-2 px-2.5 py-1.5 rounded border border-theme-border/50 bg-theme-card/30 hover:bg-theme-column/30 transition-all cursor-pointer text-xs text-theme-text-main w-full">
+          <input
+            type="checkbox"
+            v-model="hideDoneColumnLocal"
+            class="accent-theme-primary"
+          />
+          <span>{{ t('doneBucket.hide') }}</span>
+        </label>
       </div>
     </div>
 

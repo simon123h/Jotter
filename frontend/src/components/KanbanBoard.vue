@@ -56,10 +56,9 @@ const { hideDoneColumn, isSidebarOpen, currentTheme, viewMode, activeProjectId }
 const tasks = ref<Task[]>([]);
 const buckets = ref<Bucket[]>([]);
 
-const toggleHideDoneColumn = () => {
-  settingsStore.toggleHideDoneColumn();
+watch(hideDoneColumn, () => {
   fetchAllTasks();
-};
+});
 
 const displayedBuckets = computed(() => {
   if (hideDoneColumn.value) {
@@ -593,12 +592,10 @@ const formatDateISO = (d: Date): string => {
       :active-project-id="activeProjectId"
       :has-active-filters="hasActiveFilters"
       :view-mode="viewMode"
-      :hide-done-column="hideDoneColumn"
       :default-bucket-name="defaultBucketName"
       @toggle-sidebar="toggleSidebar"
       @open-filter="isFilterModalOpen = true"
       @set-view-mode="setViewMode"
-      @toggle-hide-done="toggleHideDoneColumn"
       @create-task="openCreateModal"
     />
 
