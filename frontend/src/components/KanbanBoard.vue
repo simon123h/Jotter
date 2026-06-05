@@ -3,7 +3,7 @@ import { ref, onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore, type ViewMode } from '@/stores/settings';
-import type { Task, BucketName, TaskFilterParams } from '@/types';
+import type { Task, BucketName } from '@/types';
 import { getTasks, syncSystem } from '@/api';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
 import TaskCreateModal from '@/components/modals/TaskCreateModal.vue';
