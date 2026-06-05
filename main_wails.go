@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"embed"
+	"io/fs"
 	"log"
 	"strings"
 
@@ -93,6 +94,12 @@ func main() {
 	handlers.RegisterTaskRoutes(r, dataDir)
 	handlers.RegisterSystemRoutes(r, dataDir)
 
+	// Get sub-filesystem pointing to frontend/dist to remove folder prefix from embedded path roots
+	assetsSub, errFs := fs.Sub(assets, "frontend/dist")
+	if errFs != nil {
+		log.Fatalf("Failed to create assets sub-filesystem: %v", errFs)
+	}
+
 	// Run Wails application
 	app := NewApp()
 	err := wails.Run(&options.App{
@@ -100,7 +107,7 @@ func main() {
 		Width:  1024,
 		Height: 768,
 		AssetServer: &assetserver.Options{
-			Assets:  assets,
+			Assets:  assetsSub,
 			Handler: r,
 		},
 		BackgroundColour: &options.RGBA{R: 30, G: 41, B: 59, A: 1}, // Slate dark color

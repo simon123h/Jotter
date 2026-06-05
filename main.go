@@ -3,8 +3,10 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -21,6 +23,10 @@ import (
 	"jotter/backend/db"
 	"jotter/backend/handlers"
 )
+
+//go:embed all:frontend/dist
+var assets embed.FS
+
 
 
 
@@ -164,29 +170,67 @@ func main() {
 	handlers.RegisterSystemRoutes(r, dataDir)
 
 	// Static Files Routing
-	distDir := getFrontendDistDir()
-	if distDir != "" {
-		log.Printf("Serving frontend static assets from: %s\n", distDir)
-		fileServer := http.FileServer(http.Dir(distDir))
+	var useEmbedded bool
+	assetsSub, errFs := fs.Sub(assets, "frontend/dist")
+	if errFs == nil {
+		// Read index.html to check if it's a real file (not just a tiny placeholder or empty)
+		if data, err := fs.ReadFile(assetsSub, "index.html"); err == nil && len(data) > 30 {
+			useEmbedded = true
+		}
+	}
 
-		// Serve static directory, and fallback unknown routes to index.html for frontend routing support
+	if useEmbedded {
+		log.Println("Serving frontend static assets from embedded filesystem")
+		fileServer := http.FileServer(http.FS(assetsSub))
+
 		r.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			path := req.URL.Path
-			// Check if file exists, if not serve index.html
-			filePath := filepath.Join(distDir, path)
-			if fi, err := os.Stat(filePath); err != nil || fi.IsDir() {
-				http.ServeFile(w, req, filepath.Join(distDir, "index.html"))
+			// Clean path to prevent directory traversal in the sub-filesystem
+			filePath := strings.TrimPrefix(path, "/")
+			if filePath == "" {
+				filePath = "index.html"
+			}
+			f, err := assetsSub.Open(filePath)
+			if err != nil {
+				// Fallback to index.html for frontend routing support
+				indexData, errIndex := fs.ReadFile(assetsSub, "index.html")
+				if errIndex == nil {
+					w.Header().Set("Content-Type", "text/html; charset=utf-8")
+					w.WriteHeader(http.StatusOK)
+					_, _ = w.Write(indexData)
+					return
+				}
+				http.NotFound(w, req)
 				return
 			}
+			f.Close()
 			fileServer.ServeHTTP(w, req)
 		}))
 	} else {
-		log.Println("Warning: frontend/dist directory not found. Static files will not be served.")
-		r.Get("/", func(w http.ResponseWriter, req *http.Request) {
-			w.Header().Set("Content-Type", "text/html")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`<h3>Jotter API is running</h3><p>Frontend assets are not compiled. Run <code>npm run build</code> in the frontend directory to serve them here.</p>`))
-		})
+		distDir := getFrontendDistDir()
+		if distDir != "" {
+			log.Printf("Serving frontend static assets from disk: %s\n", distDir)
+			fileServer := http.FileServer(http.Dir(distDir))
+
+			// Serve static directory, and fallback unknown routes to index.html for frontend routing support
+			r.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				path := req.URL.Path
+				// Check if file exists, if not serve index.html
+				filePath := filepath.Join(distDir, path)
+				if fi, err := os.Stat(filePath); err != nil || fi.IsDir() {
+					http.ServeFile(w, req, filepath.Join(distDir, "index.html"))
+					return
+				}
+				fileServer.ServeHTTP(w, req)
+			}))
+		} else {
+			log.Println("Warning: frontend/dist directory not found. Static files will not be served.")
+			r.Get("/", func(w http.ResponseWriter, req *http.Request) {
+				w.Header().Set("Content-Type", "text/html")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`<h3>Jotter API is running</h3><p>Frontend assets are not compiled. Run <code>npm run build</code> in the frontend directory to serve them here.</p>`))
+			})
+		}
 	}
 
 	addr := fmt.Sprintf("%s:%d", host, port)

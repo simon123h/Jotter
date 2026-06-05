@@ -28,3 +28,4 @@ coverage/
 
 # Wails bindings
 src/wailsjs/
+*.md5
