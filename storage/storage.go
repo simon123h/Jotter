@@ -104,10 +104,10 @@ func LoadProjectsFile(tasksDir string) ([]map[string]interface{}, error) {
 		nowStr = strings.Replace(nowStr, "+00:00", "Z", 1)
 		defaultProj := []map[string]interface{}{
 			{
-				"id":                 "default",
-				"title":              "Default Project",
-				"created_at":         nowStr,
-				"done_clean_period":  nil,
+				"id":                "default",
+				"title":             "Default Project",
+				"created_at":        nowStr,
+				"done_clean_period": nil,
 			},
 		}
 		_ = os.MkdirAll(filepath.Join(tasksDir, "default"), 0755)
@@ -527,7 +527,7 @@ func SyncDBWithFiles(tasksDir string) (int, error) {
 			bName, _ := b["name"].(string)
 			bTitle, _ := b["title"].(string)
 			bSubtitle, _ := b["subtitle"].(string)
-			
+
 			var bPos float64
 			if v, ok := b["position"].(float64); ok {
 				bPos = v

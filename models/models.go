@@ -2,12 +2,12 @@ package models
 
 // Project DTOs
 type ProjectCreate struct {
-	Title            string `json:"title"`
+	Title           string `json:"title"`
 	DoneCleanPeriod *int   `json:"done_clean_period,omitempty"`
 }
 
 type ProjectUpdate struct {
-	Title            *string `json:"title,omitempty"`
+	Title           *string `json:"title,omitempty"`
 	DoneCleanPeriod *int    `json:"done_clean_period,omitempty"`
 }
 
@@ -81,12 +81,12 @@ type BucketUpdate struct {
 }
 
 type BucketResponse struct {
-	Name      string   `json:"name"`
-	Title     string   `json:"title"`
-	Subtitle  string   `json:"subtitle"`
-	Position  float64  `json:"position"`
-	Color     *string  `json:"color"`
-	Layout    string   `json:"layout"`
-	MaxTasks  *int     `json:"max_tasks"`
-	IsDefault bool     `json:"is_default"`
+	Name      string  `json:"name"`
+	Title     string  `json:"title"`
+	Subtitle  string  `json:"subtitle"`
+	Position  float64 `json:"position"`
+	Color     *string `json:"color"`
+	Layout    string  `json:"layout"`
+	MaxTasks  *int    `json:"max_tasks"`
+	IsDefault bool    `json:"is_default"`
 }

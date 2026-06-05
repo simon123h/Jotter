@@ -82,10 +82,10 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 		}
 
 		newProject := map[string]interface{}{
-			"id":                 projectID,
-			"title":              req.Title,
-			"created_at":         nowStr,
-			"done_clean_period":  cleanPeriodVal,
+			"id":                projectID,
+			"title":             req.Title,
+			"created_at":        nowStr,
+			"done_clean_period": cleanPeriodVal,
 		}
 
 		projects = append(projects, newProject)

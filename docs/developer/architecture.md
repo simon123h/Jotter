@@ -50,7 +50,7 @@ Jotter employs the **"Ephemeral Index" Pattern** to combine the benefits of rela
 
 ```mermaid
 flowchart TD
-    API[FastAPI Backend] <-->|Write JSON Frontmatter| Files[(Markdown Files)]
+    API[Go Chi Backend] <-->|Write JSON Frontmatter| Files[(Markdown Files)]
     API <-->|Read / Write| DB[(SQLite Index)]
     DB -.->|Fully reconstructed from| Files
 ```
@@ -70,10 +70,10 @@ flowchart LR
         Store <--> Client[API Client]
     end
 
-    subgraph Backend [Backend Server - FastAPI]
-        Router[API Routers] <--> Models[Pydantic Models]
+    subgraph Backend [Backend Server - Go Chi / Wails]
+        Router[API Routers] <--> Models[Go Struct Models]
         Router <--> Storage[File Sync Manager]
-        Router <--> Database[SQLite db_session]
+        Router <--> Database[SQLite database/sql]
     end
 
     Client <-->|REST API / CORS| Router
@@ -85,11 +85,11 @@ flowchart LR
 - **Pinia Store**: Manages client-side settings (such as local preference persistence) synced with `localStorage`.
 - **API Client**: Interacts with the backend routes.
 
-### 5.2 Backend (Python FastAPI)
+### 5.2 Backend (Go Chi / Wails)
 
-- **API Routers**: Exposes endpoints for managing tasks, buckets, and projects.
+- **API Routers**: Exposes REST endpoints for managing tasks, buckets, and projects.
 - **Storage Manager**: Implements atomic writes to task files (writing to temporary files first before moving them into place) and handles folder migration.
-- **SQLite Database**: Uses standard Python `sqlite3` in WAL (Write-Ahead Logging) mode.
+- **SQLite Database**: Uses pure-Go `modernc.org/sqlite` in WAL (Write-Ahead Logging) mode.
 
 ---
 
@@ -101,14 +101,14 @@ When Jotter starts, it goes through a synchronization phase to align the databas
 
 ```mermaid
 sequenceDiagram
-    participant Main as main.py
-    participant DB as database.py
-    participant Storage as storage.py
+    participant Main as main.go / main_wails.go
+    participant DB as db/db.go
+    participant Storage as storage/storage.go
     participant Disk as Local Disk (.md)
 
-    Main->>DB: init_db()
+    Main->>DB: InitDB()
     DB->>DB: Create SQLite tables and indexes
-    Main->>Storage: sync_db_with_files()
+    Main->>Storage: SyncDBWithFiles()
     Storage->>Disk: Scan tasks/ directory structure
     Disk-->>Storage: Return markdown files metadata
     Storage->>DB: Clear index & bulk insert records
@@ -119,10 +119,10 @@ sequenceDiagram
 
 ## 7. Deployment View
 
-Jotter is packaged into single-file binary executables using **PyInstaller**:
+Jotter is packaged into native single-file binaries or desktop applications using **Wails**:
 
-- **Assets Bundling**: The compiled frontend SPA bundle (`dist/`) is packaged inside the binary and extracted into `sys._MEIPASS` at runtime.
-- **Web Server Integration**: FastAPI routes serve the static assets from the extracted folder while running the API server.
+- **Assets Bundling**: The compiled frontend SPA bundle (`dist/`) is embedded inside the Go binary using `go:embed` and served natively.
+- **Desktop Packaging**: Under Wails, a native webview window runs the embedded frontend while communicating with the Go backend locally.
 
 ---
 
