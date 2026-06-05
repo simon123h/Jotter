@@ -18,3 +18,4 @@ __pycache__/
 build/
 
 jotter.yaml
+jotter-backend
