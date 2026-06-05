@@ -12,14 +12,10 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/projects': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/system': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
+      '/projects': 'http://localhost:8000',
+      '/tasks': 'http://localhost:8000',
+      '/buckets': 'http://localhost:8000',
+      '/system': 'http://localhost:8000',
     },
   },
   resolve: {

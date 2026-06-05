@@ -27,10 +27,6 @@ func NewDesktopApp(cfg *AppConfig) *DesktopApp {
 	return &DesktopApp{cfg: cfg}
 }
 
-func (a *DesktopApp) GetAPIUrl() string {
-	return a.cfg.APIAddr
-}
-
 func (a *DesktopApp) startup(ctx context.Context, assets embed.FS) {
 	a.ctx = ctx
 	Bootstrap(a.cfg.DataDir, a.cfg.DBPath)
