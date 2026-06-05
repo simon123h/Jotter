@@ -1,7 +1,7 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "jotter",
-  "outputfilename": "jotter",
+  "outputfilename": "jotter-desktop",
   "main": "cmd/jotter-desktop",
   "build:tags": "wails",
   "frontend:dir": "frontend",

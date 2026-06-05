@@ -61,6 +61,13 @@ jobs:
         run: |
           npm run test:coverage
 
+      - name: Verify Binary Compilation
+        run: |
+          # Verify server binary
+          go build -v -o /dev/null cmd/jotter/main.go
+          # Verify desktop binary (using wails tags)
+          go build -v -tags wails -o /dev/null cmd/jotter-desktop/main.go
+
       - name: Upload Backend Coverage to Codecov
         uses: codecov/codecov-action@v4
         with:

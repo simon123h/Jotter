@@ -4,30 +4,29 @@ Jotter is designed to be fully self-contained. You do not need Python, Node.js, 
 
 We provide pre-compiled, single-file executables for Windows, Linux, and macOS.
 
+## Which binary should I use?
+
+The release package contains two different versions of Jotter:
+
+- **`jotter-desktop` (Recommended for most users)**: This is a standalone desktop application. It opens in its own window and behaves like a regular desktop tool (similar to Obsidian or Trello).
+- **`jotter`**: This is a lightweight CLI/server version. It runs in your terminal and starts a web server. Use this if you want to run Jotter on a headless server, inside Docker, or simply prefer using your own web browser.
+
 ## Installation Steps
 
 1. Go to the [GitHub Releases](https://github.com/simon123h/jotter/releases) page of the repository.
-2. Download the packaged executable matching your operating system:
-   - **Windows**: `jotter-vX.Y.Z-windows.zip`
-   - **Linux**: `jotter-vX.Y.Z-linux.tar.gz`
-   - **macOS**: `jotter-vX.Y.Z-macos.tar.gz`
+2. Download the packaged archive matching your operating system.
 3. Extract the downloaded archive.
 4. Run the executable:
-   - **Windows**: Double-click `jotter.exe` in the extracted folder.
-   - **Linux**: Open your terminal, navigate to the extracted folder, and run:
+   - **Windows**: Double-click `jotter-desktop.exe` for the app window, or run `jotter.exe` in a command prompt for the server mode.
+   - **Linux / macOS**: Open your terminal, navigate to the extracted folder, and run:
      ```bash
-     chmod +x jotter && ./jotter
+     chmod +x jotter*
+     ./jotter-desktop  # For the desktop app
+     # OR
+     ./jotter          # For the server mode
      ```
-   - **macOS**: Open your terminal, navigate to the extracted folder, and run:
-     ```bash
-     chmod +x jotter && ./jotter
-     ```
-     _(Note: You may need to grant execution permissions in macOS System Settings under Security & Privacy if it warns about an unidentified developer.)_
 
 ## Post-Launch
 
-Once started, Jotter will:
-
-1. Initialize a local web server (by default on `http://127.0.0.1:8000`).
-2. **Automatically open the interface** in your default web browser.
-3. Use a folder named `tasks` in your current working directory to store your markdown files. You can configure this behavior (see [Configuration Guide](../user/configuration.md)).
+- If you run **`jotter-desktop`**, the application window will open immediately.
+- If you run **`jotter`**, it will initialize a local web server (default: `http://localhost:8000`) and **automatically open** your default web browser to that address.

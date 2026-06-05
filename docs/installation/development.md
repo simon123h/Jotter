@@ -37,23 +37,24 @@ npm run install:all
 
 You can run Jotter in either Browser/Web mode or as a native Wails Desktop Application.
 
-### Option A: Browser / Web Mode (Default)
+### Option A: Wails Desktop Mode (Recommended)
 
-To run both the Go REST API server and the frontend (Vue 3 / Vite) concurrently with hot-reloading:
+To run Jotter in developer desktop mode (interactive desktop window with hot-reloading support for both Go and Vue):
 
 ```bash
 npm run dev
+# or directly
+wails dev
 ```
 
-- The **Frontend** will be accessible at: `http://localhost:5173/` (or the port shown in your terminal).
-- The **Backend API** will run at: `http://127.0.0.1:8000/`.
+### Option B: Web / Server Mode
 
-### Option B: Wails Desktop Mode
-
-To run Jotter in developer desktop mode using Wails (interactive desktop window with hot-reloading support):
+To run both the Go REST API server and the frontend (Vue 3 / Vite) concurrently in your web browser with hot-reloading:
 
 ```bash
-wails dev
+npm run dev:backend
+# and in another terminal
+npm run dev:frontend
 ```
 
 ---
@@ -62,14 +63,15 @@ wails dev
 
 Several npm script wrappers are available at the root level for convenient development workflow:
 
-| Command                | Description                                                       |
-| :--------------------- | :---------------------------------------------------------------- |
-| `npm run dev`          | Runs both backend and frontend concurrently with hot-reloads.     |
-| `npm run build`        | Builds the frontend production bundle (`dist/`).                  |
-| `npm run test`         | Executes both backend (Go test) and frontend (Vitest) test suites. |
-| `npm run lint`         | Lints the entire codebase (Go vet + ESLint for Vue).               |
-| `npm run format`       | Auto-formats code (Go fmt + Prettier).                             |
-| `npm run format:check` | Checks formatting without rewriting files.                        |
+| Command                 | Description                                                           |
+| :---------------------- | :-------------------------------------------------------------------- |
+| `npm run dev`           | Standard dev mode: launches the Wails desktop window with hot-reload. |
+| `npm run build`         | Builds both the `jotter` (server) and `jotter-desktop` binaries.      |
+| `npm run build:server`  | Builds only the server binary.                                        |
+| `npm run build:desktop` | Builds only the desktop binary.                                       |
+| `npm run test`          | Executes both backend (Go test) and frontend (Vitest) test suites.    |
+| `npm run lint`          | Lints the entire codebase.                                            |
+| `npm run format`        | Auto-formats code.                                                    |
 
 For individual components:
 

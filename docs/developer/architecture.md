@@ -101,9 +101,9 @@ When Jotter starts, it goes through a synchronization phase to align the databas
 
 ```mermaid
 sequenceDiagram
-    participant Main as main.go / main_wails.go
-    participant DB as db/db.go
-    participant Storage as storage/storage.go
+    participant Main as cmd/jotter or cmd/jotter-desktop
+    participant DB as internal/db/db.go
+    participant Storage as internal/storage/storage.go
     participant Disk as Local Disk (.md)
 
     Main->>DB: InitDB()
@@ -119,10 +119,15 @@ sequenceDiagram
 
 ## 7. Deployment View
 
-Jotter is packaged into native single-file binaries or desktop applications using **Wails**:
+Jotter is packaged into two separate native binaries:
+
+1.  **`jotter-desktop` (GUI)**: A full desktop application bundled using **Wails**. It opens a native webview window and runs the embedded frontend.
+2.  **`jotter` (Server)**: A lightweight CLI binary that starts a standard HTTP server and serves the frontend to any modern web browser.
+
+### Shared Packaging Features:
 
 - **Assets Bundling**: The compiled frontend SPA bundle (`dist/`) is embedded inside the Go binary using `go:embed` and served natively.
-- **Desktop Packaging**: Under Wails, a native webview window runs the embedded frontend while communicating with the Go backend locally.
+- **Internal Logic**: Both binaries share the exact same underlying logic from the `internal/` packages, ensuring consistent behavior across modes.
 
 ---
 
