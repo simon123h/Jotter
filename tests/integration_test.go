@@ -1,8 +1,9 @@
-package main
+package tests
 
 import (
 	"bytes"
 	"database/sql"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -41,8 +42,8 @@ func TestIntegration(t *testing.T) {
 	}
 
 	// Initialize router using the same logic as the real app
-	// Note: We don't serve static files in tests (false)
-	r := app.BuildRouter("ERROR", tasksDir, false, Assets)
+	// Note: We don't serve static files in tests, so we pass an empty embed.FS
+	r := app.BuildRouter("ERROR", tasksDir, false, embed.FS{})
 
 	var projectID string
 
