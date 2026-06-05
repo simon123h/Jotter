@@ -86,4 +86,3 @@ func LoadConfig() *AppConfig {
 		APIAddr:         apiAddr,
 	}
 }
-

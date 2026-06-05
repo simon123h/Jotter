@@ -67,7 +67,7 @@ func RunWailsProbing() {
 func RunDesktop(cfg *AppConfig) {
 	// Window Mode (Wails)
 	apiRouter := BuildRouter(cfg.LogLevel, cfg.DataDir, false) // API only for handler
-	
+
 	assetsSub, _ := fs.Sub(backend.Assets, "frontend/dist")
 
 	app := NewDesktopApp(cfg)
