@@ -56,7 +56,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const thresholdDays = useLocalStorageRef('jotter-matrix-threshold', 7);
   const pinnedProjectIds = useLocalStorageRef<string[]>('jotter-pinned-projects', []);
   const sortBy = useLocalStorageRef<SortBy>('jotter-projects-sort', 'alpha');
-  const hideAddTaskButton = useLocalStorageRef('jotter-hide-add-task-button', false);
+  const hideAddTaskButton = useLocalStorageRef('jotter-hide-add-task-button', true);
 
   // Action methods to change states directly or let views change refs
   const toggleHideDoneColumn = () => {

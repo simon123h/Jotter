@@ -152,8 +152,8 @@ export const de = {
   },
   settingsView: {
     general: 'Allgemeine Einstellungen',
-    hideAddTask: 'Schaltfläche "+ Aufgabe hinzufügen" ausblenden',
-    hideAddTaskDesc: 'Blendet die Schaltfläche zum schnellen Hinzufügen oben in jeder Spalte aus.',
+    hideAddTask: 'Kleinere Schaltfläche für "Aufgabe hinzufügen"',
+    hideAddTaskDesc: 'Ersetzt die große Schaltfläche zum Erstellen einer neuen Aufgabe in jeder Spalte durch ein Kleines "+"-Symbol.',
     subtitle: 'Passe deine persönlichen Einstellungen, das visuelle Farbschema und die Systemsprache an.',
   },
   views: {

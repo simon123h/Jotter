@@ -150,8 +150,8 @@ export const en = {
   },
   settingsView: {
     general: 'General Preferences',
-    hideAddTask: 'Hide "+ Add Task" button',
-    hideAddTaskDesc: 'Remove the quick-add button from the top of all columns on the board.',
+    hideAddTask: 'Smaller "Add task" button',
+    hideAddTaskDesc: 'Replaces the large quick-add button at the top of each column with a small "+" symbol.',
     subtitle: 'Configure your personal preferences, theme aesthetics, and system language.',
   },
   views: {
