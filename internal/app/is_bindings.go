@@ -1,6 +1,6 @@
 //go:build bindings
 
-package main
+package app
 
 // This is true ONLY during the "Generating bindings" phase
-const isGeneratingBindings = true
+const IsGeneratingBindings = true

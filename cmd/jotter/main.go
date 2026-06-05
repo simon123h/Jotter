@@ -3,7 +3,6 @@
 package main
 
 import (
-	"embed"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -19,13 +18,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"jotter/backend/config"
-	"jotter/backend/db"
-	"jotter/backend/handlers"
+	"jotter/backend"
+	"jotter/backend/internal/app"
+	"jotter/backend/internal/config"
+	"jotter/backend/internal/db"
+	"jotter/backend/internal/handlers"
 )
 
-//go:embed all:frontend/dist
-var assets embed.FS
 
 func openBrowser(url string) {
 	var cmd string
@@ -132,7 +131,7 @@ func main() {
 	dbPath := config.GetDBPath(*configFlag, *dataDirFlag)
 
 	// Bootstrap application settings and database
-	bootstrap(dataDir, dbPath)
+	app.Bootstrap(dataDir, dbPath)
 	defer db.CloseDB()
 
 	fmt.Printf("Starting Jotter on http://%s:%d\n", host, port)
@@ -168,7 +167,7 @@ func main() {
 
 	// Static Files Routing
 	var useEmbedded bool
-	assetsSub, errFs := fs.Sub(assets, "frontend/dist")
+	assetsSub, errFs := fs.Sub(backend.Assets, "frontend/dist")
 	if errFs == nil {
 		// Read index.html to check if it's a real file (not just a tiny placeholder or empty)
 		if data, err := fs.ReadFile(assetsSub, "index.html"); err == nil && len(data) > 30 {

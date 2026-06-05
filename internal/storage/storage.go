@@ -17,8 +17,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"jotter/backend/db"
-	"jotter/backend/models"
+	"jotter/backend/internal/db"
+	"jotter/backend/internal/models"
 )
 
 const base32Alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"

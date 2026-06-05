@@ -1,6 +1,6 @@
 //go:build !bindings
 
-package main
+package app
 
 // This is false during standard execution and final binary builds
-const isGeneratingBindings = false
+const IsGeneratingBindings = false

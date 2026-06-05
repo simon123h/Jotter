@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"jotter/backend/storage"
+	"jotter/backend/internal/storage"
 )
 
 func RegisterSystemRoutes(r chi.Router, tasksDir string) {

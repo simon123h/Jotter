@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"jotter/backend/db"
-	"jotter/backend/models"
-	"jotter/backend/storage"
+	"jotter/backend/internal/db"
+	"jotter/backend/internal/models"
+	"jotter/backend/internal/storage"
 )
 
 func RegisterBucketRoutes(r chi.Router, tasksDir string) {

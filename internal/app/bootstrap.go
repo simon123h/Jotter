@@ -1,11 +1,11 @@
-package main
+package app
 
 import (
 	"fmt"
 	"log"
 
-	"jotter/backend/db"
-	"jotter/backend/storage"
+	"jotter/backend/internal/db"
+	"jotter/backend/internal/storage"
 )
 
 var Version = "[dev mode]"
@@ -22,7 +22,7 @@ const asciiLogo = `
 
 // bootstrap initializes the database schema, runs the file-to-db synchronization,
 // and prints the startup ASCII banner.
-func bootstrap(dataDir string, dbPath string) {
+func Bootstrap(dataDir string, dbPath string) {
 	// Print ASCII Art logo and basic startup info
 	fmt.Print(asciiLogo)
 	fmt.Printf("Jotter - Local-first Markdown Kanban Board (Version: %s)\n", Version)

@@ -13,10 +13,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"jotter/backend/db"
-	"jotter/backend/handlers"
-	"jotter/backend/models"
-	"jotter/backend/storage"
+	"jotter/backend/internal/db"
+	"jotter/backend/internal/handlers"
+	"jotter/backend/internal/models"
+	"jotter/backend/internal/storage"
 )
 
 func TestIntegration(t *testing.T) {

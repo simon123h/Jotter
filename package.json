@@ -5,7 +5,7 @@
   "description": "Jotter - Local-First Markdown Kanban App with Ephemeral Index",
   "scripts": {
     "dev:desktop": "wails dev",
-    "dev:backend": "go run main.go",
+    "dev:backend": "go run cmd/jotter/main.go",
     "dev:frontend": "cd frontend && npm run dev",
     "dev": "npm run dev:desktop",
     "build": "wails build",

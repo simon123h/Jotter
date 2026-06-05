@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"embed"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -24,9 +23,11 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
 
-	"jotter/backend/config"
-	"jotter/backend/db"
-	"jotter/backend/handlers"
+	"jotter/backend"
+	"jotter/backend/internal/app"
+	"jotter/backend/internal/config"
+	"jotter/backend/internal/db"
+	"jotter/backend/internal/handlers"
 )
 
 func getWailsLogLevel(level string) logger.LogLevel {
@@ -63,12 +64,6 @@ func openBrowser(url string) {
 	_ = exec.Command(cmd, args...).Start()
 }
 
-//go:embed all:frontend/dist
-var assets embed.FS
-
-//go:embed docs/assets/icon.png
-var icon []byte
-
 // App struct
 type App struct {
 	ctx    context.Context
@@ -91,7 +86,6 @@ func (a *App) startup(ctx context.Context) {
 }
 
 func main() {
-
 	configFlag := flag.String("config", "", "Path to YAML/JSON configuration file")
 	portFlag := flag.Int("port", 0, "Port to run the server on")
 	hostFlag := flag.String("host", "", "Host address to bind to")
@@ -140,7 +134,7 @@ func main() {
 	os.Setenv("JOTTER_LOG_LEVEL", logLevel)
 
 	// Bootstrap application settings and database
-	bootstrap(dataDir, dbPath)
+	app.Bootstrap(dataDir, dbPath)
 	defer db.CloseDB()
 
 	// Setup Chi Router
@@ -162,7 +156,7 @@ func main() {
 	handlers.RegisterSystemRoutes(r, dataDir)
 
 	// Get sub-filesystem pointing to frontend/dist
-	assetsSub, errFs := fs.Sub(assets, "frontend/dist")
+	assetsSub, errFs := fs.Sub(backend.Assets, "frontend/dist")
 	if errFs != nil {
 		log.Fatalf("Failed to create assets sub-filesystem: %v", errFs)
 	}
@@ -201,7 +195,7 @@ func main() {
 	}
 
 	// Automatically open browser if configured
-	if launch == "browser" && !isGeneratingBindings {
+	if launch == "browser" && !app.IsGeneratingBindings {
 		time.AfterFunc(1000*time.Millisecond, func() {
 			log.Printf("Opening browser at %s", apiAddr)
 			openBrowser(apiAddr)
@@ -223,8 +217,8 @@ func main() {
 	}()
 
 	// Run Wails application
-	app := NewApp()
-	app.apiUrl = apiAddr
+	wailsApp := NewApp()
+	wailsApp.apiUrl = apiAddr
 	err := wails.Run(&options.App{
 		Title:  "Jotter",
 		Width:  1024,
@@ -235,12 +229,12 @@ func main() {
 		},
 		BackgroundColour: &options.RGBA{R: 30, G: 41, B: 59, A: 1}, // Slate dark color
 		LogLevel:         getWailsLogLevel(logLevel),
-		OnStartup:        app.startup,
+		OnStartup:        wailsApp.startup,
 		Bind: []interface{}{
-			app,
+			wailsApp,
 		},
 		Linux: &linux.Options{
-			Icon: icon,
+			Icon: backend.Icon,
 		},
 	})
 
@@ -248,3 +242,4 @@ func main() {
 		log.Fatalf("Wails launch failed: %v", err)
 	}
 }
+
