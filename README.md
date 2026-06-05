@@ -58,7 +58,7 @@ For more options, please see [the user documentation](docs/user/configuration.md
 
 ---
 
-## 📖 Documentation Index
+## 📖 Documentation
 
 For advanced setups, configuration options, and developer notes, please refer to the documents in the `docs/` folder:
 
@@ -68,5 +68,5 @@ For advanced setups, configuration options, and developer notes, please refer to
 - **User Guide**:
   - [Configuring Jotter (Ports, Directories, logs)](docs/user/configuration.md)
 - **Developer Reference**:
-  - [Architectural Design: The Ephemeral Index (arc42)](docs/developer/architecture.md)
+  - [Architectural Design](docs/developer/architecture.md)
   - [Contributing Guidelines](CONTRIBUTING.md)
