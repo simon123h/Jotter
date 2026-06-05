@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import FilterModal from '../FilterModal.vue';
+import { useSettingsStore } from '../../stores/settings';
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = vi.fn();
@@ -95,5 +96,26 @@ describe('FilterModal.vue', () => {
     await clearBtn!.trigger('click');
     await nextTick();
     expect(searchInput.value).toBe('');
+  });
+
+  it('updates settingsStore.hideDoneColumn when applied', async () => {
+    const store = useSettingsStore();
+    store.hideDoneColumn = false;
+
+    const wrapper = mount(FilterModal, {
+      props: defaultProps,
+    });
+
+    const checkbox = wrapper.find('#hide-done-column-checkbox');
+    expect(checkbox.exists()).toBe(true);
+    expect((checkbox.element as HTMLInputElement).checked).toBe(false);
+
+    await checkbox.setValue(true);
+
+    const applyBtn = wrapper.findAll('button').find((b) => b.text().includes('Apply Filters'));
+    expect(applyBtn).toBeDefined();
+    await applyBtn!.trigger('click');
+
+    expect(store.hideDoneColumn).toBe(true);
   });
 });

@@ -132,8 +132,6 @@ const emit = defineEmits<{
         </button>
       </div>
 
-
-
       <!-- New Task Button -->
       <button
         @click="emit('create-task', defaultBucketName)"

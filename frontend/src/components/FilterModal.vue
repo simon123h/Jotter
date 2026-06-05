@@ -161,7 +161,7 @@ const handleDialogClick = (event: MouseEvent) => {
     closedby="any"
     @close="handleNativeClose"
     @click="handleDialogClick"
-    class="bg-theme-base border border-theme-border rounded-lg shadow-2xl p-0 max-w-lg w-full max-h-[90vh] focus:outline-none overflow-hidden"
+    class="bg-theme-base border border-theme-border rounded-lg shadow-2xl p-0 max-w-3xl w-full max-h-[90vh] focus:outline-none overflow-hidden"
   >
     <!-- Header -->
     <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
@@ -177,157 +177,165 @@ const handleDialogClick = (event: MouseEvent) => {
       </button>
     </div>
 
-    <!-- Body (scrollable) -->
-    <div class="flex-grow p-4 overflow-y-auto space-y-4 max-h-[60vh] scroller-thin">
-      <!-- Search Input -->
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-          {{ t('filterModal.searchLabel') }}
-        </label>
-        <input
-          v-model="search"
-          type="text"
-          :placeholder="t('filterModal.searchPlaceholder')"
-          class="w-full bg-theme-card border border-theme-border rounded px-3 py-2 text-sm text-theme-text-input placeholder-theme-text-muted/40 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary"
-        />
-      </div>
-
-      <!-- Columns/Buckets Filter -->
-      <div v-if="buckets.length">
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
-          {{ t('filterModal.columnsLabel') }}
-        </label>
-        <div class="grid grid-cols-2 gap-2">
-          <label
-            v-for="b in buckets"
-            :key="b.name"
-            class="flex items-center gap-2 px-2.5 py-1.5 rounded border border-theme-border/50 bg-theme-card/30 hover:bg-theme-column/30 transition-all cursor-pointer text-xs text-theme-text-main"
-          >
-            <input type="checkbox" :value="b.name" v-model="selectedBuckets" class="accent-theme-primary" />
-            <span>{{ b.title }}</span>
+    <!-- Body -->
+    <div class="flex-grow p-6 overflow-y-auto max-h-[70vh] scroller-thin">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Search Input (Full Width) -->
+        <div class="md:col-span-2">
+          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+            {{ t('filterModal.searchLabel') }}
           </label>
-        </div>
-      </div>
-
-      <!-- Priorities Filter -->
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
-          {{ t('filterModal.prioritiesLabel') }}
-        </label>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <label
-            v-for="p in ['none', 'low', 'medium', 'high', 'urgent']"
-            :key="p"
-            class="flex items-center gap-2 px-2.5 py-1.5 rounded border border-theme-border/50 bg-theme-card/30 hover:bg-theme-column/30 transition-all cursor-pointer text-xs text-theme-text-main"
-          >
-            <input type="checkbox" :value="p" v-model="selectedPriorities" class="accent-theme-primary" />
-            <span>{{ t(`priorityOptions.${p}`) }}</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Tags Filter -->
-      <div v-if="allTags.length">
-        <div class="flex justify-between items-center mb-1.5">
-          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">
-            {{ t('filterModal.tagsLabel') }}
-          </label>
-
-          <!-- Tag matching mode selection -->
-          <div class="flex items-center gap-2 bg-theme-card border border-theme-border/50 rounded p-0.5 text-[10px]">
-            <button
-              type="button"
-              @click="tagMode = 'any'"
-              class="px-1.5 py-0.5 rounded font-semibold transition-all cursor-pointer"
-              :class="tagMode === 'any' ? 'bg-theme-primary text-white font-bold' : 'text-theme-text-muted hover:text-theme-text-main'"
-            >
-              {{ t('filterModal.tagModeAny') }}
-            </button>
-            <button
-              type="button"
-              @click="tagMode = 'all'"
-              class="px-1.5 py-0.5 rounded font-semibold transition-all cursor-pointer"
-              :class="tagMode === 'all' ? 'bg-theme-primary text-white font-bold' : 'text-theme-text-muted hover:text-theme-text-main'"
-            >
-              {{ t('filterModal.tagModeAll') }}
-            </button>
-          </div>
-        </div>
-
-        <div
-          class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto border border-theme-border/40 p-2 rounded bg-theme-card/25 scroller-thin"
-        >
-          <label
-            v-for="tag in allTags"
-            :key="tag"
-            class="flex items-center gap-1.5 px-2 py-1 rounded-full border border-theme-border/45 bg-theme-card/40 hover:bg-theme-column/45 cursor-pointer text-[11px] text-theme-text-main transition-all"
-            :class="{ 'border-theme-primary/30 bg-theme-primary/10 text-theme-accent font-semibold': selectedTags.includes(tag) }"
-          >
-            <input type="checkbox" :value="tag" v-model="selectedTags" class="hidden" />
-            <Tag class="w-2.5 h-2.5 shrink-0 text-theme-text-muted" />
-            <span>{{ tag }}</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Due Date Section -->
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
-          {{ t('filterModal.dueDateLabel') }}
-        </label>
-
-        <div class="flex items-center gap-2 bg-theme-card border border-theme-border/50 rounded p-1 mb-3">
-          <label
-            v-for="status in ['all', 'has', 'none'] as const"
-            :key="status"
-            class="flex-1 text-center py-1 rounded text-xs font-semibold cursor-pointer transition-all select-none"
-            :class="dueDateStatus === status ? 'bg-theme-primary text-white font-bold' : 'text-theme-text-muted hover:text-theme-text-main'"
-          >
-            <input type="radio" :value="status" v-model="dueDateStatus" class="hidden" />
-            {{ t(`filterModal.dueDate${status.charAt(0).toUpperCase() + status.slice(1)}`) }}
-          </label>
-        </div>
-
-        <!-- Date ranges, only editable if not 'none' -->
-        <div v-if="dueDateStatus !== 'none'" class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1 flex items-center gap-1">
-              <Calendar class="w-3 h-3 text-theme-text-muted" />
-              {{ t('filterModal.dueAfterLabel') }}
-            </label>
-            <input
-              v-model="dueAfter"
-              type="date"
-              class="w-full bg-theme-card border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
-            />
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1 flex items-center gap-1">
-              <Calendar class="w-3 h-3 text-theme-text-muted" />
-              {{ t('filterModal.dueBeforeLabel') }}
-            </label>
-            <input
-              v-model="dueBefore"
-              type="date"
-              class="w-full bg-theme-card border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- Layout Options -->
-      <div class="border-t border-theme-border/30 pt-3">
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
-          {{ t('settingsView.general') }}
-        </label>
-        <label class="flex items-center gap-2 px-2.5 py-1.5 rounded border border-theme-border/50 bg-theme-card/30 hover:bg-theme-column/30 transition-all cursor-pointer text-xs text-theme-text-main w-full">
           <input
-            type="checkbox"
-            v-model="hideDoneColumnLocal"
-            class="accent-theme-primary"
+            v-model="search"
+            type="text"
+            :placeholder="t('filterModal.searchPlaceholder')"
+            class="w-full bg-theme-card border border-theme-border rounded px-3 py-2 text-sm text-theme-text-input placeholder-theme-text-muted/40 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary"
           />
-          <span>{{ t('doneBucket.hide') }}</span>
-        </label>
+        </div>
+
+        <!-- Columns/Buckets Filter (Full Width) -->
+        <div v-if="buckets.length" class="md:col-span-2">
+          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+            {{ t('filterModal.columnsLabel') }}
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <label
+              v-for="b in buckets"
+              :key="b.name"
+              class="flex items-center gap-2 px-3 py-2 rounded border border-theme-border/50 bg-theme-card/30 hover:bg-theme-column/30 transition-all cursor-pointer text-xs text-theme-text-main animate-fade-in"
+            >
+              <input type="checkbox" :value="b.name" v-model="selectedBuckets" class="accent-theme-primary" />
+              <span class="truncate" :title="b.title">{{ b.title }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Left Column: Priorities & Due Date Section -->
+        <div class="space-y-6">
+          <!-- Priorities Filter -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+              {{ t('filterModal.prioritiesLabel') }}
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <label
+                v-for="p in ['none', 'low', 'medium', 'high', 'urgent']"
+                :key="p"
+                class="flex items-center gap-2 px-2.5 py-1.5 rounded border border-theme-border/50 bg-theme-card/30 hover:bg-theme-column/30 transition-all cursor-pointer text-xs text-theme-text-main"
+              >
+                <input type="checkbox" :value="p" v-model="selectedPriorities" class="accent-theme-primary" />
+                <span>{{ t(`priorityOptions.${p}`) }}</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Due Date Section -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+              {{ t('filterModal.dueDateLabel') }}
+            </label>
+
+            <div class="flex items-center gap-2 bg-theme-card border border-theme-border/50 rounded p-1 mb-3">
+              <label
+                v-for="status in ['all', 'has', 'none'] as const"
+                :key="status"
+                class="flex-1 text-center py-1 rounded text-xs font-semibold cursor-pointer transition-all select-none"
+                :class="
+                  dueDateStatus === status ? 'bg-theme-primary text-white font-bold' : 'text-theme-text-muted hover:text-theme-text-main'
+                "
+              >
+                <input type="radio" :value="status" v-model="dueDateStatus" class="hidden" />
+                {{ t(`filterModal.dueDate${status.charAt(0).toUpperCase() + status.slice(1)}`) }}
+              </label>
+            </div>
+
+            <!-- Date ranges, only editable if not 'none' -->
+            <div v-if="dueDateStatus !== 'none'" class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1 flex items-center gap-1">
+                  <Calendar class="w-3 h-3 text-theme-text-muted" />
+                  {{ t('filterModal.dueAfterLabel') }}
+                </label>
+                <input
+                  v-model="dueAfter"
+                  type="date"
+                  class="w-full bg-theme-card border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1 flex items-center gap-1">
+                  <Calendar class="w-3 h-3 text-theme-text-muted" />
+                  {{ t('filterModal.dueBeforeLabel') }}
+                </label>
+                <input
+                  v-model="dueBefore"
+                  type="date"
+                  class="w-full bg-theme-card border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Tags & Layout Options -->
+        <div class="space-y-6">
+          <!-- Tags Filter -->
+          <div v-if="allTags.length">
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">
+                {{ t('filterModal.tagsLabel') }}
+              </label>
+
+              <!-- Tag matching mode selection -->
+              <div class="flex items-center gap-2 bg-theme-card border border-theme-border/50 rounded p-0.5 text-[10px]">
+                <button
+                  type="button"
+                  @click="tagMode = 'any'"
+                  class="px-1.5 py-0.5 rounded font-semibold transition-all cursor-pointer"
+                  :class="tagMode === 'any' ? 'bg-theme-primary text-white font-bold' : 'text-theme-text-muted hover:text-theme-text-main'"
+                >
+                  {{ t('filterModal.tagModeAny') }}
+                </button>
+                <button
+                  type="button"
+                  @click="tagMode = 'all'"
+                  class="px-1.5 py-0.5 rounded font-semibold transition-all cursor-pointer"
+                  :class="tagMode === 'all' ? 'bg-theme-primary text-white font-bold' : 'text-theme-text-muted hover:text-theme-text-main'"
+                >
+                  {{ t('filterModal.tagModeAll') }}
+                </button>
+              </div>
+            </div>
+
+            <div
+              class="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto border border-theme-border/40 p-2 rounded bg-theme-card/25 scroller-thin animate-fade-in"
+            >
+              <label
+                v-for="tag in allTags"
+                :key="tag"
+                class="flex items-center gap-1.5 px-2 py-1 rounded-full border border-theme-border/45 bg-theme-card/40 hover:bg-theme-column/45 cursor-pointer text-[11px] text-theme-text-main transition-all"
+                :class="{ 'border-theme-primary/30 bg-theme-primary/10 text-theme-accent font-semibold': selectedTags.includes(tag) }"
+              >
+                <input type="checkbox" :value="tag" v-model="selectedTags" class="hidden" />
+                <Tag class="w-2.5 h-2.5 shrink-0 text-theme-text-muted" />
+                <span>{{ tag }}</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Layout Options -->
+          <div class="border-t border-theme-border/30 pt-4">
+            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+              {{ t('settingsView.general') }}
+            </label>
+            <label
+              class="flex items-center gap-2 px-3 py-2 rounded border border-theme-border/50 bg-theme-card/30 hover:bg-theme-column/30 transition-all cursor-pointer text-xs text-theme-text-main w-full"
+            >
+              <input id="hide-done-column-checkbox" type="checkbox" v-model="hideDoneColumnLocal" class="accent-theme-primary" />
+              <span>{{ t('doneBucket.hide') }}</span>
+            </label>
+          </div>
+        </div>
       </div>
     </div>
 
