@@ -9,12 +9,14 @@ const { t } = useI18n();
 const props = defineProps<{
   tasks: Task[];
   projects: Project[];
+  isSelected: (id: string) => boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'mark-done', task: Task): void;
   (e: 'update-planned-date', payload: { taskId: string; plannedDate: string; projectId: string }): void;
+  (e: 'toggle-select', task: Task): void;
 }>();
 
 // Group tasks into categorical planning columns (Aggregated)
@@ -84,9 +86,11 @@ const handleCardDropped = (payload: { taskId: string; toId: string }) => {
         :compact-cards="true"
         :show-project="true"
         :projects="projects"
+        :is-selected="isSelected"
         @task-click="(task) => emit('task-click', task)"
         @mark-done="(task) => emit('mark-done', task)"
         @card-dropped="handleCardDropped"
+        @toggle-select="(task) => emit('toggle-select', task)"
       >
         <template #header>
           <div

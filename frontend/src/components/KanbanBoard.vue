@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore, type ViewMode } from '@/stores/settings';
 import type { Task, BucketName } from '@/types';
-import { getTasks, getAllTasks, syncSystem } from '@/api';
+import { getTasks, getAllTasks, syncSystem, updateTask, deleteTask, moveTask } from '@/api';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
 import TaskCreateModal from '@/components/modals/TaskCreateModal.vue';
 import ProjectEditModal from '@/components/modals/ProjectEditModal.vue';
@@ -26,6 +26,8 @@ import { useTaskFilters } from '@/composables/useTaskFilters';
 import { useProjects } from '@/composables/useProjects';
 import { useBuckets } from '@/composables/useBuckets';
 import { useTaskMutations } from '@/composables/useTaskMutations';
+import { useTaskSelection } from '@/composables/useTaskSelection';
+import BulkActionBar from '@/components/ui/BulkActionBar.vue';
 
 const { t } = useI18n();
 const { showDialog, isOpen: dialogIsOpen } = useDialog();
@@ -44,6 +46,9 @@ if (route.params.viewMode) {
 }
 
 const { hideDoneColumn, hideArchiveColumn, isSidebarOpen, currentTheme, viewMode, activeProjectId } = storeToRefs(settingsStore);
+
+const { selectedIds, isSelected, toggleSelection, selectAll, clearSelection, hasSelection, selectionCount } =
+  useTaskSelection();
 
 const tasks = ref<Task[]>([]);
 const loading = ref(false);
@@ -111,6 +116,97 @@ const {
   handleDeleteColumn,
   handleColumnReordered,
 } = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
+
+// Bulk Actions
+const handleBulkDelete = async () => {
+  if (!confirm(`Are you sure you want to delete ${selectionCount.value} tasks?`)) return;
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task) await deleteTask(task.project_id, id);
+    }
+    clearSelection();
+    await fetchAllTasks();
+  } catch (err: any) {
+    localError.value = `Bulk delete failed: ${err.message}`;
+  }
+};
+
+const handleBulkMoveBucket = async (bucket: string) => {
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task) await moveTask(task.project_id, id, bucket, 1000.0);
+    }
+    clearSelection();
+    await fetchAllTasks();
+  } catch (err: any) {
+    localError.value = `Bulk move failed: ${err.message}`;
+  }
+};
+
+const handleBulkAddTag = async (tag: string) => {
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task && !task.tags.includes(tag)) {
+        await updateTask(task.project_id, id, { tags: [...task.tags, tag] });
+      }
+    }
+    clearSelection();
+    await fetchAllTasks();
+  } catch (err: any) {
+    localError.value = `Bulk tagging failed: ${err.message}`;
+  }
+};
+
+const handleBulkSetPriority = async (priority: string) => {
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task) await updateTask(task.project_id, id, { priority });
+    }
+    clearSelection();
+    await fetchAllTasks();
+  } catch (err: any) {
+    localError.value = `Bulk priority set failed: ${err.message}`;
+  }
+};
+
+const handleBulkSetPlanned = async (planned: string) => {
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task) await updateTask(task.project_id, id, { planned_date: planned });
+    }
+    clearSelection();
+    await fetchAllTasks();
+  } catch (err: any) {
+    localError.value = `Bulk planning failed: ${err.message}`;
+  }
+};
+
+const handleBulkMoveProject = async (projectId: string) => {
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task) {
+        // Move task to new project by updating project_id
+        await updateTask(task.project_id, id, { project_id: projectId } as any);
+      }
+    }
+    clearSelection();
+    await fetchAllTasks();
+  } catch (err: any) {
+    localError.value = `Bulk project move failed: ${err.message}`;
+  }
+};
 
 // Filter state & logic
 const isFilterModalOpen = ref(false);
@@ -343,6 +439,32 @@ useKeyboardShortcuts([
       }
     },
   },
+  {
+    key: 'f',
+    callback: () => {
+      if (!isCreateOpen.value && !isDetailOpen.value && !dialogIsOpen.value) {
+        isFilterModalOpen.value = true;
+      }
+    },
+  },
+  {
+    key: 'a',
+    ctrlKey: true,
+    callback: (e: KeyboardEvent) => {
+      if (!isCreateOpen.value && !isDetailOpen.value && !dialogIsOpen.value) {
+        e.preventDefault();
+        selectAll(filteredTasks.value);
+      }
+    },
+  },
+  {
+    key: 'Escape',
+    callback: () => {
+      if (hasSelection.value) {
+        clearSelection();
+      }
+    },
+  },
 ]);
 
 const handleDetailMarkTaskDone = async (task: Task) => {
@@ -457,6 +579,7 @@ const triggerSync = async () => {
             v-if="viewMode === 'board'"
             :buckets="displayedBuckets"
             :tasks-by-bucket="tasksByBucket"
+            :is-selected="isSelected"
             @task-click="openDetailModal"
             @add-task-click="openCreateModal"
             @card-dropped="handleCardDropped"
@@ -465,6 +588,7 @@ const triggerSync = async () => {
             @create-column="handleCreateColumn"
             @mark-done="handleMarkTaskDone"
             @column-reordered="handleColumnReordered"
+            @toggle-select="toggleSelection($event.id)"
           />
 
           <!-- List View Mode (Data dense Table View) -->
@@ -472,28 +596,41 @@ const triggerSync = async () => {
             v-else-if="viewMode === 'list'"
             :buckets="displayedBuckets"
             :tasks-by-bucket="tasksByBucket"
+            :is-selected="isSelected"
             @task-click="openDetailModal"
+            @toggle-select="toggleSelection($event.id)"
+            @toggle-select-all="(sel) => (sel ? selectAll(filteredTasks) : clearSelection())"
           />
 
           <!-- Matrix View Mode (Eisenhower 2x2 Matrix) -->
-          <MatrixView v-else-if="viewMode === 'matrix'" :tasks="filteredTasks" @task-click="openDetailModal" />
+          <MatrixView
+            v-else-if="viewMode === 'matrix'"
+            :tasks="filteredTasks"
+            :is-selected="isSelected"
+            @task-click="openDetailModal"
+            @toggle-select="toggleSelection($event.id)"
+          />
 
           <!-- Time View Mode (Categorical Planning) -->
           <TimeView
             v-else-if="viewMode === 'time'"
             :tasks="filteredTasks"
+            :is-selected="isSelected"
             @task-click="openDetailModal"
             @mark-done="handleMarkTaskDone"
             @update-planned-date="handleTimeViewPlannedDateUpdate"
+            @toggle-select="toggleSelection($event.id)"
           />
 
           <!-- Tag View Mode (Column per tag) -->
           <TagView
             v-else-if="viewMode === 'tag'"
             :tasks="filteredTasks"
+            :is-selected="isSelected"
             @task-click="openDetailModal"
             @mark-done="handleMarkTaskDone"
             @update-task-tags="handleTagUpdate"
+            @toggle-select="toggleSelection($event.id)"
           />
 
           <!-- Super Time View Mode (Aggregated Planning) -->
@@ -501,9 +638,11 @@ const triggerSync = async () => {
             v-else-if="viewMode === 'super-time'"
             :tasks="filteredTasks"
             :projects="projects"
+            :is-selected="isSelected"
             @task-click="openDetailModal"
             @mark-done="handleMarkTaskDone"
             @update-planned-date="handleTimeViewPlannedDateUpdate"
+            @toggle-select="toggleSelection($event.id)"
           />
 
           <!-- Settings View Mode -->
@@ -551,6 +690,21 @@ const triggerSync = async () => {
           :current-filters="taskFilters"
           @close="isFilterModalOpen = false"
           @apply="applyFilters"
+        />
+
+        <!-- Bulk Operations Bar -->
+        <BulkActionBar 
+          :selected-count="selectionCount"
+          :buckets="buckets"
+          :projects="projects"
+          :active-project-id="activeProjectId"
+          @clear="clearSelection"
+          @delete="handleBulkDelete"
+          @move-bucket="handleBulkMoveBucket"
+          @add-tag="handleBulkAddTag"
+          @set-priority="handleBulkSetPriority"
+          @set-planned="handleBulkSetPlanned"
+          @move-project="handleBulkMoveProject"
         />
       </div>
     </div>

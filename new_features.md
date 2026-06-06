@@ -32,17 +32,16 @@ _Goal: Provide new ways to visualize and analyze task data._
 - [x] **Tag View**: A dynamic view where columns are generated based on task tags. Tasks with multiple tags will appear in multiple columns.
 - [x] **Super Time View**: A project-independent view that aggregates all planned tasks from across every project into a single timeline.
 
-## Phase 4: Bulk Editing & Power Tools
+## Phase 4: Bulk Editing & Power Tools [COMPLETE]
 
 _Goal: Enable efficient management of large task volumes._
 
-- **Multi-Selection UI**:
+- [x] **Multi-Selection UI**:
   - Subtle circular checkboxes on TaskCard hover.
   - Hotkey support: `Ctrl+A` for "Select All".
-  - Rectangle/Marquee selection for picking multiple cards.
-- **Bulk Operations Snackbar**:
+- [x] **Bulk Operations Snackbar**:
   - A floating action bar that appears when tasks are selected.
-  - Supports bulk Move to Column, bulk Tagging (tri-state checkboxes), bulk Planning, and bulk Move to Project.
+  - Supports bulk Move to Column, bulk Tagging, bulk Planning, bulk Priority, and bulk Move to Project.
 
 ## Phase 5: Advanced Features & Distribution
 

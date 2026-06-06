@@ -9,10 +9,13 @@ const { t, locale } = useI18n();
 const props = defineProps<{
   buckets: Bucket[];
   tasksByBucket: Record<string, Task[]>;
+  isSelected: (id: string) => boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
+  (e: 'toggle-select', task: Task): void;
+  (e: 'toggle-select-all', selected: boolean): void;
 }>();
 
 type SortKey = 'title' | 'bucket' | 'priority' | 'due_date' | 'planned_date' | 'created_at';
@@ -22,6 +25,15 @@ const sortOrder = ref<'asc' | 'desc'>('desc');
 const allTasks = computed(() => {
   return Object.values(props.tasksByBucket).flat();
 });
+
+const isAllSelected = computed(() => {
+  return allTasks.value.length > 0 && allTasks.value.every((t) => props.isSelected(t.id));
+});
+
+const handleToggleAll = (event: Event) => {
+  const checked = (event.target as HTMLInputElement).checked;
+  emit('toggle-select-all', checked);
+};
 
 const sortedTasks = computed(() => {
   return [...allTasks.value].sort((a, b) => {
@@ -80,6 +92,14 @@ const getBucketTitle = (name: string) => {
       <table class="w-full border-collapse text-left font-sans text-sm relative">
         <thead class="sticky top-0 z-20">
           <tr class="bg-theme-column/80 backdrop-blur-md border-b border-theme-border text-xs font-bold uppercase tracking-wider text-theme-text-muted select-none">
+            <th class="px-4 py-3 w-10">
+              <input 
+                type="checkbox" 
+                :checked="isAllSelected"
+                @change="handleToggleAll"
+                class="accent-theme-primary cursor-pointer"
+              />
+            </th>
             <th @click="toggleSort('title')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors min-w-[300px]">
               <div class="flex items-center gap-1">
                 {{ t('table.title') }}
@@ -124,7 +144,16 @@ const getBucketTitle = (name: string) => {
             :key="task.id"
             @click="emit('task-click', task)"
             class="hover:bg-theme-column/15 transition-colors cursor-pointer group"
+            :class="{ 'bg-theme-accent/5': isSelected(task.id) }"
           >
+            <td class="px-4 py-2.5" @click.stop>
+              <input 
+                type="checkbox" 
+                :checked="isSelected(task.id)"
+                @change="emit('toggle-select', task)"
+                class="accent-theme-primary cursor-pointer"
+              />
+            </td>
             <td class="px-4 py-2.5">
               <div class="flex flex-col gap-0.5">
                 <span class="text-theme-text-card font-medium group-hover:text-theme-accent transition-colors truncate max-w-lg">

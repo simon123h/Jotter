@@ -14,6 +14,7 @@ const settingsStore = useSettingsStore();
 defineProps<{
   buckets: Bucket[];
   tasksByBucket: Record<string, Task[]>;
+  isSelected: (id: string) => boolean;
 }>();
 
 const emit = defineEmits<{
@@ -36,6 +37,7 @@ const emit = defineEmits<{
   (e: 'create-column', title: string, subtitle: string): void;
   (e: 'mark-done', task: Task): void;
   (e: 'column-reordered', payload: { oldIndex: number; newIndex: number }): void;
+  (e: 'toggle-select', task: Task): void;
 }>();
 
 const currentEditingBucket = ref<Bucket | null>(null);
@@ -123,10 +125,12 @@ const handleCancelAddColumn = () => {
       :is-limit-exceeded="!!b.max_tasks && (tasksByBucket[b.name] || []).length > b.max_tasks"
       :show-add-task="true"
       group-name="kanban-board"
+      :is-selected="isSelected"
       @task-click="(task) => emit('task-click', task)"
       @add-task-click="(id) => emit('add-task-click', id as BucketName)"
       @card-dropped="handleCardDropped"
       @mark-done="(task) => emit('mark-done', task)"
+      @toggle-select="(task) => emit('toggle-select', task)"
     >
       <!-- Header Slot -->
       <template #header>
