@@ -13,65 +13,47 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'mark-done', task: Task): void;
-  (e: 'update-due-date', payload: { taskId: string; columnId: string }): void;
+  (e: 'update-planned-date', payload: { taskId: string; plannedDate: string }): void;
 }>();
 
-export type TimeColumnId = 'noDate' | 'today' | 'tomorrow' | 'thisWeek' | 'thisMonth' | 'thisYear';
-
-// Group tasks into relative time columns
+// Group tasks into categorical planning columns
 const timeColumns = computed(() => {
-  const groups: Record<TimeColumnId, Task[]> = {
-    noDate: [],
+  const groups: Record<string, Task[]> = {
     today: [],
     tomorrow: [],
     thisWeek: [],
     thisMonth: [],
     thisYear: [],
+    sometime: [],
+    notPlanned: [],
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   props.tasks.forEach((task) => {
-    // Exclude completed tasks
-    if (task.bucket === 'done') return;
+    // Exclude completed or archived tasks
+    if (task.bucket === 'done' || task.bucket === 'archive') return;
 
-    if (!task.due_date) {
-      groups.noDate.push(task);
-      return;
-    }
-
-    const dueDate = new Date(task.due_date);
-    dueDate.setHours(0, 0, 0, 0);
-
-    const diffTime = dueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays <= 0) {
-      groups.today.push(task);
-    } else if (diffDays === 1) {
-      groups.tomorrow.push(task);
-    } else if (diffDays > 1 && diffDays <= 7) {
-      groups.thisWeek.push(task);
-    } else if (diffDays > 7 && diffDays <= 30) {
-      groups.thisMonth.push(task);
+    const key = task.planned_date || 'notPlanned';
+    if (groups[key]) {
+      groups[key].push(task);
     } else {
-      groups.thisYear.push(task);
+      groups.notPlanned.push(task);
     }
   });
 
   return [
-    { id: 'noDate' as TimeColumnId, title: t('timeView.noDate'), tasks: groups.noDate, color: 'slate' },
-    { id: 'today' as TimeColumnId, title: t('timeView.today'), tasks: groups.today, color: 'red' },
-    { id: 'tomorrow' as TimeColumnId, title: t('timeView.tomorrow'), tasks: groups.tomorrow, color: 'orange' },
-    { id: 'thisWeek' as TimeColumnId, title: t('timeView.thisWeek'), tasks: groups.thisWeek, color: 'yellow' },
-    { id: 'thisMonth' as TimeColumnId, title: t('timeView.thisMonth'), tasks: groups.thisMonth, color: 'blue' },
-    { id: 'thisYear' as TimeColumnId, title: t('timeView.thisYear'), tasks: groups.thisYear, color: 'green' },
+    { id: 'today', title: t('plannedDateOptions.today'), tasks: groups.today, color: 'red' },
+    { id: 'tomorrow', title: t('plannedDateOptions.tomorrow'), tasks: groups.tomorrow, color: 'orange' },
+    { id: 'thisWeek', title: t('plannedDateOptions.thisWeek'), tasks: groups.thisWeek, color: 'yellow' },
+    { id: 'thisMonth', title: t('plannedDateOptions.thisMonth'), tasks: groups.thisMonth, color: 'blue' },
+    { id: 'thisYear', title: t('plannedDateOptions.thisYear'), tasks: groups.thisYear, color: 'green' },
+    { id: 'sometime', title: t('plannedDateOptions.sometime'), tasks: groups.sometime, color: 'purple' },
+    { id: 'notPlanned', title: t('plannedDateOptions.notPlanned'), tasks: groups.notPlanned, color: 'slate' },
   ];
 });
 
 const handleCardDropped = (payload: { taskId: string; toId: string }) => {
-  emit('update-due-date', { taskId: payload.taskId, columnId: payload.toId });
+  // mapped id is the plannedDate string
+  emit('update-planned-date', { taskId: payload.taskId, plannedDate: payload.toId === 'notPlanned' ? '' : payload.toId });
 };
 </script>
 

@@ -42,6 +42,7 @@ const editBucket = ref<string>('todo');
 const editTags = ref('');
 const editBody = ref('');
 const editDueDate = ref('');
+const editPlannedDate = ref('');
 const editPriority = ref('');
 const editColor = ref<string | null>(null);
 
@@ -256,6 +257,7 @@ const fetchTaskDetail = async (id: string) => {
     editTags.value = fetchedTask.tags.join(', ');
     editBody.value = fetchedTask.body;
     editDueDate.value = fetchedTask.due_date || '';
+    editPlannedDate.value = fetchedTask.planned_date || '';
     editPriority.value = fetchedTask.priority || '';
     editColor.value = fetchedTask.color || null;
     lastMatchedKeyword.value = null;
@@ -274,10 +276,11 @@ watch(editTitle, (newTitle) => {
   const bucketNames = props.buckets.map((b) => b.name);
   const result = parseTitleState(newTitle, locale.value, bucketNames);
 
-  // 1. Due Date Sync
+  // 1. Due & Planned Date Sync
   if (result.matchedKeyword) {
     if (result.matchedKeyword !== lastMatchedKeyword.value) {
       editDueDate.value = result.dueDate || '';
+      editPlannedDate.value = result.plannedDate || '';
       lastMatchedKeyword.value = result.matchedKeyword;
     }
   } else {
@@ -405,6 +408,7 @@ const handleSave = async () => {
       tags: tagArray,
       body: editBody.value,
       due_date: editDueDate.value,
+      planned_date: editPlannedDate.value,
       priority: editPriority.value,
       color: editColor.value,
     });
@@ -486,6 +490,7 @@ const cancelEdit = () => {
     editTags.value = task.value.tags.join(', ');
     editBody.value = task.value.body;
     editDueDate.value = task.value.due_date || '';
+    editPlannedDate.value = task.value.planned_date || '';
     editPriority.value = task.value.priority || '';
     editColor.value = task.value.color || null;
     lastMatchedKeyword.value = null;
@@ -562,12 +567,18 @@ const getPriorityClasses = (prio: string) => {
                   </span>
                 </div>
 
-                <!-- Due Date & Priority Info -->
-                <div v-if="task.due_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
+                <!-- Due Date, Planned Date & Priority Info -->
+                <div v-if="task.due_date || task.planned_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
                   <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
                     <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Due:</span>
                     <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
                       {{ new Date(task.due_date).toLocaleDateString() }}
+                    </span>
+                  </div>
+                  <div v-if="task.planned_date" class="flex items-center gap-1.5 text-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Planned:</span>
+                    <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
+                      {{ t('plannedDateOptions.' + task.planned_date) }}
                     </span>
                   </div>
                   <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
@@ -703,8 +714,8 @@ const getPriorityClasses = (prio: string) => {
                 </div>
               </div>
 
-              <!-- Due Date & Priority Row -->
-              <div class="grid grid-cols-2 gap-3.5">
+              <!-- Due Date, Planned Date & Priority Row -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
                 <div>
                   <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
                     t('form.dueDateLabel')
@@ -714,6 +725,23 @@ const getPriorityClasses = (prio: string) => {
                     type="date"
                     class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
                   />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                    t('form.plannedDateLabel') || 'Planned'
+                  }}</label>
+                  <select
+                    v-model="editPlannedDate"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                  >
+                    <option value="">{{ t('plannedDateOptions.none') }}</option>
+                    <option value="today">{{ t('plannedDateOptions.today') }}</option>
+                    <option value="tomorrow">{{ t('plannedDateOptions.tomorrow') }}</option>
+                    <option value="thisWeek">{{ t('plannedDateOptions.thisWeek') }}</option>
+                    <option value="thisMonth">{{ t('plannedDateOptions.thisMonth') }}</option>
+                    <option value="thisYear">{{ t('plannedDateOptions.thisYear') }}</option>
+                    <option value="sometime">{{ t('plannedDateOptions.sometime') }}</option>
+                  </select>
                 </div>
                 <div>
                   <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{

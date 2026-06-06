@@ -23,24 +23,26 @@ type ProjectResponse struct {
 
 // Task DTOs
 type TaskCreate struct {
-	Title    string   `json:"title"`
-	Bucket   string   `json:"bucket"`
-	Tags     []string `json:"tags"`
-	Body     string   `json:"body"`
-	DueDate  *string  `json:"due_date"`
-	Priority *string  `json:"priority"`
-	Color    *string  `json:"color"`
+	Title       string   `json:"title"`
+	Bucket      string   `json:"bucket"`
+	Tags        []string `json:"tags"`
+	Body        string   `json:"body"`
+	DueDate     *string  `json:"due_date,omitempty"`
+	PlannedDate *string  `json:"planned_date,omitempty"`
+	Priority    *string  `json:"priority,omitempty"`
+	Color       *string  `json:"color,omitempty"`
 }
 
 type TaskUpdate struct {
-	Title    *string   `json:"title,omitempty"`
-	Bucket   *string   `json:"bucket,omitempty"`
-	Tags     *[]string `json:"tags,omitempty"`
-	Body     *string   `json:"body,omitempty"`
-	Position *float64  `json:"position,omitempty"`
-	DueDate  *string   `json:"due_date,omitempty"`
-	Priority *string   `json:"priority,omitempty"`
-	Color    *string   `json:"color,omitempty"`
+	Title       *string   `json:"title,omitempty"`
+	Bucket      *string   `json:"bucket,omitempty"`
+	Position    *float64  `json:"position,omitempty"`
+	Tags        *[]string `json:"tags,omitempty"`
+	Body        *string   `json:"body,omitempty"`
+	DueDate     *string   `json:"due_date,omitempty"`
+	PlannedDate *string   `json:"planned_date,omitempty"`
+	Priority    *string   `json:"priority,omitempty"`
+	Color       *string   `json:"color,omitempty"`
 }
 
 type TaskMove struct {
@@ -49,18 +51,19 @@ type TaskMove struct {
 }
 
 type TaskResponse struct {
-	ID        string   `json:"id"`
-	ProjectID string   `json:"project_id"`
-	Title     string   `json:"title"`
-	Bucket    string   `json:"bucket"`
-	Position  float64  `json:"position"`
-	Tags      []string `json:"tags"`
-	Body      string   `json:"body"`
-	DueDate   *string  `json:"due_date"`
-	Priority  *string  `json:"priority"`
-	Color     *string  `json:"color"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
+	ID          string   `json:"id"`
+	ProjectID   string   `json:"project_id"`
+	Title       string   `json:"title"`
+	Bucket      string   `json:"bucket"`
+	Position    float64  `json:"position"`
+	Tags        []string `json:"tags"`
+	Body        string   `json:"body"`
+	DueDate     *string  `json:"due_date"`
+	PlannedDate *string  `json:"planned_date"`
+	Priority    *string  `json:"priority"`
+	Color       *string  `json:"color"`
+	CreatedAt   string   `json:"created_at"`
+	UpdatedAt   string   `json:"updated_at"`
 }
 
 // Bucket DTOs

@@ -17,15 +17,18 @@ const props = withDefaults(
     groupName?: string;
     showAddTask?: boolean;
     compactCards?: boolean;
-  }>(),
-  {
-    layout: 'list',
-    groupName: 'kanban-board',
-    showAddTask: false,
-    compactCards: false,
-  }
-);
-
+    showProject?: boolean;
+    projects?: any[];
+    }>(),
+    {
+      layout: 'list',
+      groupName: 'kanban-board',
+      showAddTask: false,
+      compactCards: false,
+      showProject: false,
+      projects: () => [],
+    }
+    );
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', id: string): void;
@@ -209,6 +212,8 @@ watch(
             class="task-card"
             :task="task"
             :compact="compactCards"
+            :show-project="showProject"
+            :project-title="projects?.find((p) => p.id === task.project_id)?.title"
             :data-task-id="task.id"
             @click="emit('task-click', task)"
             @mark-done="emit('mark-done', task)"
@@ -236,6 +241,8 @@ watch(
             class="task-card"
             :task="task"
             :compact="compactCards"
+            :show-project="showProject"
+            :project-title="projects?.find((p) => p.id === task.project_id)?.title"
             :data-task-id="task.id"
             @click="emit('task-click', task)"
             @mark-done="emit('mark-done', task)"
@@ -251,6 +258,8 @@ watch(
           class="task-card"
           :task="task"
           :compact="compactCards"
+          :show-project="showProject"
+          :project-title="projects?.find((p) => p.id === task.project_id)?.title"
           :data-task-id="task.id"
           @click="emit('task-click', task)"
           @mark-done="emit('mark-done', task)"

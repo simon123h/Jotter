@@ -15,6 +15,7 @@ export interface Task {
   tags: string[];
   body: string;
   due_date?: string;
+  planned_date?: string;
   priority?: string;
   color?: string | null;
   created_at: string;
@@ -48,5 +49,6 @@ export interface TaskFilterParams {
   search?: string;
   due_before?: string; // YYYY-MM-DD
   due_after?: string; // YYYY-MM-DD
+  planned_date?: string;
   has_due_date?: boolean | null;
 }

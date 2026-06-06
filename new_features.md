@@ -2,35 +2,35 @@
 
 This document outlines the planned enhancements for Jotter, organized into implementation phases.
 
-## Phase 1: Component Foundation & Reusability
+## Phase 1: Component Foundation & Reusability [COMPLETE]
 
 _Goal: Consolidate UI logic to enable rapid development of new views._
 
-- **Universal `TaskCard.vue`**: Refactor the TaskCard to be a standalone, prop-driven component. It should support different "compactness" levels for use in the Board, Matrix, and upcoming Spreadsheet views.
-- **`GenericColumn.vue`**: Extract the core "Column" logic (Drag & Drop, header styles, grid vs. list layouts) from `KanbanColumn.vue`. This will be reused for the Board, Time View 2.0, and Tag View.
+- [x] **Universal `TaskCard.vue`**: Refactor the TaskCard to be a standalone, prop-driven component. It should support different "compactness" levels for use in the Board, Matrix, and upcoming Spreadsheet views.
+- [x] **`GenericColumn.vue`**: Extract the core "Column" logic (Drag & Drop, header styles, grid vs. list layouts) from `KanbanColumn.vue`. This will be reused for the Board, Time View 2.0, and Tag View.
 
-## Phase 2: Core Model & Flow Enhancements
+## Phase 2: Core Model & Flow Enhancements [IN PROGRESS]
 
 _Goal: Evolve the data model and improve daily task management._
 
-- **Archiving System**:
+- [x] **Archiving System**:
   - Implement a special "Archive" column (hidden by default).
   - Add a toggle in filtering settings to view archived tasks.
   - Unlike the "Done" column, the Archive will _not_ have automatic pruning.
-- **Planned vs. Due Dates**:
+- [x] **Planned vs. Due Dates**:
   - Introduce `planned_date` field with categorical options: "no date", "today", "tomorrow", "this week", "this month", "this year", "sometime maybe", "not planned".
   - Update "Smart Title Detection" to automatically set both Due and Planned dates when a date keyword is used.
-- **Time View 2.0**:
+- [x] **Time View 2.0**:
   - Refactor the Time View to use the new categorical `planned_date` columns.
   - Support dragging tasks between columns to update their planning status.
 
-## Phase 3: Specialized & Global Views
+## Phase 3: Specialized & Global Views [COMPLETE]
 
 _Goal: Provide new ways to visualize and analyze task data._
 
-- **Spreadsheet View**: Replace the basic "List View" with a high-density, sortable table (Columns: Title, Column, Priority, Due Date, Planned Date, Created).
-- **Tag View**: A dynamic view where columns are generated based on task tags. Tasks with multiple tags will appear in multiple columns.
-- **Super Time View**: A project-independent view that aggregates all planned tasks from across every project into a single timeline.
+- [x] **Spreadsheet View**: Replace the basic "List View" with a high-density, sortable table (Columns: Title, Column, Priority, Due Date, Planned Date, Created).
+- [x] **Tag View**: A dynamic view where columns are generated based on task tags. Tasks with multiple tags will appear in multiple columns.
+- [x] **Super Time View**: A project-independent view that aggregates all planned tasks from across every project into a single timeline.
 
 ## Phase 4: Bulk Editing & Power Tools
 

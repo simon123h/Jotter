@@ -67,6 +67,7 @@ func InitDB(dbPath string) error {
 		filename TEXT NOT NULL,
 		body TEXT DEFAULT '',
 		due_date TEXT DEFAULT NULL,
+		planned_date TEXT DEFAULT NULL,
 		priority TEXT DEFAULT NULL,
 		color TEXT DEFAULT NULL,
 		created_at TEXT NOT NULL,

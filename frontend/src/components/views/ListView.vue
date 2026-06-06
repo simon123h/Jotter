@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { ChevronDown, ClipboardList } from '@lucide/vue';
+import { ref, computed } from 'vue';
+import { ChevronUp, ChevronDown, Calendar, Layers, Flag } from '@lucide/vue';
 import type { Task, Bucket } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
-defineProps<{
+const props = defineProps<{
   buckets: Bucket[];
   tasksByBucket: Record<string, Task[]>;
 }>();
@@ -15,118 +15,156 @@ const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
 }>();
 
-// Collapsed state for columns in List view
-const collapsedColumns = ref<Record<string, boolean>>({});
-const toggleColumnCollapse = (bucketName: string) => {
-  collapsedColumns.value[bucketName] = !collapsedColumns.value[bucketName];
+type SortKey = 'title' | 'bucket' | 'priority' | 'due_date' | 'planned_date' | 'created_at';
+const sortKey = ref<SortKey>('created_at');
+const sortOrder = ref<'asc' | 'desc'>('desc');
+
+const allTasks = computed(() => {
+  return Object.values(props.tasksByBucket).flat();
+});
+
+const sortedTasks = computed(() => {
+  return [...allTasks.value].sort((a, b) => {
+    let valA: any = a[sortKey.value] || '';
+    let valB: any = b[sortKey.value] || '';
+
+    if (sortKey.value === 'priority') {
+      const prioMap: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1, '': 0 };
+      valA = prioMap[a.priority || ''] || 0;
+      valB = prioMap[b.priority || ''] || 0;
+    }
+
+    if (valA < valB) return sortOrder.value === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder.value === 'asc' ? 1 : -1;
+    return 0;
+  });
+});
+
+const toggleSort = (key: SortKey) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 'asc';
+  }
 };
 
-// Checklist helper
-const getChecklistStats = (body: string) => {
-  if (!body) return null;
-  const matches = body.match(/- \[[ xX]\]/g);
-  if (!matches) return null;
-  const total = matches.length;
-  const checked = (body.match(/- \[[xX]\]/g) || []).length;
-  return { checked, total };
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return '-';
+  try {
+    return new Date(dateStr).toLocaleDateString(locale.value, { month: 'short', day: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+};
+
+const getPriorityClasses = (prio?: string) => {
+  switch (prio) {
+    case 'low': return 'text-blue-400';
+    case 'medium': return 'text-yellow-400';
+    case 'high': return 'text-orange-400';
+    case 'urgent': return 'text-red-400 font-bold';
+    default: return 'text-theme-text-muted';
+  }
+};
+
+const getBucketTitle = (name: string) => {
+  const b = props.buckets.find(b => b.name === name);
+  return t('buckets.' + name) !== 'buckets.' + name ? t('buckets.' + name) : (b?.title || name);
 };
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto scroller-thin border border-theme-border rounded bg-theme-card/10">
-    <div class="min-w-[800px] w-full border-collapse text-left font-sans text-sm">
-      <!-- Table Header -->
-      <div
-        class="flex items-center bg-theme-column/60 border-b border-theme-border text-xs font-bold uppercase tracking-wider text-theme-text-muted px-3 py-2 select-none sticky top-0 z-10 backdrop-blur-sm"
-      >
-        <span class="flex-grow min-w-0">{{ t('table.title') }}</span>
-        <span class="w-20 shrink-0 text-center">{{ t('table.progress') }}</span>
-        <span class="w-52 shrink-0">{{ t('table.tags') }}</span>
-      </div>
-
-      <!-- Grouped by bucket -->
-      <div v-for="b in buckets" :key="b.name" class="border-b border-theme-border last:border-b-0">
-        <!-- Group Header -->
-        <div
-          @click="toggleColumnCollapse(b.name)"
-          class="bg-theme-column/25 px-3 py-1.5 flex items-center gap-2 cursor-pointer select-none hover:bg-theme-column/40 border-b border-theme-border/30 text-xs font-bold uppercase tracking-wider text-theme-text-muted"
-        >
-          <ChevronDown
-            class="w-3.5 h-3.5 transform transition-transform text-theme-text-muted animate-duration-150"
-            :class="{ '-rotate-90': collapsedColumns[b.name] }"
-          />
-          <span>{{ t('buckets.' + b.name) || b.title }}</span>
-          <span
-            v-if="b.subtitle"
-            class="text-xs lowercase italic text-theme-text-muted/60 font-sans tracking-normal ml-1.5 normal-case font-medium"
-          >
-            &mdash; {{ b.subtitle }}
-          </span>
-          <span class="px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted rounded text-xs font-bold">
-            {{ tasksByBucket[b.name]?.length || 0 }}
-          </span>
-        </div>
-
-        <!-- Group Rows -->
-        <div v-show="!collapsedColumns[b.name]" class="divide-y divide-theme-border/30 bg-theme-card/10">
-          <div v-if="!tasksByBucket[b.name] || !tasksByBucket[b.name].length" class="px-8 py-2 text-theme-text-muted italic text-xs">
-            {{ t('emptyColumnText') }}
-          </div>
-          <div
-            v-else
-            v-for="task in tasksByBucket[b.name]"
+  <div class="h-full flex flex-col border border-theme-border rounded bg-theme-card/10 overflow-hidden">
+    <div class="flex-grow overflow-auto scroller-thin">
+      <table class="w-full border-collapse text-left font-sans text-sm relative">
+        <thead class="sticky top-0 z-20">
+          <tr class="bg-theme-column/80 backdrop-blur-md border-b border-theme-border text-xs font-bold uppercase tracking-wider text-theme-text-muted select-none">
+            <th @click="toggleSort('title')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors min-w-[300px]">
+              <div class="flex items-center gap-1">
+                {{ t('table.title') }}
+                <component :is="sortKey === 'title' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
+              </div>
+            </th>
+            <th @click="toggleSort('bucket')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-40">
+              <div class="flex items-center gap-1">
+                <Layers class="w-3 h-3" /> {{ t('table.status') }}
+                <component :is="sortKey === 'bucket' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
+              </div>
+            </th>
+            <th @click="toggleSort('priority')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-32 text-center">
+              <div class="flex items-center justify-center gap-1">
+                <Flag class="w-3 h-3" /> {{ t('form.priorityLabel') }}
+                <component :is="sortKey === 'priority' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
+              </div>
+            </th>
+            <th @click="toggleSort('due_date')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-32 text-center">
+              <div class="flex items-center justify-center gap-1">
+                <Calendar class="w-3 h-3" /> {{ t('form.dueDateLabel') }}
+                <component :is="sortKey === 'due_date' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
+              </div>
+            </th>
+            <th @click="toggleSort('planned_date')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-32 text-center">
+              <div class="flex items-center justify-center gap-1">
+                P: {{ t('form.plannedDateLabel') }}
+                <component :is="sortKey === 'planned_date' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
+              </div>
+            </th>
+            <th @click="toggleSort('created_at')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-40 text-right">
+              <div class="flex items-center justify-end gap-1">
+                {{ t('table.updated') }}
+                <component :is="sortKey === 'created_at' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-theme-border/20">
+          <tr 
+            v-for="task in sortedTasks" 
             :key="task.id"
             @click="emit('task-click', task)"
-            class="flex items-center hover:bg-theme-column/20 px-3 py-2 cursor-pointer transition-colors duration-100 gap-3 group"
+            class="hover:bg-theme-column/15 transition-colors cursor-pointer group"
           >
-            <!-- Task Title + Note snippet -->
-            <div class="flex-grow min-w-0 flex items-baseline gap-2 overflow-hidden">
-              <span class="text-theme-text-card group-hover:text-theme-accent transition-colors truncate">
-                {{ task.title }}
+            <td class="px-4 py-2.5">
+              <div class="flex flex-col gap-0.5">
+                <span class="text-theme-text-card font-medium group-hover:text-theme-accent transition-colors truncate max-w-lg">
+                  {{ task.title }}
+                </span>
+                <div v-if="task.tags.length" class="flex flex-wrap gap-1 mt-0.5">
+                  <span v-for="tag in task.tags" :key="tag" class="text-[10px] px-1 py-0 bg-theme-column/40 text-theme-text-muted rounded border border-theme-border/30 uppercase font-bold tracking-tighter">
+                    {{ tag }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-2.5">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-theme-card border border-theme-border text-theme-text-muted whitespace-nowrap">
+                {{ getBucketTitle(task.bucket) }}
               </span>
-              <!-- Sneak peak of markdown body if available -->
-              <span v-if="task.body" class="text-theme-text-muted/60 text-xs truncate italic max-w-[28rem] font-sans">
-                -
-                {{
-                  task.body
-                    .replace(/#+\s+/g, '')
-                    .replace(/[-*]\s+\[[ xX]\]/g, '')
-                    .replace(/[-*]\s+/g, '')
-                    .replace(/[`*_]/g, '')
-                    .replace(/\s+/g, ' ')
-                    .trim()
-                }}
+            </td>
+            <td class="px-4 py-2.5 text-center">
+              <span v-if="task.priority" class="text-xs uppercase tracking-widest" :class="getPriorityClasses(task.priority)">
+                {{ task.priority }}
               </span>
-            </div>
-
-            <!-- Checklist Stats -->
-            <div class="w-20 shrink-0 flex items-center justify-center">
-              <span
-                v-if="getChecklistStats(task.body)"
-                class="flex items-center gap-1 text-xs font-bold"
-                :class="
-                  getChecklistStats(task.body)!.checked === getChecklistStats(task.body)!.total
-                    ? 'text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20'
-                    : 'text-theme-text-muted'
-                "
-              >
-                <ClipboardList class="w-3 h-3 shrink-0" />
-                <span>{{ getChecklistStats(task.body)!.checked }}/{{ getChecklistStats(task.body)!.total }}</span>
+              <span v-else class="text-theme-text-muted opacity-30">-</span>
+            </td>
+            <td class="px-4 py-2.5 text-center text-xs text-theme-text-card">
+              {{ formatDate(task.due_date) }}
+            </td>
+            <td class="px-4 py-2.5 text-center text-xs font-semibold">
+              <span v-if="task.planned_date" class="text-theme-accent/80">
+                {{ t('plannedDateOptions.' + task.planned_date) }}
               </span>
-            </div>
-
-            <!-- Tags -->
-            <div class="w-52 shrink-0 overflow-hidden flex flex-wrap gap-1">
-              <span
-                v-for="tag in task.tags"
-                :key="tag"
-                class="text-xs uppercase font-bold tracking-wider px-1 py-0.5 rounded border bg-theme-column/30 text-theme-text-muted border-theme-border/45"
-              >
-                {{ tag }}
-              </span>
-            </div>
-          </div>
-        </div>
+              <span v-else class="text-theme-text-muted opacity-30">-</span>
+            </td>
+            <td class="px-4 py-2.5 text-right text-xs text-theme-text-muted font-mono whitespace-nowrap">
+              {{ new Date(task.updated_at).toLocaleDateString(locale, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="sortedTasks.length === 0" class="p-12 text-center text-theme-text-muted italic">
+        {{ t('emptyStateTitle') }}
       </div>
     </div>
   </div>

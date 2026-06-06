@@ -46,6 +46,7 @@ export const en = {
     markdownPlaceholder: 'Write notes, checklists, or steps in markdown...',
     markdownPlaceholderEdit: 'Markdown details go here...',
     dueDateLabel: 'Due Date',
+    plannedDateLabel: 'Planned For',
     priorityLabel: 'Priority',
     noBucketsFound: 'No columns found',
   },
@@ -171,9 +172,11 @@ export const en = {
     board: 'Board',
     list: 'List View',
     matrix: 'Matrix',
-    time: 'Time View',
+    time: 'Time',
+    tag: 'Tags',
+    superTime: 'Global Planning',
     settings: 'Settings',
-  },
+    },
   matrix: {
     thresholdLabel: 'Urgency Threshold: {days} days or less',
     q1Title: 'Do First',
@@ -194,6 +197,10 @@ export const en = {
     thisYear: 'This Year',
     noDate: 'No Date',
     emptyColumn: 'No tasks',
+  },
+  tagView: {
+    noTags: 'No tags found in this project',
+    untagged: 'Untagged',
   },
   table: {
     id: 'ID',
@@ -236,5 +243,15 @@ export const en = {
     apply: 'Apply Filters',
     buttonTooltip: 'Open Filters',
     activeFilters: 'Active Filters',
+  },
+  plannedDateOptions: {
+    none: 'Not Planned',
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    thisWeek: 'This Week',
+    thisMonth: 'This Month',
+    thisYear: 'This Year',
+    sometime: 'Sometime Maybe',
+    notPlanned: 'Not Planned',
   },
 };

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus } from '@lucide/vue';
+import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus, Tag, Zap } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Project, BucketName } from '@/types';
 import type { ViewMode } from '@/stores/settings';
@@ -129,6 +129,30 @@ const emit = defineEmits<{
         >
           <Clock class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.time') }}</span>
+        </button>
+        <button
+          @click="emit('set-view-mode', 'tag')"
+          class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+          :class="
+            viewMode === 'tag'
+              ? 'bg-theme-primary text-white shadow-none'
+              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+          "
+        >
+          <Tag class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">{{ t('views.tag') }}</span>
+        </button>
+        <button
+          @click="emit('set-view-mode', 'super-time')"
+          class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+          :class="
+            viewMode === 'super-time'
+              ? 'bg-theme-primary text-white shadow-none'
+              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+          "
+        >
+          <Zap class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">{{ t('views.superTime') }}</span>
         </button>
       </div>
 

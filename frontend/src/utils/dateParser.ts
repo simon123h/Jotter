@@ -141,27 +141,45 @@ const getRules = (locale: string): DateRule[] => {
 export function parseDateFromTitle(
   title: string,
   locale: string
-): { cleanTitle: string; dueDate: string | null; matchedKeyword: string | null } {
+): { cleanTitle: string; dueDate: string | null; plannedDate: string | null; matchedKeyword: string | null } {
   if (!title) {
-    return { cleanTitle: title, dueDate: null, matchedKeyword: null };
+    return { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null };
   }
 
   const rules = getRules(locale);
+  const isDe = locale === 'de';
+
   for (const rule of rules) {
     const match = rule.pattern.exec(title);
     if (match) {
-      const matchedKeyword = match[0];
+      const matchedKeyword = match[0].toLowerCase();
       const date = rule.getDate(match);
       const dueDate = formatDate(date);
+
+      // Determine categorical planned date
+      let plannedDate: string | null = 'today';
+      if (isDe) {
+        if (matchedKeyword.includes('morgen')) plannedDate = 'tomorrow';
+        else if (matchedKeyword.includes('nächste woche')) plannedDate = 'thisWeek';
+        else if (matchedKeyword.includes('nächster monat')) plannedDate = 'thisMonth';
+        // Weekdays
+        else if (['son', 'mon', 'die', 'mit', 'don', 'fre', 'sam'].some((abbr) => matchedKeyword.includes(abbr))) plannedDate = 'thisWeek';
+      } else {
+        if (matchedKeyword.includes('tomorrow')) plannedDate = 'tomorrow';
+        else if (matchedKeyword.includes('next week')) plannedDate = 'thisWeek';
+        else if (matchedKeyword.includes('next month')) plannedDate = 'thisMonth';
+        // Weekdays
+        else if (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].some((abbr) => matchedKeyword.includes(abbr))) plannedDate = 'thisWeek';
+      }
 
       let cleanTitle = title.replace(rule.pattern, ' ');
       cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
 
-      return { cleanTitle, dueDate, matchedKeyword };
+      return { cleanTitle, dueDate, plannedDate, matchedKeyword };
     }
   }
 
-  return { cleanTitle: title, dueDate: null, matchedKeyword: null };
+  return { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null };
 }
 
 export function extractTagsFromTitle(title: string): { cleanTitle: string; tags: string[] } {
@@ -241,6 +259,7 @@ export function parseTitleState(
 ): {
   cleanTitle: string;
   dueDate: string | null;
+  plannedDate: string | null;
   matchedKeyword: string | null;
   tags: string[];
   bucket: string | null;
@@ -255,6 +274,7 @@ export function parseTitleState(
   return {
     cleanTitle: dateResult.cleanTitle,
     dueDate: dateResult.dueDate,
+    plannedDate: dateResult.plannedDate,
     matchedKeyword: dateResult.matchedKeyword,
     tags: tagsResult.tags,
     bucket: bucketResult.bucket,

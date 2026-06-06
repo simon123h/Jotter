@@ -85,17 +85,18 @@ var DefaultBuckets = []map[string]interface{}{
 }
 
 type TaskFrontmatter struct {
-	ID        string   `yaml:"id"`
-	ProjectID string   `yaml:"project_id"`
-	Title     string   `yaml:"title"`
-	Bucket    string   `yaml:"bucket"`
-	Position  float64  `yaml:"position"`
-	Tags      []string `yaml:"tags"`
-	DueDate   *string  `yaml:"due_date"`
-	Priority  *string  `yaml:"priority"`
-	Color     *string  `yaml:"color"`
-	CreatedAt string   `yaml:"created_at"`
-	UpdatedAt string   `yaml:"updated_at"`
+	ID          string   `yaml:"id"`
+	ProjectID   string   `yaml:"project_id"`
+	Title       string   `yaml:"title"`
+	Bucket      string   `yaml:"bucket"`
+	Position    float64  `yaml:"position"`
+	Tags        []string `yaml:"tags"`
+	DueDate     *string  `yaml:"due_date"`
+	PlannedDate *string  `yaml:"planned_date"`
+	Priority    *string  `yaml:"priority"`
+	Color       *string  `yaml:"color"`
+	CreatedAt   string   `yaml:"created_at"`
+	UpdatedAt   string   `yaml:"updated_at"`
 }
 
 func LoadProjectsFile(tasksDir string) ([]map[string]interface{}, error) {
@@ -320,18 +321,19 @@ func ReadTaskFile(tasksDir string, taskID string) (*models.TaskResponse, error) 
 	}
 
 	return &models.TaskResponse{
-		ID:        taskID,
-		ProjectID: projectID,
-		Title:     fm.Title,
-		Bucket:    fm.Bucket,
-		Position:  fm.Position,
-		Tags:      fm.Tags,
-		Body:      body,
-		DueDate:   fm.DueDate,
-		Priority:  fm.Priority,
-		Color:     fm.Color,
-		CreatedAt: fm.CreatedAt,
-		UpdatedAt: fm.UpdatedAt,
+		ID:          taskID,
+		ProjectID:   projectID,
+		Title:       fm.Title,
+		Bucket:      fm.Bucket,
+		Position:    fm.Position,
+		Tags:        fm.Tags,
+		Body:        body,
+		DueDate:     fm.DueDate,
+		PlannedDate: fm.PlannedDate,
+		Priority:    fm.Priority,
+		Color:       fm.Color,
+		CreatedAt:   fm.CreatedAt,
+		UpdatedAt:   fm.UpdatedAt,
 	}, nil
 }
 
@@ -355,11 +357,17 @@ func WriteTaskFile(tasksDir string, taskID string, taskData map[string]interface
 		}
 	}
 
-	var dueDate, priority, color *string
+	var dueDate, plannedDate, priority, color *string
 	if val, okVal := taskData["due_date"].(*string); okVal {
 		dueDate = val
 	} else if val, okVal := taskData["due_date"].(string); okVal && val != "" {
 		dueDate = &val
+	}
+
+	if val, okVal := taskData["planned_date"].(*string); okVal {
+		plannedDate = val
+	} else if val, okVal := taskData["planned_date"].(string); okVal && val != "" {
+		plannedDate = &val
 	}
 
 	if val, okVal := taskData["priority"].(*string); okVal {
@@ -375,17 +383,18 @@ func WriteTaskFile(tasksDir string, taskID string, taskData map[string]interface
 	}
 
 	fm := TaskFrontmatter{
-		ID:        taskID,
-		ProjectID: projectID,
-		Title:     taskData["title"].(string),
-		Bucket:    taskData["bucket"].(string),
-		Position:  taskData["position"].(float64),
-		Tags:      tags,
-		DueDate:   dueDate,
-		Priority:  priority,
-		Color:     color,
-		CreatedAt: taskData["created_at"].(string),
-		UpdatedAt: taskData["updated_at"].(string),
+		ID:          taskID,
+		ProjectID:   projectID,
+		Title:       taskData["title"].(string),
+		Bucket:      taskData["bucket"].(string),
+		Position:    taskData["position"].(float64),
+		Tags:        tags,
+		DueDate:     dueDate,
+		PlannedDate: plannedDate,
+		Priority:    priority,
+		Color:       color,
+		CreatedAt:   taskData["created_at"].(string),
+		UpdatedAt:   taskData["updated_at"].(string),
 	}
 
 	body, _ := taskData["body"].(string)
@@ -673,9 +682,12 @@ func SyncDBWithFiles(tasksDir string) (int, error) {
 				}
 
 				tagsJSON, _ := json.Marshal(fm.Tags)
-				var fmDueDate, fmPriority, fmColor sql.NullString
+				var fmDueDate, fmPlannedDate, fmPriority, fmColor sql.NullString
 				if fm.DueDate != nil {
 					fmDueDate = sql.NullString{String: *fm.DueDate, Valid: true}
+				}
+				if fm.PlannedDate != nil {
+					fmPlannedDate = sql.NullString{String: *fm.PlannedDate, Valid: true}
 				}
 				if fm.Priority != nil {
 					fmPriority = sql.NullString{String: *fm.Priority, Valid: true}
@@ -684,8 +696,8 @@ func SyncDBWithFiles(tasksDir string) (int, error) {
 					fmColor = sql.NullString{String: *fm.Color, Valid: true}
 				}
 
-				_, errT := tx.Exec("INSERT INTO tasks (id, project_id, title, bucket, position, tags, filename, body, due_date, priority, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-					idVal, pID, fm.Title, fm.Bucket, fm.Position, string(tagsJSON), f.Name(), body, fmDueDate, fmPriority, fmColor, fm.CreatedAt, fm.UpdatedAt)
+				_, errT := tx.Exec("INSERT INTO tasks (id, project_id, title, bucket, position, tags, filename, body, due_date, planned_date, priority, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+					idVal, pID, fm.Title, fm.Bucket, fm.Position, string(tagsJSON), f.Name(), body, fmDueDate, fmPlannedDate, fmPriority, fmColor, fm.CreatedAt, fm.UpdatedAt)
 				if errT != nil {
 					log.Printf("Error inserting task %s: %v", idVal, errT)
 					continue

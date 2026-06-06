@@ -19,6 +19,68 @@ import (
 )
 
 func RegisterTaskRoutes(r chi.Router, tasksDir string) {
+	r.Get("/tasks", func(w http.ResponseWriter, r *http.Request) {
+		query := "SELECT id, project_id, title, bucket, position, tags, body, due_date, planned_date, priority, color, created_at, updated_at FROM tasks WHERE 1=1"
+		var args []interface{}
+
+		excludeBuckets := r.URL.Query().Get("exclude_buckets")
+		if excludeBuckets != "" {
+			bucketList := strings.Split(excludeBuckets, ",")
+			if len(bucketList) > 0 {
+				var placeholders []string
+				for _, b := range bucketList {
+					placeholders = append(placeholders, "?")
+					args = append(args, strings.TrimSpace(b))
+				}
+				query += fmt.Sprintf(" AND bucket NOT IN (%s)", strings.Join(placeholders, ","))
+			}
+		}
+
+		query += " ORDER BY created_at DESC"
+
+		rows, err := db.DB.Query(query, args...)
+		if err != nil {
+			SendError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		defer rows.Close()
+
+		var taskList []models.TaskResponse
+		for rows.Next() {
+			var t models.TaskResponse
+			var tagsJSON string
+			var dueDate, plannedDate, priority, color sql.NullString
+
+			err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.Bucket, &t.Position, &tagsJSON, &t.Body, &dueDate, &plannedDate, &priority, &color, &t.CreatedAt, &t.UpdatedAt)
+			if err != nil {
+				SendError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			_ = json.Unmarshal([]byte(tagsJSON), &t.Tags)
+			if dueDate.Valid {
+				t.DueDate = &dueDate.String
+			}
+			if plannedDate.Valid {
+				t.PlannedDate = &plannedDate.String
+			}
+			if priority.Valid {
+				t.Priority = &priority.String
+			}
+			if color.Valid {
+				t.Color = &color.String
+			}
+
+			taskList = append(taskList, t)
+		}
+
+		if taskList == nil {
+			taskList = []models.TaskResponse{}
+		}
+
+		SendJSON(w, http.StatusOK, taskList)
+	})
+
 	r.Get("/projects/{project_id}/tasks", func(w http.ResponseWriter, r *http.Request) {
 		projectID := chi.URLParam(r, "project_id")
 
@@ -33,7 +95,7 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			return
 		}
 
-		query := "SELECT id, project_id, title, bucket, position, tags, body, due_date, priority, color, created_at, updated_at FROM tasks WHERE project_id = ?"
+		query := "SELECT id, project_id, title, bucket, position, tags, body, due_date, planned_date, priority, color, created_at, updated_at FROM tasks WHERE project_id = ?"
 		var args []interface{}
 		args = append(args, projectID)
 
@@ -109,9 +171,9 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 		for rows.Next() {
 			var t models.TaskResponse
 			var tagsJSON string
-			var dueDate, priority, color sql.NullString
+			var dueDate, plannedDate, priority, color sql.NullString
 
-			err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.Bucket, &t.Position, &tagsJSON, &t.Body, &dueDate, &priority, &color, &t.CreatedAt, &t.UpdatedAt)
+			err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.Bucket, &t.Position, &tagsJSON, &t.Body, &dueDate, &plannedDate, &priority, &color, &t.CreatedAt, &t.UpdatedAt)
 			if err != nil {
 				SendError(w, http.StatusInternalServerError, err.Error())
 				return
@@ -120,6 +182,9 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			_ = json.Unmarshal([]byte(tagsJSON), &t.Tags)
 			if dueDate.Valid {
 				t.DueDate = &dueDate.String
+			}
+			if plannedDate.Valid {
+				t.PlannedDate = &plannedDate.String
 			}
 			if priority.Valid {
 				t.Priority = &priority.String
@@ -202,18 +267,19 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 		}
 
 		taskMap := map[string]interface{}{
-			"id":         newID,
-			"project_id": projectID,
-			"title":      req.Title,
-			"bucket":     req.Bucket,
-			"position":   newPosition,
-			"tags":       tags,
-			"body":       req.Body,
-			"due_date":   req.DueDate,
-			"priority":   req.Priority,
-			"color":      req.Color,
-			"created_at": nowStr,
-			"updated_at": nowStr,
+			"id":           newID,
+			"project_id":    projectID,
+			"title":        req.Title,
+			"bucket":       req.Bucket,
+			"position":     newPosition,
+			"tags":         tags,
+			"body":         req.Body,
+			"due_date":     req.DueDate,
+			"planned_date": req.PlannedDate,
+			"priority":     req.Priority,
+			"color":        req.Color,
+			"created_at":   nowStr,
+			"updated_at":   nowStr,
 		}
 
 		filename, errWrite := storage.WriteTaskFile(tasksDir, newID, taskMap)
@@ -224,9 +290,12 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 
 		// Write to DB
 		tagsJSON, _ := json.Marshal(tags)
-		var dbDueDate, dbPriority, dbColor sql.NullString
+		var dbDueDate, dbPlannedDate, dbPriority, dbColor sql.NullString
 		if req.DueDate != nil {
 			dbDueDate = sql.NullString{String: *req.DueDate, Valid: true}
+		}
+		if req.PlannedDate != nil {
+			dbPlannedDate = sql.NullString{String: *req.PlannedDate, Valid: true}
 		}
 		if req.Priority != nil {
 			dbPriority = sql.NullString{String: *req.Priority, Valid: true}
@@ -235,8 +304,8 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			dbColor = sql.NullString{String: *req.Color, Valid: true}
 		}
 
-		_, err = db.DB.Exec("INSERT INTO tasks (id, project_id, title, bucket, position, tags, filename, body, due_date, priority, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-			newID, projectID, req.Title, req.Bucket, newPosition, string(tagsJSON), filename, req.Body, dbDueDate, dbPriority, dbColor, nowStr, nowStr)
+		_, err = db.DB.Exec("INSERT INTO tasks (id, project_id, title, bucket, position, tags, filename, body, due_date, planned_date, priority, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			newID, projectID, req.Title, req.Bucket, newPosition, string(tagsJSON), filename, req.Body, dbDueDate, dbPlannedDate, dbPriority, dbColor, nowStr, nowStr)
 		if err != nil {
 			// Clean up file if DB fails
 			_ = storage.DeleteTaskFile(tasksDir, newID)
@@ -245,18 +314,19 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 		}
 
 		res := models.TaskResponse{
-			ID:        newID,
-			ProjectID: projectID,
-			Title:     req.Title,
-			Bucket:    req.Bucket,
-			Position:  newPosition,
-			Tags:      tags,
-			Body:      req.Body,
-			DueDate:   req.DueDate,
-			Priority:  req.Priority,
-			Color:     req.Color,
-			CreatedAt: nowStr,
-			UpdatedAt: nowStr,
+			ID:          newID,
+			ProjectID:   projectID,
+			Title:       req.Title,
+			Bucket:      req.Bucket,
+			Position:    newPosition,
+			Tags:        tags,
+			Body:        req.Body,
+			DueDate:     req.DueDate,
+			PlannedDate: req.PlannedDate,
+			Priority:    req.Priority,
+			Color:       req.Color,
+			CreatedAt:   nowStr,
+			UpdatedAt:   nowStr,
 		}
 		SendJSON(w, http.StatusCreated, res)
 	})
@@ -368,6 +438,11 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				updatedDueDate = req.DueDate
 			}
 
+			updatedPlannedDate := existing.PlannedDate
+			if _, ok := raw["planned_date"]; ok {
+				updatedPlannedDate = req.PlannedDate
+			}
+
 			updatedPriority := existing.Priority
 			if _, ok := raw["priority"]; ok {
 				updatedPriority = req.Priority
@@ -419,17 +494,18 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			}
 
 			taskMap := map[string]interface{}{
-				"project_id": projectID,
-				"title":      updatedTitle,
-				"bucket":     updatedBucket,
-				"position":   updatedPosition,
-				"tags":       updatedTags,
-				"body":       updatedBody,
-				"due_date":   updatedDueDate,
-				"priority":   updatedPriority,
-				"color":      updatedColor,
-				"created_at": existing.CreatedAt,
-				"updated_at": nowStr,
+				"project_id":   projectID,
+				"title":        updatedTitle,
+				"bucket":       updatedBucket,
+				"position":     updatedPosition,
+				"tags":         updatedTags,
+				"body":         updatedBody,
+				"due_date":     updatedDueDate,
+				"planned_date": updatedPlannedDate,
+				"priority":     updatedPriority,
+				"color":        updatedColor,
+				"created_at":   existing.CreatedAt,
+				"updated_at":   nowStr,
 			}
 
 			filename, errWrite := storage.WriteTaskFile(tasksDir, taskID, taskMap)
@@ -439,9 +515,12 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			}
 
 			tagsJSON, _ := json.Marshal(updatedTags)
-			var dbDueDate, dbPriority, dbColor sql.NullString
+			var dbDueDate, dbPlannedDate, dbPriority, dbColor sql.NullString
 			if updatedDueDate != nil {
 				dbDueDate = sql.NullString{String: *updatedDueDate, Valid: true}
+			}
+			if updatedPlannedDate != nil {
+				dbPlannedDate = sql.NullString{String: *updatedPlannedDate, Valid: true}
 			}
 			if updatedPriority != nil {
 				dbPriority = sql.NullString{String: *updatedPriority, Valid: true}
@@ -450,8 +529,8 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				dbColor = sql.NullString{String: *updatedColor, Valid: true}
 			}
 
-			_, err = tx.Exec("UPDATE tasks SET title = ?, bucket = ?, position = ?, tags = ?, filename = ?, body = ?, due_date = ?, priority = ?, color = ?, updated_at = ? WHERE id = ? AND project_id = ?",
-				updatedTitle, updatedBucket, updatedPosition, string(tagsJSON), filename, updatedBody, dbDueDate, dbPriority, dbColor, nowStr, taskID, projectID)
+			_, err = tx.Exec("UPDATE tasks SET title = ?, bucket = ?, position = ?, tags = ?, filename = ?, body = ?, due_date = ?, planned_date = ?, priority = ?, color = ?, updated_at = ? WHERE id = ? AND project_id = ?",
+				updatedTitle, updatedBucket, updatedPosition, string(tagsJSON), filename, updatedBody, dbDueDate, dbPlannedDate, dbPriority, dbColor, nowStr, taskID, projectID)
 			if err != nil {
 				SendError(w, http.StatusInternalServerError, err.Error())
 				return
@@ -467,18 +546,19 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			}
 
 			res := models.TaskResponse{
-				ID:        taskID,
-				ProjectID: projectID,
-				Title:     updatedTitle,
-				Bucket:    updatedBucket,
-				Position:  updatedPosition,
-				Tags:      updatedTags,
-				Body:      updatedBody,
-				DueDate:   updatedDueDate,
-				Priority:  updatedPriority,
-				Color:     updatedColor,
-				CreatedAt: existing.CreatedAt,
-				UpdatedAt: nowStr,
+				ID:          taskID,
+				ProjectID:   projectID,
+				Title:       updatedTitle,
+				Bucket:      updatedBucket,
+				Position:    updatedPosition,
+				Tags:        updatedTags,
+				Body:        updatedBody,
+				DueDate:     updatedDueDate,
+				PlannedDate: updatedPlannedDate,
+				Priority:    updatedPriority,
+				Color:       updatedColor,
+				CreatedAt:   existing.CreatedAt,
+				UpdatedAt:   nowStr,
 			}
 			SendJSON(w, http.StatusOK, res)
 		}

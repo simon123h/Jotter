@@ -76,10 +76,12 @@ export function useTaskMutations(
 
   const handleMarkTaskDone = async (task: Task) => {
     try {
-      const targetBucketTasks = tasks.value.filter((t) => t.bucket === 'done').sort((a, b) => a.position - b.position);
+      const targetBucketTasks = tasks.value
+        .filter((t) => t.bucket === 'done' && t.project_id === task.project_id)
+        .sort((a, b) => a.position - b.position);
       const newPosition = targetBucketTasks.length > 0 ? targetBucketTasks[targetBucketTasks.length - 1].position + 1000.0 : 1000.0;
 
-      await moveTask(activeProjectId.value, task.id, 'done', newPosition);
+      await moveTask(task.project_id, task.id, 'done', newPosition);
       await fetchBuckets();
       await fetchAllTasks();
     } catch (err: any) {
@@ -87,73 +89,52 @@ export function useTaskMutations(
     }
   };
 
-  const handleTimeViewDueDateUpdate = async ({ taskId, columnId }: { taskId: string; columnId: string }) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    let newDueDate: string | null;
-
-    switch (columnId) {
-      case 'today':
-        newDueDate = formatDateISO(today);
-        break;
-      case 'tomorrow': {
-        const d = new Date(today);
-        d.setDate(d.getDate() + 1);
-        newDueDate = formatDateISO(d);
-        break;
-      }
-      case 'thisWeek': {
-        const d = new Date(today);
-        const dayOfWeek = d.getDay();
-        const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
-        d.setDate(d.getDate() + daysUntilSunday);
-        newDueDate = formatDateISO(d);
-        break;
-      }
-      case 'thisMonth': {
-        const d = new Date(today);
-        d.setDate(d.getDate() + 30);
-        newDueDate = formatDateISO(d);
-        break;
-      }
-      case 'thisYear': {
-        const d = new Date(today.getFullYear(), 11, 31);
-        newDueDate = formatDateISO(d);
-        break;
-      }
-      case 'noDate':
-      default:
-        newDueDate = null;
-        break;
-    }
-
+  const handleTimeViewPlannedDateUpdate = async ({
+    taskId,
+    plannedDate,
+    projectId,
+  }: {
+    taskId: string;
+    plannedDate: string;
+    projectId?: string;
+  }) => {
     // Optimistic local update
     const task = tasks.value.find((t) => t.id === taskId);
     if (!task) return;
 
-    const originalDueDate = task.due_date;
-    task.due_date = newDueDate ?? undefined;
+    const originalPlannedDate = task.planned_date;
+    task.planned_date = plannedDate;
 
     try {
-      await updateTask(activeProjectId.value, taskId, { due_date: newDueDate as any });
+      const pId = projectId || activeProjectId.value;
+      await updateTask(pId, taskId, { planned_date: plannedDate });
     } catch (err: any) {
-      task.due_date = originalDueDate;
-      error.value = err.message || 'Failed to update due date';
+      task.planned_date = originalPlannedDate;
+      error.value = err.message || 'Failed to update planned date';
     }
   };
 
-  const formatDateISO = (d: Date): string => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  const handleTagUpdate = async ({ taskId, tags }: { taskId: string; tags: string[] }) => {
+    const task = tasks.value.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const originalTags = [...task.tags];
+    task.tags = tags;
+
+    try {
+      const pId = task.project_id || activeProjectId.value;
+      await updateTask(pId, taskId, { tags });
+    } catch (err: any) {
+      task.tags = originalTags;
+      error.value = err.message || 'Failed to update tags';
+    }
   };
 
   return {
     error,
     handleCardDropped,
     handleMarkTaskDone,
-    handleTimeViewDueDateUpdate,
+    handleTimeViewPlannedDateUpdate,
+    handleTagUpdate,
   };
 }

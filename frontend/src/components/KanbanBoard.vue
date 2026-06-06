@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore, type ViewMode } from '@/stores/settings';
 import type { Task, BucketName } from '@/types';
-import { getTasks, syncSystem } from '@/api';
+import { getTasks, getAllTasks, syncSystem } from '@/api';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
 import TaskCreateModal from '@/components/modals/TaskCreateModal.vue';
 import ProjectEditModal from '@/components/modals/ProjectEditModal.vue';
@@ -14,6 +14,8 @@ import BoardView from '@/components/views/BoardView.vue';
 import ListView from '@/components/views/ListView.vue';
 import MatrixView from '@/components/views/MatrixView.vue';
 import TimeView from '@/components/views/TimeView.vue';
+import TagView from '@/components/views/TagView.vue';
+import SuperTimeView from '@/components/views/SuperTimeView.vue';
 import SettingsView from '@/components/views/SettingsView.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
 import { useI18n } from '@/composables/useI18n';
@@ -116,6 +118,20 @@ const { searchQuery, taskFilters, hasActiveFilters, filteredTasks, applyFilters,
 
 // Fetch all tasks using getTasks
 const fetchAllTasks = async () => {
+  if (viewMode.value === 'super-time') {
+    loading.value = true;
+    try {
+      tasks.value = await getAllTasks({
+        exclude_buckets: 'done,archive',
+      });
+    } catch (err: any) {
+      localError.value = t('errors.fetchTasks', { message: err.message || err });
+    } finally {
+      loading.value = false;
+    }
+    return;
+  }
+
   if (!activeProjectId.value || activeProjectId.value === '' || activeProjectId.value === 'init') {
     tasks.value = [];
     return;
@@ -138,7 +154,8 @@ const {
   error: taskMutationError,
   handleCardDropped,
   handleMarkTaskDone,
-  handleTimeViewDueDateUpdate,
+  handleTimeViewPlannedDateUpdate,
+  handleTagUpdate,
 } = useTaskMutations(tasks, activeProjectId, fetchBuckets, fetchAllTasks);
 
 // Synchronized computed error across all composables and local errors
@@ -461,13 +478,32 @@ const triggerSync = async () => {
           <!-- Matrix View Mode (Eisenhower 2x2 Matrix) -->
           <MatrixView v-else-if="viewMode === 'matrix'" :tasks="filteredTasks" @task-click="openDetailModal" />
 
-          <!-- Time View Mode (Deadline-based columns) -->
+          <!-- Time View Mode (Categorical Planning) -->
           <TimeView
             v-else-if="viewMode === 'time'"
             :tasks="filteredTasks"
             @task-click="openDetailModal"
             @mark-done="handleMarkTaskDone"
-            @update-due-date="handleTimeViewDueDateUpdate"
+            @update-planned-date="handleTimeViewPlannedDateUpdate"
+          />
+
+          <!-- Tag View Mode (Column per tag) -->
+          <TagView
+            v-else-if="viewMode === 'tag'"
+            :tasks="filteredTasks"
+            @task-click="openDetailModal"
+            @mark-done="handleMarkTaskDone"
+            @update-task-tags="handleTagUpdate"
+          />
+
+          <!-- Super Time View Mode (Aggregated Planning) -->
+          <SuperTimeView
+            v-else-if="viewMode === 'super-time'"
+            :tasks="filteredTasks"
+            :projects="projects"
+            @task-click="openDetailModal"
+            @mark-done="handleMarkTaskDone"
+            @update-planned-date="handleTimeViewPlannedDateUpdate"
           />
 
           <!-- Settings View Mode -->

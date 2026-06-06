@@ -15,6 +15,8 @@ const props = withDefaults(
     showFooter?: boolean;
     allowExpand?: boolean;
     compact?: boolean;
+    showProject?: boolean;
+    projectTitle?: string;
   }>(),
   {
     showTags: true,
@@ -22,6 +24,7 @@ const props = withDefaults(
     showFooter: true,
     allowExpand: true,
     compact: false,
+    showProject: false,
   }
 );
 
@@ -132,12 +135,17 @@ const cardStyle = computed(() => {
   >
     <!-- Title & ID -->
     <div class="flex justify-between items-start gap-2">
-      <h4 
-        class="text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2"
-        :class="compact ? 'text-xs' : 'text-sm'"
-      >
-        {{ task.title }}
-      </h4>
+      <div class="flex flex-col gap-0.5 overflow-hidden">
+        <span v-if="showProject && projectTitle" class="text-[9px] font-bold uppercase tracking-widest text-theme-accent/70 truncate">
+          {{ projectTitle }}
+        </span>
+        <h4 
+          class="text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2"
+          :class="compact ? 'text-xs' : 'text-sm'"
+        >
+          {{ task.title }}
+        </h4>
+      </div>
       <div
         v-if="showDoneButton && task.bucket !== 'done'"
         class="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
@@ -170,15 +178,19 @@ const cardStyle = computed(() => {
 
     <!-- Combined Footer Row: Due Date, Priority, Checklist, and Chevron -->
     <div
-      v-if="showFooter && (task.due_date || task.priority || checklistStats || hasNotes)"
+      v-if="showFooter && (task.due_date || task.planned_date || task.priority || checklistStats || hasNotes)"
       class="flex justify-between items-center text-xs text-theme-text-muted select-none"
       :class="compact ? 'mt-1 pt-1' : 'mt-1.5 pt-1.5'"
     >
       <!-- Left side: Due Date & Priority -->
       <div class="flex items-center gap-2.5">
-        <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
+        <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted" :title="'Due: ' + formatDate(task.due_date)">
           <Calendar :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
           <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.due_date) }}</span>
+        </div>
+        <div v-if="task.planned_date" class="flex items-center gap-1 text-theme-accent/80" :title="'Planned: ' + t('plannedDateOptions.' + task.planned_date)">
+          <span class="font-bold text-[10px]" :class="{ 'text-[8px]': compact }">P:</span>
+          <span :class="{ 'text-[10px]': compact }">{{ t('plannedDateOptions.' + task.planned_date) }}</span>
         </div>
         <div
           v-if="task.priority"
