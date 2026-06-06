@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { X, Trash2 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
+import { useSettingsStore } from '@/stores/settings';
+import { useProjects } from '@/composables/useProjects';
 import type { Project } from '@/types';
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
+const { activeProjectId } = storeToRefs(settingsStore);
 
 const props = defineProps<{
   isOpen: boolean;
@@ -13,17 +18,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'delete-project'): void;
-  (
-    e: 'save',
-    payload: {
-      id: string;
-      title: string;
-      done_clean_period: number | null;
-      git_remote: string | null;
-    }
-  ): void;
 }>();
+
+// Composable: Projects Management
+const {
+  handleSaveProject,
+  handleDeleteProject,
+} = useProjects(activeProjectId, () => {});
 
 const title = ref('');
 const doneCleanPeriod = ref<number | null>(null);
@@ -47,20 +48,7 @@ watch(
   { immediate: true }
 );
 
-// Also watch project prop changes in case it loads asynchronously
-watch(
-  () => props.project,
-  (newProject) => {
-    if (props.isOpen && newProject) {
-      title.value = newProject.title || '';
-      doneCleanPeriod.value =
-        newProject.done_clean_period !== undefined && newProject.done_clean_period !== null ? newProject.done_clean_period : null;
-      gitRemote.value = newProject.git_remote || '';
-    }
-  }
-);
-
-const handleSave = () => {
+const handleSave = async () => {
   const cleanTitle = (title.value || '').trim();
   if (!cleanTitle || !props.project) return;
 
@@ -75,7 +63,7 @@ const handleSave = () => {
     }
   }
 
-  emit('save', {
+  await handleSaveProject({
     id: props.project.id,
     title: cleanTitle,
     done_clean_period: parsedPeriod,
@@ -90,8 +78,10 @@ const handleKeyDown = (e: KeyboardEvent) => {
   }
 };
 
-const handleDelete = () => {
-  emit('delete-project');
+const handleDelete = async () => {
+    if (!props.project) return;
+    await handleDeleteProject(props.project);
+    emit('close');
 };
 
 onMounted(() => {

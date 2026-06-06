@@ -8,35 +8,25 @@ const { t, locale } = useI18n();
 
 const props = defineProps<{
   buckets: Bucket[];
-  tasksByBucket: Record<string, Task[]>;
+  tasks: Task[];
   isSelected: (id: string) => boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'toggle-select', task: Task): void;
-  (e: 'toggle-select-all', selected: boolean): void;
 }>();
 
 type SortKey = 'title' | 'bucket' | 'priority' | 'due_date' | 'planned_date' | 'created_at';
 const sortKey = ref<SortKey>('created_at');
 const sortOrder = ref<'asc' | 'desc'>('desc');
 
-const allTasks = computed(() => {
-  return Object.values(props.tasksByBucket).flat();
-});
-
 const isAllSelected = computed(() => {
-  return allTasks.value.length > 0 && allTasks.value.every((t) => props.isSelected(t.id));
+  return props.tasks.length > 0 && props.tasks.every((t) => props.isSelected(t.id));
 });
-
-const handleToggleAll = (event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked;
-  emit('toggle-select-all', checked);
-};
 
 const sortedTasks = computed(() => {
-  return [...allTasks.value].sort((a, b) => {
+  return [...props.tasks].sort((a, b) => {
     let valA: any = a[sortKey.value] || '';
     let valB: any = b[sortKey.value] || '';
 
@@ -100,7 +90,7 @@ const getBucketTitle = (name: string) => {
             class="bg-theme-column/80 backdrop-blur-md border-b border-theme-border text-xs font-bold uppercase tracking-wider text-theme-text-muted select-none"
           >
             <th class="px-4 py-3 w-10">
-              <input type="checkbox" :checked="isAllSelected" @change="handleToggleAll" class="accent-theme-primary cursor-pointer" />
+              <input type="checkbox" :checked="isAllSelected" class="accent-theme-primary cursor-pointer" />
             </th>
             <th @click="toggleSort('title')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors min-w-[300px]">
               <div class="flex items-center gap-1">

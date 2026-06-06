@@ -1,35 +1,25 @@
 <script setup lang="ts">
-import { ref, watch, computed, onUnmounted, nextTick } from 'vue';
+import { ref, watch, computed, onUnmounted, nextTick, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import { marked } from 'marked';
-import type { Task, BucketName } from '@/types';
+import type { Task } from '@/types';
 import { getTask, updateTask, deleteTask, uploadAttachment, deleteAttachment, getAttachmentUrl } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
+import { useProjectStore } from '@/stores/project';
 import { X, Slash, Paperclip, Trash2, Download, FileText, Plus } from '@lucide/vue';
 import { parseTitleState } from '@/utils/dateParser';
 
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();
+const route = useRoute();
+const router = useRouter();
+const projectStore = useProjectStore();
+const { buckets, tasks } = storeToRefs(projectStore);
 
-const props = withDefaults(
-  defineProps<{
-    isOpen: boolean;
-    projectId: string;
-    taskId: string | null;
-    buckets: { name: BucketName; title: string }[];
-    existingTags?: string[];
-  }>(),
-  {
-    existingTags: () => [],
-  }
-);
-
-const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'updated'): void;
-  (e: 'deleted'): void;
-  (e: 'mark-done', task: Task): void;
-}>();
+const projectId = computed(() => String(route.params.projectId));
+const taskId = computed(() => route.params.taskId ? String(route.params.taskId) : null);
 
 const task = ref<Task | null>(null);
 const loading = ref(false);
@@ -63,6 +53,16 @@ const lastExtractedTags = ref<string[]>([]);
 const isTagDropdownOpen = ref(false);
 const titleInput = ref<HTMLInputElement | null>(null);
 
+const allTags = computed(() => {
+  const tagsSet = new Set<string>();
+  tasks.value.forEach((t) => {
+    if (t.tags) {
+      t.tags.forEach((tag) => tagsSet.add(tag.toLowerCase()));
+    }
+  });
+  return Array.from(tagsSet).sort();
+});
+
 const activeTagQuery = computed(() => {
   const parts = editTags.value.split(',');
   return parts[parts.length - 1].trim().toLowerCase();
@@ -79,7 +79,7 @@ const currentTagsSet = computed(() => {
 
 const tagSuggestions = computed(() => {
   const query = activeTagQuery.value;
-  return props.existingTags.filter((tag) => {
+  return allTags.value.filter((tag) => {
     const normalizedTag = tag.toLowerCase();
     if (currentTagsSet.value.has(normalizedTag)) return false;
     return normalizedTag.includes(query);
@@ -103,7 +103,7 @@ const autocompleteIndex = ref(0);
 const filteredBuckets = computed(() => {
   if (!showAutocomplete.value) return [];
   const search = autocompleteSearch.value.toLowerCase();
-  return props.buckets.filter(
+  return buckets.value.filter(
     (b) =>
       b.name.toLowerCase().includes(search) ||
       t('buckets.' + b.name)
@@ -204,7 +204,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
   }
 
   if (event.key === 'Escape' || event.key === 'Esc') {
-    emit('close');
+    closeModal();
   } else if (event.ctrlKey && event.key === 'Enter') {
     if (isEditing.value) {
       event.preventDefault();
@@ -213,33 +213,18 @@ const handleKeyDown = (event: KeyboardEvent) => {
   }
 };
 
-// Fetch task detail when modal opens or taskId changes
-watch(
-  () => props.taskId,
-  async (newId) => {
-    if (newId !== null && props.isOpen) {
-      await fetchTaskDetail(newId);
-    } else {
-      task.value = null;
-      isEditing.value = false;
-    }
-  }
-);
+const closeModal = () => {
+    const currentMode = route.name?.toString().split('-')[0] || 'board';
+    router.push({
+        name: currentMode,
+        params: { projectId: projectId.value },
+        query: route.query,
+    });
+};
 
-watch(
-  () => props.isOpen,
-  async (open) => {
-    if (open) {
-      window.addEventListener('keydown', handleKeyDown);
-      if (props.taskId !== null) {
-        await fetchTaskDetail(props.taskId);
-      }
-    } else {
-      window.removeEventListener('keydown', handleKeyDown);
-    }
-  },
-  { immediate: true }
-);
+onMounted(() => {
+    window.addEventListener('keydown', handleKeyDown);
+});
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
@@ -249,7 +234,7 @@ const fetchTaskDetail = async (id: string) => {
   loading.value = true;
   error.value = null;
   try {
-    const fetchedTask = await getTask(props.projectId, id);
+    const fetchedTask = await getTask(projectId.value, id);
     task.value = fetchedTask;
     // Set edit form values
     editTitle.value = fetchedTask.title;
@@ -270,10 +255,24 @@ const fetchTaskDetail = async (id: string) => {
   }
 };
 
+// Fetch task detail when taskId changes
+watch(
+  taskId,
+  async (newId) => {
+    if (newId !== null) {
+      await fetchTaskDetail(newId);
+    } else {
+      task.value = null;
+      isEditing.value = false;
+    }
+  },
+  { immediate: true }
+);
+
 // Watch for date keywords, hashtags, and bucket routing in the title in real-time while editing
 watch(editTitle, (newTitle) => {
   if (!isEditing.value) return;
-  const bucketNames = props.buckets.map((b) => b.name);
+  const bucketNames = buckets.value.map((b) => b.name);
   const result = parseTitleState(newTitle, locale.value, bucketNames);
 
   // 1. Due & Planned Date Sync
@@ -359,11 +358,11 @@ const toggleCheckboxInBody = async (targetIndex: number, isChecked: boolean) => 
   });
 
   try {
-    const updated = await updateTask(props.projectId, task.value.id, {
+    const updated = await updateTask(projectId.value, task.value.id, {
       body: newBody,
     });
     task.value = updated;
-    emit('updated');
+    refreshBoard();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
   }
@@ -395,9 +394,9 @@ const handleFileUpload = async (event: Event) => {
   isUploading.value = true;
   try {
     const file = input.files[0];
-    const updated = await uploadAttachment(props.projectId, task.value.id, file);
+    const updated = await uploadAttachment(projectId.value, task.value.id, file);
     task.value = updated;
-    emit('updated');
+    refreshBoard();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
   } finally {
@@ -410,9 +409,9 @@ const handleRemoveAttachment = async (filename: string) => {
   if (!task.value || !confirm(t('form.deleteAttachmentConfirm'))) return;
 
   try {
-    const updated = await deleteAttachment(props.projectId, task.value.id, filename);
+    const updated = await deleteAttachment(projectId.value, task.value.id, filename);
     task.value = updated;
-    emit('updated');
+    refreshBoard();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
   }
@@ -421,7 +420,7 @@ const handleRemoveAttachment = async (filename: string) => {
 const handleSave = async () => {
   if (!task.value) return;
 
-  const bucketNames = props.buckets.map((b) => b.name);
+  const bucketNames = buckets.value.map((b) => b.name);
   const parseResult = parseTitleState(editTitle.value, locale.value, bucketNames);
   const finalTitle = parseResult.cleanTitle;
 
@@ -439,7 +438,7 @@ const handleSave = async () => {
       .map((t) => t.trim().toLowerCase())
       .filter((t) => t.length > 0);
 
-    const updated = await updateTask(props.projectId, task.value.id, {
+    const updated = await updateTask(projectId.value, task.value.id, {
       title: finalTitle,
       bucket: editBucket.value,
       tags: tagArray,
@@ -453,7 +452,7 @@ const handleSave = async () => {
     task.value = updated;
     task.value.tags = task.value.tags ?? [];
     isEditing.value = false;
-    emit('updated');
+    refreshBoard();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
   } finally {
@@ -476,30 +475,38 @@ const handleDelete = async () => {
   loading.value = true;
   error.value = null;
   try {
-    await deleteTask(props.projectId, task.value.id);
-    emit('deleted');
-    emit('close');
+    await deleteTask(projectId.value, task.value.id);
+    refreshBoard();
+    closeModal();
   } catch (err: any) {
     error.value = t('errors.deleteTask', { message: err.message || err });
     loading.value = false;
   }
 };
 
-const handleMarkDone = () => {
-  if (task.value) {
-    emit('mark-done', task.value);
+const handleMarkDone = async () => {
+  if (!task.value) return;
+  try {
+      await updateTask(projectId.value, task.value.id, {
+          bucket: 'done',
+          position: 1000000.0,
+      });
+      refreshBoard();
+      closeModal();
+  } catch (err: any) {
+      error.value = t('errors.updateTask', { message: err.message || err });
   }
 };
 
 const handleArchive = async () => {
   if (!task.value) return;
   try {
-    const updated = await updateTask(props.projectId, task.value.id, {
+    const updated = await updateTask(projectId.value, task.value.id, {
       bucket: 'archive',
     });
     task.value = updated;
-    emit('updated');
-    emit('close');
+    refreshBoard();
+    closeModal();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
   }
@@ -509,16 +516,22 @@ const handleUnarchive = async () => {
   if (!task.value) return;
   try {
     // Try to move back to 'todo' or the default bucket
-    const targetBucket = props.buckets.find((b) => b.name === 'todo')?.name || props.buckets[0]?.name || 'todo';
-    const updated = await updateTask(props.projectId, task.value.id, {
+    const targetBucket = buckets.value.find((b) => b.name === 'todo')?.name || buckets.value[0]?.name || 'todo';
+    const updated = await updateTask(projectId.value, task.value.id, {
       bucket: targetBucket,
     });
     task.value = updated;
-    emit('updated');
-    emit('close');
+    refreshBoard();
+    closeModal();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
   }
+};
+
+const refreshBoard = () => {
+    projectStore.fetchTasks(projectId.value, projectStore.activeProjectId === 'super-time' ? 'super-time' : 'board', false, false); // viewMode, hideDone, hideArchive should be from store
+    // Better: let the store handle it or emit a global event. 
+    // For now, projectStore handles tasks, so we can just call fetchTasks.
 };
 
 const cancelEdit = () => {
@@ -557,17 +570,17 @@ const getPriorityClasses = (prio: string) => {
 </script>
 
 <template>
-  <transition name="modal">
-    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+  <Transition name="modal" appear>
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <!-- Backdrop -->
-      <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
+      <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
 
       <!-- Modal Content -->
       <div
         class="relative bg-theme-base border border-theme-border w-full max-w-3xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
       >
         <button
-          @click="emit('close')"
+          @click="closeModal"
           class="text-slate-400 transition-colors p-1 rounded cursor-pointer"
           style="position: absolute; top: 10px; right: 10px"
         >
@@ -685,7 +698,7 @@ const getPriorityClasses = (prio: string) => {
                     </div>
                     <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity">
                       <a
-                        :href="getAttachmentUrl(props.projectId, task.id, file)"
+                        :href="getAttachmentUrl(projectId, task.id, file)"
                         target="_blank"
                         class="p-1 text-theme-text-muted hover:text-theme-accent transition-colors cursor-pointer"
                         title="Download"
@@ -971,83 +984,5 @@ const getPriorityClasses = (prio: string) => {
         </div>
       </div>
     </div>
-  </transition>
+  </Transition>
 </template>
-
-<style>
-/* Style rendered markdown headers and checklists inside the modal */
-.markdown-content h1 {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-top: 1.25rem;
-  margin-bottom: 0.5rem;
-}
-.markdown-content h2 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-}
-.markdown-content h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin-top: 0.75rem;
-  margin-bottom: 0.25rem;
-}
-.markdown-content ul {
-  list-style-type: disc;
-  padding-left: 1.25rem;
-  margin-bottom: 0.75rem;
-}
-.markdown-content ol {
-  list-style-type: decimal;
-  padding-left: 1.25rem;
-  margin-bottom: 0.75rem;
-}
-.markdown-content li {
-  margin-bottom: 0.25rem;
-}
-.markdown-content p {
-  margin-bottom: 0.75rem;
-  line-height: 1.6;
-}
-.markdown-content code {
-  background-color: var(--theme-bg-card);
-  padding: 0.15rem 0.3rem;
-  border-radius: 0.25rem;
-  font-size: 0.9em;
-  color: var(--theme-accent);
-}
-.markdown-content pre {
-  background-color: var(--theme-bg-base);
-  padding: 1rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  margin-bottom: 0.75rem;
-}
-.markdown-content pre code {
-  background-color: transparent;
-  padding: 0;
-  color: inherit;
-}
-.markdown-content a {
-  color: var(--theme-accent);
-  text-decoration: underline;
-}
-.markdown-content a:hover {
-  color: var(--theme-accent-hover);
-}
-.markdown-content blockquote {
-  border-left: 3px solid var(--theme-border);
-  padding-left: 0.75rem;
-  color: #94a3b8;
-  font-style: italic;
-  margin: 0.75rem 0;
-}
-.markdown-content input[type='checkbox'] {
-  accent-color: var(--theme-primary);
-  margin-right: 0.5rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-}
-</style>

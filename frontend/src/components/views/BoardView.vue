@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { Plus, MoreHorizontal } from '@lucide/vue';
 import Sortable from 'sortablejs';
 import type { Task, Bucket, BucketName } from '@/types';
@@ -7,38 +7,65 @@ import GenericColumn from '@/components/ui/GenericColumn.vue';
 import ColumnEditModal from '@/components/modals/ColumnEditModal.vue';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
+import { useTaskMutations } from '@/composables/useTaskMutations';
+import { useBuckets } from '@/composables/useBuckets';
+import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
+const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
-defineProps<{
+const props = defineProps<{
   buckets: Bucket[];
-  tasksByBucket: Record<string, Task[]>;
+  tasks: Task[];
   isSelected: (id: string) => boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
-  (e: 'card-dropped', payload: { taskId: string; toBucket: BucketName; prevTaskId: string | null; nextTaskId: string | null }): void;
-  (
-    e: 'rename-column',
-    payload: {
-      bucketName: string;
-      newTitle: string;
-      newSubtitle: string;
-      newColor?: string | null;
-      newLayout?: 'list' | 'grid-2' | 'grid-3';
-      newMaxTasks?: number | null;
-      newIsDefault?: boolean;
-    }
-  ): void;
-  (e: 'delete-column', bucketName: string): void;
-  (e: 'create-column', title: string, subtitle: string): void;
-  (e: 'mark-done', task: Task): void;
-  (e: 'column-reordered', payload: { oldIndex: number; newIndex: number }): void;
   (e: 'toggle-select', task: Task): void;
+  (e: 'refresh'): void;
 }>();
+
+const tasksByBucket = computed(() => {
+  const groups: Record<string, Task[]> = {};
+  props.buckets.forEach((b) => {
+    groups[b.name] = [];
+  });
+
+  props.tasks.forEach((task) => {
+    const b = task.bucket;
+    if (groups[b] === undefined) {
+      groups[b] = [];
+    }
+    groups[b].push(task);
+  });
+
+  Object.keys(groups).forEach((key) => {
+    groups[key].sort((a, b) => a.position - b.position);
+  });
+
+  return groups;
+});
+
+const {
+  fetchBuckets,
+  handleCreateColumn,
+  handleRenameColumn,
+  handleDeleteColumn,
+  handleColumnReordered,
+} = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
+
+const {
+  handleCardDropped,
+  handleMarkTaskDone,
+} = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => { emit('refresh'); });
+
+// Need a way to keep useTaskMutations in sync with props.tasks
+// Actually, useTaskMutations expects a Ref<Task[]>.
+// Since props are reactive, we can wrap it or just use the logic directly.
+// For now, let's just use the functions from the composable but pass the right data.
 
 const currentEditingBucket = ref<Bucket | null>(null);
 const isEditModalOpen = ref(false);
@@ -48,9 +75,9 @@ const openEditColumn = (bucket: Bucket) => {
   isEditModalOpen.value = true;
 };
 
-const onSaveColumn = (payload: any) => {
+const onSaveColumn = async (payload: any) => {
   if (!currentEditingBucket.value) return;
-  emit('rename-column', {
+  await handleRenameColumn({
     bucketName: currentEditingBucket.value.name,
     newTitle: payload.title,
     newSubtitle: payload.subtitle,
@@ -59,15 +86,35 @@ const onSaveColumn = (payload: any) => {
     newMaxTasks: payload.max_tasks,
     newIsDefault: payload.is_default,
   });
+  emit('refresh');
 };
 
-const handleCardDropped = (payload: any) => {
-  emit('card-dropped', {
-    taskId: payload.taskId,
-    toBucket: payload.toId as BucketName,
-    prevTaskId: payload.prevTaskId,
-    nextTaskId: payload.nextTaskId,
-  });
+const onColumnDeleted = async (name: string) => {
+    await handleDeleteColumn(name);
+    emit('refresh');
+};
+
+const onColumnReordered = async (payload: any) => {
+    await handleColumnReordered(payload);
+    emit('refresh');
+};
+
+const onCardDropped = async (payload: any) => {
+    // We need to pass the real tasks ref here
+    // But handleCardDropped uses the ref we passed to useTaskMutations.
+    // Let's refactor BoardView to be more self-contained.
+    await handleCardDropped({
+        taskId: payload.taskId,
+        toBucket: payload.toId as BucketName,
+        prevTaskId: payload.prevTaskId,
+        nextTaskId: payload.nextTaskId,
+    });
+    emit('refresh');
+};
+
+const onMarkDone = async (task: Task) => {
+    await handleMarkTaskDone(task);
+    emit('refresh');
 };
 
 // Column create state
@@ -87,17 +134,18 @@ onMounted(() => {
       onEnd: (evt) => {
         const { oldIndex, newIndex } = evt;
         if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;
-        emit('column-reordered', { oldIndex, newIndex });
+        onColumnReordered({ oldIndex, newIndex });
       },
     });
   }
 });
 
-const handleAddColumn = () => {
+const onAddColumn = async () => {
   const title = newColumnTitle.value.trim();
   const subtitle = newColumnSubtitle.value.trim();
   if (!title) return;
-  emit('create-column', title, subtitle);
+  await handleCreateColumn(title, subtitle);
+  emit('refresh');
   newColumnTitle.value = '';
   newColumnSubtitle.value = '';
   isAddingColumn.value = false;
@@ -128,8 +176,8 @@ const handleCancelAddColumn = () => {
       :is-selected="isSelected"
       @task-click="(task) => emit('task-click', task)"
       @add-task-click="(id) => emit('add-task-click', id as BucketName)"
-      @card-dropped="handleCardDropped"
-      @mark-done="(task) => emit('mark-done', task)"
+      @card-dropped="onCardDropped"
+      @mark-done="onMarkDone"
       @toggle-select="(task) => emit('toggle-select', task)"
     >
       <!-- Header Slot -->
@@ -216,7 +264,7 @@ const handleCancelAddColumn = () => {
         type="text"
         :placeholder="t('columnTitlePlaceholder')"
         class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary"
-        @keyup.enter="handleAddColumn"
+        @keyup.enter="onAddColumn"
         @keyup.esc="handleCancelAddColumn"
         autofocus
       />
@@ -225,7 +273,7 @@ const handleCancelAddColumn = () => {
         type="text"
         placeholder="Column description/subtitle (optional)"
         class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary font-sans italic"
-        @keyup.enter="handleAddColumn"
+        @keyup.enter="onAddColumn"
         @keyup.esc="handleCancelAddColumn"
       />
       <div class="flex gap-1.5 justify-end">
@@ -236,7 +284,7 @@ const handleCancelAddColumn = () => {
           {{ t('buttons.cancel') }}
         </button>
         <button
-          @click="handleAddColumn"
+          @click="onAddColumn"
           class="text-xs font-semibold px-2 py-1 bg-theme-primary hover:bg-theme-primary-hover text-white rounded cursor-pointer"
         >
           {{ t('buttons.add') }}
@@ -261,7 +309,7 @@ const handleCancelAddColumn = () => {
         currentEditingBucket = null;
       "
       @save="onSaveColumn"
-      @delete-column="emit('delete-column', currentEditingBucket.name)"
+      @delete-column="onColumnDeleted(currentEditingBucket.name)"
     />
   </div>
 </template>

@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { storeToRefs } from 'pinia';
 import type { Task, Project } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
 import { useI18n } from '@/composables/useI18n';
+import { useSettingsStore } from '@/stores/settings';
+import { useTaskMutations } from '@/composables/useTaskMutations';
+import { useBuckets } from '@/composables/useBuckets';
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
+const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const props = defineProps<{
   tasks: Task[];
@@ -14,10 +20,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
-  (e: 'mark-done', task: Task): void;
-  (e: 'update-planned-date', payload: { taskId: string; plannedDate: string; projectId: string }): void;
   (e: 'toggle-select', task: Task): void;
+  (e: 'refresh'): void;
 }>();
+
+const { fetchBuckets } = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
+const { handleMarkTaskDone, handleTimeViewPlannedDateUpdate } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => { emit('refresh'); });
 
 // Group tasks into categorical planning columns (Aggregated)
 const timeColumns = computed(() => {
@@ -53,14 +61,20 @@ const timeColumns = computed(() => {
   ];
 });
 
-const handleCardDropped = (payload: { taskId: string; toId: string }) => {
+const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
   const task = props.tasks.find((t) => t.id === payload.taskId);
   if (!task) return;
-  emit('update-planned-date', {
+  await handleTimeViewPlannedDateUpdate({
     taskId: payload.taskId,
     plannedDate: payload.toId === 'notPlanned' ? '' : payload.toId,
     projectId: task.project_id,
   });
+  emit('refresh');
+};
+
+const onMarkDone = async (task: Task) => {
+    await handleMarkTaskDone(task);
+    emit('refresh');
 };
 </script>
 
@@ -88,7 +102,7 @@ const handleCardDropped = (payload: { taskId: string; toId: string }) => {
         :projects="projects"
         :is-selected="isSelected"
         @task-click="(task) => emit('task-click', task)"
-        @mark-done="(task) => emit('mark-done', task)"
+        @mark-done="onMarkDone"
         @card-dropped="handleCardDropped"
         @toggle-select="(task) => emit('toggle-select', task)"
       >
@@ -108,9 +122,6 @@ const handleCardDropped = (payload: { taskId: string; toId: string }) => {
             </div>
           </div>
         </template>
-
-        <!-- Custom Task Card content to show Project Badge -->
-        <!-- Since GenericColumn doesn't support custom card slot yet, I'll need to update TaskCard.vue or GenericColumn.vue -->
       </GenericColumn>
     </div>
   </div>
