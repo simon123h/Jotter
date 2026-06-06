@@ -106,6 +106,10 @@ jobs:
           elif [ "${{ matrix.platform }}" = "linux" ]; then
             cp build/bin/jotter-desktop dist/
             cp build/bin/jotter-server dist/
+            cp scripts/install.sh dist/
+            cp scripts/uninstall.sh dist/
+            cp docs/assets/icon.png dist/jotter.png
+            chmod +x dist/*.sh
           fi
           cp README.md dist/
           cp LICENSE.md dist/
@@ -115,7 +119,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           cd dist
-          tar -czf jotter-${{ github.ref_name }}-linux.tar.gz jotter-server jotter-desktop README.md LICENSE.md jotter.yaml.example
+          tar -czf jotter-${{ github.ref_name }}-linux.tar.gz jotter-server jotter-desktop install.sh uninstall.sh jotter.png README.md LICENSE.md jotter.yaml.example
 
       - name: Package (macOS)
         if: matrix.platform == 'macos'

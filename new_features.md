@@ -51,6 +51,7 @@ _Goal: Enable efficient management of large task volumes._
   - Backend refactor: Transitioned to a "package-by-feature" layout for better scalability.
 - [x] **Linux Native Installer**:
   - Created installer/uninstaller shell scripts to register Jotter in the Linux desktop environment.
+  - Integrated into the GitHub Actions release pipeline (scripts are bundled with the Linux archive).
 
 
 ---
