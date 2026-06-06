@@ -251,16 +251,16 @@ const handleAddTag = () => {
 <style scoped>
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .slide-up-enter-from {
-  transform: translate(-50%, 100%) scale(0.9);
+  transform: translate(0%, 50%) scale(0.9);
   opacity: 0;
 }
 
 .slide-up-leave-to {
-  transform: translate(-50%, 100%) scale(0.9);
+  transform: translate(0%, 50%) scale(0.9);
   opacity: 0;
 }
 </style>
