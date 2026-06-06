@@ -244,6 +244,37 @@ const handleBulkMoveProject = async (projectId: string) => {
   }
 };
 
+const handleBulkArchive = async () => {
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task) await updateTask(task.project_id, id, { bucket: 'archive' });
+    }
+    clearSelection();
+    await fetchAllTasks();
+  } catch (err: any) {
+    localError.value = `Bulk archive failed: ${err.message}`;
+  }
+};
+
+const handleBulkMarkDone = async () => {
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task) {
+        // Move to 'done' bucket with a high position
+        await updateTask(task.project_id, id, { bucket: 'done', position: 1000000.0 });
+      }
+    }
+    clearSelection();
+    await fetchAllTasks();
+  } catch (err: any) {
+    localError.value = `Bulk mark done failed: ${err.message}`;
+  }
+};
+
 // Filter state & logic
 const isFilterModalOpen = ref(false);
 const { searchQuery, taskFilters, hasActiveFilters, filteredTasks, applyFilters, clearFilters } = useTaskFilters(tasks);
@@ -437,12 +468,14 @@ watch(
       activeProjectId.value = newProjectId as string;
       localError.value = null;
       clearFilters();
+      clearSelection();
       await fetchAllData();
     }
 
     // 2. View Mode Sync
     if (newViewMode && newViewMode !== viewMode.value) {
       viewMode.value = newViewMode as ViewMode;
+      clearSelection();
     }
 
     // 3. Task ID Sync
@@ -737,6 +770,8 @@ const triggerSync = async () => {
           :common-tags="commonTags"
           @clear="clearSelection"
           @delete="handleBulkDelete"
+          @archive="handleBulkArchive"
+          @mark-done="handleBulkMarkDone"
           @move-bucket="handleBulkMoveBucket"
           @add-tag="handleBulkAddTag"
           @toggle-tag="handleBulkToggleTag"

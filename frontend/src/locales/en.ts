@@ -258,6 +258,8 @@ export const en = {
     selected: 'Selected',
     moveToColumn: 'Move to Column',
     planFor: 'Plan For...',
+    markDone: 'Mark Done',
+    archive: 'Archive',
     addTag: 'Add Tag',
     setPriority: 'Set Priority',
     moveToProject: 'Move to Project',

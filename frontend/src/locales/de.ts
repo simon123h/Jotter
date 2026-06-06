@@ -259,6 +259,8 @@ export const de = {
     selected: 'Ausgewählt',
     moveToColumn: 'In Spalte verschieben',
     planFor: 'Planen für...',
+    markDone: 'Erledigen',
+    archive: 'Archivieren',
     addTag: 'Tag hinzufügen',
     setPriority: 'Priorität setzen',
     moveToProject: 'In Projekt verschieben',

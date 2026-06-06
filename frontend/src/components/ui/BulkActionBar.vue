@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { 
   X, Trash2, Layers, Tag, Flag, Clock, ArrowRightLeft, 
-  ChevronRight, Plus
+  ChevronRight, Plus, Check, Archive
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket, Project } from '@/types';
@@ -20,6 +20,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'clear'): void;
   (e: 'delete'): void;
+  (e: 'archive'): void;
+  (e: 'mark-done'): void;
   (e: 'move-bucket', bucket: string): void;
   (e: 'add-tag', tag: string): void;
   (e: 'toggle-tag', tag: string): void;
@@ -61,7 +63,7 @@ const handleAddTag = () => {
             v-for="b in buckets" 
             :key="b.name"
             @click="emit('move-bucket', b.name); activeMenu = 'none'"
-            class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left"
+            class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left cursor-pointer"
           >
             <div v-if="b.color" class="w-2 h-2 rounded-full" :style="{ backgroundColor: b.color }"></div>
             {{ t('buckets.' + b.name) !== 'buckets.' + b.name ? t('buckets.' + b.name) : b.title }}
@@ -76,7 +78,7 @@ const handleAddTag = () => {
               v-for="tag in commonTags" 
               :key="tag"
               @click="emit('toggle-tag', tag)"
-              class="px-2 py-0.5 rounded border border-theme-border bg-theme-column/30 text-[10px] font-bold uppercase tracking-wider hover:bg-theme-primary/20 hover:border-theme-primary/50 transition-all text-theme-text-muted hover:text-theme-accent"
+              class="px-2 py-0.5 rounded border border-theme-border bg-theme-column/30 text-[10px] font-bold uppercase tracking-wider hover:bg-theme-primary/20 hover:border-theme-primary/50 transition-all text-theme-text-muted hover:text-theme-accent cursor-pointer"
             >
               {{ tag }}
             </button>
@@ -90,7 +92,7 @@ const handleAddTag = () => {
               :placeholder="t('bulkActions.tagNamePlaceholder')"
               class="flex-grow bg-theme-base border border-theme-border rounded px-2 py-1 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
             />
-            <button @click="handleAddTag" class="p-1 bg-theme-primary text-white rounded hover:bg-theme-primary-hover">
+            <button @click="handleAddTag" class="p-1 bg-theme-primary text-white rounded hover:bg-theme-primary-hover cursor-pointer">
               <Plus class="w-3.5 h-3.5" />
             </button>
           </div>
@@ -102,7 +104,7 @@ const handleAddTag = () => {
             v-for="p in ['none', 'low', 'medium', 'high', 'urgent']" 
             :key="p"
             @click="emit('set-priority', p === 'none' ? '' : p); activeMenu = 'none'"
-            class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left capitalize"
+            class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left capitalize cursor-pointer"
           >
             <Flag class="w-3.5 h-3.5" :class="{
               'text-blue-400': p === 'low',
@@ -121,7 +123,7 @@ const handleAddTag = () => {
             v-for="p in ['', 'today', 'tomorrow', 'thisWeek', 'thisMonth', 'sometime']" 
             :key="p"
             @click="emit('set-planned', p); activeMenu = 'none'"
-            class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left"
+            class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left cursor-pointer"
           >
             <Clock class="w-3.5 h-3.5 text-theme-text-muted" />
             {{ p === '' ? t('plannedDateOptions.none') : t('plannedDateOptions.' + p) }}
@@ -134,7 +136,7 @@ const handleAddTag = () => {
             v-for="p in projects.filter(p => p.id !== activeProjectId)" 
             :key="p.id"
             @click="emit('move-project', p.id); activeMenu = 'none'"
-            class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left"
+            class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left cursor-pointer"
           >
             <ChevronRight class="w-3.5 h-3.5 text-theme-text-muted" />
             {{ p.title }}
@@ -144,21 +146,39 @@ const handleAddTag = () => {
 
       <!-- Main Action Bar -->
       <div 
-        class="bg-slate-900 border border-slate-700 rounded-full shadow-2xl px-4 py-2.5 flex items-center gap-3 backdrop-blur-md"
+        class="bg-theme-card border border-theme-border rounded-full shadow-2xl px-4 py-2.5 flex items-center gap-3 backdrop-blur-md"
       >
-        <div class="flex items-center gap-2.5 pr-4 border-r border-slate-700">
+        <div class="flex items-center gap-2.5 pr-4 border-r border-theme-border/50">
           <span class="w-6 h-6 flex items-center justify-center bg-theme-primary text-white rounded-full text-xs font-bold shadow-lg">
             {{ selectedCount }}
           </span>
-          <span class="text-xs font-bold text-slate-300 uppercase tracking-widest hidden sm:inline">
+          <span class="text-xs font-bold text-theme-text-main uppercase tracking-widest hidden sm:inline">
             {{ t('bulkActions.selected') }}
           </span>
         </div>
 
         <div class="flex items-center gap-1">
           <button 
+            @click="emit('mark-done')"
+            class="p-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-full transition-all cursor-pointer"
+            :title="t('bulkActions.markDone')"
+          >
+            <Check class="w-4.5 h-4.5" />
+          </button>
+
+          <button 
+            @click="emit('archive')"
+            class="p-2 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-full transition-all cursor-pointer"
+            :title="t('bulkActions.archive')"
+          >
+            <Archive class="w-4.5 h-4.5" />
+          </button>
+
+          <div class="w-px h-6 bg-theme-border/50 mx-1"></div>
+
+          <button 
             @click="toggleMenu('bucket')"
-            class="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
             :title="t('bulkActions.moveToColumn')"
           >
             <Layers class="w-4.5 h-4.5" />
@@ -166,7 +186,7 @@ const handleAddTag = () => {
           
           <button 
             @click="toggleMenu('planned')"
-            class="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
             :title="t('bulkActions.planFor')"
           >
             <Clock class="w-4.5 h-4.5" />
@@ -174,7 +194,7 @@ const handleAddTag = () => {
 
           <button 
             @click="toggleMenu('tag')"
-            class="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
             :title="t('bulkActions.addTag')"
           >
             <Tag class="w-4.5 h-4.5" />
@@ -182,7 +202,7 @@ const handleAddTag = () => {
 
           <button 
             @click="toggleMenu('priority')"
-            class="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
             :title="t('bulkActions.setPriority')"
           >
             <Flag class="w-4.5 h-4.5" />
@@ -190,27 +210,27 @@ const handleAddTag = () => {
 
           <button 
             @click="toggleMenu('project')"
-            class="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
             :title="t('bulkActions.moveToProject')"
           >
             <ArrowRightLeft class="w-4.5 h-4.5" />
           </button>
 
-          <div class="w-px h-6 bg-slate-700 mx-1"></div>
+          <div class="w-px h-6 bg-theme-border/50 mx-1"></div>
 
           <button 
             @click="emit('delete')"
-            class="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-full transition-all"
+            class="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-full transition-all cursor-pointer"
             :title="t('bulkActions.deleteSelected')"
           >
             <Trash2 class="w-4.5 h-4.5" />
           </button>
         </div>
 
-        <div class="pl-2 border-l border-slate-700">
+        <div class="pl-2 border-l border-theme-border/50">
           <button 
             @click="emit('clear')"
-            class="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+            class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
             :title="t('bulkActions.clearSelection')"
           >
             <X class="w-4 h-4" />

@@ -143,11 +143,11 @@ const cardStyle = computed(() => {
       class="absolute -left-2 -top-2 w-5 h-5 rounded-full border-2 bg-theme-card transition-all z-30 flex items-center justify-center cursor-pointer"
       :class="[
         isSelected 
-          ? 'border-theme-accent bg-theme-accent text-white scale-110 opacity-100 shadow-lg' 
+          ? 'border-theme-accent bg-theme-accent scale-110 opacity-100 shadow-lg' 
           : 'border-theme-border opacity-0 group-hover:opacity-100 hover:border-theme-accent hover:scale-105'
       ]"
     >
-      <Check v-if="isSelected" class="w-3 h-3 text-white stroke-[3px]" />
+      <Check v-if="isSelected" class="w-3 h-3 stroke-[3px]" />
     </div>
 
     <!-- Title & ID -->

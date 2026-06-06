@@ -537,13 +537,9 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				"updated_at":   nowStr,
 			}
 
-			if updatedProjectID != existing.ProjectID {
-				// Delete old file
-				_ = storage.DeleteTaskFile(tasksDir, taskID)
-			}
-
 			filename, errWrite := storage.WriteTaskFile(tasksDir, taskID, taskMap)
 			if errWrite != nil {
+				log.Printf("ERROR: Failed to write task file for task %s: %v", taskID, errWrite)
 				SendError(w, http.StatusInternalServerError, "Failed to write task file")
 				return
 			}
@@ -566,11 +562,13 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			_, err = tx.Exec("UPDATE tasks SET project_id = ?, title = ?, bucket = ?, position = ?, tags = ?, filename = ?, body = ?, due_date = ?, planned_date = ?, priority = ?, color = ?, updated_at = ? WHERE id = ? AND project_id = ?",
 				updatedProjectID, updatedTitle, updatedBucket, updatedPosition, string(tagsJSON), filename, updatedBody, dbDueDate, dbPlannedDate, dbPriority, dbColor, nowStr, taskID, projectID)
 			if err != nil {
+				log.Printf("ERROR: DB update failed for task %s: %v", taskID, err)
 				SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
 			if err := tx.Commit(); err != nil {
+				log.Printf("ERROR: TX commit failed for task %s: %v", taskID, err)
 				SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
