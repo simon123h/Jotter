@@ -22,7 +22,6 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
@@ -174,7 +173,6 @@ const handleCancelAddColumn = () => {
       :show-add-task="true"
       group-name="kanban-board"
       :is-selected="isSelected"
-      @task-click="(task) => emit('task-click', task)"
       @add-task-click="(id) => emit('add-task-click', id as BucketName)"
       @card-dropped="onCardDropped"
       @mark-done="onMarkDone"

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, watchEffect } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore, type ViewMode } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
-import type { Task, BucketName } from '@/types';
+import type { BucketName } from '@/types';
 import { updateTask, deleteTask, moveTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
@@ -16,7 +16,6 @@ import BulkActionBar from '@/components/ui/BulkActionBar.vue';
 
 const { t } = useI18n();
 const route = useRoute();
-const router = useRouter();
 
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
@@ -136,13 +135,6 @@ useKeyboardShortcuts([
   },
 ]);
 
-const openDetailModal = (task: Task) => {
-  router.push({
-    name: `${viewMode.value}-task`,
-    params: { projectId: task.project_id, taskId: String(task.id) },
-    query: route.query,
-  });
-};
 
 const error = computed({
   get() {
@@ -344,14 +336,12 @@ const handleBulkMarkDone = async () => {
         </button>
       </div>
 
-      <!-- ROUTER VIEW FOR SUB-VIEWS -->
       <router-view
         v-else
         :tasks="filteredTasks"
         :buckets="displayedBuckets"
         :projects="projects"
         :is-selected="isSelected"
-        @task-click="openDetailModal"
         @toggle-select="toggleSelection($event.id)"
         @add-task-click="openCreateModal"
         @refresh="fetchAllData"

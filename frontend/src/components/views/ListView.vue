@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ChevronUp, ChevronDown, Calendar, Layers, Flag } from '@lucide/vue';
 import type { Task, Bucket } from '@/types';
 import { useI18n } from '@/composables/useI18n';
@@ -13,9 +14,26 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
   (e: 'toggle-select', task: Task): void;
 }>();
+
+const route = useRoute();
+const router = useRouter();
+
+const getTaskRoute = (task: Task) => {
+  const currentName = route.name?.toString() || 'board';
+  const prefix = currentName.split('-')[0];
+  const viewMode = prefix === 'global' ? 'global-time' : prefix;
+  return {
+    name: `${viewMode}-task`,
+    params: { projectId: task.project_id, taskId: String(task.id) },
+    query: route.query,
+  };
+};
+
+const openTask = (task: Task) => {
+  router.push(getTaskRoute(task));
+};
 
 type SortKey = 'title' | 'bucket' | 'priority' | 'due_date' | 'planned_date' | 'created_at';
 const sortKey = ref<SortKey>('created_at');
@@ -140,7 +158,7 @@ const getBucketTitle = (name: string) => {
           <tr
             v-for="task in sortedTasks"
             :key="task.id"
-            @click="emit('task-click', task)"
+            @click="openTask(task)"
             class="hover:bg-theme-column/15 transition-colors cursor-pointer group"
             :class="{ 'bg-theme-accent/5': isSelected(task.id) }"
           >
@@ -154,9 +172,13 @@ const getBucketTitle = (name: string) => {
             </td>
             <td class="px-4 py-2.5">
               <div class="flex flex-col gap-0.5">
-                <span class="text-theme-text-card font-medium group-hover:text-theme-accent transition-colors truncate max-w-lg">
+                <router-link
+                  :to="getTaskRoute(task)"
+                  class="text-theme-text-card font-medium hover:text-theme-accent transition-colors truncate max-w-lg block no-underline"
+                  @click.stop
+                >
                   {{ task.title }}
-                </span>
+                </router-link>
                 <div v-if="task.tags.length" class="flex flex-wrap gap-1 mt-0.5">
                   <span
                     v-for="tag in task.tags"

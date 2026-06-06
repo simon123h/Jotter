@@ -17,7 +17,6 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
 }>();
@@ -96,7 +95,6 @@ const onMarkDone = async (task: Task) => {
       :show-project="showProjectBadge"
       :projects="projects"
       :is-selected="isSelected"
-      @task-click="(task) => emit('task-click', task)"
       @mark-done="onMarkDone"
       @card-dropped="handleCardDropped"
       @toggle-select="(task) => emit('toggle-select', task)"

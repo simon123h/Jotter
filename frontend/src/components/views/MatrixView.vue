@@ -15,7 +15,6 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
   (e: 'toggle-select', task: Task): void;
 }>();
 
@@ -123,7 +122,6 @@ const quadrants = computed(() => {
             :task="task"
             :compact="true"
             :is-selected="isSelected(task.id)"
-            @click="emit('task-click', task)"
             @toggle-select="emit('toggle-select', task)"
           />
         </div>
@@ -153,7 +151,6 @@ const quadrants = computed(() => {
             :task="task"
             :compact="true"
             :is-selected="isSelected(task.id)"
-            @click="emit('task-click', task)"
             @toggle-select="emit('toggle-select', task)"
           />
         </div>
@@ -183,7 +180,6 @@ const quadrants = computed(() => {
             :task="task"
             :compact="true"
             :is-selected="isSelected(task.id)"
-            @click="emit('task-click', task)"
             @toggle-select="emit('toggle-select', task)"
           />
         </div>
@@ -213,7 +209,6 @@ const quadrants = computed(() => {
             :task="task"
             :compact="true"
             :is-selected="isSelected(task.id)"
-            @click="emit('task-click', task)"
             @toggle-select="emit('toggle-select', task)"
           />
         </div>

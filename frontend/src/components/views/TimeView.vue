@@ -8,7 +8,6 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
 }>();
@@ -19,7 +18,6 @@ const emit = defineEmits<{
     :tasks="tasks"
     group-name="time-view"
     :is-selected="isSelected"
-    @task-click="emit('task-click', $event)"
     @toggle-select="emit('toggle-select', $event)"
     @refresh="emit('refresh')"
   />

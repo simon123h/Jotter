@@ -1,17 +1,13 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
 import { useTaskFilters } from '@/composables/useTaskFilters';
-import type { Task } from '@/types';
 import TimelineLayout from '@/components/layout/TimelineLayout.vue';
 import { useI18n } from '@/composables/useI18n';
 
 const { t } = useI18n();
-const route = useRoute();
-const router = useRouter();
 
 const projectStore = useProjectStore();
 const settingsStore = useSettingsStore();
@@ -43,13 +39,6 @@ watch([hideDoneColumn, hideArchiveColumn], () => {
 
 const { filteredTasks } = useTaskFilters(tasks);
 
-const handleTaskClick = (task: Task) => {
-  router.push({
-    name: 'global-time-task',
-    params: { projectId: task.project_id, taskId: String(task.id) },
-    query: route.query,
-  });
-};
 </script>
 
 <template>
@@ -69,7 +58,6 @@ const handleTaskClick = (task: Task) => {
         group-name="global-time-view"
         :show-project-badge="true"
         :is-selected="isSelected"
-        @task-click="handleTaskClick"
         @toggle-select="toggleSelection($event.id)"
         @refresh="fetchAllTasks"
       />
