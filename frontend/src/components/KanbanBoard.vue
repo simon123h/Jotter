@@ -121,7 +121,7 @@ const commonTags = computed(() => {
   const selectedTasks = tasks.value.filter((t) => isSelected(t.id));
   const tagCounts: Record<string, number> = {};
   selectedTasks.forEach((t) => {
-    t.tags.forEach((tag) => {
+    t.tags?.forEach((tag) => {
       tagCounts[tag] = (tagCounts[tag] || 0) + 1;
     });
   });
