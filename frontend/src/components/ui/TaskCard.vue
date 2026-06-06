@@ -7,9 +7,23 @@ import { useI18n } from '@/composables/useI18n';
 
 const { t, locale } = useI18n();
 
-const props = defineProps<{
-  task: Task;
-}>();
+const props = withDefaults(
+  defineProps<{
+    task: Task;
+    showTags?: boolean;
+    showDoneButton?: boolean;
+    showFooter?: boolean;
+    allowExpand?: boolean;
+    compact?: boolean;
+  }>(),
+  {
+    showTags: true,
+    showDoneButton: true,
+    showFooter: true,
+    allowExpand: true,
+    compact: false,
+  }
+);
 
 const emit = defineEmits<{
   (e: 'click', task: Task): void;
@@ -41,7 +55,9 @@ const parsedMarkdown = computed(() => {
 
 const toggleExpand = (event: Event) => {
   event.stopPropagation();
-  isExpanded.value = !isExpanded.value;
+  if (props.allowExpand) {
+    isExpanded.value = !isExpanded.value;
+  }
 };
 
 // Helper to assign a consistent, pleasant color theme to each tag (matching the professional theme)
@@ -106,18 +122,24 @@ const cardStyle = computed(() => {
 
 <template>
   <div
-    class="bg-theme-card border border-theme-border p-3 rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col gap-2 select-none"
-    :class="{ 'colored-card': task.color }"
+    class="bg-theme-card border border-theme-border rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col select-none"
+    :class="[
+      { 'colored-card': task.color },
+      compact ? 'p-2 gap-1' : 'p-3 gap-2'
+    ]"
     :style="cardStyle"
     @click="emit('click', task)"
   >
     <!-- Title & ID -->
     <div class="flex justify-between items-start gap-2">
-      <h4 class="text-sm text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2">
+      <h4 
+        class="text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2"
+        :class="compact ? 'text-xs' : 'text-sm'"
+      >
         {{ task.title }}
       </h4>
       <div
-        v-if="task.bucket !== 'done'"
+        v-if="showDoneButton && task.bucket !== 'done'"
         class="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
       >
         <!-- Mark Done Button -->
@@ -126,18 +148,21 @@ const cardStyle = computed(() => {
           class="p-1 text-theme-text-muted hover:text-emerald-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
           :title="t('taskCard.markDone')"
         >
-          <Check class="w-4.5 h-4.5 shrink-0" />
+          <Check :class="compact ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'" class="shrink-0" />
         </button>
       </div>
     </div>
 
     <!-- Tags List -->
-    <div v-if="task.tags && task.tags.length" class="flex flex-wrap gap-1 mt-0.5">
+    <div v-if="showTags && task.tags && task.tags.length" class="flex flex-wrap gap-1 mt-0.5">
       <span
         v-for="tag in task.tags"
         :key="tag"
-        class="text-xs uppercase font-bold tracking-wider px-1.5 py-0.5 rounded border"
-        :class="getTagClasses(tag)"
+        class="uppercase font-bold tracking-wider rounded border"
+        :class="[
+          getTagClasses(tag),
+          compact ? 'text-[9px] px-1 py-0' : 'text-xs px-1.5 py-0.5'
+        ]"
       >
         {{ tag }}
       </span>
@@ -145,19 +170,23 @@ const cardStyle = computed(() => {
 
     <!-- Combined Footer Row: Due Date, Priority, Checklist, and Chevron -->
     <div
-      v-if="task.due_date || task.priority || checklistStats || hasNotes"
-      class="flex justify-between items-center text-xs text-theme-text-muted mt-1.5 pt-1.5 select-none"
+      v-if="showFooter && (task.due_date || task.priority || checklistStats || hasNotes)"
+      class="flex justify-between items-center text-xs text-theme-text-muted select-none"
+      :class="compact ? 'mt-1 pt-1' : 'mt-1.5 pt-1.5'"
     >
       <!-- Left side: Due Date & Priority -->
       <div class="flex items-center gap-2.5">
         <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted">
-          <Calendar class="w-3.5 h-3.5 shrink-0" />
-          <span>{{ formatDate(task.due_date) }}</span>
+          <Calendar :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
+          <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.due_date) }}</span>
         </div>
         <div
           v-if="task.priority"
-          class="px-1.5 py-0.25 rounded border text-[10px] font-extrabold uppercase tracking-wider leading-none"
-          :class="getPriorityClasses(task.priority)"
+          class="rounded border uppercase tracking-wider leading-none"
+          :class="[
+            getPriorityClasses(task.priority),
+            compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold'
+          ]"
         >
           {{ task.priority }}
         </div>
@@ -170,31 +199,38 @@ const cardStyle = computed(() => {
           v-if="checklistStats"
           @click.stop="toggleExpand"
           class="flex items-center gap-1 font-semibold"
-          :class="
+          :class="[
             checklistStats.checked === checklistStats.total
               ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
-              : 'text-theme-text-muted'
-          "
+              : 'text-theme-text-muted',
+            { 'text-[10px]': compact }
+          ]"
         >
-          <ClipboardList class="w-3.5 h-3.5 shrink-0" />
+          <ClipboardList :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
           <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
         </div>
 
         <!-- Inline Toggle Button -->
         <button
-          v-if="hasNotes"
+          v-if="allowExpand && hasNotes"
           @click.stop="toggleExpand"
           class="p-0.5 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer"
           :title="isExpanded ? t('taskCard.collapseNotes') : t('taskCard.expandNotes')"
         >
-          <ChevronDown class="w-4 h-4 transform transition-transform animate-duration-150" :class="{ 'rotate-180': isExpanded }" />
+          <ChevronDown 
+            class="transform transition-transform animate-duration-150" 
+            :class="[
+              { 'rotate-180': isExpanded },
+              compact ? 'w-3.5 h-3.5' : 'w-4 h-4'
+            ]" 
+          />
         </button>
       </div>
     </div>
 
     <!-- Expanded Markdown Content -->
     <div
-      v-if="hasNotes && isExpanded"
+      v-if="allowExpand && hasNotes && isExpanded"
       class="text-xs max-h-40 overflow-y-auto scroller-thin p-0.5 pt-2 border-t border-theme-border/40"
       @click.stop
       v-html="parsedMarkdown"
