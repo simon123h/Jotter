@@ -1,9 +1,10 @@
-import { beforeAll, describe, it, expect, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import FilterModal from '@/components/modals/FilterModal.vue';
 import { useSettingsStore } from '@/stores/settings';
+import { useProjectStore } from '@/stores/project';
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = vi.fn();
@@ -11,15 +12,21 @@ beforeAll(() => {
   setActivePinia(createPinia());
 });
 
+beforeEach(() => {
+  const projectStore = useProjectStore();
+  projectStore.buckets = [
+    { name: 'todo', title: 'To Do', subtitle: '', position: 1, is_default: true, project_id: 'test-project' },
+    { name: 'in-progress', title: 'In Progress', subtitle: '', position: 2, is_default: false, project_id: 'test-project' },
+    { name: 'done', title: 'Done', subtitle: '', position: 3, is_default: false, project_id: 'test-project' },
+  ];
+  projectStore.tasks = [
+    { id: 1, title: 'Task 1', tags: ['bug', 'ui', 'refactor'], project_id: 'test-project', bucket: 'todo' }
+  ] as any;
+});
+
 describe('FilterModal.vue', () => {
   const defaultProps = {
     isOpen: true,
-    buckets: [
-      { name: 'todo', title: 'To Do', subtitle: '', position: 1 },
-      { name: 'in-progress', title: 'In Progress', subtitle: '', position: 2 },
-      { name: 'done', title: 'Done', subtitle: '', position: 3 },
-    ],
-    allTags: ['bug', 'ui', 'refactor'],
     currentFilters: {},
   };
 

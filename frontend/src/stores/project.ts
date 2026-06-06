@@ -12,10 +12,12 @@ export const useProjectStore = defineStore('project', () => {
   const syncLoading = ref(false);
   const syncSuccess = ref(false);
   const error = ref<string | null>(null);
+  const projectsLoaded = ref(false);
 
   const fetchProjects = async () => {
     try {
       projects.value = await getProjects();
+      projectsLoaded.value = true;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch projects';
     }
@@ -96,6 +98,7 @@ export const useProjectStore = defineStore('project', () => {
     syncLoading,
     syncSuccess,
     error,
+    projectsLoaded,
     fetchProjects,
     fetchBuckets,
     fetchTasks,

@@ -23,7 +23,7 @@ const projectStore = useProjectStore();
 const modalStore = useModalStore();
 
 const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
-const { projects, buckets, tasks, loading, error: projectError } = storeToRefs(projectStore);
+const { projects, buckets, tasks, loading, projectsLoaded, error: projectError } = storeToRefs(projectStore);
 
 const { isSelected, toggleSelection, selectAll, clearSelection, hasSelection, selectionCount, selectedIds } = useTaskSelection();
 
@@ -64,7 +64,7 @@ watchEffect(() => {
   }
 });
 
-const isNoProjects = computed(() => projects.value.length === 0);
+const isNoProjects = computed(() => projectsLoaded.value && projects.value.length === 0);
 
 const fetchAllData = async () => {
   localError.value = null;

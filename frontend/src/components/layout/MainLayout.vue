@@ -37,10 +37,7 @@ const viewMode = computed<ViewMode>(() => {
   return 'board';
 });
 
-// Keep settingsStore.viewMode in sync with the route
-watch(viewMode, (newMode) => {
-  settingsStore.setViewMode(newMode);
-}, { immediate: true });
+
 
 // Sync route params with activeProjectId in the settings store
 const routeProjectId = computed(() => route.params.projectId as string || '');

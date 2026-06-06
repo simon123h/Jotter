@@ -18,6 +18,17 @@ const { buckets, tasks } = storeToRefs(projectStore);
 
 const activeProjectId = computed(() => (route.params.projectId as string) || settingsStore.activeProjectId);
 
+const viewMode = computed(() => {
+  const name = route.name?.toString() || '';
+  if (name.startsWith('board')) return 'board';
+  if (name.startsWith('list')) return 'list';
+  if (name.startsWith('matrix')) return 'matrix';
+  if (name.startsWith('time')) return 'time';
+  if (name.startsWith('tag')) return 'tag';
+  if (name.startsWith('global-time')) return 'global-time';
+  return 'board';
+});
+
 const props = defineProps<{
   isOpen: boolean;
   defaultBucket?: BucketName;
@@ -327,7 +338,7 @@ const handleSubmit = async () => {
 
     await projectStore.fetchTasks(
       activeProjectId.value, 
-      settingsStore.viewMode, 
+      viewMode.value, 
       settingsStore.hideDoneColumn, 
       settingsStore.hideArchiveColumn
     ); 
