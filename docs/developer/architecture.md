@@ -125,6 +125,7 @@ Jotter is packaged into two separate native binaries:
 2. **`jotter-server` (Server)**: A lightweight CLI binary that starts a standard HTTP server and serves the frontend to any modern web browser.
 
 ### Shared Packaging Features:
+
 - **Assets Bundling**: The compiled frontend SPA bundle (`dist/`) is embedded inside the Go binary using `go:embed` and served natively.
 - **Internal Logic**: Both binaries share the exact same underlying logic from the `internal/` packages, ensuring consistent behavior across modes.
 
@@ -132,18 +133,18 @@ Jotter is packaged into two separate native binaries:
 
 ## 8. Git Synchronization Logic
 
-Jotter treats the local filesystem as the primary source of truth, but supports Git for cross-device synchronization. The logic is implemented in `internal/storage/git.go` using system calls to the `git` CLI.
+Jotter treats each project directory as a potential independent Git repository. The logic is implemented in `internal/storage/git.go` and is triggered sequentially for all configured projects during a system sync.
 
-### The Sync Flow:
-1. **Commit**: Runs `git add .` and `git commit` to capture local changes.
-2. **Fetch**: Runs `git fetch origin` to retrieve remote state.
-3. **Fast-Forward**: Attempts `git merge --ff-only`.
-4. **Recursive Merge**: If Fast-Forward fails, attempts `git merge --no-rebase`.
-5. **Conflict Handling**: If the real merge fails (exit code != 0), it immediately calls `git merge --abort`. The backend returns a `409 Conflict` to the frontend, forcing manual intervention.
-6. **Push**: If the merge succeeds, it pushes the results back to `origin`.
+### The Per-Project Sync Flow:
 
-This flow ensures that the user is never left in a "partially merged" or broken state on their local machine.
+1. **Discovery**: The backend queries the database for all projects that have a `git_remote` URL.
+2. **Auto-Setup**: For each project, Jotter checks if a `.git` folder exists. If not, it executes `git init` and `git remote add origin` before proceeding.
+3. **Commit**: Runs `git add .` and `git commit` inside the project subdirectory.
+4. **Fetch & Merge**: Fetches from `origin` and attempts a safe merge (Fast-Forward first, then Recursive).
+5. **Conflict Isolation**: Conflicts are handled on a per-project basis. If Project A has a conflict, it will abort that project's merge, but Project B will still continue to sync.
+6. **Push**: Successful merges are pushed to the project-specific remote.
 
+This architecture enables **selective sharing**, where different boards can be shared with different teams or kept strictly local.
 
 ---
 

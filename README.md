@@ -24,7 +24,7 @@ Jotter is a **local-first, privacy-focused task management application** designe
 - **Flexible Views**: Organise tasks your way with Kanban columns, list view, a priority-based **Eisenhower Matrix**, and a chronological **Time View** grouping by due dates.
 - **Smart Task Creation**: Create rich tasks quickly with keywords for tags, due dates or priorities in the task title.
 - **Offline-First & Local Index**: Runs entirely on your computer with a lightning-fast local SQLite database index. If the database index is ever deleted, the system automatically rebuilds it instantly from your markdown files.
-- **Automated Syncing via Git**: If the local plain text database is setup as a git repository, it is automatically synced via a `git fetch/merge/commit/push` workflow
+- **Selective Per-Project Git Sync**: Enable synchronization for individual projects by connecting them to different Git remotes. Keep "Home" local while sharing "Work" with a team.
 - **Multi-Language Support**: Fully localized in English and German.
 
 ---
