@@ -29,7 +29,7 @@ Jotter is a **local-first, privacy-focused task management application** designe
 
 ---
 
-## ▶️ Installation
+## 📦 Installation
 
 Jotter is provided as a portable tool with two distinct versions. No dependencies required.
 
