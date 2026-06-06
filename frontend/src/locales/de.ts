@@ -271,6 +271,7 @@ export const de = {
     setPriority: 'Priorität setzen',
     moveToProject: 'In Projekt verschieben',
     deleteSelected: 'Ausgewählte löschen',
+    selectAll: 'Alle auswählen',
     clearSelection: 'Auswahl aufheben',
     confirmDelete: 'Möchtest du {count} Aufgaben wirklich löschen?',
     tagNamePlaceholder: 'Tag-Name...',

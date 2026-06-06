@@ -269,6 +269,7 @@ export const en = {
     setPriority: 'Set Priority',
     moveToProject: 'Move to Project',
     deleteSelected: 'Delete Selected',
+    selectAll: 'Select All',
     clearSelection: 'Clear Selection',
     confirmDelete: 'Are you sure you want to delete {count} tasks?',
     tagNamePlaceholder: 'Tag name...',

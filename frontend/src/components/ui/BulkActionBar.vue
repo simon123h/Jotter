@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { X, Trash2, Layers, Tag, Flag, Clock, ArrowRightLeft, ChevronRight, Plus, Check, Archive } from '@lucide/vue';
+import { X, Trash2, Tag, Flag, Clock, ChevronRight, Plus, Check, Archive, SquareDashed, SquareKanban, FolderOpen } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket, Project } from '@/types';
 
@@ -16,6 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'clear'): void;
+  (e: 'select-all'): void;
   (e: 'delete'): void;
   (e: 'archive'): void;
   (e: 'mark-done'): void;
@@ -188,15 +189,7 @@ const handleAddTag = () => {
             class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
             :title="t('bulkActions.moveToColumn')"
           >
-            <Layers class="w-4.5 h-4.5" />
-          </button>
-
-          <button
-            @click="toggleMenu('planned')"
-            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
-            :title="t('bulkActions.planFor')"
-          >
-            <Clock class="w-4.5 h-4.5" />
+            <SquareKanban class="w-4.5 h-4.5" />
           </button>
 
           <button
@@ -216,11 +209,19 @@ const handleAddTag = () => {
           </button>
 
           <button
+            @click="toggleMenu('planned')"
+            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
+            :title="t('bulkActions.planFor')"
+          >
+            <Clock class="w-4.5 h-4.5" />
+          </button>
+
+          <button
             @click="toggleMenu('project')"
             class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
             :title="t('bulkActions.moveToProject')"
           >
-            <ArrowRightLeft class="w-4.5 h-4.5" />
+            <FolderOpen class="w-4.5 h-4.5" />
           </button>
 
           <div class="w-px h-6 bg-theme-border/50 mx-1"></div>
@@ -235,6 +236,13 @@ const handleAddTag = () => {
         </div>
 
         <div class="pl-2 border-l border-theme-border/50">
+          <button
+            @click="emit('select-all')"
+            class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
+            :title="t('bulkActions.selectAll')"
+          >
+            <SquareDashed class="w-4.5 h-4.5" />
+          </button>
           <button
             @click="emit('clear')"
             class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"

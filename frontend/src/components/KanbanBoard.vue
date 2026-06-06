@@ -768,6 +768,7 @@ const triggerSync = async () => {
           :active-project-id="activeProjectId"
           :common-tags="commonTags"
           @clear="clearSelection"
+          @select-all="() => selectAll(filteredTasks)"
           @delete="handleBulkDelete"
           @archive="handleBulkArchive"
           @mark-done="handleBulkMarkDone"
