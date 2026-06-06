@@ -21,8 +21,7 @@ const emit = defineEmits<{
   (e: 'archive'): void;
   (e: 'mark-done'): void;
   (e: 'move-bucket', bucket: string): void;
-  (e: 'add-tag', tag: string): void;
-  (e: 'toggle-tag', tag: string): void;
+  (e: 'edit-tag', tag: string, forceRemove: boolean): void;
   (e: 'set-priority', priority: string): void;
   (e: 'set-planned', planned: string): void;
   (e: 'move-project', projectId: string): void;
@@ -37,9 +36,9 @@ const toggleMenu = (menu: typeof activeMenu.value) => {
 const newTagName = ref('');
 const handleAddTag = () => {
   if (newTagName.value.trim()) {
-    emit('add-tag', newTagName.value.trim());
+    emit('edit-tag', newTagName.value.trim(), false);
     newTagName.value = '';
-    activeMenu.value = 'none';
+    // activeMenu.value = 'none';
   }
 };
 </script>
@@ -72,14 +71,22 @@ const handleAddTag = () => {
         <div v-if="activeMenu === 'tag'" class="p-2 space-y-3">
           <!-- Common Tags Toggles -->
           <div v-if="commonTags.length" class="flex flex-wrap gap-1 max-w-[240px]">
-            <button
+            <div
               v-for="tag in commonTags"
               :key="tag"
-              @click="emit('toggle-tag', tag)"
-              class="px-2 py-0.5 rounded border border-theme-border bg-theme-column/30 text-[10px] font-bold uppercase tracking-wider hover:bg-theme-primary/20 hover:border-theme-primary/50 transition-all text-theme-text-muted hover:text-theme-accent cursor-pointer"
+              @click="emit('edit-tag', tag, false)"
+              class="flex items-center gap-1.5 px-2 py-0.5 rounded border border-theme-border bg-theme-column/30 text-[10px] font-bold uppercase tracking-wider text-theme-text-muted cursor-pointer"
             >
-              {{ tag }}
-            </button>
+              <span>{{ tag }}</span>
+              <button
+                @click="emit('edit-tag', tag, true)"
+                type="button"
+                class="flex items-center justify-center p-0.5 -mr-1 rounded-full hover:bg-theme-primary/20 hover:text-theme-accent transition-all cursor-pointer"
+                aria-label="Remove tag"
+              >
+                <X class="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           <div class="flex items-center gap-2">

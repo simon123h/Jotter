@@ -159,30 +159,12 @@ const handleBulkMoveBucket = async (bucket: string) => {
   }
 };
 
-const handleBulkAddTag = async (tag: string) => {
-  const ids = Array.from(selectedIds.value);
-  try {
-    for (const id of ids) {
-      const task = tasks.value.find((t) => t.id === id);
-      if (task && !task.tags.includes(tag)) {
-        await updateTask(task.project_id, id, { tags: [...task.tags, tag] });
-      }
-    }
-    clearSelection();
-    await fetchAllTasks();
-  } catch (err: any) {
-    localError.value = `Bulk tagging failed: ${err.message}`;
-  }
-};
-
-const handleBulkToggleTag = async (tag: string) => {
+const handleBulkEditTag = async (tag: string, remove: boolean) => {
   const selectedTasks = tasks.value.filter((t) => isSelected(t.id));
-  const allHaveTag = selectedTasks.every((t) => t.tags.includes(tag));
-
   try {
     for (const task of selectedTasks) {
       let newTags: string[];
-      if (allHaveTag) {
+      if (remove) {
         // Remove from all
         newTags = task.tags.filter((t) => t !== tag);
       } else {
@@ -194,7 +176,7 @@ const handleBulkToggleTag = async (tag: string) => {
     }
     await fetchAllTasks();
   } catch (err: any) {
-    localError.value = `Bulk tag toggle failed: ${err.message}`;
+    localError.value = `Bulk tagging failed: ${err.message}`;
   }
 };
 
@@ -773,8 +755,7 @@ const triggerSync = async () => {
           @archive="handleBulkArchive"
           @mark-done="handleBulkMarkDone"
           @move-bucket="handleBulkMoveBucket"
-          @add-tag="handleBulkAddTag"
-          @toggle-tag="handleBulkToggleTag"
+          @edit-tag="handleBulkEditTag"
           @set-priority="handleBulkSetPriority"
           @set-planned="handleBulkSetPlanned"
           @move-project="handleBulkMoveProject"
