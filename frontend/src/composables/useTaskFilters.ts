@@ -184,9 +184,9 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
     if (combinedTags.length > 0) {
       const mode = taskFilters.value.tag_mode || 'any';
       if (mode === 'all') {
-        list = list.filter((t) => combinedTags.every((ft) => t.tags.some((tg) => tg.toLowerCase() === ft)));
+        list = list.filter((t) => combinedTags.every((ft) => (t.tags ?? []).some((tg) => tg.toLowerCase() === ft)));
       } else {
-        list = list.filter((t) => combinedTags.some((ft) => t.tags.some((tg) => tg.toLowerCase() === ft)));
+        list = list.filter((t) => combinedTags.some((ft) => (t.tags ?? []).some((tg) => tg.toLowerCase() === ft)));
       }
     }
 
