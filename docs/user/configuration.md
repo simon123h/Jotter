@@ -64,3 +64,26 @@ log_level: "warning"
   ```bash
   ./jotter-server --config /etc/jotter/config.yaml
   ```
+
+---
+
+## Git Synchronization
+
+Jotter includes built-in support for synchronizing your markdown task files using Git. This feature is automatically enabled if your tasks directory (default: `./tasks`) is a Git repository.
+
+### How to enable:
+1. Open your terminal in your tasks directory:
+   ```bash
+   cd tasks
+   git init
+   git remote add origin <your-git-repo-url>
+   ```
+2. Ensure your Git credentials are cached (using an SSH agent or a credential helper), as Jotter will run Git commands in the background without prompting for passwords.
+
+### Sync Behavior:
+When you click the **Sync** button in the Jotter interface, the following happens:
+- Local changes are automatically committed with a timestamped message.
+- The latest changes are fetched from your remote.
+- A safe merge is performed. If a **merge conflict** occurs, Jotter will abort the merge to protect your data and notify you to resolve the conflict manually in your terminal.
+- Successful merges are automatically pushed back to your remote.
+- The internal Jotter index is updated to reflect the new file states.
