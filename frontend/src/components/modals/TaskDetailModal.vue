@@ -23,16 +23,6 @@ const { buckets, tasks } = storeToRefs(projectStore);
 const projectId = computed(() => String(route.params.projectId));
 const taskId = computed(() => route.params.taskId ? String(route.params.taskId) : null);
 
-const viewMode = computed(() => {
-  const name = route.name?.toString() || '';
-  if (name.startsWith('board')) return 'board';
-  if (name.startsWith('list')) return 'list';
-  if (name.startsWith('matrix')) return 'matrix';
-  if (name.startsWith('time')) return 'time';
-  if (name.startsWith('tag')) return 'tag';
-  if (name.startsWith('global-time')) return 'global-time';
-  return 'board';
-});
 
 const task = ref<Task | null>(null);
 const loading = ref(false);
@@ -544,7 +534,7 @@ const handleUnarchive = async () => {
 const refreshBoard = () => {
     projectStore.fetchTasks(
       projectId.value,
-      viewMode.value === 'global-time' ? 'super-time' : viewMode.value,
+      route.name?.toString().startsWith('global-time') ? 'super-time' : '',
       settingsStore.hideDoneColumn,
       settingsStore.hideArchiveColumn
     );
