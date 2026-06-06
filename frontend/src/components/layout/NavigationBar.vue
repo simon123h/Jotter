@@ -143,16 +143,16 @@ const emit = defineEmits<{
           <span class="hidden sm:inline">{{ t('views.tag') }}</span>
         </button>
         <button
-          @click="emit('set-view-mode', 'super-time')"
+          @click="emit('set-view-mode', 'global-time')"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
-            viewMode === 'super-time'
+            viewMode === 'global-time'
               ? 'bg-theme-primary text-white shadow-none'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
           "
         >
           <Zap class="w-3.5 h-3.5" />
-          <span class="hidden sm:inline">{{ t('views.superTime') }}</span>
+          <span class="hidden sm:inline">{{ t('views.globalTime') }}</span>
         </button>
       </div>
 

@@ -32,14 +32,16 @@ const modalStore = useModalStore();
 const { hideDoneColumn, hideArchiveColumn, isSidebarOpen, currentTheme, viewMode, activeProjectId } = storeToRefs(settingsStore);
 const { projects, buckets, tasks, loading, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
 
-const { selectedIds, isSelected, toggleSelection, selectAll, clearSelection, hasSelection, selectionCount } = useTaskSelection();
+const { isSelected, toggleSelection, selectAll, clearSelection, hasSelection, selectionCount, selectedIds } = useTaskSelection();
 
 const localError = ref<string | null>(null);
 
 // Routing & View Mode
 const selectProject = (projectId: string) => {
-  const currentViewMode = (route.name?.toString() || viewMode.value).split('-')[0];
-  const targetMode = currentViewMode === 'settings' ? 'board' : currentViewMode;
+  const currentViewMode = viewMode.value;
+  // If we were in global mode, switch back to a project-specific view (e.g. board)
+  const targetMode = currentViewMode === 'global-time' || currentViewMode === 'settings' ? 'board' : currentViewMode;
+  
   router.push({
     name: targetMode,
     params: { projectId },
@@ -48,6 +50,12 @@ const selectProject = (projectId: string) => {
 
 const setViewMode = (mode: ViewMode) => {
   settingsStore.setViewMode(mode);
+  
+  if (mode === 'global-time') {
+    router.push({ name: 'global-time', query: route.query });
+    return;
+  }
+
   router.push({
     name: mode,
     params: { projectId: activeProjectId.value },
@@ -74,12 +82,7 @@ const setTheme = (theme: string) => {
 
 // Composable: Projects Management
 const {
-  editingProject,
-  error: projectsError,
   handleCreateProject,
-  handleEditProject,
-  handleSaveProject,
-  handleDeleteProject,
 } = useProjects(activeProjectId, selectProject);
 
 // Filter state & logic
@@ -95,6 +98,10 @@ const displayedBuckets = computed(() => {
 
 // Update document title dynamically based on active project
 watchEffect(() => {
+  if (viewMode.value === 'global-time') {
+    document.title = `Jotter / ${t('views.globalTime') || 'Global Planning'}`;
+    return;
+  }
   const currentProj = projects.value.find((p) => p.id === activeProjectId.value);
   if (currentProj) {
     document.title = `Jotter / ${currentProj.title}`;
@@ -107,9 +114,14 @@ watchEffect(() => {
 const isNoProjects = computed(() => projects.value.length === 0);
 
 const fetchAllData = async () => {
-  if (isNoProjects.value || activeProjectId.value === '') return;
   localError.value = null;
   try {
+    if (viewMode.value === 'global-time') {
+        await projectStore.fetchTasks('', 'global-time', hideDoneColumn.value, hideArchiveColumn.value);
+        return;
+    }
+
+    if (isNoProjects.value || activeProjectId.value === '') return;
     await projectStore.fetchBuckets(activeProjectId.value);
     await projectStore.fetchTasks(activeProjectId.value, viewMode.value, hideDoneColumn.value, hideArchiveColumn.value);
   } catch (err: any) {
@@ -119,22 +131,28 @@ const fetchAllData = async () => {
 
 onMounted(async () => {
   await projectStore.fetchProjects();
+  
   if (route.params.projectId) {
     activeProjectId.value = route.params.projectId as string;
   }
+  
   const currentMode = (route.name?.toString() || '').split('-')[0] as ViewMode;
-  if (['board', 'list', 'matrix', 'time', 'tag', 'super-time', 'settings'].includes(currentMode)) {
+  if (['board', 'list', 'matrix', 'time', 'tag', 'global-time', 'settings'].includes(currentMode)) {
       viewMode.value = currentMode;
   }
+
   await fetchAllData();
   setTheme(currentTheme.value);
 });
 
 // Sync route parameters with component state dynamically
 watch(
-  () => [route.params.projectId, route.name, route.params.taskId],
+  () => [route.params.projectId, route.name],
   async ([newProjectId, newRouteName]) => {
-    if (newProjectId && newProjectId !== activeProjectId.value) {
+    const newViewMode = (newRouteName?.toString() || '').split('-')[0] as ViewMode;
+    const isGlobal = newViewMode === 'global-time';
+
+    if (!isGlobal && newProjectId && newProjectId !== activeProjectId.value) {
       activeProjectId.value = newProjectId as string;
       localError.value = null;
       clearFilters();
@@ -142,17 +160,16 @@ watch(
       await fetchAllData();
     }
 
-    const newViewMode = (newRouteName?.toString() || '').split('-')[0] as ViewMode;
-    if (newViewMode && newViewMode !== viewMode.value && ['board', 'list', 'matrix', 'time', 'tag', 'super-time', 'settings'].includes(newViewMode)) {
+    if (newViewMode && newViewMode !== viewMode.value && ['board', 'list', 'matrix', 'time', 'tag', 'global-time', 'settings'].includes(newViewMode)) {
       viewMode.value = newViewMode;
       clearSelection();
-      await projectStore.fetchTasks(activeProjectId.value, viewMode.value, hideDoneColumn.value, hideArchiveColumn.value);
+      await fetchAllData();
     }
   }
 );
 
 watch([hideDoneColumn, hideArchiveColumn], () => {
-    projectStore.fetchTasks(activeProjectId.value, viewMode.value, hideDoneColumn.value, hideArchiveColumn.value);
+    fetchAllData();
 });
 
 const defaultBucketName = computed(() => {
@@ -211,7 +228,7 @@ useKeyboardShortcuts([
 const openDetailModal = (task: Task) => {
   router.push({
     name: `${viewMode.value}-task`,
-    params: { projectId: activeProjectId.value, taskId: String(task.id) },
+    params: { projectId: task.project_id, taskId: String(task.id) },
     query: route.query,
   });
 };
@@ -232,12 +249,11 @@ const triggerSync = async () => {
 
 const error = computed({
   get() {
-    return localError.value || projectsError.value || projectError.value;
+    return localError.value || projectError.value;
   },
   set(val) {
     localError.value = val;
     if (!val) {
-      projectsError.value = null;
       projectStore.error = null;
     }
   },
@@ -431,7 +447,7 @@ const handleBulkMarkDone = async () => {
           </div>
 
           <div
-            v-else-if="isNoProjects"
+            v-else-if="viewMode !== 'global-time' && isNoProjects"
             class="h-full flex flex-col items-center justify-center text-center bg-theme-column/10 border border-dashed border-theme-border rounded p-6"
           >
             <div class="p-3 bg-theme-card/50 rounded border border-theme-border mb-3 text-theme-accent">
@@ -456,6 +472,7 @@ const handleBulkMarkDone = async () => {
               {{ t('emptyStateText') }}
             </p>
             <button
+              v-if="viewMode !== 'global-time'"
               @click="openCreateModal(defaultBucketName)"
               class="mt-4 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow transition-all cursor-pointer"
             >

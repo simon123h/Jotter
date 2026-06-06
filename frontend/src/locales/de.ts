@@ -181,7 +181,8 @@ export const de = {
     matrix: 'Matrix',
     time: 'Zeit',
     tag: 'Tags',
-    superTime: 'Globale Planung',
+    globalTime: 'Globale Planung',
+    globalTimeDesc: 'Projektübergreifend',
     settings: 'Einstellungen',
   },
   matrix: {

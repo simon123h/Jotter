@@ -5,7 +5,7 @@ import ListView from '@/components/views/ListView.vue';
 import MatrixView from '@/components/views/MatrixView.vue';
 import TimeView from '@/components/views/TimeView.vue';
 import TagView from '@/components/views/TagView.vue';
-import SuperTimeView from '@/components/views/SuperTimeView.vue';
+import GlobalTimeView from '@/components/views/GlobalTimeView.vue';
 import SettingsView from '@/components/views/SettingsView.vue';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
 
@@ -16,6 +16,9 @@ const routes = [
     path: '/',
     redirect: () => {
       const settings = useSettingsStore();
+      if (settings.viewMode === 'global-time') {
+        return { name: 'global-time' };
+      }
       return {
         name: settings.viewMode,
         params: { projectId: settings.activeProjectId },
@@ -92,22 +95,28 @@ const routes = [
         },
       },
       {
-        path: 'super-time',
-        name: 'super-time',
-        component: SuperTimeView,
-      },
-      {
-        path: 'super-time/tasks/:taskId',
-        name: 'super-time-task',
-        components: {
-          default: SuperTimeView,
-          modal: TaskDetailModal,
-        },
-      },
-      {
         path: 'settings',
         name: 'settings',
         component: SettingsView,
+      },
+    ],
+  },
+  {
+    path: '/global-time',
+    component: KanbanBoard,
+    children: [
+      {
+        path: '',
+        name: 'global-time',
+        component: GlobalTimeView,
+      },
+      {
+        path: 'project/:projectId/tasks/:taskId',
+        name: 'global-time-task',
+        components: {
+          default: GlobalTimeView,
+          modal: TaskDetailModal,
+        },
       },
     ],
   },

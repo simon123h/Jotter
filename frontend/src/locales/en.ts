@@ -179,7 +179,8 @@ export const en = {
     matrix: 'Matrix',
     time: 'Time',
     tag: 'Tags',
-    superTime: 'Global Planning',
+    globalTime: 'Global Planning',
+    globalTimeDesc: 'Across all projects',
     settings: 'Settings',
   },
   matrix: {
