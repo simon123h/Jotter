@@ -67,6 +67,31 @@ jobs:
         run: |
           # Verify server binary
           go build -v -o /dev/null main_server.go shared_assets.go
+          
+          # Prepare metadata and icons for desktop verification
+          mkdir -p build/windows build/darwin
+          cp docs/assets/icon.png build/appicon.png
+          cp docs/assets/icon.ico build/windows/icon.ico
+          cp docs/assets/icon.png build/darwin/icon.png
+          
+          cat <<EOF > build/windows/info.json
+          {
+            "companyName": "Jotter",
+            "productName": "Jotter",
+            "productVersion": "ci-build",
+            "copyright": "simon123h@users.noreply.github.com"
+          }
+          EOF
+          
+          cat <<EOF > build/darwin/info.json
+          {
+            "bundleIdentifier": "com.jotter.app",
+            "productName": "Jotter",
+            "productVersion": "ci-build",
+            "copyright": "simon123h@users.noreply.github.com"
+          }
+          EOF
+
           # Verify desktop binary (using wails tags)
           go build -v -tags wails -o /dev/null main_desktop.go shared_assets.go
 

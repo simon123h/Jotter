@@ -54,10 +54,36 @@ jobs:
       - name: Build Wails Application
         shell: bash
         run: |
+          VERSION=${{ github.ref_name }}
+          mkdir -p build/windows build/darwin
+          cp docs/assets/icon.png build/appicon.png
+          cp docs/assets/icon.ico build/windows/icon.ico
+          cp docs/assets/icon.png build/darwin/icon.png
+          
+          # Generate professional OS metadata on the fly
+          cat <<EOF > build/windows/info.json
+          {
+            "companyName": "Jotter",
+            "productName": "Jotter",
+            "productVersion": "$VERSION",
+            "copyright": "simon123h@users.noreply.github.com",
+            "comments": "Local-First Markdown Kanban App"
+          }
+          EOF
+          
+          cat <<EOF > build/darwin/info.json
+          {
+            "bundleIdentifier": "com.jotter.app",
+            "productName": "Jotter",
+            "productVersion": "$VERSION",
+            "copyright": "simon123h@users.noreply.github.com"
+          }
+          EOF
+
           if [ "${{ matrix.platform }}" = "linux" ]; then
-            wails build -tags webkit2_41 -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}"
+            wails build -tags webkit2_41 -ldflags "-X jotter/backend/internal/app.Version=$VERSION"
           else
-            wails build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}"
+            wails build -ldflags "-X jotter/backend/internal/app.Version=$VERSION"
           fi
 
       - name: Build Server Binary
