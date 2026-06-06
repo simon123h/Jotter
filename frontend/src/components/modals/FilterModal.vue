@@ -106,8 +106,8 @@ const handleClear = () => {
   dueDateStatus.value = 'all';
   dueAfter.value = '';
   dueBefore.value = '';
-  hideDoneColumnLocal.value = false;
-  hideArchiveColumnLocal.value = false;
+  hideDoneColumnLocal.value = true;
+  hideArchiveColumnLocal.value = true;
 };
 
 const handleApply = () => {
