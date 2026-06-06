@@ -28,7 +28,7 @@ func TestGitSync(t *testing.T) {
 		_ = runGit(ctx, tempDir, "init")
 		// Ensure a branch exists
 		_ = runGit(ctx, tempDir, "checkout", "-b", "main")
-		
+
 		err := GitSync(tempDir)
 		if err == nil {
 			t.Error("Expected error because origin is missing")
@@ -52,7 +52,7 @@ func TestGitSync(t *testing.T) {
 		_ = runGit(ctx, localDir, "init")
 		_ = runGit(ctx, localDir, "checkout", "-b", "main")
 		_ = runGit(ctx, localDir, "remote", "add", "origin", remoteDir)
-		
+
 		// 3. Configure git user for tests
 		_ = runGit(ctx, localDir, "config", "user.email", "test@example.com")
 		_ = runGit(ctx, localDir, "config", "user.name", "Test User")
