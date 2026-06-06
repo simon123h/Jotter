@@ -84,9 +84,10 @@ func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
 	}
 
 	err := wails.Run(&options.App{
-		Title:  "Jotter",
-		Width:  1024,
-		Height: 768,
+		Title:            "Jotter",
+		Width:            1024,
+		Height:           768,
+		WindowStartState: options.Maximised,
 		AssetServer: &assetserver.Options{
 			Assets:  assetsSub,
 			Handler: apiRouter,
