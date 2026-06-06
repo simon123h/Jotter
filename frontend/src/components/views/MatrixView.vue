@@ -98,7 +98,7 @@ const quadrants = computed(() => {
     </div>
 
     <!-- 2x2 Grid -->
-    <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+    <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 overflow-hidden">
       <!-- Q1: Urgent & Important -->
       <div class="flex flex-col bg-theme-column/40 border border-theme-border rounded h-full min-h-[220px] overflow-hidden">
         <div class="px-3.5 py-2.5 border-b border-theme-border bg-rose-500/5 flex items-center gap-2 shrink-0">

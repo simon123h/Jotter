@@ -32,10 +32,12 @@ func BuildRouter(logLevel, dataDir string, serveStatic bool, assets embed.FS) *c
 	r.Use(middleware.Recoverer)
 	r.Use(common.CORSMiddleware)
 
-	project.RegisterRoutes(r, dataDir, bucket.DefaultBuckets, bucket.SyncBucketsFile)
-	bucket.RegisterRoutes(r, dataDir)
-	task.RegisterRoutes(r, dataDir)
-	system.RegisterRoutes(r, dataDir)
+	r.Route("/api", func(r chi.Router) {
+		project.RegisterRoutes(r, dataDir, bucket.DefaultBuckets, bucket.SyncBucketsFile)
+		bucket.RegisterRoutes(r, dataDir)
+		task.RegisterRoutes(r, dataDir)
+		system.RegisterRoutes(r, dataDir)
+	})
 
 	if serveStatic {
 		assetsSub, errFs := fs.Sub(assets, "frontend/dist")

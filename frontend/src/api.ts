@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import type { Task, Bucket, Project, TaskFilterParams } from '@/types';
 import * as demoApi from '@/api.demo';
 
-const API_BASE = '';
+const API_BASE = '/api';
 
 // Shared reactive connection state
 export const isServerOnline = ref(true);

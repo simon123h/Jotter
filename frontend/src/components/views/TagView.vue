@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { storeToRefs } from 'pinia';
 import type { Task } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
 import { useI18n } from '@/composables/useI18n';
+import { useSettingsStore } from '@/stores/settings';
+import { useTaskMutations } from '@/composables/useTaskMutations';
+import { useBuckets } from '@/composables/useBuckets';
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
+const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const props = defineProps<{
   tasks: Task[];
@@ -13,10 +19,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
-  (e: 'mark-done', task: Task): void;
-  (e: 'update-task-tags', payload: { taskId: string; tags: string[] }): void;
   (e: 'toggle-select', task: Task): void;
+  (e: 'refresh'): void;
 }>();
+
+const { fetchBuckets } = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
+const { handleMarkTaskDone, handleTagUpdate } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => { emit('refresh'); });
 
 // Group tasks by their tags
 const tagColumns = computed(() => {
@@ -58,23 +66,28 @@ const tagColumns = computed(() => {
   return columns;
 });
 
-const handleCardDropped = (payload: { taskId: string; toId: string }) => {
+const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
   const task = props.tasks.find((t) => t.id === payload.taskId);
   if (!task) return;
 
-  // If dropped into 'untagged', remove all tags
   if (payload.toId === 'untagged') {
-    emit('update-task-tags', { taskId: payload.taskId, tags: [] });
+    await handleTagUpdate({ taskId: payload.taskId, tags: [] });
+    emit('refresh');
     return;
   }
 
-  // If dropped into a tag column, ensure the task has that tag
   const newTag = payload.toId;
   const currentTags = task.tags ?? [];
   if (!currentTags.includes(newTag)) {
     const newTags = [...currentTags, newTag];
-    emit('update-task-tags', { taskId: payload.taskId, tags: newTags });
+    await handleTagUpdate({ taskId: payload.taskId, tags: newTags });
+    emit('refresh');
   }
+};
+
+const onMarkDone = async (task: Task) => {
+    await handleMarkTaskDone(task);
+    emit('refresh');
 };
 </script>
 
@@ -94,7 +107,7 @@ const handleCardDropped = (payload: { taskId: string; toId: string }) => {
       :compact-cards="true"
       :is-selected="isSelected"
       @task-click="(task) => emit('task-click', task)"
-      @mark-done="(task) => emit('mark-done', task)"
+      @mark-done="onMarkDone"
       @card-dropped="handleCardDropped"
       @toggle-select="(task) => emit('toggle-select', task)"
     >

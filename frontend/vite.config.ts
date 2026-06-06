@@ -5,17 +5,14 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/',
   plugins: [
     vue(),
     tailwindcss(),
   ],
   server: {
     proxy: {
-      '/projects': 'http://localhost:58271',
-      '/tasks': 'http://localhost:58271',
-      '/buckets': 'http://localhost:58271',
-      '/system': 'http://localhost:58271',
+      '/api': 'http://localhost:58271',
     },
   },
   resolve: {
