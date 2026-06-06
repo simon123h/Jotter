@@ -4,14 +4,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore, type ViewMode } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
+import { useModalStore } from '@/stores/modal';
 import type { Task, BucketName } from '@/types';
 import { updateTask, deleteTask, moveTask } from '@/api';
-import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
-import TaskCreateModal from '@/components/modals/TaskCreateModal.vue';
-import ProjectEditModal from '@/components/modals/ProjectEditModal.vue';
-import FilterModal from '@/components/modals/FilterModal.vue';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
+import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
@@ -29,6 +27,7 @@ const router = useRouter();
 
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
+const modalStore = useModalStore();
 
 const { hideDoneColumn, hideArchiveColumn, isSidebarOpen, currentTheme, viewMode, activeProjectId } = storeToRefs(settingsStore);
 const { projects, buckets, tasks, loading, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
@@ -76,7 +75,6 @@ const setTheme = (theme: string) => {
 // Composable: Projects Management
 const {
   editingProject,
-  isProjectEditModalOpen,
   error: projectsError,
   handleCreateProject,
   handleEditProject,
@@ -85,14 +83,7 @@ const {
 } = useProjects(activeProjectId, selectProject);
 
 // Filter state & logic
-const isFilterModalOpen = ref(false);
 const { searchQuery, taskFilters, hasActiveFilters, filteredTasks, applyFilters, clearFilters } = useTaskFilters(tasks);
-
-// Modal state
-const selectedTaskId = computed(() => (route.params.taskId ? String(route.params.taskId) : null));
-const isDetailOpen = computed(() => !!route.params.taskId);
-const isCreateOpen = ref(false);
-const createDefaultBucket = ref<BucketName>('todo');
 
 // Update document title dynamically based on active project
 watchEffect(() => {
@@ -162,15 +153,21 @@ const defaultBucketName = computed(() => {
 });
 
 const openCreateModal = (bucket: BucketName) => {
-  createDefaultBucket.value = bucket;
-  isCreateOpen.value = true;
+  modalStore.openTaskCreate(bucket);
+};
+
+const openFilterModal = () => {
+  modalStore.openModal('filter', { 
+    currentFilters: taskFilters.value,
+    onApply: applyFilters
+  });
 };
 
 useKeyboardShortcuts([
   {
     key: 'q',
     callback: () => {
-      if (!isCreateOpen.value && !isDetailOpen.value && !dialogIsOpen.value) {
+      if (!modalStore.activeModal && !route.params.taskId && !dialogIsOpen.value) {
         openCreateModal(defaultBucketName.value);
       }
     },
@@ -178,8 +175,8 @@ useKeyboardShortcuts([
   {
     key: 'f',
     callback: () => {
-      if (!isCreateOpen.value && !isDetailOpen.value && !dialogIsOpen.value) {
-        isFilterModalOpen.value = true;
+      if (!modalStore.activeModal && !route.params.taskId && !dialogIsOpen.value) {
+        openFilterModal();
       }
     },
   },
@@ -187,7 +184,7 @@ useKeyboardShortcuts([
     key: 'a',
     ctrlKey: true,
     callback: (e: KeyboardEvent) => {
-      if (!isCreateOpen.value && !isDetailOpen.value && !dialogIsOpen.value) {
+      if (!modalStore.activeModal && !route.params.taskId && !dialogIsOpen.value) {
         e.preventDefault();
         selectAll(filteredTasks.value);
       }
@@ -209,19 +206,6 @@ const openDetailModal = (task: Task) => {
     params: { projectId: activeProjectId.value, taskId: String(task.id) },
     query: route.query,
   });
-};
-
-const closeDetailModal = () => {
-  router.push({
-    name: viewMode.value,
-    params: { projectId: activeProjectId.value },
-    query: route.query,
-  });
-};
-
-const handleDetailMarkTaskDone = async (task: Task) => {
-  closeDetailModal();
-  await fetchAllData();
 };
 
 const triggerSync = async () => {
@@ -249,17 +233,6 @@ const error = computed({
       projectStore.error = null;
     }
   },
-});
-
-// Compute unique list of tags across all tasks
-const allTags = computed(() => {
-  const tagsSet = new Set<string>();
-  tasks.value.forEach((t) => {
-    if (t.tags) {
-      t.tags.forEach((tag) => tagsSet.add(tag.toLowerCase()));
-    }
-  });
-  return Array.from(tagsSet).sort();
 });
 
 const commonTags = computed(() => {
@@ -410,7 +383,7 @@ const handleBulkMarkDone = async () => {
       :view-mode="viewMode"
       :default-bucket-name="defaultBucketName"
       @toggle-sidebar="toggleSidebar"
-      @open-filter="isFilterModalOpen = true"
+      @open-filter="openFilterModal"
       @set-view-mode="setViewMode"
       @create-task="openCreateModal"
     />
@@ -426,7 +399,7 @@ const handleBulkMarkDone = async () => {
           :view-mode="viewMode"
           @select-project="selectProject"
           @create-project="handleCreateProject"
-          @edit-project="handleEditProject"
+          @edit-project="modalStore.openProjectEdit"
           @sync="triggerSync"
           @select-view="setViewMode"
         />
@@ -496,45 +469,6 @@ const handleBulkMarkDone = async () => {
           />
         </div>
 
-        <TaskDetailModal
-          :is-open="isDetailOpen"
-          :project-id="activeProjectId"
-          :task-id="selectedTaskId"
-          :buckets="buckets"
-          :existing-tags="allTags"
-          @close="closeDetailModal"
-          @updated="fetchAllData"
-          @deleted="fetchAllData"
-          @mark-done="handleDetailMarkTaskDone"
-        />
-
-        <TaskCreateModal
-          :is-open="isCreateOpen"
-          :project-id="activeProjectId"
-          :default-bucket="createDefaultBucket"
-          :buckets="buckets"
-          :existing-tags="allTags"
-          @close="isCreateOpen = false"
-          @created="fetchAllData"
-        />
-
-        <ProjectEditModal
-          :is-open="isProjectEditModalOpen"
-          :project="editingProject"
-          @close="isProjectEditModalOpen = false"
-          @save="handleSaveProject"
-          @delete-project="handleDeleteProject(editingProject)"
-        />
-
-        <FilterModal
-          :is-open="isFilterModalOpen"
-          :buckets="buckets"
-          :all-tags="allTags"
-          :current-filters="taskFilters"
-          @close="isFilterModalOpen = false"
-          @apply="applyFilters"
-        />
-
         <BulkActionBar
           :selected-count="selectionCount"
           :buckets="buckets"
@@ -554,6 +488,12 @@ const handleBulkMarkDone = async () => {
         />
       </div>
     </div>
+
+    <!-- MODAL ROUTER VIEW (Task Detail) -->
+    <router-view name="modal" />
+
+    <!-- MODAL REGISTRY (Utility Modals) -->
+    <ModalRegistry />
   </div>
 </template>
 

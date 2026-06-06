@@ -7,6 +7,7 @@ import TimeView from '@/components/views/TimeView.vue';
 import TagView from '@/components/views/TagView.vue';
 import SuperTimeView from '@/components/views/SuperTimeView.vue';
 import SettingsView from '@/components/views/SettingsView.vue';
+import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
 
 import { useSettingsStore } from '@/stores/settings';
 
@@ -33,7 +34,10 @@ const routes = [
       {
         path: 'board/tasks/:taskId',
         name: 'board-task',
-        component: BoardView,
+        components: {
+          default: BoardView,
+          modal: TaskDetailModal,
+        },
       },
       {
         path: 'list',
@@ -43,7 +47,10 @@ const routes = [
       {
         path: 'list/tasks/:taskId',
         name: 'list-task',
-        component: ListView,
+        components: {
+          default: ListView,
+          modal: TaskDetailModal,
+        },
       },
       {
         path: 'matrix',
@@ -53,7 +60,10 @@ const routes = [
       {
         path: 'matrix/tasks/:taskId',
         name: 'matrix-task',
-        component: MatrixView,
+        components: {
+          default: MatrixView,
+          modal: TaskDetailModal,
+        },
       },
       {
         path: 'time',
@@ -63,7 +73,10 @@ const routes = [
       {
         path: 'time/tasks/:taskId',
         name: 'time-task',
-        component: TimeView,
+        components: {
+          default: TimeView,
+          modal: TaskDetailModal,
+        },
       },
       {
         path: 'tag',
@@ -73,7 +86,10 @@ const routes = [
       {
         path: 'tag/tasks/:taskId',
         name: 'tag-task',
-        component: TagView,
+        components: {
+          default: TagView,
+          modal: TaskDetailModal,
+        },
       },
       {
         path: 'super-time',
@@ -83,7 +99,10 @@ const routes = [
       {
         path: 'super-time/tasks/:taskId',
         name: 'super-time-task',
-        component: SuperTimeView,
+        components: {
+          default: SuperTimeView,
+          modal: TaskDetailModal,
+        },
       },
       {
         path: 'settings',

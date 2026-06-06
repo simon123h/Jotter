@@ -1,33 +1,28 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onUnmounted, computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { X } from '@lucide/vue';
 import type { BucketName } from '@/types';
 import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
+import { useProjectStore } from '@/stores/project';
 import { parseTitleState } from '@/utils/dateParser';
 
 const { locale, t } = useI18n();
+const projectStore = useProjectStore();
+const { activeProjectId, buckets, tasks } = storeToRefs(projectStore);
 
-const props = withDefaults(
-  defineProps<{
-    isOpen: boolean;
-    projectId: string;
-    defaultBucket: BucketName;
-    buckets: { name: BucketName; title: string }[];
-    existingTags?: string[];
-  }>(),
-  {
-    existingTags: () => [],
-  }
-);
+const props = defineProps<{
+  isOpen: boolean;
+  defaultBucket?: BucketName;
+}>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'created'): void;
 }>();
 
 const title = ref('');
-const bucket = ref<BucketName>('todo');
+const bucket = ref<BucketName>(props.defaultBucket || 'todo');
 const tags = ref('');
 const body = ref('');
 const dueDate = ref('');
@@ -36,6 +31,16 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 
 const titleInput = ref<HTMLInputElement | null>(null);
+
+const existingTags = computed(() => {
+  const tagsSet = new Set<string>();
+  tasks.value.forEach((t) => {
+    if (t.tags) {
+      t.tags.forEach((tag) => tagsSet.add(tag.toLowerCase()));
+    }
+  });
+  return Array.from(tagsSet).sort();
+});
 
 /** Translate the bucket name, if possible */
 const bucketTitle = (bucketName: string, bucketTitle: string) => {
@@ -61,7 +66,7 @@ const currentTagsSet = computed(() => {
 
 const tagSuggestions = computed(() => {
   const query = activeTagQuery.value;
-  return props.existingTags.filter((tag) => {
+  return existingTags.value.filter((tag) => {
     const normalizedTag = tag.toLowerCase();
     if (currentTagsSet.value.has(normalizedTag)) return false;
     return normalizedTag.includes(query);
@@ -123,7 +128,7 @@ const autocompleteIndex = ref(0);
 const filteredBuckets = computed(() => {
   if (!showAutocomplete.value) return [];
   const search = autocompleteSearch.value.toLowerCase();
-  return props.buckets.filter(
+  return buckets.value.filter(
     (b) =>
       b.name.toLowerCase().includes(search) ||
       t('buckets.' + b.name)
@@ -203,7 +208,7 @@ watch(
   (open) => {
     if (open) {
       title.value = '';
-      bucket.value = props.defaultBucket;
+      bucket.value = props.defaultBucket || 'todo';
       tags.value = '';
       body.value = '';
       dueDate.value = '';
@@ -233,7 +238,7 @@ onUnmounted(() => {
 
 // Watch for date keywords, hashtags, and bucket routing in the title in real-time
 watch(title, (newTitle) => {
-  const bucketNames = props.buckets.map((b) => b.name);
+  const bucketNames = buckets.value.map((b) => b.name);
   const result = parseTitleState(newTitle, locale.value, bucketNames);
 
   // 1. Due Date Sync
@@ -288,7 +293,7 @@ watch(title, (newTitle) => {
 const handleSubmit = async () => {
   if (loading.value) return;
 
-  const bucketNames = props.buckets.map((b) => b.name);
+  const bucketNames = buckets.value.map((b) => b.name);
   const parseResult = parseTitleState(title.value, locale.value, bucketNames);
   const finalTitle = parseResult.cleanTitle;
 
@@ -305,7 +310,7 @@ const handleSubmit = async () => {
       .map((t) => t.trim().toLowerCase())
       .filter((t) => t.length > 0);
 
-    await createTask(props.projectId, {
+    await createTask(activeProjectId.value, {
       title: finalTitle,
       bucket: bucket.value,
       tags: tagArray,
@@ -314,7 +319,7 @@ const handleSubmit = async () => {
       priority: priority.value || undefined,
     });
 
-    emit('created');
+    projectStore.fetchTasks(activeProjectId.value, projectStore.activeProjectId === 'super-time' ? 'super-time' : 'board', false, false); 
     emit('close');
   } catch (err: any) {
     error.value = t('errors.createTask', { message: err.message || err });

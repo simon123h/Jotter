@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { X, SlidersHorizontal, Calendar, Tag, Trash2 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
-import type { Bucket, TaskFilterParams } from '@/types';
+import { useProjectStore } from '@/stores/project';
+import type { TaskFilterParams } from '@/types';
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
+const projectStore = useProjectStore();
+const { buckets, tasks } = storeToRefs(projectStore);
 
 const props = defineProps<{
   isOpen: boolean;
-  buckets: Bucket[];
-  allTags: string[];
-  currentFilters: TaskFilterParams;
+  currentFilters?: TaskFilterParams;
 }>();
 
 const emit = defineEmits<{
@@ -21,7 +24,15 @@ const emit = defineEmits<{
 
 const dialogRef = ref<HTMLDialogElement | null>(null);
 
-const settingsStore = useSettingsStore();
+const allTags = computed(() => {
+  const tagsSet = new Set<string>();
+  tasks.value.forEach((t) => {
+    if (t.tags) {
+      t.tags.forEach((tag) => tagsSet.add(tag.toLowerCase()));
+    }
+  });
+  return Array.from(tagsSet).sort();
+});
 
 // Local state for filters
 const search = ref('');
@@ -40,42 +51,43 @@ watch(
   () => props.isOpen,
   async (open) => {
     if (open) {
+      const filters = props.currentFilters || {};
       // Initialize local state from currentFilters
-      search.value = props.currentFilters.search || '';
+      search.value = filters.search || '';
 
-      selectedBuckets.value = props.currentFilters.buckets
-        ? props.currentFilters.buckets
+      selectedBuckets.value = filters.buckets
+        ? filters.buckets
             .split(',')
             .map((b) => b.trim())
             .filter(Boolean)
         : [];
 
-      selectedPriorities.value = props.currentFilters.priorities
-        ? props.currentFilters.priorities
+      selectedPriorities.value = filters.priorities
+        ? filters.priorities
             .split(',')
             .map((p) => p.trim())
             .filter(Boolean)
         : [];
 
-      selectedTags.value = props.currentFilters.tags
-        ? props.currentFilters.tags
+      selectedTags.value = filters.tags
+        ? filters.tags
             .split(',')
             .map((t) => t.trim())
             .filter(Boolean)
         : [];
 
-      tagMode.value = props.currentFilters.tag_mode || 'any';
+      tagMode.value = filters.tag_mode || 'any';
 
-      if (props.currentFilters.has_due_date === true) {
+      if (filters.has_due_date === true) {
         dueDateStatus.value = 'has';
-      } else if (props.currentFilters.has_due_date === false) {
+      } else if (filters.has_due_date === false) {
         dueDateStatus.value = 'none';
       } else {
         dueDateStatus.value = 'all';
       }
 
-      dueAfter.value = props.currentFilters.due_after || '';
-      dueBefore.value = props.currentFilters.due_before || '';
+      dueAfter.value = filters.due_after || '';
+      dueBefore.value = filters.due_before || '';
       hideDoneColumnLocal.value = settingsStore.hideDoneColumn;
       hideArchiveColumnLocal.value = settingsStore.hideArchiveColumn;
 
