@@ -1,26 +1,27 @@
-package handlers
+package task
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 
 	"jotter/backend/internal/db"
-	"jotter/backend/internal/models"
-	"jotter/backend/internal/storage"
+	"jotter/backend/internal/features/bucket"
+	"jotter/backend/internal/features/common"
 )
 
-func RegisterTaskRoutes(r chi.Router, tasksDir string) {
+func RegisterRoutes(r chi.Router, tasksDir string) {
 	r.Get("/tasks", func(w http.ResponseWriter, r *http.Request) {
-		query := "SELECT id, project_id, title, bucket, position, tags, body, due_date, planned_date, priority, color, created_at, updated_at FROM tasks WHERE 1=1"
+		query := "SELECT id, project_id, title, bucket, position, tags, attachments, body, due_date, planned_date, priority, color, created_at, updated_at FROM tasks WHERE 1=1"
 		var args []interface{}
 
 		excludeBuckets := r.URL.Query().Get("exclude_buckets")
@@ -40,24 +41,25 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 
 		rows, err := db.DB.Query(query, args...)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		defer rows.Close()
 
-		var taskList []models.TaskResponse
+		var taskList []Response
 		for rows.Next() {
-			var t models.TaskResponse
-			var tagsJSON string
+			var t Response
+			var tagsJSON, attachmentsJSON string
 			var dueDate, plannedDate, priority, color sql.NullString
 
-			err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.Bucket, &t.Position, &tagsJSON, &t.Body, &dueDate, &plannedDate, &priority, &color, &t.CreatedAt, &t.UpdatedAt)
+			err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.Bucket, &t.Position, &tagsJSON, &attachmentsJSON, &t.Body, &dueDate, &plannedDate, &priority, &color, &t.CreatedAt, &t.UpdatedAt)
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, err.Error())
+				common.SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
 			_ = json.Unmarshal([]byte(tagsJSON), &t.Tags)
+			_ = json.Unmarshal([]byte(attachmentsJSON), &t.Attachments)
 			if dueDate.Valid {
 				t.DueDate = &dueDate.String
 			}
@@ -75,10 +77,10 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 		}
 
 		if taskList == nil {
-			taskList = []models.TaskResponse{}
+			taskList = []Response{}
 		}
 
-		SendJSON(w, http.StatusOK, taskList)
+		common.SendJSON(w, http.StatusOK, taskList)
 	})
 
 	r.Get("/projects/{project_id}/tasks", func(w http.ResponseWriter, r *http.Request) {
@@ -88,21 +90,21 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 		var dummy string
 		err := db.DB.QueryRow("SELECT id FROM projects WHERE id = ?", projectID).Scan(&dummy)
 		if err == sql.ErrNoRows {
-			SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
+			common.SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
 			return
 		} else if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		query := "SELECT id, project_id, title, bucket, position, tags, body, due_date, planned_date, priority, color, created_at, updated_at FROM tasks WHERE project_id = ?"
+		query := "SELECT id, project_id, title, bucket, position, tags, attachments, body, due_date, planned_date, priority, color, created_at, updated_at FROM tasks WHERE project_id = ?"
 		var args []interface{}
 		args = append(args, projectID)
 
-		bucket := r.URL.Query().Get("bucket")
-		if bucket != "" {
+		bucketName := r.URL.Query().Get("bucket")
+		if bucketName != "" {
 			query += " AND bucket = ?"
-			args = append(args, bucket)
+			args = append(args, bucketName)
 		}
 
 		excludeBucket := r.URL.Query().Get("exclude_bucket")
@@ -129,21 +131,21 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 		if priorities != "" {
 			pList := strings.Split(priorities, ",")
 			var activePriorities []string
-			hasNone := false
+			var includeNone bool
 			for _, p := range pList {
 				p = strings.TrimSpace(p)
-				if strings.ToLower(p) == "none" {
-					hasNone = true
-				} else if p != "" {
-					activePriorities = append(activePriorities, strings.ToLower(p))
+				if p == "none" || p == "" {
+					includeNone = true
+				} else {
+					activePriorities = append(activePriorities, p)
 				}
 			}
 
-			if hasNone || len(activePriorities) > 0 {
+			if len(activePriorities) > 0 || includeNone {
 				query += " AND ("
-				subConditions := []string{}
-				if hasNone {
-					subConditions = append(subConditions, "priority IS NULL", "priority = ''")
+				var subConditions []string
+				if includeNone {
+					subConditions = append(subConditions, "(priority IS NULL OR priority = '')")
 				}
 				if len(activePriorities) > 0 {
 					var placeholders []string
@@ -162,24 +164,25 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 
 		rows, err := db.DB.Query(query, args...)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		defer rows.Close()
 
-		var taskList []models.TaskResponse
+		var taskList []Response
 		for rows.Next() {
-			var t models.TaskResponse
-			var tagsJSON string
+			var t Response
+			var tagsJSON, attachmentsJSON string
 			var dueDate, plannedDate, priority, color sql.NullString
 
-			err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.Bucket, &t.Position, &tagsJSON, &t.Body, &dueDate, &plannedDate, &priority, &color, &t.CreatedAt, &t.UpdatedAt)
+			err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.Bucket, &t.Position, &tagsJSON, &attachmentsJSON, &t.Body, &dueDate, &plannedDate, &priority, &color, &t.CreatedAt, &t.UpdatedAt)
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, err.Error())
+				common.SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
 			_ = json.Unmarshal([]byte(tagsJSON), &t.Tags)
+			_ = json.Unmarshal([]byte(attachmentsJSON), &t.Attachments)
 			if dueDate.Valid {
 				t.DueDate = &dueDate.String
 			}
@@ -197,68 +200,36 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 		}
 
 		if taskList == nil {
-			taskList = []models.TaskResponse{}
+			taskList = []Response{}
 		}
 
-		SendJSON(w, http.StatusOK, taskList)
+		common.SendJSON(w, http.StatusOK, taskList)
 	})
 
 	r.Post("/projects/{project_id}/tasks", func(w http.ResponseWriter, r *http.Request) {
 		projectID := chi.URLParam(r, "project_id")
 
 		if r.Body == nil {
-			log.Printf("ERROR: POST /tasks - Request body is nil")
-			SendError(w, http.StatusBadRequest, "Request body is missing")
+			common.SendError(w, http.StatusBadRequest, "Request body is missing")
 			return
 		}
 
-		var req models.TaskCreate
-		bodyBytes, _ := io.ReadAll(r.Body)
-		if len(bodyBytes) == 0 {
-			log.Printf("ERROR: POST /tasks - Request body is empty")
-			SendError(w, http.StatusBadRequest, "Request body is empty")
-			return
-		}
-		// Restore body for decoding
-		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-
+		var req Create
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			log.Printf("ERROR: POST /tasks - Failed to decode JSON: %v", err)
-			SendError(w, http.StatusBadRequest, "Invalid request payload")
+			common.SendError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
 
-		// Verify project exists
-		var dummy string
-		err := db.DB.QueryRow("SELECT id FROM projects WHERE id = ?", projectID).Scan(&dummy)
-		if err == sql.ErrNoRows {
-			SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
-			return
-		} else if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// Verify bucket exists for this project
-		err = db.DB.QueryRow("SELECT name FROM buckets WHERE project_id = ? AND name = ?", projectID, req.Bucket).Scan(&dummy)
-		if err == sql.ErrNoRows {
-			SendError(w, http.StatusBadRequest, fmt.Sprintf("Bucket '%s' does not exist in project '%s'.", req.Bucket, projectID))
-			return
-		} else if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
+		newID := common.GenerateULID()
 		nowStr := time.Now().UTC().Format(time.RFC3339Nano)
 		nowStr = strings.Replace(nowStr, "+00:00", "Z", 1)
-		newID := storage.GenerateULID()
 
-		// Calculate position: min position - 1000.0
-		var minPos sql.NullFloat64
-		_ = db.DB.QueryRow("SELECT MIN(position) FROM tasks WHERE project_id = ? AND bucket = ?", projectID, req.Bucket).Scan(&minPos)
+		// Get max position for initial positioning
+		var maxPos sql.NullFloat64
+		_ = db.DB.QueryRow("SELECT MAX(position) FROM tasks WHERE project_id = ? AND bucket = ?", projectID, req.Bucket).Scan(&maxPos)
 		newPosition := 1000.0
-		if minPos.Valid {
-			newPosition = minPos.Float64 - 1000.0
+		if maxPos.Valid {
+			newPosition = maxPos.Float64 + 1000.0
 		}
 
 		var tags []string
@@ -268,11 +239,12 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 
 		taskMap := map[string]interface{}{
 			"id":           newID,
-			"project_id":    projectID,
+			"project_id":   projectID,
 			"title":        req.Title,
 			"bucket":       req.Bucket,
 			"position":     newPosition,
 			"tags":         tags,
+			"attachments":  []string{},
 			"body":         req.Body,
 			"due_date":     req.DueDate,
 			"planned_date": req.PlannedDate,
@@ -282,14 +254,15 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			"updated_at":   nowStr,
 		}
 
-		filename, errWrite := storage.WriteTaskFile(tasksDir, newID, taskMap)
+		filename, errWrite := WriteTaskFile(tasksDir, newID, taskMap)
 		if errWrite != nil {
-			SendError(w, http.StatusInternalServerError, "Failed to write task file")
+			common.SendError(w, http.StatusInternalServerError, "Failed to write task file")
 			return
 		}
 
 		// Write to DB
 		tagsJSON, _ := json.Marshal(tags)
+		attachmentsJSON, _ := json.Marshal([]string{})
 		var dbDueDate, dbPlannedDate, dbPriority, dbColor sql.NullString
 		if req.DueDate != nil {
 			dbDueDate = sql.NullString{String: *req.DueDate, Valid: true}
@@ -304,22 +277,23 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			dbColor = sql.NullString{String: *req.Color, Valid: true}
 		}
 
-		_, err = db.DB.Exec("INSERT INTO tasks (id, project_id, title, bucket, position, tags, filename, body, due_date, planned_date, priority, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-			newID, projectID, req.Title, req.Bucket, newPosition, string(tagsJSON), filename, req.Body, dbDueDate, dbPlannedDate, dbPriority, dbColor, nowStr, nowStr)
+		_, err := db.DB.Exec("INSERT INTO tasks (id, project_id, title, bucket, position, tags, attachments, filename, body, due_date, planned_date, priority, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			newID, projectID, req.Title, req.Bucket, newPosition, string(tagsJSON), string(attachmentsJSON), filename, req.Body, dbDueDate, dbPlannedDate, dbPriority, dbColor, nowStr, nowStr)
 		if err != nil {
 			// Clean up file if DB fails
-			_ = storage.DeleteTaskFile(tasksDir, newID)
-			SendError(w, http.StatusInternalServerError, err.Error())
+			_ = DeleteTaskFile(tasksDir, newID)
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		res := models.TaskResponse{
+		res := Response{
 			ID:          newID,
 			ProjectID:   projectID,
 			Title:       req.Title,
 			Bucket:      req.Bucket,
 			Position:    newPosition,
 			Tags:        tags,
+			Attachments: []string{},
 			Body:        req.Body,
 			DueDate:     req.DueDate,
 			PlannedDate: req.PlannedDate,
@@ -328,46 +302,43 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			CreatedAt:   nowStr,
 			UpdatedAt:   nowStr,
 		}
-		SendJSON(w, http.StatusCreated, res)
+		common.SendJSON(w, http.StatusCreated, res)
 	})
 
 	r.Route("/projects/{project_id}/tasks/{task_id}", func(r chi.Router) {
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			projectID := chi.URLParam(r, "project_id")
 			taskID := chi.URLParam(r, "task_id")
-
-			taskData, err := storage.ReadTaskFile(tasksDir, taskID)
-			if err != nil || taskData.ProjectID != projectID {
-				SendError(w, http.StatusNotFound, fmt.Sprintf("Task with ID %s not found in project '%s'", taskID, projectID))
+			res, err := ReadTaskFile(tasksDir, taskID)
+			if err != nil {
+				common.SendError(w, http.StatusNotFound, err.Error())
 				return
 			}
-
-			SendJSON(w, http.StatusOK, taskData)
+			common.SendJSON(w, http.StatusOK, res)
 		})
 
 		r.Delete("/", func(w http.ResponseWriter, r *http.Request) {
 			projectID := chi.URLParam(r, "project_id")
 			taskID := chi.URLParam(r, "task_id")
 
-			existing, errRead := storage.ReadTaskFile(tasksDir, taskID)
+			existing, errRead := ReadTaskFile(tasksDir, taskID)
 			if errRead != nil || existing.ProjectID != projectID {
-				SendError(w, http.StatusNotFound, fmt.Sprintf("Task with ID %s not found in project '%s'", taskID, projectID))
+				common.SendError(w, http.StatusNotFound, fmt.Sprintf("Task with ID %s not found in project '%s'", taskID, projectID))
 				return
 			}
 
-			deleted := storage.DeleteTaskFile(tasksDir, taskID)
+			deleted := DeleteTaskFile(tasksDir, taskID)
 			if !deleted {
-				SendError(w, http.StatusInternalServerError, "Failed to delete task file")
+				common.SendError(w, http.StatusInternalServerError, "Failed to delete task file")
 				return
 			}
 
 			_, err := db.DB.Exec("DELETE FROM tasks WHERE id = ? AND project_id = ?", taskID, projectID)
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, err.Error())
+				common.SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
-			SendJSON(w, http.StatusOK, map[string]string{
+			common.SendJSON(w, http.StatusOK, map[string]string{
 				"status": "success",
 				"detail": fmt.Sprintf("Task %s deleted", taskID),
 			})
@@ -379,25 +350,25 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 
 			bodyBytes, err := io.ReadAll(r.Body)
 			if err != nil {
-				SendError(w, http.StatusBadRequest, "Failed to read request body")
+				common.SendError(w, http.StatusBadRequest, "Failed to read request body")
 				return
 			}
 
 			var raw map[string]interface{}
 			if err := json.Unmarshal(bodyBytes, &raw); err != nil {
-				SendError(w, http.StatusBadRequest, "Invalid JSON payload")
+				common.SendError(w, http.StatusBadRequest, "Invalid JSON payload")
 				return
 			}
 
-			var req models.TaskUpdate
+			var req Update
 			if err := json.Unmarshal(bodyBytes, &req); err != nil {
-				SendError(w, http.StatusBadRequest, "Invalid request payload")
+				common.SendError(w, http.StatusBadRequest, "Invalid request payload")
 				return
 			}
 
-			existing, errRead := storage.ReadTaskFile(tasksDir, taskID)
+			existing, errRead := ReadTaskFile(tasksDir, taskID)
 			if errRead != nil || existing.ProjectID != projectID {
-				SendError(w, http.StatusNotFound, fmt.Sprintf("Task with ID %s not found in project '%s'", taskID, projectID))
+				common.SendError(w, http.StatusNotFound, fmt.Sprintf("Task with ID %s not found in project '%s'", taskID, projectID))
 				return
 			}
 
@@ -453,6 +424,11 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				updatedColor = req.Color
 			}
 
+			updatedAttachments := existing.Attachments
+			if _, ok := raw["attachments"]; ok && req.Attachments != nil {
+				updatedAttachments = *req.Attachments
+			}
+
 			updatedProjectID := existing.ProjectID
 			if _, ok := raw["project_id"]; ok && req.ProjectID != nil {
 				updatedProjectID = *req.ProjectID
@@ -460,7 +436,7 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 
 			tx, err := db.DB.Begin()
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, err.Error())
+				common.SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 			defer func() { _ = tx.Rollback() }()
@@ -471,19 +447,16 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				var pDummy string
 				errP := tx.QueryRow("SELECT id FROM projects WHERE id = ?", updatedProjectID).Scan(&pDummy)
 				if errP == sql.ErrNoRows {
-					SendError(w, http.StatusBadRequest, fmt.Sprintf("Target project '%s' not found.", updatedProjectID))
+					common.SendError(w, http.StatusBadRequest, fmt.Sprintf("Target project '%s' not found.", updatedProjectID))
 					return
 				}
 
-				// If bucket wasn't explicitly changed, ensure the current bucket exists in target project
-				// or move to the first available bucket in target project
 				var bDummy string
 				errB := tx.QueryRow("SELECT name FROM buckets WHERE project_id = ? AND name = ?", updatedProjectID, updatedBucket).Scan(&bDummy)
 				if errB == sql.ErrNoRows {
-					// Default to first bucket in target project
 					errB2 := tx.QueryRow("SELECT name FROM buckets WHERE project_id = ? ORDER BY position ASC LIMIT 1", updatedProjectID).Scan(&updatedBucket)
 					if errB2 != nil {
-						SendError(w, http.StatusInternalServerError, "Target project has no columns")
+						common.SendError(w, http.StatusInternalServerError, "Target project has no columns")
 						return
 					}
 				}
@@ -509,15 +482,15 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 						_, err = tx.Exec("INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, '', ?, NULL, 'list', NULL, 0)",
 							updatedProjectID, updatedBucket, title, newPosition)
 						if err != nil {
-							SendError(w, http.StatusInternalServerError, err.Error())
+							common.SendError(w, http.StatusInternalServerError, err.Error())
 							return
 						}
 					} else {
-						SendError(w, http.StatusBadRequest, fmt.Sprintf("Bucket '%s' does not exist in project '%s'.", updatedBucket, updatedProjectID))
+						common.SendError(w, http.StatusBadRequest, fmt.Sprintf("Bucket '%s' does not exist in project '%s'.", updatedBucket, updatedProjectID))
 						return
 					}
 				} else if errB != nil {
-					SendError(w, http.StatusInternalServerError, errB.Error())
+					common.SendError(w, http.StatusInternalServerError, errB.Error())
 					return
 				}
 			}
@@ -528,6 +501,7 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				"bucket":       updatedBucket,
 				"position":     updatedPosition,
 				"tags":         updatedTags,
+				"attachments":  updatedAttachments,
 				"body":         updatedBody,
 				"due_date":     updatedDueDate,
 				"planned_date": updatedPlannedDate,
@@ -537,14 +511,15 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				"updated_at":   nowStr,
 			}
 
-			filename, errWrite := storage.WriteTaskFile(tasksDir, taskID, taskMap)
+			filename, errWrite := WriteTaskFile(tasksDir, taskID, taskMap)
 			if errWrite != nil {
 				log.Printf("ERROR: Failed to write task file for task %s: %v", taskID, errWrite)
-				SendError(w, http.StatusInternalServerError, "Failed to write task file")
+				common.SendError(w, http.StatusInternalServerError, "Failed to write task file")
 				return
 			}
 
 			tagsJSON, _ := json.Marshal(updatedTags)
+			attachmentsJSON, _ := json.Marshal(updatedAttachments)
 			var dbDueDate, dbPlannedDate, dbPriority, dbColor sql.NullString
 			if updatedDueDate != nil {
 				dbDueDate = sql.NullString{String: *updatedDueDate, Valid: true}
@@ -559,34 +534,34 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				dbColor = sql.NullString{String: *updatedColor, Valid: true}
 			}
 
-			_, err = tx.Exec("UPDATE tasks SET project_id = ?, title = ?, bucket = ?, position = ?, tags = ?, filename = ?, body = ?, due_date = ?, planned_date = ?, priority = ?, color = ?, updated_at = ? WHERE id = ? AND project_id = ?",
-				updatedProjectID, updatedTitle, updatedBucket, updatedPosition, string(tagsJSON), filename, updatedBody, dbDueDate, dbPlannedDate, dbPriority, dbColor, nowStr, taskID, projectID)
+			_, err = tx.Exec("UPDATE tasks SET project_id = ?, title = ?, bucket = ?, position = ?, tags = ?, attachments = ?, filename = ?, body = ?, due_date = ?, planned_date = ?, priority = ?, color = ?, updated_at = ? WHERE id = ? AND project_id = ?",
+				updatedProjectID, updatedTitle, updatedBucket, updatedPosition, string(tagsJSON), string(attachmentsJSON), filename, updatedBody, dbDueDate, dbPlannedDate, dbPriority, dbColor, nowStr, taskID, projectID)
 			if err != nil {
-				log.Printf("ERROR: DB update failed for task %s: %v", taskID, err)
-				SendError(w, http.StatusInternalServerError, err.Error())
+				common.SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
 			if err := tx.Commit(); err != nil {
 				log.Printf("ERROR: TX commit failed for task %s: %v", taskID, err)
-				SendError(w, http.StatusInternalServerError, err.Error())
+				common.SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
 			if updatedProjectID != existing.ProjectID {
-				_ = syncBucketsFile(tasksDir, existing.ProjectID)
-				_ = syncBucketsFile(tasksDir, updatedProjectID)
+				_ = bucket.SyncBucketsFile(tasksDir, existing.ProjectID)
+				_ = bucket.SyncBucketsFile(tasksDir, updatedProjectID)
 			} else if _, ok := raw["bucket"]; ok && (updatedBucket == "done" || updatedBucket == "archive") {
-				_ = syncBucketsFile(tasksDir, projectID)
+				_ = bucket.SyncBucketsFile(tasksDir, projectID)
 			}
 
-			res := models.TaskResponse{
+			res := Response{
 				ID:          taskID,
 				ProjectID:   updatedProjectID,
 				Title:       updatedTitle,
 				Bucket:      updatedBucket,
 				Position:    updatedPosition,
 				Tags:        updatedTags,
+				Attachments: updatedAttachments,
 				Body:        updatedBody,
 				DueDate:     updatedDueDate,
 				PlannedDate: updatedPlannedDate,
@@ -595,35 +570,171 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				CreatedAt:   existing.CreatedAt,
 				UpdatedAt:   nowStr,
 			}
-			SendJSON(w, http.StatusOK, res)
+			common.SendJSON(w, http.StatusOK, res)
 		}
 
 		r.Put("/", updateHandler)
 		r.Patch("/", updateHandler)
+
+		// --- Attachment Endpoints ---
+		r.Post("/attachments", func(w http.ResponseWriter, r *http.Request) {
+			projectID := chi.URLParam(r, "project_id")
+			taskID := chi.URLParam(r, "task_id")
+
+			err := r.ParseMultipartForm(32 << 20) // 32MB max
+			if err != nil {
+				common.SendError(w, http.StatusBadRequest, "Failed to parse multipart form")
+				return
+			}
+
+			file, header, err := r.FormFile("file")
+			if err != nil {
+				common.SendError(w, http.StatusBadRequest, "No file provided")
+				return
+			}
+			defer file.Close()
+
+			attachmentsDir := filepath.Join(tasksDir, projectID, taskID+".attachments")
+			_ = os.MkdirAll(attachmentsDir, 0755)
+
+			dstPath := filepath.Join(attachmentsDir, header.Filename)
+			dst, err := os.Create(dstPath)
+			if err != nil {
+				common.SendError(w, http.StatusInternalServerError, "Failed to create destination file")
+				return
+			}
+			defer dst.Close()
+
+			if _, err := io.Copy(dst, file); err != nil {
+				common.SendError(w, http.StatusInternalServerError, "Failed to save file")
+				return
+			}
+
+			// Update Task Metadata
+			existing, errRead := ReadTaskFile(tasksDir, taskID)
+			if errRead != nil {
+				common.SendError(w, http.StatusInternalServerError, "Failed to read task metadata")
+				return
+			}
+
+			// Check if already exists in list
+			found := false
+			for _, a := range existing.Attachments {
+				if a == header.Filename {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				existing.Attachments = append(existing.Attachments, header.Filename)
+				
+				taskMap := map[string]interface{}{
+					"project_id":   existing.ProjectID,
+					"title":        existing.Title,
+					"bucket":       existing.Bucket,
+					"position":     existing.Position,
+					"tags":         existing.Tags,
+					"attachments":  existing.Attachments,
+					"body":         existing.Body,
+					"due_date":     existing.DueDate,
+					"planned_date": existing.PlannedDate,
+					"priority: ":   existing.Priority,
+					"color":        existing.Color,
+					"created_at":   existing.CreatedAt,
+					"updated_at":   existing.UpdatedAt,
+				}
+
+				_, errWrite := WriteTaskFile(tasksDir, taskID, taskMap)
+				if errWrite != nil {
+					common.SendError(w, http.StatusInternalServerError, "Failed to update task file")
+					return
+				}
+
+				attJSON, _ := json.Marshal(existing.Attachments)
+				_, _ = db.DB.Exec("UPDATE tasks SET attachments = ? WHERE id = ? AND project_id = ?", string(attJSON), taskID, projectID)
+			}
+
+			common.SendJSON(w, http.StatusOK, existing)
+		})
+
+		r.Get("/attachments/{filename}", func(w http.ResponseWriter, r *http.Request) {
+			projectID := chi.URLParam(r, "project_id")
+			taskID := chi.URLParam(r, "task_id")
+			filename := chi.URLParam(r, "filename")
+
+			filePath := filepath.Join(tasksDir, projectID, taskID+".attachments", filename)
+			if _, err := os.Stat(filePath); os.IsNotExist(err) {
+				http.NotFound(w, r)
+				return
+			}
+
+			http.ServeFile(w, r, filePath)
+		})
+
+		r.Delete("/attachments/{filename}", func(w http.ResponseWriter, r *http.Request) {
+			projectID := chi.URLParam(r, "project_id")
+			taskID := chi.URLParam(r, "task_id")
+			filename := chi.URLParam(r, "filename")
+
+			filePath := filepath.Join(tasksDir, projectID, taskID+".attachments", filename)
+			_ = os.Remove(filePath)
+
+			// Update Metadata
+			existing, errRead := ReadTaskFile(tasksDir, taskID)
+			if errRead == nil {
+				var newAtt []string
+				for _, a := range existing.Attachments {
+					if a != filename {
+						newAtt = append(newAtt, a)
+					}
+				}
+				existing.Attachments = newAtt
+
+				taskMap := map[string]interface{}{
+					"project_id":   existing.ProjectID,
+					"title":        existing.Title,
+					"bucket":       existing.Bucket,
+					"position":     existing.Position,
+					"tags":         existing.Tags,
+					"attachments":  existing.Attachments,
+					"body":         existing.Body,
+					"due_date":     existing.DueDate,
+					"planned_date": existing.PlannedDate,
+					"priority":     existing.Priority,
+					"color":        existing.Color,
+					"created_at":   existing.CreatedAt,
+					"updated_at":   existing.UpdatedAt,
+				}
+
+				_, _ = WriteTaskFile(tasksDir, taskID, taskMap)
+				attJSON, _ := json.Marshal(existing.Attachments)
+				_, _ = db.DB.Exec("UPDATE tasks SET attachments = ? WHERE id = ? AND project_id = ?", string(attJSON), taskID, projectID)
+			}
+
+			common.SendJSON(w, http.StatusOK, existing)
+		})
 	})
 
 	r.Patch("/projects/{project_id}/tasks/{task_id}/move", func(w http.ResponseWriter, r *http.Request) {
 		projectID := chi.URLParam(r, "project_id")
 		taskID := chi.URLParam(r, "task_id")
 
-		var req models.TaskMove
+		var req Move
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			SendError(w, http.StatusBadRequest, "Invalid request payload")
+			common.SendError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
 
-		existing, errRead := storage.ReadTaskFile(tasksDir, taskID)
+		existing, errRead := ReadTaskFile(tasksDir, taskID)
 		if errRead != nil || existing.ProjectID != projectID {
-			SendError(w, http.StatusNotFound, fmt.Sprintf("Task with ID %s not found in project '%s'", taskID, projectID))
+			common.SendError(w, http.StatusNotFound, fmt.Sprintf("Task with ID %s not found in project '%s'", taskID, projectID))
 			return
 		}
-
-		nowStr := time.Now().UTC().Format(time.RFC3339Nano)
-		nowStr = strings.Replace(nowStr, "+00:00", "Z", 1)
 
 		tx, err := db.DB.Begin()
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		defer func() { _ = tx.Rollback() }()
@@ -648,68 +759,73 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				_, err = tx.Exec("INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, '', ?, NULL, 'list', NULL, 0)",
 					projectID, req.Bucket, title, newPosition)
 				if err != nil {
-					SendError(w, http.StatusInternalServerError, err.Error())
+					common.SendError(w, http.StatusInternalServerError, err.Error())
 					return
 				}
 			} else {
-				SendError(w, http.StatusBadRequest, fmt.Sprintf("Bucket '%s' does not exist in project '%s'.", req.Bucket, projectID))
+				common.SendError(w, http.StatusBadRequest, fmt.Sprintf("Bucket '%s' does not exist in project '%s'.", req.Bucket, projectID))
 				return
 			}
 		} else if errB != nil {
-			SendError(w, http.StatusInternalServerError, errB.Error())
+			common.SendError(w, http.StatusInternalServerError, errB.Error())
 			return
 		}
 
+		nowStr := time.Now().UTC().Format(time.RFC3339Nano)
+		nowStr = strings.Replace(nowStr, "+00:00", "Z", 1)
+
 		taskMap := map[string]interface{}{
-			"project_id": projectID,
-			"title":      existing.Title,
-			"bucket":     req.Bucket,
-			"position":   req.Position,
-			"tags":       existing.Tags,
-			"body":       existing.Body,
-			"due_date":   existing.DueDate,
-			"priority":   existing.Priority,
-			"color":      existing.Color,
-			"created_at": existing.CreatedAt,
-			"updated_at": nowStr,
+			"project_id":   projectID,
+			"title":        existing.Title,
+			"bucket":       req.Bucket,
+			"position":     req.Position,
+			"tags":         existing.Tags,
+			"body":         existing.Body,
+			"due_date":     existing.DueDate,
+			"planned_date": existing.PlannedDate,
+			"priority":     existing.Priority,
+			"color":        existing.Color,
+			"created_at":   existing.CreatedAt,
+			"updated_at":   nowStr,
 		}
 
-		filename, errWrite := storage.WriteTaskFile(tasksDir, taskID, taskMap)
+		filename, errWrite := WriteTaskFile(tasksDir, taskID, taskMap)
 		if errWrite != nil {
-			SendError(w, http.StatusInternalServerError, "Failed to write task file")
+			common.SendError(w, http.StatusInternalServerError, "Failed to write task file")
 			return
 		}
 
 		_, err = tx.Exec("UPDATE tasks SET bucket = ?, position = ?, filename = ?, updated_at = ? WHERE id = ? AND project_id = ?",
 			req.Bucket, req.Position, filename, nowStr, taskID, projectID)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		if req.Bucket == "done" || req.Bucket == "archive" {
-			_ = syncBucketsFile(tasksDir, projectID)
+			_ = bucket.SyncBucketsFile(tasksDir, projectID)
 		}
 
-		res := models.TaskResponse{
-			ID:        taskID,
-			ProjectID: projectID,
-			Title:     existing.Title,
-			Bucket:    req.Bucket,
-			Position:  req.Position,
-			Tags:      existing.Tags,
-			Body:      existing.Body,
-			DueDate:   existing.DueDate,
-			Priority:  existing.Priority,
-			Color:     existing.Color,
-			CreatedAt: existing.CreatedAt,
-			UpdatedAt: nowStr,
+		res := Response{
+			ID:          taskID,
+			ProjectID:   projectID,
+			Title:       existing.Title,
+			Bucket:      req.Bucket,
+			Position:    req.Position,
+			Tags:        existing.Tags,
+			Body:        existing.Body,
+			DueDate:     existing.DueDate,
+			PlannedDate: existing.PlannedDate,
+			Priority:    existing.Priority,
+			Color:       existing.Color,
+			CreatedAt:   existing.CreatedAt,
+			UpdatedAt:   nowStr,
 		}
-		SendJSON(w, http.StatusOK, res)
+		common.SendJSON(w, http.StatusOK, res)
 	})
 }

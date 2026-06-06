@@ -5,7 +5,8 @@ import (
 	"log"
 
 	"jotter/backend/internal/db"
-	"jotter/backend/internal/storage"
+	"jotter/backend/internal/features/project"
+	"jotter/backend/internal/features/system"
 )
 
 var Version = "[dev mode]"
@@ -35,8 +36,11 @@ func Bootstrap(dataDir string, dbPath string) {
 		log.Fatalf("Database initialization failed: %v", err)
 	}
 
+	// Ensure projects.json exists
+	_, _ = project.LoadProjectsFile(dataDir)
+
 	// Sync database with markdown files automatically on startup
-	if _, err := storage.SyncDBWithFiles(dataDir); err != nil {
+	if _, err := system.SyncDBWithFiles(dataDir); err != nil {
 		log.Fatalf("Initial sync failed: %v", err)
 	}
 }

@@ -245,6 +245,40 @@ export async function deleteTask(projectId: string, id: string): Promise<void> {
   }
 }
 
+export async function uploadAttachment(projectId: string, taskId: string, file: File): Promise<Task> {
+  if (IS_DEMO_MODE) {
+    throw new Error('Attachments not supported in demo mode');
+  }
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await customFetch(`${API_BASE}/projects/${projectId}/tasks/${taskId}/attachments`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to upload attachment: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function deleteAttachment(projectId: string, taskId: string, filename: string): Promise<Task> {
+  if (IS_DEMO_MODE) {
+    throw new Error('Attachments not supported in demo mode');
+  }
+  const response = await customFetch(`${API_BASE}/projects/${projectId}/tasks/${taskId}/attachments/${filename}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to delete attachment: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export function getAttachmentUrl(projectId: string, taskId: string, filename: string): string {
+  return `${window.location.origin}${API_BASE}/projects/${projectId}/tasks/${taskId}/attachments/${filename}`;
+}
+
 // ==========================================
 // COLUMN (BUCKETS) API
 // ==========================================

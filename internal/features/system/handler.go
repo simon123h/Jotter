@@ -1,4 +1,4 @@
-package handlers
+package system
 
 import (
 	"database/sql"
@@ -10,15 +10,15 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"jotter/backend/internal/db"
-	"jotter/backend/internal/storage"
+	"jotter/backend/internal/features/common"
 )
 
-func RegisterSystemRoutes(r chi.Router, tasksDir string) {
+func RegisterRoutes(r chi.Router, tasksDir string) {
 	r.Post("/system/sync", func(w http.ResponseWriter, r *http.Request) {
 		// 1. Fetch all projects from DB
 		rows, err := db.DB.Query("SELECT id, git_remote FROM projects")
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		defer rows.Close()
@@ -38,24 +38,24 @@ func RegisterSystemRoutes(r chi.Router, tasksDir string) {
 			}
 
 			// Perform Git Sync for this specific project
-			if errSync := storage.GitSync(projectPath, remoteURL); errSync != nil {
+			if errSync := common.GitSync(projectPath, remoteURL); errSync != nil {
 				gitErrors = append(gitErrors, fmt.Sprintf("Project '%s': %v", id, errSync))
 			}
 		}
 
 		if len(gitErrors) > 0 {
-			SendError(w, http.StatusConflict, fmt.Sprintf("Git Synchronization issues:\n%s", strings.Join(gitErrors, "\n")))
+			common.SendError(w, http.StatusConflict, fmt.Sprintf("Git Synchronization issues:\n%s", strings.Join(gitErrors, "\n")))
 			return
 		}
 
-		// 2. Database Index Sync (Global scan as before to keep it simple)
-		count, err := storage.SyncDBWithFiles(tasksDir)
+		// 2. Database Index Sync
+		count, err := SyncDBWithFiles(tasksDir)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, fmt.Sprintf("Database Synchronization failed: %v", err))
+			common.SendError(w, http.StatusInternalServerError, fmt.Sprintf("Database Synchronization failed: %v", err))
 			return
 		}
 
-		SendJSON(w, http.StatusOK, map[string]interface{}{
+		common.SendJSON(w, http.StatusOK, map[string]interface{}{
 			"status":             "success",
 			"synchronized_tasks": count,
 		})

@@ -49,6 +49,11 @@ export const en = {
     plannedDateLabel: 'Planned For',
     priorityLabel: 'Priority',
     noBucketsFound: 'No columns found',
+    attachmentsLabel: 'Attachments',
+    addAttachment: 'Add File',
+    uploading: 'Uploading...',
+    noAttachments: 'No attachments yet',
+    deleteAttachmentConfirm: 'Are you sure you want to remove this file?',
   },
   buttons: {
     cancel: 'Cancel',

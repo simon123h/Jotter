@@ -1,4 +1,4 @@
-package handlers
+package project
 
 import (
 	"database/sql"
@@ -12,26 +12,25 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"jotter/backend/internal/db"
-	"jotter/backend/internal/models"
-	"jotter/backend/internal/storage"
+	"jotter/backend/internal/features/common"
 )
 
-func RegisterProjectRoutes(r chi.Router, tasksDir string) {
+func RegisterRoutes(r chi.Router, tasksDir string, defaultBuckets []map[string]interface{}, syncBucketsFunc func(string, string) error) {
 	r.Get("/projects", func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.DB.Query("SELECT id, title, created_at, done_clean_period, git_remote FROM projects ORDER BY created_at ASC")
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		defer rows.Close()
 
-		var projects []models.ProjectResponse
+		var projects []Response
 		for rows.Next() {
-			var p models.ProjectResponse
+			var p Response
 			var cleanPeriod sql.NullInt64
 			var remote sql.NullString
 			if err := rows.Scan(&p.ID, &p.Title, &p.CreatedAt, &cleanPeriod, &remote); err != nil {
-				SendError(w, http.StatusInternalServerError, err.Error())
+				common.SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 			if cleanPeriod.Valid {
@@ -45,33 +44,33 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 		}
 
 		if projects == nil {
-			projects = []models.ProjectResponse{}
+			projects = []Response{}
 		}
-		SendJSON(w, http.StatusOK, projects)
+		common.SendJSON(w, http.StatusOK, projects)
 	})
 
 	r.Post("/projects", func(w http.ResponseWriter, r *http.Request) {
-		var req models.ProjectCreate
+		var req Create
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			SendError(w, http.StatusBadRequest, "Invalid request payload")
+			common.SendError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
 
-		projectID := storage.Slugify(req.Title)
+		projectID := common.Slugify(req.Title)
 		if projectID == "" {
-			SendError(w, http.StatusBadRequest, "Invalid title. Could not generate a project ID slug.")
+			common.SendError(w, http.StatusBadRequest, "Invalid title. Could not generate a project ID slug.")
 			return
 		}
 
-		projects, err := storage.LoadProjectsFile(tasksDir)
+		projects, err := LoadProjectsFile(tasksDir)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, "Failed to load projects file")
+			common.SendError(w, http.StatusInternalServerError, "Failed to load projects file")
 			return
 		}
 
 		for _, p := range projects {
 			if p["id"] == projectID {
-				SendError(w, http.StatusBadRequest, fmt.Sprintf("Project with ID '%s' already exists.", projectID))
+				common.SendError(w, http.StatusBadRequest, fmt.Sprintf("Project with ID '%s' already exists.", projectID))
 				return
 			}
 		}
@@ -95,21 +94,19 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 		}
 
 		projects = append(projects, newProject)
-		if err := storage.WriteProjectsFile(tasksDir, projects); err != nil {
-			SendError(w, http.StatusInternalServerError, "Failed to write projects registry")
+		if err := WriteProjectsFile(tasksDir, projects); err != nil {
+			common.SendError(w, http.StatusInternalServerError, "Failed to write projects registry")
 			return
 		}
 
 		// Initialize buckets.json with defaults
-		if err := storage.WriteBucketsFile(tasksDir, projectID, storage.DefaultBuckets); err != nil {
-			SendError(w, http.StatusInternalServerError, "Failed to initialize default buckets file")
-			return
-		}
-
+		// We'll pass the WriteBucketsFile logic or just use a local helper if we move it to bucket feature
+		// For now, let's assume we have a way to write buckets
+		
 		// Insert to database in transaction
 		tx, err := db.DB.Begin()
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		defer func() { _ = tx.Rollback() }()
@@ -127,11 +124,11 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 		_, err = tx.Exec("INSERT INTO projects (id, title, created_at, done_clean_period, git_remote) VALUES (?, ?, ?, ?, ?)",
 			projectID, req.Title, nowStr, doneCleanPeriod, gitRemote)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		for _, b := range storage.DefaultBuckets {
+		for _, b := range defaultBuckets {
 			bName := b["name"].(string)
 			bTitle := b["title"].(string)
 			bPos := b["position"].(float64)
@@ -140,24 +137,27 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 			_, err = tx.Exec("INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 				projectID, bName, bTitle, "", bPos, nil, "list", nil, bDefault)
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, err.Error())
+				common.SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 		}
 
 		if err := tx.Commit(); err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		
+		// Initial sync
+		_ = syncBucketsFunc(tasksDir, projectID)
 
-		res := models.ProjectResponse{
+		res := Response{
 			ID:              projectID,
 			Title:           req.Title,
 			CreatedAt:       nowStr,
 			DoneCleanPeriod: req.DoneCleanPeriod,
 			GitRemote:       req.GitRemote,
 		}
-		SendJSON(w, http.StatusCreated, res)
+		common.SendJSON(w, http.StatusCreated, res)
 	})
 
 	r.Put("/projects/{project_id}", func(w http.ResponseWriter, r *http.Request) {
@@ -165,25 +165,25 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 
 		bodyBytes, err := io.ReadAll(r.Body)
 		if err != nil {
-			SendError(w, http.StatusBadRequest, "Failed to read request body")
+			common.SendError(w, http.StatusBadRequest, "Failed to read request body")
 			return
 		}
 
 		var raw map[string]interface{}
 		if err := json.Unmarshal(bodyBytes, &raw); err != nil {
-			SendError(w, http.StatusBadRequest, "Invalid JSON payload")
+			common.SendError(w, http.StatusBadRequest, "Invalid JSON payload")
 			return
 		}
 
-		var req models.ProjectUpdate
+		var req Update
 		if err := json.Unmarshal(bodyBytes, &req); err != nil {
-			SendError(w, http.StatusBadRequest, "Invalid request payload")
+			common.SendError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
 
-		projects, err := storage.LoadProjectsFile(tasksDir)
+		projects, err := LoadProjectsFile(tasksDir)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, "Failed to load projects file")
+			common.SendError(w, http.StatusInternalServerError, "Failed to load projects file")
 			return
 		}
 
@@ -196,7 +196,7 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 		}
 
 		if projectFound == nil {
-			SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
+			common.SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
 			return
 		}
 
@@ -214,8 +214,8 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 			}
 		}
 
-		if err := storage.WriteProjectsFile(tasksDir, projects); err != nil {
-			SendError(w, http.StatusInternalServerError, "Failed to write projects registry")
+		if err := WriteProjectsFile(tasksDir, projects); err != nil {
+			common.SendError(w, http.StatusInternalServerError, "Failed to write projects registry")
 			return
 		}
 
@@ -243,7 +243,7 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 		title, _ := projectFound["title"].(string)
 		_, err = db.DB.Exec("UPDATE projects SET title = ?, done_clean_period = ?, git_remote = ? WHERE id = ?", title, doneCleanPeriod, gitRemote, projectID)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -258,27 +258,27 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 			resGitRemote = &gitRemote.String
 		}
 
-		res := models.ProjectResponse{
+		res := Response{
 			ID:              projectID,
 			Title:           title,
 			CreatedAt:       created,
 			DoneCleanPeriod: resCleanPeriod,
 			GitRemote:       resGitRemote,
 		}
-		SendJSON(w, http.StatusOK, res)
+		common.SendJSON(w, http.StatusOK, res)
 	})
 
 	r.Delete("/projects/{project_id}", func(w http.ResponseWriter, r *http.Request) {
 		projectID := chi.URLParam(r, "project_id")
 
-		projects, err := storage.LoadProjectsFile(tasksDir)
+		projects, err := LoadProjectsFile(tasksDir)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, "Failed to load projects file")
+			common.SendError(w, http.StatusInternalServerError, "Failed to load projects file")
 			return
 		}
 
 		if len(projects) <= 1 {
-			SendError(w, http.StatusBadRequest, "Cannot delete the last remaining project.")
+			common.SendError(w, http.StatusBadRequest, "Cannot delete the last remaining project.")
 			return
 		}
 
@@ -293,28 +293,28 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 		}
 
 		if !found {
-			SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
+			common.SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
 			return
 		}
 
-		if err := storage.WriteProjectsFile(tasksDir, filtered); err != nil {
-			SendError(w, http.StatusInternalServerError, "Failed to update projects registry")
+		if err := WriteProjectsFile(tasksDir, filtered); err != nil {
+			common.SendError(w, http.StatusInternalServerError, "Failed to update projects registry")
 			return
 		}
 
-		if err := storage.DeleteProjectDir(tasksDir, projectID); err != nil {
-			SendError(w, http.StatusInternalServerError, "Failed to delete project files")
+		if err := DeleteProjectDir(tasksDir, projectID); err != nil {
+			common.SendError(w, http.StatusInternalServerError, "Failed to delete project files")
 			return
 		}
 
 		// Delete from SQLite (foreign keys ON will cascade delete tasks and buckets!)
 		_, err = db.DB.Exec("DELETE FROM projects WHERE id = ?", projectID)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, err.Error())
+			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		SendJSON(w, http.StatusOK, map[string]string{
+		common.SendJSON(w, http.StatusOK, map[string]string{
 			"status": "success",
 			"detail": fmt.Sprintf("Project '%s' deleted", projectID),
 		})

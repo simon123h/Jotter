@@ -2,10 +2,13 @@
 import { ref, watch, computed, onUnmounted, nextTick } from 'vue';
 import { marked } from 'marked';
 import type { Task, BucketName } from '@/types';
-import { getTask, updateTask, deleteTask } from '@/api';
+import { 
+  getTask, updateTask, deleteTask, 
+  uploadAttachment, deleteAttachment, getAttachmentUrl 
+} from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
-import { X, Slash } from '@lucide/vue';
+import { X, Slash, Paperclip, Trash2, Download, FileText, Plus } from '@lucide/vue';
 import { parseTitleState } from '@/utils/dateParser';
 
 const { locale, t } = useI18n();
@@ -381,6 +384,43 @@ const handleMarkdownClick = async (event: MouseEvent) => {
   }
 };
 
+const isUploading = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
+
+const triggerFileUpload = () => {
+  fileInput.value?.click();
+};
+
+const handleFileUpload = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (!input.files?.length || !task.value) return;
+
+  isUploading.value = true;
+  try {
+    const file = input.files[0];
+    const updated = await uploadAttachment(props.projectId, task.value.id, file);
+    task.value = updated;
+    emit('updated');
+  } catch (err: any) {
+    error.value = t('errors.updateTask', { message: err.message || err });
+  } finally {
+    isUploading.value = false;
+    input.value = ''; // Reset input
+  }
+};
+
+const handleRemoveAttachment = async (filename: string) => {
+  if (!task.value || !confirm(t('form.deleteAttachmentConfirm'))) return;
+
+  try {
+    const updated = await deleteAttachment(props.projectId, task.value.id, filename);
+    task.value = updated;
+    emit('updated');
+  } catch (err: any) {
+    error.value = t('errors.updateTask', { message: err.message || err });
+  }
+};
+
 const handleSave = async () => {
   if (!task.value) return;
 
@@ -609,6 +649,69 @@ const getPriorityClasses = (prio: string) => {
               <div class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono">
                 <span>{{ t('timestampCreated', { date: new Date(task.created_at).toLocaleString() }) }}</span>
                 <span>{{ t('timestampUpdated', { date: new Date(task.updated_at).toLocaleString() }) }}</span>
+              </div>
+
+              <!-- Attachments Section -->
+              <div class="mt-4 pt-4 border-t border-theme-border">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-xs font-bold uppercase tracking-widest text-theme-text-muted flex items-center gap-1.5">
+                    <Paperclip class="w-3.5 h-3.5" />
+                    {{ t('form.attachmentsLabel') }}
+                  </h3>
+                  <button 
+                    @click="triggerFileUpload"
+                    class="text-[10px] font-bold uppercase tracking-wider text-theme-accent hover:text-theme-primary transition-colors flex items-center gap-1 cursor-pointer"
+                    :disabled="isUploading"
+                  >
+                    <template v-if="isUploading">
+                      <Slash class="w-3 h-3 animate-spin" />
+                      {{ t('form.uploading') }}
+                    </template>
+                    <template v-else>
+                      <Plus class="w-3 h-3" />
+                      {{ t('form.addAttachment') }}
+                    </template>
+                  </button>
+                  <input 
+                    ref="fileInput" 
+                    type="file" 
+                    class="hidden" 
+                    @change="handleFileUpload"
+                  />
+                </div>
+
+                <div v-if="task.attachments && task.attachments.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div 
+                    v-for="file in task.attachments" 
+                    :key="file"
+                    class="group/att flex items-center justify-between p-2 rounded bg-theme-column/20 border border-theme-border/50 hover:border-theme-accent/30 transition-all"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <FileText class="w-4 h-4 text-theme-text-muted shrink-0" />
+                      <span class="text-xs text-theme-text-main truncate font-medium">{{ file }}</span>
+                    </div>
+                    <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity">
+                      <a 
+                        :href="getAttachmentUrl(props.projectId, task.id, file)" 
+                        target="_blank"
+                        class="p-1 text-theme-text-muted hover:text-theme-accent transition-colors cursor-pointer"
+                        title="Download"
+                      >
+                        <Download class="w-3.5 h-3.5" />
+                      </a>
+                      <button 
+                        @click="handleRemoveAttachment(file)"
+                        class="p-1 text-theme-text-muted hover:text-rose-400 transition-colors cursor-pointer"
+                        title="Delete"
+                      >
+                        <Trash2 class="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-xs text-theme-text-muted italic opacity-50 py-2">
+                  {{ t('form.noAttachments') }}
+                </div>
               </div>
             </div>
 

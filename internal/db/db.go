@@ -64,6 +64,7 @@ func InitDB(dbPath string) error {
 		bucket TEXT NOT NULL,
 		position REAL NOT NULL,
 		tags TEXT NOT NULL,
+		attachments TEXT NOT NULL DEFAULT '[]',
 		filename TEXT NOT NULL,
 		body TEXT DEFAULT '',
 		due_date TEXT DEFAULT NULL,

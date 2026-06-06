@@ -11,7 +11,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"jotter/backend/internal/handlers"
+	"jotter/backend/internal/features/bucket"
+	"jotter/backend/internal/features/common"
+	"jotter/backend/internal/features/project"
+	"jotter/backend/internal/features/system"
+	"jotter/backend/internal/features/task"
 )
 
 func BuildRouter(logLevel, dataDir string, serveStatic bool, assets embed.FS) *chi.Mux {
@@ -26,12 +30,12 @@ func BuildRouter(logLevel, dataDir string, serveStatic bool, assets embed.FS) *c
 	}
 
 	r.Use(middleware.Recoverer)
-	r.Use(handlers.CORSMiddleware)
+	r.Use(common.CORSMiddleware)
 
-	handlers.RegisterProjectRoutes(r, dataDir)
-	handlers.RegisterBucketRoutes(r, dataDir)
-	handlers.RegisterTaskRoutes(r, dataDir)
-	handlers.RegisterSystemRoutes(r, dataDir)
+	project.RegisterRoutes(r, dataDir, bucket.DefaultBuckets, bucket.SyncBucketsFile)
+	bucket.RegisterRoutes(r, dataDir)
+	task.RegisterRoutes(r, dataDir)
+	system.RegisterRoutes(r, dataDir)
 
 	if serveStatic {
 		assetsSub, errFs := fs.Sub(assets, "frontend/dist")

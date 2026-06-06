@@ -14,8 +14,10 @@ import (
 
 	"jotter/backend/internal/app"
 	"jotter/backend/internal/db"
-	"jotter/backend/internal/models"
-	"jotter/backend/internal/storage"
+	"jotter/backend/internal/features/bucket"
+	"jotter/backend/internal/features/project"
+	"jotter/backend/internal/features/system"
+	"jotter/backend/internal/features/task"
 )
 
 func TestIntegration(t *testing.T) {
@@ -36,8 +38,11 @@ func TestIntegration(t *testing.T) {
 	}
 	defer db.CloseDB()
 
+	// Ensure projects.json exists
+	_, _ = project.LoadProjectsFile(tasksDir)
+
 	// Run initial sync to populate default project/columns in database
-	if _, err := storage.SyncDBWithFiles(tasksDir); err != nil {
+	if _, err := system.SyncDBWithFiles(tasksDir); err != nil {
 		t.Fatalf("Failed to run initial sync: %v", err)
 	}
 
@@ -57,7 +62,7 @@ func TestIntegration(t *testing.T) {
 			t.Errorf("Expected status 200, got %d", w.Code)
 		}
 
-		var projects []models.ProjectResponse
+		var projects []project.Response
 		if err := json.Unmarshal(w.Body.Bytes(), &projects); err != nil {
 			t.Fatalf("Failed to parse response: %v", err)
 		}
@@ -73,7 +78,7 @@ func TestIntegration(t *testing.T) {
 
 	// 2. Test project creation
 	t.Run("Create Project", func(t *testing.T) {
-		payload := models.ProjectCreate{
+		payload := project.Create{
 			Title: "Test Project",
 		}
 		body, _ := json.Marshal(payload)
@@ -85,7 +90,7 @@ func TestIntegration(t *testing.T) {
 			t.Errorf("Expected status 201, got %d", w.Code)
 		}
 
-		var res models.ProjectResponse
+		var res project.Response
 		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
 			t.Fatalf("Failed to parse response: %v", err)
 		}
@@ -110,7 +115,7 @@ func TestIntegration(t *testing.T) {
 			t.Errorf("Expected status 200, got %d", w.Code)
 		}
 
-		var buckets []models.BucketResponse
+		var buckets []bucket.Response
 		if err := json.Unmarshal(w.Body.Bytes(), &buckets); err != nil {
 			t.Fatalf("Failed to parse response: %v", err)
 		}
@@ -124,7 +129,7 @@ func TestIntegration(t *testing.T) {
 	// 4. Test bucket creation
 	t.Run("Create Bucket", func(t *testing.T) {
 		url := fmt.Sprintf("/projects/%s/buckets", projectID)
-		payload := models.BucketCreate{
+		payload := bucket.Create{
 			Title: "Review",
 		}
 		body, _ := json.Marshal(payload)
@@ -136,7 +141,7 @@ func TestIntegration(t *testing.T) {
 			t.Errorf("Expected status 201, got %d", w.Code)
 		}
 
-		var res models.BucketResponse
+		var res bucket.Response
 		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
 			t.Fatalf("Failed to parse response: %v", err)
 		}
@@ -151,7 +156,7 @@ func TestIntegration(t *testing.T) {
 	// 5. Test task creation
 	t.Run("Create Task", func(t *testing.T) {
 		url := fmt.Sprintf("/projects/%s/tasks", projectID)
-		payload := models.TaskCreate{
+		payload := task.Create{
 			Title:  "Test Task",
 			Bucket: "todo",
 			Body:   "Task description content",
@@ -165,7 +170,7 @@ func TestIntegration(t *testing.T) {
 			t.Errorf("Expected status 201, got %d", w.Code)
 		}
 
-		var res models.TaskResponse
+		var res task.Response
 		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
 			t.Fatalf("Failed to parse response: %v", err)
 		}
@@ -187,7 +192,7 @@ func TestIntegration(t *testing.T) {
 			t.Errorf("Expected status 200, got %d", w.Code)
 		}
 
-		var res models.TaskResponse
+		var res task.Response
 		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
 			t.Fatalf("Failed to parse response: %v", err)
 		}
@@ -200,7 +205,7 @@ func TestIntegration(t *testing.T) {
 	// 7. Test task move
 	t.Run("Move Task", func(t *testing.T) {
 		url := fmt.Sprintf("/projects/%s/tasks/%s/move", projectID, taskID)
-		payload := models.TaskMove{
+		payload := task.Move{
 			Bucket:   "review",
 			Position: 1500.0,
 		}
@@ -213,7 +218,7 @@ func TestIntegration(t *testing.T) {
 			t.Errorf("Expected status 200, got %d", w.Code)
 		}
 
-		var res models.TaskResponse
+		var res task.Response
 		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
 			t.Fatalf("Failed to parse response: %v", err)
 		}
@@ -271,7 +276,7 @@ func TestIntegration(t *testing.T) {
 		}
 
 		// Verify deletion in filesystem
-		_, _, _, errFile := storage.GetTaskFilePath(tasksDir, taskID)
+		_, _, _, errFile := task.GetTaskFilePath(tasksDir, taskID)
 		if errFile == nil {
 			t.Errorf("Task markdown file was not deleted from disk")
 		}

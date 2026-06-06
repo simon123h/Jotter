@@ -50,6 +50,11 @@ export const de = {
     plannedDateLabel: 'Geplant für',
     priorityLabel: 'Priorität',
     noBucketsFound: 'Keine Spalten gefunden',
+    attachmentsLabel: 'Anhänge',
+    addAttachment: 'Datei hinzufügen',
+    uploading: 'Lade hoch...',
+    noAttachments: 'Noch keine Anhänge',
+    deleteAttachmentConfirm: 'Bist du sicher, dass du diese Datei entfernen möchtest?',
   },
   buttons: {
     cancel: 'Abbrechen',

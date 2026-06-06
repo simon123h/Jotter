@@ -13,6 +13,7 @@ export interface Task {
   bucket: string;
   position: number;
   tags: string[];
+  attachments: string[];
   body: string;
   due_date?: string;
   planned_date?: string;

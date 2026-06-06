@@ -12,6 +12,7 @@ describe('TaskCard.vue', () => {
     bucket: 'todo',
     position: 1.0,
     tags: ['bug', 'frontend'],
+    attachments: [],
     created_at: '2026-05-30T20:00:00Z',
     updated_at: '2026-05-30T20:00:00Z',
   };
