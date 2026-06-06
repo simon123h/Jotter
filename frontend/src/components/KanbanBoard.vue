@@ -133,7 +133,7 @@ onMounted(async () => {
 // Sync route parameters with component state dynamically
 watch(
   () => [route.params.projectId, route.name, route.params.taskId],
-  async ([newProjectId, newRouteName, newTaskId]) => {
+  async ([newProjectId, newRouteName]) => {
     if (newProjectId && newProjectId !== activeProjectId.value) {
       activeProjectId.value = newProjectId as string;
       localError.value = null;

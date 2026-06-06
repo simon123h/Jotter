@@ -1,13 +1,8 @@
-import { ref, shallowRef } from 'vue';
+import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { BucketName, Project } from '@/types';
 
 export type ModalType = 'task-create' | 'project-edit' | 'filter' | null;
-
-interface ModalState {
-  type: ModalType;
-  props: Record<string, any>;
-}
 
 export const useModalStore = defineStore('modal', () => {
   const activeModal = ref<ModalType>(null);

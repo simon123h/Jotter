@@ -25,12 +25,6 @@ const isAllSelected = computed(() => {
   return props.tasks.length > 0 && props.tasks.every((t) => props.isSelected(t.id));
 });
 
-const handleToggleAll = (event: Event) => {
-  // We should emit a select-all event or similar
-  // For now, let's just emit toggle-select for each task if needed,
-  // but it's better if KanbanBoard handles it.
-};
-
 const sortedTasks = computed(() => {
   return [...props.tasks].sort((a, b) => {
     let valA: any = a[sortKey.value] || '';

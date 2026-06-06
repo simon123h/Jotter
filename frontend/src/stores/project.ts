@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { Project, Task, Bucket } from '@/types';
 import { getProjects, getBuckets, getTasks, getAllTasks, syncSystem } from '@/api';

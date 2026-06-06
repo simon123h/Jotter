@@ -3,7 +3,7 @@ import { ref, watch, computed, onUnmounted, nextTick, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { marked } from 'marked';
-import type { Task, BucketName } from '@/types';
+import type { Task } from '@/types';
 import { getTask, updateTask, deleteTask, uploadAttachment, deleteAttachment, getAttachmentUrl } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
