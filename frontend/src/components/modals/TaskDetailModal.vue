@@ -222,20 +222,6 @@ const closeModal = () => {
     });
 };
 
-// Fetch task detail when taskId changes
-watch(
-  taskId,
-  async (newId) => {
-    if (newId !== null) {
-      await fetchTaskDetail(newId);
-    } else {
-      task.value = null;
-      isEditing.value = false;
-    }
-  },
-  { immediate: true }
-);
-
 onMounted(() => {
     window.addEventListener('keydown', handleKeyDown);
 });
@@ -268,6 +254,20 @@ const fetchTaskDetail = async (id: string) => {
     loading.value = false;
   }
 };
+
+// Fetch task detail when taskId changes
+watch(
+  taskId,
+  async (newId) => {
+    if (newId !== null) {
+      await fetchTaskDetail(newId);
+    } else {
+      task.value = null;
+      isEditing.value = false;
+    }
+  },
+  { immediate: true }
+);
 
 // Watch for date keywords, hashtags, and bucket routing in the title in real-time while editing
 watch(editTitle, (newTitle) => {
