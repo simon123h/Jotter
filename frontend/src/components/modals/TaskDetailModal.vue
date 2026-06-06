@@ -451,6 +451,7 @@ const handleSave = async () => {
     });
 
     task.value = updated;
+    task.value.tags = task.value.tags ?? [];
     isEditing.value = false;
     emit('updated');
   } catch (err: any) {
