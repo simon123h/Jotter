@@ -7,7 +7,7 @@ export function useBuckets(activeProjectId: Ref<string>, hideDoneColumn: Ref<boo
   const error = ref<string | null>(null);
 
   const fetchBuckets = async () => {
-    if (!activeProjectId.value || activeProjectId.value === '' || activeProjectId.value === 'init') {
+    if (!activeProjectId.value || activeProjectId.value === '') {
       buckets.value = [];
       return;
     }

@@ -7,7 +7,6 @@ export const useProjectStore = defineStore('project', () => {
   const projects = ref<Project[]>([]);
   const buckets = ref<Bucket[]>([]);
   const tasks = ref<Task[]>([]);
-  const activeProjectId = ref<string>('init');
 
   const loading = ref(false);
   const syncLoading = ref(false);
@@ -23,7 +22,7 @@ export const useProjectStore = defineStore('project', () => {
   };
 
   const fetchBuckets = async (projectId: string) => {
-    if (!projectId || projectId === 'init') {
+    if (!projectId || projectId === '') {
       buckets.value = [];
       return;
     }
@@ -49,7 +48,7 @@ export const useProjectStore = defineStore('project', () => {
       return;
     }
 
-    if (!projectId || projectId === 'init') {
+    if (!projectId || projectId === '') {
       tasks.value = [];
       return;
     }
@@ -89,15 +88,10 @@ export const useProjectStore = defineStore('project', () => {
     }
   };
 
-  const setActiveProject = (projectId: string) => {
-    activeProjectId.value = projectId;
-  };
-
   return {
     projects,
     buckets,
     tasks,
-    activeProjectId,
     loading,
     syncLoading,
     syncSuccess,
@@ -106,6 +100,5 @@ export const useProjectStore = defineStore('project', () => {
     fetchBuckets,
     fetchTasks,
     triggerSync,
-    setActiveProject,
   };
 });

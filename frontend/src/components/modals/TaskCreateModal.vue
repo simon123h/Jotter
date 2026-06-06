@@ -1,16 +1,22 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onUnmounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { X } from '@lucide/vue';
 import type { BucketName } from '@/types';
 import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
+import { useSettingsStore } from '@/stores/settings';
 import { parseTitleState } from '@/utils/dateParser';
 
 const { locale, t } = useI18n();
+const route = useRoute();
 const projectStore = useProjectStore();
-const { activeProjectId, buckets, tasks } = storeToRefs(projectStore);
+const settingsStore = useSettingsStore();
+const { buckets, tasks } = storeToRefs(projectStore);
+
+const activeProjectId = computed(() => (route.params.projectId as string) || settingsStore.activeProjectId);
 
 const props = defineProps<{
   isOpen: boolean;
@@ -319,7 +325,12 @@ const handleSubmit = async () => {
       priority: priority.value || undefined,
     });
 
-    projectStore.fetchTasks(activeProjectId.value, projectStore.activeProjectId === 'super-time' ? 'super-time' : 'board', false, false); 
+    await projectStore.fetchTasks(
+      activeProjectId.value, 
+      settingsStore.viewMode, 
+      settingsStore.hideDoneColumn, 
+      settingsStore.hideArchiveColumn
+    ); 
     emit('close');
   } catch (err: any) {
     error.value = t('errors.createTask', { message: err.message || err });

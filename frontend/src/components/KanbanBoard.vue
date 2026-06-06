@@ -85,6 +85,14 @@ const {
 // Filter state & logic
 const { searchQuery, taskFilters, hasActiveFilters, filteredTasks, applyFilters, clearFilters } = useTaskFilters(tasks);
 
+const displayedBuckets = computed(() => {
+  return buckets.value.filter((b) => {
+    if (hideDoneColumn.value && b.name === 'done') return false;
+    if (hideArchiveColumn.value && b.name === 'archive') return false;
+    return true;
+  });
+});
+
 // Update document title dynamically based on active project
 watchEffect(() => {
   const currentProj = projects.value.find((p) => p.id === activeProjectId.value);
@@ -99,7 +107,7 @@ watchEffect(() => {
 const isNoProjects = computed(() => projects.value.length === 0);
 
 const fetchAllData = async () => {
-  if (isNoProjects.value || activeProjectId.value === 'init' || activeProjectId.value === '') return;
+  if (isNoProjects.value || activeProjectId.value === '') return;
   localError.value = null;
   try {
     await projectStore.fetchBuckets(activeProjectId.value);
@@ -459,7 +467,7 @@ const handleBulkMarkDone = async () => {
           <router-view
             v-else
             :tasks="filteredTasks"
-            :buckets="buckets"
+            :buckets="displayedBuckets"
             :projects="projects"
             :is-selected="isSelected"
             @task-click="openDetailModal"
