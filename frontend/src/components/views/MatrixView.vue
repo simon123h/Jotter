@@ -105,7 +105,9 @@ const quadrants = computed(() => {
           <AlertCircle class="w-4.5 h-4.5 text-rose-400 shrink-0" />
           <div class="min-w-0">
             <h4 class="font-bold text-sm uppercase tracking-wider text-rose-400 truncate">{{ t('matrix.q1Title') }}</h4>
-            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">{{ t('matrix.q1Desc') }}</p>
+            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">
+              {{ t('matrix.q1Desc') }}
+            </p>
           </div>
           <span class="ml-auto px-2 py-0.25 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded">
             {{ quadrants.q1.length }}
@@ -133,7 +135,9 @@ const quadrants = computed(() => {
           <ArrowRight class="w-4.5 h-4.5 text-emerald-400 shrink-0" />
           <div class="min-w-0">
             <h4 class="font-bold text-sm uppercase tracking-wider text-emerald-400 truncate">{{ t('matrix.q2Title') }}</h4>
-            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">{{ t('matrix.q2Desc') }}</p>
+            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">
+              {{ t('matrix.q2Desc') }}
+            </p>
           </div>
           <span class="ml-auto px-2 py-0.25 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded">
             {{ quadrants.q2.length }}
@@ -161,7 +165,9 @@ const quadrants = computed(() => {
           <UserCheck class="w-4.5 h-4.5 text-orange-400 shrink-0" />
           <div class="min-w-0">
             <h4 class="font-bold text-sm uppercase tracking-wider text-orange-400 truncate">{{ t('matrix.q3Title') }}</h4>
-            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">{{ t('matrix.q3Desc') }}</p>
+            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">
+              {{ t('matrix.q3Desc') }}
+            </p>
           </div>
           <span class="ml-auto px-2 py-0.25 bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold rounded">
             {{ quadrants.q3.length }}
@@ -189,7 +195,9 @@ const quadrants = computed(() => {
           <Trash class="w-4.5 h-4.5 text-slate-400 shrink-0" />
           <div class="min-w-0">
             <h4 class="font-bold text-sm uppercase tracking-wider text-slate-400 truncate">{{ t('matrix.q4Title') }}</h4>
-            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">{{ t('matrix.q4Desc') }}</p>
+            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">
+              {{ t('matrix.q4Desc') }}
+            </p>
           </div>
           <span class="ml-auto px-2 py-0.25 bg-slate-500/10 border border-slate-500/20 text-slate-400 text-xs font-bold rounded">
             {{ quadrants.q4.length }}

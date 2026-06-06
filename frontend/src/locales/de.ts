@@ -183,7 +183,8 @@ export const de = {
     tag: 'Tags',
     superTime: 'Globale Planung',
     settings: 'Einstellungen',
-    },  matrix: {
+  },
+  matrix: {
     thresholdLabel: 'Dringlichkeitsschwelle: {days} Tage oder weniger',
     q1Title: 'Sofort erledigen',
     q1Desc: 'Dringend & Wichtig',

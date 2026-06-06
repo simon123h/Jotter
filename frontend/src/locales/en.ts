@@ -181,7 +181,7 @@ export const en = {
     tag: 'Tags',
     superTime: 'Global Planning',
     settings: 'Settings',
-    },
+  },
   matrix: {
     thresholdLabel: 'Urgency Threshold: {days} days or less',
     q1Title: 'Do First',

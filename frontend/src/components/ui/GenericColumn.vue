@@ -20,8 +20,8 @@ const props = withDefaults(
     showProject?: boolean;
     projects?: any[];
     isSelected?: (id: string) => boolean;
-    }>(),
-    {
+  }>(),
+  {
     layout: 'list',
     groupName: 'kanban-board',
     showAddTask: false,
@@ -29,8 +29,9 @@ const props = withDefaults(
     showProject: false,
     projects: () => [],
     isSelected: () => false,
-    }
-    );const emit = defineEmits<{
+  }
+);
+const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', id: string): void;
   (e: 'card-dropped', payload: { taskId: string; toId: string; prevTaskId: string | null; nextTaskId: string | null }): void;

@@ -59,7 +59,7 @@ const tagColumns = computed(() => {
 });
 
 const handleCardDropped = (payload: { taskId: string; toId: string }) => {
-  const task = props.tasks.find(t => t.id === payload.taskId);
+  const task = props.tasks.find((t) => t.id === payload.taskId);
   if (!task) return;
 
   // If dropped into 'untagged', remove all tags
@@ -82,7 +82,7 @@ const handleCardDropped = (payload: { taskId: string; toId: string }) => {
     <div v-if="tagColumns.length === 0" class="flex-grow flex items-center justify-center text-theme-text-muted italic">
       {{ t('tagView.noTags') || 'No tags found in this project' }}
     </div>
-    
+
     <GenericColumn
       v-for="col in tagColumns"
       :key="col.id"
@@ -106,7 +106,9 @@ const handleCardDropped = (payload: { taskId: string; toId: string }) => {
             <h3 class="font-bold text-sm uppercase tracking-wider text-theme-text-main truncate">
               {{ col.title }}
             </h3>
-            <span class="text-xs px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0">
+            <span
+              class="text-xs px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0"
+            >
               {{ col.tasks.length }}
             </span>
           </div>

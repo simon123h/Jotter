@@ -2,10 +2,7 @@
 import { ref, watch, computed, onUnmounted, nextTick } from 'vue';
 import { marked } from 'marked';
 import type { Task, BucketName } from '@/types';
-import { 
-  getTask, updateTask, deleteTask, 
-  uploadAttachment, deleteAttachment, getAttachmentUrl 
-} from '@/api';
+import { getTask, updateTask, deleteTask, uploadAttachment, deleteAttachment, getAttachmentUrl } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { X, Slash, Paperclip, Trash2, Download, FileText, Plus } from '@lucide/vue';
@@ -511,7 +508,7 @@ const handleUnarchive = async () => {
   if (!task.value) return;
   try {
     // Try to move back to 'todo' or the default bucket
-    const targetBucket = props.buckets.find(b => b.name === 'todo')?.name || props.buckets[0]?.name || 'todo';
+    const targetBucket = props.buckets.find((b) => b.name === 'todo')?.name || props.buckets[0]?.name || 'todo';
     const updated = await updateTask(props.projectId, task.value.id, {
       bucket: targetBucket,
     });
@@ -658,7 +655,7 @@ const getPriorityClasses = (prio: string) => {
                     <Paperclip class="w-3.5 h-3.5" />
                     {{ t('form.attachmentsLabel') }}
                   </h3>
-                  <button 
+                  <button
                     @click="triggerFileUpload"
                     class="text-[10px] font-bold uppercase tracking-wider text-theme-accent hover:text-theme-primary transition-colors flex items-center gap-1 cursor-pointer"
                     :disabled="isUploading"
@@ -672,17 +669,12 @@ const getPriorityClasses = (prio: string) => {
                       {{ t('form.addAttachment') }}
                     </template>
                   </button>
-                  <input 
-                    ref="fileInput" 
-                    type="file" 
-                    class="hidden" 
-                    @change="handleFileUpload"
-                  />
+                  <input ref="fileInput" type="file" class="hidden" @change="handleFileUpload" />
                 </div>
 
                 <div v-if="task.attachments && task.attachments.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div 
-                    v-for="file in task.attachments" 
+                  <div
+                    v-for="file in task.attachments"
                     :key="file"
                     class="group/att flex items-center justify-between p-2 rounded bg-theme-column/20 border border-theme-border/50 hover:border-theme-accent/30 transition-all"
                   >
@@ -691,15 +683,15 @@ const getPriorityClasses = (prio: string) => {
                       <span class="text-xs text-theme-text-main truncate font-medium">{{ file }}</span>
                     </div>
                     <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity">
-                      <a 
-                        :href="getAttachmentUrl(props.projectId, task.id, file)" 
+                      <a
+                        :href="getAttachmentUrl(props.projectId, task.id, file)"
                         target="_blank"
                         class="p-1 text-theme-text-muted hover:text-theme-accent transition-colors cursor-pointer"
                         title="Download"
                       >
                         <Download class="w-3.5 h-3.5" />
                       </a>
-                      <button 
+                      <button
                         @click="handleRemoveAttachment(file)"
                         class="p-1 text-theme-text-muted hover:text-rose-400 transition-colors cursor-pointer"
                         title="Delete"

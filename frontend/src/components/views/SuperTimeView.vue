@@ -54,12 +54,12 @@ const timeColumns = computed(() => {
 });
 
 const handleCardDropped = (payload: { taskId: string; toId: string }) => {
-  const task = props.tasks.find(t => t.id === payload.taskId);
+  const task = props.tasks.find((t) => t.id === payload.taskId);
   if (!task) return;
-  emit('update-planned-date', { 
-    taskId: payload.taskId, 
+  emit('update-planned-date', {
+    taskId: payload.taskId,
     plannedDate: payload.toId === 'notPlanned' ? '' : payload.toId,
-    projectId: task.project_id
+    projectId: task.project_id,
   });
 };
 </script>

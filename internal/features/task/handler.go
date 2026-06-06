@@ -628,7 +628,7 @@ func RegisterRoutes(r chi.Router, tasksDir string) {
 
 			if !found {
 				existing.Attachments = append(existing.Attachments, header.Filename)
-				
+
 				taskMap := map[string]interface{}{
 					"project_id":   existing.ProjectID,
 					"title":        existing.Title,
@@ -750,7 +750,7 @@ func RegisterRoutes(r chi.Router, tasksDir string) {
 				if maxPos.Valid {
 					newPosition = maxPos.Float64 + 1000.0
 				}
-				
+
 				title := "Done"
 				if req.Bucket == "archive" {
 					title = "Archive"

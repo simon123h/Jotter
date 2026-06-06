@@ -47,8 +47,7 @@ if (route.params.viewMode) {
 
 const { hideDoneColumn, hideArchiveColumn, isSidebarOpen, currentTheme, viewMode, activeProjectId } = storeToRefs(settingsStore);
 
-const { selectedIds, isSelected, toggleSelection, selectAll, clearSelection, hasSelection, selectionCount } =
-  useTaskSelection();
+const { selectedIds, isSelected, toggleSelection, selectAll, clearSelection, hasSelection, selectionCount } = useTaskSelection();
 
 const tasks = ref<Task[]>([]);
 const loading = ref(false);
@@ -762,7 +761,7 @@ const triggerSync = async () => {
         />
 
         <!-- Bulk Operations Bar -->
-        <BulkActionBar 
+        <BulkActionBar
           :selected-count="selectionCount"
           :buckets="buckets"
           :projects="projects"

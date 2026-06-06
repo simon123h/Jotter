@@ -177,7 +177,8 @@ func SyncDBWithFiles(tasksDir string) (int, error) {
 					continue
 				}
 				count++
-			}		}
+			}
+		}
 	}
 
 	if err := tx.Commit(); err != nil {

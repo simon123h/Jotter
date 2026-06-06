@@ -132,19 +132,19 @@ const cardStyle = computed(() => {
     :class="[
       { 'colored-card': task.color },
       { 'ring-2 ring-theme-accent border-theme-accent bg-theme-accent/5 shadow-theme-ring': isSelected },
-      compact ? 'p-2 gap-1' : 'p-3 gap-2'
+      compact ? 'p-2 gap-1' : 'p-3 gap-2',
     ]"
     :style="cardStyle"
     @click="emit('click', task)"
   >
     <!-- Multi-select Checkbox (Hover or Selected) -->
-    <div 
+    <div
       @click.stop="emit('toggle-select', task)"
       class="absolute -left-2 -top-2 w-5 h-5 rounded-full border-2 bg-theme-card transition-all z-30 flex items-center justify-center cursor-pointer"
       :class="[
-        isSelected 
-          ? 'border-theme-accent bg-theme-accent scale-110 opacity-100 shadow-lg' 
-          : 'border-theme-border opacity-0 group-hover:opacity-100 hover:border-theme-accent hover:scale-105'
+        isSelected
+          ? 'border-theme-accent bg-theme-accent scale-110 opacity-100 shadow-lg'
+          : 'border-theme-border opacity-0 group-hover:opacity-100 hover:border-theme-accent hover:scale-105',
       ]"
     >
       <Check v-if="isSelected" class="w-3 h-3 stroke-[3px]" />
@@ -156,7 +156,7 @@ const cardStyle = computed(() => {
         <span v-if="showProject && projectTitle" class="text-[9px] font-bold uppercase tracking-widest text-theme-accent/70 truncate">
           {{ projectTitle }}
         </span>
-        <h4 
+        <h4
           class="text-theme-text-card group-hover:text-theme-accent transition-colors leading-tight line-clamp-2"
           :class="compact ? 'text-xs' : 'text-sm'"
         >
@@ -184,10 +184,7 @@ const cardStyle = computed(() => {
         v-for="tag in task.tags"
         :key="tag"
         class="uppercase font-bold tracking-wider rounded border"
-        :class="[
-          getTagClasses(tag),
-          compact ? 'text-[9px] px-1 py-0' : 'text-xs px-1.5 py-0.5'
-        ]"
+        :class="[getTagClasses(tag), compact ? 'text-[9px] px-1 py-0' : 'text-xs px-1.5 py-0.5']"
       >
         {{ tag }}
       </span>
@@ -205,7 +202,11 @@ const cardStyle = computed(() => {
           <Calendar :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
           <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.due_date) }}</span>
         </div>
-        <div v-if="task.planned_date" class="flex items-center gap-1 text-theme-accent/80" :title="'Planned: ' + t('plannedDateOptions.' + task.planned_date)">
+        <div
+          v-if="task.planned_date"
+          class="flex items-center gap-1 text-theme-accent/80"
+          :title="'Planned: ' + t('plannedDateOptions.' + task.planned_date)"
+        >
           <span class="font-bold text-[10px]" :class="{ 'text-[8px]': compact }">P:</span>
           <span :class="{ 'text-[10px]': compact }">{{ t('plannedDateOptions.' + task.planned_date) }}</span>
         </div>
@@ -214,7 +215,7 @@ const cardStyle = computed(() => {
           class="rounded border uppercase tracking-wider leading-none"
           :class="[
             getPriorityClasses(task.priority),
-            compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold'
+            compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold',
           ]"
         >
           {{ task.priority }}
@@ -232,7 +233,7 @@ const cardStyle = computed(() => {
             checklistStats.checked === checklistStats.total
               ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
               : 'text-theme-text-muted',
-            { 'text-[10px]': compact }
+            { 'text-[10px]': compact },
           ]"
         >
           <ClipboardList :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
@@ -246,12 +247,9 @@ const cardStyle = computed(() => {
           class="p-0.5 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer"
           :title="isExpanded ? t('taskCard.collapseNotes') : t('taskCard.expandNotes')"
         >
-          <ChevronDown 
-            class="transform transition-transform animate-duration-150" 
-            :class="[
-              { 'rotate-180': isExpanded },
-              compact ? 'w-3.5 h-3.5' : 'w-4 h-4'
-            ]" 
+          <ChevronDown
+            class="transform transition-transform animate-duration-150"
+            :class="[{ 'rotate-180': isExpanded }, compact ? 'w-3.5 h-3.5' : 'w-4 h-4']"
           />
         </button>
       </div>

@@ -72,17 +72,22 @@ const formatDate = (dateStr?: string) => {
 
 const getPriorityClasses = (prio?: string) => {
   switch (prio) {
-    case 'low': return 'text-blue-400';
-    case 'medium': return 'text-yellow-400';
-    case 'high': return 'text-orange-400';
-    case 'urgent': return 'text-red-400 font-bold';
-    default: return 'text-theme-text-muted';
+    case 'low':
+      return 'text-blue-400';
+    case 'medium':
+      return 'text-yellow-400';
+    case 'high':
+      return 'text-orange-400';
+    case 'urgent':
+      return 'text-red-400 font-bold';
+    default:
+      return 'text-theme-text-muted';
   }
 };
 
 const getBucketTitle = (name: string) => {
-  const b = props.buckets.find(b => b.name === name);
-  return t('buckets.' + name) !== 'buckets.' + name ? t('buckets.' + name) : (b?.title || name);
+  const b = props.buckets.find((b) => b.name === name);
+  return t('buckets.' + name) !== 'buckets.' + name ? t('buckets.' + name) : b?.title || name;
 };
 </script>
 
@@ -91,14 +96,11 @@ const getBucketTitle = (name: string) => {
     <div class="flex-grow overflow-auto scroller-thin">
       <table class="w-full border-collapse text-left font-sans text-sm relative">
         <thead class="sticky top-0 z-20">
-          <tr class="bg-theme-column/80 backdrop-blur-md border-b border-theme-border text-xs font-bold uppercase tracking-wider text-theme-text-muted select-none">
+          <tr
+            class="bg-theme-column/80 backdrop-blur-md border-b border-theme-border text-xs font-bold uppercase tracking-wider text-theme-text-muted select-none"
+          >
             <th class="px-4 py-3 w-10">
-              <input 
-                type="checkbox" 
-                :checked="isAllSelected"
-                @change="handleToggleAll"
-                class="accent-theme-primary cursor-pointer"
-              />
+              <input type="checkbox" :checked="isAllSelected" @change="handleToggleAll" class="accent-theme-primary cursor-pointer" />
             </th>
             <th @click="toggleSort('title')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors min-w-[300px]">
               <div class="flex items-center gap-1">
@@ -124,13 +126,19 @@ const getBucketTitle = (name: string) => {
                 <component :is="sortKey === 'due_date' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
               </div>
             </th>
-            <th @click="toggleSort('planned_date')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-32 text-center">
+            <th
+              @click="toggleSort('planned_date')"
+              class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-32 text-center"
+            >
               <div class="flex items-center justify-center gap-1">
                 P: {{ t('form.plannedDateLabel') }}
                 <component :is="sortKey === 'planned_date' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
               </div>
             </th>
-            <th @click="toggleSort('created_at')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-40 text-right">
+            <th
+              @click="toggleSort('created_at')"
+              class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-40 text-right"
+            >
               <div class="flex items-center justify-end gap-1">
                 {{ t('table.updated') }}
                 <component :is="sortKey === 'created_at' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
@@ -139,16 +147,16 @@ const getBucketTitle = (name: string) => {
           </tr>
         </thead>
         <tbody class="divide-y divide-theme-border/20">
-          <tr 
-            v-for="task in sortedTasks" 
+          <tr
+            v-for="task in sortedTasks"
             :key="task.id"
             @click="emit('task-click', task)"
             class="hover:bg-theme-column/15 transition-colors cursor-pointer group"
             :class="{ 'bg-theme-accent/5': isSelected(task.id) }"
           >
             <td class="px-4 py-2.5" @click.stop>
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 :checked="isSelected(task.id)"
                 @change="emit('toggle-select', task)"
                 class="accent-theme-primary cursor-pointer"
@@ -160,14 +168,20 @@ const getBucketTitle = (name: string) => {
                   {{ task.title }}
                 </span>
                 <div v-if="task.tags.length" class="flex flex-wrap gap-1 mt-0.5">
-                  <span v-for="tag in task.tags" :key="tag" class="text-[10px] px-1 py-0 bg-theme-column/40 text-theme-text-muted rounded border border-theme-border/30 uppercase font-bold tracking-tighter">
+                  <span
+                    v-for="tag in task.tags"
+                    :key="tag"
+                    class="text-[10px] px-1 py-0 bg-theme-column/40 text-theme-text-muted rounded border border-theme-border/30 uppercase font-bold tracking-tighter"
+                  >
                     {{ tag }}
                   </span>
                 </div>
               </div>
             </td>
             <td class="px-4 py-2.5">
-              <span class="text-xs px-2 py-0.5 rounded-full bg-theme-card border border-theme-border text-theme-text-muted whitespace-nowrap">
+              <span
+                class="text-xs px-2 py-0.5 rounded-full bg-theme-card border border-theme-border text-theme-text-muted whitespace-nowrap"
+              >
                 {{ getBucketTitle(task.bucket) }}
               </span>
             </td>
@@ -187,7 +201,14 @@ const getBucketTitle = (name: string) => {
               <span v-else class="text-theme-text-muted opacity-30">-</span>
             </td>
             <td class="px-4 py-2.5 text-right text-xs text-theme-text-muted font-mono whitespace-nowrap">
-              {{ new Date(task.updated_at).toLocaleDateString(locale, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) }}
+              {{
+                new Date(task.updated_at).toLocaleDateString(locale, {
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              }}
             </td>
           </tr>
         </tbody>

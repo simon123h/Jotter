@@ -102,7 +102,7 @@ func RegisterRoutes(r chi.Router, tasksDir string, defaultBuckets []map[string]i
 		// Initialize buckets.json with defaults
 		// We'll pass the WriteBucketsFile logic or just use a local helper if we move it to bucket feature
 		// For now, let's assume we have a way to write buckets
-		
+
 		// Insert to database in transaction
 		tx, err := db.DB.Begin()
 		if err != nil {
@@ -146,7 +146,7 @@ func RegisterRoutes(r chi.Router, tasksDir string, defaultBuckets []map[string]i
 			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		
+
 		// Initial sync
 		_ = syncBucketsFunc(tasksDir, projectID)
 
