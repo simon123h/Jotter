@@ -368,6 +368,6 @@ const handleBulkMarkDone = async () => {
     />
 
     <!-- MODAL ROUTER VIEW (Task Detail nested in layout) -->
-    <router-view name="modal" />
+    <router-view name="modal" @refresh="fetchAllData" />
   </div>
 </template>

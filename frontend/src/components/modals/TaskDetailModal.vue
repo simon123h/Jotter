@@ -8,7 +8,6 @@ import { getTask, updateTask, deleteTask, uploadAttachment, deleteAttachment, ge
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useProjectStore } from '@/stores/project';
-import { useSettingsStore } from '@/stores/settings';
 import { X, Slash, Paperclip, Trash2, Download, FileText, Plus } from '@lucide/vue';
 import { parseTitleState } from '@/utils/dateParser';
 
@@ -17,8 +16,11 @@ const { showDialog } = useDialog();
 const route = useRoute();
 const router = useRouter();
 const projectStore = useProjectStore();
-const settingsStore = useSettingsStore();
 const { buckets, tasks } = storeToRefs(projectStore);
+
+const emit = defineEmits<{
+  (e: 'refresh'): void;
+}>();
 
 const projectId = computed(() => String(route.params.projectId));
 const taskId = computed(() => route.params.taskId ? String(route.params.taskId) : null);
@@ -532,12 +534,7 @@ const handleUnarchive = async () => {
 };
 
 const refreshBoard = () => {
-    projectStore.fetchTasks(
-      projectId.value,
-      route.name?.toString().startsWith('global-time') ? 'super-time' : '',
-      settingsStore.hideDoneColumn,
-      settingsStore.hideArchiveColumn
-    );
+  emit('refresh');
 };
 
 const cancelEdit = () => {

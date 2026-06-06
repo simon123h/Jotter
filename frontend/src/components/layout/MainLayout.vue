@@ -106,6 +106,17 @@ const triggerSync = async () => {
   }
 };
 
+const handleGlobalModalRefresh = () => {
+  const isGlobalTime = route.name?.toString().startsWith('global-time');
+  const projectId = (route.params.projectId as string) || settingsStore.activeProjectId;
+  
+  if (isGlobalTime) {
+    projectStore.fetchTasks('', 'super-time', settingsStore.hideDoneColumn, settingsStore.hideArchiveColumn);
+  } else if (projectId) {
+    projectStore.fetchTasks(projectId, '', settingsStore.hideDoneColumn, settingsStore.hideArchiveColumn);
+  }
+};
+
 const error = computed({
   get() {
     return localError.value || projectError.value;
@@ -173,7 +184,7 @@ onMounted(async () => {
     </div>
 
     <!-- MODAL ROUTER VIEW (Task Detail for global views if matching) -->
-    <router-view name="modal" />
+    <router-view name="modal" @refresh="handleGlobalModalRefresh" />
 
     <!-- MODAL REGISTRY (Utility Modals) -->
     <ModalRegistry />

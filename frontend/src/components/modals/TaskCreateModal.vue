@@ -26,6 +26,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void;
+  (e: 'success'): void;
 }>();
 
 const title = ref('');
@@ -326,12 +327,7 @@ const handleSubmit = async () => {
       priority: priority.value || undefined,
     });
 
-    await projectStore.fetchTasks(
-      activeProjectId.value, 
-      route.name?.toString().startsWith('global-time') ? 'super-time' : '', 
-      settingsStore.hideDoneColumn, 
-      settingsStore.hideArchiveColumn
-    ); 
+    emit('success');
     emit('close');
   } catch (err: any) {
     error.value = t('errors.createTask', { message: err.message || err });
