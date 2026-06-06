@@ -37,7 +37,7 @@ func GitSync(tasksDir string) error {
 	}
 
 	remoteBranch := "origin/" + branch
-	
+
 	// Try fast-forward
 	errFF := runGit(ctx, tasksDir, "merge", "--ff-only", remoteBranch)
 	if errFF == nil {
