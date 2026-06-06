@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -12,6 +13,7 @@ func SendJSON(w http.ResponseWriter, status int, payload interface{}) {
 }
 
 func SendError(w http.ResponseWriter, status int, message string) {
+	log.Printf("ERROR: %d - %s", status, message)
 	SendJSON(w, status, map[string]string{"detail": message})
 }
 
