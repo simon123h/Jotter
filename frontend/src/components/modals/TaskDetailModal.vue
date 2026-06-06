@@ -594,7 +594,7 @@ const getPriorityClasses = (prio: string) => {
                 </h2>
 
                 <!-- Tags -->
-                <div v-if="task.tags.length" class="flex flex-wrap gap-1 mt-2">
+                <div v-if="task.tags?.length" class="flex flex-wrap gap-1 mt-2">
                   <span
                     v-for="tag in task.tags"
                     :key="tag"
