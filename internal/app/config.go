@@ -35,7 +35,7 @@ func LoadConfig() *AppConfig {
 		port = cfg.Port
 	}
 	if port == 0 {
-		port = 8000
+		port = 58271
 	}
 
 	host := *hostFlag

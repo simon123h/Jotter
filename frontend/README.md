@@ -40,5 +40,5 @@ The production build will be created in the `dist/` directory.
 
 ## Notes
 
-- The frontend communicates with the backend API at `http://localhost:8000`
+- The frontend communicates with the backend API at `http://localhost:58271`
 - Ensure the backend server is running before starting the frontend development server

@@ -17,7 +17,7 @@ Jotter resolves settings using the following priority (highest overrides lowest)
 
 | Setting            | CLI Option               | Config File Key        | Env Variable       | Default Value                   | Description                                                                               |
 | :----------------- | :----------------------- | :--------------------- | :----------------- | :------------------------------ | :---------------------------------------------------------------------------------------- |
-| **Port**           | `--port <number>`        | `port: <number>`       | _N/A_              | `8000`                          | The network port the server listens on.                                                   |
+| **Port**           | `--port <number>`        | `port: <number>`       | _N/A_              | `58271`                          | The network port the server listens on.                                                   |
 | **Host**           | `--host <address>`       | `host: "<address>"`    | _N/A_              | `127.0.0.1`                     | The host IP address to bind to (e.g. `0.0.0.0` to allow local network access).            |
 | **Data Directory** | `--data-dir <path>`      | `data_dir: "<path>"`   | `JOTTER_DATA_DIR`  | `./tasks`                       | The folder where your markdown task files are stored. Supports `~` home folder expansion. |
 | **Log Level**      | `--log-level <level>`    | `log_level: "<level>"` | `JOTTER_LOG_LEVEL` | `info` (dev) / `warning` (prod) | Logging verbosity (`debug`, `info`, `warning`, `error`, `critical`).                      |

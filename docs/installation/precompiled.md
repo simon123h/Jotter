@@ -29,4 +29,4 @@ The release package contains two different versions of Jotter:
 ## Post-Launch
 
 - If you run **`jotter-desktop`**, the application window will open immediately.
-- If you run **`jotter-server`**, it will initialize a local web server (default: `http://localhost:8000`). You can then access the interface by opening that address in your web browser.
+- If you run **`jotter-server`**, it will initialize a local web server (default: `http://localhost:58271`). You can then access the interface by opening that address in your web browser.

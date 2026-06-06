@@ -37,7 +37,7 @@ Jotter is provided as a portable tool with two distinct versions. No dependencie
 2. Extract the archive.
 3. Choose your preferred way to run Jotter:
    - **Standalone Desktop App**: Double-click `jotter-desktop` (or `.exe` on Windows). This opens Jotter in its own dedicated window.
-   - **Headless Server**: Run `jotter-server` from your terminal. This starts a web server (default: `http://localhost:8000`) that you can access with your preferred browser. (On Linux, double-clicking this binary will automatically open a terminal).
+   - **Headless Server**: Run `jotter-server` from your terminal. This starts a web server (default: `http://localhost:58271`) that you can access with your preferred browser. (On Linux, double-clicking this binary will automatically open a terminal).
 
    **Example (Linux / macOS terminal):**
 

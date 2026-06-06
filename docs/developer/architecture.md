@@ -34,7 +34,7 @@ Jotter is a local-first, non-commercial task management application designed to 
 
 ```mermaid
 flowchart TD
-    User([User Browser]) <-->|localhost:8000| Jotter[Jotter App]
+    User([User Browser]) <-->|localhost:58271| Jotter[Jotter App]
     Jotter <-->|File Read/Write| FS[(Local Filesystem)]
 ```
 
