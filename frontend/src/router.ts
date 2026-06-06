@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import KanbanBoard from '@/components/KanbanBoard.vue';
+import MainLayout from '@/components/layout/MainLayout.vue';
+import ProjectLayout from '@/components/layout/ProjectLayout.vue';
 import BoardView from '@/components/views/BoardView.vue';
 import ListView from '@/components/views/ListView.vue';
 import MatrixView from '@/components/views/MatrixView.vue';
@@ -14,84 +15,17 @@ import { useSettingsStore } from '@/stores/settings';
 const routes = [
   {
     path: '/',
-    redirect: () => {
-      const settings = useSettingsStore();
-      if (settings.viewMode === 'global-time') {
-        return { name: 'global-time' };
-      }
-      return {
-        name: settings.viewMode,
-        params: { projectId: settings.activeProjectId },
-      };
-    },
-  },
-  {
-    path: '/project/:projectId',
-    component: KanbanBoard,
+    component: MainLayout,
     children: [
       {
-        path: 'board',
-        name: 'board',
-        component: BoardView,
-      },
-      {
-        path: 'board/tasks/:taskId',
-        name: 'board-task',
-        components: {
-          default: BoardView,
-          modal: TaskDetailModal,
-        },
-      },
-      {
-        path: 'list',
-        name: 'list',
-        component: ListView,
-      },
-      {
-        path: 'list/tasks/:taskId',
-        name: 'list-task',
-        components: {
-          default: ListView,
-          modal: TaskDetailModal,
-        },
-      },
-      {
-        path: 'matrix',
-        name: 'matrix',
-        component: MatrixView,
-      },
-      {
-        path: 'matrix/tasks/:taskId',
-        name: 'matrix-task',
-        components: {
-          default: MatrixView,
-          modal: TaskDetailModal,
-        },
-      },
-      {
-        path: 'time',
-        name: 'time',
-        component: TimeView,
-      },
-      {
-        path: 'time/tasks/:taskId',
-        name: 'time-task',
-        components: {
-          default: TimeView,
-          modal: TaskDetailModal,
-        },
-      },
-      {
-        path: 'tag',
-        name: 'tag',
-        component: TagView,
-      },
-      {
-        path: 'tag/tasks/:taskId',
-        name: 'tag-task',
-        components: {
-          default: TagView,
-          modal: TaskDetailModal,
+        path: '',
+        name: 'home',
+        redirect: () => {
+          const settings = useSettingsStore();
+          return {
+            name: 'board',
+            params: { projectId: settings.activeProjectId || 'default' },
+          };
         },
       },
       {
@@ -99,24 +33,98 @@ const routes = [
         name: 'settings',
         component: SettingsView,
       },
-    ],
-  },
-  {
-    path: '/global-time',
-    component: KanbanBoard,
-    children: [
       {
-        path: '',
+        path: 'global-time',
         name: 'global-time',
         component: GlobalTimeView,
       },
       {
-        path: 'project/:projectId/tasks/:taskId',
+        path: 'global-time/project/:projectId/tasks/:taskId',
         name: 'global-time-task',
         components: {
           default: GlobalTimeView,
           modal: TaskDetailModal,
         },
+      },
+      {
+        path: 'project/:projectId',
+        component: ProjectLayout,
+        children: [
+          {
+            path: '',
+            redirect: (to: any) => {
+              return {
+                name: 'board',
+                params: { projectId: to.params.projectId },
+              };
+            },
+          },
+          {
+            path: 'board',
+            name: 'board',
+            component: BoardView,
+          },
+          {
+            path: 'board/tasks/:taskId',
+            name: 'board-task',
+            components: {
+              default: BoardView,
+              modal: TaskDetailModal,
+            },
+          },
+          {
+            path: 'list',
+            name: 'list',
+            component: ListView,
+          },
+          {
+            path: 'list/tasks/:taskId',
+            name: 'list-task',
+            components: {
+              default: ListView,
+              modal: TaskDetailModal,
+            },
+          },
+          {
+            path: 'matrix',
+            name: 'matrix',
+            component: MatrixView,
+          },
+          {
+            path: 'matrix/tasks/:taskId',
+            name: 'matrix-task',
+            components: {
+              default: MatrixView,
+              modal: TaskDetailModal,
+            },
+          },
+          {
+            path: 'time',
+            name: 'time',
+            component: TimeView,
+          },
+          {
+            path: 'time/tasks/:taskId',
+            name: 'time-task',
+            components: {
+              default: TimeView,
+              modal: TaskDetailModal,
+            },
+          },
+          {
+            path: 'tag',
+            name: 'tag',
+            component: TagView,
+          },
+          {
+            path: 'tag/tasks/:taskId',
+            name: 'tag-task',
+            components: {
+              default: TagView,
+              modal: TaskDetailModal,
+            },
+          },
+        ],
       },
     ],
   },

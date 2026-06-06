@@ -8,6 +8,7 @@ import { getTask, updateTask, deleteTask, uploadAttachment, deleteAttachment, ge
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useProjectStore } from '@/stores/project';
+import { useSettingsStore } from '@/stores/settings';
 import { X, Slash, Paperclip, Trash2, Download, FileText, Plus } from '@lucide/vue';
 import { parseTitleState } from '@/utils/dateParser';
 
@@ -16,6 +17,7 @@ const { showDialog } = useDialog();
 const route = useRoute();
 const router = useRouter();
 const projectStore = useProjectStore();
+const settingsStore = useSettingsStore();
 const { buckets, tasks } = storeToRefs(projectStore);
 
 const projectId = computed(() => String(route.params.projectId));
@@ -529,9 +531,12 @@ const handleUnarchive = async () => {
 };
 
 const refreshBoard = () => {
-    projectStore.fetchTasks(projectId.value, projectStore.activeProjectId === 'super-time' ? 'super-time' : 'board', false, false); // viewMode, hideDone, hideArchive should be from store
-    // Better: let the store handle it or emit a global event. 
-    // For now, projectStore handles tasks, so we can just call fetchTasks.
+    projectStore.fetchTasks(
+      projectId.value,
+      settingsStore.viewMode === 'global-time' ? 'super-time' : settingsStore.viewMode,
+      settingsStore.hideDoneColumn,
+      settingsStore.hideArchiveColumn
+    );
 };
 
 const cancelEdit = () => {

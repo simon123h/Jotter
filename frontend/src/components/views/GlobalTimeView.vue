@@ -1,21 +1,55 @@
 <script setup lang="ts">
-import type { Task, Project } from '@/types';
+import { onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { useProjectStore } from '@/stores/project';
+import { useSettingsStore } from '@/stores/settings';
+import { useTaskFilters } from '@/composables/useTaskFilters';
+import type { Task } from '@/types';
 import TimelineLayout from '@/components/layout/TimelineLayout.vue';
 import { useI18n } from '@/composables/useI18n';
 
 const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
-defineProps<{
-  tasks: Task[];
-  projects: Project[];
-  isSelected: (id: string) => boolean;
-}>();
+const projectStore = useProjectStore();
+const settingsStore = useSettingsStore();
 
-const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
-  (e: 'toggle-select', task: Task): void;
-  (e: 'refresh'): void;
-}>();
+const { projects, tasks } = storeToRefs(projectStore);
+const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+
+// Wait! Let's verify where useTaskSelection is defined. In ProjectLayout we did:
+// import { useTaskSelection } from '@/composables/useTaskSelection';
+// Let's import from '@/composables/useTaskSelection' to be sure!
+import { useTaskSelection } from '@/composables/useTaskSelection';
+
+const { isSelected, toggleSelection, clearSelection } = useTaskSelection();
+
+const fetchAllTasks = async () => {
+  // Fetch tasks for "super-time" mode (all projects)
+  await projectStore.fetchTasks('', 'super-time', hideDoneColumn.value, hideArchiveColumn.value);
+};
+
+onMounted(async () => {
+  document.title = `Jotter / ${t('views.globalTime') || 'Global Planning'}`;
+  clearSelection();
+  await fetchAllTasks();
+});
+
+watch([hideDoneColumn, hideArchiveColumn], () => {
+  fetchAllTasks();
+});
+
+const { filteredTasks } = useTaskFilters(tasks);
+
+const handleTaskClick = (task: Task) => {
+  router.push({
+    name: 'global-time-task',
+    params: { projectId: task.project_id, taskId: String(task.id) },
+    query: route.query,
+  });
+};
 </script>
 
 <template>
@@ -30,14 +64,14 @@ const emit = defineEmits<{
 
     <div class="flex-grow overflow-hidden">
       <TimelineLayout
-        :tasks="tasks"
+        :tasks="filteredTasks"
         :projects="projects"
         group-name="global-time-view"
         :show-project-badge="true"
         :is-selected="isSelected"
-        @task-click="emit('task-click', $event)"
-        @toggle-select="emit('toggle-select', $event)"
-        @refresh="emit('refresh')"
+        @task-click="handleTaskClick"
+        @toggle-select="toggleSelection($event.id)"
+        @refresh="fetchAllTasks"
       />
     </div>
   </div>
