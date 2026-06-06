@@ -117,6 +117,7 @@ export const de = {
     pinProject: 'Projekt anheften',
     unpinProject: 'Projekt lösen',
     editProject: 'Projekt bearbeiten',
+    gitConnectedTooltip: 'Mit Git-Repository verknüpft',
     offline: 'OFFLINE',
   },
   columnEdit: {
@@ -141,6 +142,10 @@ export const de = {
     prunePeriodPlaceholder: 'z. B. 30 (leer lassen für nie löschen)',
     prunePeriodHelp:
       'Aufgaben in der Spalte "Erledigt" werden nach dieser Anzahl von Tagen automatisch gelöscht. Leer lassen oder auf 0 setzen, um das automatische Löschen zu deaktivieren.',
+    gitRemoteLabel: 'Git Remote URL (Optional)',
+    gitRemotePlaceholder: 'z. B. https://github.com/user/repo.git',
+    gitRemoteHelp:
+      'Das Verknüpfen eines Git-Remotes ermöglicht die automatische Synchronisierung Ihrer Markdown-Dateien. Stelle sicher, dass deine SSH-Keys oder Anmeldedaten lokal konfiguriert sind.',
     saveButton: 'Speichern',
     deleteButton: 'Projekt Löschen',
   },

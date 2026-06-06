@@ -132,6 +132,9 @@ func LoadProjectsFile(tasksDir string) ([]map[string]interface{}, error) {
 		if _, ok := p["done_clean_period"]; !ok {
 			p["done_clean_period"] = nil
 		}
+		if _, ok := p["git_remote"]; !ok {
+			p["git_remote"] = nil
+		}
 	}
 	return projects, nil
 }

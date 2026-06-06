@@ -47,9 +47,19 @@ export function useProjects(activeProjectId: Ref<string>, onSelectProject: (id: 
     isProjectEditModalOpen.value = true;
   };
 
-  const handleSaveProject = async ({ id, title, done_clean_period }: { id: string; title: string; done_clean_period: number | null }) => {
+  const handleSaveProject = async ({
+    id,
+    title,
+    done_clean_period,
+    git_remote,
+  }: {
+    id: string;
+    title: string;
+    done_clean_period: number | null;
+    git_remote: string | null;
+  }) => {
     try {
-      await updateProject(id, { title, done_clean_period });
+      await updateProject(id, { title, done_clean_period, git_remote });
       await fetchProjects();
     } catch (err: any) {
       error.value = err.message || 'Failed to update project';

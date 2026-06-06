@@ -3,6 +3,7 @@ export interface Project {
   title: string;
   created_at: string;
   done_clean_period?: number | null;
+  git_remote?: string | null;
 }
 
 export interface Task {

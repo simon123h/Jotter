@@ -79,12 +79,19 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 		nowStr := time.Now().UTC().Format(time.RFC3339Nano)
 		nowStr = strings.Replace(nowStr, "+00:00", "Z", 1)
 
+		var gitRemoteVal interface{}
+		if req.GitRemote != nil {
+			gitRemoteVal = *req.GitRemote
+		} else {
+			gitRemoteVal = nil
+		}
+
 		newProject := map[string]interface{}{
 			"id":                projectID,
 			"title":             req.Title,
 			"created_at":        nowStr,
 			"done_clean_period": req.DoneCleanPeriod,
-			"git_remote":        req.GitRemote,
+			"git_remote":        gitRemoteVal,
 		}
 
 		projects = append(projects, newProject)
@@ -200,7 +207,11 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 			projectFound["done_clean_period"] = req.DoneCleanPeriod
 		}
 		if _, ok := raw["git_remote"]; ok {
-			projectFound["git_remote"] = req.GitRemote
+			if req.GitRemote != nil {
+				projectFound["git_remote"] = *req.GitRemote
+			} else {
+				projectFound["git_remote"] = nil
+			}
 		}
 
 		if err := storage.WriteProjectsFile(tasksDir, projects); err != nil {
