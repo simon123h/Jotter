@@ -118,8 +118,21 @@ const {
 } = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
 
 // Bulk Actions
+const commonTags = computed(() => {
+  const selectedTasks = tasks.value.filter((t) => isSelected(t.id));
+  const tagCounts: Record<string, number> = {};
+  selectedTasks.forEach((t) => {
+    t.tags.forEach((tag) => {
+      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+    });
+  });
+  // Show all tags that appear in at least one selected task
+  return Object.keys(tagCounts).sort();
+});
+
 const handleBulkDelete = async () => {
-  if (!confirm(`Are you sure you want to delete ${selectionCount.value} tasks?`)) return;
+  const count = selectionCount.value;
+  if (!confirm(t('bulkActions.confirmDelete', { count }))) return;
   const ids = Array.from(selectedIds.value);
   try {
     for (const id of ids) {
@@ -160,6 +173,29 @@ const handleBulkAddTag = async (tag: string) => {
     await fetchAllTasks();
   } catch (err: any) {
     localError.value = `Bulk tagging failed: ${err.message}`;
+  }
+};
+
+const handleBulkToggleTag = async (tag: string) => {
+  const selectedTasks = tasks.value.filter((t) => isSelected(t.id));
+  const allHaveTag = selectedTasks.every((t) => t.tags.includes(tag));
+
+  try {
+    for (const task of selectedTasks) {
+      let newTags: string[];
+      if (allHaveTag) {
+        // Remove from all
+        newTags = task.tags.filter((t) => t !== tag);
+      } else {
+        // Add to those that don't have it
+        if (task.tags.includes(tag)) continue;
+        newTags = [...task.tags, tag];
+      }
+      await updateTask(task.project_id, task.id, { tags: newTags });
+    }
+    await fetchAllTasks();
+  } catch (err: any) {
+    localError.value = `Bulk tag toggle failed: ${err.message}`;
   }
 };
 
@@ -698,10 +734,12 @@ const triggerSync = async () => {
           :buckets="buckets"
           :projects="projects"
           :active-project-id="activeProjectId"
+          :common-tags="commonTags"
           @clear="clearSelection"
           @delete="handleBulkDelete"
           @move-bucket="handleBulkMoveBucket"
           @add-tag="handleBulkAddTag"
+          @toggle-tag="handleBulkToggleTag"
           @set-priority="handleBulkSetPriority"
           @set-planned="handleBulkSetPlanned"
           @move-project="handleBulkMoveProject"

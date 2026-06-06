@@ -140,14 +140,14 @@ const cardStyle = computed(() => {
     <!-- Multi-select Checkbox (Hover or Selected) -->
     <div 
       @click.stop="emit('toggle-select', task)"
-      class="absolute -left-2 -top-2 w-5 h-5 rounded-full border-2 bg-theme-card transition-all z-20 flex items-center justify-center cursor-pointer"
+      class="absolute -left-2 -top-2 w-5 h-5 rounded-full border-2 bg-theme-card transition-all z-30 flex items-center justify-center cursor-pointer"
       :class="[
         isSelected 
-          ? 'border-theme-accent bg-theme-accent text-white scale-110 opacity-100 shadow-md' 
+          ? 'border-theme-accent bg-theme-accent text-white scale-110 opacity-100 shadow-lg' 
           : 'border-theme-border opacity-0 group-hover:opacity-100 hover:border-theme-accent hover:scale-105'
       ]"
     >
-      <Check v-if="isSelected" class="w-3.5 h-3.5 stroke-[4px]" />
+      <Check v-if="isSelected" class="w-3 h-3 text-white stroke-[3px]" />
     </div>
 
     <!-- Title & ID -->

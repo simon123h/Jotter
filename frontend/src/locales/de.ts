@@ -255,4 +255,16 @@ export const de = {
     sometime: 'Irgendwann vielleicht',
     notPlanned: 'Nicht geplant',
   },
+  bulkActions: {
+    selected: 'Ausgewählt',
+    moveToColumn: 'In Spalte verschieben',
+    planFor: 'Planen für...',
+    addTag: 'Tag hinzufügen',
+    setPriority: 'Priorität setzen',
+    moveToProject: 'In Projekt verschieben',
+    deleteSelected: 'Ausgewählte löschen',
+    clearSelection: 'Auswahl aufheben',
+    confirmDelete: 'Möchtest du {count} Aufgaben wirklich löschen?',
+    tagNamePlaceholder: 'Tag-Name...',
+  },
 };
