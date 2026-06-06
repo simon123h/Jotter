@@ -39,7 +39,8 @@ func InitDB(dbPath string) error {
 		id TEXT PRIMARY KEY,
 		title TEXT NOT NULL,
 		created_at TEXT NOT NULL,
-		done_clean_period INTEGER DEFAULT NULL
+		done_clean_period INTEGER DEFAULT NULL,
+		git_remote TEXT DEFAULT NULL
 	);
 
 	CREATE TABLE IF NOT EXISTS buckets (

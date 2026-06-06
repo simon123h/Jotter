@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -17,7 +18,7 @@ import (
 
 func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 	r.Get("/projects", func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.DB.Query("SELECT id, title, created_at, done_clean_period FROM projects ORDER BY created_at ASC")
+		rows, err := db.DB.Query("SELECT id, title, created_at, done_clean_period, git_remote FROM projects ORDER BY created_at ASC")
 		if err != nil {
 			SendError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -28,13 +29,17 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 		for rows.Next() {
 			var p models.ProjectResponse
 			var cleanPeriod sql.NullInt64
-			if err := rows.Scan(&p.ID, &p.Title, &p.CreatedAt, &cleanPeriod); err != nil {
+			var remote sql.NullString
+			if err := rows.Scan(&p.ID, &p.Title, &p.CreatedAt, &cleanPeriod, &remote); err != nil {
 				SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 			if cleanPeriod.Valid {
 				v := int(cleanPeriod.Int64)
 				p.DoneCleanPeriod = &v
+			}
+			if remote.Valid {
+				p.GitRemote = &remote.String
 			}
 			projects = append(projects, p)
 		}
@@ -74,18 +79,12 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 		nowStr := time.Now().UTC().Format(time.RFC3339Nano)
 		nowStr = strings.Replace(nowStr, "+00:00", "Z", 1)
 
-		var cleanPeriodVal interface{}
-		if req.DoneCleanPeriod != nil {
-			cleanPeriodVal = *req.DoneCleanPeriod
-		} else {
-			cleanPeriodVal = nil
-		}
-
 		newProject := map[string]interface{}{
 			"id":                projectID,
 			"title":             req.Title,
 			"created_at":        nowStr,
-			"done_clean_period": cleanPeriodVal,
+			"done_clean_period": req.DoneCleanPeriod,
+			"git_remote":        req.GitRemote,
 		}
 
 		projects = append(projects, newProject)
@@ -113,8 +112,13 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 			doneCleanPeriod = sql.NullInt64{Int64: int64(*req.DoneCleanPeriod), Valid: true}
 		}
 
-		_, err = tx.Exec("INSERT INTO projects (id, title, created_at, done_clean_period) VALUES (?, ?, ?, ?)",
-			projectID, req.Title, nowStr, doneCleanPeriod)
+		var gitRemote sql.NullString
+		if req.GitRemote != nil {
+			gitRemote = sql.NullString{String: *req.GitRemote, Valid: true}
+		}
+
+		_, err = tx.Exec("INSERT INTO projects (id, title, created_at, done_clean_period, git_remote) VALUES (?, ?, ?, ?, ?)",
+			projectID, req.Title, nowStr, doneCleanPeriod, gitRemote)
 		if err != nil {
 			SendError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -144,6 +148,7 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 			Title:           req.Title,
 			CreatedAt:       nowStr,
 			DoneCleanPeriod: req.DoneCleanPeriod,
+			GitRemote:       req.GitRemote,
 		}
 		SendJSON(w, http.StatusCreated, res)
 	})
@@ -151,8 +156,20 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 	r.Put("/projects/{project_id}", func(w http.ResponseWriter, r *http.Request) {
 		projectID := chi.URLParam(r, "project_id")
 
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			SendError(w, http.StatusBadRequest, "Failed to read request body")
+			return
+		}
+
+		var raw map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &raw); err != nil {
+			SendError(w, http.StatusBadRequest, "Invalid JSON payload")
+			return
+		}
+
 		var req models.ProjectUpdate
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if err := json.Unmarshal(bodyBytes, &req); err != nil {
 			SendError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
@@ -176,28 +193,14 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 			return
 		}
 
-		if req.Title != nil {
+		if _, ok := raw["title"]; ok && req.Title != nil {
 			projectFound["title"] = *req.Title
 		}
-
-		// Raw body reading to check if done_clean_period is in the payload to support explicit null/omission
-		var rawMap map[string]interface{}
-		_ = json.Unmarshal([]byte(""), &rawMap) // placeholder to avoid error
-		_ = r.Body.Close()                      // Wait, we need to read from body earlier or parse multiple times.
-		// Actually, req.DoneCleanPeriod is a pointer, so we can check if it is not nil.
-		// Wait, if it's explicitly null in JSON, req.DoneCleanPeriod will be nil. How do we know if it was specified or not?
-		// We can parse the request body into a generic map first to check key existence!
-		// Let's do that to match Python's pydantic model_fields_set exactly.
-
-		if req.DoneCleanPeriod != nil {
-			projectFound["done_clean_period"] = *req.DoneCleanPeriod
-		} else {
-			// In Go, since we unmarshalled req, let's look at the raw map to see if it has the key
-			// But wait! If we do it simply, if req.DoneCleanPeriod is explicitly set to nil (pointer nil),
-			// is it an omission or a null? Let's check if the field is present by parsing into a map:
-			// (We already read r.Body, so we should have buffered it or parsed it once).
-			// To keep it simple, let's treat pointer nil as clearing it (which is the default).
-			projectFound["done_clean_period"] = nil
+		if _, ok := raw["done_clean_period"]; ok {
+			projectFound["done_clean_period"] = req.DoneCleanPeriod
+		}
+		if _, ok := raw["git_remote"]; ok {
+			projectFound["git_remote"] = req.GitRemote
 		}
 
 		if err := storage.WriteProjectsFile(tasksDir, projects); err != nil {
@@ -207,35 +210,41 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 
 		// Update database
 		var doneCleanPeriod sql.NullInt64
-		if req.DoneCleanPeriod != nil {
-			doneCleanPeriod = sql.NullInt64{Int64: int64(*req.DoneCleanPeriod), Valid: true}
+		if projectFound["done_clean_period"] != nil {
+			// Handle type conversion from map
+			switch v := projectFound["done_clean_period"].(type) {
+			case float64:
+				doneCleanPeriod = sql.NullInt64{Int64: int64(v), Valid: true}
+			case int:
+				doneCleanPeriod = sql.NullInt64{Int64: int64(v), Valid: true}
+			case int64:
+				doneCleanPeriod = sql.NullInt64{Int64: v, Valid: true}
+			}
 		}
 
-		if req.Title != nil {
-			_, err = db.DB.Exec("UPDATE projects SET title = ?, done_clean_period = ? WHERE id = ?", *req.Title, doneCleanPeriod, projectID)
-		} else {
-			_, err = db.DB.Exec("UPDATE projects SET done_clean_period = ? WHERE id = ?", doneCleanPeriod, projectID)
+		var gitRemote sql.NullString
+		if projectFound["git_remote"] != nil {
+			if r, ok := projectFound["git_remote"].(string); ok {
+				gitRemote = sql.NullString{String: r, Valid: true}
+			}
 		}
+
+		title, _ := projectFound["title"].(string)
+		_, err = db.DB.Exec("UPDATE projects SET title = ?, done_clean_period = ?, git_remote = ? WHERE id = ?", title, doneCleanPeriod, gitRemote, projectID)
 		if err != nil {
 			SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		title, _ := projectFound["title"].(string)
 		created, _ := projectFound["created_at"].(string)
-
 		var resCleanPeriod *int
-		if projectFound["done_clean_period"] != nil {
-			switch v := projectFound["done_clean_period"].(type) {
-			case float64:
-				val := int(v)
-				resCleanPeriod = &val
-			case int:
-				resCleanPeriod = &v
-			case int64:
-				val := int(v)
-				resCleanPeriod = &val
-			}
+		if doneCleanPeriod.Valid {
+			v := int(doneCleanPeriod.Int64)
+			resCleanPeriod = &v
+		}
+		var resGitRemote *string
+		if gitRemote.Valid {
+			resGitRemote = &gitRemote.String
 		}
 
 		res := models.ProjectResponse{
@@ -243,6 +252,7 @@ func RegisterProjectRoutes(r chi.Router, tasksDir string) {
 			Title:           title,
 			CreatedAt:       created,
 			DoneCleanPeriod: resCleanPeriod,
+			GitRemote:       resGitRemote,
 		}
 		SendJSON(w, http.StatusOK, res)
 	})
