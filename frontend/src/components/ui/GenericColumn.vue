@@ -90,6 +90,7 @@ const setupSortables = () => {
   destroySortables();
 
   nextTick(() => {
+    // Ensure component is still mounted and DOM elements exist
     const createSortableOptions = () => ({
       group: props.groupName,
       animation: 180,
@@ -105,6 +106,8 @@ const setupSortables = () => {
       onEnd: (evt: any) => {
         document.body.classList.remove('dragging-active');
         const { item, to } = evt;
+        if (!item || !to) return;
+
         const taskId = item.getAttribute('data-task-id') || '';
         const toId = to.getAttribute('data-column-id') || '';
 
@@ -131,15 +134,19 @@ const setupSortables = () => {
     });
 
     if (props.layout === 'grid-3') {
-      [col1Container, col2Container, col3Container].forEach((ref) => {
-        if (ref.value) sortableInstances.value.push(Sortable.create(ref.value, createSortableOptions()));
+      [col1Container, col2Container, col3Container].forEach((cRef) => {
+        if (cRef.value instanceof HTMLElement) {
+          sortableInstances.value.push(Sortable.create(cRef.value, createSortableOptions()));
+        }
       });
     } else if (props.layout === 'grid-2') {
-      [leftContainer, rightContainer].forEach((ref) => {
-        if (ref.value) sortableInstances.value.push(Sortable.create(ref.value, createSortableOptions()));
+      [leftContainer, rightContainer].forEach((cRef) => {
+        if (cRef.value instanceof HTMLElement) {
+          sortableInstances.value.push(Sortable.create(cRef.value, createSortableOptions()));
+        }
       });
     } else {
-      if (cardsContainer.value) {
+      if (cardsContainer.value instanceof HTMLElement) {
         sortableInstances.value.push(Sortable.create(cardsContainer.value, createSortableOptions()));
       }
     }
@@ -155,7 +162,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  () => [props.layout, props.tasks],
+  () => props.layout,
   () => {
     setupSortables();
   },
