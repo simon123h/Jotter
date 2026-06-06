@@ -30,13 +30,13 @@ const { handleMarkTaskDone, handleTimeViewPlannedDateUpdate } = useTaskMutations
 // Group tasks into categorical planning columns (Aggregated)
 const timeColumns = computed(() => {
   const groups: Record<string, Task[]> = {
+    notPlanned: [],
     today: [],
     tomorrow: [],
     thisWeek: [],
     thisMonth: [],
     thisYear: [],
     sometime: [],
-    notPlanned: [],
   };
 
   props.tasks.forEach((task) => {
@@ -51,13 +51,13 @@ const timeColumns = computed(() => {
   });
 
   return [
+    { id: 'notPlanned', title: t('plannedDateOptions.notPlanned'), tasks: groups.notPlanned, color: 'slate' },
     { id: 'today', title: t('plannedDateOptions.today'), tasks: groups.today, color: 'red' },
     { id: 'tomorrow', title: t('plannedDateOptions.tomorrow'), tasks: groups.tomorrow, color: 'orange' },
     { id: 'thisWeek', title: t('plannedDateOptions.thisWeek'), tasks: groups.thisWeek, color: 'yellow' },
     { id: 'thisMonth', title: t('plannedDateOptions.thisMonth'), tasks: groups.thisMonth, color: 'blue' },
     { id: 'thisYear', title: t('plannedDateOptions.thisYear'), tasks: groups.thisYear, color: 'green' },
     { id: 'sometime', title: t('plannedDateOptions.sometime'), tasks: groups.sometime, color: 'purple' },
-    { id: 'notPlanned', title: t('plannedDateOptions.notPlanned'), tasks: groups.notPlanned, color: 'slate' },
   ];
 });
 
