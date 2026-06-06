@@ -164,13 +164,14 @@ const handleBulkEditTag = async (tag: string, remove: boolean) => {
   try {
     for (const task of selectedTasks) {
       let newTags: string[];
+      const currentTags = task.tags ?? [];
       if (remove) {
         // Remove from all
-        newTags = task.tags.filter((t) => t !== tag);
+        newTags = currentTags.filter((t) => t !== tag);
       } else {
         // Add to those that don't have it
-        if (task.tags.includes(tag)) continue;
-        newTags = [...task.tags, tag];
+        if (currentTags.includes(tag)) continue;
+        newTags = [...currentTags, tag];
       }
       await updateTask(task.project_id, task.id, { tags: newTags });
     }

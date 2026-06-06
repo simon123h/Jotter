@@ -70,8 +70,9 @@ const handleCardDropped = (payload: { taskId: string; toId: string }) => {
 
   // If dropped into a tag column, ensure the task has that tag
   const newTag = payload.toId;
-  if (!task.tags.includes(newTag)) {
-    const newTags = [...task.tags, newTag];
+  const currentTags = task.tags ?? [];
+  if (!currentTags.includes(newTag)) {
+    const newTags = [...currentTags, newTag];
     emit('update-task-tags', { taskId: payload.taskId, tags: newTags });
   }
 };
