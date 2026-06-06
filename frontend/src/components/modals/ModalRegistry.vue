@@ -16,13 +16,13 @@ const settingsStore = useSettingsStore();
 const { activeModal, modalProps } = storeToRefs(modalStore);
 
 const handleTaskCreateSuccess = () => {
-  const isGlobalTime = route.name?.toString().startsWith('global-time');
+  const isGlobalTime = !!route.meta.isGlobal;
   const projectId = (route.params.projectId as string) || settingsStore.activeProjectId;
-  
+
   if (isGlobalTime) {
-    projectStore.fetchTasks('', 'super-time', settingsStore.hideDoneColumn, settingsStore.hideArchiveColumn);
+    projectStore.fetchTasks('', true, settingsStore.hideDoneColumn, settingsStore.hideArchiveColumn);
   } else if (projectId) {
-    projectStore.fetchTasks(projectId, '', settingsStore.hideDoneColumn, settingsStore.hideArchiveColumn);
+    projectStore.fetchTasks(projectId, false, settingsStore.hideDoneColumn, settingsStore.hideArchiveColumn);
   }
 };
 </script>

@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useSettingsStore, type ViewMode } from '@/stores/settings';
+import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
 import type { BucketName } from '@/types';
@@ -29,18 +29,10 @@ const { isSelected, toggleSelection, selectAll, clearSelection, hasSelection, se
 const localError = ref<string | null>(null);
 
 // Get the active projectId directly from the route params
-const projectId = computed(() => route.params.projectId as string || '');
+const projectId = computed(() => (route.params.projectId as string) || '');
 
-// Compute view mode from route name
-const viewMode = computed<ViewMode>(() => {
-  const name = route.name?.toString() || '';
-  if (name.startsWith('board')) return 'board';
-  if (name.startsWith('list')) return 'list';
-  if (name.startsWith('matrix')) return 'matrix';
-  if (name.startsWith('time')) return 'time';
-  if (name.startsWith('tag')) return 'tag';
-  return 'board';
-});
+// Compute isGlobal from route meta
+const isGlobalView = computed(() => !!route.meta.isGlobal);
 
 // Filter state & logic
 const { filteredTasks, clearFilters } = useTaskFilters(tasks);
@@ -70,7 +62,10 @@ const fetchAllData = async () => {
   if (isNoProjects.value || !projectId.value) return;
   try {
     await projectStore.fetchBuckets(projectId.value);
-    await projectStore.fetchTasks(projectId.value, viewMode.value, hideDoneColumn.value, hideArchiveColumn.value);
+
+    const fetchProjectId = isGlobalView.value ? '' : projectId.value;
+
+    await projectStore.fetchTasks(fetchProjectId, isGlobalView.value, hideDoneColumn.value, hideArchiveColumn.value);
   } catch (err: any) {
     localError.value = t('errors.fetchData', { message: err.message || err });
   }
@@ -85,7 +80,7 @@ onMounted(async () => {
 
 // Sync data loading with route parameters
 watch(
-  () => [projectId.value, viewMode.value],
+  () => [projectId.value, isGlobalView.value],
   async () => {
     clearFilters();
     clearSelection();
@@ -94,7 +89,7 @@ watch(
 );
 
 watch([hideDoneColumn, hideArchiveColumn], () => {
-    fetchAllData();
+  fetchAllData();
 });
 
 const defaultBucketName = computed(() => {
@@ -134,7 +129,6 @@ useKeyboardShortcuts([
     },
   },
 ]);
-
 
 const error = computed({
   get() {

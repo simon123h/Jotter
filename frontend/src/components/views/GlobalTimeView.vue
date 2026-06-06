@@ -1,44 +1,25 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useProjectStore } from '@/stores/project';
-import { useSettingsStore } from '@/stores/settings';
-import { useTaskFilters } from '@/composables/useTaskFilters';
+import { onMounted } from 'vue';
+import type { Task, Project } from '@/types';
 import TimelineLayout from '@/components/layout/TimelineLayout.vue';
 import { useI18n } from '@/composables/useI18n';
 
 const { t } = useI18n();
 
-const projectStore = useProjectStore();
-const settingsStore = useSettingsStore();
+const props = defineProps<{
+  tasks: Task[];
+  projects: Project[];
+  isSelected: (id: string) => boolean;
+}>();
 
-const { projects, tasks } = storeToRefs(projectStore);
-const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+const emit = defineEmits<{
+  (e: 'toggle-select', task: Task): void;
+  (e: 'refresh'): void;
+}>();
 
-// Wait! Let's verify where useTaskSelection is defined. In ProjectLayout we did:
-// import { useTaskSelection } from '@/composables/useTaskSelection';
-// Let's import from '@/composables/useTaskSelection' to be sure!
-import { useTaskSelection } from '@/composables/useTaskSelection';
-
-const { isSelected, toggleSelection, clearSelection } = useTaskSelection();
-
-const fetchAllTasks = async () => {
-  // Fetch tasks for "super-time" mode (all projects)
-  await projectStore.fetchTasks('', 'super-time', hideDoneColumn.value, hideArchiveColumn.value);
-};
-
-onMounted(async () => {
+onMounted(() => {
   document.title = `Jotter / ${t('views.globalTime') || 'Global Planning'}`;
-  clearSelection();
-  await fetchAllTasks();
 });
-
-watch([hideDoneColumn, hideArchiveColumn], () => {
-  fetchAllTasks();
-});
-
-const { filteredTasks } = useTaskFilters(tasks);
-
 </script>
 
 <template>
@@ -53,13 +34,13 @@ const { filteredTasks } = useTaskFilters(tasks);
 
     <div class="flex-grow overflow-hidden">
       <TimelineLayout
-        :tasks="filteredTasks"
-        :projects="projects"
+        :tasks="props.tasks"
+        :projects="props.projects"
         group-name="global-time-view"
         :show-project-badge="true"
-        :is-selected="isSelected"
-        @toggle-select="toggleSelection($event.id)"
-        @refresh="fetchAllTasks"
+        :is-selected="props.isSelected"
+        @toggle-select="(task) => emit('toggle-select', task)"
+        @refresh="emit('refresh')"
       />
     </div>
   </div>

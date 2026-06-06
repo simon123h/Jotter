@@ -19,9 +19,7 @@ beforeEach(() => {
     { name: 'in-progress', title: 'In Progress', subtitle: '', position: 2, is_default: false },
     { name: 'done', title: 'Done', subtitle: '', position: 3, is_default: false },
   ];
-  projectStore.tasks = [
-    { id: 1, title: 'Task 1', tags: ['bug', 'ui', 'refactor'], project_id: 'test-project', bucket: 'todo' }
-  ] as any;
+  projectStore.tasks = [{ id: 1, title: 'Task 1', tags: ['bug', 'ui', 'refactor'], project_id: 'test-project', bucket: 'todo' }] as any;
 });
 
 describe('FilterModal.vue', () => {

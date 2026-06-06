@@ -48,18 +48,15 @@ const tasksByBucket = computed(() => {
   return groups;
 });
 
-const {
-  fetchBuckets,
-  handleCreateColumn,
-  handleRenameColumn,
-  handleDeleteColumn,
-  handleColumnReordered,
-} = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
+const { fetchBuckets, handleCreateColumn, handleRenameColumn, handleDeleteColumn, handleColumnReordered } = useBuckets(
+  activeProjectId,
+  hideDoneColumn,
+  hideArchiveColumn
+);
 
-const {
-  handleCardDropped,
-  handleMarkTaskDone,
-} = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => { emit('refresh'); });
+const { handleCardDropped, handleMarkTaskDone } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => {
+  emit('refresh');
+});
 
 // Need a way to keep useTaskMutations in sync with props.tasks
 // Actually, useTaskMutations expects a Ref<Task[]>.
@@ -89,31 +86,31 @@ const onSaveColumn = async (payload: any) => {
 };
 
 const onColumnDeleted = async (name: string) => {
-    await handleDeleteColumn(name);
-    emit('refresh');
+  await handleDeleteColumn(name);
+  emit('refresh');
 };
 
 const onColumnReordered = async (payload: any) => {
-    await handleColumnReordered(payload);
-    emit('refresh');
+  await handleColumnReordered(payload);
+  emit('refresh');
 };
 
 const onCardDropped = async (payload: any) => {
-    // We need to pass the real tasks ref here
-    // But handleCardDropped uses the ref we passed to useTaskMutations.
-    // Let's refactor BoardView to be more self-contained.
-    await handleCardDropped({
-        taskId: payload.taskId,
-        toBucket: payload.toId as BucketName,
-        prevTaskId: payload.prevTaskId,
-        nextTaskId: payload.nextTaskId,
-    });
-    emit('refresh');
+  // We need to pass the real tasks ref here
+  // But handleCardDropped uses the ref we passed to useTaskMutations.
+  // Let's refactor BoardView to be more self-contained.
+  await handleCardDropped({
+    taskId: payload.taskId,
+    toBucket: payload.toId as BucketName,
+    prevTaskId: payload.prevTaskId,
+    nextTaskId: payload.nextTaskId,
+  });
+  emit('refresh');
 };
 
 const onMarkDone = async (task: Task) => {
-    await handleMarkTaskDone(task);
-    emit('refresh');
+  await handleMarkTaskDone(task);
+  emit('refresh');
 };
 
 // Column create state

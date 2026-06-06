@@ -11,6 +11,7 @@ import SettingsView from '@/components/views/SettingsView.vue';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
 
 import { useSettingsStore } from '@/stores/settings';
+export { getViewMode, type ViewMode } from '@/utils/viewMode';
 
 const routes = [
   {
@@ -32,19 +33,6 @@ const routes = [
         path: 'settings',
         name: 'settings',
         component: SettingsView,
-      },
-      {
-        path: 'global-time',
-        name: 'global-time',
-        component: GlobalTimeView,
-      },
-      {
-        path: 'global-time/project/:projectId/tasks/:taskId',
-        name: 'global-time-task',
-        components: {
-          default: GlobalTimeView,
-          modal: TaskDetailModal,
-        },
       },
       {
         path: 'project/:projectId',
@@ -123,6 +111,21 @@ const routes = [
               default: TagView,
               modal: TaskDetailModal,
             },
+          },
+          {
+            path: 'global-time',
+            name: 'global-time',
+            component: GlobalTimeView,
+            meta: { isGlobal: true },
+          },
+          {
+            path: 'global-time/tasks/:taskId',
+            name: 'global-time-task',
+            components: {
+              default: GlobalTimeView,
+              modal: TaskDetailModal,
+            },
+            meta: { isGlobal: true },
           },
         ],
       },

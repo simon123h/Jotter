@@ -26,7 +26,14 @@ const settingsStore = useSettingsStore();
 const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const { fetchBuckets } = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
-const { handleMarkTaskDone, handleTimeViewPlannedDateUpdate } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => { emit('refresh'); });
+const { handleMarkTaskDone, handleTimeViewPlannedDateUpdate } = useTaskMutations(
+  ref(props.tasks),
+  activeProjectId,
+  fetchBuckets,
+  async () => {
+    emit('refresh');
+  }
+);
 
 // Group tasks into categorical planning columns
 const timeColumns = computed(() => {
@@ -66,18 +73,18 @@ const timeColumns = computed(() => {
 const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
   const task = props.tasks.find((t) => t.id === payload.taskId);
   if (!task) return;
-  
-  await handleTimeViewPlannedDateUpdate({ 
-      taskId: payload.taskId, 
-      plannedDate: payload.toId === 'notPlanned' ? '' : payload.toId,
-      projectId: task.project_id
+
+  await handleTimeViewPlannedDateUpdate({
+    taskId: payload.taskId,
+    plannedDate: payload.toId === 'notPlanned' ? '' : payload.toId,
+    projectId: task.project_id,
   });
   emit('refresh');
 };
 
 const onMarkDone = async (task: Task) => {
-    await handleMarkTaskDone(task);
-    emit('refresh');
+  await handleMarkTaskDone(task);
+  emit('refresh');
 };
 </script>
 

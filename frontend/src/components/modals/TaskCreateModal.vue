@@ -18,7 +18,6 @@ const { buckets, tasks } = storeToRefs(projectStore);
 
 const activeProjectId = computed(() => (route.params.projectId as string) || settingsStore.activeProjectId);
 
-
 const props = defineProps<{
   isOpen: boolean;
   defaultBucket?: BucketName;

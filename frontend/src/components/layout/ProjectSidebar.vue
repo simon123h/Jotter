@@ -159,9 +159,9 @@ const handleCreateProject = () => {
         v-for="project in sortedProjects"
         :key="project.id"
         :to="{
-          name: (!viewMode || viewMode === 'global-time' || viewMode === 'settings') ? 'board' : viewMode,
+          name: !viewMode || viewMode === 'global-time' || viewMode === 'settings' ? 'board' : viewMode,
           params: { projectId: project.id },
-          query: $route.query
+          query: $route.query,
         }"
         class="group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all cursor-pointer font-medium"
         :class="

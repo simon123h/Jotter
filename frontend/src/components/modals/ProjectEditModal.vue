@@ -21,10 +21,7 @@ const emit = defineEmits<{
 }>();
 
 // Composable: Projects Management
-const {
-  handleSaveProject,
-  handleDeleteProject,
-} = useProjects(activeProjectId, () => {});
+const { handleSaveProject, handleDeleteProject } = useProjects(activeProjectId, () => {});
 
 const title = ref('');
 const doneCleanPeriod = ref<number | null>(null);
@@ -79,9 +76,9 @@ const handleKeyDown = (e: KeyboardEvent) => {
 };
 
 const handleDelete = async () => {
-    if (!props.project) return;
-    await handleDeleteProject(props.project);
-    emit('close');
+  if (!props.project) return;
+  await handleDeleteProject(props.project);
+  emit('close');
 };
 
 onMounted(() => {

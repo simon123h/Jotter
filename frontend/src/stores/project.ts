@@ -35,8 +35,8 @@ export const useProjectStore = defineStore('project', () => {
     }
   };
 
-  const fetchTasks = async (projectId: string, viewMode: string, hideDone: boolean, hideArchive: boolean) => {
-    if (viewMode === 'super-time') {
+  const fetchTasks = async (projectId: string, isGlobal: boolean, hideDone: boolean, hideArchive: boolean) => {
+    if (isGlobal) {
       loading.value = true;
       try {
         tasks.value = await getAllTasks({

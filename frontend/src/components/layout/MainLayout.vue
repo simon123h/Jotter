@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useSettingsStore, type ViewMode } from '@/stores/settings';
+import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
@@ -10,6 +10,7 @@ import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useProjects } from '@/composables/useProjects';
 import { useTaskFilters } from '@/composables/useTaskFilters';
+import { getViewMode, type ViewMode } from '@/utils/viewMode';
 import { X } from '@lucide/vue';
 
 const route = useRoute();
@@ -24,40 +25,31 @@ const { projects, syncLoading, syncSuccess, error: projectError } = storeToRefs(
 
 const localError = ref<string | null>(null);
 
-// Compute current view mode based on the current active route name
-const viewMode = computed<ViewMode>(() => {
-  const name = route.name?.toString() || '';
-  if (name.startsWith('board')) return 'board';
-  if (name.startsWith('list')) return 'list';
-  if (name.startsWith('matrix')) return 'matrix';
-  if (name.startsWith('time')) return 'time';
-  if (name.startsWith('tag')) return 'tag';
-  if (name.startsWith('global-time')) return 'global-time';
-  if (name.startsWith('settings')) return 'settings';
-  return 'board';
-});
-
-
+// Compute current view mode from route name using the router map
+const viewMode = computed<ViewMode>(() => getViewMode(route.name));
 
 // Sync route params with activeProjectId in the settings store
-const routeProjectId = computed(() => route.params.projectId as string || '');
-watch(routeProjectId, (newId) => {
-  if (newId) {
-    settingsStore.setActiveProjectId(newId);
-  }
-}, { immediate: true });
+const routeProjectId = computed(() => (route.params.projectId as string) || '');
+watch(
+  routeProjectId,
+  (newId) => {
+    if (newId) {
+      settingsStore.setActiveProjectId(newId);
+    }
+  },
+  { immediate: true }
+);
 
 const selectProject = (projectId: string) => {
   const currentView = viewMode.value;
   const targetMode = currentView === 'global-time' || currentView === 'settings' ? 'board' : currentView;
-  
+
   router.push({
     name: targetMode,
     params: { projectId },
     query: route.query,
   });
 };
-
 
 const toggleSidebar = () => {
   settingsStore.toggleSidebar();
@@ -80,9 +72,9 @@ const setTheme = (theme: string) => {
 const { searchQuery, taskFilters, hasActiveFilters, applyFilters } = useTaskFilters(ref([]));
 
 const openFilterModal = () => {
-  modalStore.openModal('filter', { 
+  modalStore.openModal('filter', {
     currentFilters: taskFilters.value,
-    onApply: applyFilters
+    onApply: applyFilters,
   });
 };
 
@@ -101,19 +93,8 @@ const handleCreateProject = async (title: string) => {
 const triggerSync = async () => {
   try {
     await projectStore.triggerSync();
-  } catch (err: any) {
+  } catch {
     // Error is stored in projectStore.error and displayed automatically
-  }
-};
-
-const handleGlobalModalRefresh = () => {
-  const isGlobalTime = route.name?.toString().startsWith('global-time');
-  const projectId = (route.params.projectId as string) || settingsStore.activeProjectId;
-  
-  if (isGlobalTime) {
-    projectStore.fetchTasks('', 'super-time', settingsStore.hideDoneColumn, settingsStore.hideArchiveColumn);
-  } else if (projectId) {
-    projectStore.fetchTasks(projectId, '', settingsStore.hideDoneColumn, settingsStore.hideArchiveColumn);
   }
 };
 
@@ -182,9 +163,6 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-
-    <!-- MODAL ROUTER VIEW (Task Detail for global views if matching) -->
-    <router-view name="modal" @refresh="handleGlobalModalRefresh" />
 
     <!-- MODAL REGISTRY (Utility Modals) -->
     <ModalRegistry />

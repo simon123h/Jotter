@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { getViewMode } from '@/utils/viewMode';
 import { ChevronUp, ChevronDown, Calendar, Layers, Flag } from '@lucide/vue';
 import type { Task, Bucket } from '@/types';
 import { useI18n } from '@/composables/useI18n';
@@ -21,9 +22,7 @@ const route = useRoute();
 const router = useRouter();
 
 const getTaskRoute = (task: Task) => {
-  const currentName = route.name?.toString() || 'board';
-  const prefix = currentName.split('-')[0];
-  const viewMode = prefix === 'global' ? 'global-time' : prefix;
+  const viewMode = getViewMode(route?.name);
   return {
     name: `${viewMode}-task`,
     params: { projectId: task.project_id, taskId: String(task.id) },

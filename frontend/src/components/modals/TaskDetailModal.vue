@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onUnmounted, nextTick, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { getViewMode } from '@/utils/viewMode';
 import { storeToRefs } from 'pinia';
 import { marked } from 'marked';
 import type { Task } from '@/types';
@@ -23,8 +24,7 @@ const emit = defineEmits<{
 }>();
 
 const projectId = computed(() => String(route.params.projectId));
-const taskId = computed(() => route.params.taskId ? String(route.params.taskId) : null);
-
+const taskId = computed(() => (route.params.taskId ? String(route.params.taskId) : null));
 
 const task = ref<Task | null>(null);
 const loading = ref(false);
@@ -219,16 +219,16 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 const closeModal = () => {
-    const currentMode = route.name?.toString().split('-')[0] || 'board';
-    router.push({
-        name: currentMode,
-        params: { projectId: projectId.value },
-        query: route.query,
-    });
+  const currentMode = getViewMode(route.name);
+  router.push({
+    name: currentMode,
+    params: { projectId: projectId.value },
+    query: route.query,
+  });
 };
 
 onMounted(() => {
-    window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keydown', handleKeyDown);
 });
 
 onUnmounted(() => {
@@ -492,14 +492,14 @@ const handleDelete = async () => {
 const handleMarkDone = async () => {
   if (!task.value) return;
   try {
-      await updateTask(projectId.value, task.value.id, {
-          bucket: 'done',
-          position: 1000000.0,
-      });
-      refreshBoard();
-      closeModal();
+    await updateTask(projectId.value, task.value.id, {
+      bucket: 'done',
+      position: 1000000.0,
+    });
+    refreshBoard();
+    closeModal();
   } catch (err: any) {
-      error.value = t('errors.updateTask', { message: err.message || err });
+    error.value = t('errors.updateTask', { message: err.message || err });
   }
 };
 

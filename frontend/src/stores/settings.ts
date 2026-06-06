@@ -71,8 +71,6 @@ export const useSettingsStore = defineStore('settings', () => {
     currentTheme.value = theme;
   };
 
-
-
   const setActiveProjectId = (projectId: string) => {
     activeProjectId.value = projectId;
   };

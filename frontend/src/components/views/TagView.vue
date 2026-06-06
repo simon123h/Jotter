@@ -23,7 +23,9 @@ const emit = defineEmits<{
 }>();
 
 const { fetchBuckets } = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
-const { handleMarkTaskDone, handleTagUpdate } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => { emit('refresh'); });
+const { handleMarkTaskDone, handleTagUpdate } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => {
+  emit('refresh');
+});
 
 // Group tasks by their tags
 const tagColumns = computed(() => {
@@ -85,8 +87,8 @@ const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
 };
 
 const onMarkDone = async (task: Task) => {
-    await handleMarkTaskDone(task);
-    emit('refresh');
+  await handleMarkTaskDone(task);
+  emit('refresh');
 };
 </script>
 

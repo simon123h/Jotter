@@ -142,7 +142,7 @@ const emit = defineEmits<{
           <span class="hidden sm:inline">{{ t('views.tag') }}</span>
         </router-link>
         <router-link
-          :to="{ name: 'global-time', query: $route.query }"
+          :to="{ name: 'global-time', params: { projectId: activeProjectId || 'default' }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
             viewMode === 'global-time'
