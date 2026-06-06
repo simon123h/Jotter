@@ -254,4 +254,18 @@ export const en = {
     sometime: 'Sometime Maybe',
     notPlanned: 'Not Planned',
   },
+  bulkActions: {
+    selected: 'Selected',
+    moveToColumn: 'Move to Column',
+    planFor: 'Plan For...',
+    markDone: 'Mark Done',
+    archive: 'Archive',
+    addTag: 'Add Tag',
+    setPriority: 'Set Priority',
+    moveToProject: 'Move to Project',
+    deleteSelected: 'Delete Selected',
+    clearSelection: 'Clear Selection',
+    confirmDelete: 'Are you sure you want to delete {count} tasks?',
+    tagNamePlaceholder: 'Tag name...',
+  },
 };

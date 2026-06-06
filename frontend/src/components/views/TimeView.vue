@@ -8,12 +8,14 @@ const { t } = useI18n();
 
 const props = defineProps<{
   tasks: Task[];
+  isSelected: (id: string) => boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'mark-done', task: Task): void;
   (e: 'update-planned-date', payload: { taskId: string; plannedDate: string }): void;
+  (e: 'toggle-select', task: Task): void;
 }>();
 
 // Group tasks into categorical planning columns
@@ -68,9 +70,11 @@ const handleCardDropped = (payload: { taskId: string; toId: string }) => {
       :color="col.color"
       group-name="time-view"
       :compact-cards="true"
+      :is-selected="isSelected"
       @task-click="(task) => emit('task-click', task)"
       @mark-done="(task) => emit('mark-done', task)"
       @card-dropped="handleCardDropped"
+      @toggle-select="(task) => emit('toggle-select', task)"
     >
       <template #header>
         <div

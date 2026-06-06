@@ -17,6 +17,7 @@ const props = withDefaults(
     compact?: boolean;
     showProject?: boolean;
     projectTitle?: string;
+    isSelected?: boolean;
   }>(),
   {
     showTags: true,
@@ -25,12 +26,14 @@ const props = withDefaults(
     allowExpand: true,
     compact: false,
     showProject: false,
+    isSelected: false,
   }
 );
 
 const emit = defineEmits<{
   (e: 'click', task: Task): void;
   (e: 'mark-done', task: Task): void;
+  (e: 'toggle-select', task: Task): void;
 }>();
 
 const isExpanded = ref(false);
@@ -125,14 +128,28 @@ const cardStyle = computed(() => {
 
 <template>
   <div
-    class="bg-theme-card border border-theme-border rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col select-none"
+    class="bg-theme-card border border-theme-border rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col select-none relative"
     :class="[
       { 'colored-card': task.color },
+      { 'ring-2 ring-theme-accent border-theme-accent bg-theme-accent/5 shadow-theme-ring': isSelected },
       compact ? 'p-2 gap-1' : 'p-3 gap-2'
     ]"
     :style="cardStyle"
     @click="emit('click', task)"
   >
+    <!-- Multi-select Checkbox (Hover or Selected) -->
+    <div 
+      @click.stop="emit('toggle-select', task)"
+      class="absolute -left-2 -top-2 w-5 h-5 rounded-full border-2 bg-theme-card transition-all z-30 flex items-center justify-center cursor-pointer"
+      :class="[
+        isSelected 
+          ? 'border-theme-accent bg-theme-accent scale-110 opacity-100 shadow-lg' 
+          : 'border-theme-border opacity-0 group-hover:opacity-100 hover:border-theme-accent hover:scale-105'
+      ]"
+    >
+      <Check v-if="isSelected" class="w-3 h-3 stroke-[3px]" />
+    </div>
+
     <!-- Title & ID -->
     <div class="flex justify-between items-start gap-2">
       <div class="flex flex-col gap-0.5 overflow-hidden">

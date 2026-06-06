@@ -34,6 +34,7 @@ type TaskCreate struct {
 }
 
 type TaskUpdate struct {
+	ProjectID   *string   `json:"project_id,omitempty"`
 	Title       *string   `json:"title,omitempty"`
 	Bucket      *string   `json:"bucket,omitempty"`
 	Position    *float64  `json:"position,omitempty"`

@@ -8,12 +8,14 @@ const { t } = useI18n();
 
 const props = defineProps<{
   tasks: Task[];
+  isSelected: (id: string) => boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'mark-done', task: Task): void;
   (e: 'update-task-tags', payload: { taskId: string; tags: string[] }): void;
+  (e: 'toggle-select', task: Task): void;
 }>();
 
 // Group tasks by their tags
@@ -89,9 +91,11 @@ const handleCardDropped = (payload: { taskId: string; toId: string }) => {
       :tasks="col.tasks"
       group-name="tag-view"
       :compact-cards="true"
+      :is-selected="isSelected"
       @task-click="(task) => emit('task-click', task)"
       @mark-done="(task) => emit('mark-done', task)"
       @card-dropped="handleCardDropped"
+      @toggle-select="(task) => emit('toggle-select', task)"
     >
       <template #header>
         <div

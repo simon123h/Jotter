@@ -19,21 +19,23 @@ const props = withDefaults(
     compactCards?: boolean;
     showProject?: boolean;
     projects?: any[];
+    isSelected?: (id: string) => boolean;
     }>(),
     {
-      layout: 'list',
-      groupName: 'kanban-board',
-      showAddTask: false,
-      compactCards: false,
-      showProject: false,
-      projects: () => [],
+    layout: 'list',
+    groupName: 'kanban-board',
+    showAddTask: false,
+    compactCards: false,
+    showProject: false,
+    projects: () => [],
+    isSelected: () => false,
     }
-    );
-const emit = defineEmits<{
+    );const emit = defineEmits<{
   (e: 'task-click', task: Task): void;
   (e: 'add-task-click', id: string): void;
   (e: 'card-dropped', payload: { taskId: string; toId: string; prevTaskId: string | null; nextTaskId: string | null }): void;
   (e: 'mark-done', task: Task): void;
+  (e: 'toggle-select', task: Task): void;
 }>();
 
 const cardsContainer = ref<HTMLElement | null>(null);
@@ -214,9 +216,11 @@ watch(
             :compact="compactCards"
             :show-project="showProject"
             :project-title="projects?.find((p) => p.id === task.project_id)?.title"
+            :is-selected="isSelected(task.id)"
             :data-task-id="task.id"
             @click="emit('task-click', task)"
             @mark-done="emit('mark-done', task)"
+            @toggle-select="emit('toggle-select', $event)"
           />
         </div>
       </div>
@@ -243,9 +247,11 @@ watch(
             :compact="compactCards"
             :show-project="showProject"
             :project-title="projects?.find((p) => p.id === task.project_id)?.title"
+            :is-selected="isSelected(task.id)"
             :data-task-id="task.id"
             @click="emit('task-click', task)"
             @mark-done="emit('mark-done', task)"
+            @toggle-select="emit('toggle-select', $event)"
           />
         </div>
       </div>
@@ -260,9 +266,11 @@ watch(
           :compact="compactCards"
           :show-project="showProject"
           :project-title="projects?.find((p) => p.id === task.project_id)?.title"
+          :is-selected="isSelected(task.id)"
           :data-task-id="task.id"
           @click="emit('task-click', task)"
           @mark-done="emit('mark-done', task)"
+          @toggle-select="emit('toggle-select', $event)"
         />
       </div>
     </div>

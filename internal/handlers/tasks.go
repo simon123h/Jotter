@@ -453,6 +453,11 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				updatedColor = req.Color
 			}
 
+			updatedProjectID := existing.ProjectID
+			if _, ok := raw["project_id"]; ok && req.ProjectID != nil {
+				updatedProjectID = *req.ProjectID
+			}
+
 			tx, err := db.DB.Begin()
 			if err != nil {
 				SendError(w, http.StatusInternalServerError, err.Error())
@@ -460,13 +465,37 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			}
 			defer func() { _ = tx.Rollback() }()
 
+			// Handle Project Move
+			if updatedProjectID != existing.ProjectID {
+				// Verify target project exists
+				var pDummy string
+				errP := tx.QueryRow("SELECT id FROM projects WHERE id = ?", updatedProjectID).Scan(&pDummy)
+				if errP == sql.ErrNoRows {
+					SendError(w, http.StatusBadRequest, fmt.Sprintf("Target project '%s' not found.", updatedProjectID))
+					return
+				}
+
+				// If bucket wasn't explicitly changed, ensure the current bucket exists in target project
+				// or move to the first available bucket in target project
+				var bDummy string
+				errB := tx.QueryRow("SELECT name FROM buckets WHERE project_id = ? AND name = ?", updatedProjectID, updatedBucket).Scan(&bDummy)
+				if errB == sql.ErrNoRows {
+					// Default to first bucket in target project
+					errB2 := tx.QueryRow("SELECT name FROM buckets WHERE project_id = ? ORDER BY position ASC LIMIT 1", updatedProjectID).Scan(&updatedBucket)
+					if errB2 != nil {
+						SendError(w, http.StatusInternalServerError, "Target project has no columns")
+						return
+					}
+				}
+			}
+
 			if _, ok := raw["bucket"]; ok && req.Bucket != nil && *req.Bucket != existing.Bucket {
 				var bDummy string
-				errB := tx.QueryRow("SELECT name FROM buckets WHERE project_id = ? AND name = ?", projectID, updatedBucket).Scan(&bDummy)
+				errB := tx.QueryRow("SELECT name FROM buckets WHERE project_id = ? AND name = ?", updatedProjectID, updatedBucket).Scan(&bDummy)
 				if errB == sql.ErrNoRows {
 					if updatedBucket == "done" || updatedBucket == "archive" {
 						var maxPos sql.NullFloat64
-						_ = tx.QueryRow("SELECT MAX(position) FROM buckets WHERE project_id = ?", projectID).Scan(&maxPos)
+						_ = tx.QueryRow("SELECT MAX(position) FROM buckets WHERE project_id = ?", updatedProjectID).Scan(&maxPos)
 						newPosition := 1000.0
 						if maxPos.Valid {
 							newPosition = maxPos.Float64 + 1000.0
@@ -478,13 +507,13 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 						}
 
 						_, err = tx.Exec("INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, '', ?, NULL, 'list', NULL, 0)",
-							projectID, updatedBucket, title, newPosition)
+							updatedProjectID, updatedBucket, title, newPosition)
 						if err != nil {
 							SendError(w, http.StatusInternalServerError, err.Error())
 							return
 						}
 					} else {
-						SendError(w, http.StatusBadRequest, fmt.Sprintf("Bucket '%s' does not exist in project '%s'.", updatedBucket, projectID))
+						SendError(w, http.StatusBadRequest, fmt.Sprintf("Bucket '%s' does not exist in project '%s'.", updatedBucket, updatedProjectID))
 						return
 					}
 				} else if errB != nil {
@@ -494,7 +523,7 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			}
 
 			taskMap := map[string]interface{}{
-				"project_id":   projectID,
+				"project_id":   updatedProjectID,
 				"title":        updatedTitle,
 				"bucket":       updatedBucket,
 				"position":     updatedPosition,
@@ -510,6 +539,7 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 
 			filename, errWrite := storage.WriteTaskFile(tasksDir, taskID, taskMap)
 			if errWrite != nil {
+				log.Printf("ERROR: Failed to write task file for task %s: %v", taskID, errWrite)
 				SendError(w, http.StatusInternalServerError, "Failed to write task file")
 				return
 			}
@@ -529,25 +559,30 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				dbColor = sql.NullString{String: *updatedColor, Valid: true}
 			}
 
-			_, err = tx.Exec("UPDATE tasks SET title = ?, bucket = ?, position = ?, tags = ?, filename = ?, body = ?, due_date = ?, planned_date = ?, priority = ?, color = ?, updated_at = ? WHERE id = ? AND project_id = ?",
-				updatedTitle, updatedBucket, updatedPosition, string(tagsJSON), filename, updatedBody, dbDueDate, dbPlannedDate, dbPriority, dbColor, nowStr, taskID, projectID)
+			_, err = tx.Exec("UPDATE tasks SET project_id = ?, title = ?, bucket = ?, position = ?, tags = ?, filename = ?, body = ?, due_date = ?, planned_date = ?, priority = ?, color = ?, updated_at = ? WHERE id = ? AND project_id = ?",
+				updatedProjectID, updatedTitle, updatedBucket, updatedPosition, string(tagsJSON), filename, updatedBody, dbDueDate, dbPlannedDate, dbPriority, dbColor, nowStr, taskID, projectID)
 			if err != nil {
+				log.Printf("ERROR: DB update failed for task %s: %v", taskID, err)
 				SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
 			if err := tx.Commit(); err != nil {
+				log.Printf("ERROR: TX commit failed for task %s: %v", taskID, err)
 				SendError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
-			if _, ok := raw["bucket"]; ok && (updatedBucket == "done" || updatedBucket == "archive") {
+			if updatedProjectID != existing.ProjectID {
+				_ = syncBucketsFile(tasksDir, existing.ProjectID)
+				_ = syncBucketsFile(tasksDir, updatedProjectID)
+			} else if _, ok := raw["bucket"]; ok && (updatedBucket == "done" || updatedBucket == "archive") {
 				_ = syncBucketsFile(tasksDir, projectID)
 			}
 
 			res := models.TaskResponse{
 				ID:          taskID,
-				ProjectID:   projectID,
+				ProjectID:   updatedProjectID,
 				Title:       updatedTitle,
 				Bucket:      updatedBucket,
 				Position:    updatedPosition,
