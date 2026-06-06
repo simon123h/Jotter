@@ -125,9 +125,25 @@ Jotter is packaged into two separate native binaries:
 2. **`jotter-server` (Server)**: A lightweight CLI binary that starts a standard HTTP server and serves the frontend to any modern web browser.
 
 ### Shared Packaging Features:
-
 - **Assets Bundling**: The compiled frontend SPA bundle (`dist/`) is embedded inside the Go binary using `go:embed` and served natively.
 - **Internal Logic**: Both binaries share the exact same underlying logic from the `internal/` packages, ensuring consistent behavior across modes.
+
+---
+
+## 8. Git Synchronization Logic
+
+Jotter treats the local filesystem as the primary source of truth, but supports Git for cross-device synchronization. The logic is implemented in `internal/storage/git.go` using system calls to the `git` CLI.
+
+### The Sync Flow:
+1. **Commit**: Runs `git add .` and `git commit` to capture local changes.
+2. **Fetch**: Runs `git fetch origin` to retrieve remote state.
+3. **Fast-Forward**: Attempts `git merge --ff-only`.
+4. **Recursive Merge**: If Fast-Forward fails, attempts `git merge --no-rebase`.
+5. **Conflict Handling**: If the real merge fails (exit code != 0), it immediately calls `git merge --abort`. The backend returns a `409 Conflict` to the frontend, forcing manual intervention.
+6. **Push**: If the merge succeeds, it pushes the results back to `origin`.
+
+This flow ensures that the user is never left in a "partially merged" or broken state on their local machine.
+
 
 ---
 
