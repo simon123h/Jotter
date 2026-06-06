@@ -570,417 +570,419 @@ const getPriorityClasses = (prio: string) => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-    <!-- Backdrop -->
-    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
+  <Transition name="modal" appear>
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <!-- Backdrop -->
+      <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
 
-    <!-- Modal Content -->
-    <div
-      class="relative bg-theme-base border border-theme-border w-full max-w-3xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
-    >
-      <button
-        @click="closeModal"
-        class="text-slate-400 transition-colors p-1 rounded cursor-pointer"
-        style="position: absolute; top: 10px; right: 10px"
+      <!-- Modal Content -->
+      <div
+        class="relative bg-theme-base border border-theme-border w-full max-w-3xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
       >
-        <X class="w-4 h-4 shrink-0" />
-      </button>
-      <!-- Error alert -->
-      <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
-        {{ error }}
-      </div>
-
-      <!-- Main Body -->
-      <div class="p-4 overflow-y-auto flex-grow scroller-thin">
-        <!-- Loading State -->
-        <div v-if="loading && !task" class="flex flex-col items-center justify-center py-12 gap-3">
-          <div class="w-8 h-8 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
-          <span class="text-slate-400 text-xs">{{ t('loadingTask') }}</span>
+        <button
+          @click="closeModal"
+          class="text-slate-400 transition-colors p-1 rounded cursor-pointer"
+          style="position: absolute; top: 10px; right: 10px"
+        >
+          <X class="w-4 h-4 shrink-0" />
+        </button>
+        <!-- Error alert -->
+        <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
+          {{ error }}
         </div>
 
-        <div v-else-if="task">
-          <!-- View Mode -->
-          <div v-if="!isEditing" class="space-y-4">
-            <div>
-              <h2 class="text-xl font-bold text-theme-text-main mb-1.5 leading-snug">
-                {{ task.title }}
-              </h2>
+        <!-- Main Body -->
+        <div class="p-4 overflow-y-auto flex-grow scroller-thin">
+          <!-- Loading State -->
+          <div v-if="loading && !task" class="flex flex-col items-center justify-center py-12 gap-3">
+            <div class="w-8 h-8 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-slate-400 text-xs">{{ t('loadingTask') }}</span>
+          </div>
 
-              <!-- Tags -->
-              <div v-if="task.tags?.length" class="flex flex-wrap gap-1 mt-2">
-                <span
-                  v-for="tag in task.tags"
-                  :key="tag"
-                  class="text-xs font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded"
-                >
-                  {{ tag }}
-                </span>
-              </div>
+          <div v-else-if="task">
+            <!-- View Mode -->
+            <div v-if="!isEditing" class="space-y-4">
+              <div>
+                <h2 class="text-xl font-bold text-theme-text-main mb-1.5 leading-snug">
+                  {{ task.title }}
+                </h2>
 
-              <!-- Due Date, Planned Date & Priority Info -->
-              <div v-if="task.due_date || task.planned_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
-                <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Due:</span>
-                  <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-                    {{ new Date(task.due_date).toLocaleDateString() }}
-                  </span>
-                </div>
-                <div v-if="task.planned_date" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Planned:</span>
-                  <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-                    {{ t('plannedDateOptions.' + task.planned_date) }}
-                  </span>
-                </div>
-                <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Priority:</span>
+                <!-- Tags -->
+                <div v-if="task.tags?.length" class="flex flex-wrap gap-1 mt-2">
                   <span
-                    class="px-2 py-0.5 rounded border text-xs font-extrabold uppercase tracking-wider"
-                    :class="getPriorityClasses(task.priority)"
+                    v-for="tag in task.tags"
+                    :key="tag"
+                    class="text-xs font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded"
                   >
-                    {{ t('priorityOptions.' + task.priority) }}
+                    {{ tag }}
                   </span>
+                </div>
+
+                <!-- Due Date, Planned Date & Priority Info -->
+                <div v-if="task.due_date || task.planned_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
+                  <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Due:</span>
+                    <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
+                      {{ new Date(task.due_date).toLocaleDateString() }}
+                    </span>
+                  </div>
+                  <div v-if="task.planned_date" class="flex items-center gap-1.5 text-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Planned:</span>
+                    <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
+                      {{ t('plannedDateOptions.' + task.planned_date) }}
+                    </span>
+                  </div>
+                  <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Priority:</span>
+                    <span
+                      class="px-2 py-0.5 rounded border text-xs font-extrabold uppercase tracking-wider"
+                      :class="getPriorityClasses(task.priority)"
+                    >
+                      {{ t('priorityOptions.' + task.priority) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-t border-theme-border pt-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-2">{{ t('notesLabel') }}</h4>
+
+                <!-- Rendered Markdown -->
+                <div
+                  v-if="task.body"
+                  class="markdown-content text-theme-text-card prose prose-invert max-w-none space-y-3 break-all"
+                  v-html="parsedMarkdown"
+                  @click="handleMarkdownClick"
+                ></div>
+                <div v-else class="text-theme-text-muted italic text-xs py-2">{{ t('noDescription') }}</div>
+              </div>
+
+              <div class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono">
+                <span>{{ t('timestampCreated', { date: new Date(task.created_at).toLocaleString() }) }}</span>
+                <span>{{ t('timestampUpdated', { date: new Date(task.updated_at).toLocaleString() }) }}</span>
+              </div>
+
+              <!-- Attachments Section -->
+              <div class="mt-4 pt-4 border-t border-theme-border">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-xs font-bold uppercase tracking-widest text-theme-text-muted flex items-center gap-1.5">
+                    <Paperclip class="w-3.5 h-3.5" />
+                    {{ t('form.attachmentsLabel') }}
+                  </h3>
+                  <button
+                    @click="triggerFileUpload"
+                    class="text-[10px] font-bold uppercase tracking-wider text-theme-accent hover:text-theme-primary transition-colors flex items-center gap-1 cursor-pointer"
+                    :disabled="isUploading"
+                  >
+                    <template v-if="isUploading">
+                      <Slash class="w-3 h-3 animate-spin" />
+                      {{ t('form.uploading') }}
+                    </template>
+                    <template v-else>
+                      <Plus class="w-3 h-3" />
+                      {{ t('form.addAttachment') }}
+                    </template>
+                  </button>
+                  <input ref="fileInput" type="file" class="hidden" @change="handleFileUpload" />
+                </div>
+
+                <div v-if="task.attachments && task.attachments.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div
+                    v-for="file in task.attachments"
+                    :key="file"
+                    class="group/att flex items-center justify-between p-2 rounded bg-theme-column/20 border border-theme-border/50 hover:border-theme-accent/30 transition-all"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <FileText class="w-4 h-4 text-theme-text-muted shrink-0" />
+                      <span class="text-xs text-theme-text-main truncate font-medium">{{ file }}</span>
+                    </div>
+                    <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity">
+                      <a
+                        :href="getAttachmentUrl(projectId, task.id, file)"
+                        target="_blank"
+                        class="p-1 text-theme-text-muted hover:text-theme-accent transition-colors cursor-pointer"
+                        title="Download"
+                      >
+                        <Download class="w-3.5 h-3.5" />
+                      </a>
+                      <button
+                        @click="handleRemoveAttachment(file)"
+                        class="p-1 text-theme-text-muted hover:text-rose-400 transition-colors cursor-pointer"
+                        title="Delete"
+                      >
+                        <Trash2 class="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-xs text-theme-text-muted italic opacity-50 py-2">
+                  {{ t('form.noAttachments') }}
                 </div>
               </div>
             </div>
 
-            <div class="border-t border-theme-border pt-4">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-2">{{ t('notesLabel') }}</h4>
-
-              <!-- Rendered Markdown -->
-              <div
-                v-if="task.body"
-                class="markdown-content text-theme-text-card prose prose-invert max-w-none space-y-3 break-all"
-                v-html="parsedMarkdown"
-                @click="handleMarkdownClick"
-              ></div>
-              <div v-else class="text-theme-text-muted italic text-xs py-2">{{ t('noDescription') }}</div>
-            </div>
-
-            <div class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono">
-              <span>{{ t('timestampCreated', { date: new Date(task.created_at).toLocaleString() }) }}</span>
-              <span>{{ t('timestampUpdated', { date: new Date(task.updated_at).toLocaleString() }) }}</span>
-            </div>
-
-            <!-- Attachments Section -->
-            <div class="mt-4 pt-4 border-t border-theme-border">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-xs font-bold uppercase tracking-widest text-theme-text-muted flex items-center gap-1.5">
-                  <Paperclip class="w-3.5 h-3.5" />
-                  {{ t('form.attachmentsLabel') }}
-                </h3>
-                <button
-                  @click="triggerFileUpload"
-                  class="text-[10px] font-bold uppercase tracking-wider text-theme-accent hover:text-theme-primary transition-colors flex items-center gap-1 cursor-pointer"
-                  :disabled="isUploading"
-                >
-                  <template v-if="isUploading">
-                    <Slash class="w-3 h-3 animate-spin" />
-                    {{ t('form.uploading') }}
-                  </template>
-                  <template v-else>
-                    <Plus class="w-3 h-3" />
-                    {{ t('form.addAttachment') }}
-                  </template>
-                </button>
-                <input ref="fileInput" type="file" class="hidden" @change="handleFileUpload" />
+            <!-- Edit Mode -->
+            <div v-else class="space-y-3">
+              <!-- Title -->
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                  t('form.titleLabel')
+                }}</label>
+                <div class="relative">
+                  <input
+                    ref="titleInput"
+                    v-model="editTitle"
+                    type="text"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                    :placeholder="t('form.titlePlaceholder')"
+                    @input="checkAutocomplete"
+                    @click="checkAutocomplete"
+                    @keyup="checkAutocomplete"
+                    @keydown="handleTitleKeyDown"
+                    @blur="showAutocomplete = false"
+                  />
+                  <!-- Autocomplete Popup -->
+                  <div
+                    v-if="showAutocomplete"
+                    class="absolute left-0 right-0 top-full mt-1 z-50 bg-theme-base border border-theme-border rounded shadow-xl max-h-48 overflow-y-auto py-1 scroller-thin"
+                  >
+                    <div
+                      v-for="(b, index) in filteredBuckets"
+                      :key="b.name"
+                      @mousedown.prevent="selectAutocompleteItem(b.name)"
+                      @mouseenter="autocompleteIndex = index"
+                      class="px-3 py-1.5 text-sm flex items-center justify-between cursor-pointer transition-colors"
+                      :class="
+                        index === autocompleteIndex
+                          ? 'bg-theme-primary text-white font-semibold'
+                          : 'text-theme-text-main hover:bg-theme-card/60'
+                      "
+                    >
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="w-1.5 h-1.5 rounded-full bg-theme-accent"
+                          :class="index === autocompleteIndex ? 'bg-white' : ''"
+                        ></span>
+                        <span>{{ t('buckets.' + b.name) }}</span>
+                      </div>
+                      <span class="text-xs font-mono" :class="index === autocompleteIndex ? 'text-white/80' : 'text-theme-text-muted'"
+                        >/{{ b.name }}</span
+                      >
+                    </div>
+                    <div v-if="filteredBuckets.length === 0" class="px-3 py-2 text-xs text-theme-text-muted italic">
+                      {{ t('form.noBucketsFound') }}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div v-if="task.attachments && task.attachments.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div
-                  v-for="file in task.attachments"
-                  :key="file"
-                  class="group/att flex items-center justify-between p-2 rounded bg-theme-column/20 border border-theme-border/50 hover:border-theme-accent/30 transition-all"
-                >
-                  <div class="flex items-center gap-2 min-w-0">
-                    <FileText class="w-4 h-4 text-theme-text-muted shrink-0" />
-                    <span class="text-xs text-theme-text-main truncate font-medium">{{ file }}</span>
-                  </div>
-                  <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity">
-                    <a
-                      :href="getAttachmentUrl(projectId, task.id, file)"
-                      target="_blank"
-                      class="p-1 text-theme-text-muted hover:text-theme-accent transition-colors cursor-pointer"
-                      title="Download"
-                    >
-                      <Download class="w-3.5 h-3.5" />
-                    </a>
+              <!-- Bucket & Tags Row -->
+              <div class="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                    t('form.columnLabel')
+                  }}</label>
+                  <select
+                    v-model="editBucket"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                  >
+                    <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
+                  </select>
+                </div>
+                <div class="relative">
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                    t('form.tagsLabel')
+                  }}</label>
+                  <input
+                    v-model="editTags"
+                    type="text"
+                    @focus="isTagDropdownOpen = true"
+                    @blur="isTagDropdownOpen = false"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                    :placeholder="t('form.tagsPlaceholderEdit')"
+                  />
+                  <div
+                    v-if="isTagDropdownOpen && tagSuggestions.length"
+                    class="absolute left-0 right-0 mt-1 max-h-40 overflow-y-auto bg-theme-card border border-theme-border rounded shadow-xl z-30 p-1 space-y-0.5 scroller-thin"
+                  >
                     <button
-                      @click="handleRemoveAttachment(file)"
-                      class="p-1 text-theme-text-muted hover:text-rose-400 transition-colors cursor-pointer"
-                      title="Delete"
+                      v-for="(suggestion, idx) in tagSuggestions"
+                      :key="suggestion"
+                      type="button"
+                      @mousedown.prevent="selectTagSuggestion(suggestion)"
+                      class="w-full text-left px-2.5 py-1.5 text-xs rounded transition-colors cursor-pointer font-medium"
+                      :class="
+                        idx === activeSuggestionIndex
+                          ? 'bg-theme-column text-theme-text-main font-semibold'
+                          : 'text-theme-text-card hover:bg-theme-column/80 hover:text-theme-text-main'
+                      "
                     >
-                      <Trash2 class="w-3.5 h-3.5" />
+                      {{ suggestion }}
                     </button>
                   </div>
                 </div>
               </div>
-              <div v-else class="text-xs text-theme-text-muted italic opacity-50 py-2">
-                {{ t('form.noAttachments') }}
-              </div>
-            </div>
-          </div>
 
-          <!-- Edit Mode -->
-          <div v-else class="space-y-3">
-            <!-- Title -->
-            <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                t('form.titleLabel')
-              }}</label>
-              <div class="relative">
-                <input
-                  ref="titleInput"
-                  v-model="editTitle"
-                  type="text"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                  :placeholder="t('form.titlePlaceholder')"
-                  @input="checkAutocomplete"
-                  @click="checkAutocomplete"
-                  @keyup="checkAutocomplete"
-                  @keydown="handleTitleKeyDown"
-                  @blur="showAutocomplete = false"
-                />
-                <!-- Autocomplete Popup -->
-                <div
-                  v-if="showAutocomplete"
-                  class="absolute left-0 right-0 top-full mt-1 z-50 bg-theme-base border border-theme-border rounded shadow-xl max-h-48 overflow-y-auto py-1 scroller-thin"
-                >
-                  <div
-                    v-for="(b, index) in filteredBuckets"
-                    :key="b.name"
-                    @mousedown.prevent="selectAutocompleteItem(b.name)"
-                    @mouseenter="autocompleteIndex = index"
-                    class="px-3 py-1.5 text-sm flex items-center justify-between cursor-pointer transition-colors"
-                    :class="
-                      index === autocompleteIndex
-                        ? 'bg-theme-primary text-white font-semibold'
-                        : 'text-theme-text-main hover:bg-theme-card/60'
-                    "
+              <!-- Due Date, Planned Date & Priority Row -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                    t('form.dueDateLabel')
+                  }}</label>
+                  <input
+                    v-model="editDueDate"
+                    type="date"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                    t('form.plannedDateLabel') || 'Planned'
+                  }}</label>
+                  <select
+                    v-model="editPlannedDate"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
                   >
-                    <div class="flex items-center gap-2">
-                      <span
-                        class="w-1.5 h-1.5 rounded-full bg-theme-accent"
-                        :class="index === autocompleteIndex ? 'bg-white' : ''"
-                      ></span>
-                      <span>{{ t('buckets.' + b.name) }}</span>
-                    </div>
-                    <span class="text-xs font-mono" :class="index === autocompleteIndex ? 'text-white/80' : 'text-theme-text-muted'"
-                      >/{{ b.name }}</span
-                    >
-                  </div>
-                  <div v-if="filteredBuckets.length === 0" class="px-3 py-2 text-xs text-theme-text-muted italic">
-                    {{ t('form.noBucketsFound') }}
-                  </div>
+                    <option value="">{{ t('plannedDateOptions.none') }}</option>
+                    <option value="today">{{ t('plannedDateOptions.today') }}</option>
+                    <option value="tomorrow">{{ t('plannedDateOptions.tomorrow') }}</option>
+                    <option value="thisWeek">{{ t('plannedDateOptions.thisWeek') }}</option>
+                    <option value="thisMonth">{{ t('plannedDateOptions.thisMonth') }}</option>
+                    <option value="thisYear">{{ t('plannedDateOptions.thisYear') }}</option>
+                    <option value="sometime">{{ t('plannedDateOptions.sometime') }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                    t('form.priorityLabel')
+                  }}</label>
+                  <select
+                    v-model="editPriority"
+                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                  >
+                    <option value="">{{ t('priorityOptions.none') }}</option>
+                    <option value="low">{{ t('priorityOptions.low') }}</option>
+                    <option value="medium">{{ t('priorityOptions.medium') }}</option>
+                    <option value="high">{{ t('priorityOptions.high') }}</option>
+                    <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
+                  </select>
                 </div>
               </div>
-            </div>
 
-            <!-- Bucket & Tags Row -->
-            <div class="grid grid-cols-2 gap-3.5">
+              <!-- Highlight Color Selector -->
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                  t('form.columnLabel')
-                }}</label>
-                <select
-                  v-model="editBucket"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                >
-                  <option v-for="b in buckets" :key="b.name" :value="b.name">{{ t('buckets.' + b.name) }}</option>
-                </select>
-              </div>
-              <div class="relative">
-                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                  t('form.tagsLabel')
-                }}</label>
-                <input
-                  v-model="editTags"
-                  type="text"
-                  @focus="isTagDropdownOpen = true"
-                  @blur="isTagDropdownOpen = false"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                  :placeholder="t('form.tagsPlaceholderEdit')"
-                />
-                <div
-                  v-if="isTagDropdownOpen && tagSuggestions.length"
-                  class="absolute left-0 right-0 mt-1 max-h-40 overflow-y-auto bg-theme-card border border-theme-border rounded shadow-xl z-30 p-1 space-y-0.5 scroller-thin"
-                >
+                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+                  {{ t('columnEdit.colorLabel') }}
+                </label>
+                <div class="flex flex-wrap gap-2.5 items-center">
+                  <!-- None Option -->
                   <button
-                    v-for="(suggestion, idx) in tagSuggestions"
-                    :key="suggestion"
                     type="button"
-                    @mousedown.prevent="selectTagSuggestion(suggestion)"
-                    class="w-full text-left px-2.5 py-1.5 text-xs rounded transition-colors cursor-pointer font-medium"
-                    :class="
-                      idx === activeSuggestionIndex
-                        ? 'bg-theme-column text-theme-text-main font-semibold'
-                        : 'text-theme-text-card hover:bg-theme-column/80 hover:text-theme-text-main'
-                    "
+                    @click="editColor = null"
+                    class="w-7 h-7 rounded-full border border-theme-border flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 text-theme-text-muted hover:text-theme-text-main"
+                    :class="[
+                      editColor === null
+                        ? 'ring-2 ring-theme-accent ring-offset-2 ring-offset-theme-base bg-theme-card/80 border-theme-accent/60'
+                        : 'bg-theme-card/30 hover:bg-theme-card',
+                    ]"
+                    :title="t('columnEdit.colorNone')"
                   >
-                    {{ suggestion }}
+                    <Slash class="w-3 h-3 shrink-0 rotate-90" />
                   </button>
+
+                  <!-- Colors -->
+                  <button
+                    v-for="c in colors"
+                    :key="c.id"
+                    type="button"
+                    @click="editColor = c.id"
+                    class="w-7 h-7 rounded-full cursor-pointer transition-all hover:scale-110 active:scale-95"
+                    :class="[c.bg, editColor === c.id ? `ring-2 ring-offset-2 ring-offset-theme-base ${c.ring}` : '']"
+                    :title="c.name"
+                  />
                 </div>
               </div>
-            </div>
 
-            <!-- Due Date, Planned Date & Priority Row -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              <!-- Body (Markdown Textarea) -->
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                  t('form.dueDateLabel')
-                }}</label>
-                <input
-                  v-model="editDueDate"
-                  type="date"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                />
+                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
+                  {{ t('form.markdownLabelEdit') }}
+                </label>
+                <textarea
+                  v-model="editBody"
+                  rows="10"
+                  class="w-full bg-theme-base/60 border border-theme-border rounded p-3 text-sm text-theme-text-input font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring scroller-thin"
+                  :placeholder="t('form.markdownPlaceholderEdit')"
+                ></textarea>
               </div>
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                  t('form.plannedDateLabel') || 'Planned'
-                }}</label>
-                <select
-                  v-model="editPlannedDate"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                >
-                  <option value="">{{ t('plannedDateOptions.none') }}</option>
-                  <option value="today">{{ t('plannedDateOptions.today') }}</option>
-                  <option value="tomorrow">{{ t('plannedDateOptions.tomorrow') }}</option>
-                  <option value="thisWeek">{{ t('plannedDateOptions.thisWeek') }}</option>
-                  <option value="thisMonth">{{ t('plannedDateOptions.thisMonth') }}</option>
-                  <option value="thisYear">{{ t('plannedDateOptions.thisYear') }}</option>
-                  <option value="sometime">{{ t('plannedDateOptions.sometime') }}</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                  t('form.priorityLabel')
-                }}</label>
-                <select
-                  v-model="editPriority"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                >
-                  <option value="">{{ t('priorityOptions.none') }}</option>
-                  <option value="low">{{ t('priorityOptions.low') }}</option>
-                  <option value="medium">{{ t('priorityOptions.medium') }}</option>
-                  <option value="high">{{ t('priorityOptions.high') }}</option>
-                  <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Highlight Color Selector -->
-            <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
-                {{ t('columnEdit.colorLabel') }}
-              </label>
-              <div class="flex flex-wrap gap-2.5 items-center">
-                <!-- None Option -->
-                <button
-                  type="button"
-                  @click="editColor = null"
-                  class="w-7 h-7 rounded-full border border-theme-border flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 text-theme-text-muted hover:text-theme-text-main"
-                  :class="[
-                    editColor === null
-                      ? 'ring-2 ring-theme-accent ring-offset-2 ring-offset-theme-base bg-theme-card/80 border-theme-accent/60'
-                      : 'bg-theme-card/30 hover:bg-theme-card',
-                  ]"
-                  :title="t('columnEdit.colorNone')"
-                >
-                  <Slash class="w-3 h-3 shrink-0 rotate-90" />
-                </button>
-
-                <!-- Colors -->
-                <button
-                  v-for="c in colors"
-                  :key="c.id"
-                  type="button"
-                  @click="editColor = c.id"
-                  class="w-7 h-7 rounded-full cursor-pointer transition-all hover:scale-110 active:scale-95"
-                  :class="[c.bg, editColor === c.id ? `ring-2 ring-offset-2 ring-offset-theme-base ${c.ring}` : '']"
-                  :title="c.name"
-                />
-              </div>
-            </div>
-
-            <!-- Body (Markdown Textarea) -->
-            <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                {{ t('form.markdownLabelEdit') }}
-              </label>
-              <textarea
-                v-model="editBody"
-                rows="10"
-                class="w-full bg-theme-base/60 border border-theme-border rounded p-3 text-sm text-theme-text-input font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring scroller-thin"
-                :placeholder="t('form.markdownPlaceholderEdit')"
-              ></textarea>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Footer Buttons -->
-      <div class="px-4 py-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
-        <div>
-          <button
-            v-if="task && !isEditing"
-            @click="handleDelete"
-            class="text-sm font-semibold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors cursor-pointer"
-          >
-            {{ t('buttons.delete') }}
-          </button>
-        </div>
-        <div class="flex gap-2">
-          <!-- View mode buttons -->
-          <template v-if="!isEditing">
+        <!-- Footer Buttons -->
+        <div class="px-4 py-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
+          <div>
             <button
-              v-if="task && task.bucket !== 'archive'"
-              @click="handleArchive"
-              class="text-sm font-semibold px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded transition-all cursor-pointer"
+              v-if="task && !isEditing"
+              @click="handleDelete"
+              class="text-sm font-semibold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors cursor-pointer"
             >
-              {{ t('buttons.archive') }}
+              {{ t('buttons.delete') }}
             </button>
-            <button
-              v-if="task && task.bucket === 'archive'"
-              @click="handleUnarchive"
-              class="text-sm font-semibold px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded transition-all cursor-pointer"
-            >
-              {{ t('buttons.unarchive') }}
-            </button>
-            <button
-              v-if="task && task.bucket !== 'done' && task.bucket !== 'archive'"
-              @click="handleMarkDone"
-              class="text-sm font-semibold px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all cursor-pointer"
-            >
-              {{ t('buttons.markDone') }}
-            </button>
-            <button
-              @click="isEditing = true"
-              class="text-sm font-semibold px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/25 rounded transition-all cursor-pointer"
-            >
-              {{ t('buttons.edit') }}
-            </button>
-          </template>
+          </div>
+          <div class="flex gap-2">
+            <!-- View mode buttons -->
+            <template v-if="!isEditing">
+              <button
+                v-if="task && task.bucket !== 'archive'"
+                @click="handleArchive"
+                class="text-sm font-semibold px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded transition-all cursor-pointer"
+              >
+                {{ t('buttons.archive') }}
+              </button>
+              <button
+                v-if="task && task.bucket === 'archive'"
+                @click="handleUnarchive"
+                class="text-sm font-semibold px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded transition-all cursor-pointer"
+              >
+                {{ t('buttons.unarchive') }}
+              </button>
+              <button
+                v-if="task && task.bucket !== 'done' && task.bucket !== 'archive'"
+                @click="handleMarkDone"
+                class="text-sm font-semibold px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all cursor-pointer"
+              >
+                {{ t('buttons.markDone') }}
+              </button>
+              <button
+                @click="isEditing = true"
+                class="text-sm font-semibold px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/25 rounded transition-all cursor-pointer"
+              >
+                {{ t('buttons.edit') }}
+              </button>
+            </template>
 
-          <!-- Edit mode buttons -->
-          <template v-else>
-            <button
-              @click="cancelEdit"
-              class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
-              :disabled="loading"
-            >
-              {{ t('buttons.cancel') }}
-            </button>
-            <button
-              @click="handleSave"
-              class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-              :disabled="loading"
-            >
-              <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              {{ t('buttons.save') }}
-            </button>
-          </template>
+            <!-- Edit mode buttons -->
+            <template v-else>
+              <button
+                @click="cancelEdit"
+                class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+                :disabled="loading"
+              >
+                {{ t('buttons.cancel') }}
+              </button>
+              <button
+                @click="handleSave"
+                class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                :disabled="loading"
+              >
+                <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                {{ t('buttons.save') }}
+              </button>
+            </template>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </Transition>
 </template>
