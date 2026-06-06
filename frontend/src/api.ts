@@ -180,7 +180,7 @@ export async function updateTask(projectId: string, id: string, task: Partial<Ta
     return demoApi.updateTask(projectId, id, task);
   }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/tasks/${id}`, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(task),
   });
