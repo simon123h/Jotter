@@ -2,20 +2,23 @@ package models
 
 // Project DTOs
 type ProjectCreate struct {
-	Title           string `json:"title"`
-	DoneCleanPeriod *int   `json:"done_clean_period,omitempty"`
+	Title           string  `json:"title"`
+	DoneCleanPeriod *int    `json:"done_clean_period,omitempty"`
+	GitRemote       *string `json:"git_remote,omitempty"`
 }
 
 type ProjectUpdate struct {
 	Title           *string `json:"title,omitempty"`
 	DoneCleanPeriod *int    `json:"done_clean_period,omitempty"`
+	GitRemote       *string `json:"git_remote,omitempty"`
 }
 
 type ProjectResponse struct {
-	ID              string `json:"id"`
-	Title           string `json:"title"`
-	CreatedAt       string `json:"created_at"`
-	DoneCleanPeriod *int   `json:"done_clean_period"`
+	ID              string  `json:"id"`
+	Title           string  `json:"title"`
+	CreatedAt       string  `json:"created_at"`
+	DoneCleanPeriod *int    `json:"done_clean_period"`
+	GitRemote       *string `json:"git_remote"`
 }
 
 // Task DTOs

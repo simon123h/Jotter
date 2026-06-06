@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check } from '@lucide/vue';
+import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore, type ViewMode } from '@/stores/settings';
 import type { Project } from '@/types';
@@ -171,7 +171,10 @@ const handleCreateProject = () => {
         <!-- Project Title -->
         <div class="flex items-center gap-2 overflow-hidden flex-grow mr-2">
           <Hash class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
-          <span class="truncate font-sans">{{ project.title }}</span>
+          <span class="truncate font-sans flex items-center gap-1.5" :title="t('projects.gitConnectedTooltip')">
+            {{ project.title }}
+            <GitBranch v-if="project.git_remote" class="w-3 h-3 text-theme-accent shrink-0" />
+          </span>
         </div>
 
         <!-- Project Actions -->

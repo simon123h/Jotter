@@ -115,6 +115,7 @@ export const en = {
     pinProject: 'Pin project',
     unpinProject: 'Unpin project',
     editProject: 'Edit Project',
+    gitConnectedTooltip: 'Backed by Git repository',
     offline: 'OFFLINE',
   },
   columnEdit: {
@@ -139,6 +140,10 @@ export const en = {
     prunePeriodPlaceholder: 'e.g. 30 (empty for never delete)',
     prunePeriodHelp:
       'Automatically delete tasks in the "Done" column after this many days. Leave empty or set to 0 to disable auto-deletion.',
+    gitRemoteLabel: 'Git Remote URL (Optional)',
+    gitRemotePlaceholder: 'e.g. https://github.com/user/repo.git',
+    gitRemoteHelp:
+      'Connecting a Git remote enables automatic synchronization of your markdown files. Ensure your SSH keys or credentials are configured locally.',
     saveButton: 'Save',
     deleteButton: 'Delete project',
   },

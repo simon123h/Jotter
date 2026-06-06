@@ -69,14 +69,14 @@ export async function getProjects(): Promise<Project[]> {
   return response.json();
 }
 
-export async function createProject(title: string): Promise<Project> {
+export async function createProject(title: string, git_remote?: string | null): Promise<Project> {
   if (IS_DEMO_MODE) {
     return demoApi.createProject(title);
   }
   const response = await customFetch(`${API_BASE}/projects`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title }),
+    body: JSON.stringify({ title, git_remote }),
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -85,7 +85,7 @@ export async function createProject(title: string): Promise<Project> {
   return response.json();
 }
 
-export async function updateProject(id: string, updates: { title?: string; done_clean_period?: number | null }): Promise<Project> {
+export async function updateProject(id: string, updates: Partial<Project>): Promise<Project> {
   if (IS_DEMO_MODE) {
     return demoApi.updateProject(id, updates);
   }

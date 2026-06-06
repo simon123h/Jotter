@@ -20,12 +20,14 @@ const emit = defineEmits<{
       id: string;
       title: string;
       done_clean_period: number | null;
+      git_remote: string | null;
     }
   ): void;
 }>();
 
 const title = ref('');
 const doneCleanPeriod = ref<number | null>(null);
+const gitRemote = ref('');
 const titleInput = ref<HTMLInputElement | null>(null);
 
 // Watch for modal open and initialize values
@@ -36,6 +38,7 @@ watch(
       title.value = props.project.title || '';
       doneCleanPeriod.value =
         props.project.done_clean_period !== undefined && props.project.done_clean_period !== null ? props.project.done_clean_period : null;
+      gitRemote.value = props.project.git_remote || '';
       nextTick(() => {
         titleInput.value?.focus();
       });
@@ -52,6 +55,7 @@ watch(
       title.value = newProject.title || '';
       doneCleanPeriod.value =
         newProject.done_clean_period !== undefined && newProject.done_clean_period !== null ? newProject.done_clean_period : null;
+      gitRemote.value = newProject.git_remote || '';
     }
   }
 );
@@ -75,6 +79,7 @@ const handleSave = () => {
     id: props.project.id,
     title: cleanTitle,
     done_clean_period: parsedPeriod,
+    git_remote: gitRemote.value.trim() || null,
   });
   emit('close');
 };
@@ -151,6 +156,22 @@ onUnmounted(() => {
               />
               <p class="mt-1 text-[11px] text-theme-text-muted leading-relaxed">
                 {{ t('projectEdit.prunePeriodHelp') }}
+              </p>
+            </div>
+
+            <!-- Git Remote URL Input -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
+                {{ t('projectEdit.gitRemoteLabel') }}
+              </label>
+              <input
+                v-model="gitRemote"
+                type="text"
+                :placeholder="t('projectEdit.gitRemotePlaceholder')"
+                class="w-full bg-theme-card border border-theme-border rounded px-3 py-2 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary"
+              />
+              <p class="mt-1 text-[11px] text-theme-text-muted leading-relaxed">
+                {{ t('projectEdit.gitRemoteHelp') }}
               </p>
             </div>
 

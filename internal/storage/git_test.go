@@ -14,7 +14,7 @@ func TestGitSync(t *testing.T) {
 		tempDir, _ := os.MkdirTemp("", "git-test-non-*")
 		defer os.RemoveAll(tempDir)
 
-		err := GitSync(tempDir)
+		err := GitSync(tempDir, "")
 		if err != nil {
 			t.Errorf("Expected nil error for non-git dir, got: %v", err)
 		}
@@ -29,14 +29,11 @@ func TestGitSync(t *testing.T) {
 		// Ensure a branch exists
 		_ = runGit(ctx, tempDir, "checkout", "-b", "main")
 
-		err := GitSync(tempDir)
-		if err == nil {
-			t.Error("Expected error because origin is missing")
-		} else if !strings.Contains(err.Error(), "git fetch failed") {
-			t.Errorf("Unexpected error message: %v", err)
+		err := GitSync(tempDir, "")
+		if err != nil {
+			t.Errorf("Expected nil error for git dir without remote, got: %v", err)
 		}
 	})
-
 	t.Run("Full Sync Flow", func(t *testing.T) {
 		// 1. Create a "remote" repository
 		remoteDir, _ := os.MkdirTemp("", "git-remote-*")
@@ -66,7 +63,7 @@ func TestGitSync(t *testing.T) {
 
 		// 5. Test GitSync (with local changes)
 		_ = os.WriteFile(filepath.Join(localDir, "task1.md"), []byte("new task"), 0644)
-		err := GitSync(localDir)
+		err := GitSync(localDir, "")
 		if err != nil {
 			t.Fatalf("GitSync failed: %v", err)
 		}
@@ -117,7 +114,7 @@ func TestGitSync(t *testing.T) {
 		_ = os.WriteFile(filepath.Join(localDir, "conflict.md"), []byte("local changed"), 0644)
 
 		// 4. Run GitSync - should fail with conflict message
-		err := GitSync(localDir)
+		err := GitSync(localDir, "")
 		if err == nil {
 			t.Error("Expected conflict error, got nil")
 		} else if !strings.Contains(err.Error(), "merge conflict detected") {

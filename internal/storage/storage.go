@@ -108,6 +108,7 @@ func LoadProjectsFile(tasksDir string) ([]map[string]interface{}, error) {
 				"title":             "Default Project",
 				"created_at":        nowStr,
 				"done_clean_period": nil,
+				"git_remote":        nil,
 			},
 		}
 		_ = os.MkdirAll(filepath.Join(tasksDir, "default"), 0755)
@@ -130,6 +131,9 @@ func LoadProjectsFile(tasksDir string) ([]map[string]interface{}, error) {
 	for _, p := range projects {
 		if _, ok := p["done_clean_period"]; !ok {
 			p["done_clean_period"] = nil
+		}
+		if _, ok := p["git_remote"]; !ok {
+			p["git_remote"] = nil
 		}
 	}
 	return projects, nil
@@ -510,7 +514,14 @@ func SyncDBWithFiles(tasksDir string) (int, error) {
 			}
 		}
 
-		_, errProj := tx.Exec("INSERT INTO projects (id, title, created_at, done_clean_period) VALUES (?, ?, ?, ?)", pID, pTitle, pCreated, doneCleanPeriod)
+		var gitRemote sql.NullString
+		if p["git_remote"] != nil {
+			if r, ok := p["git_remote"].(string); ok {
+				gitRemote = sql.NullString{String: r, Valid: true}
+			}
+		}
+
+		_, errProj := tx.Exec("INSERT INTO projects (id, title, created_at, done_clean_period, git_remote) VALUES (?, ?, ?, ?, ?)", pID, pTitle, pCreated, doneCleanPeriod, gitRemote)
 		if errProj != nil {
 			return 0, errProj
 		}
