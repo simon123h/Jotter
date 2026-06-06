@@ -20,7 +20,6 @@ const emit = defineEmits<{
   (e: 'update:modelValue', val: string): void;
   (e: 'toggle-sidebar'): void;
   (e: 'open-filter'): void;
-  (e: 'set-view-mode', mode: ViewMode): void;
   (e: 'create-task', defaultBucket: BucketName): void;
 }>();
 </script>
@@ -82,8 +81,8 @@ const emit = defineEmits<{
 
       <!-- View Mode Toggle -->
       <div class="flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
-        <button
-          @click="emit('set-view-mode', 'board')"
+        <router-link
+          :to="{ name: 'board', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
             viewMode === 'board'
@@ -93,9 +92,9 @@ const emit = defineEmits<{
         >
           <LayoutGrid class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.board') }}</span>
-        </button>
-        <button
-          @click="emit('set-view-mode', 'list')"
+        </router-link>
+        <router-link
+          :to="{ name: 'list', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
             viewMode === 'list'
@@ -105,9 +104,9 @@ const emit = defineEmits<{
         >
           <List class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.list') }}</span>
-        </button>
-        <button
-          @click="emit('set-view-mode', 'matrix')"
+        </router-link>
+        <router-link
+          :to="{ name: 'matrix', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
             viewMode === 'matrix'
@@ -117,9 +116,9 @@ const emit = defineEmits<{
         >
           <Grid class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.matrix') }}</span>
-        </button>
-        <button
-          @click="emit('set-view-mode', 'time')"
+        </router-link>
+        <router-link
+          :to="{ name: 'time', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
             viewMode === 'time'
@@ -129,9 +128,9 @@ const emit = defineEmits<{
         >
           <Clock class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.time') }}</span>
-        </button>
-        <button
-          @click="emit('set-view-mode', 'tag')"
+        </router-link>
+        <router-link
+          :to="{ name: 'tag', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
             viewMode === 'tag'
@@ -141,9 +140,9 @@ const emit = defineEmits<{
         >
           <Tag class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.tag') }}</span>
-        </button>
-        <button
-          @click="emit('set-view-mode', 'global-time')"
+        </router-link>
+        <router-link
+          :to="{ name: 'global-time', query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
             viewMode === 'global-time'
@@ -153,7 +152,7 @@ const emit = defineEmits<{
         >
           <Zap class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.globalTime') }}</span>
-        </button>
+        </router-link>
       </div>
 
       <!-- New Task Button -->

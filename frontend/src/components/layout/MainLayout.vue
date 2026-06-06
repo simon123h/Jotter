@@ -58,22 +58,6 @@ const selectProject = (projectId: string) => {
   });
 };
 
-const setViewMode = (mode: ViewMode) => {
-  if (mode === 'global-time') {
-    router.push({ name: 'global-time', query: route.query });
-    return;
-  }
-  if (mode === 'settings') {
-    router.push({ name: 'settings', query: route.query });
-    return;
-  }
-
-  router.push({
-    name: mode,
-    params: { projectId: activeProjectId.value },
-    query: route.query,
-  });
-};
 
 const toggleSidebar = () => {
   settingsStore.toggleSidebar();
@@ -152,7 +136,6 @@ onMounted(async () => {
       default-bucket-name="todo"
       @toggle-sidebar="toggleSidebar"
       @open-filter="openFilterModal"
-      @set-view-mode="setViewMode"
       @create-task="openCreateModal"
     />
 
@@ -165,11 +148,9 @@ onMounted(async () => {
           :sync-loading="syncLoading"
           :sync-success="syncSuccess"
           :view-mode="viewMode"
-          @select-project="selectProject"
           @create-project="handleCreateProject"
           @edit-project="modalStore.openProjectEdit"
           @sync="triggerSync"
-          @select-view="setViewMode"
         />
       </transition>
 

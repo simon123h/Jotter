@@ -16,8 +16,8 @@ describe('TaskCreateModal.vue', () => {
     setActivePinia(createPinia());
     const projectStore = useProjectStore();
     projectStore.buckets = [
-      { name: 'todo' as const, title: 'To Do', subtitle: '', position: 1, is_default: true, project_id: 'test-project' },
-      { name: 'done' as const, title: 'Done', subtitle: '', position: 2, is_default: false, project_id: 'test-project' },
+      { name: 'todo' as const, title: 'To Do', subtitle: '', position: 1, is_default: true },
+      { name: 'done' as const, title: 'Done', subtitle: '', position: 2, is_default: false },
     ];
   });
 

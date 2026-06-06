@@ -18,11 +18,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'select-project', id: string): void;
   (e: 'create-project', title: string): void;
   (e: 'edit-project', project: Project): void;
   (e: 'sync'): void;
-  (e: 'select-view', view: ViewMode): void;
 }>();
 
 const settingsStore = useSettingsStore();
@@ -157,16 +155,20 @@ const handleCreateProject = () => {
 
     <!-- Projects List -->
     <div class="flex-grow overflow-y-auto p-2 space-y-1 scroller-thin">
-      <div
+      <router-link
         v-for="project in sortedProjects"
         :key="project.id"
+        :to="{
+          name: (!viewMode || viewMode === 'global-time' || viewMode === 'settings') ? 'board' : viewMode,
+          params: { projectId: project.id },
+          query: $route.query
+        }"
         class="group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all cursor-pointer font-medium"
         :class="
           project.id === activeProjectId
             ? 'bg-theme-primary/10 text-theme-accent border border-theme-primary/15'
             : 'text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main border border-transparent'
         "
-        @click="emit('select-project', project.id)"
       >
         <!-- Project Title -->
         <div class="flex items-center gap-2 overflow-hidden flex-grow mr-2">
@@ -205,7 +207,7 @@ const handleCreateProject = () => {
             </button>
           </div>
         </div>
-      </div>
+      </router-link>
     </div>
 
     <!-- Add Project Action at Bottom of Sidebar -->
@@ -253,8 +255,8 @@ const handleCreateProject = () => {
       </button>
 
       <!-- Settings Button -->
-      <button
-        @click="emit('select-view', 'settings')"
+      <router-link
+        :to="{ name: 'settings', query: $route.query }"
         class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded border transition-all cursor-pointer"
         :class="
           viewMode === 'settings'
@@ -264,7 +266,7 @@ const handleCreateProject = () => {
       >
         <Settings class="w-3.5 h-3.5" />
         <span>{{ t('views.settings') }}</span>
-      </button>
+      </router-link>
     </div>
   </aside>
 </template>
