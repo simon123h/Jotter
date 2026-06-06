@@ -26,7 +26,9 @@ func TestGitSync(t *testing.T) {
 
 		ctx := context.Background()
 		_ = runGit(ctx, tempDir, "init")
-
+		// Ensure a branch exists
+		_ = runGit(ctx, tempDir, "checkout", "-b", "main")
+		
 		err := GitSync(tempDir)
 		if err == nil {
 			t.Error("Expected error because origin is missing")
@@ -41,13 +43,16 @@ func TestGitSync(t *testing.T) {
 		defer os.RemoveAll(remoteDir)
 		ctx := context.Background()
 		_ = runGit(ctx, remoteDir, "init", "--bare")
+		// Explicitly set default branch on remote to main
+		_ = runGit(ctx, remoteDir, "symbolic-ref", "HEAD", "refs/heads/main")
 
 		// 2. Create local repository
 		localDir, _ := os.MkdirTemp("", "git-local-*")
 		defer os.RemoveAll(localDir)
 		_ = runGit(ctx, localDir, "init")
+		_ = runGit(ctx, localDir, "checkout", "-b", "main")
 		_ = runGit(ctx, localDir, "remote", "add", "origin", remoteDir)
-
+		
 		// 3. Configure git user for tests
 		_ = runGit(ctx, localDir, "config", "user.email", "test@example.com")
 		_ = runGit(ctx, localDir, "config", "user.name", "Test User")
@@ -57,7 +62,7 @@ func TestGitSync(t *testing.T) {
 		_ = os.WriteFile(filepath.Join(localDir, "initial.md"), []byte("hello"), 0644)
 		_ = runGit(ctx, localDir, "add", ".")
 		_ = runGit(ctx, localDir, "commit", "-m", "Initial commit")
-		_ = runGit(ctx, localDir, "push", "origin", "main")
+		_ = runGit(ctx, localDir, "push", "-u", "origin", "main")
 
 		// 5. Test GitSync (with local changes)
 		_ = os.WriteFile(filepath.Join(localDir, "task1.md"), []byte("new task"), 0644)
@@ -81,10 +86,12 @@ func TestGitSync(t *testing.T) {
 		defer os.RemoveAll(remoteDir)
 		ctx := context.Background()
 		_ = runGit(ctx, remoteDir, "init", "--bare")
+		_ = runGit(ctx, remoteDir, "symbolic-ref", "HEAD", "refs/heads/main")
 
 		localDir, _ := os.MkdirTemp("", "git-conflict-local-*")
 		defer os.RemoveAll(localDir)
 		_ = runGit(ctx, localDir, "init")
+		_ = runGit(ctx, localDir, "checkout", "-b", "main")
 		_ = runGit(ctx, localDir, "remote", "add", "origin", remoteDir)
 		_ = runGit(ctx, localDir, "config", "user.email", "test@example.com")
 		_ = runGit(ctx, localDir, "config", "user.name", "Test User")
@@ -93,7 +100,7 @@ func TestGitSync(t *testing.T) {
 		_ = os.WriteFile(filepath.Join(localDir, "conflict.md"), []byte("initial"), 0644)
 		_ = runGit(ctx, localDir, "add", ".")
 		_ = runGit(ctx, localDir, "commit", "-m", "Initial")
-		_ = runGit(ctx, localDir, "push", "origin", "main")
+		_ = runGit(ctx, localDir, "push", "-u", "origin", "main")
 
 		// 2. Create another local to simulate remote change
 		otherDir, _ := os.MkdirTemp("", "git-conflict-other-*")
