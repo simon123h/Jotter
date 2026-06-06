@@ -59,6 +59,8 @@ export const en = {
     addColumn: 'Add Column',
     add: 'Add',
     markDone: 'Mark Done',
+    archive: 'Archive',
+    unarchive: 'Unarchive',
   },
   errors: {
     titleRequired: 'Title is required',
@@ -101,6 +103,12 @@ export const en = {
     hide: 'Hide "Done" column',
     showText: 'Show Done',
     hideText: 'Hide Done',
+  },
+  archiveBucket: {
+    show: 'Show "Archive" column',
+    hide: 'Hide "Archive" column',
+    showText: 'Show Archive',
+    hideText: 'Hide Archive',
   },
   projects: {
     sidebarTitle: 'Projects',

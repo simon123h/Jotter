@@ -49,6 +49,19 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			args = append(args, excludeBucket)
 		}
 
+		excludeBuckets := r.URL.Query().Get("exclude_buckets")
+		if excludeBuckets != "" {
+			bucketList := strings.Split(excludeBuckets, ",")
+			if len(bucketList) > 0 {
+				var placeholders []string
+				for _, b := range bucketList {
+					placeholders = append(placeholders, "?")
+					args = append(args, strings.TrimSpace(b))
+				}
+				query += fmt.Sprintf(" AND bucket NOT IN (%s)", strings.Join(placeholders, ","))
+			}
+		}
+
 		// Priority filtering
 		priorities := r.URL.Query().Get("priorities")
 		if priorities != "" {
@@ -376,15 +389,21 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				var bDummy string
 				errB := tx.QueryRow("SELECT name FROM buckets WHERE project_id = ? AND name = ?", projectID, updatedBucket).Scan(&bDummy)
 				if errB == sql.ErrNoRows {
-					if updatedBucket == "done" {
+					if updatedBucket == "done" || updatedBucket == "archive" {
 						var maxPos sql.NullFloat64
 						_ = tx.QueryRow("SELECT MAX(position) FROM buckets WHERE project_id = ?", projectID).Scan(&maxPos)
 						newPosition := 1000.0
 						if maxPos.Valid {
 							newPosition = maxPos.Float64 + 1000.0
 						}
-						_, err = tx.Exec("INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, 'done', 'Done', '', ?, NULL, 'list', NULL, 0)",
-							projectID, newPosition)
+
+						title := "Done"
+						if updatedBucket == "archive" {
+							title = "Archive"
+						}
+
+						_, err = tx.Exec("INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, '', ?, NULL, 'list', NULL, 0)",
+							projectID, updatedBucket, title, newPosition)
 						if err != nil {
 							SendError(w, http.StatusInternalServerError, err.Error())
 							return
@@ -443,7 +462,7 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 				return
 			}
 
-			if _, ok := raw["bucket"]; ok && updatedBucket == "done" {
+			if _, ok := raw["bucket"]; ok && (updatedBucket == "done" || updatedBucket == "archive") {
 				_ = syncBucketsFile(tasksDir, projectID)
 			}
 
@@ -498,16 +517,21 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 		var bDummy string
 		errB := tx.QueryRow("SELECT name FROM buckets WHERE project_id = ? AND name = ?", projectID, req.Bucket).Scan(&bDummy)
 		if errB == sql.ErrNoRows {
-			if req.Bucket == "done" {
+			if req.Bucket == "done" || req.Bucket == "archive" {
 				var maxPos sql.NullFloat64
 				_ = tx.QueryRow("SELECT MAX(position) FROM buckets WHERE project_id = ?", projectID).Scan(&maxPos)
 				newPosition := 1000.0
 				if maxPos.Valid {
 					newPosition = maxPos.Float64 + 1000.0
 				}
+				
+				title := "Done"
+				if req.Bucket == "archive" {
+					title = "Archive"
+				}
 
-				_, err = tx.Exec("INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, 'done', 'Done', '', ?, NULL, 'list', NULL, 0)",
-					projectID, newPosition)
+				_, err = tx.Exec("INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, '', ?, NULL, 'list', NULL, 0)",
+					projectID, req.Bucket, title, newPosition)
 				if err != nil {
 					SendError(w, http.StatusInternalServerError, err.Error())
 					return
@@ -553,7 +577,7 @@ func RegisterTaskRoutes(r chi.Router, tasksDir string) {
 			return
 		}
 
-		if req.Bucket == "done" {
+		if req.Bucket == "done" || req.Bucket == "archive" {
 			_ = syncBucketsFile(tasksDir, projectID)
 		}
 

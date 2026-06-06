@@ -449,6 +449,36 @@ const handleMarkDone = () => {
   }
 };
 
+const handleArchive = async () => {
+  if (!task.value) return;
+  try {
+    const updated = await updateTask(props.projectId, task.value.id, {
+      bucket: 'archive',
+    });
+    task.value = updated;
+    emit('updated');
+    emit('close');
+  } catch (err: any) {
+    error.value = t('errors.updateTask', { message: err.message || err });
+  }
+};
+
+const handleUnarchive = async () => {
+  if (!task.value) return;
+  try {
+    // Try to move back to 'todo' or the default bucket
+    const targetBucket = props.buckets.find(b => b.name === 'todo')?.name || props.buckets[0]?.name || 'todo';
+    const updated = await updateTask(props.projectId, task.value.id, {
+      bucket: targetBucket,
+    });
+    task.value = updated;
+    emit('updated');
+    emit('close');
+  } catch (err: any) {
+    error.value = t('errors.updateTask', { message: err.message || err });
+  }
+};
+
 const cancelEdit = () => {
   if (task.value) {
     editTitle.value = task.value.title;
@@ -767,7 +797,21 @@ const getPriorityClasses = (prio: string) => {
             <!-- View mode buttons -->
             <template v-if="!isEditing">
               <button
-                v-if="task && task.bucket !== 'done'"
+                v-if="task && task.bucket !== 'archive'"
+                @click="handleArchive"
+                class="text-sm font-semibold px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded transition-all cursor-pointer"
+              >
+                {{ t('buttons.archive') }}
+              </button>
+              <button
+                v-if="task && task.bucket === 'archive'"
+                @click="handleUnarchive"
+                class="text-sm font-semibold px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded transition-all cursor-pointer"
+              >
+                {{ t('buttons.unarchive') }}
+              </button>
+              <button
+                v-if="task && task.bucket !== 'done' && task.bucket !== 'archive'"
                 @click="handleMarkDone"
                 class="text-sm font-semibold px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all cursor-pointer"
               >

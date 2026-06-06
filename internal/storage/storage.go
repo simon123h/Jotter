@@ -81,6 +81,7 @@ var DefaultBuckets = []map[string]interface{}{
 	{"name": "todo", "title": "To Do", "subtitle": "", "position": 2000.0, "is_default": false, "layout": "list"},
 	{"name": "in-progress", "title": "In Progress", "subtitle": "", "position": 3000.0, "is_default": false, "layout": "list"},
 	{"name": "done", "title": "Done", "subtitle": "", "position": 4000.0, "is_default": false, "layout": "list"},
+	{"name": "archive", "title": "Archive", "subtitle": "", "position": 5000.0, "is_default": false, "layout": "list"},
 }
 
 type TaskFrontmatter struct {

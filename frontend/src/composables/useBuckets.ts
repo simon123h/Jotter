@@ -2,7 +2,7 @@ import { ref, computed, type Ref } from 'vue';
 import type { Bucket } from '@/types';
 import { getBuckets, createBucket, updateBucket, deleteBucket } from '@/api';
 
-export function useBuckets(activeProjectId: Ref<string>, hideDoneColumn: Ref<boolean>) {
+export function useBuckets(activeProjectId: Ref<string>, hideDoneColumn: Ref<boolean>, hideArchiveColumn: Ref<boolean>) {
   const buckets = ref<Bucket[]>([]);
   const error = ref<string | null>(null);
 
@@ -19,10 +19,11 @@ export function useBuckets(activeProjectId: Ref<string>, hideDoneColumn: Ref<boo
   };
 
   const displayedBuckets = computed(() => {
-    if (hideDoneColumn.value) {
-      return buckets.value.filter((b) => b.name !== 'done');
-    }
-    return buckets.value;
+    return buckets.value.filter((b) => {
+      if (b.name === 'done' && hideDoneColumn.value) return false;
+      if (b.name === 'archive' && hideArchiveColumn.value) return false;
+      return true;
+    });
   });
 
   const handleCreateColumn = async (title: string, subtitle: string) => {

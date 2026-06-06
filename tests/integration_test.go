@@ -115,9 +115,9 @@ func TestIntegration(t *testing.T) {
 			t.Fatalf("Failed to parse response: %v", err)
 		}
 
-		// Default project creation populates default columns (backlog, todo, in-progress, done)
-		if len(buckets) != 4 {
-			t.Errorf("Expected 4 default buckets, got %d", len(buckets))
+		// Default project creation populates default columns (backlog, todo, in-progress, done, archive)
+		if len(buckets) != 5 {
+			t.Errorf("Expected 5 default buckets, got %d", len(buckets))
 		}
 	})
 

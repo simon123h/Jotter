@@ -49,6 +49,7 @@ function useLocalStorageRef<T>(key: string, defaultValue: T): Ref<T> {
 export const useSettingsStore = defineStore('settings', () => {
   // Settings synchronized with localStorage
   const hideDoneColumn = useLocalStorageRef('jotter-hide-done-column', true);
+  const hideArchiveColumn = useLocalStorageRef('jotter-hide-archive-column', true);
   const isSidebarOpen = useLocalStorageRef('jotter-sidebar-open', true);
   const currentTheme = useLocalStorageRef('jotter-theme', 'nordic-light');
   const viewMode = useLocalStorageRef<ViewMode>('jotter-view-mode', 'board');
@@ -111,6 +112,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   return {
     hideDoneColumn,
+    hideArchiveColumn,
     isSidebarOpen,
     currentTheme,
     viewMode,

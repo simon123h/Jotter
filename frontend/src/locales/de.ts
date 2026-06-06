@@ -60,6 +60,8 @@ export const de = {
     addColumn: 'Spalte hinzufügen',
     add: 'Hinzufügen',
     markDone: 'Als erledigt markieren',
+    archive: 'Archivieren',
+    unarchive: 'Wiederherstellen',
   },
   errors: {
     titleRequired: 'Titel ist erforderlich',
@@ -102,6 +104,12 @@ export const de = {
     hide: '"Erledigt"-Spalte ausblenden',
     showText: 'Erledigte zeigen',
     hideText: 'Erledigte ausblenden',
+  },
+  archiveBucket: {
+    show: '"Archiv"-Spalte anzeigen',
+    hide: '"Archiv"-Spalte ausblenden',
+    showText: 'Archiv zeigen',
+    hideText: 'Archiv ausblenden',
   },
   projects: {
     sidebarTitle: 'Projekte',

@@ -33,6 +33,7 @@ const dueDateStatus = ref<'all' | 'has' | 'none'>('all');
 const dueAfter = ref('');
 const dueBefore = ref('');
 const hideDoneColumnLocal = ref(false);
+const hideArchiveColumnLocal = ref(false);
 
 // Watch for isOpen changes to call showModal() / close()
 watch(
@@ -76,6 +77,7 @@ watch(
       dueAfter.value = props.currentFilters.due_after || '';
       dueBefore.value = props.currentFilters.due_before || '';
       hideDoneColumnLocal.value = settingsStore.hideDoneColumn;
+      hideArchiveColumnLocal.value = settingsStore.hideArchiveColumn;
 
       await nextTick();
       if (dialogRef.value && !dialogRef.value.open) {
@@ -105,6 +107,7 @@ const handleClear = () => {
   dueAfter.value = '';
   dueBefore.value = '';
   hideDoneColumnLocal.value = false;
+  hideArchiveColumnLocal.value = false;
 };
 
 const handleApply = () => {
@@ -124,6 +127,7 @@ const handleApply = () => {
   };
 
   settingsStore.hideDoneColumn = hideDoneColumnLocal.value;
+  settingsStore.hideArchiveColumn = hideArchiveColumnLocal.value;
 
   emit('apply', filters);
   emit('close');
@@ -333,6 +337,12 @@ const handleDialogClick = (event: MouseEvent) => {
             >
               <input id="hide-done-column-checkbox" type="checkbox" v-model="hideDoneColumnLocal" class="accent-theme-primary" />
               <span>{{ t('doneBucket.hide') }}</span>
+            </label>
+            <label
+              class="flex items-center gap-2 px-3 py-2 mt-2 rounded border border-theme-border/50 bg-theme-card/30 hover:bg-theme-column/30 transition-all cursor-pointer text-xs text-theme-text-main w-full"
+            >
+              <input id="hide-archive-column-checkbox" type="checkbox" v-model="hideArchiveColumnLocal" class="accent-theme-primary" />
+              <span>{{ t('archiveBucket.hide') }}</span>
             </label>
           </div>
         </div>

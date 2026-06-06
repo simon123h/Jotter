@@ -146,8 +146,8 @@ func TestBucketStorage(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if len(buckets) != 4 {
-			t.Errorf("Expected 4 default buckets, got %d", len(buckets))
+		if len(buckets) != 5 {
+			t.Errorf("Expected 5 default buckets, got %d", len(buckets))
 		}
 	})
 

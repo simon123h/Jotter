@@ -41,7 +41,7 @@ if (route.params.viewMode) {
   settingsStore.setViewMode(route.params.viewMode as ViewMode);
 }
 
-const { hideDoneColumn, isSidebarOpen, currentTheme, viewMode, activeProjectId } = storeToRefs(settingsStore);
+const { hideDoneColumn, hideArchiveColumn, isSidebarOpen, currentTheme, viewMode, activeProjectId } = storeToRefs(settingsStore);
 
 const tasks = ref<Task[]>([]);
 const loading = ref(false);
@@ -108,7 +108,7 @@ const {
   handleRenameColumn,
   handleDeleteColumn,
   handleColumnReordered,
-} = useBuckets(activeProjectId, hideDoneColumn);
+} = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
 
 // Filter state & logic
 const isFilterModalOpen = ref(false);
@@ -121,7 +121,13 @@ const fetchAllTasks = async () => {
     return;
   }
   try {
-    tasks.value = await getTasks(activeProjectId.value, { exclude_bucket: hideDoneColumn.value ? 'done' : undefined });
+    const excludeList = [];
+    if (hideDoneColumn.value) excludeList.push('done');
+    if (hideArchiveColumn.value) excludeList.push('archive');
+
+    tasks.value = await getTasks(activeProjectId.value, {
+      exclude_buckets: excludeList.length > 0 ? excludeList.join(',') : undefined,
+    });
   } catch (err: any) {
     localError.value = t('errors.fetchTasks', { message: err.message || err });
   }
@@ -150,7 +156,6 @@ const error = computed({
   },
 });
 
-// Sync taskFilters.show_done and hideDoneColumn
 watch(
   () => taskFilters.value.show_done,
   (newVal) => {
@@ -162,10 +167,29 @@ watch(
   { immediate: true }
 );
 
+watch(
+  () => taskFilters.value.show_archived,
+  (newVal) => {
+    const shouldHide = !newVal;
+    if (hideArchiveColumn.value !== shouldHide) {
+      hideArchiveColumn.value = shouldHide;
+    }
+  },
+  { immediate: true }
+);
+
 watch(hideDoneColumn, (newVal) => {
   const showDoneTarget = newVal ? undefined : true;
   if (taskFilters.value.show_done !== showDoneTarget) {
     taskFilters.value.show_done = showDoneTarget;
+  }
+  fetchAllTasks();
+});
+
+watch(hideArchiveColumn, (newVal) => {
+  const showArchivedTarget = newVal ? undefined : true;
+  if (taskFilters.value.show_archived !== showArchivedTarget) {
+    taskFilters.value.show_archived = showArchivedTarget;
   }
   fetchAllTasks();
 });
