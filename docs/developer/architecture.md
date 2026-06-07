@@ -71,12 +71,16 @@ flowchart LR
     end
 
     subgraph Backend [Backend Server - Go Chi / Wails]
-        Router[API Routers] <--> Models[Go Struct Models]
-        Router <--> Storage[File Sync Manager]
-        Router <--> Database[SQLite database/sql]
+        direction TB
+        Router[API Routers / chi.Router] <--> Handlers[Layered Handlers / Controllers]
+        Handlers <--> Services[Domain Services / Business Layer]
+        Services <--> DBRepo[Database Repositories]
+        Services <--> FileRepo[File Repositories]
+        DBRepo <--> Database[(SQLite DB Index)]
     end
 
     Client <-->|REST API / CORS| Router
+    FileRepo <-->|Read / Write| Disk[(Local Disk .md)]
 ```
 
 ### 5.1 Frontend (Vue 3 Single Page Application)
@@ -87,9 +91,20 @@ flowchart LR
 
 ### 5.2 Backend (Go Chi / Wails)
 
-- **API Routers**: Exposes REST endpoints for managing tasks, buckets, and projects.
-- **Storage Manager**: Implements atomic writes to task files (writing to temporary files first before moving them into place) and handles folder migration.
-- **SQLite Database**: Uses pure-Go `modernc.org/sqlite` in WAL (Write-Ahead Logging) mode.
+Jotter is built using a clean, layered architectural design divided into modular feature packages (`internal/features/...`): `project`, `bucket`, `task`, `settings`, and `system`. Each feature package consists of three decoupled layers (perfectly matching Spring Boot's Controller-Service-Repository separation):
+
+1. **Handlers (Controller Layer)**:
+   - Registers feature-specific REST endpoints (`RegisterRoutes`).
+   - Acts as the entry point for HTTP requests.
+   - Parses request parameters and decodes request payloads into Go struct DTOs (Data Transfer Objects).
+   - Translates domain-level responses or errors into standard HTTP status codes and JSON responses.
+2. **Services (Business Logic / Domain Layer)**:
+   - Contains pure business logic, input validation, and business rule evaluation.
+   - Coordinates multi-repository operations (e.g., ensuring disk storage and the SQLite index remain synchronized).
+   - Handles advanced file-system operations such as multi-part attachment uploads, task list filtering, and project-scoped auto-pruning.
+3. **Repositories (Data Access / Persistence Layer)**:
+   - **Database Repository (SQLite Repositories)**: Interacts directly with the local ephemeral SQLite index database (`modernc.org/sqlite`) using structured SQL queries.
+   - **File Repository (Disk Repositories)**: Directly interacts with the host filesystem to read/write Markdown YAML frontmatter files, JSON configuration registries (`projects.json`), and binary/text attachment files.
 
 ---
 
@@ -101,18 +116,28 @@ When Jotter starts, it goes through a synchronization phase to align the databas
 
 ```mermaid
 sequenceDiagram
-    participant Main as main_server.go or main_desktop.go
+    participant Main as main_server.go / main_desktop.go
+    participant Bootstrap as internal/app/bootstrap.go
     participant DB as internal/db/db.go
-    participant Storage as internal/storage/storage.go
+    participant SysSvc as system.Service (internal/features/system)
+    participant FileRepo as system.FileRepository (internal/features/system)
+    participant DBRepo as system.DBRepository (internal/features/system)
     participant Disk as Local Disk (.md)
 
-    Main->>DB: InitDB()
-    DB->>DB: Create SQLite tables and indexes
-    Main->>Storage: SyncDBWithFiles()
-    Storage->>Disk: Scan tasks/ directory structure
-    Disk-->>Storage: Return markdown files metadata
-    Storage->>DB: Clear index & bulk insert records
-    Storage-->>Main: Return synchronization count
+    Main->>Bootstrap: Bootstrap(dataDir, dbPath)
+    Bootstrap->>DB: InitDB()
+    DB-->>Bootstrap: DB initialized (SQLite schema setup)
+    Bootstrap->>SysSvc: SyncDBWithFiles()
+    SysSvc->>SysSvc: Instantiate Service + Repositories
+    SysSvc->>FileRepo: LoadProjectsFile() & ReadDir()
+    FileRepo->>Disk: Read projects.json and project directories
+    Disk-->>FileRepo: Return directories & files
+    FileRepo-->>SysSvc: Project configurations & task list
+    SysSvc->>SysSvc: Parse yaml frontmatter from markdown files
+    SysSvc->>DBRepo: Clear & bulk insert buckets/tasks/projects
+    DBRepo-->>SysSvc: Sync complete
+    SysSvc-->>Bootstrap: Return sync count
+    Bootstrap-->>Main: Ready to serve
 ```
 
 ---
@@ -133,7 +158,7 @@ Jotter is packaged into two separate native binaries:
 
 ## 8. Git Synchronization Logic
 
-Jotter treats each project directory as a potential independent Git repository. The logic is implemented in `internal/storage/git.go` and is triggered sequentially for all configured projects during a system sync.
+Jotter treats each project directory as a potential independent Git repository. The logic is implemented in `internal/features/common/git.go` (and orchestrated via `system.Service`'s file repository wrapper) and is triggered sequentially for all configured projects during a system sync.
 
 ### The Per-Project Sync Flow:
 
@@ -148,7 +173,7 @@ This architecture enables **selective sharing**, where different boards can be s
 
 ---
 
-## 8. Data Model
+## 9. Data Model
 
 ### 8.1 Markdown YAML Frontmatter
 
