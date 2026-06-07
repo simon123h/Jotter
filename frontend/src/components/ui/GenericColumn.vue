@@ -99,14 +99,54 @@ const headerColorClasses = computed(() => {
   if (!props.color) return defaultClasses;
   const color = props.color;
   const mapping: Record<string, { bg: string; text: string; badge: string; border: string }> = {
-    red: { bg: 'bg-rose-500/5', text: 'text-rose-400', badge: 'bg-rose-500/10 border border-rose-500/20 text-rose-400', border: 'border-rose-500/10' },
-    orange: { bg: 'bg-orange-500/5', text: 'text-orange-400', badge: 'bg-orange-500/10 border border-orange-500/20 text-orange-400', border: 'border-orange-500/10' },
-    yellow: { bg: 'bg-amber-500/5', text: 'text-amber-400', badge: 'bg-amber-500/10 border border-amber-500/20 text-amber-400', border: 'border-amber-500/10' },
-    green: { bg: 'bg-emerald-500/5', text: 'text-emerald-400', badge: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', border: 'border-emerald-500/10' },
-    blue: { bg: 'bg-blue-500/5', text: 'text-blue-400', badge: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', border: 'border-blue-500/10' },
-    purple: { bg: 'bg-purple-500/5', text: 'text-purple-400', badge: 'bg-purple-500/10 border border-purple-500/20 text-purple-400', border: 'border-purple-500/10' },
-    pink: { bg: 'bg-pink-500/5', text: 'text-pink-400', badge: 'bg-pink-500/10 border border-pink-500/20 text-pink-400', border: 'border-pink-500/10' },
-    slate: { bg: 'bg-slate-500/5', text: 'text-slate-400', badge: 'bg-slate-500/10 border border-slate-500/20 text-slate-400', border: 'border-slate-500/10' },
+    red: {
+      bg: 'bg-rose-500/5',
+      text: 'text-rose-400',
+      badge: 'bg-rose-500/10 border border-rose-500/20 text-rose-400',
+      border: 'border-rose-500/10',
+    },
+    orange: {
+      bg: 'bg-orange-500/5',
+      text: 'text-orange-400',
+      badge: 'bg-orange-500/10 border border-orange-500/20 text-orange-400',
+      border: 'border-orange-500/10',
+    },
+    yellow: {
+      bg: 'bg-amber-500/5',
+      text: 'text-amber-400',
+      badge: 'bg-amber-500/10 border border-amber-500/20 text-amber-400',
+      border: 'border-amber-500/10',
+    },
+    green: {
+      bg: 'bg-emerald-500/5',
+      text: 'text-emerald-400',
+      badge: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400',
+      border: 'border-emerald-500/10',
+    },
+    blue: {
+      bg: 'bg-blue-500/5',
+      text: 'text-blue-400',
+      badge: 'bg-blue-500/10 border border-blue-500/20 text-blue-400',
+      border: 'border-blue-500/10',
+    },
+    purple: {
+      bg: 'bg-purple-500/5',
+      text: 'text-purple-400',
+      badge: 'bg-purple-500/10 border border-purple-500/20 text-purple-400',
+      border: 'border-purple-500/10',
+    },
+    pink: {
+      bg: 'bg-pink-500/5',
+      text: 'text-pink-400',
+      badge: 'bg-pink-500/10 border border-pink-500/20 text-pink-400',
+      border: 'border-pink-500/10',
+    },
+    slate: {
+      bg: 'bg-slate-500/5',
+      text: 'text-slate-400',
+      badge: 'bg-slate-500/10 border border-slate-500/20 text-slate-400',
+      border: 'border-slate-500/10',
+    },
   };
   return mapping[color] || defaultClasses;
 });
@@ -247,16 +287,10 @@ watch(
         >
           <div class="flex flex-col justify-center overflow-hidden">
             <div class="flex items-center gap-1.5">
-              <h3
-                class="font-bold text-sm uppercase tracking-wider truncate"
-                :class="[headerColorClasses.text]"
-              >
+              <h3 class="font-bold text-sm uppercase tracking-wider truncate" :class="[headerColorClasses.text]">
                 {{ title }}
               </h3>
-              <span
-                class="text-xs px-1.5 py-0.25 font-bold rounded"
-                :class="[headerColorClasses.badge]"
-              >
+              <span class="text-xs px-1.5 py-0.25 font-bold rounded" :class="[headerColorClasses.badge]">
                 {{ tasks.length }}
               </span>
             </div>

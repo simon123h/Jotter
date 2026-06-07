@@ -140,16 +140,10 @@ onBeforeUnmount(() => {
         >
           <!-- Title & Count Badge -->
           <div class="flex items-center gap-1.5 min-w-0 mr-1">
-            <h3
-              class="font-bold text-sm uppercase tracking-wider truncate"
-              :class="[classes.text]"
-            >
+            <h3 class="font-bold text-sm uppercase tracking-wider truncate" :class="[classes.text]">
               {{ col.title }}
             </h3>
-            <span
-              class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0"
-              :class="[classes.badge]"
-            >
+            <span class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0" :class="[classes.badge]">
               {{ col.tasks.length }}
             </span>
           </div>

@@ -72,7 +72,11 @@ export const useUiStore = defineStore('ui', () => {
     collapseEmptyColumns.value = val;
   };
 
-  const getVirtualColumnLayout = (viewName: string, colId: string, defaultLayout: 'list' | 'grid-2' | 'grid-3' = 'list'): 'list' | 'grid-2' | 'grid-3' => {
+  const getVirtualColumnLayout = (
+    viewName: string,
+    colId: string,
+    defaultLayout: 'list' | 'grid-2' | 'grid-3' = 'list'
+  ): 'list' | 'grid-2' | 'grid-3' => {
     return virtualColumnLayouts.value[`${viewName}-${colId}`] || defaultLayout;
   };
 
