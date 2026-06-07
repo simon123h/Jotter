@@ -9,6 +9,7 @@ import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { parseTitleState } from '@/utils/dateParser';
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
+import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 
 const { locale, t } = useI18n();
 const route = useRoute();
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const title = ref('');
+const ignoredKeywords = ref<Set<string>>(new Set());
 const bucket = ref<BucketName>(props.defaultBucket || 'todo');
 const tags = ref('');
 const body = ref('');
@@ -36,7 +38,7 @@ const priority = ref('');
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-const titleInput = ref<HTMLInputElement | null>(null);
+const titleInput = ref<any>(null);
 
 const existingTags = computed(() => {
   const tagsSet = new Set<string>();
@@ -144,7 +146,7 @@ const filteredBuckets = computed(() => {
 });
 
 const checkAutocomplete = () => {
-  const input = titleInput.value;
+  const input = titleInput.value ? titleInput.value.inputEl || titleInput.value : null;
   if (!input) {
     showAutocomplete.value = false;
     return;
@@ -167,7 +169,7 @@ const checkAutocomplete = () => {
 };
 
 const selectAutocompleteItem = (bucketName: string) => {
-  const input = titleInput.value;
+  const input = titleInput.value ? titleInput.value.inputEl || titleInput.value : null;
   if (!input) return;
 
   const value = title.value;
@@ -178,8 +180,12 @@ const selectAutocompleteItem = (bucketName: string) => {
     title.value = value.substring(0, slashIndex) + '/' + bucketName + ' ' + value.substring(cursor);
     const newCursor = slashIndex + bucketName.length + 2;
     nextTick(() => {
-      input.setSelectionRange(newCursor, newCursor);
-      input.focus();
+      if (titleInput.value?.setSelectionRange) {
+        titleInput.value.setSelectionRange(newCursor, newCursor);
+      } else {
+        input.setSelectionRange(newCursor, newCursor);
+      }
+      titleInput.value?.focus();
       checkAutocomplete();
     });
   }
@@ -214,6 +220,7 @@ watch(
   (open) => {
     if (open) {
       title.value = '';
+      ignoredKeywords.value = new Set();
       bucket.value = props.defaultBucket || 'todo';
       tags.value = '';
       body.value = '';
@@ -243,9 +250,9 @@ onUnmounted(() => {
 });
 
 // Watch for date keywords, hashtags, and bucket routing in the title in real-time
-watch(title, (newTitle) => {
+watch([title, () => ignoredKeywords.value], ([newTitle, newIgnored]) => {
   const bucketNames = buckets.value.map((b) => b.name);
-  const result = parseTitleState(newTitle, locale.value, bucketNames);
+  const result = parseTitleState(newTitle, locale.value, bucketNames, newIgnored);
 
   // 1. Due Date Sync
   if (result.matchedKeyword) {
@@ -306,7 +313,7 @@ const handleSubmit = async () => {
   if (loading.value) return;
 
   const bucketNames = buckets.value.map((b) => b.name);
-  const parseResult = parseTitleState(title.value, locale.value, bucketNames);
+  const parseResult = parseTitleState(title.value, locale.value, bucketNames, ignoredKeywords.value);
   const finalTitle = parseResult.cleanTitle;
 
   if (!finalTitle) {
@@ -373,13 +380,14 @@ const handleSubmit = async () => {
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.titleLabel') }}</label>
             <div class="relative">
-              <input
+              <KeywordHighlightInput
                 ref="titleInput"
                 v-model="title"
-                type="text"
-                required
-                class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                v-model:ignored-keywords="ignoredKeywords"
+                :bucket-names="buckets.map((b) => b.name)"
+                :locale="locale"
                 :placeholder="t('form.titlePlaceholder')"
+                :required="true"
                 @input="checkAutocomplete"
                 @click="checkAutocomplete"
                 @keyup="checkAutocomplete"

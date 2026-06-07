@@ -140,7 +140,8 @@ const getRules = (locale: string): DateRule[] => {
 
 export function parseDateFromTitle(
   title: string,
-  locale: string
+  locale: string,
+  ignoredKeywords?: Set<string>
 ): { cleanTitle: string; dueDate: string | null; plannedDate: string | null; matchedKeyword: string | null } {
   if (!title) {
     return { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null };
@@ -152,7 +153,15 @@ export function parseDateFromTitle(
   for (const rule of rules) {
     const match = rule.pattern.exec(title);
     if (match) {
-      const matchedKeyword = match[0].trim().toLowerCase();
+      let matchedText = match[0];
+      if (matchedText.startsWith(' ')) {
+        matchedText = matchedText.substring(1);
+      }
+      const matchedKeyword = matchedText.trim().toLowerCase();
+      if (ignoredKeywords && ignoredKeywords.has(matchedKeyword)) {
+        continue;
+      }
+
       const date = rule.getDate(match);
       const dueDate = formatDate(date);
 
@@ -175,33 +184,44 @@ export function parseDateFromTitle(
       let cleanTitle = title.replace(rule.pattern, ' ');
       cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
 
-      return { cleanTitle, dueDate, plannedDate, matchedKeyword };
+      return { cleanTitle, dueDate, plannedDate, matchedKeyword: matchedText };
     }
   }
 
   return { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null };
 }
 
-export function extractTagsFromTitle(title: string): { cleanTitle: string; tags: string[] } {
+export function extractTagsFromTitle(title: string, ignoredKeywords?: Set<string>): { cleanTitle: string; tags: string[] } {
   if (!title) {
     return { cleanTitle: title, tags: [] };
   }
 
   const tagRegex = /(?:^|\s)#([a-zA-Z0-9\u00C0-\u017F_-]+)(?=\s|$)/g;
   const tags: string[] = [];
-  let match;
 
-  while ((match = tagRegex.exec(title)) !== null) {
-    tags.push(match[1].toLowerCase());
-  }
+  let cleanTitle = title.replace(tagRegex, (fullMatch, tagName) => {
+    let matchedText = fullMatch;
+    if (matchedText.startsWith(' ')) {
+      matchedText = matchedText.substring(1);
+    }
+    const keyword = matchedText.toLowerCase();
+    if (ignoredKeywords && ignoredKeywords.has(keyword)) {
+      return fullMatch;
+    }
+    tags.push(tagName.toLowerCase());
+    return ' ';
+  });
 
-  let cleanTitle = title.replace(tagRegex, ' ');
   cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
 
   return { cleanTitle, tags };
 }
 
-export function extractBucketFromTitle(title: string, bucketNames: string[]): { cleanTitle: string; bucket: string | null } {
+export function extractBucketFromTitle(
+  title: string,
+  bucketNames: string[],
+  ignoredKeywords?: Set<string>
+): { cleanTitle: string; bucket: string | null } {
   if (!title || !bucketNames || bucketNames.length === 0) {
     return { cleanTitle: title, bucket: null };
   }
@@ -210,6 +230,15 @@ export function extractBucketFromTitle(title: string, bucketNames: string[]): { 
   let foundBucket: string | null = null;
 
   let cleanTitle = title.replace(bucketRegex, (fullMatch, name) => {
+    let matchedText = fullMatch;
+    if (matchedText.startsWith(' ')) {
+      matchedText = matchedText.substring(1);
+    }
+    const keyword = matchedText.toLowerCase();
+    if (ignoredKeywords && ignoredKeywords.has(keyword)) {
+      return fullMatch;
+    }
+
     const matchedName = name.toLowerCase();
     const matchedBucket = bucketNames.find((b) => b.toLowerCase() === matchedName);
     if (matchedBucket) {
@@ -224,7 +253,10 @@ export function extractBucketFromTitle(title: string, bucketNames: string[]): { 
   return { cleanTitle, bucket: foundBucket };
 }
 
-export function extractPriorityFromTitle(title: string): { cleanTitle: string; priority: string | null; matchedPriority: string | null } {
+export function extractPriorityFromTitle(
+  title: string,
+  ignoredKeywords?: Set<string>
+): { cleanTitle: string; priority: string | null; matchedPriority: string | null } {
   if (!title) {
     return { cleanTitle: title, priority: null, matchedPriority: null };
   }
@@ -234,6 +266,15 @@ export function extractPriorityFromTitle(title: string): { cleanTitle: string; p
   const match = priorityRegex.exec(title);
 
   if (match) {
+    let matchedText = match[0];
+    if (matchedText.startsWith(' ')) {
+      matchedText = matchedText.substring(1);
+    }
+    const keyword = matchedText.toLowerCase();
+    if (ignoredKeywords && ignoredKeywords.has(keyword)) {
+      return { cleanTitle: title, priority: null, matchedPriority: null };
+    }
+
     const matchedPriority = match[1]; // e.g. "p1"
     const level = match[2]; // e.g. "1"
     let priorityVal = '';
@@ -255,7 +296,8 @@ export function extractPriorityFromTitle(title: string): { cleanTitle: string; p
 export function parseTitleState(
   title: string,
   locale: string,
-  bucketNames?: string[]
+  bucketNames?: string[],
+  ignoredKeywords?: string[] | Set<string>
 ): {
   cleanTitle: string;
   dueDate: string | null;
@@ -266,10 +308,12 @@ export function parseTitleState(
   priority: string | null;
   matchedPriority: string | null;
 } {
-  const tagsResult = extractTagsFromTitle(title);
-  const bucketResult = extractBucketFromTitle(tagsResult.cleanTitle, bucketNames || []);
-  const priorityResult = extractPriorityFromTitle(bucketResult.cleanTitle);
-  const dateResult = parseDateFromTitle(priorityResult.cleanTitle, locale);
+  const ignoredSet = ignoredKeywords ? (ignoredKeywords instanceof Set ? ignoredKeywords : new Set(ignoredKeywords)) : new Set<string>();
+
+  const tagsResult = extractTagsFromTitle(title, ignoredSet);
+  const bucketResult = extractBucketFromTitle(tagsResult.cleanTitle, bucketNames || [], ignoredSet);
+  const priorityResult = extractPriorityFromTitle(bucketResult.cleanTitle, ignoredSet);
+  const dateResult = parseDateFromTitle(priorityResult.cleanTitle, locale, ignoredSet);
 
   return {
     cleanTitle: dateResult.cleanTitle,
@@ -281,4 +325,111 @@ export function parseTitleState(
     priority: priorityResult.priority,
     matchedPriority: priorityResult.matchedPriority,
   };
+}
+
+export interface KeywordMatch {
+  start: number;
+  end: number;
+  text: string;
+  type: 'tag' | 'bucket' | 'priority' | 'date';
+  keyword: string;
+}
+
+export function getKeywordMatches(title: string, locale: string, bucketNames: string[], ignoredKeywords?: Set<string>): KeywordMatch[] {
+  const matches: KeywordMatch[] = [];
+  if (!title) return matches;
+
+  const hasOverlap = (start: number, end: number) => {
+    return matches.some((m) => start < m.end && m.start < end);
+  };
+
+  // 1. Tags
+  const tagRegex = /(?:^|\s)#([a-zA-Z0-9\u00C0-\u017F_-]+)/g;
+  let match;
+  while ((match = tagRegex.exec(title)) !== null) {
+    let matchedText = match[0];
+    let start = match.index;
+    if (matchedText.startsWith(' ')) {
+      start += 1;
+      matchedText = matchedText.substring(1);
+    }
+    const end = start + matchedText.length;
+    const keyword = matchedText.toLowerCase();
+
+    if (ignoredKeywords && ignoredKeywords.has(keyword)) {
+      continue;
+    }
+    if (!hasOverlap(start, end)) {
+      matches.push({ start, end, text: matchedText, type: 'tag', keyword });
+    }
+  }
+
+  // 2. Buckets
+  const bucketRegex = /(?:^|\s)\/([a-zA-Z0-9\u00C0-\u017F_-]+)/g;
+  while ((match = bucketRegex.exec(title)) !== null) {
+    let matchedText = match[0];
+    let start = match.index;
+    if (matchedText.startsWith(' ')) {
+      start += 1;
+      matchedText = matchedText.substring(1);
+    }
+    const end = start + matchedText.length;
+    const name = match[1].toLowerCase();
+    const matchedBucket = bucketNames.find((b) => b.toLowerCase() === name);
+
+    if (matchedBucket) {
+      const keyword = matchedText.toLowerCase();
+      if (ignoredKeywords && ignoredKeywords.has(keyword)) {
+        continue;
+      }
+      if (!hasOverlap(start, end)) {
+        matches.push({ start, end, text: matchedText, type: 'bucket', keyword });
+      }
+    }
+  }
+
+  // 3. Priorities
+  const priorityRegex = /(?:^|\s)\/?([pP]([0-4]))/g;
+  while ((match = priorityRegex.exec(title)) !== null) {
+    let matchedText = match[0];
+    let start = match.index;
+    if (matchedText.startsWith(' ')) {
+      start += 1;
+      matchedText = matchedText.substring(1);
+    }
+    const end = start + matchedText.length;
+    const keyword = matchedText.toLowerCase();
+
+    if (ignoredKeywords && ignoredKeywords.has(keyword)) {
+      continue;
+    }
+    if (!hasOverlap(start, end)) {
+      matches.push({ start, end, text: matchedText, type: 'priority', keyword });
+    }
+  }
+
+  // 4. Dates
+  const rules = getRules(locale);
+  for (const rule of rules) {
+    const rulePattern = new RegExp(rule.pattern.source, rule.pattern.flags.includes('g') ? rule.pattern.flags : rule.pattern.flags + 'g');
+    while ((match = rulePattern.exec(title)) !== null) {
+      let matchedText = match[0];
+      let start = match.index;
+      if (matchedText.startsWith(' ')) {
+        start += 1;
+        matchedText = matchedText.substring(1);
+      }
+      const end = start + matchedText.length;
+      const keyword = matchedText.toLowerCase();
+
+      if (ignoredKeywords && ignoredKeywords.has(keyword)) {
+        continue;
+      }
+      if (!hasOverlap(start, end)) {
+        matches.push({ start, end, text: matchedText, type: 'date', keyword });
+      }
+    }
+  }
+
+  return matches.sort((a, b) => a.start - b.start);
 }

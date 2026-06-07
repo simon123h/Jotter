@@ -11,6 +11,7 @@ import { useProjectStore } from '@/stores/project';
 import { X, Slash, Paperclip, Trash2, Download, FileText, Plus } from '@lucide/vue';
 import { parseTitleState } from '@/utils/dateParser';
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
+import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();
@@ -33,6 +34,7 @@ const isEditing = ref(false);
 
 // Edit state
 const editTitle = ref('');
+const ignoredKeywords = ref<Set<string>>(new Set());
 const editBucket = ref<string>('todo');
 const editTags = ref('');
 const editBody = ref('');
@@ -56,7 +58,7 @@ const lastMatchedPriority = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
 const isTagDropdownOpen = ref(false);
-const titleInput = ref<HTMLInputElement | null>(null);
+const titleInput = ref<any>(null);
 
 const allTags = computed(() => {
   const tagsSet = new Set<string>();
@@ -118,7 +120,7 @@ const filteredBuckets = computed(() => {
 });
 
 const checkAutocomplete = () => {
-  const input = titleInput.value;
+  const input = titleInput.value ? titleInput.value.inputEl || titleInput.value : null;
   if (!input) {
     showAutocomplete.value = false;
     return;
@@ -141,7 +143,7 @@ const checkAutocomplete = () => {
 };
 
 const selectAutocompleteItem = (bucketName: string) => {
-  const input = titleInput.value;
+  const input = titleInput.value ? titleInput.value.inputEl || titleInput.value : null;
   if (!input) return;
 
   const value = editTitle.value;
@@ -152,8 +154,12 @@ const selectAutocompleteItem = (bucketName: string) => {
     editTitle.value = value.substring(0, slashIndex) + '/' + bucketName + ' ' + value.substring(cursor);
     const newCursor = slashIndex + bucketName.length + 2;
     nextTick(() => {
-      input.setSelectionRange(newCursor, newCursor);
-      input.focus();
+      if (titleInput.value?.setSelectionRange) {
+        titleInput.value.setSelectionRange(newCursor, newCursor);
+      } else {
+        input.setSelectionRange(newCursor, newCursor);
+      }
+      titleInput.value?.focus();
       checkAutocomplete();
     });
   }
@@ -243,6 +249,7 @@ const fetchTaskDetail = async (id: string) => {
     task.value = fetchedTask;
     // Set edit form values
     editTitle.value = fetchedTask.title;
+    ignoredKeywords.value = new Set();
     editBucket.value = fetchedTask.bucket;
     editTags.value = fetchedTask.tags.join(', ');
     editBody.value = fetchedTask.body;
@@ -275,10 +282,10 @@ watch(
 );
 
 // Watch for date keywords, hashtags, and bucket routing in the title in real-time while editing
-watch(editTitle, (newTitle) => {
+watch([editTitle, () => ignoredKeywords.value], ([newTitle, newIgnored]) => {
   if (!isEditing.value) return;
   const bucketNames = buckets.value.map((b) => b.name);
-  const result = parseTitleState(newTitle, locale.value, bucketNames);
+  const result = parseTitleState(newTitle, locale.value, bucketNames, newIgnored);
 
   // 1. Due & Planned Date Sync
   if (result.matchedKeyword) {
@@ -433,7 +440,7 @@ const handleSave = async () => {
   if (!task.value) return;
 
   const bucketNames = buckets.value.map((b) => b.name);
-  const parseResult = parseTitleState(editTitle.value, locale.value, bucketNames);
+  const parseResult = parseTitleState(editTitle.value, locale.value, bucketNames, ignoredKeywords.value);
   const finalTitle = parseResult.cleanTitle;
 
   if (!finalTitle) {
@@ -547,6 +554,7 @@ const refreshBoard = () => {
 const cancelEdit = () => {
   if (task.value) {
     editTitle.value = task.value.title;
+    ignoredKeywords.value = new Set();
     editBucket.value = task.value.bucket;
     editTags.value = task.value.tags.join(', ');
     editBody.value = task.value.body;
@@ -739,12 +747,14 @@ const getPriorityClasses = (prio: string) => {
                   t('form.titleLabel')
                 }}</label>
                 <div class="relative">
-                  <input
+                  <KeywordHighlightInput
                     ref="titleInput"
                     v-model="editTitle"
-                    type="text"
-                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                    v-model:ignored-keywords="ignoredKeywords"
+                    :bucket-names="buckets.map((b) => b.name)"
+                    :locale="locale"
                     :placeholder="t('form.titlePlaceholder')"
+                    :required="true"
                     @input="checkAutocomplete"
                     @click="checkAutocomplete"
                     @keyup="checkAutocomplete"
