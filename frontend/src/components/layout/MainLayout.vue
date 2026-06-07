@@ -46,12 +46,8 @@ watch(
 );
 
 const selectProject = (projectId: string) => {
-  const routeName = String(route.name || '');
-  const baseMode = routeName.split('-')[0];
-  const targetMode = ['board', 'list', 'matrix', 'time', 'tag'].includes(baseMode) ? baseMode : 'board';
-
   router.push({
-    name: targetMode,
+    name: 'project',
     params: { projectId },
     query: route.query,
   });

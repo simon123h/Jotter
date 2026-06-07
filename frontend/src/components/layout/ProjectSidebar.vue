@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
-import { useRoute } from 'vue-router';
 import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
@@ -9,7 +8,6 @@ import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
 
 const { t } = useI18n();
-const route = useRoute();
 
 const props = defineProps<{
   projects: Project[];
@@ -17,12 +15,6 @@ const props = defineProps<{
   syncLoading?: boolean;
   syncSuccess?: boolean;
 }>();
-
-const targetRouteName = computed(() => {
-  const routeName = String(route.name || '');
-  const baseName = routeName.split('-')[0];
-  return ['board', 'list', 'matrix', 'time', 'tag'].includes(baseName) ? baseName : 'board';
-});
 
 const emit = defineEmits<{
   (e: 'create-project', title: string): void;
@@ -165,7 +157,7 @@ const handleCreateProject = () => {
         v-for="project in sortedProjects"
         :key="project.id"
         :to="{
-          name: targetRouteName,
+          name: 'project',
           params: { projectId: project.id },
           query: $route.query,
         }"

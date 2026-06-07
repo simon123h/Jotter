@@ -24,8 +24,8 @@ const emit = defineEmits<{
 }>();
 
 const isTabActive = (tab: string) => {
-  const routeName = String(route.name || '');
-  return routeName === tab || routeName === `${tab}-task`;
+  const currentMode = (route.meta.backRoute as string) || String(route.name || '');
+  return currentMode === tab;
 };
 </script>
 

@@ -225,9 +225,9 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 const closeModal = () => {
-  const currentMode = String(route.name || '').replace('-task', '') || 'board';
+  const backRouteName = (route.meta.backRoute as string) || 'board';
   router.push({
-    name: currentMode,
+    name: backRouteName,
     params: { projectId: projectId.value },
     query: route.query,
   });

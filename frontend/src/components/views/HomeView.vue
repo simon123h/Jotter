@@ -19,7 +19,7 @@ const { pinnedProjectIds } = storeToRefs(settingsStore);
 
 const selectProject = (projectId: string) => {
   router.push({
-    name: 'board',
+    name: 'project',
     params: { projectId },
   });
 };

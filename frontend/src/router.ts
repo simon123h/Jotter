@@ -10,6 +10,7 @@ import GlobalTimeView from '@/components/views/GlobalTimeView.vue';
 import SettingsView from '@/components/views/SettingsView.vue';
 import HomeView from '@/components/views/HomeView.vue';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
+import { useUiStore } from '@/stores/ui';
 
 const routes = [
   {
@@ -28,15 +29,24 @@ const routes = [
       },
       {
         path: 'project/:projectId',
+        name: 'project',
         component: ProjectLayout,
         children: [
           {
             path: '',
             redirect: (to: any) => {
-              return {
-                name: 'board',
-                params: { projectId: to.params.projectId },
-              };
+              try {
+                const uiStore = useUiStore();
+                return {
+                  name: uiStore.lastViewMode || 'board',
+                  params: { projectId: to.params.projectId },
+                };
+              } catch {
+                return {
+                  name: 'board',
+                  params: { projectId: to.params.projectId },
+                };
+              }
             },
           },
           {
@@ -51,6 +61,7 @@ const routes = [
               default: BoardView,
               modal: TaskDetailModal,
             },
+            meta: { backRoute: 'board' },
           },
           {
             path: 'list',
@@ -64,6 +75,7 @@ const routes = [
               default: ListView,
               modal: TaskDetailModal,
             },
+            meta: { backRoute: 'list' },
           },
           {
             path: 'matrix',
@@ -77,6 +89,7 @@ const routes = [
               default: MatrixView,
               modal: TaskDetailModal,
             },
+            meta: { backRoute: 'matrix' },
           },
           {
             path: 'time',
@@ -90,6 +103,7 @@ const routes = [
               default: TimeView,
               modal: TaskDetailModal,
             },
+            meta: { backRoute: 'time' },
           },
           {
             path: 'tag',
@@ -103,6 +117,7 @@ const routes = [
               default: TagView,
               modal: TaskDetailModal,
             },
+            meta: { backRoute: 'tag' },
           },
           {
             path: 'global-time',
@@ -117,7 +132,7 @@ const routes = [
               default: GlobalTimeView,
               modal: TaskDetailModal,
             },
-            meta: { isGlobal: true },
+            meta: { isGlobal: true, backRoute: 'global-time' },
           },
         ],
       },
@@ -132,6 +147,18 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
+});
+
+router.afterEach((to) => {
+  try {
+    const uiStore = useUiStore();
+    const currentMode = (to.meta.backRoute as string) || String(to.name || '');
+    if (to.params.projectId && ['board', 'list', 'matrix', 'time', 'tag'].includes(currentMode)) {
+      uiStore.setLastViewMode(currentMode);
+    }
+  } catch {
+    // Fail-safe in case store is accessed before pinia activation
+  }
 });
 
 export default router;
