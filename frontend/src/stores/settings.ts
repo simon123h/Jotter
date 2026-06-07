@@ -17,6 +17,7 @@ export const useSettingsStore = defineStore('settings', () => {
     hideAddTaskButton: true,
     projectMru: {},
     gitRemoteUrl: '',
+    language: '',
   });
 
   let skipSave = false;
@@ -31,6 +32,7 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!state.pinnedProjectIds) state.pinnedProjectIds = [];
       if (!state.projectMru) state.projectMru = {};
       if (!state.gitRemoteUrl) state.gitRemoteUrl = '';
+      if (!state.language) state.language = '';
 
       await nextTick();
       skipSave = false;

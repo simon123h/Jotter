@@ -1,6 +1,7 @@
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { en } from '@/locales/en';
 import { de } from '@/locales/de';
+import { useSettingsStore } from '@/stores/settings';
 
 export type Locale = 'en' | 'de';
 
@@ -17,15 +18,47 @@ const savedLocale = typeof localStorage !== 'undefined' ? (localStorage.getItem(
 const currentLocale = ref<Locale>(savedLocale && (savedLocale === 'en' || savedLocale === 'de') ? savedLocale : getBrowserLocale());
 
 export function useI18n() {
+  let settingsStore: any = null;
+  try {
+    settingsStore = useSettingsStore();
+  } catch {
+    // Pinia not yet initialized or in a non-component test context
+  }
+
   const locale = computed({
-    get: () => currentLocale.value,
+    get: () => {
+      if (settingsStore && settingsStore.language && (settingsStore.language === 'en' || settingsStore.language === 'de')) {
+        return settingsStore.language as Locale;
+      }
+      return currentLocale.value;
+    },
     set: (value: Locale) => {
       currentLocale.value = value;
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('jotter-lang', value);
       }
+      if (settingsStore) {
+        settingsStore.language = value;
+      }
     },
   });
+
+  if (settingsStore) {
+    watch(
+      () => settingsStore.language,
+      (newLang) => {
+        if (newLang === 'en' || newLang === 'de') {
+          if (currentLocale.value !== newLang) {
+            currentLocale.value = newLang;
+            if (typeof localStorage !== 'undefined') {
+              localStorage.setItem('jotter-lang', newLang);
+            }
+          }
+        }
+      },
+      { immediate: true }
+    );
+  }
 
   const t = (key: string, params?: Record<string, string | number>): string => {
     const keys = key.split('.');
