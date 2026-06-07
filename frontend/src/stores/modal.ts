@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { BucketName, Project } from '@/types';
 
-export type ModalType = 'task-create' | 'project-edit' | 'filter' | null;
+export type ModalType = 'task-create' | 'project-edit' | 'filter' | 'import-planner' | null;
 
 export const useModalStore = defineStore('modal', () => {
   const activeModal = ref<ModalType>(null);
@@ -31,6 +31,10 @@ export const useModalStore = defineStore('modal', () => {
     openModal('filter');
   };
 
+  const openImportPlanner = (projectId: string) => {
+    openModal('import-planner', { projectId });
+  };
+
   return {
     activeModal,
     modalProps,
@@ -39,5 +43,6 @@ export const useModalStore = defineStore('modal', () => {
     openTaskCreate,
     openProjectEdit,
     openFilter,
+    openImportPlanner,
   };
 });

@@ -5,6 +5,7 @@ import { useProjectStore } from '@/stores/project';
 import TaskCreateModal from './TaskCreateModal.vue';
 import ProjectEditModal from './ProjectEditModal.vue';
 import FilterModal from './FilterModal.vue';
+import ImportPlannerModal from './ImportPlannerModal.vue';
 
 const modalStore = useModalStore();
 const projectStore = useProjectStore();
@@ -43,6 +44,15 @@ const handleTaskCreateSuccess = async () => {
         :current-filters="modalProps.currentFilters"
         @close="modalStore.closeModal"
         @apply="modalProps.onApply"
+      />
+
+      <!-- Import Planner Modal -->
+      <ImportPlannerModal
+        v-else-if="activeModal === 'import-planner'"
+        :is-open="true"
+        :project-id="modalProps.projectId"
+        @close="modalStore.closeModal"
+        @success="handleTaskCreateSuccess"
       />
     </div>
   </Transition>

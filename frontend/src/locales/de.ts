@@ -92,6 +92,7 @@ export const de = {
     deleteTask: 'Fehler beim Löschen der Aufgabe: {message}',
     moveTask: 'Fehler beim Speichern der Kartenbewegung. Änderung wurde rückgängig gemacht.',
     loadTask: 'Fehler beim Laden der Aufgabendetails: {message}',
+    invalidFileType: 'Nur Excel-Dateien (.xlsx, .xls) werden unterstützt.',
   },
   doubleClickToRename: 'Doppelklicken zum Umbenennen',
   columnTitlePlaceholder: 'Spaltentitel...',

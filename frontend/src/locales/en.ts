@@ -91,6 +91,7 @@ export const en = {
     deleteTask: 'Failed to delete task: {message}',
     moveTask: 'Failed to persist card movement. Reverted change.',
     loadTask: 'Failed to load task details: {message}',
+    invalidFileType: 'Only Excel files (.xlsx, .xls) are supported.',
   },
   doubleClickToRename: 'Double click to rename',
   columnTitlePlaceholder: 'Column title...',

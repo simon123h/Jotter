@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch, BookOpen } from '@lucide/vue';
+import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch, BookOpen, FileSpreadsheet } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import Sortable from 'sortablejs';
 import { useSettingsStore } from '@/stores/settings';
@@ -21,6 +21,7 @@ const emit = defineEmits<{
   (e: 'create-project', title: string): void;
   (e: 'edit-project', project: Project): void;
   (e: 'sync'): void;
+  (e: 'import-planner', projectId: string): void;
 }>();
 
 const settingsStore = useSettingsStore();
@@ -283,6 +284,16 @@ const handleCreateProject = () => {
         <span>
           {{ syncSuccess ? t('sync.synced') : syncLoading ? t('sync.syncing') : t('sync.button') }}
         </span>
+      </button>
+
+      <!-- Import MS Planner Button -->
+      <button
+        v-if="activeProjectId"
+        @click="emit('import-planner', activeProjectId)"
+        class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded border border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main transition-all cursor-pointer"
+      >
+        <FileSpreadsheet class="w-3.5 h-3.5" />
+        <span>.xlsx-Import</span>
       </button>
 
       <!-- Documentation Link -->

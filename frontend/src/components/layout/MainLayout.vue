@@ -160,6 +160,7 @@ onMounted(async () => {
           @create-project="handleCreateProject"
           @edit-project="modalStore.openProjectEdit"
           @sync="triggerSync"
+          @import-planner="modalStore.openImportPlanner"
         />
       </transition>
 
