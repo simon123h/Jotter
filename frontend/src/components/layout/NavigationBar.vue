@@ -44,7 +44,7 @@ const emit = defineEmits<{
     </div>
 
     <!-- Search (Flex-grow to fill remaining space) -->
-    <div class="flex-grow mx-3 relative">
+    <div v-if="viewMode !== 'home'" class="flex-grow mx-3 relative">
       <input
         :value="modelValue"
         @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
@@ -53,9 +53,10 @@ const emit = defineEmits<{
         class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
       />
     </div>
+    <div v-else class="flex-grow"></div>
 
     <!-- Toolbar Actions -->
-    <div class="flex items-center gap-2 shrink-0">
+    <div v-if="viewMode !== 'home'" class="flex items-center gap-2 shrink-0">
       <!-- Advanced Filter Button -->
       <button
         @click="emit('open-filter')"

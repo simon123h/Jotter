@@ -9,7 +9,7 @@ import type { BucketName } from '@/types';
 import { updateTask, deleteTask, moveTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
-import { X, ClipboardList, Folder } from '@lucide/vue';
+import { X, Folder } from '@lucide/vue';
 import { useTaskFilters } from '@/composables/useTaskFilters';
 import { useTaskSelection } from '@/composables/useTaskSelection';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
@@ -306,36 +306,17 @@ const handleBulkMarkDone = async () => {
         </p>
       </div>
 
-      <!-- Empty Board state (Tasks) -->
-      <div
-        v-else-if="!tasks.length"
-        class="h-full flex flex-col items-center justify-center text-center bg-theme-column/10 border border-dashed border-theme-border rounded p-6"
-      >
-        <div class="p-3 bg-theme-card/50 rounded border border-theme-border mb-3 text-theme-accent">
-          <ClipboardList class="w-6 h-6" />
-        </div>
-        <h3 class="font-bold text-theme-text-main text-sm">{{ t('emptyStateTitle') }}</h3>
-        <p class="text-theme-text-muted text-xs max-w-sm mt-0.5">
-          {{ t('emptyStateText') }}
-        </p>
-        <button
-          @click="openCreateModal(defaultBucketName)"
-          class="mt-4 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow transition-all cursor-pointer"
-        >
-          {{ t('createFirstTaskButton') }}
-        </button>
+      <div v-else class="h-full">
+        <router-view
+          :tasks="filteredTasks"
+          :buckets="displayedBuckets"
+          :projects="projects"
+          :is-selected="isSelected"
+          @toggle-select="toggleSelection($event.id)"
+          @add-task-click="openCreateModal"
+          @refresh="fetchAllData"
+        />
       </div>
-
-      <router-view
-        v-else
-        :tasks="filteredTasks"
-        :buckets="displayedBuckets"
-        :projects="projects"
-        :is-selected="isSelected"
-        @toggle-select="toggleSelection($event.id)"
-        @add-task-click="openCreateModal"
-        @refresh="fetchAllData"
-      />
     </div>
 
     <!-- Bulk Action Bar -->

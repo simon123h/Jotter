@@ -40,9 +40,30 @@ watch(
   { immediate: true }
 );
 
+// Watch projects list and redirect if route project does not exist
+watch(
+  [projects, routeProjectId],
+  ([newProjects, newRouteId]) => {
+    if (newProjects.length > 0) {
+      // If route has a projectId, and it is 'default' or not in the projects list,
+      // redirect the user to the first available project's board view.
+      if (newRouteId && newRouteId !== 'settings') {
+        const routeProjectExists = newProjects.some((p) => p.id === newRouteId);
+        if (!routeProjectExists) {
+          selectProject(newProjects[0].id);
+        }
+      }
+    }
+  },
+  { immediate: true }
+);
+
 const selectProject = (projectId: string) => {
   const currentView = viewMode.value;
-  const targetMode = currentView === 'global-time' || currentView === 'settings' ? 'board' : currentView;
+  const targetMode =
+    currentView === 'global-time' || currentView === 'settings' || currentView === 'home'
+      ? 'board'
+      : currentView;
 
   router.push({
     name: targetMode,
@@ -122,7 +143,7 @@ onMounted(async () => {
       v-model="searchQuery"
       :is-sidebar-open="isSidebarOpen"
       :projects="projects"
-      :active-project-id="activeProjectId"
+      :active-project-id="viewMode === 'home' ? '' : activeProjectId"
       :has-active-filters="hasActiveFilters"
       :view-mode="viewMode"
       default-bucket-name="todo"
@@ -136,7 +157,7 @@ onMounted(async () => {
         <ProjectSidebar
           v-show="isSidebarOpen"
           :projects="projects"
-          :active-project-id="activeProjectId"
+          :active-project-id="viewMode === 'home' ? '' : activeProjectId"
           :sync-loading="syncLoading"
           :sync-success="syncSuccess"
           :view-mode="viewMode"

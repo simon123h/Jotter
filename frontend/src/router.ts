@@ -8,9 +8,9 @@ import TimeView from '@/components/views/TimeView.vue';
 import TagView from '@/components/views/TagView.vue';
 import GlobalTimeView from '@/components/views/GlobalTimeView.vue';
 import SettingsView from '@/components/views/SettingsView.vue';
+import HomeView from '@/components/views/HomeView.vue';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
 
-import { useSettingsStore } from '@/stores/settings';
 export { getViewMode, type ViewMode } from '@/utils/viewMode';
 
 const routes = [
@@ -21,13 +21,7 @@ const routes = [
       {
         path: '',
         name: 'home',
-        redirect: () => {
-          const settings = useSettingsStore();
-          return {
-            name: 'board',
-            params: { projectId: settings.activeProjectId || 'default' },
-          };
-        },
+        component: HomeView,
       },
       {
         path: 'settings',

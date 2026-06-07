@@ -159,7 +159,7 @@ const handleCreateProject = () => {
         v-for="project in sortedProjects"
         :key="project.id"
         :to="{
-          name: !viewMode || viewMode === 'global-time' || viewMode === 'settings' ? 'board' : viewMode,
+          name: !viewMode || viewMode === 'global-time' || viewMode === 'settings' || viewMode === 'home' ? 'board' : viewMode,
           params: { projectId: project.id },
           query: $route.query,
         }"

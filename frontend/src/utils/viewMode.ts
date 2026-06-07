@@ -1,6 +1,7 @@
-export type ViewMode = 'board' | 'list' | 'matrix' | 'time' | 'tag' | 'global-time' | 'settings';
+export type ViewMode = 'board' | 'list' | 'matrix' | 'time' | 'tag' | 'global-time' | 'settings' | 'home';
 
 const viewModeMap: Record<string, ViewMode> = {
+  'home': 'home',
   'board': 'board',
   'board-task': 'board',
   'list': 'list',
