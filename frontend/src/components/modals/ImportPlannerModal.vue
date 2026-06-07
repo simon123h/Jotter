@@ -12,7 +12,7 @@ import {
   Settings,
   ListTodo,
   ArrowRight,
-  Loader2
+  Loader2,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
@@ -63,7 +63,7 @@ const mappings = ref({
   startDate: '',
   dueDate: '',
   labels: '',
-  checklist: ''
+  checklist: '',
 });
 
 // Destination Column Mapping Strategy
@@ -87,7 +87,7 @@ const logs = ref<{ type: 'info' | 'success' | 'warn' | 'error'; text: string }[]
 const importSummary = ref({
   success: 0,
   skipped: 0,
-  failed: 0
+  failed: 0,
 });
 
 const isImporting = ref(false);
@@ -108,7 +108,7 @@ const resetState = () => {
     startDate: '',
     dueDate: '',
     labels: '',
-    checklist: ''
+    checklist: '',
   };
   bucketStrategy.value = 'excel-bucket';
   selectedRows.value.clear();
@@ -122,10 +122,12 @@ const resetState = () => {
 // Auto-map Excel Headers to standard Planner fields
 const autoDetectMappings = () => {
   const findMatch = (keys: string[]) => {
-    return excelHeaders.value.find(header => {
-      const norm = header.toLowerCase().replace(/[^a-z0-9]/g, '');
-      return keys.some(k => norm === k || norm.includes(k));
-    }) || '';
+    return (
+      excelHeaders.value.find((header) => {
+        const norm = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return keys.some((k) => norm === k || norm.includes(k));
+      }) || ''
+    );
   };
 
   mappings.value.title = findMatch(['tasktitle', 'taskname', 'title', 'name']);
@@ -165,7 +167,7 @@ const processFile = async (file: File) => {
 
     const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];
-    
+
     // Parse sheet as JSON with raw values to keep date formats
     const rows = utils.sheet_to_json<Record<string, any>>(worksheet, { defval: '' });
     if (rows.length === 0) {
@@ -175,8 +177,8 @@ const processFile = async (file: File) => {
 
     // Get all unique headers from rows
     const headersSet = new Set<string>();
-    rows.forEach(row => {
-      Object.keys(row).forEach(key => headersSet.add(key));
+    rows.forEach((row) => {
+      Object.keys(row).forEach((key) => headersSet.add(key));
     });
 
     excelHeaders.value = Array.from(headersSet);
@@ -241,7 +243,7 @@ const prevStep = () => {
 // Formatting Helper Functions
 const parseExcelDate = (val: any): string | undefined => {
   if (!val) return undefined;
-  
+
   // SheetJS sometimes imports dates as numbers (days since 1900)
   if (typeof val === 'number') {
     const date = new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -272,9 +274,7 @@ const parseExcelTags = (val: any): string[] => {
   if (!val) return [];
   // Split on semicolons, commas, or newlines
   const parts = String(val).split(/[;,|\n]+/);
-  return parts
-    .map(p => p.trim())
-    .filter(Boolean);
+  return parts.map((p) => p.trim()).filter(Boolean);
 };
 
 const parseExcelChecklist = (val: any): string => {
@@ -282,7 +282,7 @@ const parseExcelChecklist = (val: any): string => {
   // Split on semicolons, commas, or newlines
   const items = String(val).split(/[;\n]+/);
   let md = '\n\n### Checklist\n';
-  items.forEach(item => {
+  items.forEach((item) => {
     const clean = item.trim();
     if (clean) {
       md += `- [ ] ${clean}\n`;
@@ -296,23 +296,23 @@ const runImport = async () => {
   isImporting.value = true;
   currentStep.value = 4;
   logs.value = [];
-  
+
   const toImportIndices = Array.from(selectedRows.value);
   importProgressTotal.value = toImportIndices.length;
   importProgressCurrent.value = 0;
-  
+
   importSummary.value = { success: 0, skipped: 0, failed: 0 };
-  
+
   // Cache current tasks to prevent duplicates quickly
   const existingTaskTitles = new Set<string>();
-  projectStore.tasks.forEach(t => {
+  projectStore.tasks.forEach((t) => {
     existingTaskTitles.add(t.title.toLowerCase().trim());
   });
 
   // Keep a map of buckets to avoid redundant fetch calls
   let currentBuckets = [...projectStore.buckets];
   const bucketCache = new Map<string, string>();
-  currentBuckets.forEach(b => {
+  currentBuckets.forEach((b) => {
     bucketCache.set(b.title.toLowerCase().trim(), b.name);
     bucketCache.set(b.name.toLowerCase().trim(), b.name);
   });
@@ -340,13 +340,13 @@ const runImport = async () => {
 
   const parsedTagsAppend = appendTags.value
     .split(',')
-    .map(t => t.trim().toLowerCase())
+    .map((t) => t.trim().toLowerCase())
     .filter(Boolean);
 
   for (const idx of toImportIndices) {
     const row = excelRows.value[idx];
     const rawTitle = String(row[mappings.value.title] || '').trim();
-    
+
     if (!rawTitle) {
       importSummary.value.failed++;
       logs.value.push({ type: 'error', text: `Row ${idx + 1}: Skipped (Empty task title)` });
@@ -364,12 +364,14 @@ const runImport = async () => {
 
     // Resolve Bucket name based on selection strategy
     let resolvedBucket = fallbackBucket.value;
-    
+
     if (bucketStrategy.value === 'excel-bucket' && mappings.value.bucket) {
       const excelBucketVal = String(row[mappings.value.bucket] || '').trim();
       resolvedBucket = await getOrCreateBucketName(excelBucketVal || 'To Do');
     } else if (bucketStrategy.value === 'excel-status' && mappings.value.status) {
-      const excelStatusVal = String(row[mappings.value.status] || '').toLowerCase().trim();
+      const excelStatusVal = String(row[mappings.value.status] || '')
+        .toLowerCase()
+        .trim();
       if (excelStatusVal.includes('completed') || excelStatusVal.includes('done')) {
         resolvedBucket = 'done';
       } else if (excelStatusVal.includes('progress') || excelStatusVal.includes('started')) {
@@ -381,7 +383,7 @@ const runImport = async () => {
 
     // Resolve priority
     const priorityVal = mappings.value.priority ? parseExcelPriority(row[mappings.value.priority]) : 'none';
-    
+
     // Resolve Dates
     const dueDateVal = mappings.value.dueDate ? parseExcelDate(row[mappings.value.dueDate]) : undefined;
     const startDateVal = mappings.value.startDate ? parseExcelDate(row[mappings.value.startDate]) : undefined;
@@ -405,12 +407,12 @@ const runImport = async () => {
         body: descriptionBody,
         due_date: dueDateVal,
         planned_date: startDateVal, // map Planner's start date to Jotter's planned_date
-        priority: priorityVal
+        priority: priorityVal,
       });
 
       // Track duplicate prevention list dynamically during runtime import
       existingTaskTitles.add(rawTitle.toLowerCase());
-      
+
       importSummary.value.success++;
       logs.value.push({ type: 'success', text: `Created task: "${rawTitle}"` });
     } catch (err: any) {
@@ -424,7 +426,7 @@ const runImport = async () => {
   // Reload board / project store
   await projectStore.invalidate();
   await projectStore.fetchBuckets(props.projectId);
-  
+
   isImporting.value = false;
   currentStep.value = 5;
   emit('success');
@@ -463,9 +465,12 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
 });
 
-watch(() => props.isOpen, (newVal) => {
-  if (newVal) resetState();
-});
+watch(
+  () => props.isOpen,
+  (newVal) => {
+    if (newVal) resetState();
+  }
+);
 </script>
 
 <template>
@@ -475,16 +480,15 @@ watch(() => props.isOpen, (newVal) => {
       <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="!isImporting && emit('close')"></div>
 
       <!-- Modal Container -->
-      <div class="relative bg-theme-base border border-theme-border w-full max-w-2xl rounded shadow-2xl overflow-hidden flex flex-col z-10 transition-all max-h-[85vh]">
-        
+      <div
+        class="relative bg-theme-base border border-theme-border w-full max-w-2xl rounded shadow-2xl overflow-hidden flex flex-col z-10 transition-all max-h-[85vh]"
+      >
         <!-- Header -->
         <div class="px-5 py-4 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
           <div class="flex items-center gap-2">
             <FileSpreadsheet class="w-5 h-5 text-emerald-500" />
             <div>
-              <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">
-                Import from Microsoft Planner
-              </h3>
+              <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">Import from Microsoft Planner</h3>
               <p class="text-[11px] text-theme-text-muted">Import tasks directly from exported Planner Excel sheets.</p>
             </div>
           </div>
@@ -499,7 +503,6 @@ watch(() => props.isOpen, (newVal) => {
 
         <!-- Scrollable Content Area -->
         <div class="flex-grow overflow-y-auto p-5 scroller-thin">
-          
           <!-- ========================================================= -->
           <!-- STEP 1: UPLOAD FILE -->
           <!-- ========================================================= -->
@@ -510,29 +513,23 @@ watch(() => props.isOpen, (newVal) => {
               @drop="handleDrop"
               class="border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center transition-all cursor-pointer select-none"
               :class="[
-                isDragging 
-                  ? 'border-theme-primary bg-theme-primary/5 scale-[0.99] shadow-inner' 
-                  : 'border-theme-border hover:border-theme-primary/60 hover:bg-theme-column/10'
+                isDragging
+                  ? 'border-theme-primary bg-theme-primary/5 scale-[0.99] shadow-inner'
+                  : 'border-theme-border hover:border-theme-primary/60 hover:bg-theme-column/10',
               ]"
               @click="triggerFileSelect"
             >
-              <input
-                ref="fileInput"
-                type="file"
-                accept=".xlsx,.xls"
-                class="hidden"
-                @change="handleFileSelect"
-              />
+              <input ref="fileInput" type="file" accept=".xlsx,.xls" class="hidden" @change="handleFileSelect" />
               <div class="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4 text-emerald-500">
                 <Upload class="w-7 h-7" :class="{ 'animate-bounce': isDragging }" />
               </div>
-              <p class="text-sm font-semibold text-theme-text-main">
-                Drag & drop your Planner Excel file here
-              </p>
+              <p class="text-sm font-semibold text-theme-text-main">Drag & drop your Planner Excel file here</p>
               <p class="text-xs text-theme-text-muted mt-1 max-w-sm">
                 Only standard Microsoft Planner `.xlsx` spreadsheets exported via 'Export plan to Excel' are accepted.
               </p>
-              <span class="mt-4 px-3 py-1.5 bg-theme-card border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary transition-all">
+              <span
+                class="mt-4 px-3 py-1.5 bg-theme-card border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary transition-all"
+              >
                 Browse Files
               </span>
             </div>
@@ -548,7 +545,9 @@ watch(() => props.isOpen, (newVal) => {
               <div class="space-y-1">
                 <h4 class="text-xs font-bold text-theme-text-main uppercase tracking-wider">How to export from MS Planner:</h4>
                 <p class="text-[11px] text-theme-text-muted leading-relaxed">
-                  Open Microsoft Planner in your browser, select your plan, click the <span class="font-bold text-theme-text-main">"..." (More)</span> option next to "Schedule" in the header, and select <span class="font-bold text-theme-text-main">"Export plan to Excel"</span>.
+                  Open Microsoft Planner in your browser, select your plan, click the
+                  <span class="font-bold text-theme-text-main">"..." (More)</span> option next to "Schedule" in the header, and select
+                  <span class="font-bold text-theme-text-main">"Export plan to Excel"</span>.
                 </p>
               </div>
             </div>
@@ -563,7 +562,9 @@ watch(() => props.isOpen, (newVal) => {
                 <FileSpreadsheet class="w-4 h-4 text-theme-accent" />
                 <span class="text-xs font-bold text-theme-text-main font-mono">{{ fileName }}</span>
               </div>
-              <span class="text-[11px] px-2 py-0.5 bg-theme-primary/10 border border-theme-primary/15 text-theme-accent rounded font-semibold">
+              <span
+                class="text-[11px] px-2 py-0.5 bg-theme-primary/10 border border-theme-primary/15 text-theme-accent rounded font-semibold"
+              >
                 {{ excelRows.length }} rows detected
               </span>
             </div>
@@ -593,9 +594,7 @@ watch(() => props.isOpen, (newVal) => {
 
                 <!-- Description Mapping -->
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                    Notes & Description
-                  </label>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1"> Notes & Description </label>
                   <select
                     v-model="mappings.description"
                     class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
@@ -607,9 +606,7 @@ watch(() => props.isOpen, (newVal) => {
 
                 <!-- Bucket Name Mapping -->
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                    Bucket Name (Columns)
-                  </label>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1"> Bucket Name (Columns) </label>
                   <select
                     v-model="mappings.bucket"
                     class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
@@ -621,9 +618,7 @@ watch(() => props.isOpen, (newVal) => {
 
                 <!-- Status Mapping -->
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                    Status (Progress)
-                  </label>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1"> Status (Progress) </label>
                   <select
                     v-model="mappings.status"
                     class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
@@ -635,9 +630,7 @@ watch(() => props.isOpen, (newVal) => {
 
                 <!-- Priority Mapping -->
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                    Priority
-                  </label>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1"> Priority </label>
                   <select
                     v-model="mappings.priority"
                     class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
@@ -649,9 +642,7 @@ watch(() => props.isOpen, (newVal) => {
 
                 <!-- Labels Mapping -->
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                    Labels (Tags)
-                  </label>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1"> Labels (Tags) </label>
                   <select
                     v-model="mappings.labels"
                     class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
@@ -663,9 +654,7 @@ watch(() => props.isOpen, (newVal) => {
 
                 <!-- Start Date Mapping -->
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                    Start Date
-                  </label>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1"> Start Date </label>
                   <select
                     v-model="mappings.startDate"
                     class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
@@ -677,9 +666,7 @@ watch(() => props.isOpen, (newVal) => {
 
                 <!-- Due Date Mapping -->
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                    Due Date
-                  </label>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1"> Due Date </label>
                   <select
                     v-model="mappings.dueDate"
                     class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
@@ -691,9 +678,7 @@ watch(() => props.isOpen, (newVal) => {
 
                 <!-- Checklist Mapping -->
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                    Checklist Items
-                  </label>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1"> Checklist Items </label>
                   <select
                     v-model="mappings.checklist"
                     class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
@@ -715,13 +700,7 @@ watch(() => props.isOpen, (newVal) => {
                 <!-- Radio Strategies -->
                 <div class="space-y-2.5">
                   <label class="flex items-start gap-2.5 cursor-pointer">
-                    <input
-                      v-model="bucketStrategy"
-                      type="radio"
-                      value="excel-bucket"
-                      :disabled="!mappings.bucket"
-                      class="mt-1"
-                    />
+                    <input v-model="bucketStrategy" type="radio" value="excel-bucket" :disabled="!mappings.bucket" class="mt-1" />
                     <div>
                       <span class="text-xs font-bold text-theme-text-main block">Use Excel's Bucket Name column</span>
                       <span class="text-[10.5px] text-theme-text-muted leading-tight block">
@@ -731,13 +710,7 @@ watch(() => props.isOpen, (newVal) => {
                   </label>
 
                   <label class="flex items-start gap-2.5 cursor-pointer">
-                    <input
-                      v-model="bucketStrategy"
-                      type="radio"
-                      value="excel-status"
-                      :disabled="!mappings.status"
-                      class="mt-1"
-                    />
+                    <input v-model="bucketStrategy" type="radio" value="excel-status" :disabled="!mappings.status" class="mt-1" />
                     <div>
                       <span class="text-xs font-bold text-theme-text-main block">Map by Progress Status</span>
                       <span class="text-[10.5px] text-theme-text-muted leading-tight block">
@@ -778,7 +751,9 @@ watch(() => props.isOpen, (newVal) => {
                   <input v-model="skipDuplicates" type="checkbox" class="rounded text-theme-primary" />
                   <div>
                     <span class="text-xs font-bold text-theme-text-main block">Skip existing duplicate titles</span>
-                    <span class="text-[10.5px] text-theme-text-muted block">Prevents duplicate tasks if a task with the exact title already exists in this project.</span>
+                    <span class="text-[10.5px] text-theme-text-muted block"
+                      >Prevents duplicate tasks if a task with the exact title already exists in this project.</span
+                    >
                   </div>
                 </label>
 
@@ -804,7 +779,8 @@ watch(() => props.isOpen, (newVal) => {
           <div v-if="currentStep === 3" class="space-y-4">
             <div class="flex justify-between items-center bg-theme-card/30 border border-theme-border/60 rounded px-4 py-2 text-xs">
               <span class="text-theme-text-muted">
-                Selected <span class="font-bold text-theme-text-main">{{ selectedRows.size }}</span> of <span class="font-bold text-theme-text-main">{{ excelRows.length }}</span> tasks
+                Selected <span class="font-bold text-theme-text-main">{{ selectedRows.size }}</span> of
+                <span class="font-bold text-theme-text-main">{{ excelRows.length }}</span> tasks
               </span>
               <button
                 @click="toggleSelectAll"
@@ -819,12 +795,7 @@ watch(() => props.isOpen, (newVal) => {
                 <thead class="bg-theme-card/50 border-b border-theme-border sticky top-0">
                   <tr>
                     <th class="p-3 w-10 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="selectedRows.size === excelRows.length"
-                        @change="toggleSelectAll"
-                        class="rounded"
-                      />
+                      <input type="checkbox" :checked="selectedRows.size === excelRows.length" @change="toggleSelectAll" class="rounded" />
                     </th>
                     <th class="p-3 font-semibold text-theme-text-muted">Title</th>
                     <th class="p-3 font-semibold text-theme-text-muted">Dest. Column / Status</th>
@@ -840,12 +811,7 @@ watch(() => props.isOpen, (newVal) => {
                     @click="toggleRow(idx)"
                   >
                     <td class="p-3 text-center" @click.stop>
-                      <input
-                        type="checkbox"
-                        :checked="selectedRows.has(idx)"
-                        @change="toggleRow(idx)"
-                        class="rounded"
-                      />
+                      <input type="checkbox" :checked="selectedRows.has(idx)" @change="toggleRow(idx)" class="rounded" />
                     </td>
                     <td class="p-3 font-semibold text-theme-text-main max-w-xs truncate" :title="row[mappings.title]">
                       {{ row[mappings.title] || '(Empty)' }}
@@ -857,9 +823,7 @@ watch(() => props.isOpen, (newVal) => {
                       <span v-else-if="bucketStrategy === 'excel-status' && mappings.status" class="capitalize block">
                         {{ row[mappings.status] || 'Not started' }}
                       </span>
-                      <span v-else class="text-theme-text-muted italic">
-                        Fallback Column
-                      </span>
+                      <span v-else class="text-theme-text-muted italic"> Fallback Column </span>
                     </td>
                     <td class="p-3 text-theme-text-muted">
                       <span class="capitalize">{{ parseExcelPriority(row[mappings.priority]) }}</span>
@@ -879,19 +843,19 @@ watch(() => props.isOpen, (newVal) => {
           <div v-if="currentStep === 4" class="space-y-6 py-6 text-center">
             <div class="flex flex-col items-center">
               <Loader2 class="w-10 h-10 text-theme-primary animate-spin mb-4" />
-              <h4 class="text-sm font-bold text-theme-text-main">
-                Importing Tasks...
-              </h4>
-              <p class="text-xs text-theme-text-muted mt-1">
-                Please wait while we parse Excel files and write local Markdown entries.
-              </p>
+              <h4 class="text-sm font-bold text-theme-text-main">Importing Tasks...</h4>
+              <p class="text-xs text-theme-text-muted mt-1">Please wait while we parse Excel files and write local Markdown entries.</p>
             </div>
 
             <!-- Progress Bar -->
             <div class="space-y-2">
               <div class="flex justify-between text-xs font-mono text-theme-text-muted">
                 <span>Progress</span>
-                <span>{{ importProgressCurrent }} / {{ importProgressTotal }} ({{ Math.round((importProgressCurrent / importProgressTotal) * 100) }}%)</span>
+                <span
+                  >{{ importProgressCurrent }} / {{ importProgressTotal }} ({{
+                    Math.round((importProgressCurrent / importProgressTotal) * 100)
+                  }}%)</span
+                >
               </div>
               <div class="w-full bg-theme-column/30 rounded-full h-2 overflow-hidden border border-theme-border/50">
                 <div
@@ -902,7 +866,9 @@ watch(() => props.isOpen, (newVal) => {
             </div>
 
             <!-- Logs / Output -->
-            <div class="text-left space-y-1 bg-slate-950 p-4 rounded font-mono text-[10.5px] h-44 overflow-y-auto border border-theme-border/30 scroller-thin">
+            <div
+              class="text-left space-y-1 bg-slate-950 p-4 rounded font-mono text-[10.5px] h-44 overflow-y-auto border border-theme-border/30 scroller-thin"
+            >
               <div
                 v-for="(log, idx) in logs"
                 :key="idx"
@@ -910,7 +876,7 @@ watch(() => props.isOpen, (newVal) => {
                   'text-emerald-400': log.type === 'success',
                   'text-yellow-400': log.type === 'warn',
                   'text-red-400': log.type === 'error',
-                  'text-sky-400': log.type === 'info'
+                  'text-sky-400': log.type === 'info',
                 }"
               >
                 &gt; {{ log.text }}
@@ -926,12 +892,8 @@ watch(() => props.isOpen, (newVal) => {
               <div class="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-4">
                 <CheckCircle2 class="w-8 h-8" />
               </div>
-              <h4 class="text-sm font-bold text-theme-text-main">
-                Import Completed!
-              </h4>
-              <p class="text-xs text-theme-text-muted mt-1">
-                Tasks have been parsed and synced to Jotter's local markdown repository.
-              </p>
+              <h4 class="text-sm font-bold text-theme-text-main">Import Completed!</h4>
+              <p class="text-xs text-theme-text-muted mt-1">Tasks have been parsed and synced to Jotter's local markdown repository.</p>
             </div>
 
             <!-- Stats grid -->
@@ -952,15 +914,14 @@ watch(() => props.isOpen, (newVal) => {
 
             <!-- Informational message -->
             <p class="text-[11px] text-theme-text-muted max-w-md mx-auto leading-relaxed">
-              Jotter indexing automatically rebuilt the local index. Your new tasks will immediately appear on the Kanban board and in the schedule views.
+              Jotter indexing automatically rebuilt the local index. Your new tasks will immediately appear on the Kanban board and in the
+              schedule views.
             </p>
           </div>
-
         </div>
 
         <!-- Footer Buttons -->
         <div class="px-5 py-3.5 border-t border-theme-border flex justify-end gap-2 bg-theme-card/30">
-          
           <!-- Cancel / Close (Visible during Steps 1-3) -->
           <button
             v-if="currentStep <= 3"
@@ -1011,9 +972,7 @@ watch(() => props.isOpen, (newVal) => {
           >
             Done
           </button>
-
         </div>
-
       </div>
     </div>
   </transition>
