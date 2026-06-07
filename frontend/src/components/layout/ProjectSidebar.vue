@@ -33,8 +33,7 @@ const emit = defineEmits<{
 const settingsStore = useSettingsStore();
 const { pinnedProjectIds, sortBy } = storeToRefs(settingsStore);
 
-const togglePin = (projectId: string, event: Event) => {
-  event.stopPropagation();
+const togglePin = (projectId: string) => {
   if (pinnedProjectIds.value.includes(projectId)) {
     settingsStore.unpinProject(projectId);
   } else {
@@ -190,7 +189,7 @@ const handleCreateProject = () => {
         <div class="flex items-center gap-1 shrink-0">
           <!-- Pin Toggle Button -->
           <button
-            @click.stop="togglePin(project.id, $event)"
+            @click.stop.prevent="togglePin(project.id)"
             class="p-0.5 rounded transition-all cursor-pointer"
             :class="
               pinnedProjectIds.includes(project.id)
@@ -206,7 +205,7 @@ const handleCreateProject = () => {
           <div class="flex items-center gap-1 shrink-0 transition-opacity">
             <!-- Edit Project Button -->
             <button
-              @click.stop="emit('edit-project', project)"
+              @click.stop.prevent="emit('edit-project', project)"
               class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-colors cursor-pointer"
               :title="t('projects.editProject')"
             >

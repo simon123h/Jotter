@@ -150,7 +150,7 @@ const cardStyle = computed(() => {
   >
     <!-- Multi-select Checkbox (Hover or Selected) -->
     <div
-      @click.stop="emit('toggle-select', task)"
+      @click.stop.prevent="emit('toggle-select', task)"
       class="absolute -left-2 -top-2 w-5 h-5 rounded-full border-2 bg-theme-card transition-all z-30 flex items-center justify-center cursor-pointer"
       :class="[
         isSelected
@@ -180,7 +180,7 @@ const cardStyle = computed(() => {
       >
         <!-- Mark Done Button -->
         <button
-          @click.stop="emit('mark-done', task)"
+          @click.stop.prevent="emit('mark-done', task)"
           class="p-1 text-theme-text-muted hover:text-emerald-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
           :title="t('taskCard.markDone')"
         >

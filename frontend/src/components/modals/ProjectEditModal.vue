@@ -3,9 +3,11 @@ import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { X, Trash2 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { useProjects } from '@/composables/useProjects';
+import { useProjectStore } from '@/stores/project';
 import type { Project } from '@/types';
 
 const { t } = useI18n();
+const projectStore = useProjectStore();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -24,15 +26,15 @@ const doneCleanPeriod = ref<number | null>(null);
 const gitRemote = ref('');
 const titleInput = ref<HTMLInputElement | null>(null);
 
-// Watch for modal open and initialize values
+// Watch for modal open and project changes to initialize values
 watch(
-  () => props.isOpen,
-  (open) => {
-    if (open && props.project) {
-      title.value = props.project.title || '';
+  [() => props.isOpen, () => props.project],
+  ([open, project]) => {
+    if (open && project) {
+      title.value = project.title || '';
       doneCleanPeriod.value =
-        props.project.done_clean_period !== undefined && props.project.done_clean_period !== null ? props.project.done_clean_period : null;
-      gitRemote.value = props.project.git_remote || '';
+        project.done_clean_period !== undefined && project.done_clean_period !== null ? project.done_clean_period : null;
+      gitRemote.value = project.git_remote || '';
       nextTick(() => {
         titleInput.value?.focus();
       });
@@ -62,6 +64,7 @@ const handleSave = async () => {
     done_clean_period: parsedPeriod,
     git_remote: gitRemote.value.trim() || null,
   });
+  await projectStore.fetchProjects();
   emit('close');
 };
 
@@ -74,6 +77,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
 const handleDelete = async () => {
   if (!props.project) return;
   await handleDeleteProject(props.project);
+  await projectStore.fetchProjects();
   emit('close');
 };
 
@@ -87,9 +91,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <transition name="modal">
-      <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+  <transition name="modal">
+    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
 
@@ -187,5 +190,4 @@ onUnmounted(() => {
         </div>
       </div>
     </transition>
-  </Teleport>
 </template>
