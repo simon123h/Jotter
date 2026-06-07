@@ -4,17 +4,17 @@ import { defineStore } from 'pinia';
 export const useUiStore = defineStore('ui', () => {
   const lastViewMode = ref<string>(localStorage.getItem('jotter-last-view-mode') || 'board');
 
-  const collapsedColumns = ref<Record<string, string[]>>(
-    JSON.parse(localStorage.getItem('jotter-collapsed-columns') || '{}')
-  );
+  const collapsedColumns = ref<Record<string, string[]>>(JSON.parse(localStorage.getItem('jotter-collapsed-columns') || '{}'));
 
-  const collapseEmptyColumns = ref<boolean>(
-    localStorage.getItem('jotter-collapse-empty-columns') === 'true'
-  );
+  const collapseEmptyColumns = ref<boolean>(localStorage.getItem('jotter-collapse-empty-columns') === 'true');
 
-  watch(lastViewMode, (newMode) => {
-    localStorage.setItem('jotter-last-view-mode', newMode || 'board');
-  }, { flush: 'sync' });
+  watch(
+    lastViewMode,
+    (newMode) => {
+      localStorage.setItem('jotter-last-view-mode', newMode || 'board');
+    },
+    { flush: 'sync' }
+  );
 
   watch(
     collapsedColumns,

@@ -23,8 +23,10 @@ const activeProjectId = computed(() => (route.params.projectId as string) || '')
 const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const isCollapsed = (bucketName: string) => {
-  return uiStore.isColumnCollapsed(activeProjectId.value, bucketName) ||
-         (uiStore.collapseEmptyColumns && (tasksByBucket.value[bucketName] || []).length === 0);
+  return (
+    uiStore.isColumnCollapsed(activeProjectId.value, bucketName) ||
+    (uiStore.collapseEmptyColumns && (tasksByBucket.value[bucketName] || []).length === 0)
+  );
 };
 
 const props = defineProps<{
@@ -81,7 +83,8 @@ const { fetchBuckets, handleCreateColumn, handleRenameColumn, handleDeleteColumn
   hideArchiveColumn
 );
 
-const { handleCardDropped, handleMarkTaskDone } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => {
+const { tasks: storeTasks } = storeToRefs(projectStore);
+const { handleCardDropped, handleMarkTaskDone } = useTaskMutations(storeTasks, activeProjectId, fetchBuckets, async () => {
   emit('refresh');
 });
 
@@ -325,7 +328,9 @@ const handleCancelAddColumn = () => {
       </div>
 
       <!-- auto-collapse empty columns check -->
-      <label class="flex items-center gap-2 px-3 py-2 bg-theme-column/10 border border-theme-border/40 rounded text-xs text-theme-text-muted select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all">
+      <label
+        class="flex items-center gap-2 px-3 py-2 bg-theme-column/10 border border-theme-border/40 rounded text-xs text-theme-text-muted select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+      >
         <input
           type="checkbox"
           :checked="uiStore.collapseEmptyColumns"

@@ -127,6 +127,17 @@ const setupSortables = () => {
         const prevTaskId = prevEl ? prevEl.getAttribute('data-task-id') : null;
         const nextTaskId = nextEl ? nextEl.getAttribute('data-task-id') : null;
 
+        // Revert Sortable.js physical DOM manipulation if the card was moved between columns.
+        // This lets Vue's reactivity take full control of rendering, preventing double-rendering or unmount issues.
+        const { from, oldIndex } = evt;
+        if (from && from !== to) {
+          if (oldIndex !== undefined && oldIndex < from.children.length) {
+            from.insertBefore(item, from.children[oldIndex]);
+          } else {
+            from.appendChild(item);
+          }
+        }
+
         emit('card-dropped', {
           taskId,
           toId,
@@ -183,15 +194,16 @@ watch(
 <template>
   <div
     :style="columnStyle"
-    class="generic-column flex flex-col bg-theme-column border border-theme-border rounded h-fit max-h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
+    class="generic-column flex flex-col rounded h-fit max-h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
     :class="[
       isCollapsed
-        ? 'w-12 min-w-[48px] max-w-[48px] h-[500px] md:h-auto'
-        : layout === 'grid-3'
-          ? 'min-w-[840px] w-[864px] md:w-[960px]'
-          : layout === 'grid-2'
-            ? 'min-w-[560px] w-[576px] md:w-[640px]'
-            : 'min-w-[280px] w-72 md:w-80',
+        ? 'w-12 min-w-[48px] max-w-[48px] bg-theme-column/50 backdrop-blur-[2px] border border-theme-border hover:bg-theme-column/75 hover:border-theme-accent/40 shadow-sm hover:shadow-md'
+        : 'bg-theme-column border border-theme-border shadow-sm ' +
+          (layout === 'grid-3'
+            ? 'min-w-[840px] w-[864px] md:w-[960px]'
+            : layout === 'grid-2'
+              ? 'min-w-[560px] w-[576px] md:w-[640px]'
+              : 'min-w-[280px] w-72 md:w-80'),
     ]"
   >
     <template v-if="!isCollapsed">
@@ -298,26 +310,37 @@ watch(
     </template>
 
     <template v-else>
-      <!-- Collapsed Column Content Overlay -->
-      <div class="absolute inset-0 flex flex-col items-center py-4 gap-4 pointer-events-none select-none z-10">
+      <!-- Collapsed Header matching active columns' header height of 48px -->
+      <div
+        class="h-12 min-h-[48px] flex items-center justify-center border-b border-theme-border bg-theme-card/30 rounded-t shrink-0 column-drag-handle"
+      >
         <!-- Expand Button -->
         <button
-          @click="emit('toggle-collapse')"
-          class="pointer-events-auto text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/50 p-1.5 rounded transition-colors cursor-pointer"
+          @click.stop="emit('toggle-collapse')"
+          class="text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/50 p-1.5 rounded transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
           title="Expand Column"
         >
           <ChevronRight class="w-4 h-4" />
         </button>
+      </div>
 
+      <!-- Collapsed Column Content Tab (Static to flow and drive h-fit parent height) -->
+      <div class="flex flex-col items-center py-4 px-1 gap-3.5 select-none w-full h-fit relative z-10 min-h-[140px]">
         <!-- Count Badge -->
-        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-theme-card border border-theme-border/60 text-theme-text-muted select-none">
+        <span
+          class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border transition-all duration-300 select-none z-10"
+          :class="[
+            isLimitExceeded
+              ? 'bg-rose-500/20 border-rose-500/50 text-rose-400 animate-pulse'
+              : 'bg-theme-card border-theme-border/60 text-theme-text-muted',
+          ]"
+        >
           {{ tasks.length }}
         </span>
 
         <!-- Rotated vertical title -->
         <div
-          @click="emit('toggle-collapse')"
-          class="pointer-events-auto font-bold text-xs uppercase tracking-wider text-theme-text-main hover:text-theme-accent cursor-pointer writing-vertical rotate-180 truncate max-h-[320px] mt-2 select-none"
+          class="font-bold text-xs uppercase tracking-wider text-theme-text-muted group-hover/col:text-theme-text-main cursor-pointer writing-vertical rotate-180 truncate max-h-[180px] select-none leading-none transition-colors duration-200 z-10"
           :title="title"
         >
           {{ title }}
@@ -328,7 +351,8 @@ watch(
       <div
         ref="cardsContainer"
         :data-column-id="id"
-        class="absolute inset-0 z-0 opacity-0 cards-container-list"
+        class="absolute inset-y-12 inset-x-0 z-20 opacity-0 cards-container-list cursor-pointer"
+        @click="emit('toggle-collapse')"
       ></div>
     </template>
   </div>
