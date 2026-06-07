@@ -256,7 +256,9 @@ const parseExcelDate = (val: any): string | undefined => {
     if (!isNaN(date.getTime())) {
       return date.toISOString().split('T')[0];
     }
-  } catch {}
+  } catch (e) {
+    console.warn('Error parsing date: ' + e);
+  }
   return undefined;
 };
 
@@ -334,6 +336,7 @@ const runImport = async () => {
       return newB.name;
     } catch (err: any) {
       logs.value.push({ type: 'warn', text: `Failed to create column "${cleanTitle}", using default instead.` });
+      console.warn(err);
       return fallbackBucket.value;
     }
   };
