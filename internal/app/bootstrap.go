@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"jotter/backend/internal/db"
 	"jotter/backend/internal/features/project"
@@ -21,6 +22,21 @@ const asciiLogo = `
                               
 `
 
+// rebuildDB closes the DB connection, deletes the old DB cache files, and re-initializes a clean DB schema.
+func rebuildDB(dbPath string) error {
+	db.CloseDB()
+
+	// Remove transient SQLite db files
+	_ = os.Remove(dbPath)
+	_ = os.Remove(dbPath + "-wal")
+	_ = os.Remove(dbPath + "-shm")
+
+	if err := db.InitDB(dbPath); err != nil {
+		return fmt.Errorf("failed to initialize clean database: %w", err)
+	}
+	return nil
+}
+
 // bootstrap initializes the database schema, runs the file-to-db synchronization,
 // and prints the startup ASCII banner.
 func Bootstrap(dataDir string, dbPath string) {
@@ -33,7 +49,10 @@ func Bootstrap(dataDir string, dbPath string) {
 
 	// Initialize SQLite Database
 	if err := db.InitDB(dbPath); err != nil {
-		log.Fatalf("Database initialization failed: %v", err)
+		log.Printf("Database initialization failed: %v. Attempting automatic cache rebuild...", err)
+		if errRebuild := rebuildDB(dbPath); errRebuild != nil {
+			log.Fatalf("Fatal: Database rebuild failed: %v", errRebuild)
+		}
 	}
 
 	// Ensure projects.json exists
@@ -41,6 +60,14 @@ func Bootstrap(dataDir string, dbPath string) {
 
 	// Sync database with markdown files automatically on startup
 	if _, err := system.SyncDBWithFiles(dataDir); err != nil {
-		log.Fatalf("Initial sync failed: %v", err)
+		log.Printf("Initial sync failed (likely due to schema mismatch or database corruption): %v. Rebuilding cache database...", err)
+		if errRebuild := rebuildDB(dbPath); errRebuild != nil {
+			log.Fatalf("Fatal: Database rebuild failed: %v", errRebuild)
+		}
+
+		// Re-attempt synchronization after rebuilding database with clean schema
+		if _, errSync := system.SyncDBWithFiles(dataDir); errSync != nil {
+			log.Fatalf("Fatal: Initial sync failed after database rebuild: %v", errSync)
+		}
 	}
 }
