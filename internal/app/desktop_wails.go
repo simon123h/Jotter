@@ -16,6 +16,8 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"jotter/backend/internal/features/settings"
 )
 
 type DesktopApp struct {
@@ -62,6 +64,24 @@ func RunWailsProbing() {
 }
 
 func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
+	// Load settings for window state
+	width := 1024
+	height := 768
+	var startState options.WindowStartState = options.Maximised
+
+	appSettings, errSettings := settings.LoadSettings(cfg.DataDir)
+	if errSettings == nil {
+		if appSettings.WindowWidth > 0 {
+			width = appSettings.WindowWidth
+		}
+		if appSettings.WindowHeight > 0 {
+			height = appSettings.WindowHeight
+		}
+		if !appSettings.WindowMaximized {
+			startState = options.Normal
+		}
+	}
+
 	// Window Mode (Wails)
 	apiRouter := BuildRouter(cfg.LogLevel, cfg.DataDir, false, assets) // API only for handler
 
@@ -83,11 +103,11 @@ func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
 		wailsLogLevel = logger.INFO
 	}
 
-	err := wails.Run(&options.App{
+	wailsOptions := &options.App{
 		Title:            "Jotter",
-		Width:            1024,
-		Height:           768,
-		WindowStartState: options.Maximised,
+		Width:            width,
+		Height:           height,
+		WindowStartState: startState,
 		AssetServer: &assetserver.Options{
 			Assets:  assetsSub,
 			Handler: apiRouter,
@@ -97,13 +117,36 @@ func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx, assets)
 		},
+		OnBeforeClose: func(ctx context.Context) (prevent bool) {
+			if s, err := settings.LoadSettings(cfg.DataDir); err == nil {
+				isMaximized := runtime.WindowIsMaximized(ctx)
+				s.WindowMaximized = isMaximized
+				if !isMaximized {
+					w, h := runtime.WindowGetSize(ctx)
+					s.WindowWidth = w
+					s.WindowHeight = h
+					px, py := runtime.WindowGetPosition(ctx)
+					s.WindowX = px
+					s.WindowY = py
+				}
+				_ = settings.SaveSettings(cfg.DataDir, s)
+			}
+			return false
+		},
 		Bind: []interface{}{
 			app,
 		},
 		Linux: &linux.Options{
 			Icon: icon,
 		},
-	})
+	}
+
+	if errSettings == nil && (appSettings.WindowX > 0 || appSettings.WindowY > 0) {
+		wailsOptions.X = appSettings.WindowX
+		wailsOptions.Y = appSettings.WindowY
+	}
+
+	err := wails.Run(wailsOptions)
 
 	if err != nil {
 		log.Fatalf("Wails launch failed: %v", err)

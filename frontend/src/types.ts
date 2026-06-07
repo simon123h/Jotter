@@ -59,3 +59,20 @@ export interface TaskQuery {
   isGlobal?: boolean;
   excludeBuckets?: string;
 }
+
+export interface AppSettings {
+  hideDoneColumn: boolean;
+  hideArchiveColumn: boolean;
+  isSidebarOpen: boolean;
+  currentTheme: string;
+  thresholdDays: number;
+  pinnedProjectIds: string[];
+  sortBy: 'alpha' | 'mru';
+  hideAddTaskButton: boolean;
+  projectMru: Record<string, number>;
+  windowWidth?: number;
+  windowHeight?: number;
+  windowX?: number;
+  windowY?: number;
+  windowMaximized?: boolean;
+}

@@ -1,114 +1,143 @@
-import { ref, watch, type Ref } from 'vue';
+import { reactive, toRefs, watch, nextTick } from 'vue';
 import { defineStore } from 'pinia';
+import { getSettings, saveSettings } from '@/api';
+import type { AppSettings } from '@/types';
 
-export type ViewMode = 'board' | 'list' | 'matrix' | 'time' | 'tag' | 'global-time' | 'settings' | 'home';
 export type SortBy = 'alpha' | 'mru';
 
-/**
- * A utility helper to create a reactive ref synchronized with localStorage.
- */
-function useLocalStorageRef<T>(key: string, defaultValue: T): Ref<T> {
-  const getStoredValue = (): T => {
-    const item = localStorage.getItem(key);
-    if (item === null) return defaultValue;
+export const useSettingsStore = defineStore('settings', () => {
+  const state = reactive<AppSettings>({
+    hideDoneColumn: true,
+    hideArchiveColumn: true,
+    isSidebarOpen: true,
+    currentTheme: 'nordic-light',
+    thresholdDays: 7,
+    pinnedProjectIds: [],
+    sortBy: 'alpha',
+    hideAddTaskButton: true,
+    projectMru: {},
+  });
+
+  let skipSave = false;
+
+  const loadSettings = async () => {
     try {
-      if (typeof defaultValue === 'boolean') {
-        return (item === 'true') as T;
+      skipSave = true;
+      const settings = await getSettings();
+      Object.assign(state, settings);
+
+      // Ensure defaults for optional/partial loads
+      if (!state.pinnedProjectIds) state.pinnedProjectIds = [];
+      if (!state.projectMru) state.projectMru = {};
+
+      await nextTick();
+      skipSave = false;
+    } catch (err) {
+      const isTest = typeof globalThis !== 'undefined' && (globalThis as any).process?.env?.NODE_ENV === 'test';
+      if (!isTest) {
+        console.error('Failed to load settings:', err);
       }
-      if (typeof defaultValue === 'number') {
-        return Number(item) as T;
-      }
-      if (typeof defaultValue === 'object' && defaultValue !== null) {
-        return JSON.parse(item) as T;
-      }
-      return item as T;
-    } catch {
-      return defaultValue;
+      skipSave = false;
     }
   };
 
-  const state = ref<T>(getStoredValue()) as Ref<T>;
+  // Trigger load immediately when store is instantiated
+  loadSettings();
+
+  // Watch for theme changes and apply to document element
+  const applyThemeToDocument = (theme: string) => {
+    if (typeof document === 'undefined') return;
+    const docClasses = document.documentElement.classList;
+    docClasses.forEach((c) => {
+      if (c.startsWith('theme-')) {
+        docClasses.remove(c);
+      }
+    });
+    if (theme && theme !== 'nordic-light') {
+      docClasses.add('theme-' + theme);
+    }
+  };
+
+  watch(
+    () => state.currentTheme,
+    (newTheme) => {
+      applyThemeToDocument(newTheme);
+    },
+    { immediate: true }
+  );
+
+  // Debounced save
+  let saveTimeout: any = null;
+  const triggerSave = () => {
+    if (skipSave) return;
+
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+
+    saveTimeout = setTimeout(async () => {
+      try {
+        await saveSettings({ ...state });
+      } catch (err) {
+        console.error('Failed to save settings:', err);
+      }
+    }, 500);
+  };
 
   watch(
     state,
-    (newValue) => {
-      if (newValue === null || newValue === undefined) {
-        localStorage.removeItem(key);
-      } else if (typeof newValue === 'object') {
-        localStorage.setItem(key, JSON.stringify(newValue));
-      } else {
-        localStorage.setItem(key, String(newValue));
-      }
+    () => {
+      triggerSave();
     },
-    { deep: true, flush: 'sync' }
+    { deep: true }
   );
 
-  return state;
-}
-
-export const useSettingsStore = defineStore('settings', () => {
-  // Settings synchronized with localStorage
-  const hideDoneColumn = useLocalStorageRef('jotter-hide-done-column', true);
-  const hideArchiveColumn = useLocalStorageRef('jotter-hide-archive-column', true);
-  const isSidebarOpen = useLocalStorageRef('jotter-sidebar-open', true);
-  const currentTheme = useLocalStorageRef('jotter-theme', 'nordic-light');
-  const thresholdDays = useLocalStorageRef('jotter-matrix-threshold', 7);
-  const pinnedProjectIds = useLocalStorageRef<string[]>('jotter-pinned-projects', []);
-  const sortBy = useLocalStorageRef<SortBy>('jotter-projects-sort', 'alpha');
-  const hideAddTaskButton = useLocalStorageRef('jotter-hide-add-task-button', true);
-
-  // Action methods to change states directly or let views change refs
+  // Actions
   const toggleHideDoneColumn = () => {
-    hideDoneColumn.value = !hideDoneColumn.value;
+    state.hideDoneColumn = !state.hideDoneColumn;
   };
 
   const toggleSidebar = () => {
-    isSidebarOpen.value = !isSidebarOpen.value;
+    state.isSidebarOpen = !state.isSidebarOpen;
   };
 
   const setTheme = (theme: string) => {
-    currentTheme.value = theme;
+    state.currentTheme = theme;
   };
 
   const setThresholdDays = (days: number) => {
-    thresholdDays.value = days;
+    state.thresholdDays = days;
   };
 
   const pinProject = (projectId: string) => {
-    if (!pinnedProjectIds.value.includes(projectId)) {
-      pinnedProjectIds.value.push(projectId);
+    if (!state.pinnedProjectIds.includes(projectId)) {
+      state.pinnedProjectIds.push(projectId);
     }
   };
 
   const unpinProject = (projectId: string) => {
-    pinnedProjectIds.value = pinnedProjectIds.value.filter((id) => id !== projectId);
+    state.pinnedProjectIds = state.pinnedProjectIds.filter((id) => id !== projectId);
   };
 
   const setSortBy = (sort: SortBy) => {
-    sortBy.value = sort;
+    state.sortBy = sort;
   };
 
   const updateProjectMru = (projectId: string) => {
-    localStorage.setItem(`jotter-project-mru-${projectId}`, String(Date.now()));
+    state.projectMru[projectId] = Date.now();
   };
 
   const getProjectMru = (projectId: string): number => {
-    return Number(localStorage.getItem(`jotter-project-mru-${projectId}`) || '0');
+    return state.projectMru[projectId] || 0;
   };
 
   const toggleHideAddTaskButton = () => {
-    hideAddTaskButton.value = !hideAddTaskButton.value;
+    state.hideAddTaskButton = !state.hideAddTaskButton;
   };
 
   return {
-    hideDoneColumn,
-    hideArchiveColumn,
-    isSidebarOpen,
-    currentTheme,
-    thresholdDays,
-    pinnedProjectIds,
-    sortBy,
-    hideAddTaskButton,
+    ...toRefs(state),
+    loadSettings,
     toggleHideDoneColumn,
     toggleSidebar,
     setTheme,

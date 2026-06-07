@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import type { Task, Bucket, Project, TaskFilterParams } from '@/types';
+import type { Task, Bucket, Project, TaskFilterParams, AppSettings } from '@/types';
 import * as demoApi from '@/api.demo';
 
 const API_BASE = '/api';
@@ -45,7 +45,12 @@ export async function checkServerStatus(): Promise<boolean> {
 // Wrapper around fetch to update isServerOnline state reactively
 async function customFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   try {
-    const response = await fetch(input, init);
+    let target = input;
+    if (typeof target === 'string' && target.startsWith('/')) {
+      const base = typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : 'http://localhost';
+      target = new URL(target, base).toString();
+    }
+    const response = await fetch(target, init);
     updateStatusFromResponse(response);
     return response;
   } catch (error) {
@@ -362,4 +367,57 @@ export async function syncSystem(): Promise<{ status: string; synchronized_tasks
     throw new Error(errorData.detail || `Failed to synchronize: ${response.statusText}`);
   }
   return response.json();
+}
+
+// ==========================================
+// SETTINGS API
+// ==========================================
+
+const DEMO_SETTINGS_KEY = 'jotter-demo-settings';
+const DEFAULT_DEMO_SETTINGS: AppSettings = {
+  hideDoneColumn: true,
+  hideArchiveColumn: true,
+  isSidebarOpen: true,
+  currentTheme: 'nordic-light',
+  thresholdDays: 7,
+  pinnedProjectIds: [],
+  sortBy: 'alpha',
+  hideAddTaskButton: true,
+  projectMru: {},
+};
+
+export async function getSettings(): Promise<AppSettings> {
+  if (IS_DEMO_MODE) {
+    const stored = localStorage.getItem(DEMO_SETTINGS_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return { ...DEFAULT_DEMO_SETTINGS };
+      }
+    }
+    return { ...DEFAULT_DEMO_SETTINGS };
+  }
+
+  const response = await customFetch(`${API_BASE}/settings`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch settings: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function saveSettings(settings: AppSettings): Promise<void> {
+  if (IS_DEMO_MODE) {
+    localStorage.setItem(DEMO_SETTINGS_KEY, JSON.stringify(settings));
+    return;
+  }
+
+  const response = await customFetch(`${API_BASE}/settings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to save settings: ${response.statusText}`);
+  }
 }

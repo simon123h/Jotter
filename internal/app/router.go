@@ -14,6 +14,7 @@ import (
 	"jotter/backend/internal/features/bucket"
 	"jotter/backend/internal/features/common"
 	"jotter/backend/internal/features/project"
+	"jotter/backend/internal/features/settings"
 	"jotter/backend/internal/features/system"
 	"jotter/backend/internal/features/task"
 )
@@ -37,6 +38,7 @@ func BuildRouter(logLevel, dataDir string, serveStatic bool, assets embed.FS) *c
 		bucket.RegisterRoutes(r, dataDir)
 		task.RegisterRoutes(r, dataDir)
 		system.RegisterRoutes(r, dataDir)
+		settings.RegisterRoutes(r, dataDir)
 	})
 
 	if serveStatic {
