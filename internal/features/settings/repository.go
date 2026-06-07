@@ -21,6 +21,7 @@ type AppSettings struct {
 	WindowX           int              `json:"windowX"`
 	WindowY           int              `json:"windowY"`
 	WindowMaximized   bool             `json:"windowMaximized"`
+	GitRemoteURL      string           `json:"gitRemoteUrl"`
 }
 
 func GetDefaultSettings() AppSettings {
@@ -39,6 +40,7 @@ func GetDefaultSettings() AppSettings {
 		WindowX:           -1,
 		WindowY:           -1,
 		WindowMaximized:   true,
+		GitRemoteURL:      "",
 	}
 }
 

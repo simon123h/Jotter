@@ -75,4 +75,5 @@ export interface AppSettings {
   windowX?: number;
   windowY?: number;
   windowMaximized?: boolean;
+  gitRemoteUrl?: string;
 }

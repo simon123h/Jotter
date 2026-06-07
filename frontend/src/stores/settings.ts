@@ -16,6 +16,7 @@ export const useSettingsStore = defineStore('settings', () => {
     sortBy: 'alpha',
     hideAddTaskButton: true,
     projectMru: {},
+    gitRemoteUrl: '',
   });
 
   let skipSave = false;
@@ -29,6 +30,7 @@ export const useSettingsStore = defineStore('settings', () => {
       // Ensure defaults for optional/partial loads
       if (!state.pinnedProjectIds) state.pinnedProjectIds = [];
       if (!state.projectMru) state.projectMru = {};
+      if (!state.gitRemoteUrl) state.gitRemoteUrl = '';
 
       await nextTick();
       skipSave = false;

@@ -186,6 +186,10 @@ export const de = {
     hideAddTask: 'Kleinere Schaltfläche für "Aufgabe hinzufügen"',
     hideAddTaskDesc: 'Ersetzt die große Schaltfläche zum Erstellen einer neuen Aufgabe in jeder Spalte durch ein Kleines "+"-Symbol.',
     subtitle: 'Passe deine persönlichen Einstellungen, das visuelle Farbschema und die Systemsprache an.',
+    gitSync: 'Git-Synchronisation',
+    gitRemoteLabel: 'Globale Git-Remote-URL',
+    gitRemoteDesc:
+      'Konfiguriert ein zentrales Git-Repository für den gesamten Jotter-Arbeitsbereich (alle Projekte und Dateien). Jotter synchronisiert automatisch alle Änderungen beim Neuerstellen des Index. Projekte, die über ein eigenes separates Git-Repository mit konfigurierter Remote-URL verfügen, werden von dieser globalen Synchronisation automatisch ignoriert.',
   },
   views: {
     board: 'Board',

@@ -384,6 +384,7 @@ const DEFAULT_DEMO_SETTINGS: AppSettings = {
   sortBy: 'alpha',
   hideAddTaskButton: true,
   projectMru: {},
+  gitRemoteUrl: '',
 };
 
 export async function getSettings(): Promise<AppSettings> {

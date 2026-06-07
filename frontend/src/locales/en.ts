@@ -184,6 +184,10 @@ export const en = {
     hideAddTask: 'Smaller "Add task" button',
     hideAddTaskDesc: 'Replaces the large quick-add button at the top of each column with a small "+" symbol.',
     subtitle: 'Configure your personal preferences, theme aesthetics, and system language.',
+    gitSync: 'Git Synchronization',
+    gitRemoteLabel: 'Global Git Remote URL',
+    gitRemoteDesc:
+      'Configures a central Git repository for your entire Jotter workspace (all projects and files). Jotter will automatically synchronize additions, updates, and deletions on index rebuilds. Projects that manage their own separate Git repository and remote URL will be auto-ignored by this global sync.',
   },
   views: {
     board: 'Board',

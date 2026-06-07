@@ -2,11 +2,11 @@
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useI18n } from '@/composables/useI18n';
-import { Settings, Check, Globe } from '@lucide/vue';
+import { Settings, Check, Globe, GitBranch } from '@lucide/vue';
 
 const { locale, t } = useI18n();
 const settingsStore = useSettingsStore();
-const { currentTheme, hideAddTaskButton } = storeToRefs(settingsStore);
+const { currentTheme, hideAddTaskButton, gitRemoteUrl } = storeToRefs(settingsStore);
 
 const themes = [
   { id: 'midnight', name: 'Midnight Violet', color: 'bg-violet-500' },
@@ -121,6 +121,33 @@ const setTheme = (theme: string) => {
             <span class="text-xs text-theme-text-muted mt-0.5">{{ t('settingsView.hideAddTaskDesc') }}</span>
           </div>
         </label>
+      </div>
+    </div>
+
+    <div class="border-t border-theme-border/30"></div>
+
+    <!-- Git Sync Section -->
+    <div class="flex flex-col gap-4">
+      <h3 class="text-xs font-bold text-theme-text-main uppercase tracking-wider flex items-center gap-1.5">
+        <GitBranch class="w-4 h-4 text-theme-accent shrink-0" />
+        {{ t('settingsView.gitSync') }}
+      </h3>
+      <div class="bg-theme-card/60 border border-theme-border/60 rounded-xl p-5 flex flex-col gap-3">
+        <div class="flex flex-col gap-1.5">
+          <label for="global-git-remote" class="text-xs font-bold text-theme-text-main">
+            {{ t('settingsView.gitRemoteLabel') }}
+          </label>
+          <input
+            id="global-git-remote"
+            type="text"
+            v-model="gitRemoteUrl"
+            placeholder="git@github.com:username/repo.git"
+            class="w-full px-3.5 py-2.5 bg-theme-bg border border-theme-border/60 rounded-xl text-xs text-theme-text-main placeholder:text-theme-text-muted focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary/30 transition-all font-mono"
+          />
+        </div>
+        <p class="text-xs text-theme-text-muted leading-relaxed">
+          {{ t('settingsView.gitRemoteDesc') }}
+        </p>
       </div>
     </div>
   </div>
