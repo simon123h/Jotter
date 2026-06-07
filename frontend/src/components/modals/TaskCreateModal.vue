@@ -8,6 +8,7 @@ import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { parseTitleState } from '@/utils/dateParser';
+import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 
 const { locale, t } = useI18n();
 const route = useRoute();
@@ -483,17 +484,12 @@ const handleSubmit = async () => {
             </div>
           </div>
 
-          <!-- Body (Markdown Textarea) -->
+          <!-- Body (Markdown Editor) -->
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
               {{ t('form.markdownLabel') }}
             </label>
-            <textarea
-              v-model="body"
-              rows="8"
-              class="w-full bg-theme-base/60 border border-theme-border rounded p-3 text-sm text-theme-text-input font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring scroller-thin"
-              :placeholder="t('form.markdownPlaceholder')"
-            ></textarea>
+            <MarkdownEditor v-model="body" :rows="10" :placeholder="t('form.markdownPlaceholder')" />
           </div>
         </form>
 

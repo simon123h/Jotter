@@ -238,7 +238,7 @@ const cardStyle = computed(() => {
         <!-- Checklist Stats -->
         <div
           v-if="checklistStats"
-          @click.stop="toggleExpand"
+          @click.stop.prevent="toggleExpand"
           class="flex items-center gap-1 font-semibold"
           :class="[
             checklistStats.checked === checklistStats.total
@@ -254,7 +254,7 @@ const cardStyle = computed(() => {
         <!-- Inline Toggle Button -->
         <button
           v-if="allowExpand && hasNotes"
-          @click.stop="toggleExpand"
+          @click.stop.prevent="toggleExpand"
           class="p-0.5 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer"
           :title="isExpanded ? t('taskCard.collapseNotes') : t('taskCard.expandNotes')"
         >

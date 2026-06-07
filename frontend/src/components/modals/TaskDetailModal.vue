@@ -10,6 +10,7 @@ import { useDialog } from '@/composables/useDialog';
 import { useProjectStore } from '@/stores/project';
 import { X, Slash, Paperclip, Trash2, Download, FileText, Plus } from '@lucide/vue';
 import { parseTitleState } from '@/utils/dateParser';
+import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();
@@ -905,17 +906,12 @@ const getPriorityClasses = (prio: string) => {
                 </div>
               </div>
 
-              <!-- Body (Markdown Textarea) -->
+              <!-- Body (Markdown Editor) -->
               <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
                   {{ t('form.markdownLabelEdit') }}
                 </label>
-                <textarea
-                  v-model="editBody"
-                  rows="10"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded p-3 text-sm text-theme-text-input font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring scroller-thin"
-                  :placeholder="t('form.markdownPlaceholderEdit')"
-                ></textarea>
+                <MarkdownEditor v-model="editBody" :rows="12" :placeholder="t('form.markdownPlaceholderEdit')" />
               </div>
             </div>
           </div>

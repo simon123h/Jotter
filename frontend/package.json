@@ -16,8 +16,10 @@
     "format:check": "prettier --check \"src/**/*.{js,ts,vue,css}\""
   },
   "dependencies": {
+    "@codemirror/lang-markdown": "^6.5.0",
     "@lucide/vue": "^1.17.0",
     "@tailwindcss/vite": "^4.3.0",
+    "codemirror": "^6.0.2",
     "marked": "^18.0.4",
     "pinia": "^3.0.4",
     "sortablejs": "^1.15.7",
