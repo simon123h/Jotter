@@ -41,7 +41,9 @@ const isTabActive = (tab: string) => {
         <Menu class="w-4 h-4 shrink-0" />
       </button>
       <h1 class="text-base font-bold tracking-tight text-theme-text-main truncate flex items-baseline gap-1.5">
-        {{ t('brand.title') }}
+        <router-link :to="{ name: 'home' }" class="hover:text-theme-primary transition-colors cursor-pointer">
+          {{ t('brand.title') }}
+        </router-link>
         <span class="text-xs font-semibold text-theme-text-muted opacity-80" v-if="projects.find((p) => p.id === activeProjectId)">
           / {{ projects.find((p) => p.id === activeProjectId)?.title }}
         </span>

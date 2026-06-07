@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { Folder, Plus, ArrowRight, GitBranch, Pin, Sparkles } from '@lucide/vue';
+import { Folder, Plus, ArrowRight, GitBranch, Pin, Kanban } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
@@ -52,25 +52,37 @@ const sortedProjects = computed(() => {
     return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
   });
 });
+
+const welcomeParts = computed(() => {
+  const full = t('home.welcome');
+  const brandName = t('brand.title');
+  const index = full.indexOf(brandName);
+  if (index === -1) {
+    return { prefix: full, brand: '', suffix: '' };
+  }
+  return {
+    prefix: full.slice(0, index),
+    brand: brandName,
+    suffix: full.slice(index + brandName.length),
+  };
+});
 </script>
 
 <template>
-  <div class="h-full w-full flex items-center justify-center p-6 overflow-y-auto scroller-thin bg-theme-base/20 select-none">
+  <div class="h-4/5 w-full flex items-center justify-center p-6 overflow-y-auto scroller-thin bg-theme-base/20 select-none">
     <div class="max-w-4xl w-full flex flex-col items-center text-center space-y-8 py-8 animate-fade-in">
       <!-- Welcome Hero Header -->
       <div class="space-y-3.5 relative">
         <div
           class="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-theme-primary/10 rounded-full blur-2xl pointer-events-none"
         ></div>
-        <div
-          class="inline-flex p-3.5 bg-theme-card/50 border border-theme-border/60 rounded-2xl shadow-lg relative text-theme-accent animate-pulse-slow"
-        >
-          <Sparkles class="w-8 h-8" />
+        <div class="inline-flex p-3.5 text-theme-accent">
+          <Kanban class="w-10 h-10" />
         </div>
-        <h1
-          class="text-4xl font-extrabold tracking-tight text-theme-text-main bg-gradient-to-r from-theme-text-main via-theme-accent to-theme-text-main bg-clip-text text-transparent"
-        >
-          {{ t('home.welcome') }}
+        <h1 class="text-4xl font-extrabold tracking-tight text-theme-text-main">
+          <span>{{ welcomeParts.prefix }}</span>
+          <span class="text-theme-accent">{{ welcomeParts.brand }}</span>
+          <span>{{ welcomeParts.suffix }}</span>
         </h1>
         <p class="text-sm font-medium text-theme-text-muted max-w-md mx-auto italic">
           {{ t('home.subtitle') }}

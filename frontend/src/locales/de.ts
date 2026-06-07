@@ -5,8 +5,8 @@ export const de = {
   },
   home: {
     welcome: 'Willkommen bei Jotter',
-    subtitle: 'Dein lokaler Markdown-Kanban-Organizer',
-    selectProject: 'Wähle ein Projekt aus der Seitenleiste oder unten aus, um zu beginnen:',
+    subtitle: 'Lokales Kanban-Board mit Markdown-Unterstützung.',
+    selectProject: 'Wähle ein Projekt aus, um zu beginnen:',
     noProjects: 'Noch keine Projekte erstellt.',
     createProject: 'Erstelle dein erstes Projekt, um deine Arbeit zu organisieren:',
     newProjectPlaceholder: 'Projekttitel...',
