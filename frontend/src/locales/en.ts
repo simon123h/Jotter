@@ -200,7 +200,7 @@ export const en = {
   },
   views: {
     board: 'Board',
-    list: 'List View',
+    list: 'List',
     matrix: 'Matrix',
     time: 'Schedule',
     tag: 'Tags',

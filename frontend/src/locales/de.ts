@@ -202,7 +202,7 @@ export const de = {
   },
   views: {
     board: 'Board',
-    list: 'Listenansicht',
+    list: 'Liste',
     matrix: 'Matrix',
     time: 'Zeitplan',
     tag: 'Tags',
