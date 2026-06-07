@@ -203,7 +203,8 @@ export const de = {
   views: {
     board: 'Board',
     list: 'Liste',
-    matrix: 'Matrix',
+    matrix: 'Matrix view',
+    matrixDesc: 'Eisenhower matrix',
     time: 'Zeitplan',
     tag: 'Tags',
     globalTime: 'Projektübergreifend',

@@ -197,6 +197,12 @@ const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
     task.due_date = originalDueDate;
   }
 };
+
+const sliderPercentage = computed(() => {
+  const min = 1;
+  const max = 30;
+  return ((thresholdDays.value - min) / (max - min)) * 100;
+});
 </script>
 
 <template>
@@ -204,26 +210,38 @@ const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
     <!-- Header with Threshold Slider -->
     <div class="flex items-center justify-between px-1">
       <div class="flex flex-col">
-        <h2 class="text-lg font-bold text-theme-text-main flex items-center gap-2">
-          <Clock class="w-5 h-5 text-theme-accent" />
+        <h2 class="text-lg font-bold text-theme-text-main flex items-baseline gap-2">
+          <span class="w-2 h-2 rounded-full bg-theme-accent"></span>
           {{ t('views.matrix') }}
+          <span class="text-xs font-normal text-theme-text-muted ml-2 uppercase tracking-widest">{{ t('views.matrixDesc') }}</span>
         </h2>
-        <span class="text-xs text-theme-text-muted uppercase tracking-widest font-semibold">Eisenhower Matrix</span>
       </div>
 
-      <div class="flex flex-col items-end gap-1">
-        <label class="text-[10px] font-bold uppercase tracking-wider text-theme-text-muted">
+      <div
+        class="flex flex-col items-end gap-1 bg-theme-column/30 border border-theme-border/25 rounded-xl px-4 py-2 hover:bg-theme-column/45 transition-all duration-300 shadow-sm max-w-fit"
+      >
+        <label class="text-[10px] font-extrabold uppercase tracking-wider text-theme-text-muted select-none leading-none">
           {{ t('matrix.thresholdLabel', { days: thresholdDays }) }}
         </label>
-        <div class="flex items-center gap-3">
+        <div class="relative flex flex-col w-48 mt-1.5">
           <input
             type="range"
             min="1"
             max="30"
             :value="thresholdDays"
             @input="updateThreshold(parseInt(($event.target as HTMLInputElement).value))"
-            class="w-48 h-1.5 bg-theme-column/40 rounded-lg appearance-none cursor-pointer accent-theme-primary"
+            class="urgency-slider w-full h-1 appearance-none cursor-pointer rounded-full outline-none transition-all duration-150"
+            :style="{
+              background: `linear-gradient(to right, var(--theme-accent) ${sliderPercentage}%, var(--theme-border) ${sliderPercentage}%)`,
+            }"
           />
+          <!-- Helper presets / ticks -->
+          <div class="flex justify-between w-full px-0.5 mt-1 text-[8px] font-black text-theme-text-muted/60 select-none">
+            <span class="cursor-pointer hover:text-theme-accent transition-colors duration-150" @click="updateThreshold(1)">1d</span>
+            <span class="cursor-pointer hover:text-theme-accent transition-colors duration-150" @click="updateThreshold(7)">7d</span>
+            <span class="cursor-pointer hover:text-theme-accent transition-colors duration-150" @click="updateThreshold(14)">14d</span>
+            <span class="cursor-pointer hover:text-theme-accent transition-colors duration-150" @click="updateThreshold(30)">30d</span>
+          </div>
         </div>
       </div>
     </div>
@@ -261,10 +279,7 @@ const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
                   {{ col.subtitle }}
                 </p>
               </div>
-              <span
-                class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0"
-                :class="[classes.badge]"
-              >
+              <span class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0" :class="[classes.badge]">
                 {{ col.tasks.length }}
               </span>
             </div>
@@ -295,11 +310,16 @@ const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
                     v-if="activeMenuColId === col.id"
                     class="absolute right-0 top-full mt-1 bg-theme-card border border-theme-border rounded shadow-lg p-1 flex flex-col gap-1 z-50 min-w-[130px]"
                   >
-                    <div class="px-2.5 py-1 text-[9px] font-bold text-theme-text-muted/65 uppercase tracking-wider border-b border-theme-border/30 mb-0.5 select-none">
+                    <div
+                      class="px-2.5 py-1 text-[9px] font-bold text-theme-text-muted/65 uppercase tracking-wider border-b border-theme-border/30 mb-0.5 select-none"
+                    >
                       Layout
                     </div>
                     <button
-                      @click.stop="uiStore.setVirtualColumnLayout('matrix-view', col.id, 'list'); closeMenu()"
+                      @click.stop="
+                        uiStore.setVirtualColumnLayout('matrix-view', col.id, 'list');
+                        closeMenu();
+                      "
                       class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded hover:bg-theme-column/50 transition-colors text-left cursor-pointer w-full"
                       :class="[
                         uiStore.getVirtualColumnLayout('matrix-view', col.id, 'grid-3') === 'list'
@@ -311,7 +331,10 @@ const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
                       <span>List</span>
                     </button>
                     <button
-                      @click.stop="uiStore.setVirtualColumnLayout('matrix-view', col.id, 'grid-2'); closeMenu()"
+                      @click.stop="
+                        uiStore.setVirtualColumnLayout('matrix-view', col.id, 'grid-2');
+                        closeMenu();
+                      "
                       class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded hover:bg-theme-column/50 transition-colors text-left cursor-pointer w-full"
                       :class="[
                         uiStore.getVirtualColumnLayout('matrix-view', col.id, 'grid-3') === 'grid-2'
@@ -323,7 +346,10 @@ const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
                       <span>2 Columns</span>
                     </button>
                     <button
-                      @click.stop="uiStore.setVirtualColumnLayout('matrix-view', col.id, 'grid-3'); closeMenu()"
+                      @click.stop="
+                        uiStore.setVirtualColumnLayout('matrix-view', col.id, 'grid-3');
+                        closeMenu();
+                      "
                       class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded hover:bg-theme-column/50 transition-colors text-left cursor-pointer w-full"
                       :class="[
                         uiStore.getVirtualColumnLayout('matrix-view', col.id, 'grid-3') === 'grid-3'
@@ -344,3 +370,74 @@ const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.urgency-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+
+/* Style the Webkit/Blink slider thumb */
+.urgency-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 2px solid var(--theme-accent, #3b82f6);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition:
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* Style the Firefox slider thumb */
+.urgency-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 2px solid var(--theme-accent, #3b82f6);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition:
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* Hover & Active Effects */
+.urgency-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  border-color: var(--theme-accent-hover, #60a5fa);
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.3),
+    0 0 0 4px var(--theme-ring);
+}
+
+.urgency-slider::-moz-range-thumb:hover {
+  transform: scale(1.25);
+  border-color: var(--theme-accent-hover, #60a5fa);
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.3),
+    0 0 0 4px var(--theme-ring);
+}
+
+.urgency-slider::-webkit-slider-thumb:active {
+  transform: scale(1.1);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 0 6px var(--theme-ring);
+}
+
+.urgency-slider::-moz-range-thumb:active {
+  transform: scale(1.1);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 0 6px var(--theme-ring);
+}
+</style>

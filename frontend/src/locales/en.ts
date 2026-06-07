@@ -201,7 +201,8 @@ export const en = {
   views: {
     board: 'Board',
     list: 'List',
-    matrix: 'Matrix',
+    matrix: 'Matrix-Ansicht',
+    matrixDesc: 'Eisenhower-Matrix',
     time: 'Schedule',
     tag: 'Tags',
     globalTime: 'Global Planning',

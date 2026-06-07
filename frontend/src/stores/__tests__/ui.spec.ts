@@ -47,4 +47,20 @@ describe('UI Store', () => {
     expect(store.collapseEmptyColumns).toBe(true);
     expect(localStorage.getItem('jotter-collapse-empty-columns')).toBe('true');
   });
+
+  it('manages virtual column layouts with custom defaults', () => {
+    const store = useUiStore();
+    // Default to list if none specified
+    expect(store.getVirtualColumnLayout('matrix-view', 'q1')).toBe('list');
+    // Accepts custom default layout like grid-3
+    expect(store.getVirtualColumnLayout('matrix-view', 'q1', 'grid-3')).toBe('grid-3');
+
+    // Can set layout
+    store.setVirtualColumnLayout('matrix-view', 'q1', 'grid-2');
+    expect(store.getVirtualColumnLayout('matrix-view', 'q1', 'grid-3')).toBe('grid-2');
+    expect(JSON.parse(localStorage.getItem('jotter-virtual-column-layouts') || '{}')).toEqual({
+      'matrix-view-q1': 'grid-2',
+    });
+  });
 });
+

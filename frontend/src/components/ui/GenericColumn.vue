@@ -223,14 +223,14 @@ watch(
 <template>
   <div
     :style="columnStyle"
-    class="generic-column flex flex-col rounded h-fit max-h-full group/col relative overflow-hidden transition-all duration-300"
+    class="generic-column flex flex-col rounded group/col relative overflow-hidden transition-all duration-300"
     :class="[
       isCollapsed
-        ? 'w-12 min-w-[48px] max-w-[48px] shrink-0 bg-theme-column/50 backdrop-blur-[2px] border border-theme-border hover:bg-theme-column/75 hover:border-theme-accent/40 shadow-sm hover:shadow-md'
+        ? 'w-12 min-w-[48px] max-w-[48px] h-fit max-h-full shrink-0 bg-theme-column/50 backdrop-blur-[2px] border border-theme-border hover:bg-theme-column/75 hover:border-theme-accent/40 shadow-sm hover:shadow-md'
         : 'bg-theme-column border border-theme-border shadow-sm ' +
           (isFluid
-            ? 'w-full min-w-0'
-            : 'shrink-0 ' +
+            ? 'w-full h-full min-w-0'
+            : 'h-fit max-h-full shrink-0 ' +
               (layout === 'grid-3'
                 ? 'min-w-[840px] w-[864px] md:w-[960px]'
                 : layout === 'grid-2'
