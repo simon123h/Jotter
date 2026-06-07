@@ -6,6 +6,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"jotter/backend/internal/db"
 	"jotter/backend/internal/features/bucket"
 	"jotter/backend/internal/features/project"
+	"jotter/backend/internal/features/settings"
 	"jotter/backend/internal/features/system"
 	"jotter/backend/internal/features/task"
 )
@@ -104,6 +106,32 @@ func TestIntegration(t *testing.T) {
 		}
 	})
 
+	// 2b. Test project update
+	t.Run("Update Project", func(t *testing.T) {
+		newTitle := "Updated Test Project"
+		payload := project.Update{
+			Title: &newTitle,
+		}
+		body, _ := json.Marshal(payload)
+		url := fmt.Sprintf("/api/projects/%s", projectID)
+		req := httptest.NewRequest("PUT", url, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		var res project.Response
+		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if res.Title != "Updated Test Project" {
+			t.Errorf("Expected project title 'Updated Test Project', got '%s'", res.Title)
+		}
+	})
+
 	// 3. Test list buckets (columns)
 	t.Run("Get Buckets Initial", func(t *testing.T) {
 		url := fmt.Sprintf("/api/projects/%s/buckets", projectID)
@@ -151,6 +179,34 @@ func TestIntegration(t *testing.T) {
 		}
 	})
 
+	// 4b. Test Update Bucket
+	t.Run("Update Bucket", func(t *testing.T) {
+		newTitle := "Needs Review"
+		colorCode := "#ff0000"
+		payload := bucket.Update{
+			Title: &newTitle,
+			Color: &colorCode,
+		}
+		body, _ := json.Marshal(payload)
+		url := fmt.Sprintf("/api/projects/%s/buckets/review", projectID)
+		req := httptest.NewRequest("PUT", url, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		var res bucket.Response
+		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if res.Title != "Needs Review" || res.Color == nil || *res.Color != "#ff0000" {
+			t.Errorf("Expected title 'Needs Review' and color '#ff0000', got title='%s', color='%v'", res.Title, res.Color)
+		}
+	})
+
 	var taskID string
 
 	// 5. Test task creation
@@ -181,6 +237,44 @@ func TestIntegration(t *testing.T) {
 		taskID = res.ID
 	})
 
+	// 5b. Test List Tasks
+	t.Run("List Tasks", func(t *testing.T) {
+		// List all tasks globally
+		reqAll := httptest.NewRequest("GET", "/api/tasks", nil)
+		wAll := httptest.NewRecorder()
+		r.ServeHTTP(wAll, reqAll)
+
+		if wAll.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for global task list, got %d", wAll.Code)
+		}
+
+		var tasksAll []task.Response
+		if err := json.Unmarshal(wAll.Body.Bytes(), &tasksAll); err != nil {
+			t.Fatalf("Failed to parse global task list: %v", err)
+		}
+
+		if len(tasksAll) != 1 || tasksAll[0].ID != taskID {
+			t.Errorf("Expected global task list to contain exactly 1 task with ID %s, got %v", taskID, tasksAll)
+		}
+
+		// List tasks for specific project
+		urlProj := fmt.Sprintf("/api/projects/%s/tasks", projectID)
+		reqProj := httptest.NewRequest("GET", urlProj, nil)
+		wProj := httptest.NewRecorder()
+		r.ServeHTTP(wProj, reqProj)
+
+		if wProj.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for project task list, got %d", wProj.Code)
+		}
+
+		var tasksProj []task.Response
+		_ = json.Unmarshal(wProj.Body.Bytes(), &tasksProj)
+
+		if len(tasksProj) != 1 || tasksProj[0].ID != taskID {
+			t.Errorf("Expected project task list to contain exactly 1 task with ID %s, got %v", taskID, tasksProj)
+		}
+	})
+
 	// 6. Test task fetch
 	t.Run("Get Task", func(t *testing.T) {
 		url := fmt.Sprintf("/api/projects/%s/tasks/%s", projectID, taskID)
@@ -199,6 +293,105 @@ func TestIntegration(t *testing.T) {
 
 		if res.ID != taskID || res.Title != "Test Task" {
 			t.Errorf("Fetched task data mismatch: %+v", res)
+		}
+	})
+
+	// 6b. Test Update Task
+	t.Run("Update Task", func(t *testing.T) {
+		newTitle := "Updated Task Title"
+		newBody := "Updated body description content"
+		newPriority := "high"
+		tags := []string{"bug", "important"}
+		payload := task.Update{
+			Title:    &newTitle,
+			Body:     &newBody,
+			Priority: &newPriority,
+			Tags:     &tags,
+		}
+		body, _ := json.Marshal(payload)
+		url := fmt.Sprintf("/api/projects/%s/tasks/%s", projectID, taskID)
+		req := httptest.NewRequest("PUT", url, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		var res task.Response
+		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if res.Title != "Updated Task Title" || res.Body != "Updated body description content" || res.Priority == nil || *res.Priority != "high" || len(res.Tags) != 2 {
+			t.Errorf("Updated task mismatch: %+v", res)
+		}
+	})
+
+	// 6c. Test Task Attachments
+	t.Run("Task Attachments", func(t *testing.T) {
+		// 1. Upload Attachment
+		urlUpload := fmt.Sprintf("/api/projects/%s/tasks/%s/attachments", projectID, taskID)
+
+		var b bytes.Buffer
+		writer := multipart.NewWriter(&b)
+		part, err := writer.CreateFormFile("file", "test_doc.txt")
+		if err != nil {
+			t.Fatalf("Failed to create form file: %v", err)
+		}
+		_, _ = part.Write([]byte("This is some sample test document text."))
+		_ = writer.Close()
+
+		reqUpload := httptest.NewRequest("POST", urlUpload, &b)
+		reqUpload.Header.Set("Content-Type", writer.FormDataContentType())
+		wUpload := httptest.NewRecorder()
+		r.ServeHTTP(wUpload, reqUpload)
+
+		if wUpload.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for upload, got %d. Body: %s", wUpload.Code, wUpload.Body.String())
+		}
+
+		var resUpload task.Response
+		if err := json.Unmarshal(wUpload.Body.Bytes(), &resUpload); err != nil {
+			t.Fatalf("Failed to parse upload response: %v", err)
+		}
+
+		if len(resUpload.Attachments) != 1 || resUpload.Attachments[0] != "test_doc.txt" {
+			t.Errorf("Expected attachment list to have 'test_doc.txt', got: %v", resUpload.Attachments)
+		}
+
+		// 2. Download Attachment
+		urlDownload := fmt.Sprintf("/api/projects/%s/tasks/%s/attachments/test_doc.txt", projectID, taskID)
+		reqDownload := httptest.NewRequest("GET", urlDownload, nil)
+		wDownload := httptest.NewRecorder()
+		r.ServeHTTP(wDownload, reqDownload)
+
+		if wDownload.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for download, got %d", wDownload.Code)
+		}
+
+		downloadContent := wDownload.Body.String()
+		if downloadContent != "This is some sample test document text." {
+			t.Errorf("Expected download content 'This is some sample test document text.', got %q", downloadContent)
+		}
+
+		// 3. Delete Attachment
+		urlDelete := fmt.Sprintf("/api/projects/%s/tasks/%s/attachments/test_doc.txt", projectID, taskID)
+		reqDelete := httptest.NewRequest("DELETE", urlDelete, nil)
+		wDelete := httptest.NewRecorder()
+		r.ServeHTTP(wDelete, reqDelete)
+
+		if wDelete.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for delete, got %d", wDelete.Code)
+		}
+
+		var resDelete task.Response
+		if err := json.Unmarshal(wDelete.Body.Bytes(), &resDelete); err != nil {
+			t.Fatalf("Failed to parse delete response: %v", err)
+		}
+
+		if len(resDelete.Attachments) != 0 {
+			t.Errorf("Expected attachment list to be empty after delete, got: %v", resDelete.Attachments)
 		}
 	})
 
@@ -286,6 +479,69 @@ func TestIntegration(t *testing.T) {
 		err := db.DB.QueryRow("SELECT id FROM tasks WHERE id = ?", taskID).Scan(&dummy)
 		if err != sql.ErrNoRows {
 			t.Errorf("Task still exists in database: %v", err)
+		}
+	})
+
+	// 9b. Test Delete Bucket
+	t.Run("Delete Bucket", func(t *testing.T) {
+		url := fmt.Sprintf("/api/projects/%s/buckets/review", projectID)
+		req := httptest.NewRequest("DELETE", url, nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		var res map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if res["status"] != "success" {
+			t.Errorf("Expected success, got %v", res["status"])
+		}
+	})
+
+	// 9c. Test Settings (Get and Post Settings)
+	t.Run("Get and Save Settings", func(t *testing.T) {
+		// Get Settings
+		reqGet := httptest.NewRequest("GET", "/api/settings", nil)
+		wGet := httptest.NewRecorder()
+		r.ServeHTTP(wGet, reqGet)
+
+		if wGet.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for GET settings, got %d", wGet.Code)
+		}
+
+		var loadedSettings settings.AppSettings
+		if err := json.Unmarshal(wGet.Body.Bytes(), &loadedSettings); err != nil {
+			t.Fatalf("Failed to parse GET settings: %v", err)
+		}
+
+		// Save Settings
+		loadedSettings.CurrentTheme = "nordic-dark"
+		loadedSettings.HideDoneColumn = false
+
+		body, _ := json.Marshal(loadedSettings)
+		reqPost := httptest.NewRequest("POST", "/api/settings", bytes.NewBuffer(body))
+		wPost := httptest.NewRecorder()
+		r.ServeHTTP(wPost, reqPost)
+
+		if wPost.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for POST settings, got %d", wPost.Code)
+		}
+
+		// Re-fetch Settings to verify change
+		reqGet2 := httptest.NewRequest("GET", "/api/settings", nil)
+		wGet2 := httptest.NewRecorder()
+		r.ServeHTTP(wGet2, reqGet2)
+
+		var verifiedSettings settings.AppSettings
+		_ = json.Unmarshal(wGet2.Body.Bytes(), &verifiedSettings)
+
+		if verifiedSettings.CurrentTheme != "nordic-dark" || verifiedSettings.HideDoneColumn != false {
+			t.Errorf("Expected theme 'nordic-dark' and HideDoneColumn false, got: %+v", verifiedSettings)
 		}
 	})
 

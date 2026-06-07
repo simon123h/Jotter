@@ -6,6 +6,29 @@ import (
 	"path/filepath"
 )
 
+// FileRepository defines the disk operations for settings
+type FileRepository interface {
+	LoadSettings(tasksDir string) (AppSettings, error)
+	SaveSettings(tasksDir string, settings AppSettings) error
+}
+
+type fileRepository struct{}
+
+// NewFileRepository creates a new File repository instance for settings
+func NewFileRepository() FileRepository {
+	return &fileRepository{}
+}
+
+func (r *fileRepository) LoadSettings(tasksDir string) (AppSettings, error) {
+	return LoadSettings(tasksDir)
+}
+
+func (r *fileRepository) SaveSettings(tasksDir string, settings AppSettings) error {
+	return SaveSettings(tasksDir, settings)
+}
+
+// Low-level helper functions (Kept for backwards compatibility and internal repository usage)
+
 type AppSettings struct {
 	HideDoneColumn    bool             `json:"hideDoneColumn"`
 	HideArchiveColumn bool             `json:"hideArchiveColumn"`

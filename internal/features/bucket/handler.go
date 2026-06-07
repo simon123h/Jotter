@@ -1,8 +1,9 @@
 package bucket
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -12,50 +13,25 @@ import (
 	"jotter/backend/internal/features/common"
 )
 
+// RegisterRoutes registers the columns (buckets) sub-routes.
+// It internally bootstraps the layered architecture for the bucket feature,
+// maintaining backwards compatibility with caller signatures.
 func RegisterRoutes(r chi.Router, tasksDir string) {
+	dbRepo := NewSQLRepository(db.DB)
+	fileRepo := NewFileRepository()
+	svc := NewService(dbRepo, fileRepo)
+
 	r.Get("/projects/{project_id}/buckets", func(w http.ResponseWriter, r *http.Request) {
 		projectID := chi.URLParam(r, "project_id")
 
-		// Verify project exists
-		var dummy string
-		err := db.DB.QueryRow("SELECT id FROM projects WHERE id = ?", projectID).Scan(&dummy)
-		if err == sql.ErrNoRows {
-			common.SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
-			return
-		} else if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		rows, err := db.DB.Query("SELECT name, title, subtitle, position, color, layout, max_tasks, is_default FROM buckets WHERE project_id = ? ORDER BY position ASC", projectID)
+		buckets, err := svc.GetBuckets(r.Context(), projectID)
 		if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		defer rows.Close()
-
-		var buckets []Response
-		for rows.Next() {
-			var b Response
-			var color sql.NullString
-			var maxTasks sql.NullInt64
-
-			if err := rows.Scan(&b.Name, &b.Title, &b.Subtitle, &b.Position, &color, &b.Layout, &maxTasks, &b.IsDefault); err != nil {
+			if errors.Is(err, ErrProjectNotFound) {
+				common.SendError(w, http.StatusNotFound, err.Error())
+			} else {
 				common.SendError(w, http.StatusInternalServerError, err.Error())
-				return
 			}
-			if color.Valid {
-				b.Color = &color.String
-			}
-			if maxTasks.Valid {
-				v := int(maxTasks.Int64)
-				b.MaxTasks = &v
-			}
-			buckets = append(buckets, b)
-		}
-
-		if buckets == nil {
-			buckets = []Response{}
+			return
 		}
 		common.SendJSON(w, http.StatusOK, buckets)
 	})
@@ -69,111 +45,18 @@ func RegisterRoutes(r chi.Router, tasksDir string) {
 			return
 		}
 
-		name := common.Slugify(req.Title)
-		if name == "" {
-			common.SendError(w, http.StatusBadRequest, "Invalid title. Could not generate a bucket name slug.")
-			return
-		}
-
-		// Verify project exists
-		var dummy string
-		err := db.DB.QueryRow("SELECT id FROM projects WHERE id = ?", projectID).Scan(&dummy)
-		if err == sql.ErrNoRows {
-			common.SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
-			return
-		} else if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// Check if bucket name already exists in this project
-		var existingName string
-		err = db.DB.QueryRow("SELECT name FROM buckets WHERE project_id = ? AND name = ?", projectID, name).Scan(&existingName)
-		if err != sql.ErrNoRows {
-			if err == nil {
-				common.SendError(w, http.StatusBadRequest, fmt.Sprintf("A column with a similar name '%s' already exists in project '%s'.", name, projectID))
-				return
-			}
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// Calculate position: max position + 1000.0
-		var maxPos sql.NullFloat64
-		_ = db.DB.QueryRow("SELECT MAX(position) FROM buckets WHERE project_id = ?", projectID).Scan(&maxPos)
-		newPosition := 1000.0
-		if maxPos.Valid {
-			newPosition = maxPos.Float64 + 1000.0
-		}
-
-		isDefault := false
-		if req.IsDefault != nil {
-			isDefault = *req.IsDefault
-		}
-
-		tx, err := db.DB.Begin()
+		res, err := svc.CreateBucket(r.Context(), tasksDir, projectID, req)
 		if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		defer func() { _ = tx.Rollback() }()
-
-		if isDefault {
-			_, err = tx.Exec("UPDATE buckets SET is_default = 0 WHERE project_id = ?", projectID)
-			if err != nil {
+			if errors.Is(err, ErrProjectNotFound) {
+				common.SendError(w, http.StatusNotFound, err.Error())
+			} else if errors.Is(err, ErrDuplicateBucket) || errors.Is(err, ErrInvalidInput) {
+				common.SendError(w, http.StatusBadRequest, err.Error())
+			} else {
 				common.SendError(w, http.StatusInternalServerError, err.Error())
-				return
 			}
-		}
-
-		var subtitle string
-		if req.Subtitle != nil {
-			subtitle = *req.Subtitle
-		}
-
-		var color sql.NullString
-		if req.Color != nil {
-			color = sql.NullString{String: *req.Color, Valid: true}
-		}
-
-		layout := "list"
-		if req.Layout != nil {
-			layout = *req.Layout
-		}
-
-		var maxTasks sql.NullInt64
-		if req.MaxTasks != nil {
-			maxTasks = sql.NullInt64{Int64: int64(*req.MaxTasks), Valid: true}
-		}
-
-		_, err = tx.Exec("INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-			projectID, name, req.Title, subtitle, newPosition, color, layout, maxTasks, isDefault)
-		if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		if err := tx.Commit(); err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// Sync buckets.json file
-		if err := SyncBucketsFile(tasksDir, projectID); err != nil {
-			common.SendError(w, http.StatusInternalServerError, "Failed to sync buckets.json file")
-			return
-		}
-
-		res := Response{
-			Name:      name,
-			Title:     req.Title,
-			Subtitle:  subtitle,
-			Position:  newPosition,
-			Color:     req.Color,
-			Layout:    layout,
-			MaxTasks:  req.MaxTasks,
-			IsDefault: isDefault,
-		}
 		common.SendJSON(w, http.StatusCreated, res)
 	})
 
@@ -187,158 +70,32 @@ func RegisterRoutes(r chi.Router, tasksDir string) {
 			return
 		}
 
-		// Verify project exists
-		var dummy string
-		err := db.DB.QueryRow("SELECT id FROM projects WHERE id = ?", projectID).Scan(&dummy)
-		if err == sql.ErrNoRows {
-			common.SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
-			return
-		} else if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// Check if bucket exists
-		var b Response
-		var color sql.NullString
-		var maxTasks sql.NullInt64
-		err = db.DB.QueryRow("SELECT name, title, subtitle, position, color, layout, max_tasks, is_default FROM buckets WHERE project_id = ? AND name = ?", projectID, name).Scan(
-			&b.Name, &b.Title, &b.Subtitle, &b.Position, &color, &b.Layout, &maxTasks, &b.IsDefault)
-
-		if err == sql.ErrNoRows {
-			common.SendError(w, http.StatusNotFound, fmt.Sprintf("Column '%s' not found in project '%s'.", name, projectID))
-			return
-		} else if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if color.Valid {
-			b.Color = &color.String
-		}
-		if maxTasks.Valid {
-			v := int(maxTasks.Int64)
-			b.MaxTasks = &v
-		}
-
-		// Update properties in memory
-		if req.Title != nil {
-			b.Title = *req.Title
-		}
-		if req.Subtitle != nil {
-			b.Subtitle = *req.Subtitle
-		}
-		if req.Position != nil {
-			b.Position = *req.Position
-		}
-		if req.Color != nil {
-			b.Color = req.Color
-		}
-		if req.Layout != nil {
-			b.Layout = *req.Layout
-		}
-		if req.MaxTasks != nil {
-			b.MaxTasks = req.MaxTasks
-		}
-
-		isDefaultChanged := req.IsDefault != nil && *req.IsDefault != b.IsDefault
-		if req.IsDefault != nil {
-			b.IsDefault = *req.IsDefault
-		}
-
-		tx, err := db.DB.Begin()
+		res, err := svc.UpdateBucket(r.Context(), tasksDir, projectID, name, req)
 		if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		defer func() { _ = tx.Rollback() }()
-
-		if isDefaultChanged && b.IsDefault {
-			_, err = tx.Exec("UPDATE buckets SET is_default = 0 WHERE project_id = ?", projectID)
-			if err != nil {
+			if errors.Is(err, ErrProjectNotFound) || errors.Is(err, ErrBucketNotFound) {
+				common.SendError(w, http.StatusNotFound, err.Error())
+			} else {
 				common.SendError(w, http.StatusInternalServerError, err.Error())
-				return
 			}
-		}
-
-		var updateColor sql.NullString
-		if b.Color != nil {
-			updateColor = sql.NullString{String: *b.Color, Valid: true}
-		}
-
-		var updateMaxTasks sql.NullInt64
-		if b.MaxTasks != nil {
-			updateMaxTasks = sql.NullInt64{Int64: int64(*b.MaxTasks), Valid: true}
-		}
-
-		_, err = tx.Exec("UPDATE buckets SET title = ?, subtitle = ?, position = ?, color = ?, layout = ?, max_tasks = ?, is_default = ? WHERE project_id = ? AND name = ?",
-			b.Title, b.Subtitle, b.Position, updateColor, b.Layout, updateMaxTasks, b.IsDefault, projectID, name)
-		if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		if err := tx.Commit(); err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// Sync buckets.json file
-		if err := SyncBucketsFile(tasksDir, projectID); err != nil {
-			common.SendError(w, http.StatusInternalServerError, "Failed to sync buckets.json file")
-			return
-		}
-
-		common.SendJSON(w, http.StatusOK, b)
+		common.SendJSON(w, http.StatusOK, res)
 	})
 
 	r.Delete("/projects/{project_id}/buckets/{name}", func(w http.ResponseWriter, r *http.Request) {
 		projectID := chi.URLParam(r, "project_id")
 		name := chi.URLParam(r, "name")
 
-		// Verify project exists
-		var dummy string
-		err := db.DB.QueryRow("SELECT id FROM projects WHERE id = ?", projectID).Scan(&dummy)
-		if err == sql.ErrNoRows {
-			common.SendError(w, http.StatusNotFound, fmt.Sprintf("Project '%s' not found.", projectID))
-			return
-		} else if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// Check if bucket exists
-		err = db.DB.QueryRow("SELECT name FROM buckets WHERE project_id = ? AND name = ?", projectID, name).Scan(&dummy)
-		if err == sql.ErrNoRows {
-			common.SendError(w, http.StatusNotFound, fmt.Sprintf("Column '%s' not found in project '%s'.", name, projectID))
-			return
-		} else if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// Check if there are tasks in this bucket in this project
-		var taskCount int
-		err = db.DB.QueryRow("SELECT COUNT(*) FROM tasks WHERE project_id = ? AND bucket = ?", projectID, name).Scan(&taskCount)
+		err := svc.DeleteBucket(r.Context(), tasksDir, projectID, name)
 		if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if taskCount > 0 {
-			common.SendError(w, http.StatusBadRequest, fmt.Sprintf("Cannot delete column '%s' because it contains %d task(s). Please move or delete these tasks first.", name, taskCount))
-			return
-		}
-
-		_, err = db.DB.Exec("DELETE FROM buckets WHERE project_id = ? AND name = ?", projectID, name)
-		if err != nil {
-			common.SendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// Sync buckets.json file
-		if err := SyncBucketsFile(tasksDir, projectID); err != nil {
-			common.SendError(w, http.StatusInternalServerError, "Failed to sync buckets.json file")
+			if errors.Is(err, ErrProjectNotFound) || errors.Is(err, ErrBucketNotFound) {
+				common.SendError(w, http.StatusNotFound, err.Error())
+			} else if errors.Is(err, ErrBucketNotEmpty) {
+				common.SendError(w, http.StatusBadRequest, err.Error())
+			} else {
+				common.SendError(w, http.StatusInternalServerError, err.Error())
+			}
 			return
 		}
 
@@ -349,46 +106,39 @@ func RegisterRoutes(r chi.Router, tasksDir string) {
 	})
 }
 
+// SyncBucketsFile queries the current SQL database state for a project's buckets
+// and writes them down to the buckets.json file.
+// Kept at package-level for project creation bootstrapping backwards compatibility.
 func SyncBucketsFile(tasksDir string, projectID string) error {
-	rows, err := db.DB.Query("SELECT name, title, subtitle, position, color, layout, max_tasks, is_default FROM buckets WHERE project_id = ? ORDER BY position ASC", projectID)
+	dbRepo := NewSQLRepository(db.DB)
+	buckets, err := dbRepo.GetAll(context.Background(), projectID)
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
 
-	var buckets []map[string]interface{}
-	for rows.Next() {
-		var name, title, subtitle, layout string
-		var position float64
-		var color sql.NullString
-		var maxTasks sql.NullInt64
-		var isDefault bool
-
-		if err := rows.Scan(&name, &title, &subtitle, &position, &color, &layout, &maxTasks, &isDefault); err != nil {
-			return err
-		}
-
+	var jsonBuckets []map[string]interface{}
+	for _, b := range buckets {
 		bMap := map[string]interface{}{
-			"name":       name,
-			"title":      title,
-			"subtitle":   subtitle,
-			"position":   position,
-			"layout":     layout,
-			"is_default": isDefault,
+			"name":       b.Name,
+			"title":      b.Title,
+			"subtitle":   b.Subtitle,
+			"position":   b.Position,
+			"layout":     b.Layout,
+			"is_default": b.IsDefault,
 		}
-		if color.Valid {
-			bMap["color"] = color.String
+		if b.Color != nil {
+			bMap["color"] = *b.Color
 		} else {
 			bMap["color"] = nil
 		}
-		if maxTasks.Valid {
-			bMap["max_tasks"] = int(maxTasks.Int64)
+		if b.MaxTasks != nil {
+			bMap["max_tasks"] = *b.MaxTasks
 		} else {
 			bMap["max_tasks"] = nil
 		}
 
-		buckets = append(buckets, bMap)
+		jsonBuckets = append(jsonBuckets, bMap)
 	}
 
-	return WriteBucketsFile(tasksDir, projectID, buckets)
+	return WriteBucketsFile(tasksDir, projectID, jsonBuckets)
 }

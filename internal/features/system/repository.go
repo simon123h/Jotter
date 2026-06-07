@@ -1,38 +1,121 @@
 package system
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
-	"log"
 	"os"
-	"path/filepath"
-	"strings"
-	"time"
 
 	"jotter/backend/internal/db"
+	"jotter/backend/internal/features/common"
 	"jotter/backend/internal/features/project"
-	"jotter/backend/internal/features/task"
+	"jotter/backend/internal/features/settings"
 )
 
-func SyncDBWithFiles(tasksDir string) (int, error) {
-	// 1. Sync Projects first
-	projectsData, err := project.LoadProjectsFile(tasksDir)
-	if err != nil {
-		return 0, err
-	}
+// ProjectSyncInfo holds basic details needed during git sync
+type ProjectSyncInfo struct {
+	ID        string
+	RemoteURL string
+}
 
-	tx, err := db.DB.Begin()
+// BucketSyncInfo represents DB columns configuration to insert during sync
+type BucketSyncInfo struct {
+	ProjectID string
+	Name      string
+	Title     string
+	Subtitle  string
+	Position  float64
+	Layout    string
+	IsDefault bool
+	Color     *string
+	MaxTasks  *int
+}
+
+// TaskSyncInfo represents SQLite task attributes to rebuild
+type TaskSyncInfo struct {
+	ID          string
+	ProjectID   string
+	Title       string
+	Bucket      string
+	Position    float64
+	Tags        []string
+	Attachments []string
+	Filename    string
+	Body        string
+	DueDate     *string
+	PlannedDate *string
+	Priority    *string
+	Color       *string
+	CreatedAt   string
+	UpdatedAt   string
+}
+
+// DBRepository defines the database operations for system sync
+type DBRepository interface {
+	GetProjects(ctx context.Context) ([]ProjectSyncInfo, error)
+	RebuildIndex(ctx context.Context, projects []map[string]interface{}, buckets []BucketSyncInfo, tasks []TaskSyncInfo) (int, error)
+}
+
+// FileRepository defines the filesystem operations for system sync
+type FileRepository interface {
+	LoadProjectsFile(tasksDir string) ([]map[string]interface{}, error)
+	ReadDir(path string) ([]os.DirEntry, error)
+	ReadFile(path string) ([]byte, error)
+	RemoveFile(path string) error
+	RemoveDirAll(path string) error
+	WriteFile(path string, data []byte) error
+	GitSync(path string, remoteURL string) error
+}
+
+type sqlRepository struct {
+	db *sql.DB
+}
+
+// NewSQLRepository creates a new DB repository instance for system sync
+func NewSQLRepository(db *sql.DB) DBRepository {
+	return &sqlRepository{db: db}
+}
+
+func (r *sqlRepository) GetProjects(ctx context.Context) ([]ProjectSyncInfo, error) {
+	rows, err := r.db.QueryContext(ctx, "SELECT id, git_remote FROM projects")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var projects []ProjectSyncInfo
+	for rows.Next() {
+		var id string
+		var remote sql.NullString
+		if err := rows.Scan(&id, &remote); err != nil {
+			continue
+		}
+
+		remoteURL := ""
+		if remote.Valid {
+			remoteURL = remote.String
+		}
+
+		projects = append(projects, ProjectSyncInfo{
+			ID:        id,
+			RemoteURL: remoteURL,
+		})
+	}
+	return projects, nil
+}
+
+func (r *sqlRepository) RebuildIndex(ctx context.Context, projects []map[string]interface{}, buckets []BucketSyncInfo, tasks []TaskSyncInfo) (int, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	// Clear existing tasks and buckets before rebuilding index
-	_, _ = tx.Exec("DELETE FROM tasks")
-	_, _ = tx.Exec("DELETE FROM buckets")
-	_, _ = tx.Exec("DELETE FROM projects")
+	_, _ = tx.ExecContext(ctx, "DELETE FROM tasks")
+	_, _ = tx.ExecContext(ctx, "DELETE FROM buckets")
+	_, _ = tx.ExecContext(ctx, "DELETE FROM projects")
 
-	for _, p := range projectsData {
+	for _, p := range projects {
 		pID := p["id"].(string)
 		title := p["title"].(string)
 		created := p["created_at"].(string)
@@ -56,129 +139,55 @@ func SyncDBWithFiles(tasksDir string) (int, error) {
 			}
 		}
 
-		_, err = tx.Exec("INSERT INTO projects (id, title, created_at, done_clean_period, git_remote) VALUES (?, ?, ?, ?, ?)",
+		_, err = tx.ExecContext(ctx, "INSERT INTO projects (id, title, created_at, done_clean_period, git_remote) VALUES (?, ?, ?, ?, ?)",
 			pID, title, created, doneCleanPeriod, gitRemote)
 		if err != nil {
 			return 0, err
 		}
 	}
 
-	// 2. Sync Buckets and Tasks
-	projects, err := os.ReadDir(tasksDir)
-	if err != nil {
-		return 0, err
+	for _, b := range buckets {
+		var bColor sql.NullString
+		if b.Color != nil {
+			bColor = sql.NullString{String: *b.Color, Valid: true}
+		}
+
+		var bMaxTasks sql.NullInt64
+		if b.MaxTasks != nil {
+			bMaxTasks = sql.NullInt64{Int64: int64(*b.MaxTasks), Valid: true}
+		}
+
+		_, err = tx.ExecContext(ctx, "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			b.ProjectID, b.Name, b.Title, b.Subtitle, b.Position, bColor, b.Layout, bMaxTasks, b.IsDefault)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	count := 0
-	for _, p := range projects {
-		if !p.IsDir() || strings.HasPrefix(p.Name(), ".") {
+	for _, t := range tasks {
+		tagsJSON, _ := json.Marshal(t.Tags)
+		attachmentsJSON, _ := json.Marshal(t.Attachments)
+		var fmDueDate, fmPlannedDate, fmPriority, fmColor sql.NullString
+		if t.DueDate != nil {
+			fmDueDate = sql.NullString{String: *t.DueDate, Valid: true}
+		}
+		if t.PlannedDate != nil {
+			fmPlannedDate = sql.NullString{String: *t.PlannedDate, Valid: true}
+		}
+		if t.Priority != nil {
+			fmPriority = sql.NullString{String: *t.Priority, Valid: true}
+		}
+		if t.Color != nil {
+			fmColor = sql.NullString{String: *t.Color, Valid: true}
+		}
+
+		_, errT := tx.ExecContext(ctx, "INSERT INTO tasks (id, project_id, title, bucket, position, tags, attachments, filename, body, due_date, planned_date, priority, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			t.ID, t.ProjectID, t.Title, t.Bucket, t.Position, string(tagsJSON), string(attachmentsJSON), t.Filename, t.Body, fmDueDate, fmPlannedDate, fmPriority, fmColor, t.CreatedAt, t.UpdatedAt)
+		if errT != nil {
 			continue
 		}
-		pID := p.Name()
-		projectDir := filepath.Join(tasksDir, pID)
-
-		// 1. Load Buckets
-		bucketsFile := filepath.Join(projectDir, "buckets.json")
-		if _, err := os.Stat(bucketsFile); err == nil {
-			data, _ := os.ReadFile(bucketsFile)
-			var buckets []map[string]interface{}
-			if err := json.Unmarshal(data, &buckets); err == nil {
-				for _, b := range buckets {
-					bName := b["name"].(string)
-					bTitle := b["title"].(string)
-					bSubtitle, _ := b["subtitle"].(string)
-					bPos := b["position"].(float64)
-					bLayout, _ := b["layout"].(string)
-					if bLayout == "" {
-						bLayout = "list"
-					}
-					bDefault, _ := b["is_default"].(bool)
-
-					var bColor sql.NullString
-					if c, ok := b["color"].(string); ok {
-						bColor = sql.NullString{String: c, Valid: true}
-					}
-
-					var bMaxTasks sql.NullInt64
-					if m, ok := b["max_tasks"].(float64); ok {
-						bMaxTasks = sql.NullInt64{Int64: int64(m), Valid: true}
-					}
-
-					_, _ = tx.Exec("INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-						pID, bName, bTitle, bSubtitle, bPos, bColor, bLayout, bMaxTasks, bDefault)
-				}
-			}
-		}
-
-		// 2. Load Tasks
-		files, err := os.ReadDir(projectDir)
-		if err != nil {
-			continue
-		}
-
-		for _, f := range files {
-			if f.IsDir() || !strings.HasSuffix(f.Name(), ".md") {
-				continue
-			}
-
-			data, err := os.ReadFile(filepath.Join(projectDir, f.Name()))
-			if err != nil {
-				continue
-			}
-
-			fm, body, err := task.ParseFrontmatter(string(data))
-			if err == nil {
-				taskID := strings.TrimSuffix(f.Name(), ".md")
-
-				// --- Done Task Auto-Pruning ---
-				var doneCleanPeriod sql.NullInt64
-				_ = tx.QueryRow("SELECT done_clean_period FROM projects WHERE id = ?", pID).Scan(&doneCleanPeriod)
-
-				if doneCleanPeriod.Valid && doneCleanPeriod.Int64 > 0 && fm.Bucket == "done" {
-					updatedAt, errTime := time.Parse(time.RFC3339Nano, fm.UpdatedAt)
-					if errTime == nil {
-						ageDays := int64(time.Since(updatedAt).Hours() / 24)
-						if ageDays >= doneCleanPeriod.Int64 {
-							// Prune this task
-							_ = os.Remove(filepath.Join(projectDir, f.Name()))
-							attachmentsDir := filepath.Join(projectDir, taskID+".attachments")
-							_ = os.RemoveAll(attachmentsDir)
-							continue
-						}
-					}
-				}
-				// ------------------------------
-
-				idVal := fm.ID
-				if idVal == "" {
-					idVal = taskID
-				}
-
-				tagsJSON, _ := json.Marshal(fm.Tags)
-				attachmentsJSON, _ := json.Marshal(fm.Attachments)
-				var fmDueDate, fmPlannedDate, fmPriority, fmColor sql.NullString
-				if fm.DueDate != nil {
-					fmDueDate = sql.NullString{String: *fm.DueDate, Valid: true}
-				}
-				if fm.PlannedDate != nil {
-					fmPlannedDate = sql.NullString{String: *fm.PlannedDate, Valid: true}
-				}
-				if fm.Priority != nil {
-					fmPriority = sql.NullString{String: *fm.Priority, Valid: true}
-				}
-				if fm.Color != nil {
-					fmColor = sql.NullString{String: *fm.Color, Valid: true}
-				}
-
-				_, errT := tx.Exec("INSERT INTO tasks (id, project_id, title, bucket, position, tags, attachments, filename, body, due_date, planned_date, priority, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-					idVal, pID, fm.Title, fm.Bucket, fm.Position, string(tagsJSON), string(attachmentsJSON), f.Name(), body, fmDueDate, fmPlannedDate, fmPriority, fmColor, fm.CreatedAt, fm.UpdatedAt)
-				if errT != nil {
-					log.Printf("Error inserting task %s: %v", idVal, errT)
-					continue
-				}
-				count++
-			}
-		}
+		count++
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -186,4 +195,48 @@ func SyncDBWithFiles(tasksDir string) (int, error) {
 	}
 
 	return count, nil
+}
+
+type fileRepository struct{}
+
+// NewFileRepository creates a new File repository instance for system sync
+func NewFileRepository() FileRepository {
+	return &fileRepository{}
+}
+
+func (r *fileRepository) LoadProjectsFile(tasksDir string) ([]map[string]interface{}, error) {
+	return project.LoadProjectsFile(tasksDir)
+}
+
+func (r *fileRepository) ReadDir(path string) ([]os.DirEntry, error) {
+	return os.ReadDir(path)
+}
+
+func (r *fileRepository) ReadFile(path string) ([]byte, error) {
+	return os.ReadFile(path)
+}
+
+func (r *fileRepository) RemoveFile(path string) error {
+	return os.Remove(path)
+}
+
+func (r *fileRepository) RemoveDirAll(path string) error {
+	return os.RemoveAll(path)
+}
+
+func (r *fileRepository) WriteFile(path string, data []byte) error {
+	return os.WriteFile(path, data, 0644)
+}
+
+func (r *fileRepository) GitSync(path string, remoteURL string) error {
+	return common.GitSync(path, remoteURL)
+}
+
+// SyncDBWithFiles maintains 100% backwards compatibility with other system callers (bootstrap, integration tests)
+func SyncDBWithFiles(tasksDir string) (int, error) {
+	dbRepo := NewSQLRepository(db.DB)
+	fileRepo := NewFileRepository()
+	settingsRepo := settings.NewFileRepository()
+	svc := NewService(dbRepo, fileRepo, settingsRepo)
+	return svc.SyncDBOnly(context.Background(), tasksDir)
 }
