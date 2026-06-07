@@ -176,7 +176,6 @@ const handleBulkMoveBucket = async (bucket: string) => {
       const task = tasks.value.find((t) => t.id === id);
       if (task) await moveTask(task.project_id, id, bucket, 1000.0);
     }
-    clearSelection();
     await fetchAllData();
   } catch (err: any) {
     localError.value = `Bulk move failed: ${err.message}`;
@@ -210,7 +209,6 @@ const handleBulkSetPriority = async (priority: string) => {
       const task = tasks.value.find((t) => t.id === id);
       if (task) await updateTask(task.project_id, id, { priority });
     }
-    clearSelection();
     await fetchAllData();
   } catch (err: any) {
     localError.value = `Bulk priority set failed: ${err.message}`;
@@ -224,10 +222,22 @@ const handleBulkSetPlanned = async (planned: string) => {
       const task = tasks.value.find((t) => t.id === id);
       if (task) await updateTask(task.project_id, id, { planned_date: planned });
     }
-    clearSelection();
     await fetchAllData();
   } catch (err: any) {
     localError.value = `Bulk planning failed: ${err.message}`;
+  }
+};
+
+const handleBulkSetDueDate = async (date: string) => {
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task) await updateTask(task.project_id, id, { due_date: date });
+    }
+    await fetchAllData();
+  } catch (err: any) {
+    localError.value = `Bulk due date set failed: ${err.message}`;
   }
 };
 
@@ -338,6 +348,7 @@ const handleBulkMarkDone = async () => {
       @edit-tag="handleBulkEditTag"
       @set-priority="handleBulkSetPriority"
       @set-planned="handleBulkSetPlanned"
+      @set-due-date="handleBulkSetDueDate"
       @move-project="handleBulkMoveProject"
     />
 

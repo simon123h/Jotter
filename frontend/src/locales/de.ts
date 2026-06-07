@@ -292,5 +292,11 @@ export const de = {
     clearSelection: 'Auswahl aufheben',
     confirmDelete: 'Möchtest du {count} Aufgaben wirklich löschen?',
     tagNamePlaceholder: 'Tag-Name...',
+    setDueDate: 'Fälligkeitsdatum setzen...',
+    customDate: 'Benutzerdefiniertes Datum',
+    dueDateToday: 'Heute',
+    dueDateTomorrow: 'Morgen',
+    dueDateNextWeek: 'Nächste Woche',
+    dueDateClear: 'Datum löschen',
   },
 };

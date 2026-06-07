@@ -290,5 +290,11 @@ export const en = {
     clearSelection: 'Clear Selection',
     confirmDelete: 'Are you sure you want to delete {count} tasks?',
     tagNamePlaceholder: 'Tag name...',
+    setDueDate: 'Set Due Date...',
+    customDate: 'Custom Date',
+    dueDateToday: 'Today',
+    dueDateTomorrow: 'Tomorrow',
+    dueDateNextWeek: 'Next Week',
+    dueDateClear: 'Clear Due Date',
   },
 };

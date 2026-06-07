@@ -1,6 +1,20 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { X, Trash2, Tag, Flag, Clock, ChevronRight, Plus, Check, Archive, SquareDashed, SquareKanban, FolderOpen } from '@lucide/vue';
+import {
+  X,
+  Trash2,
+  Tag,
+  Flag,
+  Clock,
+  ChevronRight,
+  Plus,
+  Check,
+  Archive,
+  SquareDashed,
+  SquareKanban,
+  FolderOpen,
+  Calendar,
+} from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket, Project } from '@/types';
 
@@ -24,10 +38,11 @@ const emit = defineEmits<{
   (e: 'edit-tag', tag: string, forceRemove: boolean): void;
   (e: 'set-priority', priority: string): void;
   (e: 'set-planned', planned: string): void;
+  (e: 'set-due-date', date: string): void;
   (e: 'move-project', projectId: string): void;
 }>();
 
-const activeMenu = ref<'none' | 'bucket' | 'tag' | 'priority' | 'planned' | 'project'>('none');
+const activeMenu = ref<'none' | 'bucket' | 'tag' | 'priority' | 'planned' | 'project' | 'dueDate'>('none');
 
 const toggleMenu = (menu: typeof activeMenu.value) => {
   activeMenu.value = activeMenu.value === menu ? 'none' : menu;
@@ -40,6 +55,31 @@ const handleAddTag = () => {
     newTagName.value = '';
     // activeMenu.value = 'none';
   }
+};
+
+const customDueDate = ref('');
+
+const setDueDatePreset = (preset: 'today' | 'tomorrow' | 'nextWeek' | 'clear') => {
+  if (preset === 'clear') {
+    emit('set-due-date', '');
+  } else {
+    const date = new Date();
+    if (preset === 'tomorrow') {
+      date.setDate(date.getDate() + 1);
+    } else if (preset === 'nextWeek') {
+      date.setDate(date.getDate() + 7);
+    }
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    emit('set-due-date', `${year}-${month}-${day}`);
+  }
+  // activeMenu.value = 'none';
+};
+
+const handleCustomDueDate = () => {
+  emit('set-due-date', customDueDate.value);
+  // activeMenu.value = 'none';
 };
 </script>
 
@@ -56,10 +96,7 @@ const handleAddTag = () => {
           <button
             v-for="b in buckets"
             :key="b.name"
-            @click="
-              emit('move-bucket', b.name);
-              activeMenu = 'none';
-            "
+            @click="emit('move-bucket', b.name)"
             class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left cursor-pointer"
           >
             <div v-if="b.color" class="w-2 h-2 rounded-full" :style="{ backgroundColor: b.color }"></div>
@@ -108,10 +145,7 @@ const handleAddTag = () => {
           <button
             v-for="p in ['none', 'low', 'medium', 'high', 'urgent']"
             :key="p"
-            @click="
-              emit('set-priority', p === 'none' ? '' : p);
-              activeMenu = 'none';
-            "
+            @click="emit('set-priority', p === 'none' ? '' : p)"
             class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left capitalize cursor-pointer"
           >
             <Flag
@@ -133,15 +167,66 @@ const handleAddTag = () => {
           <button
             v-for="p in ['', 'today', 'tomorrow', 'thisWeek', 'thisMonth', 'sometime']"
             :key="p"
-            @click="
-              emit('set-planned', p);
-              activeMenu = 'none';
-            "
+            @click="emit('set-planned', p)"
             class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left cursor-pointer"
           >
             <Clock class="w-3.5 h-3.5 text-theme-text-muted" />
             {{ p === '' ? t('plannedDateOptions.none') : t('plannedDateOptions.' + p) }}
           </button>
+        </div>
+
+        <!-- Due Date Menu -->
+        <div v-if="activeMenu === 'dueDate'" class="p-3 space-y-3 min-w-[240px]">
+          <div class="text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1 text-left">
+            {{ t('bulkActions.setDueDate') }}
+          </div>
+          <!-- Presets -->
+          <div class="grid grid-cols-2 gap-1.5">
+            <button
+              @click="setDueDatePreset('today')"
+              class="px-2 py-1.5 hover:bg-theme-column rounded text-xs text-theme-text-main hover:text-theme-accent transition-all text-center cursor-pointer border border-theme-border/30 bg-theme-base/30"
+            >
+              {{ t('bulkActions.dueDateToday') }}
+            </button>
+            <button
+              @click="setDueDatePreset('tomorrow')"
+              class="px-2 py-1.5 hover:bg-theme-column rounded text-xs text-theme-text-main hover:text-theme-accent transition-all text-center cursor-pointer border border-theme-border/30 bg-theme-base/30"
+            >
+              {{ t('bulkActions.dueDateTomorrow') }}
+            </button>
+            <button
+              @click="setDueDatePreset('nextWeek')"
+              class="px-2 py-1.5 hover:bg-theme-column rounded text-xs text-theme-text-main hover:text-theme-accent transition-all text-center cursor-pointer border border-theme-border/30 bg-theme-base/30"
+            >
+              {{ t('bulkActions.dueDateNextWeek') }}
+            </button>
+            <button
+              @click="setDueDatePreset('clear')"
+              class="px-2 py-1.5 hover:bg-rose-500/10 hover:text-rose-400 rounded text-xs text-theme-text-muted transition-all text-center cursor-pointer border border-theme-border/30 bg-theme-base/30"
+            >
+              {{ t('bulkActions.dueDateClear') }}
+            </button>
+          </div>
+
+          <!-- Custom Date Picker -->
+          <div class="space-y-1.5 pt-2 border-t border-theme-border/50 text-left">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted">
+              {{ t('bulkActions.customDate') }}
+            </label>
+            <div class="flex items-center gap-2">
+              <input
+                v-model="customDueDate"
+                type="date"
+                class="flex-grow bg-theme-base border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              />
+              <button
+                @click="handleCustomDueDate"
+                class="p-1.5 bg-theme-primary text-white rounded hover:bg-theme-primary-hover cursor-pointer"
+              >
+                <Check class="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Project Menu -->
@@ -221,6 +306,14 @@ const handleAddTag = () => {
             :title="t('bulkActions.planFor')"
           >
             <Clock class="w-4.5 h-4.5" />
+          </button>
+
+          <button
+            @click="toggleMenu('dueDate')"
+            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
+            :title="t('bulkActions.setDueDate')"
+          >
+            <Calendar class="w-4.5 h-4.5" />
           </button>
 
           <button
