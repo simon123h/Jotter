@@ -14,7 +14,7 @@ vi.mock('@/api', () => ({
       pinnedProjectIds: [],
       sortBy: 'alpha',
       hideAddTaskButton: true,
-      projectMru: {},
+      projectOrder: [],
     })
   ),
   saveSettings: vi.fn(() => Promise.resolve()),
@@ -52,11 +52,9 @@ describe('Settings Store', () => {
     expect(store.pinnedProjectIds).toEqual([]);
   });
 
-  it('can set and retrieve MRU project active timestamp', () => {
+  it('can set and retrieve manual project order', () => {
     const store = useSettingsStore();
-    const before = Date.now();
-    store.updateProjectMru('project-2');
-    const mru = store.getProjectMru('project-2');
-    expect(mru).toBeGreaterThanOrEqual(before);
+    store.setProjectOrder(['project-2', 'project-1']);
+    expect(store.projectOrder).toEqual(['project-2', 'project-1']);
   });
 });

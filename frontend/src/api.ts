@@ -383,7 +383,7 @@ const DEFAULT_DEMO_SETTINGS: AppSettings = {
   pinnedProjectIds: [],
   sortBy: 'alpha',
   hideAddTaskButton: true,
-  projectMru: {},
+  projectOrder: [],
   gitRemoteUrl: '',
 };
 

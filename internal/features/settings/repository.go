@@ -30,22 +30,22 @@ func (r *fileRepository) SaveSettings(tasksDir string, settings AppSettings) err
 // Low-level helper functions (Kept for backwards compatibility and internal repository usage)
 
 type AppSettings struct {
-	HideDoneColumn    bool             `json:"hideDoneColumn"`
-	HideArchiveColumn bool             `json:"hideArchiveColumn"`
-	IsSidebarOpen     bool             `json:"isSidebarOpen"`
-	CurrentTheme      string           `json:"currentTheme"`
-	ThresholdDays     int              `json:"thresholdDays"`
-	PinnedProjectIds  []string         `json:"pinnedProjectIds"`
-	SortBy            string           `json:"sortBy"`
-	HideAddTaskButton bool             `json:"hideAddTaskButton"`
-	ProjectMru        map[string]int64 `json:"projectMru"`
-	WindowWidth       int              `json:"windowWidth"`
-	WindowHeight      int              `json:"windowHeight"`
-	WindowX           int              `json:"windowX"`
-	WindowY           int              `json:"windowY"`
-	WindowMaximized   bool             `json:"windowMaximized"`
-	GitRemoteURL      string           `json:"gitRemoteUrl"`
-	Language          string           `json:"language"`
+	HideDoneColumn    bool     `json:"hideDoneColumn"`
+	HideArchiveColumn bool     `json:"hideArchiveColumn"`
+	IsSidebarOpen     bool     `json:"isSidebarOpen"`
+	CurrentTheme      string   `json:"currentTheme"`
+	ThresholdDays     int      `json:"thresholdDays"`
+	PinnedProjectIds  []string `json:"pinnedProjectIds"`
+	SortBy            string   `json:"sortBy"`
+	HideAddTaskButton bool     `json:"hideAddTaskButton"`
+	ProjectOrder      []string `json:"projectOrder"`
+	WindowWidth       int      `json:"windowWidth"`
+	WindowHeight      int      `json:"windowHeight"`
+	WindowX           int      `json:"windowX"`
+	WindowY           int      `json:"windowY"`
+	WindowMaximized   bool     `json:"windowMaximized"`
+	GitRemoteURL      string   `json:"gitRemoteUrl"`
+	Language          string   `json:"language"`
 }
 
 func GetDefaultSettings() AppSettings {
@@ -58,7 +58,7 @@ func GetDefaultSettings() AppSettings {
 		PinnedProjectIds:  []string{},
 		SortBy:            "alpha",
 		HideAddTaskButton: true,
-		ProjectMru:        make(map[string]int64),
+		ProjectOrder:      []string{},
 		WindowWidth:       1024,
 		WindowHeight:      768,
 		WindowX:           -1,
@@ -88,8 +88,8 @@ func LoadSettings(tasksDir string) (AppSettings, error) {
 		return GetDefaultSettings(), err
 	}
 
-	if settings.ProjectMru == nil {
-		settings.ProjectMru = make(map[string]int64)
+	if settings.ProjectOrder == nil {
+		settings.ProjectOrder = []string{}
 	}
 	if settings.PinnedProjectIds == nil {
 		settings.PinnedProjectIds = []string{}

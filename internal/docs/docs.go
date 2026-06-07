@@ -1246,11 +1246,10 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "projectMru": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "integer",
-                        "format": "int64"
+                "projectOrder": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 },
                 "sortBy": {

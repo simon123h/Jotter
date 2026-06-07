@@ -2,6 +2,7 @@
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
+import Sortable from 'sortablejs';
 import { useSettingsStore } from '@/stores/settings';
 import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
@@ -34,21 +35,8 @@ const togglePin = (projectId: string) => {
 };
 
 const toggleSortOrder = () => {
-  settingsStore.setSortBy(sortBy.value === 'alpha' ? 'mru' : 'alpha');
+  settingsStore.setSortBy(sortBy.value === 'alpha' ? 'manual' : 'alpha');
 };
-
-const updateMru = (id: string) => {
-  if (id) {
-    settingsStore.updateProjectMru(id);
-  }
-};
-
-watch(
-  () => props.activeProjectId,
-  (newId) => {
-    updateMru(newId);
-  }
-);
 
 // Server Status Checking
 let pingInterval: any = null;
@@ -59,8 +47,42 @@ const handleFocusOrVisible = () => {
   }
 };
 
+const projectsListEl = ref<HTMLElement | null>(null);
+let sortableInstance: Sortable | null = null;
+
+const initSortable = () => {
+  if (!projectsListEl.value) return;
+
+  if (sortableInstance) {
+    sortableInstance.destroy();
+    sortableInstance = null;
+  }
+
+  sortableInstance = Sortable.create(projectsListEl.value, {
+    animation: 150,
+    draggable: '.project-item',
+    disabled: sortBy.value !== 'manual',
+    filter: 'button, input, select, textarea',
+    onEnd: (evt) => {
+      const { oldIndex, newIndex } = evt;
+      if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;
+
+      const reordered = [...sortedProjects.value];
+      const [moved] = reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, moved);
+      settingsStore.setProjectOrder(reordered.map((p) => p.id));
+    },
+  });
+};
+
+watch(sortBy, (newSortBy) => {
+  if (sortableInstance) {
+    sortableInstance.option('disabled', newSortBy !== 'manual');
+  }
+});
+
 onMounted(() => {
-  updateMru(props.activeProjectId);
+  initSortable();
   checkServerStatus();
   pingInterval = setInterval(checkServerStatus, 30000);
   window.addEventListener('focus', checkServerStatus);
@@ -68,6 +90,10 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (sortableInstance) {
+    sortableInstance.destroy();
+    sortableInstance = null;
+  }
   if (pingInterval) clearInterval(pingInterval);
   window.removeEventListener('focus', checkServerStatus);
   document.removeEventListener('visibilitychange', handleFocusOrVisible);
@@ -84,11 +110,17 @@ const sortedProjects = computed(() => {
     if (!aPinned && bPinned) return 1;
 
     // 2. Sort by the user's selected sorting order
-    if (sortBy.value === 'mru') {
-      const aMru = settingsStore.getProjectMru(a.id);
-      const bMru = settingsStore.getProjectMru(b.id);
-      if (aMru !== bMru) {
-        return bMru - aMru; // descending: recently active project first
+    if (sortBy.value === 'manual') {
+      const aIndex = settingsStore.projectOrder.indexOf(a.id);
+      const bIndex = settingsStore.projectOrder.indexOf(b.id);
+      const aHasOrder = aIndex !== -1;
+      const bHasOrder = bIndex !== -1;
+      if (aHasOrder && bHasOrder) {
+        if (aIndex !== bIndex) return aIndex - bIndex;
+      } else if (aHasOrder) {
+        return -1;
+      } else if (bHasOrder) {
+        return 1;
       }
     }
 
@@ -145,14 +177,14 @@ const handleCreateProject = () => {
       <button
         @click="toggleSortOrder"
         class="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-theme-border/50 bg-theme-column/30 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main transition-colors cursor-pointer"
-        :title="sortBy === 'alpha' ? t('projects.sortTooltipAlpha') : t('projects.sortTooltipMru')"
+        :title="sortBy === 'alpha' ? t('projects.sortTooltipAlpha') : t('projects.sortTooltipManual')"
       >
-        {{ sortBy === 'alpha' ? 'A-Z' : 'MRU' }}
+        {{ sortBy === 'alpha' ? 'A-Z' : t('projects.sortManualAbbr') }}
       </button>
     </div>
 
     <!-- Projects List -->
-    <div class="flex-grow overflow-y-auto p-2 space-y-1 scroller-thin">
+    <div ref="projectsListEl" class="flex-grow overflow-y-auto p-2 space-y-1 scroller-thin">
       <router-link
         v-for="project in sortedProjects"
         :key="project.id"
@@ -161,12 +193,13 @@ const handleCreateProject = () => {
           params: { projectId: project.id },
           query: $route.query,
         }"
-        class="group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all cursor-pointer font-medium"
-        :class="
+        class="project-item group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all font-medium animate-fade-in"
+        :class="[
           project.id === activeProjectId
             ? 'bg-theme-primary/10 text-theme-accent border border-theme-primary/15'
-            : 'text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main border border-transparent'
-        "
+            : 'text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main border border-transparent',
+          sortBy === 'manual' ? 'cursor-grab' : 'cursor-pointer',
+        ]"
       >
         <!-- Project Title -->
         <div class="flex items-center gap-2 overflow-hidden flex-grow mr-2">

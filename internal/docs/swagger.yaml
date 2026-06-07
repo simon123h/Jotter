@@ -107,11 +107,10 @@ definitions:
         items:
           type: string
         type: array
-      projectMru:
-        additionalProperties:
-          format: int64
-          type: integer
-        type: object
+      projectOrder:
+        items:
+          type: string
+        type: array
       sortBy:
         type: string
       thresholdDays:

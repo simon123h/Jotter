@@ -67,9 +67,9 @@ export interface AppSettings {
   currentTheme: string;
   thresholdDays: number;
   pinnedProjectIds: string[];
-  sortBy: 'alpha' | 'mru';
+  sortBy: 'alpha' | 'manual';
   hideAddTaskButton: boolean;
-  projectMru: Record<string, number>;
+  projectOrder: string[];
   windowWidth?: number;
   windowHeight?: number;
   windowX?: number;

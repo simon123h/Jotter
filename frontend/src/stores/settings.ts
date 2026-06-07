@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import { getSettings, saveSettings } from '@/api';
 import type { AppSettings } from '@/types';
 
-export type SortBy = 'alpha' | 'mru';
+export type SortBy = 'alpha' | 'manual';
 
 export const useSettingsStore = defineStore('settings', () => {
   const state = reactive<AppSettings>({
@@ -15,7 +15,7 @@ export const useSettingsStore = defineStore('settings', () => {
     pinnedProjectIds: [],
     sortBy: 'alpha',
     hideAddTaskButton: true,
-    projectMru: {},
+    projectOrder: [],
     gitRemoteUrl: '',
     language: '',
   });
@@ -30,7 +30,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       // Ensure defaults for optional/partial loads
       if (!state.pinnedProjectIds) state.pinnedProjectIds = [];
-      if (!state.projectMru) state.projectMru = {};
+      if (!state.projectOrder) state.projectOrder = [];
       if (!state.gitRemoteUrl) state.gitRemoteUrl = '';
       if (!state.language) state.language = '';
 
@@ -127,12 +127,8 @@ export const useSettingsStore = defineStore('settings', () => {
     state.sortBy = sort;
   };
 
-  const updateProjectMru = (projectId: string) => {
-    state.projectMru[projectId] = Date.now();
-  };
-
-  const getProjectMru = (projectId: string): number => {
-    return state.projectMru[projectId] || 0;
+  const setProjectOrder = (order: string[]) => {
+    state.projectOrder = order;
   };
 
   const toggleHideAddTaskButton = () => {
@@ -149,8 +145,7 @@ export const useSettingsStore = defineStore('settings', () => {
     pinProject,
     unpinProject,
     setSortBy,
-    updateProjectMru,
-    getProjectMru,
+    setProjectOrder,
     toggleHideAddTaskButton,
   };
 });
