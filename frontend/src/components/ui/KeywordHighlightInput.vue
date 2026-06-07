@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { getKeywordMatches, type KeywordMatch } from '@/utils/dateParser';
+import { getKeywordMatches } from '@/utils/dateParser';
 
 const props = withDefaults(
   defineProps<{
