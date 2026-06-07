@@ -1,63 +1,122 @@
-import { ref, watch, type Ref } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { defineStore } from 'pinia';
+import { getSettings, saveSettings } from '@/api';
+import type { AppSettings } from '@/types';
 
-export type ViewMode = 'board' | 'list' | 'matrix' | 'time' | 'tag' | 'global-time' | 'settings' | 'home';
 export type SortBy = 'alpha' | 'mru';
 
-/**
- * A utility helper to create a reactive ref synchronized with localStorage.
- */
-function useLocalStorageRef<T>(key: string, defaultValue: T): Ref<T> {
-  const getStoredValue = (): T => {
-    const item = localStorage.getItem(key);
-    if (item === null) return defaultValue;
+export const useSettingsStore = defineStore('settings', () => {
+  // Default values matching backend defaults
+  const hideDoneColumn = ref(true);
+  const hideArchiveColumn = ref(true);
+  const isSidebarOpen = ref(true);
+  const currentTheme = ref('nordic-light');
+  const thresholdDays = ref(7);
+  const pinnedProjectIds = ref<string[]>([]);
+  const sortBy = ref<SortBy>('alpha');
+  const hideAddTaskButton = ref(true);
+  const projectMru = ref<Record<string, number>>({});
+
+  let skipSave = false;
+
+  const loadSettings = async () => {
     try {
-      if (typeof defaultValue === 'boolean') {
-        return (item === 'true') as T;
+      skipSave = true;
+      const settings = await getSettings();
+      hideDoneColumn.value = settings.hideDoneColumn;
+      hideArchiveColumn.value = settings.hideArchiveColumn;
+      isSidebarOpen.value = settings.isSidebarOpen;
+      currentTheme.value = settings.currentTheme || 'nordic-light';
+      thresholdDays.value = settings.thresholdDays ?? 7;
+      pinnedProjectIds.value = settings.pinnedProjectIds || [];
+      sortBy.value = (settings.sortBy as SortBy) || 'alpha';
+      hideAddTaskButton.value = settings.hideAddTaskButton ?? true;
+      projectMru.value = settings.projectMru ? { ...settings.projectMru } : {};
+
+      await nextTick();
+      skipSave = false;
+    } catch (err) {
+      const isTest = typeof globalThis !== 'undefined' && (globalThis as any).process?.env?.NODE_ENV === 'test';
+      if (!isTest) {
+        console.error('Failed to load settings:', err);
       }
-      if (typeof defaultValue === 'number') {
-        return Number(item) as T;
-      }
-      if (typeof defaultValue === 'object' && defaultValue !== null) {
-        return JSON.parse(item) as T;
-      }
-      return item as T;
-    } catch {
-      return defaultValue;
+      skipSave = false;
     }
   };
 
-  const state = ref<T>(getStoredValue()) as Ref<T>;
+  // Trigger load immediately when store is instantiated
+  loadSettings();
+
+  // Watch for theme changes and apply to document element
+  const applyThemeToDocument = (theme: string) => {
+    if (typeof document === 'undefined') return;
+    const docClasses = document.documentElement.classList;
+    docClasses.forEach((c) => {
+      if (c.startsWith('theme-')) {
+        docClasses.remove(c);
+      }
+    });
+    if (theme && theme !== 'nordic-light') {
+      docClasses.add('theme-' + theme);
+    }
+  };
 
   watch(
-    state,
-    (newValue) => {
-      if (newValue === null || newValue === undefined) {
-        localStorage.removeItem(key);
-      } else if (typeof newValue === 'object') {
-        localStorage.setItem(key, JSON.stringify(newValue));
-      } else {
-        localStorage.setItem(key, String(newValue));
-      }
+    currentTheme,
+    (newTheme) => {
+      applyThemeToDocument(newTheme);
     },
-    { deep: true, flush: 'sync' }
+    { immediate: true }
   );
 
-  return state;
-}
+  // Debounced save
+  let saveTimeout: any = null;
+  const triggerSave = () => {
+    if (skipSave) return;
 
-export const useSettingsStore = defineStore('settings', () => {
-  // Settings synchronized with localStorage
-  const hideDoneColumn = useLocalStorageRef('jotter-hide-done-column', true);
-  const hideArchiveColumn = useLocalStorageRef('jotter-hide-archive-column', true);
-  const isSidebarOpen = useLocalStorageRef('jotter-sidebar-open', true);
-  const currentTheme = useLocalStorageRef('jotter-theme', 'nordic-light');
-  const thresholdDays = useLocalStorageRef('jotter-matrix-threshold', 7);
-  const pinnedProjectIds = useLocalStorageRef<string[]>('jotter-pinned-projects', []);
-  const sortBy = useLocalStorageRef<SortBy>('jotter-projects-sort', 'alpha');
-  const hideAddTaskButton = useLocalStorageRef('jotter-hide-add-task-button', true);
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
 
-  // Action methods to change states directly or let views change refs
+    saveTimeout = setTimeout(async () => {
+      try {
+        const payload: AppSettings = {
+          hideDoneColumn: hideDoneColumn.value,
+          hideArchiveColumn: hideArchiveColumn.value,
+          isSidebarOpen: isSidebarOpen.value,
+          currentTheme: currentTheme.value,
+          thresholdDays: thresholdDays.value,
+          pinnedProjectIds: [...pinnedProjectIds.value],
+          sortBy: sortBy.value,
+          hideAddTaskButton: hideAddTaskButton.value,
+          projectMru: { ...projectMru.value },
+        };
+        await saveSettings(payload);
+      } catch (err) {
+        console.error('Failed to save settings:', err);
+      }
+    }, 500);
+  };
+
+  watch(
+    [
+      hideDoneColumn,
+      hideArchiveColumn,
+      isSidebarOpen,
+      currentTheme,
+      thresholdDays,
+      pinnedProjectIds,
+      sortBy,
+      hideAddTaskButton,
+      projectMru,
+    ],
+    () => {
+      triggerSave();
+    },
+    { deep: true }
+  );
+
+  // Actions
   const toggleHideDoneColumn = () => {
     hideDoneColumn.value = !hideDoneColumn.value;
   };
@@ -89,11 +148,11 @@ export const useSettingsStore = defineStore('settings', () => {
   };
 
   const updateProjectMru = (projectId: string) => {
-    localStorage.setItem(`jotter-project-mru-${projectId}`, String(Date.now()));
+    projectMru.value[projectId] = Date.now();
   };
 
   const getProjectMru = (projectId: string): number => {
-    return Number(localStorage.getItem(`jotter-project-mru-${projectId}`) || '0');
+    return projectMru.value[projectId] || 0;
   };
 
   const toggleHideAddTaskButton = () => {
@@ -109,6 +168,8 @@ export const useSettingsStore = defineStore('settings', () => {
     pinnedProjectIds,
     sortBy,
     hideAddTaskButton,
+    projectMru,
+    loadSettings,
     toggleHideDoneColumn,
     toggleSidebar,
     setTheme,
