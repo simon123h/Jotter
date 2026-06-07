@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 import MainLayout from '@/components/layout/MainLayout.vue';
 import ProjectLayout from '@/components/layout/ProjectLayout.vue';
 import BoardView from '@/components/views/BoardView.vue';
@@ -130,7 +130,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(),
   routes,
 });
 

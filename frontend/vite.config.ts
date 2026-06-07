@@ -3,14 +3,9 @@ import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 
-// Determine base path: use repository name subpath if building in GitHub Actions
-const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
-const repoName = process.env.GITHUB_REPOSITORY ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}/` : '/';
-const base = isGithubActions ? repoName : '/';
-
 // https://vite.dev/config/
 export default defineConfig({
-  base,
+  base: './',
   plugins: [
     vue(),
     tailwindcss(),
