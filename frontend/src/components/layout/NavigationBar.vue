@@ -30,7 +30,7 @@ const isTabActive = (tab: string) => {
 </script>
 
 <template>
-  <header class="flex items-center justify-between gap-3 border-b border-theme-border px-4 py-3 shrink-0 bg-theme-card z-10">
+  <header class="flex items-center justify-between gap-3 border-b border-theme-border px-4 py-3 shrink-0 bg-theme-card z-[110]">
     <div class="flex items-center gap-2.5 overflow-hidden mr-2 shrink-0">
       <!-- Hamburger Menu Button -->
       <button

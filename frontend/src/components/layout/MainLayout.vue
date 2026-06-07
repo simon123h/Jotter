@@ -123,7 +123,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-screen w-full flex flex-col overflow-hidden bg-theme-base">
+  <div class="h-dvh w-full flex flex-col overflow-hidden bg-theme-base">
     <NavigationBar
       v-model="searchQuery"
       :is-sidebar-open="isSidebarOpen"
