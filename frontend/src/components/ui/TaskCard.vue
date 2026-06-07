@@ -191,6 +191,18 @@ const cardStyle = computed(() => {
       </div>
     </div>
 
+    <!-- Tags List -->
+    <div v-if="showTags && task.tags && task.tags.length" class="flex flex-wrap gap-1">
+      <span
+        v-for="tag in task.tags"
+        :key="tag"
+        class="rounded border uppercase tracking-wider leading-none"
+        :class="[getTagClasses(tag), compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold']"
+      >
+        {{ tag }}
+      </span>
+    </div>
+
     <!-- Combined Footer Row: Due Date, Priority, Checklist, and Chevron -->
     <div
       v-if="showFooter && (task.due_date || task.planned_date || task.priority || checklistStats || hasNotes)"
@@ -223,18 +235,6 @@ const cardStyle = computed(() => {
           ]"
         >
           {{ task.priority }}
-        </div>
-
-        <!-- Tags List -->
-        <div v-if="showTags && task.tags && task.tags.length" class="flex flex-wrap gap-1">
-          <span
-            v-for="tag in task.tags"
-            :key="tag"
-            class="rounded border uppercase tracking-wider leading-none"
-            :class="[getTagClasses(tag), compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold']"
-          >
-            {{ tag }}
-          </span>
         </div>
       </div>
 
