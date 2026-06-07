@@ -56,7 +56,7 @@ func BuildRouter(logLevel, dataDir string, serveStatic bool, assets embed.FS) *c
 		project.RegisterRoutes(r, dataDir, bucket.DefaultBuckets, bucket.SyncBucketsFile)
 		bucket.RegisterRoutes(r, dataDir)
 		task.RegisterRoutes(r, dataDir)
-		system.RegisterRoutes(r, dataDir)
+		system.RegisterRoutes(r, dataDir, Version)
 		settings.RegisterRoutes(r, dataDir)
 	})
 

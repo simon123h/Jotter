@@ -194,6 +194,9 @@ export const en = {
     gitRemoteLabel: 'Global Git Remote URL',
     gitRemoteDesc:
       'Configures a central Git repository for your entire Jotter workspace (all projects and files). Jotter will automatically synchronize additions, updates, and deletions on index rebuilds. Projects that manage their own separate Git repository and remote URL will be auto-ignored by this global sync.',
+    systemInfo: 'System Information',
+    versionLabel: 'Jotter Version',
+    dataDirLabel: 'Data Directory',
   },
   views: {
     board: 'Board',

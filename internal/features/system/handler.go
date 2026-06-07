@@ -14,16 +14,18 @@ import (
 type Handler struct {
 	svc      Service
 	tasksDir string
+	version  string
 }
 
-func RegisterRoutes(r chi.Router, tasksDir string) {
+func RegisterRoutes(r chi.Router, tasksDir string, version string) {
 	dbRepo := NewSQLRepository(db.DB)
 	fileRepo := NewFileRepository()
 	settingsRepo := settings.NewFileRepository()
 	svc := NewService(dbRepo, fileRepo, settingsRepo)
-	h := &Handler{svc: svc, tasksDir: tasksDir}
+	h := &Handler{svc: svc, tasksDir: tasksDir, version: version}
 
 	r.Post("/system/sync", h.Sync)
+	r.Get("/system/info", h.GetInfo)
 }
 
 // Sync godoc
@@ -49,5 +51,19 @@ func (h *Handler) Sync(w http.ResponseWriter, r *http.Request) {
 	common.SendJSON(w, http.StatusOK, map[string]interface{}{
 		"status":             "success",
 		"synchronized_tasks": count,
+	})
+}
+
+// GetInfo godoc
+// @Summary      Get system info
+// @Description  Get currently running version of Jotter and the data directory path.
+// @Tags         system
+// @Produce      json
+// @Success      200  {object}  map[string]string
+// @Router       /system/info [get]
+func (h *Handler) GetInfo(w http.ResponseWriter, r *http.Request) {
+	common.SendJSON(w, http.StatusOK, map[string]string{
+		"version":  h.version,
+		"data_dir": h.tasksDir,
 	})
 }

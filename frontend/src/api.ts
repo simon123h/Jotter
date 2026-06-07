@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import type { Task, Bucket, Project, TaskFilterParams, AppSettings } from '@/types';
+import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo } from '@/types';
 import * as demoApi from '@/api.demo';
 
 const API_BASE = '/api';
@@ -365,6 +365,20 @@ export async function syncSystem(): Promise<{ status: string; synchronized_tasks
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Failed to synchronize: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function getSystemInfo(): Promise<SystemInfo> {
+  if (IS_DEMO_MODE) {
+    return demoApi.getSystemInfo();
+  }
+  const response = await customFetch(`${API_BASE}/system/info`, {
+    method: 'GET',
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to fetch system info: ${response.statusText}`);
   }
   return response.json();
 }

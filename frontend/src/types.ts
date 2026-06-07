@@ -78,3 +78,8 @@ export interface AppSettings {
   gitRemoteUrl?: string;
   language?: string;
 }
+
+export interface SystemInfo {
+  version: string;
+  data_dir: string;
+}

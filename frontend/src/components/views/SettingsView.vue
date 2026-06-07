@@ -1,12 +1,25 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useI18n } from '@/composables/useI18n';
-import { Settings, Check, Globe, GitBranch } from '@lucide/vue';
+import { Settings, Check, Globe, GitBranch, Info, Folder } from '@lucide/vue';
+import { getSystemInfo } from '@/api';
+import type { SystemInfo } from '@/types';
 
 const { locale, t } = useI18n();
 const settingsStore = useSettingsStore();
 const { currentTheme, hideAddTaskButton, gitRemoteUrl } = storeToRefs(settingsStore);
+
+const systemInfo = ref<SystemInfo | null>(null);
+
+onMounted(async () => {
+  try {
+    systemInfo.value = await getSystemInfo();
+  } catch (err) {
+    console.error('Error fetching system info:', err);
+  }
+});
 
 const themes = [
   { id: 'midnight', name: 'Midnight Violet', color: 'bg-violet-500' },
@@ -148,6 +161,38 @@ const setTheme = (theme: string) => {
         <p class="text-xs text-theme-text-muted leading-relaxed">
           {{ t('settingsView.gitRemoteDesc') }}
         </p>
+      </div>
+    </div>
+
+    <div class="border-t border-theme-border/30"></div>
+
+    <!-- System Information Section -->
+    <div v-if="systemInfo" class="flex flex-col gap-4">
+      <h3 class="text-xs font-bold text-theme-text-main uppercase tracking-wider flex items-center gap-1.5">
+        <Info class="w-4 h-4 text-theme-accent shrink-0" />
+        {{ t('settingsView.systemInfo') }}
+      </h3>
+      <div class="bg-theme-card/60 border border-theme-border/60 rounded-xl p-5 flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Version Info -->
+          <div class="flex items-center gap-3.5 p-3.5 bg-theme-bg/40 border border-theme-border/30 rounded-xl">
+            <Info class="w-5 h-5 text-theme-primary shrink-0" />
+            <div class="flex flex-col min-w-0">
+              <span class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider">{{ t('settingsView.versionLabel') }}</span>
+              <span class="text-xs font-mono font-bold text-theme-text-main mt-0.5 truncate">{{ systemInfo.version }}</span>
+            </div>
+          </div>
+          <!-- Data Directory Info -->
+          <div class="flex items-center gap-3.5 p-3.5 bg-theme-bg/40 border border-theme-border/30 rounded-xl">
+            <Folder class="w-5 h-5 text-theme-primary shrink-0" />
+            <div class="flex flex-col min-w-0">
+              <span class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider">{{ t('settingsView.dataDirLabel') }}</span>
+              <span class="text-xs font-mono font-bold text-theme-text-main mt-0.5 truncate" :title="systemInfo.data_dir">{{
+                systemInfo.data_dir
+              }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

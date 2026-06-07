@@ -196,6 +196,9 @@ export const de = {
     gitRemoteLabel: 'Globale Git-Remote-URL',
     gitRemoteDesc:
       'Konfiguriert ein zentrales Git-Repository für den gesamten Jotter-Arbeitsbereich (alle Projekte und Dateien). Jotter synchronisiert automatisch alle Änderungen beim Neuerstellen des Index. Projekte, die über ein eigenes separates Git-Repository mit konfigurierter Remote-URL verfügen, werden von dieser globalen Synchronisation automatisch ignoriert.',
+    systemInfo: 'Systeminformationen',
+    versionLabel: 'Jotter-Version',
+    dataDirLabel: 'Datenverzeichnis',
   },
   views: {
     board: 'Board',

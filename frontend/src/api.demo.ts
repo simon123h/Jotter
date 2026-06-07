@@ -1,4 +1,4 @@
-import type { Task, Bucket, Project, TaskFilterParams } from '@/types';
+import type { Task, Bucket, Project, TaskFilterParams, SystemInfo } from '@/types';
 
 // ==========================================
 // LOCAL STORAGE MOCK CLIENT (DEMO MODE)
@@ -518,4 +518,11 @@ export async function syncSystem(): Promise<{ status: string; synchronized_tasks
     pruneDemoTasks(p.id);
   });
   return { status: 'success', synchronized_tasks: 0 };
+}
+
+export async function getSystemInfo(): Promise<SystemInfo> {
+  return {
+    version: '2.9.1 (demo)',
+    data_dir: '/demo-local-storage',
+  };
 }

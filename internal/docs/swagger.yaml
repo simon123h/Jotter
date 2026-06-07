@@ -891,6 +891,22 @@ paths:
       summary: Save user settings
       tags:
       - settings
+  /system/info:
+    get:
+      description: Get currently running version of Jotter and the data directory
+        path.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get system info
+      tags:
+      - system
   /system/sync:
     post:
       description: Trigger a complete bidirectional sync. It parses task markdown

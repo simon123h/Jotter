@@ -1010,6 +1010,29 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/info": {
+            "get": {
+                "description": "Get currently running version of Jotter and the data directory path.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Get system info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/system/sync": {
             "post": {
                 "description": "Trigger a complete bidirectional sync. It parses task markdown files to rebuild the SQLite DB index, and fetches/merges/pushes active Git remotes.",
