@@ -143,7 +143,7 @@ const autoDetectMappings = () => {
     );
   };
 
-  mappings.value.title = findMatch(['tasktitle', 'taskname', 'title', 'name', 'aufgabenname']);
+  mappings.value.title = findMatch(['tasktitle', 'taskname', 'title', 'task name', 'aufgabenname']);
   mappings.value.description = findMatch(['description', 'notes', 'body', 'details', 'notizen', 'beschreibung']);
   mappings.value.bucket = findMatch(['bucketname', 'bucket', 'column', 'eimer']);
   mappings.value.status = findMatch(['status', 'progress', 'state']);
