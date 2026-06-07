@@ -31,7 +31,6 @@ func NewDesktopApp(cfg *AppConfig) *DesktopApp {
 
 func (a *DesktopApp) startup(ctx context.Context, assets embed.FS) {
 	a.ctx = ctx
-	Bootstrap(a.cfg.DataDir, a.cfg.DBPath)
 
 	// Start background HTTP server
 	r := BuildRouter(a.cfg.LogLevel, a.cfg.DataDir, true, assets)
@@ -64,6 +63,8 @@ func RunWailsProbing() {
 }
 
 func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
+	Bootstrap(cfg.DataDir, cfg.DBPath)
+
 	// Load settings for window state
 	width := 1024
 	height := 768
