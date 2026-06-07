@@ -99,4 +99,31 @@ describe('useKeyboardShortcuts composable', () => {
     input.remove();
     wrapper.unmount();
   });
+
+  it('respects allowInInputs property when focused on an input element', () => {
+    const callback = vi.fn();
+    const TestComponent = defineComponent({
+      setup() {
+        useKeyboardShortcuts([{ key: 'k', ctrlKey: true, allowInInputs: true, callback }]);
+        return {};
+      },
+      template: '<div></div>',
+    });
+
+    const wrapper = mount(TestComponent);
+
+    // Create focusable input element
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+
+    const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true });
+    window.dispatchEvent(event);
+
+    expect(callback).toHaveBeenCalled();
+
+    // Clean up
+    input.remove();
+    wrapper.unmount();
+  });
 });

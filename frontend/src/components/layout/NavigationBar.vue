@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus, Tag, Zap } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
@@ -22,6 +23,17 @@ const emit = defineEmits<{
   (e: 'open-filter'): void;
   (e: 'create-task', defaultBucket: BucketName): void;
 }>();
+
+const searchInput = ref<HTMLInputElement | null>(null);
+
+const focusSearch = () => {
+  searchInput.value?.focus();
+  searchInput.value?.select();
+};
+
+defineExpose({
+  focusSearch,
+});
 
 const isTabActive = (tab: string) => {
   const currentMode = (route.meta.backRoute as string) || String(route.name || '');
@@ -53,6 +65,7 @@ const isTabActive = (tab: string) => {
     <!-- Search (Flex-grow to fill remaining space) -->
     <div v-if="activeProjectId" class="flex-grow mx-3 relative">
       <input
+        ref="searchInput"
         :value="modelValue"
         @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         type="text"

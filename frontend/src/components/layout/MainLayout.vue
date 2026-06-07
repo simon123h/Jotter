@@ -10,6 +10,7 @@ import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useProjects } from '@/composables/useProjects';
 import { useTaskFilters } from '@/composables/useTaskFilters';
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { X } from '@lucide/vue';
 
 const route = useRoute();
@@ -26,6 +27,21 @@ const localError = ref<string | null>(null);
 
 // Derive active project ID strictly from the current route params
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
+
+const navBarRef = ref<any>(null);
+
+useKeyboardShortcuts([
+  {
+    key: 'k',
+    ctrlKey: true,
+    allowInInputs: true,
+    callback: () => {
+      if (activeProjectId.value) {
+        navBarRef.value?.focusSearch();
+      }
+    },
+  },
+]);
 
 // Watch projects list and redirect if route project does not exist
 watch(
@@ -121,6 +137,7 @@ onMounted(async () => {
 <template>
   <div class="h-dvh w-full flex flex-col overflow-hidden bg-theme-base">
     <NavigationBar
+      ref="navBarRef"
       v-model="searchQuery"
       :is-sidebar-open="isSidebarOpen"
       :projects="projects"

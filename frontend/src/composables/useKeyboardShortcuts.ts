@@ -6,23 +6,12 @@ export interface ShortcutHandler {
   altKey?: boolean;
   shiftKey?: boolean;
   metaKey?: boolean;
+  allowInInputs?: boolean;
   callback: (event: KeyboardEvent) => void;
 }
 
 export function useKeyboardShortcuts(shortcuts: ShortcutHandler[]) {
   const handleKeyDown = (event: KeyboardEvent) => {
-    // Ignore keyboard shortcuts when user is focused on input elements
-    const activeEl = document.activeElement;
-    if (
-      activeEl &&
-      (activeEl.tagName === 'INPUT' ||
-        activeEl.tagName === 'TEXTAREA' ||
-        activeEl.tagName === 'SELECT' ||
-        activeEl.hasAttribute('contenteditable'))
-    ) {
-      return;
-    }
-
     const key = event.key.toLowerCase();
     const match = shortcuts.find((s) => {
       const targetKey = s.key.toLowerCase();
@@ -38,6 +27,20 @@ export function useKeyboardShortcuts(shortcuts: ShortcutHandler[]) {
     });
 
     if (match) {
+      if (!match.allowInInputs) {
+        // Ignore keyboard shortcuts when user is focused on input elements
+        const activeEl = document.activeElement;
+        if (
+          activeEl &&
+          (activeEl.tagName === 'INPUT' ||
+            activeEl.tagName === 'TEXTAREA' ||
+            activeEl.tagName === 'SELECT' ||
+            activeEl.hasAttribute('contenteditable'))
+        ) {
+          return;
+        }
+      }
+
       event.preventDefault();
       match.callback(event);
     }
