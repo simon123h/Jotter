@@ -1,7 +1,8 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import type { Project, Task, Bucket } from '@/types';
+import type { Project, Task, Bucket, TaskQuery } from '@/types';
 import { getProjects, getBuckets, getTasks, getAllTasks, syncSystem } from '@/api';
+import { useSettingsStore } from '@/stores/settings';
 
 export const useProjectStore = defineStore('project', () => {
   const projects = ref<Project[]>([]);
@@ -12,10 +13,15 @@ export const useProjectStore = defineStore('project', () => {
   const syncLoading = ref(false);
   const syncSuccess = ref(false);
   const error = ref<string | null>(null);
+  const projectsLoaded = ref(false);
+
+  const currentQuery = ref<TaskQuery | null>(null);
+  const cachedQueryKey = ref<string | null>(null);
 
   const fetchProjects = async () => {
     try {
       projects.value = await getProjects();
+      projectsLoaded.value = true;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch projects';
     }
@@ -33,39 +39,62 @@ export const useProjectStore = defineStore('project', () => {
     }
   };
 
-  const fetchTasks = async (projectId: string, viewMode: string, hideDone: boolean, hideArchive: boolean) => {
-    if (viewMode === 'super-time') {
-      loading.value = true;
-      try {
-        tasks.value = await getAllTasks({
-          exclude_buckets: 'done,archive',
-        });
-      } catch (err: any) {
-        error.value = err.message || 'Failed to fetch all tasks';
-      } finally {
-        loading.value = false;
-      }
+  const resolveExcludeBuckets = (query: TaskQuery): string => {
+    if (query.excludeBuckets !== undefined) {
+      return query.excludeBuckets;
+    }
+    const settingsStore = useSettingsStore();
+    const excludeList = [];
+    if (settingsStore.hideDoneColumn) excludeList.push('done');
+    if (settingsStore.hideArchiveColumn) excludeList.push('archive');
+    return excludeList.join(',');
+  };
+
+  const serializeQuery = (query: TaskQuery): string => {
+    return JSON.stringify({
+      projectId: query.projectId || '',
+      isGlobal: !!query.isGlobal,
+      excludeBuckets: resolveExcludeBuckets(query),
+    });
+  };
+
+  const fetchTasks = async (query: TaskQuery, forceRefresh = false) => {
+    const queryKey = serializeQuery(query);
+    if (!forceRefresh && cachedQueryKey.value === queryKey) {
       return;
     }
 
-    if (!projectId || projectId === '') {
-      tasks.value = [];
-      return;
-    }
+    currentQuery.value = query;
+    cachedQueryKey.value = queryKey;
+
+    const resolvedExclude = resolveExcludeBuckets(query);
 
     loading.value = true;
     try {
-      const excludeList = [];
-      if (hideDone) excludeList.push('done');
-      if (hideArchive) excludeList.push('archive');
-
-      tasks.value = await getTasks(projectId, {
-        exclude_buckets: excludeList.length > 0 ? excludeList.join(',') : undefined,
-      });
+      if (query.isGlobal) {
+        tasks.value = await getAllTasks({
+          exclude_buckets: resolvedExclude || undefined,
+        });
+      } else {
+        const projectId = query.projectId || '';
+        if (!projectId || projectId === '') {
+          tasks.value = [];
+          return;
+        }
+        tasks.value = await getTasks(projectId, {
+          exclude_buckets: resolvedExclude || undefined,
+        });
+      }
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch tasks';
     } finally {
       loading.value = false;
+    }
+  };
+
+  const invalidate = async () => {
+    if (currentQuery.value) {
+      await fetchTasks(currentQuery.value, true);
     }
   };
 
@@ -96,9 +125,13 @@ export const useProjectStore = defineStore('project', () => {
     syncLoading,
     syncSuccess,
     error,
+    projectsLoaded,
+    currentQuery,
+    cachedQueryKey,
     fetchProjects,
     fetchBuckets,
     fetchTasks,
+    invalidate,
     triggerSync,
   };
 });

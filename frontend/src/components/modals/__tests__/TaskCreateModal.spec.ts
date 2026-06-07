@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { useProjectStore } from '@/stores/project';
 import TaskCreateModal from '@/components/modals/TaskCreateModal.vue';
 
 describe('TaskCreateModal.vue', () => {
@@ -8,11 +10,16 @@ describe('TaskCreateModal.vue', () => {
     isOpen: true,
     projectId: 'test-project',
     defaultBucket: 'todo' as const,
-    buckets: [
-      { name: 'todo' as const, title: 'To Do' },
-      { name: 'done' as const, title: 'Done' },
-    ],
   };
+
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    const projectStore = useProjectStore();
+    projectStore.buckets = [
+      { name: 'todo' as const, title: 'To Do', subtitle: '', position: 1, is_default: true },
+      { name: 'done' as const, title: 'Done', subtitle: '', position: 2, is_default: false },
+    ];
+  });
 
   it('renders correctly when isOpen is true', () => {
     const wrapper = mount(TaskCreateModal, {

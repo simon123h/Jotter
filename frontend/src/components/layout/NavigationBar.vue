@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router';
 import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus, Tag, Zap } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Project, BucketName } from '@/types';
-import type { ViewMode } from '@/stores/settings';
 
 const { t } = useI18n();
+const route = useRoute();
 
 defineProps<{
   modelValue: string; // bound to searchQuery
@@ -12,7 +13,6 @@ defineProps<{
   projects: Project[];
   activeProjectId: string;
   hasActiveFilters: boolean;
-  viewMode: ViewMode;
   defaultBucketName: BucketName;
 }>();
 
@@ -20,9 +20,13 @@ const emit = defineEmits<{
   (e: 'update:modelValue', val: string): void;
   (e: 'toggle-sidebar'): void;
   (e: 'open-filter'): void;
-  (e: 'set-view-mode', mode: ViewMode): void;
   (e: 'create-task', defaultBucket: BucketName): void;
 }>();
+
+const isTabActive = (tab: string) => {
+  const routeName = String(route.name || '');
+  return routeName === tab || routeName === `${tab}-task`;
+};
 </script>
 
 <template>
@@ -45,7 +49,7 @@ const emit = defineEmits<{
     </div>
 
     <!-- Search (Flex-grow to fill remaining space) -->
-    <div class="flex-grow mx-3 relative">
+    <div v-if="activeProjectId" class="flex-grow mx-3 relative">
       <input
         :value="modelValue"
         @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
@@ -54,9 +58,10 @@ const emit = defineEmits<{
         class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
       />
     </div>
+    <div v-else class="flex-grow"></div>
 
     <!-- Toolbar Actions -->
-    <div class="flex items-center gap-2 shrink-0">
+    <div v-if="activeProjectId" class="flex items-center gap-2 shrink-0">
       <!-- Advanced Filter Button -->
       <button
         @click="emit('open-filter')"
@@ -82,78 +87,78 @@ const emit = defineEmits<{
 
       <!-- View Mode Toggle -->
       <div class="flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
-        <button
-          @click="emit('set-view-mode', 'board')"
+        <router-link
+          :to="{ name: 'board', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
-            viewMode === 'board'
+            isTabActive('board')
               ? 'bg-theme-primary text-white shadow-none'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
           "
         >
           <LayoutGrid class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.board') }}</span>
-        </button>
-        <button
-          @click="emit('set-view-mode', 'list')"
+        </router-link>
+        <router-link
+          :to="{ name: 'list', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
-            viewMode === 'list'
+            isTabActive('list')
               ? 'bg-theme-primary text-white shadow-none'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
           "
         >
           <List class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.list') }}</span>
-        </button>
-        <button
-          @click="emit('set-view-mode', 'matrix')"
+        </router-link>
+        <router-link
+          :to="{ name: 'matrix', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
-            viewMode === 'matrix'
+            isTabActive('matrix')
               ? 'bg-theme-primary text-white shadow-none'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
           "
         >
           <Grid class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.matrix') }}</span>
-        </button>
-        <button
-          @click="emit('set-view-mode', 'time')"
+        </router-link>
+        <router-link
+          :to="{ name: 'time', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
-            viewMode === 'time'
+            isTabActive('time')
               ? 'bg-theme-primary text-white shadow-none'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
           "
         >
           <Clock class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.time') }}</span>
-        </button>
-        <button
-          @click="emit('set-view-mode', 'tag')"
+        </router-link>
+        <router-link
+          :to="{ name: 'tag', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
-            viewMode === 'tag'
+            isTabActive('tag')
               ? 'bg-theme-primary text-white shadow-none'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
           "
         >
           <Tag class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.tag') }}</span>
-        </button>
-        <button
-          @click="emit('set-view-mode', 'global-time')"
+        </router-link>
+        <router-link
+          :to="{ name: 'global-time', params: { projectId: activeProjectId || 'default' }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
-            viewMode === 'global-time'
+            isTabActive('global-time')
               ? 'bg-theme-primary text-white shadow-none'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
           "
         >
           <Zap class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.globalTime') }}</span>
-        </button>
+        </router-link>
       </div>
 
       <!-- New Task Button -->

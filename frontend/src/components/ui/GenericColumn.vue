@@ -32,7 +32,6 @@ const props = withDefaults(
   }
 );
 const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
   (e: 'add-task-click', id: string): void;
   (e: 'card-dropped', payload: { taskId: string; toId: string; prevTaskId: string | null; nextTaskId: string | null }): void;
   (e: 'mark-done', task: Task): void;
@@ -226,7 +225,6 @@ watch(
             :project-title="projects?.find((p) => p.id === task.project_id)?.title"
             :is-selected="isSelected(task.id)"
             :data-task-id="task.id"
-            @click="emit('task-click', task)"
             @mark-done="emit('mark-done', task)"
             @toggle-select="emit('toggle-select', $event)"
           />
@@ -257,7 +255,6 @@ watch(
             :project-title="projects?.find((p) => p.id === task.project_id)?.title"
             :is-selected="isSelected(task.id)"
             :data-task-id="task.id"
-            @click="emit('task-click', task)"
             @mark-done="emit('mark-done', task)"
             @toggle-select="emit('toggle-select', $event)"
           />
@@ -276,7 +273,6 @@ watch(
           :project-title="projects?.find((p) => p.id === task.project_id)?.title"
           :is-selected="isSelected(task.id)"
           :data-task-id="task.id"
-          @click="emit('task-click', task)"
           @mark-done="emit('mark-done', task)"
           @toggle-select="emit('toggle-select', $event)"
         />

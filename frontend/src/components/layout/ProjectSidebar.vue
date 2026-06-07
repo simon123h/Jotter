@@ -1,35 +1,39 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
-import { useSettingsStore, type ViewMode } from '@/stores/settings';
+import { useSettingsStore } from '@/stores/settings';
 import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
 
 const { t } = useI18n();
+const route = useRoute();
 
 const props = defineProps<{
   projects: Project[];
   activeProjectId: string;
   syncLoading?: boolean;
   syncSuccess?: boolean;
-  viewMode?: ViewMode;
 }>();
 
+const targetRouteName = computed(() => {
+  const routeName = String(route.name || '');
+  const baseName = routeName.split('-')[0];
+  return ['board', 'list', 'matrix', 'time', 'tag'].includes(baseName) ? baseName : 'board';
+});
+
 const emit = defineEmits<{
-  (e: 'select-project', id: string): void;
   (e: 'create-project', title: string): void;
   (e: 'edit-project', project: Project): void;
   (e: 'sync'): void;
-  (e: 'select-view', view: ViewMode): void;
 }>();
 
 const settingsStore = useSettingsStore();
 const { pinnedProjectIds, sortBy } = storeToRefs(settingsStore);
 
-const togglePin = (projectId: string, event: Event) => {
-  event.stopPropagation();
+const togglePin = (projectId: string) => {
   if (pinnedProjectIds.value.includes(projectId)) {
     settingsStore.unpinProject(projectId);
   } else {
@@ -157,16 +161,20 @@ const handleCreateProject = () => {
 
     <!-- Projects List -->
     <div class="flex-grow overflow-y-auto p-2 space-y-1 scroller-thin">
-      <div
+      <router-link
         v-for="project in sortedProjects"
         :key="project.id"
+        :to="{
+          name: targetRouteName,
+          params: { projectId: project.id },
+          query: $route.query,
+        }"
         class="group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all cursor-pointer font-medium"
         :class="
           project.id === activeProjectId
             ? 'bg-theme-primary/10 text-theme-accent border border-theme-primary/15'
             : 'text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main border border-transparent'
         "
-        @click="emit('select-project', project.id)"
       >
         <!-- Project Title -->
         <div class="flex items-center gap-2 overflow-hidden flex-grow mr-2">
@@ -181,7 +189,7 @@ const handleCreateProject = () => {
         <div class="flex items-center gap-1 shrink-0">
           <!-- Pin Toggle Button -->
           <button
-            @click.stop="togglePin(project.id, $event)"
+            @click.stop.prevent="togglePin(project.id)"
             class="p-0.5 rounded transition-all cursor-pointer"
             :class="
               pinnedProjectIds.includes(project.id)
@@ -197,7 +205,7 @@ const handleCreateProject = () => {
           <div class="flex items-center gap-1 shrink-0 transition-opacity">
             <!-- Edit Project Button -->
             <button
-              @click.stop="emit('edit-project', project)"
+              @click.stop.prevent="emit('edit-project', project)"
               class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-colors cursor-pointer"
               :title="t('projects.editProject')"
             >
@@ -205,7 +213,7 @@ const handleCreateProject = () => {
             </button>
           </div>
         </div>
-      </div>
+      </router-link>
     </div>
 
     <!-- Add Project Action at Bottom of Sidebar -->
@@ -253,18 +261,18 @@ const handleCreateProject = () => {
       </button>
 
       <!-- Settings Button -->
-      <button
-        @click="emit('select-view', 'settings')"
+      <router-link
+        :to="{ name: 'settings', query: $route.query }"
         class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded border transition-all cursor-pointer"
         :class="
-          viewMode === 'settings'
+          $route.name === 'settings'
             ? 'bg-theme-primary/10 border-theme-primary/15 text-theme-accent'
             : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
         "
       >
         <Settings class="w-3.5 h-3.5" />
         <span>{{ t('views.settings') }}</span>
-      </button>
+      </router-link>
     </div>
   </aside>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { Plus, MoreHorizontal } from '@lucide/vue';
 import Sortable from 'sortablejs';
 import type { Task, Bucket, BucketName } from '@/types';
@@ -7,13 +8,17 @@ import GenericColumn from '@/components/ui/GenericColumn.vue';
 import ColumnEditModal from '@/components/modals/ColumnEditModal.vue';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
+import { useProjectStore } from '@/stores/project';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useBuckets } from '@/composables/useBuckets';
 import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();
+const route = useRoute();
 const settingsStore = useSettingsStore();
-const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+const projectStore = useProjectStore();
+const activeProjectId = computed(() => (route.params.projectId as string) || '');
+const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const props = defineProps<{
   buckets: Bucket[];
@@ -22,11 +27,25 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
   (e: 'add-task-click', bucket: BucketName): void;
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
 }>();
+
+const fetchViewTasks = async () => {
+  if (!activeProjectId.value) return;
+  await projectStore.fetchTasks({
+    projectId: activeProjectId.value,
+  });
+};
+
+onMounted(async () => {
+  await fetchViewTasks();
+});
+
+watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
+  await fetchViewTasks();
+});
 
 const tasksByBucket = computed(() => {
   const groups: Record<string, Task[]> = {};
@@ -49,18 +68,15 @@ const tasksByBucket = computed(() => {
   return groups;
 });
 
-const {
-  fetchBuckets,
-  handleCreateColumn,
-  handleRenameColumn,
-  handleDeleteColumn,
-  handleColumnReordered,
-} = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
+const { fetchBuckets, handleCreateColumn, handleRenameColumn, handleDeleteColumn, handleColumnReordered } = useBuckets(
+  activeProjectId,
+  hideDoneColumn,
+  hideArchiveColumn
+);
 
-const {
-  handleCardDropped,
-  handleMarkTaskDone,
-} = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => { emit('refresh'); });
+const { handleCardDropped, handleMarkTaskDone } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => {
+  emit('refresh');
+});
 
 // Need a way to keep useTaskMutations in sync with props.tasks
 // Actually, useTaskMutations expects a Ref<Task[]>.
@@ -90,31 +106,31 @@ const onSaveColumn = async (payload: any) => {
 };
 
 const onColumnDeleted = async (name: string) => {
-    await handleDeleteColumn(name);
-    emit('refresh');
+  await handleDeleteColumn(name);
+  emit('refresh');
 };
 
 const onColumnReordered = async (payload: any) => {
-    await handleColumnReordered(payload);
-    emit('refresh');
+  await handleColumnReordered(payload);
+  emit('refresh');
 };
 
 const onCardDropped = async (payload: any) => {
-    // We need to pass the real tasks ref here
-    // But handleCardDropped uses the ref we passed to useTaskMutations.
-    // Let's refactor BoardView to be more self-contained.
-    await handleCardDropped({
-        taskId: payload.taskId,
-        toBucket: payload.toId as BucketName,
-        prevTaskId: payload.prevTaskId,
-        nextTaskId: payload.nextTaskId,
-    });
-    emit('refresh');
+  // We need to pass the real tasks ref here
+  // But handleCardDropped uses the ref we passed to useTaskMutations.
+  // Let's refactor BoardView to be more self-contained.
+  await handleCardDropped({
+    taskId: payload.taskId,
+    toBucket: payload.toId as BucketName,
+    prevTaskId: payload.prevTaskId,
+    nextTaskId: payload.nextTaskId,
+  });
+  emit('refresh');
 };
 
 const onMarkDone = async (task: Task) => {
-    await handleMarkTaskDone(task);
-    emit('refresh');
+  await handleMarkTaskDone(task);
+  emit('refresh');
 };
 
 // Column create state
@@ -174,7 +190,6 @@ const handleCancelAddColumn = () => {
       :show-add-task="true"
       group-name="kanban-board"
       :is-selected="isSelected"
-      @task-click="(task) => emit('task-click', task)"
       @add-task-click="(id) => emit('add-task-click', id as BucketName)"
       @card-dropped="onCardDropped"
       @mark-done="onMarkDone"

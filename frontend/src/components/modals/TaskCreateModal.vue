@@ -7,16 +7,14 @@ import type { BucketName } from '@/types';
 import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
-import { useSettingsStore } from '@/stores/settings';
 import { parseTitleState } from '@/utils/dateParser';
 
 const { locale, t } = useI18n();
 const route = useRoute();
 const projectStore = useProjectStore();
-const settingsStore = useSettingsStore();
 const { buckets, tasks } = storeToRefs(projectStore);
 
-const activeProjectId = computed(() => (route.params.projectId as string) || settingsStore.activeProjectId);
+const activeProjectId = computed(() => (route.params.projectId as string) || '');
 
 const props = defineProps<{
   isOpen: boolean;
@@ -25,6 +23,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void;
+  (e: 'success'): void;
 }>();
 
 const title = ref('');
@@ -325,12 +324,7 @@ const handleSubmit = async () => {
       priority: priority.value || undefined,
     });
 
-    await projectStore.fetchTasks(
-      activeProjectId.value, 
-      settingsStore.viewMode, 
-      settingsStore.hideDoneColumn, 
-      settingsStore.hideArchiveColumn
-    ); 
+    emit('success');
     emit('close');
   } catch (err: any) {
     error.value = t('errors.createTask', { message: err.message || err });

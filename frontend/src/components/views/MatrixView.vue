@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
-import { computed } from 'vue';
+import { useProjectStore } from '@/stores/project';
+import { computed, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { Clock, AlertCircle, ArrowRight, UserCheck, Trash } from '@lucide/vue';
 import type { Task } from '@/types';
 import TaskCard from '@/components/ui/TaskCard.vue';
@@ -15,12 +17,29 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
   (e: 'toggle-select', task: Task): void;
 }>();
 
+const route = useRoute();
 const settingsStore = useSettingsStore();
-const { thresholdDays } = storeToRefs(settingsStore);
+const projectStore = useProjectStore();
+const activeProjectId = computed(() => (route.params.projectId as string) || '');
+const { thresholdDays, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+
+const fetchViewTasks = async () => {
+  if (!activeProjectId.value) return;
+  await projectStore.fetchTasks({
+    projectId: activeProjectId.value,
+  });
+};
+
+onMounted(async () => {
+  await fetchViewTasks();
+});
+
+watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
+  await fetchViewTasks();
+});
 
 const updateThreshold = (val: number) => {
   if (val < 1) val = 1;
@@ -123,7 +142,6 @@ const quadrants = computed(() => {
             :task="task"
             :compact="true"
             :is-selected="isSelected(task.id)"
-            @click="emit('task-click', task)"
             @toggle-select="emit('toggle-select', task)"
           />
         </div>
@@ -153,7 +171,6 @@ const quadrants = computed(() => {
             :task="task"
             :compact="true"
             :is-selected="isSelected(task.id)"
-            @click="emit('task-click', task)"
             @toggle-select="emit('toggle-select', task)"
           />
         </div>
@@ -183,7 +200,6 @@ const quadrants = computed(() => {
             :task="task"
             :compact="true"
             :is-selected="isSelected(task.id)"
-            @click="emit('task-click', task)"
             @toggle-select="emit('toggle-select', task)"
           />
         </div>
@@ -213,7 +229,6 @@ const quadrants = computed(() => {
             :task="task"
             :compact="true"
             :is-selected="isSelected(task.id)"
-            @click="emit('task-click', task)"
             @toggle-select="emit('toggle-select', task)"
           />
         </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { marked } from 'marked';
 import { ChevronDown, ClipboardList, Check, Calendar } from '@lucide/vue';
 import type { Task } from '@/types';
@@ -35,6 +36,16 @@ const emit = defineEmits<{
   (e: 'mark-done', task: Task): void;
   (e: 'toggle-select', task: Task): void;
 }>();
+
+const route = useRoute();
+const targetRoute = computed(() => {
+  const viewMode = String(route?.name || '').replace('-task', '') || 'board';
+  return {
+    name: `${viewMode}-task`,
+    params: { projectId: props.task.project_id, taskId: String(props.task.id) },
+    query: route?.query || {},
+  };
+});
 
 const isExpanded = ref(false);
 
@@ -127,19 +138,19 @@ const cardStyle = computed(() => {
 </script>
 
 <template>
-  <div
-    class="bg-theme-card border border-theme-border rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col select-none relative"
+  <router-link
+    :to="targetRoute"
+    class="bg-theme-card border border-theme-border rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col select-none relative no-underline text-inherit"
     :class="[
       { 'colored-card': task.color },
       { 'ring-2 ring-theme-accent border-theme-accent bg-theme-accent/5 shadow-theme-ring': isSelected },
       compact ? 'p-2 gap-1' : 'p-3 gap-2',
     ]"
     :style="cardStyle"
-    @click="emit('click', task)"
   >
     <!-- Multi-select Checkbox (Hover or Selected) -->
     <div
-      @click.stop="emit('toggle-select', task)"
+      @click.stop.prevent="emit('toggle-select', task)"
       class="absolute -left-2 -top-2 w-5 h-5 rounded-full border-2 bg-theme-card transition-all z-30 flex items-center justify-center cursor-pointer"
       :class="[
         isSelected
@@ -169,7 +180,7 @@ const cardStyle = computed(() => {
       >
         <!-- Mark Done Button -->
         <button
-          @click.stop="emit('mark-done', task)"
+          @click.stop.prevent="emit('mark-done', task)"
           class="p-1 text-theme-text-muted hover:text-emerald-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
           :title="t('taskCard.markDone')"
         >
@@ -262,7 +273,7 @@ const cardStyle = computed(() => {
       @click.stop
       v-html="parsedMarkdown"
     ></div>
-  </div>
+  </router-link>
 </template>
 
 <style scoped>

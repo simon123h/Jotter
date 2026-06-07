@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import type { Task, Project } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
@@ -17,17 +18,25 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
 }>();
 
 const { t } = useI18n();
+const route = useRoute();
 const settingsStore = useSettingsStore();
-const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+const activeProjectId = computed(() => (route.params.projectId as string) || '');
+const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const { fetchBuckets } = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
-const { handleMarkTaskDone, handleTimeViewPlannedDateUpdate } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => { emit('refresh'); });
+const { handleMarkTaskDone, handleTimeViewPlannedDateUpdate } = useTaskMutations(
+  ref(props.tasks),
+  activeProjectId,
+  fetchBuckets,
+  async () => {
+    emit('refresh');
+  }
+);
 
 // Group tasks into categorical planning columns
 const timeColumns = computed(() => {
@@ -67,18 +76,18 @@ const timeColumns = computed(() => {
 const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
   const task = props.tasks.find((t) => t.id === payload.taskId);
   if (!task) return;
-  
-  await handleTimeViewPlannedDateUpdate({ 
-      taskId: payload.taskId, 
-      plannedDate: payload.toId === 'notPlanned' ? '' : payload.toId,
-      projectId: task.project_id
+
+  await handleTimeViewPlannedDateUpdate({
+    taskId: payload.taskId,
+    plannedDate: payload.toId === 'notPlanned' ? '' : payload.toId,
+    projectId: task.project_id,
   });
   emit('refresh');
 };
 
 const onMarkDone = async (task: Task) => {
-    await handleMarkTaskDone(task);
-    emit('refresh');
+  await handleMarkTaskDone(task);
+  emit('refresh');
 };
 </script>
 
@@ -96,7 +105,6 @@ const onMarkDone = async (task: Task) => {
       :show-project="showProjectBadge"
       :projects="projects"
       :is-selected="isSelected"
-      @task-click="(task) => emit('task-click', task)"
       @mark-done="onMarkDone"
       @card-dropped="handleCardDropped"
       @toggle-select="(task) => emit('toggle-select', task)"

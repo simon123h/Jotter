@@ -1,21 +1,31 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import type { Task, Project } from '@/types';
 import TimelineLayout from '@/components/layout/TimelineLayout.vue';
 import { useI18n } from '@/composables/useI18n';
+import { useProjectStore } from '@/stores/project';
 
 const { t } = useI18n();
+const projectStore = useProjectStore();
 
-defineProps<{
+const props = defineProps<{
   tasks: Task[];
   projects: Project[];
   isSelected: (id: string) => boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'task-click', task: Task): void;
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
 }>();
+
+onMounted(async () => {
+  document.title = `Jotter / ${t('views.globalTime') || 'Global Planning'}`;
+  await projectStore.fetchTasks({
+    isGlobal: true,
+    excludeBuckets: 'done,archive',
+  });
+});
 </script>
 
 <template>
@@ -30,13 +40,12 @@ const emit = defineEmits<{
 
     <div class="flex-grow overflow-hidden">
       <TimelineLayout
-        :tasks="tasks"
-        :projects="projects"
+        :tasks="props.tasks"
+        :projects="props.projects"
         group-name="global-time-view"
         :show-project-badge="true"
-        :is-selected="isSelected"
-        @task-click="emit('task-click', $event)"
-        @toggle-select="emit('toggle-select', $event)"
+        :is-selected="props.isSelected"
+        @toggle-select="(task) => emit('toggle-select', task)"
         @refresh="emit('refresh')"
       />
     </div>

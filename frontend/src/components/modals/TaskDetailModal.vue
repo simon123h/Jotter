@@ -18,8 +18,12 @@ const router = useRouter();
 const projectStore = useProjectStore();
 const { buckets, tasks } = storeToRefs(projectStore);
 
+const emit = defineEmits<{
+  (e: 'refresh'): void;
+}>();
+
 const projectId = computed(() => String(route.params.projectId));
-const taskId = computed(() => route.params.taskId ? String(route.params.taskId) : null);
+const taskId = computed(() => (route.params.taskId ? String(route.params.taskId) : null));
 
 const task = ref<Task | null>(null);
 const loading = ref(false);
@@ -214,16 +218,16 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 const closeModal = () => {
-    const currentMode = route.name?.toString().split('-')[0] || 'board';
-    router.push({
-        name: currentMode,
-        params: { projectId: projectId.value },
-        query: route.query,
-    });
+  const currentMode = String(route.name || '').replace('-task', '') || 'board';
+  router.push({
+    name: currentMode,
+    params: { projectId: projectId.value },
+    query: route.query,
+  });
 };
 
 onMounted(() => {
-    window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keydown', handleKeyDown);
 });
 
 onUnmounted(() => {
@@ -487,14 +491,14 @@ const handleDelete = async () => {
 const handleMarkDone = async () => {
   if (!task.value) return;
   try {
-      await updateTask(projectId.value, task.value.id, {
-          bucket: 'done',
-          position: 1000000.0,
-      });
-      refreshBoard();
-      closeModal();
+    await updateTask(projectId.value, task.value.id, {
+      bucket: 'done',
+      position: 1000000.0,
+    });
+    refreshBoard();
+    closeModal();
   } catch (err: any) {
-      error.value = t('errors.updateTask', { message: err.message || err });
+    error.value = t('errors.updateTask', { message: err.message || err });
   }
 };
 
@@ -529,9 +533,7 @@ const handleUnarchive = async () => {
 };
 
 const refreshBoard = () => {
-    projectStore.fetchTasks(projectId.value, projectStore.activeProjectId === 'super-time' ? 'super-time' : 'board', false, false); // viewMode, hideDone, hideArchive should be from store
-    // Better: let the store handle it or emit a global event. 
-    // For now, projectStore handles tasks, so we can just call fetchTasks.
+  emit('refresh');
 };
 
 const cancelEdit = () => {
