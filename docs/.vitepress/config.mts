@@ -28,6 +28,7 @@ export default defineConfig({
 							text: 'User Guide',
 							items: [
 								{ text: 'Configuration', link: '/user/configuration' },
+								{ text: 'MS Planner Import', link: '/user/import-planner' },
 								{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' },
 								{ text: 'Markdown File Spec', link: '/user/format-spec' },
 								{ text: 'Obsidian & PKM Sync', link: '/user/obsidian' },
@@ -48,6 +49,7 @@ export default defineConfig({
 							text: 'User Guide',
 							items: [
 								{ text: 'Configuration', link: '/user/configuration' },
+								{ text: 'MS Planner Import', link: '/user/import-planner' },
 								{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' },
 								{ text: 'Markdown File Spec', link: '/user/format-spec' },
 								{ text: 'Obsidian & PKM Sync', link: '/user/obsidian' },
@@ -93,6 +95,7 @@ export default defineConfig({
 							text: 'Benutzerhandbuch',
 							items: [
 								{ text: 'Konfiguration', link: '/de/user/configuration' },
+								{ text: 'MS Planner Import', link: '/de/user/import-planner' },
 								{ text: 'Tastaturkurzbefehle', link: '/de/user/shortcuts' },
 								{ text: 'Markdown-Spezifikation', link: '/de/user/format-spec' },
 								{ text: 'Obsidian & PKM-Sync', link: '/de/user/obsidian' },
@@ -113,6 +116,7 @@ export default defineConfig({
 							text: 'Benutzerhandbuch',
 							items: [
 								{ text: 'Konfiguration', link: '/de/user/configuration' },
+								{ text: 'MS Planner Import', link: '/de/user/import-planner' },
 								{ text: 'Tastaturkurzbefehle', link: '/de/user/shortcuts' },
 								{ text: 'Markdown-Spezifikation', link: '/de/user/format-spec' },
 								{ text: 'Obsidian & PKM-Sync', link: '/de/user/obsidian' },

@@ -28,6 +28,7 @@ Jotter is a **local-first, privacy-focused task management application** designe
 - **Offline-First & Local Index**: Runs entirely on your computer with a lightning-fast local SQLite database index. If the database index is ever deleted, the system automatically rebuilds it instantly from your markdown files.
 - **Selective Per-Project Git Sync**: Enable synchronization for individual projects by connecting them to different Git remotes. Keep "Home" local while sharing "Work" with a team.
 - **Multi-Language Support**: Fully localized in English and German.
+- **Microsoft Planner Importer**: Seamlessly import your tasks and columns from official MS Planner Excel exports (`.xlsx`), with complete support for localized formats (English & German), multi-sheet workbook selection, and custom completed status overrides.
 
 ---
 
@@ -66,6 +67,7 @@ Alternatively, you can refer to the raw Markdown source files in the `docs/` fol
 
 - **User Guide & Setup**:
   - [Configuring Jotter (Ports, Directories, logs)](docs/user/configuration.md)
+  - [Importing from Microsoft Planner](docs/user/import-planner.md)
 - **Installation**:
   - [Running Pre-compiled Binaries (Windows/Linux/macOS)](docs/installation/precompiled.md)
   - [Running from Source (For Developers)](docs/installation/development.md)
