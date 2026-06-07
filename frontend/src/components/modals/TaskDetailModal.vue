@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed, onUnmounted, nextTick, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { marked } from 'marked';
 import type { Task } from '@/types';
@@ -602,6 +602,25 @@ const handleDblClick = (event: MouseEvent) => {
     titleInput.value?.focus();
   });
 };
+
+onBeforeRouteLeave(async () => {
+  if (isEditing.value) {
+    const bucketNames = buckets.value.map((b) => b.name);
+    const parseResult = parseTitleState(editTitle.value, locale.value, bucketNames, ignoredKeywords.value);
+    const finalTitle = parseResult.cleanTitle;
+
+    if (finalTitle) {
+      await handleSave();
+      if (isEditing.value) {
+        // Saving failed (e.g. due to validation or API error), stay on the route
+        return false;
+      }
+    } else {
+      cancelEdit();
+    }
+  }
+  return true;
+});
 </script>
 
 <template>
