@@ -25,4 +25,26 @@ describe('UI Store', () => {
     const store = useUiStore();
     expect(store.lastViewMode).toBe('list');
   });
+
+  it('can manage and persist collapsed columns per project', () => {
+    const store = useUiStore();
+    expect(store.isColumnCollapsed('proj-1', 'todo')).toBe(false);
+
+    // Toggle collapse on
+    store.toggleColumnCollapse('proj-1', 'todo');
+    expect(store.isColumnCollapsed('proj-1', 'todo')).toBe(true);
+
+    // Toggle collapse off
+    store.toggleColumnCollapse('proj-1', 'todo');
+    expect(store.isColumnCollapsed('proj-1', 'todo')).toBe(false);
+  });
+
+  it('can set and persist collapseEmptyColumns toggle', () => {
+    const store = useUiStore();
+    expect(store.collapseEmptyColumns).toBe(false);
+
+    store.setCollapseEmptyColumns(true);
+    expect(store.collapseEmptyColumns).toBe(true);
+    expect(localStorage.getItem('jotter-collapse-empty-columns')).toBe('true');
+  });
 });

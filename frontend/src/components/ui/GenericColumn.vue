@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import Sortable from 'sortablejs';
 import type { Task } from '@/types';
 import TaskCard from '@/components/ui/TaskCard.vue';
+import { ChevronRight } from '@lucide/vue';
 
 const props = withDefaults(
   defineProps<{
@@ -20,6 +21,7 @@ const props = withDefaults(
     showProject?: boolean;
     projects?: any[];
     isSelected?: (id: string) => boolean;
+    isCollapsed?: boolean;
   }>(),
   {
     layout: 'list',
@@ -29,6 +31,7 @@ const props = withDefaults(
     showProject: false,
     projects: () => [],
     isSelected: () => false,
+    isCollapsed: false,
   }
 );
 const emit = defineEmits<{
@@ -36,6 +39,7 @@ const emit = defineEmits<{
   (e: 'card-dropped', payload: { taskId: string; toId: string; prevTaskId: string | null; nextTaskId: string | null }): void;
   (e: 'mark-done', task: Task): void;
   (e: 'toggle-select', task: Task): void;
+  (e: 'toggle-collapse'): void;
 }>();
 
 const cardsContainer = ref<HTMLElement | null>(null);
@@ -167,6 +171,13 @@ watch(
   },
   { deep: false }
 );
+
+watch(
+  () => props.isCollapsed,
+  () => {
+    setupSortables();
+  }
+);
 </script>
 
 <template>
@@ -174,49 +185,100 @@ watch(
     :style="columnStyle"
     class="generic-column flex flex-col bg-theme-column border border-theme-border rounded h-fit max-h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
     :class="[
-      layout === 'grid-3'
-        ? 'min-w-[840px] w-[864px] md:w-[960px]'
-        : layout === 'grid-2'
-          ? 'min-w-[560px] w-[576px] md:w-[640px]'
-          : 'min-w-[280px] w-72 md:w-80',
+      isCollapsed
+        ? 'w-12 min-w-[48px] max-w-[48px] h-[500px] md:h-auto'
+        : layout === 'grid-3'
+          ? 'min-w-[840px] w-[864px] md:w-[960px]'
+          : layout === 'grid-2'
+            ? 'min-w-[560px] w-[576px] md:w-[640px]'
+            : 'min-w-[280px] w-72 md:w-80',
     ]"
   >
-    <!-- Header Slot -->
-    <slot name="header">
-      <div class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t min-h-[48px]">
-        <div class="flex flex-col justify-center overflow-hidden">
-          <div class="flex items-center gap-1.5">
-            <h3 class="font-bold text-sm uppercase tracking-wider text-theme-text-main truncate">{{ title }}</h3>
-            <span class="text-xs px-1.5 py-0.25 font-bold rounded bg-theme-card border border-theme-border/60 text-theme-text-muted">
-              {{ tasks.length }}
-            </span>
+    <template v-if="!isCollapsed">
+      <!-- Header Slot -->
+      <slot name="header">
+        <div class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t min-h-[48px]">
+          <div class="flex flex-col justify-center overflow-hidden">
+            <div class="flex items-center gap-1.5">
+              <h3 class="font-bold text-sm uppercase tracking-wider text-theme-text-main truncate">{{ title }}</h3>
+              <span class="text-xs px-1.5 py-0.25 font-bold rounded bg-theme-card border border-theme-border/60 text-theme-text-muted">
+                {{ tasks.length }}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-    </slot>
+      </slot>
 
-    <!-- Cards Container -->
-    <div class="flex-grow flex flex-col p-2.5 overflow-y-auto scroller-thin">
-      <!-- Optional Add Task Button -->
-      <slot name="add-button"></slot>
+      <!-- Cards Container -->
+      <div class="flex-grow flex flex-col p-2.5 overflow-y-auto scroller-thin">
+        <!-- Optional Add Task Button -->
+        <slot name="add-button"></slot>
 
-      <!-- Grid 3x -->
-      <div v-if="layout === 'grid-3'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow pb-6">
-        <div
-          v-for="(colTasks, i) in [col1Tasks, col2Tasks, col3Tasks]"
-          :key="i"
-          :ref="
-            (el) => {
-              if (i === 0) col1Container = el as any;
-              else if (i === 1) col2Container = el as any;
-              else col3Container = el as any;
-            }
-          "
-          :data-column-id="id"
-          class="subcolumn flex flex-col gap-2.5 w-1/3 flex-grow"
-        >
+        <!-- Grid 3x -->
+        <div v-if="layout === 'grid-3'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow pb-6">
+          <div
+            v-for="(colTasks, i) in [col1Tasks, col2Tasks, col3Tasks]"
+            :key="i"
+            :ref="
+              (el) => {
+                if (i === 0) col1Container = el as any;
+                else if (i === 1) col2Container = el as any;
+                else col3Container = el as any;
+              }
+            "
+            :data-column-id="id"
+            class="subcolumn flex flex-col gap-2.5 w-1/3 flex-grow"
+          >
+            <TaskCard
+              v-for="task in colTasks"
+              :key="task.id"
+              class="task-card"
+              :task="task"
+              :compact="compactCards"
+              :show-project="showProject"
+              :project-title="projects?.find((p) => p.id === task.project_id)?.title"
+              :is-selected="isSelected(task.id)"
+              :data-task-id="task.id"
+              @mark-done="emit('mark-done', task)"
+              @toggle-select="emit('toggle-select', $event)"
+            />
+          </div>
+        </div>
+
+        <!-- Grid 2x -->
+        <div v-else-if="layout === 'grid-2'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow pb-6">
+          <div
+            v-for="(colTasks, i) in [leftTasks, rightTasks]"
+            :key="i"
+            :ref="
+              (el) => {
+                if (i === 0) leftContainer = el as any;
+                else rightContainer = el as any;
+              }
+            "
+            :data-column-id="id"
+            class="subcolumn flex flex-col gap-2.5 w-1/2 flex-grow"
+          >
+            <TaskCard
+              v-for="task in colTasks"
+              :key="task.id"
+              class="task-card"
+              :task="task"
+              :compact="compactCards"
+              :show-project="showProject"
+              :project-title="projects?.find((p) => p.id === task.project_id)?.title"
+              :is-selected="isSelected(task.id)"
+              :data-task-id="task.id"
+              @mark-done="emit('mark-done', task)"
+              @toggle-select="emit('toggle-select', $event)"
+            />
+          </div>
+        </div>
+
+        <!-- Single Column -->
+        <div v-else ref="cardsContainer" :data-column-id="id" class="cards-container-list flex flex-col gap-2.5 flex-grow pb-6">
           <TaskCard
-            v-for="task in colTasks"
+            v-for="task in tasks"
             :key="task.id"
             class="task-card"
             :task="task"
@@ -231,56 +293,44 @@ watch(
         </div>
       </div>
 
-      <!-- Grid 2x -->
-      <div v-else-if="layout === 'grid-2'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow pb-6">
-        <div
-          v-for="(colTasks, i) in [leftTasks, rightTasks]"
-          :key="i"
-          :ref="
-            (el) => {
-              if (i === 0) leftContainer = el as any;
-              else rightContainer = el as any;
-            }
-          "
-          :data-column-id="id"
-          class="subcolumn flex flex-col gap-2.5 w-1/2 flex-grow"
+      <!-- Footer Slot -->
+      <slot name="footer"></slot>
+    </template>
+
+    <template v-else>
+      <!-- Collapsed Column Content Overlay -->
+      <div class="absolute inset-0 flex flex-col items-center py-4 gap-4 pointer-events-none select-none z-10">
+        <!-- Expand Button -->
+        <button
+          @click="emit('toggle-collapse')"
+          class="pointer-events-auto text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/50 p-1.5 rounded transition-colors cursor-pointer"
+          title="Expand Column"
         >
-          <TaskCard
-            v-for="task in colTasks"
-            :key="task.id"
-            class="task-card"
-            :task="task"
-            :compact="compactCards"
-            :show-project="showProject"
-            :project-title="projects?.find((p) => p.id === task.project_id)?.title"
-            :is-selected="isSelected(task.id)"
-            :data-task-id="task.id"
-            @mark-done="emit('mark-done', task)"
-            @toggle-select="emit('toggle-select', $event)"
-          />
+          <ChevronRight class="w-4 h-4" />
+        </button>
+
+        <!-- Count Badge -->
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-theme-card border border-theme-border/60 text-theme-text-muted select-none">
+          {{ tasks.length }}
+        </span>
+
+        <!-- Rotated vertical title -->
+        <div
+          @click="emit('toggle-collapse')"
+          class="pointer-events-auto font-bold text-xs uppercase tracking-wider text-theme-text-main hover:text-theme-accent cursor-pointer writing-vertical rotate-180 truncate max-h-[320px] mt-2 select-none"
+          :title="title"
+        >
+          {{ title }}
         </div>
       </div>
 
-      <!-- Single Column -->
-      <div v-else ref="cardsContainer" :data-column-id="id" class="cards-container-list flex flex-col gap-2.5 flex-grow pb-6">
-        <TaskCard
-          v-for="task in tasks"
-          :key="task.id"
-          class="task-card"
-          :task="task"
-          :compact="compactCards"
-          :show-project="showProject"
-          :project-title="projects?.find((p) => p.id === task.project_id)?.title"
-          :is-selected="isSelected(task.id)"
-          :data-task-id="task.id"
-          @mark-done="emit('mark-done', task)"
-          @toggle-select="emit('toggle-select', $event)"
-        />
-      </div>
-    </div>
-
-    <!-- Footer Slot -->
-    <slot name="footer"></slot>
+      <!-- Empty Drop Zone wrapper for Sortable in collapsed mode -->
+      <div
+        ref="cardsContainer"
+        :data-column-id="id"
+        class="absolute inset-0 z-0 opacity-0 cards-container-list"
+      ></div>
+    </template>
   </div>
 </template>
 
@@ -290,5 +340,9 @@ watch(
 .cards-container-list {
   flex-grow: 1;
   min-height: 100px;
+}
+.writing-vertical {
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
 }
 </style>
