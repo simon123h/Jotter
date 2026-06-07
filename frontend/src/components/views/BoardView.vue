@@ -329,18 +329,49 @@ const handleCancelAddColumn = () => {
         </div>
       </div>
 
-      <!-- auto-collapse empty columns check -->
-      <label
-        class="flex items-center gap-2 px-3 py-2 bg-theme-column/10 border border-theme-border/40 rounded text-xs text-theme-text-muted select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+      <!-- board display options container -->
+      <div
+        class="flex flex-col bg-theme-column/10 border border-theme-border/40 rounded text-xs text-theme-text-muted overflow-hidden divide-y divide-theme-border/30"
       >
-        <input
-          type="checkbox"
-          :checked="uiStore.collapseEmptyColumns"
-          @change="uiStore.setCollapseEmptyColumns(($event.target as HTMLInputElement).checked)"
-          class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
-        />
-        <span class="font-semibold">{{ t('autoCollapseEmptyColumns') }}</span>
-      </label>
+        <!-- auto-collapse empty columns check -->
+        <label
+          class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+        >
+          <input
+            type="checkbox"
+            :checked="uiStore.collapseEmptyColumns"
+            @change="uiStore.setCollapseEmptyColumns(($event.target as HTMLInputElement).checked)"
+            class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
+          />
+          <span class="font-semibold">{{ t('autoCollapseEmptyColumns') }}</span>
+        </label>
+
+        <!-- hide done column check -->
+        <label
+          class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+        >
+          <input
+            type="checkbox"
+            :checked="settingsStore.hideDoneColumn"
+            @change="settingsStore.hideDoneColumn = ($event.target as HTMLInputElement).checked"
+            class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
+          />
+          <span class="font-semibold">{{ t('doneBucket.hide') }}</span>
+        </label>
+
+        <!-- hide archive column check -->
+        <label
+          class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+        >
+          <input
+            type="checkbox"
+            :checked="settingsStore.hideArchiveColumn"
+            @change="settingsStore.hideArchiveColumn = ($event.target as HTMLInputElement).checked"
+            class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
+          />
+          <span class="font-semibold">{{ t('archiveBucket.hide') }}</span>
+        </label>
+      </div>
     </div>
 
     <!-- Edit Modal -->
