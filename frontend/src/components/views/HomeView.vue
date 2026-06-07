@@ -59,11 +59,17 @@ const sortedProjects = computed(() => {
     <div class="max-w-4xl w-full flex flex-col items-center text-center space-y-8 py-8 animate-fade-in">
       <!-- Welcome Hero Header -->
       <div class="space-y-3.5 relative">
-        <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-theme-primary/10 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="inline-flex p-3.5 bg-theme-card/50 border border-theme-border/60 rounded-2xl shadow-lg relative text-theme-accent animate-pulse-slow">
+        <div
+          class="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-theme-primary/10 rounded-full blur-2xl pointer-events-none"
+        ></div>
+        <div
+          class="inline-flex p-3.5 bg-theme-card/50 border border-theme-border/60 rounded-2xl shadow-lg relative text-theme-accent animate-pulse-slow"
+        >
           <Sparkles class="w-8 h-8" />
         </div>
-        <h1 class="text-4xl font-extrabold tracking-tight text-theme-text-main bg-gradient-to-r from-theme-text-main via-theme-accent to-theme-text-main bg-clip-text text-transparent">
+        <h1
+          class="text-4xl font-extrabold tracking-tight text-theme-text-main bg-gradient-to-r from-theme-text-main via-theme-accent to-theme-text-main bg-clip-text text-transparent"
+        >
           {{ t('home.welcome') }}
         </h1>
         <p class="text-sm font-medium text-theme-text-muted max-w-md mx-auto italic">
@@ -88,15 +94,24 @@ const sortedProjects = computed(() => {
               class="group relative bg-theme-card hover:bg-theme-column/20 border border-theme-border/60 hover:border-theme-primary/40 rounded-xl p-4.5 cursor-pointer shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between h-36 overflow-hidden"
             >
               <!-- Highlight background on hover -->
-              <div class="absolute inset-0 bg-gradient-to-br from-theme-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+              <div
+                class="absolute inset-0 bg-gradient-to-br from-theme-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+              ></div>
 
               <div>
                 <div class="flex items-start justify-between">
-                  <h3 class="font-bold text-sm text-theme-text-main group-hover:text-theme-accent transition-colors truncate pr-1" :title="project.title">
+                  <h3
+                    class="font-bold text-sm text-theme-text-main group-hover:text-theme-accent transition-colors truncate pr-1"
+                    :title="project.title"
+                  >
                     {{ project.title }}
                   </h3>
                   <div class="flex items-center gap-1.5 shrink-0">
-                    <Pin v-if="pinnedProjectIds.includes(project.id)" class="w-3 h-3 text-theme-accent fill-theme-accent shrink-0" title="Pinned" />
+                    <Pin
+                      v-if="pinnedProjectIds.includes(project.id)"
+                      class="w-3 h-3 text-theme-accent fill-theme-accent shrink-0"
+                      title="Pinned"
+                    />
                     <GitBranch v-if="project.git_remote" class="w-3 h-3 text-theme-accent shrink-0" title="Git Connected" />
                   </div>
                 </div>
@@ -105,7 +120,9 @@ const sortedProjects = computed(() => {
                 </p>
               </div>
 
-              <div class="flex items-center justify-between text-xs font-bold text-theme-text-muted group-hover:text-theme-accent transition-colors mt-4">
+              <div
+                class="flex items-center justify-between text-xs font-bold text-theme-text-muted group-hover:text-theme-accent transition-colors mt-4"
+              >
                 <span>{{ t('home.openProject') }}</span>
                 <ArrowRight class="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </div>
@@ -149,14 +166,25 @@ const sortedProjects = computed(() => {
   animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .8; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
