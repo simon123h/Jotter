@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed, onUnmounted, nextTick, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getViewMode } from '@/utils/viewMode';
 import { storeToRefs } from 'pinia';
 import { marked } from 'marked';
 import type { Task } from '@/types';
@@ -219,7 +218,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 const closeModal = () => {
-  const currentMode = getViewMode(route.name);
+  const currentMode = String(route.name || '').replace('-task', '') || 'board';
   router.push({
     name: currentMode,
     params: { projectId: projectId.value },

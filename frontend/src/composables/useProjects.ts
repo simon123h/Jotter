@@ -1,10 +1,10 @@
-import { ref, type Ref } from 'vue';
+import { ref } from 'vue';
 import type { Project } from '@/types';
 import { getProjects, createProject, updateProject, deleteProject } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 
-export function useProjects(activeProjectId: Ref<string>, onSelectProject: (id: string) => void) {
+export function useProjects(onSelectProject: (id: string) => void) {
   const { t } = useI18n();
   const { showDialog } = useDialog();
 
@@ -16,17 +16,6 @@ export function useProjects(activeProjectId: Ref<string>, onSelectProject: (id: 
   const fetchProjects = async () => {
     try {
       projects.value = await getProjects();
-
-      // If the current active project isn't in the list anymore (or never was)
-      if (!projects.value.find((p) => p.id === activeProjectId.value)) {
-        if (projects.value.length > 0) {
-          // Select the first available project
-          onSelectProject(projects.value[0].id);
-        } else {
-          // No projects exist at all. Set ID to empty to trigger "no project" UI states
-          onSelectProject('');
-        }
-      }
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch projects';
     }

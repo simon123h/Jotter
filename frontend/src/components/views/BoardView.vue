@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { Plus, MoreHorizontal } from '@lucide/vue';
 import Sortable from 'sortablejs';
 import type { Task, Bucket, BucketName } from '@/types';
@@ -13,9 +14,11 @@ import { useBuckets } from '@/composables/useBuckets';
 import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();
+const route = useRoute();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
-const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+const activeProjectId = computed(() => (route.params.projectId as string) || '');
+const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const props = defineProps<{
   buckets: Bucket[];

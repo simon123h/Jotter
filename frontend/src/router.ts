@@ -11,8 +11,6 @@ import SettingsView from '@/components/views/SettingsView.vue';
 import HomeView from '@/components/views/HomeView.vue';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
 
-export { getViewMode, type ViewMode } from '@/utils/viewMode';
-
 const routes = [
   {
     path: '/',

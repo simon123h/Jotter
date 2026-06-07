@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
+import { onMounted, watch, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import type { Task } from '@/types';
 import TimelineLayout from '@/components/layout/TimelineLayout.vue';
 import { useSettingsStore } from '@/stores/settings';
@@ -16,9 +17,11 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
 
+const route = useRoute();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
-const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+const activeProjectId = computed(() => (route.params.projectId as string) || '');
+const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const fetchViewTasks = async () => {
   if (!activeProjectId.value) return;

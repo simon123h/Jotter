@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getViewMode } from '@/utils/viewMode';
 import { ChevronUp, ChevronDown, Calendar, Layers, Flag } from '@lucide/vue';
 import type { Task, Bucket } from '@/types';
 import { useI18n } from '@/composables/useI18n';
@@ -10,9 +9,12 @@ import { useProjectStore } from '@/stores/project';
 import { storeToRefs } from 'pinia';
 
 const { t, locale } = useI18n();
+const route = useRoute();
+const router = useRouter();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
-const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+const activeProjectId = computed(() => (route.params.projectId as string) || '');
+const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const props = defineProps<{
   buckets: Bucket[];
@@ -39,11 +41,8 @@ watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
   await fetchViewTasks();
 });
 
-const route = useRoute();
-const router = useRouter();
-
 const getTaskRoute = (task: Task) => {
-  const viewMode = getViewMode(route?.name);
+  const viewMode = String(route?.name || '').replace('-task', '') || 'list';
   return {
     name: `${viewMode}-task`,
     params: { projectId: task.project_id, taskId: String(task.id) },

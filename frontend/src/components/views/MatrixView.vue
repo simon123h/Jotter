@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { computed, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { Clock, AlertCircle, ArrowRight, UserCheck, Trash } from '@lucide/vue';
 import type { Task } from '@/types';
 import TaskCard from '@/components/ui/TaskCard.vue';
@@ -19,9 +20,11 @@ const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
 }>();
 
+const route = useRoute();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
-const { thresholdDays, activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+const activeProjectId = computed(() => (route.params.projectId as string) || '');
+const { thresholdDays, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const fetchViewTasks = async () => {
   if (!activeProjectId.value) return;

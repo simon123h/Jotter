@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { storeToRefs } from 'pinia';
 import { X, Trash2 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
-import { useSettingsStore } from '@/stores/settings';
 import { useProjects } from '@/composables/useProjects';
 import type { Project } from '@/types';
 
 const { t } = useI18n();
-const settingsStore = useSettingsStore();
-const { activeProjectId } = storeToRefs(settingsStore);
 
 const props = defineProps<{
   isOpen: boolean;
@@ -21,7 +17,7 @@ const emit = defineEmits<{
 }>();
 
 // Composable: Projects Management
-const { handleSaveProject, handleDeleteProject } = useProjects(activeProjectId, () => {});
+const { handleSaveProject, handleDeleteProject } = useProjects(() => {});
 
 const title = ref('');
 const doneCleanPeriod = ref<number | null>(null);

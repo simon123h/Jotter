@@ -13,7 +13,6 @@ describe('Settings Store', () => {
     expect(store.hideDoneColumn).toBe(true);
     expect(store.isSidebarOpen).toBe(true);
     expect(store.currentTheme).toBe('nordic-light');
-    expect(store.activeProjectId).toBe('default');
     expect(store.thresholdDays).toBe(7);
     expect(store.pinnedProjectIds).toEqual([]);
     expect(store.sortBy).toBe('alpha');

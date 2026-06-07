@@ -18,7 +18,6 @@ const { projects } = storeToRefs(projectStore);
 const { pinnedProjectIds } = storeToRefs(settingsStore);
 
 const selectProject = (projectId: string) => {
-  settingsStore.setActiveProjectId(projectId);
   router.push({
     name: 'board',
     params: { projectId },
@@ -26,10 +25,7 @@ const selectProject = (projectId: string) => {
 };
 
 // Project creation handling using standard projects composable
-const { handleCreateProject: runCreateProject } = useProjects(
-  ref(''),
-  selectProject
-);
+const { handleCreateProject: runCreateProject } = useProjects(selectProject);
 
 const newProjectTitle = ref('');
 const isCreating = ref(false);

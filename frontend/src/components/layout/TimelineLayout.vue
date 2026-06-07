@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import type { Task, Project } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
@@ -22,8 +23,10 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const route = useRoute();
 const settingsStore = useSettingsStore();
-const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+const activeProjectId = computed(() => (route.params.projectId as string) || '');
+const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const { fetchBuckets } = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
 const { handleMarkTaskDone, handleTimeViewPlannedDateUpdate } = useTaskMutations(

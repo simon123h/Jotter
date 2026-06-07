@@ -69,9 +69,6 @@ const fetchAllData = async () => {
 };
 
 onMounted(async () => {
-  if (projectId.value) {
-    settingsStore.setActiveProjectId(projectId.value);
-  }
   await fetchAllData();
 });
 
@@ -79,9 +76,6 @@ onMounted(async () => {
 watch(
   () => [projectId.value, isGlobalView.value],
   async () => {
-    if (projectId.value) {
-      settingsStore.setActiveProjectId(projectId.value);
-    }
     clearFilters();
     clearSelection();
     await fetchAllData();

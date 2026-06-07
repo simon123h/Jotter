@@ -52,7 +52,6 @@ export const useSettingsStore = defineStore('settings', () => {
   const hideArchiveColumn = useLocalStorageRef('jotter-hide-archive-column', true);
   const isSidebarOpen = useLocalStorageRef('jotter-sidebar-open', true);
   const currentTheme = useLocalStorageRef('jotter-theme', 'nordic-light');
-  const activeProjectId = useLocalStorageRef('jotter-active-project-id', 'default');
   const thresholdDays = useLocalStorageRef('jotter-matrix-threshold', 7);
   const pinnedProjectIds = useLocalStorageRef<string[]>('jotter-pinned-projects', []);
   const sortBy = useLocalStorageRef<SortBy>('jotter-projects-sort', 'alpha');
@@ -69,10 +68,6 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const setTheme = (theme: string) => {
     currentTheme.value = theme;
-  };
-
-  const setActiveProjectId = (projectId: string) => {
-    activeProjectId.value = projectId;
   };
 
   const setThresholdDays = (days: number) => {
@@ -110,7 +105,6 @@ export const useSettingsStore = defineStore('settings', () => {
     hideArchiveColumn,
     isSidebarOpen,
     currentTheme,
-    activeProjectId,
     thresholdDays,
     pinnedProjectIds,
     sortBy,
@@ -118,7 +112,6 @@ export const useSettingsStore = defineStore('settings', () => {
     toggleHideDoneColumn,
     toggleSidebar,
     setTheme,
-    setActiveProjectId,
     setThresholdDays,
     pinProject,
     unpinProject,

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { getViewMode } from '@/utils/viewMode';
 import { marked } from 'marked';
 import { ChevronDown, ClipboardList, Check, Calendar } from '@lucide/vue';
 import type { Task } from '@/types';
@@ -40,7 +39,7 @@ const emit = defineEmits<{
 
 const route = useRoute();
 const targetRoute = computed(() => {
-  const viewMode = getViewMode(route?.name);
+  const viewMode = String(route?.name || '').replace('-task', '') || 'board';
   return {
     name: `${viewMode}-task`,
     params: { projectId: props.task.project_id, taskId: String(props.task.id) },

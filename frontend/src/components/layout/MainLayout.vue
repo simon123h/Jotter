@@ -10,7 +10,6 @@ import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useProjects } from '@/composables/useProjects';
 import { useTaskFilters } from '@/composables/useTaskFilters';
-import { getViewMode, type ViewMode } from '@/utils/viewMode';
 import { X } from '@lucide/vue';
 
 const route = useRoute();
@@ -20,32 +19,20 @@ const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const modalStore = useModalStore();
 
-const { isSidebarOpen, currentTheme, activeProjectId } = storeToRefs(settingsStore);
+const { isSidebarOpen, currentTheme } = storeToRefs(settingsStore);
 const { projects, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
 
 const localError = ref<string | null>(null);
 
-// Compute current view mode from route name using the router map
-const viewMode = computed<ViewMode>(() => getViewMode(route.name));
-
-// Sync route params with activeProjectId in the settings store
-const routeProjectId = computed(() => (route.params.projectId as string) || '');
-watch(
-  routeProjectId,
-  (newId) => {
-    if (newId) {
-      settingsStore.setActiveProjectId(newId);
-    }
-  },
-  { immediate: true }
-);
+// Derive active project ID strictly from the current route params
+const activeProjectId = computed(() => (route.params.projectId as string) || '');
 
 // Watch projects list and redirect if route project does not exist
 watch(
-  [projects, routeProjectId],
+  [projects, activeProjectId],
   ([newProjects, newRouteId]) => {
     if (newProjects.length > 0) {
-      // If route has a projectId, and it is 'default' or not in the projects list,
+      // If route has a projectId, and it is not in the projects list,
       // redirect the user to the first available project's board view.
       if (newRouteId && newRouteId !== 'settings') {
         const routeProjectExists = newProjects.some((p) => p.id === newRouteId);
@@ -59,11 +46,9 @@ watch(
 );
 
 const selectProject = (projectId: string) => {
-  const currentView = viewMode.value;
-  const targetMode =
-    currentView === 'global-time' || currentView === 'settings' || currentView === 'home'
-      ? 'board'
-      : currentView;
+  const routeName = String(route.name || '');
+  const baseMode = routeName.split('-')[0];
+  const targetMode = ['board', 'list', 'matrix', 'time', 'tag'].includes(baseMode) ? baseMode : 'board';
 
   router.push({
     name: targetMode,
@@ -104,7 +89,7 @@ const openCreateModal = (bucket: string) => {
 };
 
 // Project creation handling using standard projects composable
-const { handleCreateProject: runCreateProject } = useProjects(activeProjectId, selectProject);
+const { handleCreateProject: runCreateProject } = useProjects(selectProject);
 
 const handleCreateProject = async (title: string) => {
   await runCreateProject(title);
@@ -143,9 +128,8 @@ onMounted(async () => {
       v-model="searchQuery"
       :is-sidebar-open="isSidebarOpen"
       :projects="projects"
-      :active-project-id="viewMode === 'home' ? '' : activeProjectId"
+      :active-project-id="activeProjectId"
       :has-active-filters="hasActiveFilters"
-      :view-mode="viewMode"
       default-bucket-name="todo"
       @toggle-sidebar="toggleSidebar"
       @open-filter="openFilterModal"
@@ -157,10 +141,9 @@ onMounted(async () => {
         <ProjectSidebar
           v-show="isSidebarOpen"
           :projects="projects"
-          :active-project-id="viewMode === 'home' ? '' : activeProjectId"
+          :active-project-id="activeProjectId"
           :sync-loading="syncLoading"
           :sync-success="syncSuccess"
-          :view-mode="viewMode"
           @create-project="handleCreateProject"
           @edit-project="modalStore.openProjectEdit"
           @sync="triggerSync"

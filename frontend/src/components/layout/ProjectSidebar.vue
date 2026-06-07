@@ -1,21 +1,28 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
-import { useSettingsStore, type ViewMode } from '@/stores/settings';
+import { useSettingsStore } from '@/stores/settings';
 import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
 
 const { t } = useI18n();
+const route = useRoute();
 
 const props = defineProps<{
   projects: Project[];
   activeProjectId: string;
   syncLoading?: boolean;
   syncSuccess?: boolean;
-  viewMode?: ViewMode;
 }>();
+
+const targetRouteName = computed(() => {
+  const routeName = String(route.name || '');
+  const baseName = routeName.split('-')[0];
+  return ['board', 'list', 'matrix', 'time', 'tag'].includes(baseName) ? baseName : 'board';
+});
 
 const emit = defineEmits<{
   (e: 'create-project', title: string): void;
@@ -159,7 +166,7 @@ const handleCreateProject = () => {
         v-for="project in sortedProjects"
         :key="project.id"
         :to="{
-          name: !viewMode || viewMode === 'global-time' || viewMode === 'settings' || viewMode === 'home' ? 'board' : viewMode,
+          name: targetRouteName,
           params: { projectId: project.id },
           query: $route.query,
         }"
@@ -259,7 +266,7 @@ const handleCreateProject = () => {
         :to="{ name: 'settings', query: $route.query }"
         class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded border transition-all cursor-pointer"
         :class="
-          viewMode === 'settings'
+          $route.name === 'settings'
             ? 'bg-theme-primary/10 border-theme-primary/15 text-theme-accent'
             : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
         "
