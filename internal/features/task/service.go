@@ -287,7 +287,7 @@ func (s *taskService) UpdateTask(ctx context.Context, tasksDir string, projectID
 		if updatedProjectID != existing.ProjectID {
 			_ = syncBucketsFunc(tasksDir, existing.ProjectID)
 			_ = syncBucketsFunc(tasksDir, updatedProjectID)
-		} else if updatedBucket != existing.Bucket && (updatedBucket == "done" || updatedBucket == "archive") {
+		} else if updatedBucket != existing.Bucket {
 			_ = syncBucketsFunc(tasksDir, projectID)
 		}
 	}
@@ -365,7 +365,7 @@ func (s *taskService) MoveTask(ctx context.Context, tasksDir string, projectID s
 	}
 
 	if syncBucketsFunc != nil {
-		if req.Bucket != existing.Bucket && (req.Bucket == "done" || req.Bucket == "archive") {
+		if req.Bucket != existing.Bucket {
 			_ = syncBucketsFunc(tasksDir, projectID)
 		}
 	}

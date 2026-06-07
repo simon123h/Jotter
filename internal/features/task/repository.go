@@ -226,26 +226,24 @@ func (r *sqlRepository) Update(ctx context.Context, oldProjectID string, task Re
 	var bDummy string
 	errB := tx.QueryRowContext(ctx, "SELECT name FROM buckets WHERE project_id = ? AND name = ?", task.ProjectID, task.Bucket).Scan(&bDummy)
 	if errB == sql.ErrNoRows {
-		if task.Bucket == "done" || task.Bucket == "archive" {
-			var maxPos sql.NullFloat64
-			_ = tx.QueryRowContext(ctx, "SELECT MAX(position) FROM buckets WHERE project_id = ?", task.ProjectID).Scan(&maxPos)
-			newPosition := 1000.0
-			if maxPos.Valid {
-				newPosition = maxPos.Float64 + 1000.0
-			}
+		var maxPos sql.NullFloat64
+		_ = tx.QueryRowContext(ctx, "SELECT MAX(position) FROM buckets WHERE project_id = ?", task.ProjectID).Scan(&maxPos)
+		newPosition := 1000.0
+		if maxPos.Valid {
+			newPosition = maxPos.Float64 + 1000.0
+		}
 
-			title := "Done"
-			if task.Bucket == "archive" {
-				title = "Archive"
-			}
+		title := task.Bucket
+		if task.Bucket == "done" {
+			title = "Done"
+		} else if task.Bucket == "archive" {
+			title = "Archive"
+		}
 
-			_, err = tx.ExecContext(ctx, "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, '', ?, NULL, 'list', NULL, 0)",
-				task.ProjectID, task.Bucket, title, newPosition)
-			if err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("bucket '%s' does not exist in project '%s'", task.Bucket, task.ProjectID)
+		_, err = tx.ExecContext(ctx, "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, '', ?, NULL, 'list', NULL, 0)",
+			task.ProjectID, task.Bucket, title, newPosition)
+		if err != nil {
+			return err
 		}
 	} else if errB != nil {
 		return errB
