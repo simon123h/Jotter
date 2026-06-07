@@ -32,6 +32,18 @@ export const useUiStore = defineStore('ui', () => {
     { flush: 'sync' }
   );
 
+  const virtualColumnLayouts = ref<Record<string, 'list' | 'grid-2' | 'grid-3'>>(
+    JSON.parse(localStorage.getItem('jotter-virtual-column-layouts') || '{}')
+  );
+
+  watch(
+    virtualColumnLayouts,
+    (newVal) => {
+      localStorage.setItem('jotter-virtual-column-layouts', JSON.stringify(newVal));
+    },
+    { deep: true, flush: 'sync' }
+  );
+
   const setLastViewMode = (mode: string) => {
     lastViewMode.value = mode;
   };
@@ -60,13 +72,25 @@ export const useUiStore = defineStore('ui', () => {
     collapseEmptyColumns.value = val;
   };
 
+  const getVirtualColumnLayout = (viewName: string, colId: string): 'list' | 'grid-2' | 'grid-3' => {
+    return virtualColumnLayouts.value[`${viewName}-${colId}`] || 'list';
+  };
+
+  const setVirtualColumnLayout = (viewName: string, colId: string, layout: 'list' | 'grid-2' | 'grid-3') => {
+    virtualColumnLayouts.value[`${viewName}-${colId}`] = layout;
+    virtualColumnLayouts.value = { ...virtualColumnLayouts.value };
+  };
+
   return {
     lastViewMode,
     collapsedColumns,
     collapseEmptyColumns,
+    virtualColumnLayouts,
     setLastViewMode,
     isColumnCollapsed,
     toggleColumnCollapse,
     setCollapseEmptyColumns,
+    getVirtualColumnLayout,
+    setVirtualColumnLayout,
   };
 });

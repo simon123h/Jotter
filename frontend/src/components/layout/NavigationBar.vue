@@ -139,18 +139,6 @@ const isTabActive = (tab: string) => {
           <span class="hidden sm:inline">{{ t('views.matrix') }}</span>
         </router-link>
         <router-link
-          :to="{ name: 'time', params: { projectId: activeProjectId }, query: $route.query }"
-          class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
-          :class="
-            isTabActive('time')
-              ? 'bg-theme-primary text-white shadow-none'
-              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
-          "
-        >
-          <Clock class="w-3.5 h-3.5" />
-          <span class="hidden sm:inline">{{ t('views.time') }}</span>
-        </router-link>
-        <router-link
           :to="{ name: 'tag', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
@@ -161,6 +149,18 @@ const isTabActive = (tab: string) => {
         >
           <Tag class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.tag') }}</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'time', params: { projectId: activeProjectId }, query: $route.query }"
+          class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+          :class="
+            isTabActive('time')
+              ? 'bg-theme-primary text-white shadow-none'
+              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+          "
+        >
+          <Clock class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">{{ t('views.time') }}</span>
         </router-link>
         <router-link
           :to="{ name: 'global-time', params: { projectId: activeProjectId || 'default' }, query: $route.query }"

@@ -31,8 +31,8 @@ onMounted(async () => {
 <template>
   <div class="flex flex-col h-full space-y-4">
     <div class="px-1">
-      <h2 class="text-lg font-bold text-theme-text-main flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-theme-accent animate-pulse"></span>
+      <h2 class="text-lg font-bold text-theme-text-main flex items-baseline gap-2">
+        <span class="w-2 h-2 rounded-full bg-theme-accent"></span>
         {{ t('views.globalTime') }}
         <span class="text-xs font-normal text-theme-text-muted ml-2 uppercase tracking-widest">{{ t('views.globalTimeDesc') }}</span>
       </h2>
