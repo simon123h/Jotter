@@ -92,6 +92,10 @@ const importSummary = ref({
 
 const isImporting = ref(false);
 
+const currentWorkbook = ref<any>(null);
+const sheetNames = ref<string[]>([]);
+const selectedSheetName = ref<string>('');
+
 // Clean up states on reset
 const resetState = () => {
   currentStep.value = 1;
@@ -117,6 +121,9 @@ const resetState = () => {
   logs.value = [];
   importSummary.value = { success: 0, skipped: 0, failed: 0 };
   isImporting.value = false;
+  currentWorkbook.value = null;
+  sheetNames.value = [];
+  selectedSheetName.value = '';
 };
 
 // Auto-map Excel Headers to standard Planner fields
@@ -124,27 +131,74 @@ const autoDetectMappings = () => {
   const findMatch = (keys: string[]) => {
     return (
       excelHeaders.value.find((header) => {
-        const norm = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const norm = header
+          .toLowerCase()
+          .replace(/ä/g, 'a')
+          .replace(/ö/g, 'o')
+          .replace(/ü/g, 'u')
+          .replace(/ß/g, 'ss')
+          .replace(/[^a-z0-9]/g, '');
         return keys.some((k) => norm === k || norm.includes(k));
       }) || ''
     );
   };
 
-  mappings.value.title = findMatch(['tasktitle', 'taskname', 'title', 'name']);
-  mappings.value.description = findMatch(['description', 'notes', 'body', 'details']);
-  mappings.value.bucket = findMatch(['bucketname', 'bucket', 'column']);
+  mappings.value.title = findMatch(['tasktitle', 'taskname', 'title', 'name', 'aufgabenname']);
+  mappings.value.description = findMatch(['description', 'notes', 'body', 'details', 'notizen', 'beschreibung']);
+  mappings.value.bucket = findMatch(['bucketname', 'bucket', 'column', 'eimer']);
   mappings.value.status = findMatch(['status', 'progress', 'state']);
-  mappings.value.priority = findMatch(['priority']);
-  mappings.value.startDate = findMatch(['startdate', 'start']);
-  mappings.value.dueDate = findMatch(['duedate', 'due', 'deadline']);
-  mappings.value.labels = findMatch(['labels', 'tags', 'categories']);
-  mappings.value.checklist = findMatch(['checklist', 'checklistitems', 'checklists']);
+  mappings.value.priority = findMatch(['priority', 'prioritat', 'priorit']);
+  mappings.value.startDate = findMatch(['startdate', 'start', 'startdatum']);
+  mappings.value.dueDate = findMatch(['duedate', 'due', 'deadline', 'falligkeitsdatum', 'falligkeit']);
+  mappings.value.labels = findMatch(['labels', 'tags', 'categories', 'bezeichnungen']);
+  mappings.value.checklist = findMatch(['checklist', 'checklistitems', 'checklists', 'checklistenpunkte']);
 
   // Adjust Strategy based on auto-detection
   if (!mappings.value.bucket && mappings.value.status) {
     bucketStrategy.value = 'excel-status';
   } else if (!mappings.value.bucket) {
     bucketStrategy.value = 'single-column';
+  }
+};
+
+const loadSheet = (sheetName: string) => {
+  if (!currentWorkbook.value) return;
+
+  fileError.value = null;
+  try {
+    const worksheet = currentWorkbook.value.Sheets[sheetName];
+    if (!worksheet) {
+      fileError.value = `Sheet "${sheetName}" not found.`;
+      return;
+    }
+
+    // Parse sheet as JSON with raw values to keep date formats
+    const rows = utils.sheet_to_json<Record<string, any>>(worksheet, { defval: '' });
+    if (rows.length === 0) {
+      fileError.value = `The selected sheet "${sheetName}" is empty.`;
+      excelHeaders.value = [];
+      excelRows.value = [];
+      selectedRows.value.clear();
+      return;
+    }
+
+    // Get all unique headers from rows
+    const headersSet = new Set<string>();
+    rows.forEach((row) => {
+      Object.keys(row).forEach((key) => headersSet.add(key));
+    });
+
+    excelHeaders.value = Array.from(headersSet);
+    excelRows.value = rows;
+    selectedSheetName.value = sheetName;
+
+    // Reset row selection (select all by default)
+    selectedRows.value = new Set(excelRows.value.keys());
+
+    // Run auto-mapping
+    autoDetectMappings();
+  } catch (err: any) {
+    fileError.value = `Failed to load sheet "${sheetName}": ${err.message || err}`;
   }
 };
 
@@ -165,33 +219,28 @@ const processFile = async (file: File) => {
       return;
     }
 
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
+    currentWorkbook.value = workbook;
+    sheetNames.value = workbook.SheetNames;
 
-    // Parse sheet as JSON with raw values to keep date formats
-    const rows = utils.sheet_to_json<Record<string, any>>(worksheet, { defval: '' });
-    if (rows.length === 0) {
-      fileError.value = 'The Excel file is empty.';
-      return;
+    // Find the best sheet name
+    const commonSheets = ['konsolidierte daten', 'consolidated data', 'tasks', 'aufgaben', 'sheet1', 'tabelle1'];
+    let bestSheetName = workbook.SheetNames[0];
+
+    for (const name of workbook.SheetNames) {
+      const normName = name.toLowerCase().trim();
+      if (commonSheets.some((cs) => normName === cs || normName.includes(cs))) {
+        bestSheetName = name;
+        break;
+      }
     }
 
-    // Get all unique headers from rows
-    const headersSet = new Set<string>();
-    rows.forEach((row) => {
-      Object.keys(row).forEach((key) => headersSet.add(key));
-    });
+    // Load the detected best sheet
+    loadSheet(bestSheetName);
 
-    excelHeaders.value = Array.from(headersSet);
-    excelRows.value = rows;
-
-    // Reset row selection (select all by default)
-    selectedRows.value = new Set(excelRows.value.keys());
-
-    // Run auto-mapping
-    autoDetectMappings();
-
-    // Advance to Step 2
-    currentStep.value = 2;
+    if (excelRows.value.length > 0) {
+      // Advance to Step 2
+      currentStep.value = 2;
+    }
   } catch (err: any) {
     fileError.value = `Failed to read Excel file: ${err.message || err}`;
   }
@@ -265,10 +314,10 @@ const parseExcelDate = (val: any): string | undefined => {
 const parseExcelPriority = (val: any): string => {
   if (!val) return 'none';
   const norm = String(val).toLowerCase().trim();
-  if (norm.includes('urgent')) return 'urgent';
-  if (norm.includes('high') || norm.includes('important')) return 'high';
-  if (norm.includes('medium') || norm.includes('normal')) return 'medium';
-  if (norm.includes('low')) return 'low';
+  if (norm.includes('urgent') || norm.includes('dringend')) return 'urgent';
+  if (norm.includes('high') || norm.includes('important') || norm.includes('wichtig')) return 'high';
+  if (norm.includes('medium') || norm.includes('normal') || norm.includes('mittel')) return 'medium';
+  if (norm.includes('low') || norm.includes('niedrig')) return 'low';
   return 'none';
 };
 
@@ -291,6 +340,75 @@ const parseExcelChecklist = (val: any): string => {
     }
   });
   return md;
+};
+
+const getDestinationBucketInfo = (row: Record<string, any>) => {
+  // let bucketName = fallbackBucket.value;
+  let bucketName;
+  let isOverride = false;
+  let originalBucket = '';
+
+  if (bucketStrategy.value === 'excel-bucket' && mappings.value.bucket) {
+    const excelBucketVal = String(row[mappings.value.bucket] || '').trim();
+    originalBucket = excelBucketVal || 'To Do';
+    bucketName = originalBucket;
+
+    if (mappings.value.status && row[mappings.value.status]) {
+      const excelStatusVal = String(row[mappings.value.status]).toLowerCase().trim();
+      if (
+        excelStatusVal.includes('completed') ||
+        excelStatusVal.includes('done') ||
+        excelStatusVal.includes('abgeschlossen') ||
+        excelStatusVal.includes('erledigt')
+      ) {
+        bucketName = 'done';
+        isOverride = true;
+      }
+    }
+  } else if (bucketStrategy.value === 'excel-status' && mappings.value.status) {
+    const excelStatusVal = String(row[mappings.value.status] || '')
+      .toLowerCase()
+      .trim();
+    if (
+      excelStatusVal.includes('completed') ||
+      excelStatusVal.includes('done') ||
+      excelStatusVal.includes('abgeschlossen') ||
+      excelStatusVal.includes('erledigt')
+    ) {
+      bucketName = 'done';
+    } else if (excelStatusVal.includes('progress') || excelStatusVal.includes('started') || excelStatusVal.includes('bearbeitung')) {
+      bucketName = 'in-progress';
+    } else {
+      bucketName = 'todo';
+    }
+  } else {
+    // single-column strategy
+    originalBucket = fallbackBucket.value;
+    bucketName = originalBucket;
+    if (mappings.value.status && row[mappings.value.status]) {
+      const excelStatusVal = String(row[mappings.value.status]).toLowerCase().trim();
+      if (
+        excelStatusVal.includes('completed') ||
+        excelStatusVal.includes('done') ||
+        excelStatusVal.includes('abgeschlossen') ||
+        excelStatusVal.includes('erledigt')
+      ) {
+        bucketName = 'done';
+        isOverride = true;
+      }
+    }
+  }
+
+  return {
+    bucketName,
+    isOverride,
+    originalBucket,
+  };
+};
+
+const getBucketTitle = (name: string): string => {
+  const b = projectStore.buckets.find((bucket) => bucket.name === name);
+  return b ? b.title : name;
 };
 
 // Main Run Import Routine
@@ -366,22 +484,36 @@ const runImport = async () => {
     }
 
     // Resolve Bucket name based on selection strategy
-    let resolvedBucket = fallbackBucket.value;
+    // let resolvedBucket = fallbackBucket.value;
+    let resolvedBucket;
+    const info = getDestinationBucketInfo(row);
 
     if (bucketStrategy.value === 'excel-bucket' && mappings.value.bucket) {
-      const excelBucketVal = String(row[mappings.value.bucket] || '').trim();
-      resolvedBucket = await getOrCreateBucketName(excelBucketVal || 'To Do');
-    } else if (bucketStrategy.value === 'excel-status' && mappings.value.status) {
-      const excelStatusVal = String(row[mappings.value.status] || '')
-        .toLowerCase()
-        .trim();
-      if (excelStatusVal.includes('completed') || excelStatusVal.includes('done')) {
+      const originalBucketName = info.originalBucket || 'To Do';
+      // "the Column/Bucket/Eimer import should go first" -> create/get the bucket
+      const bucketIdName = await getOrCreateBucketName(originalBucketName);
+
+      if (info.isOverride) {
         resolvedBucket = 'done';
-      } else if (excelStatusVal.includes('progress') || excelStatusVal.includes('started')) {
-        resolvedBucket = 'in-progress';
+        logs.value.push({
+          type: 'info',
+          text: `Row ${idx + 1}: Status override for "${rawTitle}" - original bucket was "${originalBucketName}", placed in "done" because status is "${row[mappings.value.status]}"`,
+        });
       } else {
-        resolvedBucket = 'todo';
+        resolvedBucket = bucketIdName;
       }
+    } else if (bucketStrategy.value === 'single-column') {
+      if (info.isOverride) {
+        resolvedBucket = 'done';
+        logs.value.push({
+          type: 'info',
+          text: `Row ${idx + 1}: Status override for "${rawTitle}" - placed in "done" instead of single column "${getBucketTitle(fallbackBucket.value)}" because status is "${row[mappings.value.status]}"`,
+        });
+      } else {
+        resolvedBucket = fallbackBucket.value;
+      }
+    } else {
+      resolvedBucket = info.bucketName;
     }
 
     // Resolve priority
@@ -560,16 +692,35 @@ watch(
           <!-- STEP 2: COLUMN MAPPING & STRATEGY -->
           <!-- ========================================================= -->
           <div v-if="currentStep === 2" class="space-y-5">
-            <div class="p-3 bg-theme-card/50 border border-theme-border rounded flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <FileSpreadsheet class="w-4 h-4 text-theme-accent" />
-                <span class="text-xs font-bold text-theme-text-main font-mono">{{ fileName }}</span>
+            <div class="p-4 bg-theme-card/50 border border-theme-border rounded-lg space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <FileSpreadsheet class="w-4 h-4 text-emerald-500" />
+                  <span class="text-xs font-bold text-theme-text-main font-mono">{{ fileName }}</span>
+                </div>
+                <span
+                  class="text-[11px] px-2 py-0.5 bg-theme-primary/10 border border-theme-primary/15 text-theme-accent rounded font-semibold"
+                >
+                  {{ excelRows.length }} rows detected
+                </span>
               </div>
-              <span
-                class="text-[11px] px-2 py-0.5 bg-theme-primary/10 border border-theme-primary/15 text-theme-accent rounded font-semibold"
+
+              <!-- Sheet Selector if there are multiple sheets -->
+              <div
+                v-if="sheetNames.length > 1"
+                class="flex flex-col sm:flex-row sm:items-center gap-2 pt-2 border-t border-theme-border/50"
               >
-                {{ excelRows.length }} rows detected
-              </span>
+                <span class="text-xs text-theme-text-muted shrink-0 font-semibold">Select Sheet:</span>
+                <select
+                  :value="selectedSheetName"
+                  @change="loadSheet(($event.target as HTMLSelectElement).value)"
+                  class="bg-theme-card border border-theme-border rounded px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary flex-grow font-mono"
+                >
+                  <option v-for="name in sheetNames" :key="name" :value="name">
+                    {{ name }}
+                  </option>
+                </select>
+              </div>
             </div>
 
             <div class="space-y-3">
@@ -820,13 +971,27 @@ watch(
                       {{ row[mappings.title] || '(Empty)' }}
                     </td>
                     <td class="p-3 text-theme-text-muted font-mono text-[11px]">
-                      <span v-if="bucketStrategy === 'excel-bucket' && mappings.bucket" class="truncate block">
-                        {{ row[mappings.bucket] || 'To Do' }}
+                      <span v-if="getDestinationBucketInfo(row).isOverride" class="block">
+                        <span class="text-theme-text-muted line-through mr-1 text-[10px]">
+                          {{ getBucketTitle(getDestinationBucketInfo(row).originalBucket) }}
+                        </span>
+                        <span class="text-emerald-500 font-semibold">&rarr; Done (Override)</span>
                       </span>
-                      <span v-else-if="bucketStrategy === 'excel-status' && mappings.status" class="capitalize block">
-                        {{ row[mappings.status] || 'Not started' }}
+                      <span
+                        v-else-if="bucketStrategy === 'excel-bucket' && mappings.bucket"
+                        class="truncate block font-semibold text-theme-text-main"
+                      >
+                        {{ getBucketTitle(row[mappings.bucket] || 'To Do') }}
                       </span>
-                      <span v-else class="text-theme-text-muted italic"> Fallback Column </span>
+                      <span
+                        v-else-if="bucketStrategy === 'excel-status' && mappings.status"
+                        class="capitalize block font-semibold text-theme-text-main"
+                      >
+                        {{ getBucketTitle(getDestinationBucketInfo(row).bucketName) }}
+                      </span>
+                      <span v-else class="text-theme-text-main font-semibold">
+                        {{ getBucketTitle(fallbackBucket) }}
+                      </span>
                     </td>
                     <td class="p-3 text-theme-text-muted">
                       <span class="capitalize">{{ parseExcelPriority(row[mappings.priority]) }}</span>
