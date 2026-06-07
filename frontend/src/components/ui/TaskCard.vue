@@ -27,6 +27,7 @@ const props = withDefaults(
     allowExpand: true,
     compact: false,
     showProject: false,
+    projectTitle: '',
     isSelected: false,
   }
 );

@@ -24,7 +24,11 @@ const props = withDefaults(
     isCollapsed?: boolean;
   }>(),
   {
+    subtitle: '',
     layout: 'list',
+    color: null,
+    maxTasks: null,
+    isLimitExceeded: false,
     groupName: 'kanban-board',
     showAddTask: false,
     compactCards: false,
