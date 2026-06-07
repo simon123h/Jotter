@@ -33,11 +33,29 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.25.0'
+          cache: true
+          cache-dependency-path: 'go.sum'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Cache Node Modules
+        uses: actions/cache@v4
         with:
-          node-version: '22'
+          path: |
+            node_modules
+            frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install All Dependencies
+        shell: bash
+        run: |
+          npm install
+          cd frontend && npm install
+
+      - name: Build Frontend
+        shell: bash
+        run: |
+          cd frontend && npm run build
 
       - name: Install Linux build dependencies
         if: matrix.platform == 'linux'
@@ -47,9 +65,6 @@ jobs:
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-      - name: Pre-create frontend dist for Go embed
-        run: mkdir -p frontend/dist && touch frontend/dist/index.html
 
       - name: Build Wails Application
         shell: bash
@@ -81,15 +96,15 @@ jobs:
           EOF
 
           if [ "${{ matrix.platform }}" = "linux" ]; then
-            wails build -tags webkit2_41 -ldflags "-X jotter/backend/internal/app.Version=$VERSION"
+            wails build -skipfrontend -tags webkit2_41 -ldflags "-X jotter/backend/internal/app.Version=$VERSION"
           else
-            wails build -ldflags "-X jotter/backend/internal/app.Version=$VERSION"
+            wails build -skipfrontend -ldflags "-X jotter/backend/internal/app.Version=$VERSION"
           fi
 
       - name: Build Server Binary
         shell: bash
         run: |
-          # The frontend was already built by wails build above
+          # The frontend was already built by the Build Frontend step above
           if [ "${{ matrix.platform }}" = "windows" ]; then
             go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter-server.exe main_server.go shared_assets.go
           else

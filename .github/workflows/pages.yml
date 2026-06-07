@@ -44,19 +44,21 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install All Dependencies
+        shell: bash
         run: |
           npm install
           cd frontend && npm install
 
       - name: Build Docs and Frontend Demo
+        shell: bash
         run: |
           npm run docs:build
           cd frontend && npm run build
           cd ..
           mkdir -p dist-pages
-          cp -R docs/.vitepress/dist/* dist-pages/
+          cp -R docs/.vitepress/dist/. dist-pages/
           mkdir -p dist-pages/demo
-          cp -R frontend/dist/* dist-pages/demo/
+          cp -R frontend/dist/. dist-pages/demo/
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
