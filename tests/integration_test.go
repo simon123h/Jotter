@@ -54,7 +54,7 @@ func TestIntegration(t *testing.T) {
 
 	// 1. Test projects loading (creates default project)
 	t.Run("Get Projects Initial", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/projects", nil)
+		req := httptest.NewRequest("GET", "/api/projects", nil)
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
@@ -82,7 +82,7 @@ func TestIntegration(t *testing.T) {
 			Title: "Test Project",
 		}
 		body, _ := json.Marshal(payload)
-		req := httptest.NewRequest("POST", "/projects", bytes.NewBuffer(body))
+		req := httptest.NewRequest("POST", "/api/projects", bytes.NewBuffer(body))
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
@@ -106,7 +106,7 @@ func TestIntegration(t *testing.T) {
 
 	// 3. Test list buckets (columns)
 	t.Run("Get Buckets Initial", func(t *testing.T) {
-		url := fmt.Sprintf("/projects/%s/buckets", projectID)
+		url := fmt.Sprintf("/api/projects/%s/buckets", projectID)
 		req := httptest.NewRequest("GET", url, nil)
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
@@ -128,7 +128,7 @@ func TestIntegration(t *testing.T) {
 
 	// 4. Test bucket creation
 	t.Run("Create Bucket", func(t *testing.T) {
-		url := fmt.Sprintf("/projects/%s/buckets", projectID)
+		url := fmt.Sprintf("/api/projects/%s/buckets", projectID)
 		payload := bucket.Create{
 			Title: "Review",
 		}
@@ -155,7 +155,7 @@ func TestIntegration(t *testing.T) {
 
 	// 5. Test task creation
 	t.Run("Create Task", func(t *testing.T) {
-		url := fmt.Sprintf("/projects/%s/tasks", projectID)
+		url := fmt.Sprintf("/api/projects/%s/tasks", projectID)
 		payload := task.Create{
 			Title:  "Test Task",
 			Bucket: "todo",
@@ -183,7 +183,7 @@ func TestIntegration(t *testing.T) {
 
 	// 6. Test task fetch
 	t.Run("Get Task", func(t *testing.T) {
-		url := fmt.Sprintf("/projects/%s/tasks/%s", projectID, taskID)
+		url := fmt.Sprintf("/api/projects/%s/tasks/%s", projectID, taskID)
 		req := httptest.NewRequest("GET", url, nil)
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
@@ -204,7 +204,7 @@ func TestIntegration(t *testing.T) {
 
 	// 7. Test task move
 	t.Run("Move Task", func(t *testing.T) {
-		url := fmt.Sprintf("/projects/%s/tasks/%s/move", projectID, taskID)
+		url := fmt.Sprintf("/api/projects/%s/tasks/%s/move", projectID, taskID)
 		payload := task.Move{
 			Bucket:   "review",
 			Position: 1500.0,
@@ -241,7 +241,7 @@ func TestIntegration(t *testing.T) {
 
 	// 8. Test system sync
 	t.Run("System Sync", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/system/sync", nil)
+		req := httptest.NewRequest("POST", "/api/system/sync", nil)
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
@@ -266,7 +266,7 @@ func TestIntegration(t *testing.T) {
 
 	// 9. Test task deletion
 	t.Run("Delete Task", func(t *testing.T) {
-		url := fmt.Sprintf("/projects/%s/tasks/%s", projectID, taskID)
+		url := fmt.Sprintf("/api/projects/%s/tasks/%s", projectID, taskID)
 		req := httptest.NewRequest("DELETE", url, nil)
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
@@ -291,7 +291,7 @@ func TestIntegration(t *testing.T) {
 
 	// 10. Test project deletion
 	t.Run("Delete Project", func(t *testing.T) {
-		url := fmt.Sprintf("/projects/%s", projectID)
+		url := fmt.Sprintf("/api/projects/%s", projectID)
 		req := httptest.NewRequest("DELETE", url, nil)
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
