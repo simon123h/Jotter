@@ -23,3 +23,8 @@ jotter-desktop
 jotter-server
 main_server
 main_desktop
+
+# documentation / Pages builds
+dist-pages/
+docs/.vitepress/dist/
+docs/.vitepress/cache/

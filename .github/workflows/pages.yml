@@ -45,17 +45,25 @@ jobs:
 
       - name: Install All Dependencies
         run: |
+          npm install
           cd frontend && npm install
 
-      - name: Build Frontend
+      - name: Build Docs and Frontend Demo
         run: |
+          npm run docs:build
           cd frontend && npm run build
+          cd ..
+          mkdir -p dist-pages
+          cp -R docs/.vitepress/dist/* dist-pages/
+          mkdir -p dist-pages/demo
+          cp -R frontend/dist/* dist-pages/demo/
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: frontend/dist
+          path: dist-pages
 
       - name: Deploy to GitHub Pages
+          # Identical deployment step
         id: deployment
         uses: actions/deploy-pages@v4

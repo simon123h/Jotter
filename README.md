@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License">
 </p>
 
-🚀 **Try the Online Demo**: [simon123h.github.io/Jotter](https://simon123h.github.io/Jotter/)
+🚀 **Try the Online Demo**: [simon123h.github.io/Jotter](https://simon123h.github.io/Jotter/demo/)
 
 Jotter is a **local-first, privacy-focused task management application** designed to help you organize tasks without losing data ownership. Modeled as a Markdown Kanban board, Jotter helps combat "task flooding" through filtering, intuitive UI, all while keeping your data stored locally in simple, plain-text files on your own machine. The integrated git support allows for syncing the tasks across devices.
 
