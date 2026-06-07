@@ -31,24 +31,21 @@ const routes = [
         path: 'project/:projectId',
         name: 'project',
         component: ProjectLayout,
+        redirect: (to: any) => {
+          try {
+            const uiStore = useUiStore();
+            return {
+              name: uiStore.lastViewMode || 'board',
+              params: { projectId: to.params.projectId },
+            };
+          } catch {
+            return {
+              name: 'board',
+              params: { projectId: to.params.projectId },
+            };
+          }
+        },
         children: [
-          {
-            path: '',
-            redirect: (to: any) => {
-              try {
-                const uiStore = useUiStore();
-                return {
-                  name: uiStore.lastViewMode || 'board',
-                  params: { projectId: to.params.projectId },
-                };
-              } catch {
-                return {
-                  name: 'board',
-                  params: { projectId: to.params.projectId },
-                };
-              }
-            },
-          },
           {
             path: 'board',
             name: 'board',
