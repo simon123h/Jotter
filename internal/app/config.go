@@ -10,13 +10,14 @@ import (
 )
 
 type AppConfig struct {
-	Port     int
-	Host     string
-	DataDir  string
-	DBPath   string
-	LogLevel string
-	Addr     string
-	APIAddr  string
+	Port       int
+	Host       string
+	DataDir    string
+	DBPath     string
+	LogLevel   string
+	Addr       string
+	APIAddr    string
+	ConfigPath string
 }
 
 func LoadConfig() *AppConfig {
@@ -63,12 +64,13 @@ func LoadConfig() *AppConfig {
 	}
 
 	return &AppConfig{
-		Port:     port,
-		Host:     host,
-		DataDir:  dataDir,
-		DBPath:   dbPath,
-		LogLevel: logLevel,
-		Addr:     addr,
-		APIAddr:  apiAddr,
+		Port:       port,
+		Host:       host,
+		DataDir:    dataDir,
+		DBPath:     dbPath,
+		LogLevel:   logLevel,
+		Addr:       addr,
+		APIAddr:    apiAddr,
+		ConfigPath: config.LoadedConfigPath(),
 	}
 }

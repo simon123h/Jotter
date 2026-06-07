@@ -10,7 +10,7 @@ import (
 )
 
 func RunServer(cfg *AppConfig, assets embed.FS) {
-	Bootstrap(cfg.DataDir, cfg.DBPath)
+	Bootstrap(cfg.ConfigPath, cfg.DataDir, cfg.DBPath)
 	defer db.CloseDB()
 
 	r := BuildRouter(cfg.LogLevel, cfg.DataDir, true, assets)

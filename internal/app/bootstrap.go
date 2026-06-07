@@ -37,13 +37,16 @@ func rebuildDB(dbPath string) error {
 	return nil
 }
 
-// bootstrap initializes the database schema, runs the file-to-db synchronization,
+// Bootstrap initializes the database schema, runs the file-to-db synchronization,
 // and prints the startup ASCII banner.
-func Bootstrap(dataDir string, dbPath string) {
+func Bootstrap(configPath string, dataDir string, dbPath string) {
 	// Print ASCII Art logo and basic startup info
 	fmt.Print(asciiLogo)
 	fmt.Printf("Jotter - Local-first Markdown Kanban Board (Version: %s)\n", Version)
 	fmt.Println("==========================================")
+	if configPath != "" {
+		fmt.Printf("Using configuration file: %s\n", configPath)
+	}
 	fmt.Printf("Using database file: %s\n", dbPath)
 	fmt.Printf("Using tasks markdown directory: %s\n", dataDir)
 

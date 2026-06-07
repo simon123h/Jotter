@@ -16,7 +16,7 @@ func TestBootstrap(t *testing.T) {
 	os.MkdirAll(dataDir, 0755)
 
 	t.Run("Full Bootstrap", func(t *testing.T) {
-		Bootstrap(dataDir, dbPath)
+		Bootstrap("", dataDir, dbPath)
 		defer db.CloseDB()
 
 		if _, err := os.Stat(dbPath); os.IsNotExist(err) {

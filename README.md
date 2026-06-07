@@ -46,16 +46,13 @@ Jotter is provided as a portable tool with two distinct versions. No dependencie
    ./jotter-desktop
    ```
 
-You may customize the configuration e.g. by placing a `jotter.yaml` next to the binary:
+Jotter automatically handles both portable and global configurations out of the box:
 
-```yaml
-# customize the port
-port: 9000
-# customize the user data directory
-data_dir: "~/Documents/my-jotter-data"
-```
+- **Portable Mode (Self-Contained)**: If a `tasks/` directory is present in the folder you execute Jotter from, tasks will default to `./tasks` and configurations to `./jotter.yaml` in that folder.
+- **Global / Installed Mode**: Otherwise, Jotter uses standard OS-specific directories for both data and settings storage (such as XDG standard paths on Linux, AppData on Windows, and Application Support on macOS).
+- **Auto-Config Generation**: If no configuration file exists at all on startup, Jotter will automatically create a default, annotated `jotter.yaml` template file for you at the default location.
 
-For more options, please see [the user documentation](docs/user/configuration.md).
+For advanced customization and full directory details, please see [the user configuration documentation](docs/user/configuration.md).
 
 ---
 

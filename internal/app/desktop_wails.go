@@ -63,7 +63,7 @@ func RunWailsProbing() {
 }
 
 func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
-	Bootstrap(cfg.DataDir, cfg.DBPath)
+	Bootstrap(cfg.ConfigPath, cfg.DataDir, cfg.DBPath)
 
 	// Load settings for window state
 	width := 1024
