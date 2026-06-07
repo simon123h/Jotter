@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useUiStore } from '@/stores/ui';
-import { Clock, AlertCircle, ArrowRight, UserCheck, Trash, MoreHorizontal, List, LayoutGrid, Grid } from '@lucide/vue';
+import { AlertCircle, ArrowRight, UserCheck, Trash, MoreHorizontal, List, LayoutGrid, Grid } from '@lucide/vue';
 import type { Task } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
 import { useI18n } from '@/composables/useI18n';
