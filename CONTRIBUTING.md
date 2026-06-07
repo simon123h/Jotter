@@ -12,7 +12,7 @@ To maintain a clean and trackable history, we enforce the following rules:
 
 All commit messages must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This helps automate releases and changelogs.
 
-Format: `<type>(<scope>): <description>`
+Format: `<type>: <description>`
 
 Common types:
 
@@ -27,8 +27,8 @@ Common types:
 Example:
 
 ```bash
-feat(frontend): support keyboard autocomplete tags list in details modal
-fix(backend): expand home user path in config data directory resolution
+feat: support keyboard autocomplete tags list in details modal
+fix: expand home user path in config data directory resolution
 ```
 
 ### 2. Semi-Linear Git History
