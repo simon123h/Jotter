@@ -6,6 +6,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -236,6 +237,44 @@ func TestIntegration(t *testing.T) {
 		taskID = res.ID
 	})
 
+	// 5b. Test List Tasks
+	t.Run("List Tasks", func(t *testing.T) {
+		// List all tasks globally
+		reqAll := httptest.NewRequest("GET", "/api/tasks", nil)
+		wAll := httptest.NewRecorder()
+		r.ServeHTTP(wAll, reqAll)
+
+		if wAll.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for global task list, got %d", wAll.Code)
+		}
+
+		var tasksAll []task.Response
+		if err := json.Unmarshal(wAll.Body.Bytes(), &tasksAll); err != nil {
+			t.Fatalf("Failed to parse global task list: %v", err)
+		}
+
+		if len(tasksAll) != 1 || tasksAll[0].ID != taskID {
+			t.Errorf("Expected global task list to contain exactly 1 task with ID %s, got %v", taskID, tasksAll)
+		}
+
+		// List tasks for specific project
+		urlProj := fmt.Sprintf("/api/projects/%s/tasks", projectID)
+		reqProj := httptest.NewRequest("GET", urlProj, nil)
+		wProj := httptest.NewRecorder()
+		r.ServeHTTP(wProj, reqProj)
+
+		if wProj.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for project task list, got %d", wProj.Code)
+		}
+
+		var tasksProj []task.Response
+		_ = json.Unmarshal(wProj.Body.Bytes(), &tasksProj)
+
+		if len(tasksProj) != 1 || tasksProj[0].ID != taskID {
+			t.Errorf("Expected project task list to contain exactly 1 task with ID %s, got %v", taskID, tasksProj)
+		}
+	})
+
 	// 6. Test task fetch
 	t.Run("Get Task", func(t *testing.T) {
 		url := fmt.Sprintf("/api/projects/%s/tasks/%s", projectID, taskID)
@@ -286,6 +325,73 @@ func TestIntegration(t *testing.T) {
 
 		if res.Title != "Updated Task Title" || res.Body != "Updated body description content" || res.Priority == nil || *res.Priority != "high" || len(res.Tags) != 2 {
 			t.Errorf("Updated task mismatch: %+v", res)
+		}
+	})
+
+	// 6c. Test Task Attachments
+	t.Run("Task Attachments", func(t *testing.T) {
+		// 1. Upload Attachment
+		urlUpload := fmt.Sprintf("/api/projects/%s/tasks/%s/attachments", projectID, taskID)
+
+		var b bytes.Buffer
+		writer := multipart.NewWriter(&b)
+		part, err := writer.CreateFormFile("file", "test_doc.txt")
+		if err != nil {
+			t.Fatalf("Failed to create form file: %v", err)
+		}
+		_, _ = part.Write([]byte("This is some sample test document text."))
+		_ = writer.Close()
+
+		reqUpload := httptest.NewRequest("POST", urlUpload, &b)
+		reqUpload.Header.Set("Content-Type", writer.FormDataContentType())
+		wUpload := httptest.NewRecorder()
+		r.ServeHTTP(wUpload, reqUpload)
+
+		if wUpload.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for upload, got %d. Body: %s", wUpload.Code, wUpload.Body.String())
+		}
+
+		var resUpload task.Response
+		if err := json.Unmarshal(wUpload.Body.Bytes(), &resUpload); err != nil {
+			t.Fatalf("Failed to parse upload response: %v", err)
+		}
+
+		if len(resUpload.Attachments) != 1 || resUpload.Attachments[0] != "test_doc.txt" {
+			t.Errorf("Expected attachment list to have 'test_doc.txt', got: %v", resUpload.Attachments)
+		}
+
+		// 2. Download Attachment
+		urlDownload := fmt.Sprintf("/api/projects/%s/tasks/%s/attachments/test_doc.txt", projectID, taskID)
+		reqDownload := httptest.NewRequest("GET", urlDownload, nil)
+		wDownload := httptest.NewRecorder()
+		r.ServeHTTP(wDownload, reqDownload)
+
+		if wDownload.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for download, got %d", wDownload.Code)
+		}
+
+		downloadContent := wDownload.Body.String()
+		if downloadContent != "This is some sample test document text." {
+			t.Errorf("Expected download content 'This is some sample test document text.', got %q", downloadContent)
+		}
+
+		// 3. Delete Attachment
+		urlDelete := fmt.Sprintf("/api/projects/%s/tasks/%s/attachments/test_doc.txt", projectID, taskID)
+		reqDelete := httptest.NewRequest("DELETE", urlDelete, nil)
+		wDelete := httptest.NewRecorder()
+		r.ServeHTTP(wDelete, reqDelete)
+
+		if wDelete.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for delete, got %d", wDelete.Code)
+		}
+
+		var resDelete task.Response
+		if err := json.Unmarshal(wDelete.Body.Bytes(), &resDelete); err != nil {
+			t.Fatalf("Failed to parse delete response: %v", err)
+		}
+
+		if len(resDelete.Attachments) != 0 {
+			t.Errorf("Expected attachment list to be empty after delete, got: %v", resDelete.Attachments)
 		}
 	})
 
