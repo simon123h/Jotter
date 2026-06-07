@@ -26,7 +26,11 @@ export default defineConfig({
 					text: 'User Guide',
 					items: [
 						{ text: 'Configuration', link: '/user/configuration' },
-						{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' }
+						{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' },
+						{ text: 'Markdown File Spec', link: '/user/format-spec' },
+						{ text: 'Obsidian & PKM Sync', link: '/user/obsidian' },
+						{ text: 'Git Sync & Collaboration', link: '/user/git-sync' },
+						{ text: 'Data Safety & Recovery', link: '/user/safety' }
 					]
 				}
 			],
@@ -42,7 +46,11 @@ export default defineConfig({
 					text: 'User Guide',
 					items: [
 						{ text: 'Configuration', link: '/user/configuration' },
-						{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' }
+						{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' },
+						{ text: 'Markdown File Spec', link: '/user/format-spec' },
+						{ text: 'Obsidian & PKM Sync', link: '/user/obsidian' },
+						{ text: 'Git Sync & Collaboration', link: '/user/git-sync' },
+						{ text: 'Data Safety & Recovery', link: '/user/safety' }
 					]
 				}
 			],
@@ -51,10 +59,14 @@ export default defineConfig({
 				{
 					text: 'Developer Reference',
 					items: [
-						{ text: 'Architecture (arc42)', link: '/developer/architecture' }
+						{ text: 'Architecture (arc42)', link: '/developer/architecture' },
+						{ text: 'REST API & OpenAPI', link: '/developer/api' }
 					]
 				}
 			]
+		},
+		search: {
+			provider: 'local'
 		},
 		socialLinks: [
 			{ icon: 'github', link: 'https://github.com/simon123h/jotter' }
