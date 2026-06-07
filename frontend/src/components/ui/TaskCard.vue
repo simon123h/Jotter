@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { marked } from 'marked';
-import { ChevronDown, ClipboardList, Check, Calendar } from '@lucide/vue';
+import { ChevronDown, ClipboardList, Check, Calendar, Clock } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 
@@ -191,38 +191,29 @@ const cardStyle = computed(() => {
       </div>
     </div>
 
-    <!-- Tags List -->
-    <div v-if="showTags && task.tags && task.tags.length" class="flex flex-wrap gap-1 mt-0.5">
-      <span
-        v-for="tag in task.tags"
-        :key="tag"
-        class="uppercase font-bold tracking-wider rounded border"
-        :class="[getTagClasses(tag), compact ? 'text-[9px] px-1 py-0' : 'text-xs px-1.5 py-0.5']"
-      >
-        {{ tag }}
-      </span>
-    </div>
-
     <!-- Combined Footer Row: Due Date, Priority, Checklist, and Chevron -->
     <div
       v-if="showFooter && (task.due_date || task.planned_date || task.priority || checklistStats || hasNotes)"
-      class="flex justify-between items-center text-xs text-theme-text-muted select-none"
-      :class="compact ? 'mt-1 pt-1' : 'mt-1.5 pt-1.5'"
+      class="flex justify-between items-center text-xs text-theme-text-muted select-none flex-wrap"
     >
-      <!-- Left side: Due Date & Priority -->
+      <!-- Left side: Due Date, Planned date, Priority, Tags -->
       <div class="flex items-center gap-2.5">
         <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted" :title="'Due: ' + formatDate(task.due_date)">
           <Calendar :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
           <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.due_date) }}</span>
         </div>
+
+        <!-- Planned date -->
         <div
           v-if="task.planned_date"
           class="flex items-center gap-1 text-theme-accent/80"
           :title="'Planned: ' + t('plannedDateOptions.' + task.planned_date)"
         >
-          <span class="font-bold text-[10px]" :class="{ 'text-[8px]': compact }">P:</span>
+          <Clock class="w-3 h-3" />
           <span :class="{ 'text-[10px]': compact }">{{ t('plannedDateOptions.' + task.planned_date) }}</span>
         </div>
+
+        <!-- Priority -->
         <div
           v-if="task.priority"
           class="rounded border uppercase tracking-wider leading-none"
@@ -232,6 +223,18 @@ const cardStyle = computed(() => {
           ]"
         >
           {{ task.priority }}
+        </div>
+
+        <!-- Tags List -->
+        <div v-if="showTags && task.tags && task.tags.length" class="flex flex-wrap gap-1">
+          <span
+            v-for="tag in task.tags"
+            :key="tag"
+            class="rounded border uppercase tracking-wider leading-none"
+            :class="[getTagClasses(tag), compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold']"
+          >
+            {{ tag }}
+          </span>
         </div>
       </div>
 
