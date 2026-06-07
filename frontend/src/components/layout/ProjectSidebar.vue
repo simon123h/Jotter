@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch } from '@lucide/vue';
+import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch, BookOpen } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import Sortable from 'sortablejs';
 import { useSettingsStore } from '@/stores/settings';
@@ -284,6 +284,17 @@ const handleCreateProject = () => {
           {{ syncSuccess ? t('sync.synced') : syncLoading ? t('sync.syncing') : t('sync.button') }}
         </span>
       </button>
+
+      <!-- Documentation Link -->
+      <a
+        href="https://simon123h.github.io/Jotter/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded border border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main transition-all cursor-pointer"
+      >
+        <BookOpen class="w-3.5 h-3.5" />
+        <span>{{ t('views.documentation') }}</span>
+      </a>
 
       <!-- Settings Button -->
       <router-link

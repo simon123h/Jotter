@@ -204,6 +204,7 @@ export const en = {
     globalTime: 'Global Planning',
     globalTimeDesc: 'Across all projects',
     settings: 'Settings',
+    documentation: 'Documentation',
   },
   matrix: {
     thresholdLabel: 'Urgency Threshold: {days} days or less',

@@ -206,6 +206,7 @@ export const de = {
     globalTime: 'Globale Planung',
     globalTimeDesc: 'Projektübergreifend',
     settings: 'Einstellungen',
+    documentation: 'Dokumentation',
   },
   matrix: {
     thresholdLabel: 'Dringlichkeitsschwelle: {days} Tage oder weniger',
