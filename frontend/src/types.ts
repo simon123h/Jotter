@@ -53,3 +53,9 @@ export interface TaskFilterParams {
   planned_date?: string;
   has_due_date?: boolean | null;
 }
+
+export interface TaskQuery {
+  projectId?: string;
+  isGlobal?: boolean;
+  excludeBuckets?: string;
+}

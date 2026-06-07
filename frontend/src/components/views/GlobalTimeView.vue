@@ -3,8 +3,10 @@ import { onMounted } from 'vue';
 import type { Task, Project } from '@/types';
 import TimelineLayout from '@/components/layout/TimelineLayout.vue';
 import { useI18n } from '@/composables/useI18n';
+import { useProjectStore } from '@/stores/project';
 
 const { t } = useI18n();
+const projectStore = useProjectStore();
 
 const props = defineProps<{
   tasks: Task[];
@@ -17,8 +19,12 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
 
-onMounted(() => {
+onMounted(async () => {
   document.title = `Jotter / ${t('views.globalTime') || 'Global Planning'}`;
+  await projectStore.fetchTasks({
+    isGlobal: true,
+    excludeBuckets: 'done,archive',
+  });
 });
 </script>
 

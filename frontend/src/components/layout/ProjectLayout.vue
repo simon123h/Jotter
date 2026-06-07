@@ -62,10 +62,7 @@ const fetchAllData = async () => {
   if (isNoProjects.value || !projectId.value) return;
   try {
     await projectStore.fetchBuckets(projectId.value);
-
-    const fetchProjectId = isGlobalView.value ? '' : projectId.value;
-
-    await projectStore.fetchTasks(fetchProjectId, isGlobalView.value, hideDoneColumn.value, hideArchiveColumn.value);
+    await projectStore.invalidate();
   } catch (err: any) {
     localError.value = t('errors.fetchData', { message: err.message || err });
   }
@@ -82,15 +79,14 @@ onMounted(async () => {
 watch(
   () => [projectId.value, isGlobalView.value],
   async () => {
+    if (projectId.value) {
+      settingsStore.setActiveProjectId(projectId.value);
+    }
     clearFilters();
     clearSelection();
     await fetchAllData();
   }
 );
-
-watch([hideDoneColumn, hideArchiveColumn], () => {
-  fetchAllData();
-});
 
 const defaultBucketName = computed(() => {
   const defCol = buckets.value.find((b) => b.is_default);

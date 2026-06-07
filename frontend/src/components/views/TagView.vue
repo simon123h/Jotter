@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import type { Task } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
+import { useProjectStore } from '@/stores/project';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useBuckets } from '@/composables/useBuckets';
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
+const projectStore = useProjectStore();
 const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const props = defineProps<{
@@ -21,6 +23,21 @@ const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
 }>();
+
+const fetchViewTasks = async () => {
+  if (!activeProjectId.value) return;
+  await projectStore.fetchTasks({
+    projectId: activeProjectId.value,
+  });
+};
+
+onMounted(async () => {
+  await fetchViewTasks();
+});
+
+watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
+  await fetchViewTasks();
+});
 
 const { fetchBuckets } = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn);
 const { handleMarkTaskDone, handleTagUpdate } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => {

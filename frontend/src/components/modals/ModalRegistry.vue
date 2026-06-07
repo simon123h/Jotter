@@ -1,29 +1,18 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useModalStore } from '@/stores/modal';
 import { useProjectStore } from '@/stores/project';
-import { useSettingsStore } from '@/stores/settings';
 import TaskCreateModal from './TaskCreateModal.vue';
 import ProjectEditModal from './ProjectEditModal.vue';
 import FilterModal from './FilterModal.vue';
 
-const route = useRoute();
 const modalStore = useModalStore();
 const projectStore = useProjectStore();
-const settingsStore = useSettingsStore();
 
 const { activeModal, modalProps } = storeToRefs(modalStore);
 
-const handleTaskCreateSuccess = () => {
-  const isGlobalTime = !!route.meta.isGlobal;
-  const projectId = (route.params.projectId as string) || settingsStore.activeProjectId;
-
-  if (isGlobalTime) {
-    projectStore.fetchTasks('', true, settingsStore.hideDoneColumn, settingsStore.hideArchiveColumn);
-  } else if (projectId) {
-    projectStore.fetchTasks(projectId, false, settingsStore.hideDoneColumn, settingsStore.hideArchiveColumn);
-  }
+const handleTaskCreateSuccess = async () => {
+  await projectStore.invalidate();
 };
 </script>
 

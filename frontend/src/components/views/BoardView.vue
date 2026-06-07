@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { Plus, MoreHorizontal } from '@lucide/vue';
 import Sortable from 'sortablejs';
 import type { Task, Bucket, BucketName } from '@/types';
@@ -7,12 +7,14 @@ import GenericColumn from '@/components/ui/GenericColumn.vue';
 import ColumnEditModal from '@/components/modals/ColumnEditModal.vue';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
+import { useProjectStore } from '@/stores/project';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useBuckets } from '@/composables/useBuckets';
 import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
+const projectStore = useProjectStore();
 const { activeProjectId, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const props = defineProps<{
@@ -26,6 +28,21 @@ const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
 }>();
+
+const fetchViewTasks = async () => {
+  if (!activeProjectId.value) return;
+  await projectStore.fetchTasks({
+    projectId: activeProjectId.value,
+  });
+};
+
+onMounted(async () => {
+  await fetchViewTasks();
+});
+
+watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
+  await fetchViewTasks();
+});
 
 const tasksByBucket = computed(() => {
   const groups: Record<string, Task[]> = {};
