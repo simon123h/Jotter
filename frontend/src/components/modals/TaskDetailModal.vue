@@ -585,6 +585,23 @@ const getPriorityClasses = (prio: string) => {
       return 'bg-slate-500/10 text-slate-400 border-slate-500/25';
   }
 };
+
+const handleDblClick = (event: MouseEvent) => {
+  if (isEditing.value) return;
+
+  const target = event.target as HTMLElement | null;
+  if (!target) return;
+
+  const ignoreTags = ['BUTTON', 'INPUT', 'SELECT', 'OPTION', 'TEXTAREA', 'A'];
+  if (ignoreTags.includes(target.tagName) || target.closest('button') || target.closest('a')) {
+    return;
+  }
+
+  isEditing.value = true;
+  nextTick(() => {
+    titleInput.value?.focus();
+  });
+};
 </script>
 
 <template>
@@ -596,6 +613,7 @@ const getPriorityClasses = (prio: string) => {
       <!-- Modal Content -->
       <div
         class="relative bg-theme-base border border-theme-border w-full max-w-3xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
+        @dblclick="handleDblClick"
       >
         <button
           @click="closeModal"
