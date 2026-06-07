@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import { computed, onMounted, ref, watch, onBeforeUnmount } from 'vue';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
-import { computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { Clock, AlertCircle, ArrowRight, UserCheck, Trash } from '@lucide/vue';
+import { useUiStore } from '@/stores/ui';
+import { Clock, AlertCircle, ArrowRight, UserCheck, Trash, MoreHorizontal, List, LayoutGrid, Grid } from '@lucide/vue';
 import type { Task } from '@/types';
-import TaskCard from '@/components/ui/TaskCard.vue';
+import GenericColumn from '@/components/ui/GenericColumn.vue';
 import { useI18n } from '@/composables/useI18n';
+import { updateTask } from '@/api';
 
 const { t } = useI18n();
 
@@ -23,6 +25,7 @@ const emit = defineEmits<{
 const route = useRoute();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
+const uiStore = useUiStore();
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
 const { thresholdDays, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
@@ -35,6 +38,11 @@ const fetchViewTasks = async () => {
 
 onMounted(async () => {
   await fetchViewTasks();
+  window.addEventListener('click', closeMenu);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('click', closeMenu);
 });
 
 watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
@@ -85,6 +93,110 @@ const quadrants = computed(() => {
 
   return { q1, q2, q3, q4 };
 });
+
+const activeMenuColId = ref<string | null>(null);
+
+const toggleMenu = (colId: string) => {
+  activeMenuColId.value = activeMenuColId.value === colId ? null : colId;
+};
+
+const closeMenu = () => {
+  activeMenuColId.value = null;
+};
+
+const matrixColumns = computed(() => [
+  {
+    id: 'q1',
+    title: t('matrix.q1Title'),
+    subtitle: t('matrix.q1Desc'),
+    tasks: quadrants.value.q1,
+    color: 'red',
+    icon: AlertCircle,
+  },
+  {
+    id: 'q2',
+    title: t('matrix.q2Title'),
+    subtitle: t('matrix.q2Desc'),
+    tasks: quadrants.value.q2,
+    color: 'green',
+    icon: ArrowRight,
+  },
+  {
+    id: 'q3',
+    title: t('matrix.q3Title'),
+    subtitle: t('matrix.q3Desc'),
+    tasks: quadrants.value.q3,
+    color: 'orange',
+    icon: UserCheck,
+  },
+  {
+    id: 'q4',
+    title: t('matrix.q4Title'),
+    subtitle: t('matrix.q4Desc'),
+    tasks: quadrants.value.q4,
+    color: 'slate',
+    icon: Trash,
+  },
+]);
+
+const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
+  const task = props.tasks.find((t) => t.id === payload.taskId);
+  if (!task) return;
+
+  const originalPriority = task.priority;
+  const originalDueDate = task.due_date;
+
+  let newPriority = task.priority;
+  let newDueDate = task.due_date;
+
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  if (payload.toId === 'q1') {
+    if (task.priority !== 'high' && task.priority !== 'urgent') {
+      newPriority = 'high';
+    }
+    if (!isUrgent(task)) {
+      newDueDate = todayStr;
+    }
+  } else if (payload.toId === 'q2') {
+    if (task.priority !== 'high' && task.priority !== 'urgent') {
+      newPriority = 'high';
+    }
+    if (isUrgent(task)) {
+      newDueDate = '';
+    }
+  } else if (payload.toId === 'q3') {
+    if (task.priority === 'high' || task.priority === 'urgent') {
+      newPriority = 'medium';
+    }
+    if (!isUrgent(task)) {
+      newDueDate = todayStr;
+    }
+  } else if (payload.toId === 'q4') {
+    if (task.priority === 'high' || task.priority === 'urgent') {
+      newPriority = 'medium';
+    }
+    if (isUrgent(task)) {
+      newDueDate = '';
+    }
+  }
+
+  // Optimistic update
+  task.priority = newPriority;
+  task.due_date = newDueDate;
+
+  try {
+    await updateTask(task.project_id || activeProjectId.value, payload.taskId, {
+      priority: newPriority,
+      due_date: newDueDate,
+    });
+    await fetchViewTasks();
+  } catch {
+    task.priority = originalPriority;
+    task.due_date = originalDueDate;
+  }
+};
 </script>
 
 <template>
@@ -116,123 +228,119 @@ const quadrants = computed(() => {
       </div>
     </div>
 
-    <!-- 2x2 Grid -->
-    <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 overflow-hidden">
-      <!-- Q1: Urgent & Important -->
-      <div class="flex flex-col bg-theme-column/40 border border-theme-border rounded h-full min-h-[220px] overflow-hidden">
-        <div class="px-3.5 py-2.5 border-b border-theme-border bg-rose-500/5 flex items-center gap-2 shrink-0">
-          <AlertCircle class="w-4.5 h-4.5 text-rose-400 shrink-0" />
-          <div class="min-w-0">
-            <h4 class="font-bold text-sm uppercase tracking-wider text-rose-400 truncate">{{ t('matrix.q1Title') }}</h4>
-            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">
-              {{ t('matrix.q1Desc') }}
-            </p>
-          </div>
-          <span class="ml-auto px-2 py-0.25 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded">
-            {{ quadrants.q1.length }}
-          </span>
-        </div>
-        <div class="flex-grow p-3 overflow-y-auto space-y-2.5 scroller-thin">
-          <div v-if="!quadrants.q1.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-xs">
-            {{ t('matrix.emptyQuadrant') }}
-          </div>
-          <TaskCard
-            v-for="task in quadrants.q1"
-            :key="task.id"
-            :task="task"
-            :compact="true"
-            :is-selected="isSelected(task.id)"
-            @toggle-select="emit('toggle-select', task)"
-          />
-        </div>
-      </div>
+    <!-- 2x2 Grid using GenericColumn component -->
+    <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 overflow-hidden select-none">
+      <GenericColumn
+        v-for="col in matrixColumns"
+        :key="col.id"
+        :id="col.id"
+        :title="col.title"
+        :tasks="col.tasks"
+        :color="col.color"
+        :group-name="'matrix-view'"
+        :compact-cards="true"
+        :is-selected="isSelected"
+        :is-fluid="true"
+        :layout="uiStore.getVirtualColumnLayout('matrix-view', col.id, 'grid-3')"
+        @card-dropped="handleCardDropped"
+        @toggle-select="(task) => emit('toggle-select', task)"
+      >
+        <template #header="{ classes }">
+          <div
+            class="px-3.5 py-2 flex justify-between items-center border-b rounded-t shrink-0 min-h-[48px] cursor-grab active:cursor-grabbing column-drag-handle"
+            :class="[classes.bg, classes.border]"
+          >
+            <!-- Title, Description & Count Badge -->
+            <div class="flex items-center gap-2 min-w-0 mr-1">
+              <component :is="col.icon" class="w-4.5 h-4.5 shrink-0" :class="[classes.text]" />
+              <div class="min-w-0">
+                <h4 class="font-bold text-sm uppercase tracking-wider truncate" :class="[classes.text]">
+                  {{ col.title }}
+                </h4>
+                <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">
+                  {{ col.subtitle }}
+                </p>
+              </div>
+              <span
+                class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0"
+                :class="[classes.badge]"
+              >
+                {{ col.tasks.length }}
+              </span>
+            </div>
 
-      <!-- Q2: Not Urgent & Important -->
-      <div class="flex flex-col bg-theme-column/40 border border-theme-border rounded h-full min-h-[220px] overflow-hidden">
-        <div class="px-3.5 py-2.5 border-b border-theme-border bg-emerald-500/5 flex items-center gap-2 shrink-0">
-          <ArrowRight class="w-4.5 h-4.5 text-emerald-400 shrink-0" />
-          <div class="min-w-0">
-            <h4 class="font-bold text-sm uppercase tracking-wider text-emerald-400 truncate">{{ t('matrix.q2Title') }}</h4>
-            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">
-              {{ t('matrix.q2Desc') }}
-            </p>
-          </div>
-          <span class="ml-auto px-2 py-0.25 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded">
-            {{ quadrants.q2.length }}
-          </span>
-        </div>
-        <div class="flex-grow p-3 overflow-y-auto space-y-2.5 scroller-thin">
-          <div v-if="!quadrants.q2.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-xs">
-            {{ t('matrix.emptyQuadrant') }}
-          </div>
-          <TaskCard
-            v-for="task in quadrants.q2"
-            :key="task.id"
-            :task="task"
-            :compact="true"
-            :is-selected="isSelected(task.id)"
-            @toggle-select="emit('toggle-select', task)"
-          />
-        </div>
-      </div>
+            <!-- Controls: Layout Selector (NO collapsing) -->
+            <div class="flex items-center shrink-0">
+              <!-- Layout Selector Dropdown Menu -->
+              <div class="relative flex items-center">
+                <button
+                  @click.stop="toggleMenu(col.id)"
+                  class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-all duration-200 cursor-pointer"
+                  :class="{ 'text-theme-text-main bg-theme-card/50': activeMenuColId === col.id }"
+                  title="Column Layout Options"
+                >
+                  <MoreHorizontal class="w-4 h-4 shrink-0" />
+                </button>
 
-      <!-- Q3: Urgent & Not Important -->
-      <div class="flex flex-col bg-theme-column/40 border border-theme-border rounded h-full min-h-[220px] overflow-hidden">
-        <div class="px-3.5 py-2.5 border-b border-theme-border bg-orange-500/5 flex items-center gap-2 shrink-0">
-          <UserCheck class="w-4.5 h-4.5 text-orange-400 shrink-0" />
-          <div class="min-w-0">
-            <h4 class="font-bold text-sm uppercase tracking-wider text-orange-400 truncate">{{ t('matrix.q3Title') }}</h4>
-            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">
-              {{ t('matrix.q3Desc') }}
-            </p>
+                <!-- Dropdown Panel -->
+                <transition
+                  enter-active-class="transition duration-100 ease-out"
+                  enter-from-class="transform scale-95 opacity-0"
+                  enter-to-class="transform scale-100 opacity-100"
+                  leave-active-class="transition duration-75 ease-in"
+                  leave-from-class="transform scale-100 opacity-100"
+                  leave-to-class="transform scale-95 opacity-0"
+                >
+                  <div
+                    v-if="activeMenuColId === col.id"
+                    class="absolute right-0 top-full mt-1 bg-theme-card border border-theme-border rounded shadow-lg p-1 flex flex-col gap-1 z-50 min-w-[130px]"
+                  >
+                    <div class="px-2.5 py-1 text-[9px] font-bold text-theme-text-muted/65 uppercase tracking-wider border-b border-theme-border/30 mb-0.5 select-none">
+                      Layout
+                    </div>
+                    <button
+                      @click.stop="uiStore.setVirtualColumnLayout('matrix-view', col.id, 'list'); closeMenu()"
+                      class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded hover:bg-theme-column/50 transition-colors text-left cursor-pointer w-full"
+                      :class="[
+                        uiStore.getVirtualColumnLayout('matrix-view', col.id, 'grid-3') === 'list'
+                          ? 'text-theme-primary font-semibold bg-theme-primary/10'
+                          : 'text-theme-text-muted hover:text-theme-text-main',
+                      ]"
+                    >
+                      <List class="w-3.5 h-3.5 shrink-0" />
+                      <span>List</span>
+                    </button>
+                    <button
+                      @click.stop="uiStore.setVirtualColumnLayout('matrix-view', col.id, 'grid-2'); closeMenu()"
+                      class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded hover:bg-theme-column/50 transition-colors text-left cursor-pointer w-full"
+                      :class="[
+                        uiStore.getVirtualColumnLayout('matrix-view', col.id, 'grid-3') === 'grid-2'
+                          ? 'text-theme-primary font-semibold bg-theme-primary/10'
+                          : 'text-theme-text-muted hover:text-theme-text-main',
+                      ]"
+                    >
+                      <LayoutGrid class="w-3.5 h-3.5 shrink-0" />
+                      <span>2 Columns</span>
+                    </button>
+                    <button
+                      @click.stop="uiStore.setVirtualColumnLayout('matrix-view', col.id, 'grid-3'); closeMenu()"
+                      class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded hover:bg-theme-column/50 transition-colors text-left cursor-pointer w-full"
+                      :class="[
+                        uiStore.getVirtualColumnLayout('matrix-view', col.id, 'grid-3') === 'grid-3'
+                          ? 'text-theme-primary font-semibold bg-theme-primary/10'
+                          : 'text-theme-text-muted hover:text-theme-text-main',
+                      ]"
+                    >
+                      <Grid class="w-3.5 h-3.5 shrink-0" />
+                      <span>3 Columns</span>
+                    </button>
+                  </div>
+                </transition>
+              </div>
+            </div>
           </div>
-          <span class="ml-auto px-2 py-0.25 bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold rounded">
-            {{ quadrants.q3.length }}
-          </span>
-        </div>
-        <div class="flex-grow p-3 overflow-y-auto space-y-2.5 scroller-thin">
-          <div v-if="!quadrants.q3.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-xs">
-            {{ t('matrix.emptyQuadrant') }}
-          </div>
-          <TaskCard
-            v-for="task in quadrants.q3"
-            :key="task.id"
-            :task="task"
-            :compact="true"
-            :is-selected="isSelected(task.id)"
-            @toggle-select="emit('toggle-select', task)"
-          />
-        </div>
-      </div>
-
-      <!-- Q4: Not Urgent & Not Important -->
-      <div class="flex flex-col bg-theme-column/40 border border-theme-border rounded h-full min-h-[220px] overflow-hidden">
-        <div class="px-3.5 py-2.5 border-b border-theme-border bg-slate-500/5 flex items-center gap-2 shrink-0">
-          <Trash class="w-4.5 h-4.5 text-slate-400 shrink-0" />
-          <div class="min-w-0">
-            <h4 class="font-bold text-sm uppercase tracking-wider text-slate-400 truncate">{{ t('matrix.q4Title') }}</h4>
-            <p class="text-[10px] text-theme-text-muted leading-tight truncate uppercase tracking-tighter opacity-70">
-              {{ t('matrix.q4Desc') }}
-            </p>
-          </div>
-          <span class="ml-auto px-2 py-0.25 bg-slate-500/10 border border-slate-500/20 text-slate-400 text-xs font-bold rounded">
-            {{ quadrants.q4.length }}
-          </span>
-        </div>
-        <div class="flex-grow p-3 overflow-y-auto space-y-2.5 scroller-thin">
-          <div v-if="!quadrants.q4.length" class="h-full flex items-center justify-center text-theme-text-muted italic text-xs">
-            {{ t('matrix.emptyQuadrant') }}
-          </div>
-          <TaskCard
-            v-for="task in quadrants.q4"
-            :key="task.id"
-            :task="task"
-            :compact="true"
-            :is-selected="isSelected(task.id)"
-            @toggle-select="emit('toggle-select', task)"
-          />
-        </div>
-      </div>
+        </template>
+      </GenericColumn>
     </div>
   </div>
 </template>

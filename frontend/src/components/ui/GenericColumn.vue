@@ -22,6 +22,7 @@ const props = withDefaults(
     projects?: any[];
     isSelected?: (id: string) => boolean;
     isCollapsed?: boolean;
+    isFluid?: boolean;
   }>(),
   {
     subtitle: '',
@@ -36,6 +37,7 @@ const props = withDefaults(
     projects: () => [],
     isSelected: () => false,
     isCollapsed: false,
+    isFluid: false,
   }
 );
 const emit = defineEmits<{
@@ -68,6 +70,7 @@ const colorMap: Record<string, string> = {
   blue: '#3b82f6',
   purple: '#a855f7',
   pink: '#ec4899',
+  slate: '#64748b',
 };
 
 const columnStyle = computed(() => {
@@ -84,6 +87,28 @@ const columnStyle = computed(() => {
     styles['border-color'] = `color-mix(in srgb, ${hexColor} 25%, var(--theme-border))`;
   }
   return styles;
+});
+
+const headerColorClasses = computed(() => {
+  const defaultClasses = {
+    bg: 'bg-theme-card/30',
+    text: 'text-theme-text-main',
+    badge: 'bg-theme-card border border-theme-border/60 text-theme-text-muted',
+    border: 'border-theme-border',
+  };
+  if (!props.color) return defaultClasses;
+  const color = props.color;
+  const mapping: Record<string, { bg: string; text: string; badge: string; border: string }> = {
+    red: { bg: 'bg-rose-500/5', text: 'text-rose-400', badge: 'bg-rose-500/10 border border-rose-500/20 text-rose-400', border: 'border-rose-500/10' },
+    orange: { bg: 'bg-orange-500/5', text: 'text-orange-400', badge: 'bg-orange-500/10 border border-orange-500/20 text-orange-400', border: 'border-orange-500/10' },
+    yellow: { bg: 'bg-amber-500/5', text: 'text-amber-400', badge: 'bg-amber-500/10 border border-amber-500/20 text-amber-400', border: 'border-amber-500/10' },
+    green: { bg: 'bg-emerald-500/5', text: 'text-emerald-400', badge: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', border: 'border-emerald-500/10' },
+    blue: { bg: 'bg-blue-500/5', text: 'text-blue-400', badge: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', border: 'border-blue-500/10' },
+    purple: { bg: 'bg-purple-500/5', text: 'text-purple-400', badge: 'bg-purple-500/10 border border-purple-500/20 text-purple-400', border: 'border-purple-500/10' },
+    pink: { bg: 'bg-pink-500/5', text: 'text-pink-400', badge: 'bg-pink-500/10 border border-pink-500/20 text-pink-400', border: 'border-pink-500/10' },
+    slate: { bg: 'bg-slate-500/5', text: 'text-slate-400', badge: 'bg-slate-500/10 border border-slate-500/20 text-slate-400', border: 'border-slate-500/10' },
+  };
+  return mapping[color] || defaultClasses;
 });
 
 const sortableInstances = ref<Sortable[]>([]);
@@ -198,26 +223,40 @@ watch(
 <template>
   <div
     :style="columnStyle"
-    class="generic-column flex flex-col rounded h-fit max-h-full shrink-0 group/col relative overflow-hidden transition-all duration-300"
+    class="generic-column flex flex-col rounded h-fit max-h-full group/col relative overflow-hidden transition-all duration-300"
     :class="[
       isCollapsed
-        ? 'w-12 min-w-[48px] max-w-[48px] bg-theme-column/50 backdrop-blur-[2px] border border-theme-border hover:bg-theme-column/75 hover:border-theme-accent/40 shadow-sm hover:shadow-md'
+        ? 'w-12 min-w-[48px] max-w-[48px] shrink-0 bg-theme-column/50 backdrop-blur-[2px] border border-theme-border hover:bg-theme-column/75 hover:border-theme-accent/40 shadow-sm hover:shadow-md'
         : 'bg-theme-column border border-theme-border shadow-sm ' +
-          (layout === 'grid-3'
-            ? 'min-w-[840px] w-[864px] md:w-[960px]'
-            : layout === 'grid-2'
-              ? 'min-w-[560px] w-[576px] md:w-[640px]'
-              : 'min-w-[280px] w-72 md:w-80'),
+          (isFluid
+            ? 'w-full min-w-0'
+            : 'shrink-0 ' +
+              (layout === 'grid-3'
+                ? 'min-w-[840px] w-[864px] md:w-[960px]'
+                : layout === 'grid-2'
+                  ? 'min-w-[560px] w-[576px] md:w-[640px]'
+                  : 'min-w-[280px] w-72 md:w-80')),
     ]"
   >
     <template v-if="!isCollapsed">
       <!-- Header Slot -->
-      <slot name="header">
-        <div class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t min-h-[48px]">
+      <slot name="header" :classes="headerColorClasses">
+        <div
+          class="px-3 py-2 flex justify-between items-center border-b rounded-t min-h-[48px]"
+          :class="[headerColorClasses.bg, headerColorClasses.border]"
+        >
           <div class="flex flex-col justify-center overflow-hidden">
             <div class="flex items-center gap-1.5">
-              <h3 class="font-bold text-sm uppercase tracking-wider text-theme-text-main truncate">{{ title }}</h3>
-              <span class="text-xs px-1.5 py-0.25 font-bold rounded bg-theme-card border border-theme-border/60 text-theme-text-muted">
+              <h3
+                class="font-bold text-sm uppercase tracking-wider truncate"
+                :class="[headerColorClasses.text]"
+              >
+                {{ title }}
+              </h3>
+              <span
+                class="text-xs px-1.5 py-0.25 font-bold rounded"
+                :class="[headerColorClasses.badge]"
+              >
                 {{ tasks.length }}
               </span>
             </div>

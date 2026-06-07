@@ -133,17 +133,22 @@ onBeforeUnmount(() => {
       @toggle-select="(task) => emit('toggle-select', task)"
       @toggle-collapse="uiStore.toggleColumnCollapse(groupName, col.id)"
     >
-      <template #header>
+      <template #header="{ classes }">
         <div
-          class="px-3 py-2 flex justify-between items-center border-b border-theme-border rounded-t shrink-0 min-h-[48px] bg-theme-card/10 cursor-grab active:cursor-grabbing column-drag-handle"
+          class="px-3 py-2 flex justify-between items-center border-b rounded-t shrink-0 min-h-[48px] cursor-grab active:cursor-grabbing column-drag-handle"
+          :class="[classes.bg, classes.border]"
         >
           <!-- Title & Count Badge -->
           <div class="flex items-center gap-1.5 min-w-0 mr-1">
-            <h3 class="font-bold text-sm uppercase tracking-wider text-theme-text-main truncate">
+            <h3
+              class="font-bold text-sm uppercase tracking-wider truncate"
+              :class="[classes.text]"
+            >
               {{ col.title }}
             </h3>
             <span
-              class="text-xs px-1.5 py-0.25 bg-theme-card border border-theme-border/60 text-theme-text-muted font-bold rounded shrink-0"
+              class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0"
+              :class="[classes.badge]"
             >
               {{ col.tasks.length }}
             </span>

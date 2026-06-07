@@ -208,14 +208,16 @@ const handleCancelAddColumn = () => {
       @toggle-collapse="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
     >
       <!-- Header Slot -->
-      <template #header>
+      <template #header="{ classes }">
         <div
-          class="px-3 py-2 flex justify-between items-center border-b border-theme-border bg-theme-card/30 rounded-t shrink-0 min-h-[48px] cursor-grab active:cursor-grabbing column-drag-handle"
+          class="px-3 py-2 flex justify-between items-center border-b rounded-t shrink-0 min-h-[48px] cursor-grab active:cursor-grabbing column-drag-handle"
+          :class="[classes.bg, classes.border]"
         >
           <div class="flex-grow flex flex-col justify-center overflow-hidden mr-1">
             <div class="flex items-center gap-1.5 overflow-hidden">
               <h3
-                class="font-bold text-sm uppercase tracking-wider text-theme-text-main truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
+                class="font-bold text-sm uppercase tracking-wider truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
+                :class="[classes.text]"
                 @dblclick="openEditColumn(b)"
                 :title="t('doubleClickToRename')"
               >
@@ -226,7 +228,7 @@ const handleCancelAddColumn = () => {
                 :class="[
                   b.max_tasks && (tasksByBucket[b.name] || []).length > b.max_tasks
                     ? 'bg-rose-500/20 border border-rose-500/50 text-rose-400 animate-pulse'
-                    : 'bg-theme-card border border-theme-border/60 text-theme-text-muted',
+                    : classes.badge,
                 ]"
               >
                 {{ b.max_tasks ? `${(tasksByBucket[b.name] || []).length}/${b.max_tasks}` : (tasksByBucket[b.name] || []).length }}
