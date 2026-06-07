@@ -1,7 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeAll, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
+
+beforeAll(() => {
+  setActivePinia(createPinia());
+});
 
 // Mock getTask API
 vi.mock('@/api', () => ({
