@@ -6,6 +6,10 @@ import (
 	"net/http"
 )
 
+type ErrorResponse struct {
+	Detail string `json:"detail"`
+}
+
 func SendJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -14,7 +18,7 @@ func SendJSON(w http.ResponseWriter, status int, payload interface{}) {
 
 func SendError(w http.ResponseWriter, status int, message string) {
 	log.Printf("ERROR: %d - %s", status, message)
-	SendJSON(w, status, map[string]string{"detail": message})
+	SendJSON(w, status, ErrorResponse{Detail: message})
 }
 
 // CORSMiddleware enables CORS for frontend integration

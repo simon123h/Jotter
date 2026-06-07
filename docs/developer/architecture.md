@@ -192,7 +192,19 @@ tags:
 due_date: 2026-06-30
 priority: high
 created_at: 2026-06-04T12:00:00Z
-updated_at: 2026-06-04T12:05:00Z
----
 The notes regarding this task go here, using standard markdown formatting.
 ```
+
+---
+
+## 10. API & Swagger Documentation
+
+Jotter includes fully-automated OpenAPI 2.0 (Swagger) specification generation and an integrated Swagger UI served directly from the headless server.
+
+- **OpenAPI Annotations**: Every handler/controller is fully annotated using `@Summary`, `@Description`, `@Tags`, `@Accept`, `@Produce`, `@Param`, `@Success`, `@Failure`, and `@Router`.
+- **Swagger UI Endpoint**: When running `jotter-server` (or in headless mode), the Swagger UI is accessible at `http://<server-host>:<port>/swagger/index.html` (e.g., `http://localhost:58271/swagger/index.html`).
+- **Regenerating Docs**: To regenerate the Swagger documentation after editing endpoint handlers, run:
+  ```bash
+  npm run swagger:generate
+  ```
+  This uses the `swag` CLI tool to parse comments in `internal/features/` and output updated spec files to `internal/docs/`.

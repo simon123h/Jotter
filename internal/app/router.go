@@ -10,7 +10,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 
+	_ "jotter/backend/internal/docs"
 	"jotter/backend/internal/features/bucket"
 	"jotter/backend/internal/features/common"
 	"jotter/backend/internal/features/project"
@@ -18,6 +20,19 @@ import (
 	"jotter/backend/internal/features/system"
 	"jotter/backend/internal/features/task"
 )
+
+// @title           Jotter API
+// @version         2.9.1
+// @description     Local-first Markdown Kanban Board backend API.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   Simon
+// @contact.url    https://github.com/simon123h/jotter
+
+// @license.name  MIT
+// @license.url   https://github.com/simon123h/jotter/blob/main/LICENSE.md
+
+// @BasePath  /api
 
 func BuildRouter(logLevel, dataDir string, serveStatic bool, assets embed.FS) *chi.Mux {
 	r := chi.NewRouter()
@@ -32,6 +47,10 @@ func BuildRouter(logLevel, dataDir string, serveStatic bool, assets embed.FS) *c
 
 	r.Use(middleware.Recoverer)
 	r.Use(common.CORSMiddleware)
+
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
 
 	r.Route("/api", func(r chi.Router) {
 		project.RegisterRoutes(r, dataDir, bucket.DefaultBuckets, bucket.SyncBucketsFile)

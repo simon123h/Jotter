@@ -7,6 +7,7 @@
     "dev:desktop": "wails dev",
     "dev:backend": "go run main_server.go shared_assets.go",
     "dev:frontend": "cd frontend && npm run dev",
+    "swagger:generate": "swag init -g internal/app/router.go -o internal/docs",
     "dev": "concurrently --kill-others-on-fail --names \"Backend,Frontend\" --prefix-colors \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:desktop": "wails build",
     "build:server": "cd frontend && npm run build && cd .. && go build -o build/bin/jotter-server main_server.go shared_assets.go",
