@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { Plus, MoreHorizontal } from '@lucide/vue';
+import { Plus, MoreHorizontal, ChevronLeft } from '@lucide/vue';
 import Sortable from 'sortablejs';
 import type { Task, Bucket, BucketName } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
@@ -11,14 +11,23 @@ import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useBuckets } from '@/composables/useBuckets';
+import { useUiStore } from '@/stores/ui';
 import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();
 const route = useRoute();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
+const uiStore = useUiStore();
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
 const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+
+const isCollapsed = (bucketName: string) => {
+  return (
+    uiStore.isColumnCollapsed(activeProjectId.value, bucketName) ||
+    (uiStore.collapseEmptyColumns && (tasksByBucket.value[bucketName] || []).length === 0)
+  );
+};
 
 const props = defineProps<{
   buckets: Bucket[];
@@ -74,7 +83,8 @@ const { fetchBuckets, handleCreateColumn, handleRenameColumn, handleDeleteColumn
   hideArchiveColumn
 );
 
-const { handleCardDropped, handleMarkTaskDone } = useTaskMutations(ref(props.tasks), activeProjectId, fetchBuckets, async () => {
+const { tasks: storeTasks } = storeToRefs(projectStore);
+const { handleCardDropped, handleMarkTaskDone } = useTaskMutations(storeTasks, activeProjectId, fetchBuckets, async () => {
   emit('refresh');
 });
 
@@ -190,10 +200,12 @@ const handleCancelAddColumn = () => {
       :show-add-task="true"
       group-name="kanban-board"
       :is-selected="isSelected"
+      :is-collapsed="isCollapsed(b.name)"
       @add-task-click="(id) => emit('add-task-click', id as BucketName)"
       @card-dropped="onCardDropped"
       @mark-done="onMarkDone"
       @toggle-select="(task) => emit('toggle-select', task)"
+      @toggle-collapse="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
     >
       <!-- Header Slot -->
       <template #header>
@@ -230,6 +242,13 @@ const handleCancelAddColumn = () => {
           </div>
           <div class="flex items-center shrink-0 gap-1">
             <button
+              @click.stop="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
+              class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer animate-fade-in"
+              :title="t('collapseColumnTooltip')"
+            >
+              <ChevronLeft class="w-4 h-4 shrink-0" />
+            </button>
+            <button
               v-if="settingsStore.hideAddTaskButton"
               @click="emit('add-task-click', b.name)"
               class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
@@ -260,51 +279,66 @@ const handleCancelAddColumn = () => {
       </template>
     </GenericColumn>
 
-    <!-- Add Column Card -->
-    <button
-      v-if="!isAddingColumn"
-      @click="isAddingColumn = true"
-      class="flex items-center justify-center gap-2 bg-theme-column/20 hover:bg-theme-column/40 border border-dashed border-theme-border/60 hover:border-theme-accent text-theme-text-muted hover:text-theme-text-main font-semibold text-sm cursor-pointer w-72 shrink-0 h-[48px] rounded transition-all shadow-sm"
-    >
-      <Plus class="w-4 h-4 shrink-0" />
-      {{ t('buttons.addColumn') }}
-    </button>
-    <div
-      v-else
-      class="flex flex-col bg-theme-column/20 border border-dashed border-theme-border/60 rounded w-72 shrink-0 p-3 h-fit space-y-2.5"
-    >
-      <h4 class="font-bold text-xs uppercase tracking-wider text-theme-text-muted">{{ t('newColumnTitle') }}</h4>
-      <input
-        v-model="newColumnTitle"
-        type="text"
-        :placeholder="t('columnTitlePlaceholder')"
-        class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary"
-        @keyup.enter="onAddColumn"
-        @keyup.esc="handleCancelAddColumn"
-        autofocus
-      />
-      <input
-        v-model="newColumnSubtitle"
-        type="text"
-        placeholder="Column description/subtitle (optional)"
-        class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary font-sans italic"
-        @keyup.enter="onAddColumn"
-        @keyup.esc="handleCancelAddColumn"
-      />
-      <div class="flex gap-1.5 justify-end">
-        <button
-          @click="handleCancelAddColumn"
-          class="text-xs font-semibold px-2 py-1 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded cursor-pointer"
-        >
-          {{ t('buttons.cancel') }}
-        </button>
-        <button
-          @click="onAddColumn"
-          class="text-xs font-semibold px-2 py-1 bg-theme-primary hover:bg-theme-primary-hover text-white rounded cursor-pointer"
-        >
-          {{ t('buttons.add') }}
-        </button>
+    <div class="flex flex-col gap-3 shrink-0 w-72">
+      <!-- Add Column Card -->
+      <button
+        v-if="!isAddingColumn"
+        @click="isAddingColumn = true"
+        class="flex items-center justify-center gap-2 bg-theme-column/20 hover:bg-theme-column/40 border border-dashed border-theme-border/60 hover:border-theme-accent text-theme-text-muted hover:text-theme-text-main font-semibold text-sm cursor-pointer w-full shrink-0 h-[48px] rounded transition-all shadow-sm"
+      >
+        <Plus class="w-4 h-4 shrink-0" />
+        {{ t('buttons.addColumn') }}
+      </button>
+      <div
+        v-else
+        class="flex flex-col bg-theme-column/20 border border-dashed border-theme-border/60 rounded w-full shrink-0 p-3 h-fit space-y-2.5"
+      >
+        <h4 class="font-bold text-xs uppercase tracking-wider text-theme-text-muted">{{ t('newColumnTitle') }}</h4>
+        <input
+          v-model="newColumnTitle"
+          type="text"
+          :placeholder="t('columnTitlePlaceholder')"
+          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary"
+          @keyup.enter="onAddColumn"
+          @keyup.esc="handleCancelAddColumn"
+          autofocus
+        />
+        <input
+          v-model="newColumnSubtitle"
+          type="text"
+          placeholder="Column description/subtitle (optional)"
+          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary font-sans italic"
+          @keyup.enter="onAddColumn"
+          @keyup.esc="handleCancelAddColumn"
+        />
+        <div class="flex gap-1.5 justify-end">
+          <button
+            @click="handleCancelAddColumn"
+            class="text-xs font-semibold px-2 py-1 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded cursor-pointer"
+          >
+            {{ t('buttons.cancel') }}
+          </button>
+          <button
+            @click="onAddColumn"
+            class="text-xs font-semibold px-2 py-1 bg-theme-primary hover:bg-theme-primary-hover text-white rounded cursor-pointer"
+          >
+            {{ t('buttons.add') }}
+          </button>
+        </div>
       </div>
+
+      <!-- auto-collapse empty columns check -->
+      <label
+        class="flex items-center gap-2 px-3 py-2 bg-theme-column/10 border border-theme-border/40 rounded text-xs text-theme-text-muted select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+      >
+        <input
+          type="checkbox"
+          :checked="uiStore.collapseEmptyColumns"
+          @change="uiStore.setCollapseEmptyColumns(($event.target as HTMLInputElement).checked)"
+          class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
+        />
+        <span class="font-semibold">{{ t('autoCollapseEmptyColumns') }}</span>
+      </label>
     </div>
 
     <!-- Edit Modal -->
