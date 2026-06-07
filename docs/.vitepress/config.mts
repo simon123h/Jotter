@@ -25,7 +25,8 @@ export default defineConfig({
 				{
 					text: 'User Guide',
 					items: [
-						{ text: 'Configuration', link: '/user/configuration' }
+						{ text: 'Configuration', link: '/user/configuration' },
+						{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' }
 					]
 				}
 			],
@@ -40,7 +41,8 @@ export default defineConfig({
 				{
 					text: 'User Guide',
 					items: [
-						{ text: 'Configuration', link: '/user/configuration' }
+						{ text: 'Configuration', link: '/user/configuration' },
+						{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' }
 					]
 				}
 			],
