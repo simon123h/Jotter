@@ -16,7 +16,7 @@ const getRules = (locale: string): DateRule[] => {
   const rules: DateRule[] = [
     // 1. Explicit dates (German/European style): 21.5.2026, 21.5.26, 21.5.
     {
-      pattern: /\b(\d{1,2})\.(\d{1,2})\.(?:(\d{4}|\d{2})\b)?/i,
+      pattern: /(?:^|\s)(\d{1,2})\.(\d{1,2})\.(?:(\d{4}|\d{2}))?(?=\s|$)/i,
       getDate: (match) => {
         const day = parseInt(match[1], 10);
         const month = parseInt(match[2], 10);
@@ -41,7 +41,7 @@ const getRules = (locale: string): DateRule[] => {
     },
     // 2. Explicit dates (US style, slash): 5/21/2026, 5/21/26, 5/21
     {
-      pattern: /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{4}|\d{2})\b)?/i,
+      pattern: /(?:^|\s)(\d{1,2})\/(\d{1,2})(?:\/(\d{4}|\d{2}))?(?=\s|$)/i,
       getDate: (match) => {
         const month = parseInt(match[1], 10);
         const day = parseInt(match[2], 10);
@@ -66,12 +66,12 @@ const getRules = (locale: string): DateRule[] => {
     },
     // 3. Today / Heute
     {
-      pattern: isDe ? /\b(heute|heu)\b/i : /\b(today|tod)\b/i,
+      pattern: isDe ? /(?:^|\s)(heute|heu)(?=\s|$)/i : /(?:^|\s)(today|tod)(?=\s|$)/i,
       getDate: () => new Date(),
     },
     // 4. Tomorrow / Morgen
     {
-      pattern: isDe ? /\b(morgen|mor)\b/i : /\b(tomorrow|tom)\b/i,
+      pattern: isDe ? /(?:^|\s)(morgen|mor)(?=\s|$)/i : /(?:^|\s)(tomorrow|tom)(?=\s|$)/i,
       getDate: () => {
         const d = new Date();
         d.setDate(d.getDate() + 1);
@@ -80,7 +80,7 @@ const getRules = (locale: string): DateRule[] => {
     },
     // 5. Next week / Nächste Woche
     {
-      pattern: isDe ? /\b(n\u00e4chste woche|n\u00e4c)\b/i : /\b(next week|nex)\b/i,
+      pattern: isDe ? /(?:^|\s)(n\u00e4chste woche|n\u00e4c)(?=\s|$)/i : /(?:^|\s)(next week|nex)(?=\s|$)/i,
       getDate: () => {
         const d = new Date();
         d.setDate(d.getDate() + 7);
@@ -89,7 +89,7 @@ const getRules = (locale: string): DateRule[] => {
     },
     // 6. Next month / Nächster Monat
     {
-      pattern: isDe ? /\b(n\u00e4chster monat|nmo)\b/i : /\b(next month|nmt)\b/i,
+      pattern: isDe ? /(?:^|\s)(n\u00e4chster monat|nmo)(?=\s|$)/i : /(?:^|\s)(next month|nmt)(?=\s|$)/i,
       getDate: () => {
         const d = new Date();
         d.setMonth(d.getMonth() + 1);
@@ -121,7 +121,7 @@ const getRules = (locale: string): DateRule[] => {
 
   weekdays.forEach(({ name, abbr, day }) => {
     rules.push({
-      pattern: new RegExp(`\\b(${name}|${abbr})\\b`, 'i'),
+      pattern: new RegExp(`(?:^|\\s)(${name}|${abbr})(?=\\s|$)`, 'i'),
       getDate: () => {
         const d = new Date();
         const currentDay = d.getDay();
@@ -152,7 +152,7 @@ export function parseDateFromTitle(
   for (const rule of rules) {
     const match = rule.pattern.exec(title);
     if (match) {
-      const matchedKeyword = match[0].toLowerCase();
+      const matchedKeyword = match[0].trim().toLowerCase();
       const date = rule.getDate(match);
       const dueDate = formatDate(date);
 
@@ -187,7 +187,7 @@ export function extractTagsFromTitle(title: string): { cleanTitle: string; tags:
     return { cleanTitle: title, tags: [] };
   }
 
-  const tagRegex = /#([a-zA-Z0-9\u00C0-\u017F_-]+)/g;
+  const tagRegex = /(?:^|\s)#([a-zA-Z0-9\u00C0-\u017F_-]+)(?=\s|$)/g;
   const tags: string[] = [];
   let match;
 
@@ -206,7 +206,7 @@ export function extractBucketFromTitle(title: string, bucketNames: string[]): { 
     return { cleanTitle: title, bucket: null };
   }
 
-  const bucketRegex = /(?:^|\s)\/([a-zA-Z0-9\u00C0-\u017F_-]+)/g;
+  const bucketRegex = /(?:^|\s)\/([a-zA-Z0-9\u00C0-\u017F_-]+)(?=\s|$)/g;
   let foundBucket: string | null = null;
 
   let cleanTitle = title.replace(bucketRegex, (fullMatch, name) => {
@@ -230,7 +230,7 @@ export function extractPriorityFromTitle(title: string): { cleanTitle: string; p
   }
 
   // Matches p0, p1, p2, p3, p4 (case-insensitive) optionally slash-prefixed as a standalone word
-  const priorityRegex = /(?:^|\s)\/?([pP]([0-4]))\b/;
+  const priorityRegex = /(?:^|\s)\/?([pP]([0-4]))(?=\s|$)/;
   const match = priorityRegex.exec(title);
 
   if (match) {

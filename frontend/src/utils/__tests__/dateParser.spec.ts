@@ -200,6 +200,12 @@ describe('dateParser', () => {
       expect(result.bucket).toBe('in-progress');
       expect(result.cleanTitle).toBe('submit report');
     });
+
+    it('should not extract bucket command if it is a prefix of another word', () => {
+      const result = extractBucketFromTitle('buy groceries /todosomething', buckets);
+      expect(result.bucket).toBeNull();
+      expect(result.cleanTitle).toBe('buy groceries /todosomething');
+    });
   });
 
   describe('Priority extraction', () => {
@@ -219,6 +225,28 @@ describe('dateParser', () => {
       const result4 = parseTitleState('task with p0 priority', 'en');
       expect(result4.priority).toBe('');
       expect(result4.cleanTitle).toBe('task with priority');
+    });
+
+    it('should not extract priority keywords if they are part of another word', () => {
+      const result1 = parseTitleState('p4something', 'en');
+      expect(result1.priority).toBeNull();
+      expect(result1.cleanTitle).toBe('p4something');
+
+      const result2 = parseTitleState('/p4something', 'en');
+      expect(result2.priority).toBeNull();
+      expect(result2.cleanTitle).toBe('/p4something');
+
+      const result3 = parseTitleState('somethingp4', 'en');
+      expect(result3.priority).toBeNull();
+      expect(result3.cleanTitle).toBe('somethingp4');
+
+      const result4 = parseTitleState('something p4', 'en');
+      expect(result4.priority).toBe('urgent');
+      expect(result4.cleanTitle).toBe('something');
+
+      const result5 = parseTitleState('p4 something', 'en');
+      expect(result5.priority).toBe('urgent');
+      expect(result5.cleanTitle).toBe('something');
     });
   });
 

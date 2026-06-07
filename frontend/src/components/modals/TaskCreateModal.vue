@@ -254,6 +254,9 @@ watch(title, (newTitle) => {
       lastMatchedKeyword.value = result.matchedKeyword;
     }
   } else {
+    if (lastMatchedKeyword.value) {
+      dueDate.value = '';
+    }
     lastMatchedKeyword.value = null;
   }
 
@@ -292,6 +295,9 @@ watch(title, (newTitle) => {
       lastMatchedPriority.value = result.matchedPriority;
     }
   } else {
+    if (lastMatchedPriority.value) {
+      priority.value = '';
+    }
     lastMatchedPriority.value = null;
   }
 });

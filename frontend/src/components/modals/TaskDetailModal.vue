@@ -288,6 +288,10 @@ watch(editTitle, (newTitle) => {
       lastMatchedKeyword.value = result.matchedKeyword;
     }
   } else {
+    if (lastMatchedKeyword.value) {
+      editDueDate.value = '';
+      editPlannedDate.value = '';
+    }
     lastMatchedKeyword.value = null;
   }
 
@@ -326,6 +330,9 @@ watch(editTitle, (newTitle) => {
       lastMatchedPriority.value = result.matchedPriority;
     }
   } else {
+    if (lastMatchedPriority.value) {
+      editPriority.value = '';
+    }
     lastMatchedPriority.value = null;
   }
 });
