@@ -2,7 +2,7 @@
   "name": "jotter",
   "version": "1.0.0",
   "private": true,
-  "description": "Jotter - Local-First Markdown Kanban App with Ephemeral Index",
+  "description": "Jotter - Local-First Markdown Kanban Board",
   "scripts": {
     "dev:desktop": "wails dev",
     "dev:backend": "go run main_server.go shared_assets.go",

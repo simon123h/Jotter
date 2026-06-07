@@ -9,9 +9,11 @@
   <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License">
 </p>
 
-🚀 **Try the Online Demo**: [simon123h.github.io/Jotter](https://simon123h.github.io/Jotter/demo/)
+🚀 **Try the Online Demo**: [simon123h.github.io/Jotter/demo/](https://simon123h.github.io/Jotter/demo/)
 
 Jotter is a **local-first, privacy-focused task management application** designed to help you organize tasks without losing data ownership. Modeled as a Markdown Kanban board, Jotter helps combat "task flooding" through filtering, intuitive UI, all while keeping your data stored locally in simple, plain-text files on your own machine. The integrated git support allows for syncing the tasks across devices.
+
+**Documentation**: [simon123h.github.io/Jotter](https://simon123h.github.io/Jotter/)
 
 ![Jotter Kanban Board Screenshot](docs/assets/screenshot.png)
 
@@ -58,13 +60,16 @@ For advanced customization and full directory details, please see [the user conf
 
 ## 📖 Documentation
 
-For advanced setups, configuration options, and developer notes, please refer to the documents in the `docs/` folder:
+The complete documentation is available at **[simon123h.github.io/Jotter/](https://simon123h.github.io/Jotter/)**.
 
-- **Installation & Running**:
+Alternatively, you can refer to the raw Markdown source files in the `docs/` folder:
+
+- **User Guide & Setup**:
+  - [Configuring Jotter (Ports, Directories, logs)](docs/user/configuration.md)
+- **Installation**:
   - [Running Pre-compiled Binaries (Windows/Linux/macOS)](docs/installation/precompiled.md)
   - [Running from Source (For Developers)](docs/installation/development.md)
-- **User Guide**:
-  - [Configuring Jotter (Ports, Directories, logs)](docs/user/configuration.md)
 - **Developer Reference**:
-  - [Architectural Design](docs/developer/architecture.md)
+  - [Architectural Design (arc42)](docs/developer/architecture.md)
+  - [API Documentation (Swagger UI)](http://localhost:58271/swagger/index.html) _(Only available when running the backend headless server)_
   - [Contributing Guidelines](CONTRIBUTING.md)
