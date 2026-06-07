@@ -1,12 +1,12 @@
 # Jotter
 
 <p align="center">
-  <img src="https://img.shields.io/github/actions/workflow/status/simon123h/jotter/ci.yml?branch=main&style=flat-square&label=build" alt="Build Status">
-  <img src="https://img.shields.io/codecov/c/github/simon123h/jotter?style=flat-square&logo=codecov&label=coverage" alt="Coverage">
-  <img src="https://img.shields.io/github/go-mod/go-version/simon123h/jotter?style=flat-square&logo=go&logoColor=white&color=00ADD8" alt="Go Version">
+  <img src="https://github.com/simon123h/jotter/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build Status">
+  <img src="https://codecov.io/gh/simon123h/jotter/branch/main/graph/badge.svg" alt="Coverage">
+  <img src="https://img.shields.io/badge/Go-v1.25-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Version">
   <img src="https://img.shields.io/badge/Vue.js-v3.5+-4FC08D?style=flat-square&logo=vue.js&logoColor=white" alt="Vue Version">
-  <img src="https://img.shields.io/github/v/release/simon123h/jotter?style=flat-square&color=orange" alt="Latest Release">
-  <img src="https://img.shields.io/github/license/simon123h/jotter?style=flat-square&color=blue" alt="License">
+  <img src="https://badgen.net/github/release/simon123h/jotter?color=orange" alt="Latest Release">
+  <img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License">
 </p>
 
 🚀 **Try the Online Demo**: [simon123h.github.io/Jotter](https://simon123h.github.io/Jotter/)
