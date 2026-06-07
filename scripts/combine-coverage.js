@@ -10,21 +10,34 @@ try {
   
   if (fs.existsSync(backendCovPath)) {
     const lines = fs.readFileSync(backendCovPath, 'utf8').split('\n');
+    const blocks = new Map();
+    
     for (const line of lines) {
       if (!line || line.startsWith('mode:')) continue;
       
       // Format: path/file.go:line.col,line.col num_statements count
       const parts = line.split(' ');
       if (parts.length === 3) {
+        const blockKey = parts[0];
         const numStatements = parseInt(parts[1], 10);
         const count = parseInt(parts[2], 10);
         
-        backendTotal += numStatements;
-        if (count > 0) {
-          backendCovered += numStatements;
+        const existing = blocks.get(blockKey);
+        if (existing) {
+          existing.count = Math.max(existing.count, count);
+        } else {
+          blocks.set(blockKey, { numStatements, count });
         }
       }
     }
+    
+    for (const block of blocks.values()) {
+      backendTotal += block.numStatements;
+      if (block.count > 0) {
+        backendCovered += block.numStatements;
+      }
+    }
+    
     backendPct = backendTotal > 0 ? (backendCovered / backendTotal) * 100 : 0;
   }
 
