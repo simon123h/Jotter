@@ -104,7 +104,7 @@ type mockFileRepository struct {
 func (m *mockFileRepository) GetTaskFilePath(tasksDir string, taskID string) (filePath string, filename string, projectID string, err error) {
 	if t, ok := m.tasks[taskID]; ok {
 		pID := t["project_id"].(string)
-		return filepath.Join(tasksDir, pID, taskID+".md"), taskID+".md", pID, nil
+		return filepath.Join(tasksDir, pID, taskID+".md"), taskID + ".md", pID, nil
 	}
 	return "", "", "", errors.New("file not found")
 }

@@ -12,7 +12,7 @@ import (
 
 // Standard domain errors
 var (
-	ErrProjectNotFound = errors.New("project not found")
+	ErrProjectNotFound  = errors.New("project not found")
 	ErrDuplicateProject = errors.New("project already exists")
 	ErrLastProject      = errors.New("cannot delete the last remaining project")
 	ErrInvalidInput     = errors.New("invalid input")
