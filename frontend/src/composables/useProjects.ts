@@ -58,7 +58,7 @@ export function useProjects(onSelectProject: (id: string) => void) {
   const handleDeleteProject = async (project: Project | null) => {
     if (!project) return;
     const confirmed = await showDialog({
-      title: t('buttons.delete'),
+      title: t('buttons.deleteProject'),
       message: t('projects.deleteProjectConfirm', { title: project.title }),
       type: 'warning',
       showCancel: true,

@@ -45,7 +45,7 @@ const { isOpen, title, message, type, confirmText, cancelText, showCancel, handl
             v-if="showCancel"
             type="button"
             @click="handleCancel"
-            class="flex-1 text-xs font-semibold py-1.5 px-3 bg-theme-base hover:bg-theme-column/60 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+            class="flex-1 text-xs font-semibold py-1.5 px-3 bg-theme-base hover:bg-theme-column/60 border border-theme-border rounded transition-all cursor-pointer"
           >
             {{ cancelText }}
           </button>

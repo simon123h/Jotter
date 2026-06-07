@@ -482,7 +482,7 @@ const handleSave = async () => {
 const handleDelete = async () => {
   if (!task.value) return;
   const confirmed = await showDialog({
-    title: t('buttons.delete'),
+    title: t('buttons.deleteTask'),
     message: t('deleteConfirm'),
     type: 'warning',
     showCancel: true,
