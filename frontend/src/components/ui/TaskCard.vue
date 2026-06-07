@@ -140,7 +140,8 @@ const cardStyle = computed(() => {
 <template>
   <router-link
     :to="targetRoute"
-    class="bg-theme-card border border-theme-border rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col select-none relative no-underline text-inherit"
+    :data-task-id="task.id"
+    class="task-card bg-theme-card border border-theme-border rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col select-none relative no-underline text-inherit"
     :class="[
       { 'colored-card': task.color },
       { 'ring-2 ring-theme-accent border-theme-accent bg-theme-accent/5 shadow-theme-ring': isSelected },

@@ -12,6 +12,7 @@ import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { X, Folder } from '@lucide/vue';
 import { useTaskFilters } from '@/composables/useTaskFilters';
 import { useTaskSelection } from '@/composables/useTaskSelection';
+import { useDragSelect } from '@/composables/useDragSelect';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
 
 const { t } = useI18n();
@@ -25,6 +26,14 @@ const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 const { projects, buckets, tasks, loading, projectsLoaded, error: projectError } = storeToRefs(projectStore);
 
 const { isSelected, toggleSelection, selectAll, clearSelection, hasSelection, selectionCount, selectedIds } = useTaskSelection();
+
+const {
+  active: isDragSelecting,
+  dragSelectStyle,
+  onMouseDown: handleDragSelectMouseDown,
+} = useDragSelect({
+  selectedIds,
+});
 
 const localError = ref<string | null>(null);
 
@@ -281,7 +290,7 @@ const handleBulkMarkDone = async () => {
       </button>
     </div>
 
-    <div class="flex-grow overflow-hidden relative">
+    <div @mousedown="handleDragSelectMouseDown" class="flex-grow overflow-hidden relative">
       <div v-if="loading && !tasks.length" class="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <div class="w-10 h-10 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
         <span class="text-theme-text-muted text-xs">{{ t('loadingBoard') }}</span>
@@ -334,5 +343,8 @@ const handleBulkMarkDone = async () => {
 
     <!-- MODAL ROUTER VIEW (Task Detail nested in layout) -->
     <router-view name="modal" @refresh="fetchAllData" />
+
+    <!-- Drag Selection Rectangle -->
+    <div v-if="isDragSelecting" :style="dragSelectStyle"></div>
   </div>
 </template>
