@@ -1,4 +1,4 @@
-import { ref, watch, nextTick } from 'vue';
+import { reactive, toRefs, watch, nextTick } from 'vue';
 import { defineStore } from 'pinia';
 import { getSettings, saveSettings } from '@/api';
 import type { AppSettings } from '@/types';
@@ -6,16 +6,17 @@ import type { AppSettings } from '@/types';
 export type SortBy = 'alpha' | 'mru';
 
 export const useSettingsStore = defineStore('settings', () => {
-  // Default values matching backend defaults
-  const hideDoneColumn = ref(true);
-  const hideArchiveColumn = ref(true);
-  const isSidebarOpen = ref(true);
-  const currentTheme = ref('nordic-light');
-  const thresholdDays = ref(7);
-  const pinnedProjectIds = ref<string[]>([]);
-  const sortBy = ref<SortBy>('alpha');
-  const hideAddTaskButton = ref(true);
-  const projectMru = ref<Record<string, number>>({});
+  const state = reactive<AppSettings>({
+    hideDoneColumn: true,
+    hideArchiveColumn: true,
+    isSidebarOpen: true,
+    currentTheme: 'nordic-light',
+    thresholdDays: 7,
+    pinnedProjectIds: [],
+    sortBy: 'alpha',
+    hideAddTaskButton: true,
+    projectMru: {},
+  });
 
   let skipSave = false;
 
@@ -23,15 +24,11 @@ export const useSettingsStore = defineStore('settings', () => {
     try {
       skipSave = true;
       const settings = await getSettings();
-      hideDoneColumn.value = settings.hideDoneColumn;
-      hideArchiveColumn.value = settings.hideArchiveColumn;
-      isSidebarOpen.value = settings.isSidebarOpen;
-      currentTheme.value = settings.currentTheme || 'nordic-light';
-      thresholdDays.value = settings.thresholdDays ?? 7;
-      pinnedProjectIds.value = settings.pinnedProjectIds || [];
-      sortBy.value = (settings.sortBy as SortBy) || 'alpha';
-      hideAddTaskButton.value = settings.hideAddTaskButton ?? true;
-      projectMru.value = settings.projectMru ? { ...settings.projectMru } : {};
+      Object.assign(state, settings);
+
+      // Ensure defaults for optional/partial loads
+      if (!state.pinnedProjectIds) state.pinnedProjectIds = [];
+      if (!state.projectMru) state.projectMru = {};
 
       await nextTick();
       skipSave = false;
@@ -62,7 +59,7 @@ export const useSettingsStore = defineStore('settings', () => {
   };
 
   watch(
-    currentTheme,
+    () => state.currentTheme,
     (newTheme) => {
       applyThemeToDocument(newTheme);
     },
@@ -80,18 +77,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
     saveTimeout = setTimeout(async () => {
       try {
-        const payload: AppSettings = {
-          hideDoneColumn: hideDoneColumn.value,
-          hideArchiveColumn: hideArchiveColumn.value,
-          isSidebarOpen: isSidebarOpen.value,
-          currentTheme: currentTheme.value,
-          thresholdDays: thresholdDays.value,
-          pinnedProjectIds: [...pinnedProjectIds.value],
-          sortBy: sortBy.value,
-          hideAddTaskButton: hideAddTaskButton.value,
-          projectMru: { ...projectMru.value },
-        };
-        await saveSettings(payload);
+        await saveSettings({ ...state });
       } catch (err) {
         console.error('Failed to save settings:', err);
       }
@@ -99,17 +85,7 @@ export const useSettingsStore = defineStore('settings', () => {
   };
 
   watch(
-    [
-      hideDoneColumn,
-      hideArchiveColumn,
-      isSidebarOpen,
-      currentTheme,
-      thresholdDays,
-      pinnedProjectIds,
-      sortBy,
-      hideAddTaskButton,
-      projectMru,
-    ],
+    state,
     () => {
       triggerSave();
     },
@@ -118,57 +94,49 @@ export const useSettingsStore = defineStore('settings', () => {
 
   // Actions
   const toggleHideDoneColumn = () => {
-    hideDoneColumn.value = !hideDoneColumn.value;
+    state.hideDoneColumn = !state.hideDoneColumn;
   };
 
   const toggleSidebar = () => {
-    isSidebarOpen.value = !isSidebarOpen.value;
+    state.isSidebarOpen = !state.isSidebarOpen;
   };
 
   const setTheme = (theme: string) => {
-    currentTheme.value = theme;
+    state.currentTheme = theme;
   };
 
   const setThresholdDays = (days: number) => {
-    thresholdDays.value = days;
+    state.thresholdDays = days;
   };
 
   const pinProject = (projectId: string) => {
-    if (!pinnedProjectIds.value.includes(projectId)) {
-      pinnedProjectIds.value.push(projectId);
+    if (!state.pinnedProjectIds.includes(projectId)) {
+      state.pinnedProjectIds.push(projectId);
     }
   };
 
   const unpinProject = (projectId: string) => {
-    pinnedProjectIds.value = pinnedProjectIds.value.filter((id) => id !== projectId);
+    state.pinnedProjectIds = state.pinnedProjectIds.filter((id) => id !== projectId);
   };
 
   const setSortBy = (sort: SortBy) => {
-    sortBy.value = sort;
+    state.sortBy = sort;
   };
 
   const updateProjectMru = (projectId: string) => {
-    projectMru.value[projectId] = Date.now();
+    state.projectMru[projectId] = Date.now();
   };
 
   const getProjectMru = (projectId: string): number => {
-    return projectMru.value[projectId] || 0;
+    return state.projectMru[projectId] || 0;
   };
 
   const toggleHideAddTaskButton = () => {
-    hideAddTaskButton.value = !hideAddTaskButton.value;
+    state.hideAddTaskButton = !state.hideAddTaskButton;
   };
 
   return {
-    hideDoneColumn,
-    hideArchiveColumn,
-    isSidebarOpen,
-    currentTheme,
-    thresholdDays,
-    pinnedProjectIds,
-    sortBy,
-    hideAddTaskButton,
-    projectMru,
+    ...toRefs(state),
     loadSettings,
     toggleHideDoneColumn,
     toggleSidebar,
