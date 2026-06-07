@@ -108,6 +108,7 @@ func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
 		Width:            width,
 		Height:           height,
 		WindowStartState: startState,
+		StartHidden:      true,
 		AssetServer: &assetserver.Options{
 			Assets:  assetsSub,
 			Handler: apiRouter,
@@ -117,9 +118,15 @@ func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx, assets)
 		},
+		OnDomReady: func(ctx context.Context) {
+			if errSettings == nil && (appSettings.WindowX > 0 || appSettings.WindowY > 0) {
+				runtime.WindowSetPosition(ctx, appSettings.WindowX, appSettings.WindowY)
+			}
+			runtime.WindowShow(ctx)
+		},
 		OnBeforeClose: func(ctx context.Context) (prevent bool) {
 			if s, err := settings.LoadSettings(cfg.DataDir); err == nil {
-				isMaximized := runtime.WindowIsMaximized(ctx)
+				isMaximized := runtime.WindowIsMaximised(ctx)
 				s.WindowMaximized = isMaximized
 				if !isMaximized {
 					w, h := runtime.WindowGetSize(ctx)
@@ -139,11 +146,6 @@ func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
 		Linux: &linux.Options{
 			Icon: icon,
 		},
-	}
-
-	if errSettings == nil && (appSettings.WindowX > 0 || appSettings.WindowY > 0) {
-		wailsOptions.X = appSettings.WindowX
-		wailsOptions.Y = appSettings.WindowY
 	}
 
 	err := wails.Run(wailsOptions)
