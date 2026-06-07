@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import {
   X,
   Trash2,
@@ -47,6 +47,15 @@ const activeMenu = ref<'none' | 'bucket' | 'tag' | 'priority' | 'planned' | 'pro
 const toggleMenu = (menu: typeof activeMenu.value) => {
   activeMenu.value = activeMenu.value === menu ? 'none' : menu;
 };
+
+watch(
+  () => props.selectedCount,
+  (newCount) => {
+    if (newCount === 0) {
+      activeMenu.value = 'none';
+    }
+  }
+);
 
 const newTagName = ref('');
 const handleAddTag = () => {

@@ -1,5 +1,6 @@
 import { beforeAll, describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
 
@@ -99,5 +100,32 @@ describe('BulkActionBar.vue', () => {
     const emitted = wrapper.emitted('set-due-date');
     expect(emitted).toBeTruthy();
     expect(emitted?.[0][0]).toBe('2026-12-25');
+  });
+
+  it('resets activeMenu to none when selectedCount becomes 0', async () => {
+    const wrapper = mount(BulkActionBar, {
+      props: {
+        ...defaultProps,
+        selectedCount: 3,
+      },
+    });
+
+    const calendarBtn = wrapper.find('button[title*="Set Due Date"]');
+    expect(calendarBtn.exists()).toBe(true);
+    await calendarBtn.trigger('click');
+
+    // The nested menu should be open
+    expect(wrapper.text()).toContain('Set Due Date');
+
+    // Change selectedCount to 0 (triggers the watch and resets activeMenu to 'none')
+    await wrapper.setProps({ selectedCount: 0 });
+    await nextTick();
+
+    // Change selectedCount back to 3
+    await wrapper.setProps({ selectedCount: 3 });
+    await nextTick();
+
+    // The nested menu should NOT be open anymore because activeMenu was reset to 'none'
+    expect(wrapper.text()).not.toContain('Set Due Date');
   });
 });
