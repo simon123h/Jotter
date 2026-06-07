@@ -16,6 +16,7 @@ import (
 	"jotter/backend/internal/db"
 	"jotter/backend/internal/features/bucket"
 	"jotter/backend/internal/features/project"
+	"jotter/backend/internal/features/settings"
 	"jotter/backend/internal/features/system"
 	"jotter/backend/internal/features/task"
 )
@@ -104,6 +105,32 @@ func TestIntegration(t *testing.T) {
 		}
 	})
 
+	// 2b. Test project update
+	t.Run("Update Project", func(t *testing.T) {
+		newTitle := "Updated Test Project"
+		payload := project.Update{
+			Title: &newTitle,
+		}
+		body, _ := json.Marshal(payload)
+		url := fmt.Sprintf("/api/projects/%s", projectID)
+		req := httptest.NewRequest("PUT", url, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		var res project.Response
+		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if res.Title != "Updated Test Project" {
+			t.Errorf("Expected project title 'Updated Test Project', got '%s'", res.Title)
+		}
+	})
+
 	// 3. Test list buckets (columns)
 	t.Run("Get Buckets Initial", func(t *testing.T) {
 		url := fmt.Sprintf("/api/projects/%s/buckets", projectID)
@@ -148,6 +175,34 @@ func TestIntegration(t *testing.T) {
 
 		if res.Name != "review" || res.Title != "Review" {
 			t.Errorf("Expected bucket name 'review', got '%s'", res.Name)
+		}
+	})
+
+	// 4b. Test Update Bucket
+	t.Run("Update Bucket", func(t *testing.T) {
+		newTitle := "Needs Review"
+		colorCode := "#ff0000"
+		payload := bucket.Update{
+			Title: &newTitle,
+			Color: &colorCode,
+		}
+		body, _ := json.Marshal(payload)
+		url := fmt.Sprintf("/api/projects/%s/buckets/review", projectID)
+		req := httptest.NewRequest("PUT", url, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		var res bucket.Response
+		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if res.Title != "Needs Review" || res.Color == nil || *res.Color != "#ff0000" {
+			t.Errorf("Expected title 'Needs Review' and color '#ff0000', got title='%s', color='%v'", res.Title, res.Color)
 		}
 	})
 
@@ -199,6 +254,38 @@ func TestIntegration(t *testing.T) {
 
 		if res.ID != taskID || res.Title != "Test Task" {
 			t.Errorf("Fetched task data mismatch: %+v", res)
+		}
+	})
+
+	// 6b. Test Update Task
+	t.Run("Update Task", func(t *testing.T) {
+		newTitle := "Updated Task Title"
+		newBody := "Updated body description content"
+		newPriority := "high"
+		tags := []string{"bug", "important"}
+		payload := task.Update{
+			Title:    &newTitle,
+			Body:     &newBody,
+			Priority: &newPriority,
+			Tags:     &tags,
+		}
+		body, _ := json.Marshal(payload)
+		url := fmt.Sprintf("/api/projects/%s/tasks/%s", projectID, taskID)
+		req := httptest.NewRequest("PUT", url, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		var res task.Response
+		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if res.Title != "Updated Task Title" || res.Body != "Updated body description content" || res.Priority == nil || *res.Priority != "high" || len(res.Tags) != 2 {
+			t.Errorf("Updated task mismatch: %+v", res)
 		}
 	})
 
@@ -286,6 +373,69 @@ func TestIntegration(t *testing.T) {
 		err := db.DB.QueryRow("SELECT id FROM tasks WHERE id = ?", taskID).Scan(&dummy)
 		if err != sql.ErrNoRows {
 			t.Errorf("Task still exists in database: %v", err)
+		}
+	})
+
+	// 9b. Test Delete Bucket
+	t.Run("Delete Bucket", func(t *testing.T) {
+		url := fmt.Sprintf("/api/projects/%s/buckets/review", projectID)
+		req := httptest.NewRequest("DELETE", url, nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		var res map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if res["status"] != "success" {
+			t.Errorf("Expected success, got %v", res["status"])
+		}
+	})
+
+	// 9c. Test Settings (Get and Post Settings)
+	t.Run("Get and Save Settings", func(t *testing.T) {
+		// Get Settings
+		reqGet := httptest.NewRequest("GET", "/api/settings", nil)
+		wGet := httptest.NewRecorder()
+		r.ServeHTTP(wGet, reqGet)
+
+		if wGet.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for GET settings, got %d", wGet.Code)
+		}
+
+		var loadedSettings settings.AppSettings
+		if err := json.Unmarshal(wGet.Body.Bytes(), &loadedSettings); err != nil {
+			t.Fatalf("Failed to parse GET settings: %v", err)
+		}
+
+		// Save Settings
+		loadedSettings.CurrentTheme = "nordic-dark"
+		loadedSettings.HideDoneColumn = false
+
+		body, _ := json.Marshal(loadedSettings)
+		reqPost := httptest.NewRequest("POST", "/api/settings", bytes.NewBuffer(body))
+		wPost := httptest.NewRecorder()
+		r.ServeHTTP(wPost, reqPost)
+
+		if wPost.Code != http.StatusOK {
+			t.Errorf("Expected status 200 for POST settings, got %d", wPost.Code)
+		}
+
+		// Re-fetch Settings to verify change
+		reqGet2 := httptest.NewRequest("GET", "/api/settings", nil)
+		wGet2 := httptest.NewRecorder()
+		r.ServeHTTP(wGet2, reqGet2)
+
+		var verifiedSettings settings.AppSettings
+		_ = json.Unmarshal(wGet2.Body.Bytes(), &verifiedSettings)
+
+		if verifiedSettings.CurrentTheme != "nordic-dark" || verifiedSettings.HideDoneColumn != false {
+			t.Errorf("Expected theme 'nordic-dark' and HideDoneColumn false, got: %+v", verifiedSettings)
 		}
 	})
 
