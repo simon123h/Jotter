@@ -8,7 +8,7 @@ import { getTask, updateTask, deleteTask, uploadAttachment, deleteAttachment, ge
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useProjectStore } from '@/stores/project';
-import { X, Slash, Paperclip, Trash2, Download, FileText, Plus } from '@lucide/vue';
+import { X, Slash, Paperclip, Trash2, Download, FileText, Plus, ClipboardList } from '@lucide/vue';
 import { parseTitleState } from '@/utils/dateParser';
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
@@ -399,6 +399,22 @@ const handleMarkdownClick = async (event: MouseEvent) => {
   }
 };
 
+const markdownEditor = ref<any>(null);
+
+const addChecklistItem = () => {
+  if (!isEditing.value) {
+    isEditing.value = true;
+  }
+  nextTick(() => {
+    markdownEditor.value?.appendTextAndFocus('- [ ] ');
+  });
+};
+
+const hasChecklist = computed(() => {
+  const bodyText = isEditing.value ? editBody.value : (task.value?.body || '');
+  return /(?:^|\n)\s*[-*+]\s+\[[ xX]\]/.test(bodyText);
+});
+
 const isUploading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 
@@ -700,7 +716,18 @@ onBeforeRouteLeave(async () => {
               </div>
 
               <div class="border-t border-theme-border pt-4">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-2">{{ t('notesLabel') }}</h4>
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('notesLabel') }}</h4>
+                  <button
+                    v-if="!hasChecklist"
+                    type="button"
+                    @click="addChecklistItem"
+                    class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
+                  >
+                    <ClipboardList class="w-3.5 h-3.5" />
+                    {{ t('form.quickAddChecklist') }}
+                  </button>
+                </div>
 
                 <!-- Rendered Markdown -->
                 <div
@@ -962,10 +989,21 @@ onBeforeRouteLeave(async () => {
 
               <!-- Body (Markdown Editor) -->
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                  {{ t('form.markdownLabelEdit') }}
-                </label>
-                <MarkdownEditor v-model="editBody" :rows="12" :placeholder="t('form.markdownPlaceholderEdit')" />
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">
+                    {{ t('form.markdownLabelEdit') }}
+                  </label>
+                  <button
+                    v-if="!hasChecklist"
+                    type="button"
+                    @click="addChecklistItem"
+                    class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
+                  >
+                    <ClipboardList class="w-3.5 h-3.5" />
+                    {{ t('form.quickAddChecklist') }}
+                  </button>
+                </div>
+                <MarkdownEditor ref="markdownEditor" v-model="editBody" :rows="12" :placeholder="t('form.markdownPlaceholderEdit')" />
               </div>
             </div>
           </div>

@@ -57,6 +57,7 @@ export const en = {
     markdownLabelEdit: 'Markdown Body',
     markdownPlaceholder: 'Write notes, checklists, or steps in markdown...',
     markdownPlaceholderEdit: 'Markdown details go here...',
+    quickAddChecklist: 'Add List',
     dueDateLabel: 'Due Date',
     plannedDateLabel: 'Planned For',
     priorityLabel: 'Priority',
