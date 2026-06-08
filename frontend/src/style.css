@@ -331,3 +331,21 @@
   cursor: pointer;
   vertical-align: middle;
 }
+
+/* Dragging visual polish */
+/* Pattern 1: Stacked/faded non-dragged selected cards during active drag */
+body.dragging-active .task-card.is-selected:not(.sortable-chosen) {
+  opacity: 0.45;
+  transform: scale(0.96) translateY(2px);
+  border-style: dashed;
+  box-shadow: none;
+  transition: all 0.2s ease;
+}
+
+/* Pattern 2: Show the dynamic multi-drag badge only when hovering over a selected card when multi-selection is active */
+.task-drag-badge {
+  display: none !important;
+}
+.task-card.is-selected:hover .task-drag-badge {
+  display: inline-block !important;
+}

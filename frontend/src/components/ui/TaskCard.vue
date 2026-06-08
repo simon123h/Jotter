@@ -19,6 +19,7 @@ const props = withDefaults(
     showProject?: boolean;
     projectTitle?: string;
     isSelected?: boolean;
+    selectionCount?: number;
   }>(),
   {
     showTags: true,
@@ -29,6 +30,7 @@ const props = withDefaults(
     showProject: false,
     projectTitle: '',
     isSelected: false,
+    selectionCount: 0,
   }
 );
 
@@ -145,7 +147,7 @@ const cardStyle = computed(() => {
     class="task-card bg-theme-card border border-theme-border rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col select-none relative no-underline text-inherit"
     :class="[
       { 'colored-card': task.color },
-      { 'ring-2 ring-theme-accent border-theme-accent bg-theme-accent/5 shadow-theme-ring': isSelected },
+      { 'ring-2 ring-theme-accent border-theme-accent bg-theme-accent/5 shadow-theme-ring is-selected': isSelected },
       compact ? 'p-2 gap-1' : 'p-3 gap-2',
     ]"
     :style="cardStyle"
@@ -161,6 +163,14 @@ const cardStyle = computed(() => {
       ]"
     >
       <Check v-if="isSelected" class="w-3 h-3 stroke-[3px]" />
+    </div>
+
+    <!-- Multi-drag Badge -->
+    <div
+      v-if="isSelected && selectionCount > 1"
+      class="task-drag-badge absolute -top-2 -right-2 bg-theme-accent text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-lg border border-theme-card z-40"
+    >
+      +{{ selectionCount - 1 }}
     </div>
 
     <!-- Title & ID -->

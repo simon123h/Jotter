@@ -22,6 +22,8 @@ const props = defineProps<{
   isSelected: (id: string) => boolean;
 }>();
 
+const selectionCount = computed(() => props.tasks.filter((t) => props.isSelected(t.id)).length);
+
 const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
@@ -137,6 +139,7 @@ const onMarkDone = async (task: Task) => {
       group-name="tag-view"
       :compact-cards="true"
       :is-selected="isSelected"
+      :selection-count="selectionCount"
       @mark-done="onMarkDone"
       @card-dropped="handleCardDropped"
       @toggle-select="(task) => emit('toggle-select', task)"

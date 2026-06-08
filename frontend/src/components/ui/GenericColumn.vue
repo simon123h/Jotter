@@ -23,6 +23,7 @@ const props = withDefaults(
     isSelected?: (id: string) => boolean;
     isCollapsed?: boolean;
     isFluid?: boolean;
+    selectionCount?: number;
   }>(),
   {
     subtitle: '',
@@ -38,6 +39,7 @@ const props = withDefaults(
     isSelected: () => false,
     isCollapsed: false,
     isFluid: false,
+    selectionCount: 0,
   }
 );
 const emit = defineEmits<{
@@ -327,6 +329,7 @@ watch(
               :show-project="showProject"
               :project-title="projects?.find((p) => p.id === task.project_id)?.title"
               :is-selected="isSelected(task.id)"
+              :selection-count="selectionCount"
               :data-task-id="task.id"
               @mark-done="emit('mark-done', task)"
               @toggle-select="emit('toggle-select', $event)"
@@ -357,6 +360,7 @@ watch(
               :show-project="showProject"
               :project-title="projects?.find((p) => p.id === task.project_id)?.title"
               :is-selected="isSelected(task.id)"
+              :selection-count="selectionCount"
               :data-task-id="task.id"
               @mark-done="emit('mark-done', task)"
               @toggle-select="emit('toggle-select', $event)"
@@ -375,6 +379,7 @@ watch(
             :show-project="showProject"
             :project-title="projects?.find((p) => p.id === task.project_id)?.title"
             :is-selected="isSelected(task.id)"
+            :selection-count="selectionCount"
             :data-task-id="task.id"
             @mark-done="emit('mark-done', task)"
             @toggle-select="emit('toggle-select', $event)"

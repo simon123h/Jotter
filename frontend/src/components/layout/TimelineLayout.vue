@@ -19,6 +19,8 @@ const props = defineProps<{
   showProjectBadge?: boolean;
 }>();
 
+const selectionCount = computed(() => props.tasks.filter((t) => props.isSelected(t.id)).length);
+
 const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
@@ -136,6 +138,7 @@ onBeforeUnmount(() => {
       :show-project="showProjectBadge"
       :projects="projects"
       :is-selected="isSelected"
+      :selection-count="selectionCount"
       :is-collapsed="uiStore.isColumnCollapsed(groupName, col.id)"
       :layout="uiStore.getVirtualColumnLayout(groupName, col.id)"
       @mark-done="onMarkDone"

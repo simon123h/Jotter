@@ -35,6 +35,8 @@ const props = defineProps<{
   isSelected: (id: string) => boolean;
 }>();
 
+const selectionCount = computed(() => props.tasks.filter((t) => props.isSelected(t.id)).length);
+
 const emit = defineEmits<{
   (e: 'add-task-click', bucket: BucketName): void;
   (e: 'toggle-select', task: Task): void;
@@ -200,6 +202,7 @@ const handleCancelAddColumn = () => {
       :show-add-task="true"
       group-name="kanban-board"
       :is-selected="isSelected"
+      :selection-count="selectionCount"
       :is-collapsed="isCollapsed(b.name)"
       @add-task-click="(id) => emit('add-task-click', id as BucketName)"
       @card-dropped="onCardDropped"

@@ -18,6 +18,8 @@ const props = defineProps<{
   isSelected: (id: string) => boolean;
 }>();
 
+const selectionCount = computed(() => props.tasks.filter((t) => props.isSelected(t.id)).length);
+
 const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
 }>();
@@ -275,6 +277,7 @@ const sliderPercentage = computed(() => {
         :group-name="'matrix-view'"
         :compact-cards="true"
         :is-selected="isSelected"
+        :selection-count="selectionCount"
         :is-fluid="true"
         :layout="uiStore.getVirtualColumnLayout('matrix-view', col.id, 'grid-3')"
         @card-dropped="handleCardDropped"
