@@ -14,6 +14,8 @@ import {
   SquareKanban,
   FolderOpen,
   Calendar,
+  Palette,
+  Slash,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket, Project } from '@/types';
@@ -40,9 +42,20 @@ const emit = defineEmits<{
   (e: 'set-planned', planned: string): void;
   (e: 'set-due-date', date: string): void;
   (e: 'move-project', projectId: string): void;
+  (e: 'set-color', color: string | null): void;
 }>();
 
-const activeMenu = ref<'none' | 'bucket' | 'tag' | 'priority' | 'planned' | 'project' | 'dueDate'>('none');
+const colors = [
+  { id: 'red', name: 'Red', bg: 'bg-rose-500', ring: 'ring-rose-500' },
+  { id: 'orange', name: 'Orange', bg: 'bg-amber-600', ring: 'ring-amber-600' },
+  { id: 'yellow', name: 'Yellow', bg: 'bg-yellow-500', ring: 'ring-yellow-500' },
+  { id: 'green', name: 'Green', bg: 'bg-emerald-500', ring: 'ring-emerald-500' },
+  { id: 'blue', name: 'Blue', bg: 'bg-blue-500', ring: 'ring-blue-500' },
+  { id: 'purple', name: 'Purple', bg: 'bg-purple-500', ring: 'ring-purple-500' },
+  { id: 'pink', name: 'Pink', bg: 'bg-pink-500', ring: 'ring-pink-500' },
+];
+
+const activeMenu = ref<'none' | 'bucket' | 'tag' | 'priority' | 'planned' | 'project' | 'dueDate' | 'color'>('none');
 
 const toggleMenu = (menu: typeof activeMenu.value) => {
   activeMenu.value = activeMenu.value === menu ? 'none' : menu;
@@ -253,6 +266,41 @@ const handleCustomDueDate = () => {
             {{ p.title }}
           </button>
         </div>
+
+        <!-- Color Menu -->
+        <div v-if="activeMenu === 'color'" class="p-3 space-y-3 min-w-[200px]">
+          <div class="text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1 text-left">
+            {{ t('columnEdit.colorLabel') }}
+          </div>
+          <div class="flex flex-wrap gap-2.5 items-center">
+            <!-- None / Clear Option -->
+            <button
+              type="button"
+              @click="
+                emit('set-color', null);
+                activeMenu = 'none';
+              "
+              class="w-7 h-7 rounded-full border border-theme-border flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 text-theme-text-muted hover:text-theme-text-main bg-theme-card/30 hover:bg-theme-card"
+              :title="t('columnEdit.colorNone')"
+            >
+              <Slash class="w-3 h-3 shrink-0 rotate-90" />
+            </button>
+
+            <!-- Color Options -->
+            <button
+              v-for="c in colors"
+              :key="c.id"
+              type="button"
+              @click="
+                emit('set-color', c.id);
+                activeMenu = 'none';
+              "
+              class="w-7 h-7 rounded-full cursor-pointer transition-all hover:scale-110 active:scale-95"
+              :class="[c.bg]"
+              :title="c.name"
+            />
+          </div>
+        </div>
       </div>
 
       <!-- Main Action Bar -->
@@ -307,6 +355,14 @@ const handleCustomDueDate = () => {
             :title="t('bulkActions.setPriority')"
           >
             <Flag class="w-4.5 h-4.5" />
+          </button>
+
+          <button
+            @click="toggleMenu('color')"
+            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
+            :title="t('columnEdit.colorLabel') || 'Change Color'"
+          >
+            <Palette class="w-4.5 h-4.5" />
           </button>
 
           <button

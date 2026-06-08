@@ -215,6 +215,19 @@ const handleBulkSetPriority = async (priority: string) => {
   }
 };
 
+const handleBulkSetColor = async (color: string | null) => {
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task) await updateTask(task.project_id, id, { color });
+    }
+    await fetchAllData();
+  } catch (err: any) {
+    localError.value = `Bulk color change failed: ${err.message}`;
+  }
+};
+
 const handleBulkSetPlanned = async (planned: string) => {
   const ids = Array.from(selectedIds.value);
   try {
@@ -350,6 +363,7 @@ const handleBulkMarkDone = async () => {
       @set-planned="handleBulkSetPlanned"
       @set-due-date="handleBulkSetDueDate"
       @move-project="handleBulkMoveProject"
+      @set-color="handleBulkSetColor"
     />
 
     <!-- MODAL ROUTER VIEW (Task Detail nested in layout) -->

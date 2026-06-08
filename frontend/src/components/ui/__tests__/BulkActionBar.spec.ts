@@ -128,4 +128,25 @@ describe('BulkActionBar.vue', () => {
     // The nested menu should NOT be open anymore because activeMenu was reset to 'none'
     expect(wrapper.text()).not.toContain('Set Due Date');
   });
+
+  it('toggles the color menu and emits set-color events', async () => {
+    const wrapper = mount(BulkActionBar, {
+      props: defaultProps,
+    });
+
+    const colorBtn = wrapper.find('button[title*="Color"]');
+    expect(colorBtn.exists()).toBe(true);
+
+    // Toggle menu
+    await colorBtn.trigger('click');
+
+    // Red color button should be visible and clickable
+    const redBtn = wrapper.find('button[title="Red"]');
+    expect(redBtn.exists()).toBe(true);
+    await redBtn.trigger('click');
+
+    const emitted = wrapper.emitted('set-color');
+    expect(emitted).toBeTruthy();
+    expect(emitted?.[0][0]).toBe('red');
+  });
 });
