@@ -83,3 +83,11 @@ export interface SystemInfo {
   version: string;
   data_dir: string;
 }
+
+export interface GitCommit {
+  id: string;
+  short_id: string;
+  author: string;
+  date: string;
+  message: string;
+}

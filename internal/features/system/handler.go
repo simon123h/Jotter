@@ -1,6 +1,7 @@
 package system
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -26,6 +27,8 @@ func RegisterRoutes(r chi.Router, tasksDir string, version string) {
 
 	r.Post("/system/sync", h.Sync)
 	r.Get("/system/info", h.GetInfo)
+	r.Get("/system/history", h.GetHistory)
+	r.Post("/system/restore", h.Restore)
 }
 
 // Sync godoc
@@ -65,5 +68,62 @@ func (h *Handler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	common.SendJSON(w, http.StatusOK, map[string]string{
 		"version":  h.version,
 		"data_dir": h.tasksDir,
+	})
+}
+
+// GetHistory godoc
+// @Summary      Get git commit history
+// @Description  Load recent git commit history for a project or the global workspace.
+// @Tags         system
+// @Produce      json
+// @Param        projectId query string false "Project ID to load history for"
+// @Success      200  {array}  map[string]string
+// @Failure      500  {object}  common.ErrorResponse
+// @Router       /system/history [get]
+func (h *Handler) GetHistory(w http.ResponseWriter, r *http.Request) {
+	projectID := r.URL.Query().Get("projectId")
+	commits, err := h.svc.GetGitHistory(r.Context(), h.tasksDir, projectID)
+	if err != nil {
+		common.SendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	common.SendJSON(w, http.StatusOK, commits)
+}
+
+type RestoreRequest struct {
+	CommitHash string `json:"commitHash"`
+	ProjectID  string `json:"projectId"`
+}
+
+// Restore godoc
+// @Summary      Restore workspace/project to a specific commit
+// @Description  Revert the workspace or active project to the given commit, backing up any dirty changes first, and then rebuild the DB index.
+// @Tags         system
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {object}  common.ErrorResponse
+// @Router       /system/restore [post]
+func (h *Handler) Restore(w http.ResponseWriter, r *http.Request) {
+	var req RestoreRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		common.SendError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.CommitHash == "" {
+		common.SendError(w, http.StatusBadRequest, "commitHash is required")
+		return
+	}
+
+	count, err := h.svc.RestoreCommit(r.Context(), h.tasksDir, req.ProjectID, req.CommitHash)
+	if err != nil {
+		common.SendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	common.SendJSON(w, http.StatusOK, map[string]interface{}{
+		"status":             "success",
+		"synchronized_tasks": count,
 	})
 }

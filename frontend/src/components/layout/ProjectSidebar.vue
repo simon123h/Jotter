@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch, BookOpen, FileSpreadsheet } from '@lucide/vue';
+import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch, BookOpen, FileSpreadsheet, ChevronDown } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import Sortable from 'sortablejs';
 import { useSettingsStore } from '@/stores/settings';
+import { useModalStore } from '@/stores/modal';
 import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
@@ -184,6 +185,12 @@ const handleCreateProject = () => {
   newProjectTitle.value = '';
   showAddProjectInput.value = false;
 };
+
+const modalStore = useModalStore();
+
+const openTimeMachineModal = () => {
+  modalStore.openTimeMachine(props.activeProjectId || undefined);
+};
 </script>
 
 <template>
@@ -314,25 +321,50 @@ const handleCreateProject = () => {
 
     <!-- Sidebar Footer Actions -->
     <div class="p-3 border-t border-theme-border flex flex-col gap-1.5 shrink-0 bg-transparent">
-      <!-- Sync Index Button -->
-      <button
-        @click="emit('sync')"
-        class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded border transition-all duration-300 cursor-pointer"
+      <!-- Sync Index Button with Dropdown -->
+      <div class="relative w-full flex items-stretch rounded transition-all duration-300"
         :class="
           syncSuccess
-            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 dark:text-emerald-400'
+            ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400'
             : syncLoading
-              ? 'bg-theme-column/20 border-transparent text-theme-text-main'
-              : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
+              ? 'bg-theme-column/20 text-theme-text-main animate-pulse'
+              : 'bg-transparent text-theme-text-muted'
         "
-        :disabled="syncLoading"
       >
-        <Check v-if="syncSuccess" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 animate-bounce" />
-        <RefreshCw v-else class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" />
-        <span>
-          {{ syncSuccess ? t('sync.synced') : syncLoading ? t('sync.syncing') : t('sync.button') }}
-        </span>
-      </button>
+        <!-- Main Sync Button (85%) -->
+        <button
+          @click="emit('sync')"
+          class="flex-grow flex items-center justify-center gap-2 py-2 pl-3 text-xs font-semibold rounded-l transition-all duration-300 cursor-pointer"
+          :class="
+            syncSuccess
+              ? 'text-emerald-500 dark:text-emerald-400'
+              : syncLoading
+                ? 'text-theme-text-main'
+                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30'
+          "
+          :disabled="syncLoading"
+        >
+          <Check v-if="syncSuccess" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 animate-bounce" />
+          <RefreshCw v-else class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" />
+          <span>
+            {{ syncSuccess ? t('sync.synced') : syncLoading ? t('sync.syncing') : t('sync.button') }}
+          </span>
+        </button>
+
+        <!-- Dropdown Arrow Button (15%) -->
+        <button
+          @click.stop="openTimeMachineModal"
+          class="px-2 rounded-r transition-all duration-300 cursor-pointer"
+          :class="
+            syncSuccess
+              ? 'text-emerald-500 hover:bg-emerald-500/5'
+              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30'
+          "
+          title="Time Machine / History"
+        >
+          <ChevronDown class="w-3.5 h-3.5" />
+        </button>
+      </div>
 
       <!-- Import MS Planner Button -->
       <button
@@ -375,5 +407,17 @@ const handleCreateProject = () => {
 <style scoped>
 .project-item.dragging-active * {
   pointer-events: none;
+}
+
+/* Fade/Slide transition for premium micro-animations */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1), transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
 }
 </style>

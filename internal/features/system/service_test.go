@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"jotter/backend/internal/features/common"
 	"jotter/backend/internal/features/settings"
 )
 
@@ -241,5 +242,95 @@ func TestSync_GitSynchronization(t *testing.T) {
 		if !found {
 			t.Errorf("Expected GitSync to be called with: %q, got: %v", expected, pRepo.gitSyncCalled)
 		}
+	}
+}
+
+func TestGitHistoryAndRestore(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "jotter-test-history-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	ctx := context.Background()
+
+	dbRepo := &mockDBRepository{}
+	fileRepo := NewFileRepository() // real file repo
+	settingsRepo := &mockSettingsRepository{}
+	svc := NewService(dbRepo, fileRepo, settingsRepo)
+
+	// Initialize git repo
+	if err := common.RunGit(ctx, tempDir, "init"); err != nil {
+		t.Fatalf("git init failed: %v", err)
+	}
+	_ = common.RunGit(ctx, tempDir, "checkout", "-b", "main")
+	_ = common.RunGit(ctx, tempDir, "config", "user.email", "test@example.com")
+	_ = common.RunGit(ctx, tempDir, "config", "user.name", "Test User")
+
+	// 1. Check history on empty repo
+	commits, err := svc.GetGitHistory(ctx, tempDir, "")
+	if err != nil {
+		t.Fatalf("GetGitHistory on empty repo failed: %v", err)
+	}
+	if len(commits) != 0 {
+		t.Errorf("Expected 0 commits on empty repo, got: %d", len(commits))
+	}
+
+	// 2. Add files and make two commits
+	projectsFile := filepath.Join(tempDir, "projects.json")
+	_ = os.WriteFile(projectsFile, []byte(`[]`), 0644)
+	if err := common.RunGit(ctx, tempDir, "add", "."); err != nil {
+		t.Fatalf("git add failed: %v", err)
+	}
+	if err := common.RunGit(ctx, tempDir, "commit", "-m", "Initial commit"); err != nil {
+		t.Fatalf("git commit failed: %v", err)
+	}
+
+	_ = os.WriteFile(filepath.Join(tempDir, "test.md"), []byte("hello revision 1"), 0644)
+	_ = common.RunGit(ctx, tempDir, "add", ".")
+	_ = common.RunGit(ctx, tempDir, "commit", "-m", "Second commit")
+
+	// Get history again
+	commits, err = svc.GetGitHistory(ctx, tempDir, "")
+	if err != nil {
+		t.Fatalf("GetGitHistory failed: %v", err)
+	}
+	if len(commits) != 2 {
+		t.Errorf("Expected 2 commits, got: %d", len(commits))
+	}
+	if commits[0]["message"] != "Second commit" {
+		t.Errorf("Expected first commit message 'Second commit', got: %q", commits[0]["message"])
+	}
+	if commits[1]["message"] != "Initial commit" {
+		t.Errorf("Expected second commit message 'Initial commit', got: %q", commits[1]["message"])
+	}
+
+	// 3. Restore to initial commit
+	firstCommitHash := commits[1]["id"]
+
+	// Create uncommitted change to test backup
+	_ = os.WriteFile(filepath.Join(tempDir, "uncommitted.md"), []byte("uncommitted draft"), 0644)
+
+	_, err = svc.RestoreCommit(ctx, tempDir, "", firstCommitHash)
+	if err != nil {
+		t.Fatalf("RestoreCommit failed: %v", err)
+	}
+
+	// Verify history now contains backup and revert commits
+	commitsAfter, err := svc.GetGitHistory(ctx, tempDir, "")
+	if err != nil {
+		t.Fatalf("GetGitHistory after restore failed: %v", err)
+	}
+	t.Logf("Commits after restore: %v", commitsAfter)
+	for idx, c := range commitsAfter {
+		t.Logf("Commit %d: Message: %q, Hash: %s", idx, c["message"], c["id"])
+	}
+	if len(commitsAfter) < 4 {
+		t.Errorf("Expected at least 4 commits in history after backup & restore, got: %d", len(commitsAfter))
+	}
+
+	// Verify file content matches first commit (e.g. test.md should not exist or be empty)
+	if _, err := os.Stat(filepath.Join(tempDir, "test.md")); !os.IsNotExist(err) {
+		t.Error("Expected test.md to be deleted/reverted by restore commit, but it still exists")
 	}
 }

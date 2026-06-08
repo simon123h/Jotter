@@ -54,6 +54,36 @@ Falls du HTTPS-URLs (`https://github.com/...`) bevorzugst:
 
 ---
 
+## Time Machine (Versions-Wiederherstellung)
+
+Jotter verfügt über eine integrierte **Time Machine**-Funktion, mit der du deinen Arbeitsbereich oder bestimmte Projekte direkt über die Benutzeroberfläche auf jeden beliebigen Zustand in deiner Git-Historie zurücksetzen kannst.
+
+Dies bietet eine risikofreie Umgebung für Experimente, versehentliches Löschen oder das Ansehen früherer Zustände deiner Boards.
+
+### So greifst du auf die Time Machine zu
+1. Suche in der Seitenleiste die Schaltfläche **Synchronisieren** ganz unten.
+2. Klicke auf das kleine **Chevron-Abwärts-Symbol** auf der rechten Seite der Schaltfläche.
+3. Dadurch öffnet sich das Overlay der **Time Machine**, das die letzten 10 Schnappschüsse (Commits) deines Repositories anzeigt.
+4. Jeder Schnappschuss zeigt:
+   * Die **Nachricht** des Commits.
+   * Den **Autor**, der die Änderung vorgenommen hat.
+   * Das **Datum und die Uhrzeit** des Schnappschusses.
+   * Die abgekürzte **Git-Commit-ID** (z.B. `8b5f800`).
+
+### Einen Schnappschuss wiederherstellen (Perfekter Undo-Mechanismus)
+Wenn du auf einen Schnappschuss klickst, um ihn wiederherzustellen, führt Jotter im Hintergrund eine robuste Git-Wiederherstellung durch, die immer vorwärtsgerichtet ist:
+
+1. **Automatisches Backup vor der Wiederherstellung**: Jotter prüft zuerst, ob ungespeicherte Änderungen oder Entwürfe in deinem Arbeitsverzeichnis vorliegen. Falls vorhanden, werden diese automatisch gestaged und committet (`backup: snapshot before restoring to <hash>`). Dies garantiert **vollständigen Schutz vor Datenverlust**—du kannst jederzeit wieder zum aktuellen Stand zurückkehren!
+2. **Hard-Reset**: Es wird ein sauberer Reset durchgeführt, um die Dateien exakt an den Ziel-Commit anzupassen (gelöschte und neue, ungetrackte Dateien werden dabei sauber bereinigt).
+3. **Soft-Reset & Vorwärts-Commit**: Jotter setzt den Git-Pointer zurück, ohne die Historie zu überschreiben oder zu verändern. Der wiederhergestellte Stand wird als neuer Revert-Commit erfasst (`revert: restore workspace to commit <hash>`).
+4. **Kein Überschreiben der Historie (Force-Push)**: Da dieses Verfahren die Git-Historie linear fortschreibt und niemals `git push --force` erzwingt, bleibt die Synchronisation über mehrere Geräte hinweg völlig ungestört und stabil.
+5. **Datenbank-Reindexierung**: Sobald die Dateien auf der Festplatte wiederhergestellt wurden, reindexiert Jotter im Hintergrund die SQLite-Datenbank. Dein Aufgabenboard, die Spalten und die Filter aktualisieren sich sofort in der App.
+
+> [!TIP]
+> Da vor jeder Wiederherstellung automatisch ein Backup-Schnappschuss angelegt wird, kannst du eine Wiederherstellung jederzeit rückgängig machen, indem du in der Time Machine einfach den entsprechenden Backup-Eintrag auswählst!
+
+---
+
 ## Nutzung auf mehreren Geräten und im Team
 
 Da Git Konflikte in Textdateien hervorragend verarbeiten kann, kannst du denselben Aufgabenordner auf mehreren Rechnern parallel nutzen oder sogar im Team bearbeiten.

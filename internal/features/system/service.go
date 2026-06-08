@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"jotter/backend/internal/features/common"
 	"jotter/backend/internal/features/settings"
 	"jotter/backend/internal/features/task"
 )
@@ -16,6 +19,8 @@ import (
 type Service interface {
 	Sync(ctx context.Context, tasksDir string) (int, error)
 	SyncDBOnly(ctx context.Context, tasksDir string) (int, error)
+	GetGitHistory(ctx context.Context, tasksDir string, projectID string) ([]map[string]string, error)
+	RestoreCommit(ctx context.Context, tasksDir string, projectID string, commitHash string) (int, error)
 }
 
 type systemService struct {
@@ -238,4 +243,111 @@ func (s *systemService) SyncDBOnly(ctx context.Context, tasksDir string) (int, e
 
 	// 3. Rebuild database tables transactionally
 	return s.dbRepo.RebuildIndex(ctx, projectsData, buckets, tasks)
+}
+
+func (s *systemService) GetGitHistory(ctx context.Context, tasksDir string, projectID string) ([]map[string]string, error) {
+	repoPath := tasksDir
+	if projectID != "" {
+		repoPath = filepath.Join(tasksDir, projectID)
+	}
+
+	// Check if .git directory exists
+	if _, err := os.Stat(filepath.Join(repoPath, ".git")); os.IsNotExist(err) {
+		return []map[string]string{}, nil
+	}
+
+	// Check if HEAD exists (verifies if there are any commits at all)
+	if err := common.RunGit(ctx, repoPath, "rev-parse", "--verify", "HEAD"); err != nil {
+		// Empty repository (no commits)
+		return []map[string]string{}, nil
+	}
+
+	// Run git log command with formatting
+	output, err := common.RunGitWithOutput(ctx, repoPath, "log", "-n", "50", "--pretty=format:%H|%h|%an|%ad|%s", "--date=iso-strict")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read git log: %w", err)
+	}
+
+	var commits []map[string]string
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		parts := strings.SplitN(trimmed, "|", 5)
+		if len(parts) == 5 {
+			commits = append(commits, map[string]string{
+				"id":       parts[0],
+				"short_id": parts[1],
+				"author":   parts[2],
+				"date":     parts[3],
+				"message":  parts[4],
+			})
+		}
+	}
+
+	return commits, nil
+}
+
+func (s *systemService) RestoreCommit(ctx context.Context, tasksDir string, projectID string, commitHash string) (int, error) {
+	repoPath := tasksDir
+	if projectID != "" {
+		repoPath = filepath.Join(tasksDir, projectID)
+	}
+
+	// 0. Get the current HEAD hash to restore back to
+	origHeadOut, err := common.RunGitWithOutput(ctx, repoPath, "rev-parse", "HEAD")
+	if err != nil {
+		return 0, fmt.Errorf("failed to get current HEAD: %w", err)
+	}
+	origHead := strings.TrimSpace(origHeadOut)
+
+	// 1. Check for uncommitted changes
+	statusOut, err := common.RunGitWithOutput(ctx, repoPath, "status", "--porcelain")
+	if err != nil {
+		return 0, fmt.Errorf("git status failed: %w", err)
+	}
+
+	if len(strings.TrimSpace(statusOut)) > 0 {
+		// Stage all changes
+		if err := common.RunGit(ctx, repoPath, "add", "."); err != nil {
+			return 0, fmt.Errorf("git add failed for pre-restore backup: %w", err)
+		}
+		// Create a backup commit
+		if err := common.RunGit(ctx, repoPath, "commit", "-m", fmt.Sprintf("backup: snapshot before restoring to %s", commitHash)); err != nil {
+			return 0, fmt.Errorf("git commit failed for pre-restore backup: %w", err)
+		}
+		// Refresh origHead to point to the backup commit we just created
+		newHeadOut, err := common.RunGitWithOutput(ctx, repoPath, "rev-parse", "HEAD")
+		if err != nil {
+			return 0, fmt.Errorf("failed to get current HEAD after backup: %w", err)
+		}
+		origHead = strings.TrimSpace(newHeadOut)
+	}
+
+	// 2. Perform a hard reset to the target commit to match index and worktree perfectly
+	if err := common.RunGit(ctx, repoPath, "reset", "--hard", commitHash); err != nil {
+		return 0, fmt.Errorf("git reset --hard to commit %s failed: %w", commitHash, err)
+	}
+
+	// 3. Move the HEAD branch pointer back to the original commit, leaving index and worktree at the target state
+	if err := common.RunGit(ctx, repoPath, "reset", "--soft", origHead); err != nil {
+		return 0, fmt.Errorf("git reset --soft back to original HEAD %s failed: %w", origHead, err)
+	}
+
+	// 4. Stage all differences and commit them immediately (Forward Restore)
+	statusOutRestored, err := common.RunGitWithOutput(ctx, repoPath, "status", "--porcelain")
+	log.Printf("[RestoreCommit] statusOutRestored after soft reset: %q, err: %v", statusOutRestored, err)
+	if err == nil && len(strings.TrimSpace(statusOutRestored)) > 0 {
+		if err := common.RunGit(ctx, repoPath, "add", "-A"); err != nil {
+			return 0, fmt.Errorf("git add failed for restore commit: %w", err)
+		}
+		if err := common.RunGit(ctx, repoPath, "commit", "-m", fmt.Sprintf("revert: restore workspace to commit %s", commitHash)); err != nil {
+			return 0, fmt.Errorf("git commit failed for restore commit: %w", err)
+		}
+	}
+
+	// 5. Synchronize the local SQLite database index from files on disk
+	return s.SyncDBOnly(ctx, tasksDir)
 }

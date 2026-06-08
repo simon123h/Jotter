@@ -7,8 +7,8 @@ import (
 	"syscall"
 )
 
-// prepareCmd configures the command's system attributes to suppress terminal window popping on Windows.
-func prepareCmd(cmd *exec.Cmd) {
+// PrepareCmd configures the command's system attributes to suppress terminal window popping on Windows.
+func PrepareCmd(cmd *exec.Cmd) {
 	if cmd.SysProcAttr == nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
