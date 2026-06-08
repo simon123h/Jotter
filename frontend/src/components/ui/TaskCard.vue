@@ -249,24 +249,26 @@ const cardStyle = computed(() => {
       </div>
     </div>
 
-    <!-- Tags List -->
-    <div v-if="showTags && task.tags && task.tags.length" class="flex flex-wrap gap-1">
-      <span
-        v-for="tag in task.tags"
-        :key="tag"
-        class="rounded border uppercase tracking-wider leading-none"
-        :class="[getTagClasses(tag), compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold']"
-      >
-        {{ tag }}
-      </span>
-    </div>
-
-    <!-- Checklist Items -->
+    <!-- Checklist Items (Directly below the title) -->
     <div
       v-if="!compact && renderedChecklist.length > 0"
-      class="task-card-checklist flex flex-col gap-1.5 mt-1 pt-2 border-t border-theme-border/20"
+      class="task-card-checklist flex flex-col gap-1.5 mt-1 pt-2 border-t border-theme-border/20 relative pr-14"
       @click.stop
     >
+      <!-- Floating Checklist Stats at top-right corner of the checklist bounding box -->
+      <div
+        v-if="checklistStats"
+        class="absolute top-2 right-0 flex items-center gap-1 font-semibold pointer-events-none select-none"
+        :class="[
+          checklistStats.checked === checklistStats.total
+            ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
+            : 'text-theme-text-muted',
+        ]"
+      >
+        <ClipboardList class="w-3.5 h-3.5 shrink-0" />
+        <span class="text-xs">{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
+      </div>
+
       <label
         v-for="item in renderedChecklist"
         :key="item.globalIndex"
@@ -284,57 +286,64 @@ const cardStyle = computed(() => {
       </label>
     </div>
 
-    <!-- Combined Footer Row: Due Date, Priority, and Checklist -->
+    <!-- Flexible Combined Row: Tags, Due Date, Planned Date, Priority, and List Counter (when compact or no visible list items) -->
     <div
-      v-if="showFooter && (task.due_date || task.planned_date || task.priority || checklistStats)"
-      class="flex justify-between items-center text-xs text-theme-text-muted select-none flex-wrap mt-1"
+      v-if="showFooter && (task.due_date || task.planned_date || task.priority || (showTags && task.tags && task.tags.length) || (checklistStats && (compact || renderedChecklist.length === 0)))"
+      class="flex flex-wrap items-center gap-2 text-xs text-theme-text-muted select-none mt-1"
     >
-      <!-- Left side: Due Date, Planned date, Priority, Tags -->
-      <div class="flex items-center gap-2.5">
-        <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted" :title="'Due: ' + formatDate(task.due_date)">
-          <Calendar :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
-          <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.due_date) }}</span>
-        </div>
-
-        <!-- Planned date -->
-        <div
-          v-if="task.planned_date"
-          class="flex items-center gap-1 text-theme-accent/80"
-          :title="'Planned: ' + t('plannedDateOptions.' + task.planned_date)"
-        >
-          <Clock class="w-3 h-3" />
-          <span :class="{ 'text-[10px]': compact }">{{ t('plannedDateOptions.' + task.planned_date) }}</span>
-        </div>
-
-        <!-- Priority -->
-        <div
-          v-if="task.priority"
+      <!-- Tags List inside the combined flexible row -->
+      <div v-if="showTags && task.tags && task.tags.length" class="flex flex-wrap gap-1">
+        <span
+          v-for="tag in task.tags"
+          :key="tag"
           class="rounded border uppercase tracking-wider leading-none"
-          :class="[
-            getPriorityClasses(task.priority),
-            compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold',
-          ]"
+          :class="[getTagClasses(tag), compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold']"
         >
-          {{ task.priority }}
-        </div>
+          {{ tag }}
+        </span>
       </div>
 
-      <!-- Right side: Checklist -->
-      <div class="flex items-center gap-2.5">
-        <!-- Checklist Stats -->
-        <div
-          v-if="checklistStats"
-          class="flex items-center gap-1 font-semibold"
-          :class="[
-            checklistStats.checked === checklistStats.total
-              ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
-              : 'text-theme-text-muted',
-            { 'text-[10px]': compact },
-          ]"
-        >
-          <ClipboardList :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
-          <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
-        </div>
+      <!-- Due Date -->
+      <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted" :title="'Due: ' + formatDate(task.due_date)">
+        <Calendar :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
+        <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.due_date) }}</span>
+      </div>
+
+      <!-- Planned date -->
+      <div
+        v-if="task.planned_date"
+        class="flex items-center gap-1 text-theme-accent/80"
+        :title="'Planned: ' + t('plannedDateOptions.' + task.planned_date)"
+      >
+        <Clock class="w-3 h-3" />
+        <span :class="{ 'text-[10px]': compact }">{{ t('plannedDateOptions.' + task.planned_date) }}</span>
+      </div>
+
+      <!-- Priority -->
+      <div
+        v-if="task.priority"
+        class="rounded border uppercase tracking-wider leading-none"
+        :class="[
+          getPriorityClasses(task.priority),
+          compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold',
+        ]"
+      >
+        {{ task.priority }}
+      </div>
+
+      <!-- Checklist Stats (Only displayed in footer row if not already shown inside the checklist bounding box) -->
+      <div
+        v-if="checklistStats && (compact || renderedChecklist.length === 0)"
+        class="flex items-center gap-1 font-semibold ml-auto"
+        :class="[
+          checklistStats.checked === checklistStats.total
+            ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
+            : 'text-theme-text-muted',
+          { 'text-[10px]': compact },
+        ]"
+      >
+        <ClipboardList :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
+        <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
       </div>
     </div>
   </router-link>
