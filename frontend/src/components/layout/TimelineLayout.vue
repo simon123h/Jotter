@@ -20,7 +20,6 @@ const props = defineProps<{
 }>();
 
 const selectionStore = useSelectionStore();
-const selectionCount = computed(() => props.tasks.filter((t) => selectionStore.isSelected(t.id)).length);
 
 const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
