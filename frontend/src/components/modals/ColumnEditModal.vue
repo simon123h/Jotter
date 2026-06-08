@@ -105,9 +105,18 @@ const handleSave = () => {
   emit('close');
 };
 
+const closeAndSave = () => {
+  const cleanTitle = (title.value || '').trim();
+  if (cleanTitle) {
+    handleSave();
+  } else {
+    emit('close');
+  }
+};
+
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === 'Escape' && props.isOpen) {
-    emit('close');
+    closeAndSave();
   }
 };
 
@@ -125,7 +134,7 @@ onUnmounted(() => {
     <transition name="modal">
       <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
+        <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="closeAndSave"></div>
 
         <!-- Modal Content -->
         <div
@@ -135,7 +144,7 @@ onUnmounted(() => {
           <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
             <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">{{ t('columnEdit.title') }}</h3>
             <button
-              @click="emit('close')"
+              @click="closeAndSave"
               class="text-theme-text-muted hover:text-theme-text-main transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
             >
               <X class="w-4 h-4 shrink-0" />

@@ -147,7 +147,7 @@ const handleApply = () => {
 
 // Setup native dialog cancel (Esc key) handler
 const handleNativeClose = () => {
-  emit('close');
+  handleApply();
 };
 
 // Light dismiss click fallback
@@ -165,7 +165,7 @@ const handleDialogClick = (event: MouseEvent) => {
       rect.left <= event.clientX &&
       event.clientX <= rect.left + rect.width;
     if (!isDialogContent) {
-      emit('close');
+      handleApply();
     }
   }
 };
@@ -186,7 +186,7 @@ const handleDialogClick = (event: MouseEvent) => {
         {{ t('filterModal.title') }}
       </h3>
       <button
-        @click="handleClose"
+        @click="handleApply"
         class="text-theme-text-muted hover:text-theme-text-main transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
       >
         <X class="w-4 h-4 shrink-0" />

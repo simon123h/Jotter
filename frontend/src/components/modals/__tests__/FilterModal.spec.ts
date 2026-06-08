@@ -41,7 +41,7 @@ describe('FilterModal.vue', () => {
     expect(wrapper.text()).toContain('ui');
   });
 
-  it('emits close event when clicking close button', async () => {
+  it('emits apply and close events when clicking close button (auto-save)', async () => {
     const wrapper = mount(FilterModal, {
       props: defaultProps,
     });
@@ -50,7 +50,32 @@ describe('FilterModal.vue', () => {
     const closeBtn = wrapper.find('button[class*="text-theme-text-muted"]');
     expect(closeBtn.exists()).toBe(true);
     await closeBtn.trigger('click');
+    expect(wrapper.emitted('apply')).toBeTruthy();
     expect(wrapper.emitted('close')).toBeTruthy();
+  });
+
+  it('emits apply and close events when dialog triggers native close / cancel (auto-save)', async () => {
+    const wrapper = mount(FilterModal, {
+      props: defaultProps,
+    });
+
+    const dialog = wrapper.find('dialog');
+    expect(dialog.exists()).toBe(true);
+    await dialog.trigger('close');
+    expect(wrapper.emitted('apply')).toBeTruthy();
+    expect(wrapper.emitted('close')).toBeTruthy();
+  });
+
+  it('emits close but does NOT emit apply when clicking Cancel button (discard)', async () => {
+    const wrapper = mount(FilterModal, {
+      props: defaultProps,
+    });
+
+    const cancelBtn = wrapper.findAll('button').find((b) => b.text().includes('Cancel'));
+    expect(cancelBtn).toBeDefined();
+    await cancelBtn!.trigger('click');
+    expect(wrapper.emitted('close')).toBeTruthy();
+    expect(wrapper.emitted('apply')).toBeFalsy();
   });
 
   it('emits apply event with selected filters', async () => {

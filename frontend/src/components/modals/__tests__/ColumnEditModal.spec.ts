@@ -44,7 +44,7 @@ describe('ColumnEditModal.vue', () => {
     expect(titleInput).toBeNull();
   });
 
-  it('emits close event when close button is clicked', async () => {
+  it('emits save and close events when close button is clicked (auto-save)', async () => {
     wrapper = mount(ColumnEditModal, {
       props: defaultProps,
     });
@@ -53,10 +53,11 @@ describe('ColumnEditModal.vue', () => {
     expect(closeBtn).not.toBeNull();
     closeBtn.click();
 
+    expect(wrapper.emitted('save')).toBeTruthy();
     expect(wrapper.emitted('close')).toBeTruthy();
   });
 
-  it('emits close event when pressing Escape key', () => {
+  it('emits save and close events when pressing Escape key (auto-save)', () => {
     wrapper = mount(ColumnEditModal, {
       props: defaultProps,
     });
@@ -64,7 +65,36 @@ describe('ColumnEditModal.vue', () => {
     const event = new KeyboardEvent('keydown', { key: 'Escape' });
     window.dispatchEvent(event);
 
+    expect(wrapper.emitted('save')).toBeTruthy();
     expect(wrapper.emitted('close')).toBeTruthy();
+  });
+
+  it('emits save and close events when clicking backdrop (auto-save)', async () => {
+    wrapper = mount(ColumnEditModal, {
+      props: defaultProps,
+    });
+
+    const backdrop = document.body.querySelector('.backdrop-blur-sm') as HTMLDivElement;
+    expect(backdrop).not.toBeNull();
+    backdrop.click();
+
+    expect(wrapper.emitted('save')).toBeTruthy();
+    expect(wrapper.emitted('close')).toBeTruthy();
+  });
+
+  it('emits close but does NOT emit save when Cancel button is clicked (discard)', async () => {
+    wrapper = mount(ColumnEditModal, {
+      props: defaultProps,
+    });
+
+    const cancelBtn = Array.from(document.body.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Cancel')
+    ) as HTMLButtonElement;
+    expect(cancelBtn).not.toBeNull();
+    cancelBtn.click();
+
+    expect(wrapper.emitted('close')).toBeTruthy();
+    expect(wrapper.emitted('save')).toBeFalsy();
   });
 
   it('emits save event with updated title and subtitle when saved', async () => {

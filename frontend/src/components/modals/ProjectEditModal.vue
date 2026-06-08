@@ -68,9 +68,18 @@ const handleSave = async () => {
   emit('close');
 };
 
+const closeAndSave = async () => {
+  const cleanTitle = (title.value || '').trim();
+  if (cleanTitle && props.project) {
+    await handleSave();
+  } else {
+    emit('close');
+  }
+};
+
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === 'Escape' && props.isOpen) {
-    emit('close');
+    closeAndSave();
   }
 };
 
@@ -94,7 +103,7 @@ onUnmounted(() => {
   <transition name="modal">
     <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <!-- Backdrop -->
-      <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
+      <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="closeAndSave"></div>
 
       <!-- Modal Content -->
       <div class="relative bg-theme-base border border-theme-border w-full max-w-md rounded shadow-2xl overflow-hidden flex flex-col z-10">
@@ -102,7 +111,7 @@ onUnmounted(() => {
         <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
           <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">{{ t('projectEdit.title') }}</h3>
           <button
-            @click="emit('close')"
+            @click="closeAndSave"
             class="text-theme-text-muted hover:text-theme-text-main transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
           >
             <X class="w-4 h-4 shrink-0" />
