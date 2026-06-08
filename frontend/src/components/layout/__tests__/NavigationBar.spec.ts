@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { mount, RouterLinkStub } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import NavigationBar from '../NavigationBar.vue';
+import type { Project } from '@/types';
 
 // Mock vue-router
 vi.mock('vue-router', () => ({
@@ -23,9 +24,9 @@ describe('NavigationBar.vue', () => {
     modelValue: '',
     isSidebarOpen: true,
     projects: [
-      { id: '1', title: 'Project 1' },
-      { id: '2', title: 'Project 2' },
-    ],
+      { id: '1', title: 'Project 1', created_at: '2026-06-08T00:00:00Z' },
+      { id: '2', title: 'Project 2', created_at: '2026-06-08T00:00:00Z' },
+    ] as Project[],
     activeProjectId: '1',
     hasActiveFilters: false,
     defaultBucketName: 'todo' as const,
