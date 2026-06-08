@@ -116,6 +116,41 @@ watch(
     }
   }
 );
+
+const appendTextAndFocus = (text: string) => {
+  if (!view) return;
+  const length = view.state.doc.length;
+  let textToInsert = text;
+  if (length > 0) {
+    const docStr = view.state.doc.toString();
+    if (!docStr.endsWith('\n')) {
+      textToInsert = '\n' + text;
+    }
+  }
+
+  view.dispatch({
+    changes: {
+      from: length,
+      insert: textToInsert,
+    },
+    selection: {
+      anchor: length + textToInsert.length,
+    },
+    scrollIntoView: true,
+  });
+  view.focus();
+};
+
+const focus = () => {
+  if (view) {
+    view.focus();
+  }
+};
+
+defineExpose({
+  appendTextAndFocus,
+  focus,
+});
 </script>
 
 <template>

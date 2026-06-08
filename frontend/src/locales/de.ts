@@ -58,6 +58,7 @@ export const de = {
     markdownLabelEdit: 'Markdown-Text',
     markdownPlaceholder: 'Schreibe Notizen, Checklisten oder Schritte in Markdown...',
     markdownPlaceholderEdit: 'Markdown-Details kommen hierhin...',
+    quickAddChecklist: 'Liste hinzufügen',
     dueDateLabel: 'Fälligkeitsdatum',
     plannedDateLabel: 'Geplant für',
     priorityLabel: 'Priorität',

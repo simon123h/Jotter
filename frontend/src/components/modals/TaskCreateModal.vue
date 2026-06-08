@@ -2,7 +2,7 @@
 import { ref, watch, nextTick, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { X } from '@lucide/vue';
+import { X, ClipboardList } from '@lucide/vue';
 import type { BucketName } from '@/types';
 import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
@@ -39,6 +39,13 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 
 const titleInput = ref<any>(null);
+const markdownEditor = ref<any>(null);
+
+const addChecklistItem = () => {
+  nextTick(() => {
+    markdownEditor.value?.appendTextAndFocus('- [ ] ');
+  });
+};
 
 const existingTags = computed(() => {
   const tagsSet = new Set<string>();
@@ -500,10 +507,20 @@ const handleSubmit = async () => {
 
           <!-- Body (Markdown Editor) -->
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-              {{ t('form.markdownLabel') }}
-            </label>
-            <MarkdownEditor v-model="body" :rows="10" :placeholder="t('form.markdownPlaceholder')" />
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">
+                {{ t('form.markdownLabel') }}
+              </label>
+              <button
+                type="button"
+                @click="addChecklistItem"
+                class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
+              >
+                <ClipboardList class="w-3.5 h-3.5" />
+                {{ t('form.quickAddChecklist') }}
+              </button>
+            </div>
+            <MarkdownEditor ref="markdownEditor" v-model="body" :rows="10" :placeholder="t('form.markdownPlaceholder')" />
           </div>
         </form>
 
