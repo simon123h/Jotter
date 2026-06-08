@@ -4,6 +4,9 @@ import Sortable from 'sortablejs';
 import type { Task } from '@/types';
 import TaskCard from '@/components/ui/TaskCard.vue';
 import { ChevronRight } from '@lucide/vue';
+import { useSelectionStore } from '@/stores/selection';
+
+const selectionStore = useSelectionStore();
 
 const props = withDefaults(
   defineProps<{
@@ -170,11 +173,14 @@ const setupSortables = () => {
       draggable: '.task-card',
       filter: '.add-task-btn',
       preventOnFilter: true,
-      onStart: () => {
+      onStart: (evt: any) => {
         document.body.classList.add('dragging-active');
+        const taskId = evt.item.getAttribute('data-task-id') || '';
+        selectionStore.startDragging(taskId);
       },
       onEnd: (evt: any) => {
         document.body.classList.remove('dragging-active');
+        selectionStore.stopDragging();
         const { item, to } = evt;
         if (!item || !to) return;
 

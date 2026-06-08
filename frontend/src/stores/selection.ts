@@ -28,6 +28,20 @@ export const useSelectionStore = defineStore('selection', () => {
   const hasSelection = computed(() => selectedIds.value.size > 0);
   const selectionCount = computed(() => selectedIds.value.size);
 
+  const draggingTaskIds = ref<string[]>([]);
+
+  const startDragging = (taskId: string) => {
+    if (selectedIds.value.has(taskId)) {
+      draggingTaskIds.value = Array.from(selectedIds.value);
+    } else {
+      draggingTaskIds.value = [taskId];
+    }
+  };
+
+  const stopDragging = () => {
+    draggingTaskIds.value = [];
+  };
+
   return {
     selectedIds,
     isSelected,
@@ -36,5 +50,8 @@ export const useSelectionStore = defineStore('selection', () => {
     clearSelection,
     hasSelection,
     selectionCount,
+    draggingTaskIds,
+    startDragging,
+    stopDragging,
   };
 });

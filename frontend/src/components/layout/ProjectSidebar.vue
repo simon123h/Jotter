@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/stores/settings';
 import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
+import { useSelectionStore } from '@/stores/selection';
 
 const { t } = useI18n();
 
@@ -22,7 +23,38 @@ const emit = defineEmits<{
   (e: 'edit-project', project: Project): void;
   (e: 'sync'): void;
   (e: 'import-planner', projectId: string): void;
+  (e: 'move-tasks-to-project', payload: { taskIds: string[]; projectId: string }): void;
 }>();
+
+const selectionStore = useSelectionStore();
+const draggingOverProjectId = ref<string | null>(null);
+
+const onDragOver = (event: DragEvent, projectId: string) => {
+  if (selectionStore.draggingTaskIds.length > 0 && projectId !== props.activeProjectId) {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }
+};
+
+const onDragEnter = (projectId: string) => {
+  if (selectionStore.draggingTaskIds.length > 0 && projectId !== props.activeProjectId) {
+    draggingOverProjectId.value = projectId;
+  }
+};
+
+const onDragLeave = () => {
+  draggingOverProjectId.value = null;
+};
+
+const onDrop = (projectId: string) => {
+  draggingOverProjectId.value = null;
+  const taskIds = selectionStore.draggingTaskIds;
+  if (taskIds.length > 0 && projectId !== props.activeProjectId) {
+    emit('move-tasks-to-project', { taskIds, projectId });
+  }
+};
 
 const settingsStore = useSettingsStore();
 const { pinnedProjectIds, sortBy } = storeToRefs(settingsStore);
@@ -194,17 +226,24 @@ const handleCreateProject = () => {
           params: { projectId: project.id },
           query: $route.query,
         }"
-        class="project-item group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all font-medium animate-fade-in"
+        class="project-item group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all duration-200 font-medium animate-fade-in"
         :class="[
           project.id === activeProjectId
             ? 'bg-theme-primary/10 text-theme-accent border border-theme-primary/15'
             : 'text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main border border-transparent',
           sortBy === 'manual' ? 'cursor-grab' : 'cursor-pointer',
+          project.id === draggingOverProjectId
+            ? '!border-theme-primary !bg-theme-primary/15 scale-[1.03] shadow-lg shadow-theme-primary/10 ring-2 ring-theme-primary/30 z-10 text-theme-accent'
+            : '',
         ]"
+        @dragover="onDragOver($event, project.id)"
+        @dragenter.prevent="onDragEnter(project.id)"
+        @dragleave="onDragLeave"
+        @drop="onDrop(project.id)"
       >
         <!-- Project Title -->
         <div class="flex items-center gap-2 overflow-hidden flex-grow mr-2">
-          <Hash class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
+          <Hash class="w-3.5 h-3.5 text-theme-text-muted shrink-0" :class="{ 'text-theme-accent': project.id === draggingOverProjectId }" />
           <span class="truncate font-sans flex items-center gap-1.5" :title="t('projects.gitConnectedTooltip')">
             {{ project.title }}
             <GitBranch v-if="project.git_remote" class="w-3 h-3 text-theme-accent shrink-0" />
@@ -213,31 +252,39 @@ const handleCreateProject = () => {
 
         <!-- Project Actions -->
         <div class="flex items-center gap-1 shrink-0">
-          <!-- Pin Toggle Button -->
-          <button
-            @click.stop.prevent="togglePin(project.id)"
-            class="p-0.5 rounded transition-all cursor-pointer"
-            :class="
-              pinnedProjectIds.includes(project.id)
-                ? 'text-theme-accent opacity-100'
-                : 'text-theme-text-muted hover:text-theme-text-main opacity-0 group-hover:opacity-100'
-            "
-            :title="pinnedProjectIds.includes(project.id) ? t('projects.unpinProject') : t('projects.pinProject')"
+          <span
+            v-if="project.id === draggingOverProjectId && selectionStore.draggingTaskIds.length > 0"
+            class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-theme-primary text-white animate-pulse shadow-md shadow-theme-primary/50"
           >
-            <Pin class="w-3 h-3" :class="{ 'fill-theme-accent': pinnedProjectIds.includes(project.id) }" />
-          </button>
-
-          <!-- Edit Icon -->
-          <div class="flex items-center gap-1 shrink-0 transition-opacity">
-            <!-- Edit Project Button -->
+            +{{ selectionStore.draggingTaskIds.length }}
+          </span>
+          <template v-else>
+            <!-- Pin Toggle Button -->
             <button
-              @click.stop.prevent="emit('edit-project', project)"
-              class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-colors cursor-pointer"
-              :title="t('projects.editProject')"
+              @click.stop.prevent="togglePin(project.id)"
+              class="p-0.5 rounded transition-all cursor-pointer"
+              :class="
+                pinnedProjectIds.includes(project.id)
+                  ? 'text-theme-accent opacity-100'
+                  : 'text-theme-text-muted hover:text-theme-text-main opacity-0 group-hover:opacity-100'
+              "
+              :title="pinnedProjectIds.includes(project.id) ? t('projects.unpinProject') : t('projects.pinProject')"
             >
-              <MoreHorizontal class="w-3.5 h-3.5" />
+              <Pin class="w-3 h-3" :class="{ 'fill-theme-accent': pinnedProjectIds.includes(project.id) }" />
             </button>
-          </div>
+
+            <!-- Edit Icon -->
+            <div class="flex items-center gap-1 shrink-0 transition-opacity">
+              <!-- Edit Project Button -->
+              <button
+                @click.stop.prevent="emit('edit-project', project)"
+                class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded transition-colors cursor-pointer"
+                :title="t('projects.editProject')"
+              >
+                <MoreHorizontal class="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </template>
         </div>
       </router-link>
     </div>

@@ -5,6 +5,8 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
+import { useSelectionStore } from '@/stores/selection';
+import { updateTask } from '@/api';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
@@ -128,6 +130,23 @@ const error = computed({
   },
 });
 
+const handleMoveTasksToProject = async ({ taskIds, projectId: targetProjectId }: { taskIds: string[]; projectId: string }) => {
+  try {
+    for (const taskId of taskIds) {
+      const task = projectStore.tasks.find((t) => t.id === taskId);
+      const currentProjId = task ? task.project_id : activeProjectId.value;
+      if (currentProjId && targetProjectId !== currentProjId) {
+        await updateTask(currentProjId, taskId, { project_id: targetProjectId } as any);
+      }
+    }
+    const selectionStore = useSelectionStore();
+    selectionStore.clearSelection();
+    await projectStore.invalidate();
+  } catch (err: any) {
+    localError.value = `Failed to move tasks: ${err.message}`;
+  }
+};
+
 onMounted(async () => {
   await projectStore.fetchProjects();
   setTheme(currentTheme.value);
@@ -161,6 +180,7 @@ onMounted(async () => {
           @edit-project="modalStore.openProjectEdit"
           @sync="triggerSync"
           @import-planner="modalStore.openImportPlanner"
+          @move-tasks-to-project="handleMoveTasksToProject"
         />
       </transition>
 
