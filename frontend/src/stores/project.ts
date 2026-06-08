@@ -109,6 +109,12 @@ export const useProjectStore = defineStore('project', () => {
         syncSuccess.value = false;
       }, 2000);
       await fetchProjects();
+      if (currentQuery.value) {
+        if (currentQuery.value.projectId) {
+          await fetchBuckets(currentQuery.value.projectId);
+        }
+        await invalidate();
+      }
     } catch (err: any) {
       error.value = err.message || 'Failed to synchronize';
       throw err;
