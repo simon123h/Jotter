@@ -77,14 +77,24 @@ const timeColumns = computed(() => {
 });
 
 const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
-  const task = props.tasks.find((t) => t.id === payload.taskId);
-  if (!task) return;
+  const isSelectedTask = props.isSelected(payload.taskId);
+  const tasksToUpdate = isSelectedTask
+    ? props.tasks.filter((t) => props.isSelected(t.id))
+    : props.tasks.filter((t) => t.id === payload.taskId);
 
-  await handleTimeViewPlannedDateUpdate({
-    taskId: payload.taskId,
-    plannedDate: payload.toId === 'notPlanned' ? '' : payload.toId,
-    projectId: task.project_id,
-  });
+  if (tasksToUpdate.length === 0) return;
+
+  const targetDate = payload.toId === 'notPlanned' ? '' : payload.toId;
+
+  await Promise.all(
+    tasksToUpdate.map((t) =>
+      handleTimeViewPlannedDateUpdate({
+        taskId: t.id,
+        plannedDate: targetDate,
+        projectId: t.project_id,
+      })
+    )
+  );
   emit('refresh');
 };
 

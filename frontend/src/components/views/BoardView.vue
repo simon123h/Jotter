@@ -126,14 +126,14 @@ const onColumnReordered = async (payload: any) => {
 };
 
 const onCardDropped = async (payload: any) => {
-  // We need to pass the real tasks ref here
-  // But handleCardDropped uses the ref we passed to useTaskMutations.
-  // Let's refactor BoardView to be more self-contained.
+  // Pass selectedIds if the dropped task is part of selection
+  const selectedIds = new Set(props.tasks.filter((t) => props.isSelected(t.id)).map((t) => t.id));
   await handleCardDropped({
     taskId: payload.taskId,
     toBucket: payload.toId as BucketName,
     prevTaskId: payload.prevTaskId,
     nextTaskId: payload.nextTaskId,
+    selectedIds,
   });
   emit('refresh');
 };

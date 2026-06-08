@@ -140,61 +140,78 @@ const matrixColumns = computed(() => [
 ]);
 
 const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
-  const task = props.tasks.find((t) => t.id === payload.taskId);
-  if (!task) return;
+  const isSelectedTask = props.isSelected(payload.taskId);
+  const tasksToUpdate = isSelectedTask
+    ? props.tasks.filter((t) => props.isSelected(t.id))
+    : props.tasks.filter((t) => t.id === payload.taskId);
 
-  const originalPriority = task.priority;
-  const originalDueDate = task.due_date;
-
-  let newPriority = task.priority;
-  let newDueDate = task.due_date;
+  if (tasksToUpdate.length === 0) return;
 
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
-  if (payload.toId === 'q1') {
-    if (task.priority !== 'high' && task.priority !== 'urgent') {
-      newPriority = 'high';
-    }
-    if (!isUrgent(task)) {
-      newDueDate = todayStr;
-    }
-  } else if (payload.toId === 'q2') {
-    if (task.priority !== 'high' && task.priority !== 'urgent') {
-      newPriority = 'high';
-    }
-    if (isUrgent(task)) {
-      newDueDate = '';
-    }
-  } else if (payload.toId === 'q3') {
-    if (task.priority === 'high' || task.priority === 'urgent') {
-      newPriority = 'medium';
-    }
-    if (!isUrgent(task)) {
-      newDueDate = todayStr;
-    }
-  } else if (payload.toId === 'q4') {
-    if (task.priority === 'high' || task.priority === 'urgent') {
-      newPriority = 'medium';
-    }
-    if (isUrgent(task)) {
-      newDueDate = '';
-    }
-  }
+  // Store original states for potential rollback
+  const originalStates = tasksToUpdate.map((t) => ({
+    task: t,
+    priority: t.priority,
+    dueDate: t.due_date,
+  }));
 
-  // Optimistic update
-  task.priority = newPriority;
-  task.due_date = newDueDate;
+  // Optimistically update and call API in parallel
+  tasksToUpdate.forEach((t) => {
+    let newPriority = t.priority;
+    let newDueDate = t.due_date;
+
+    if (payload.toId === 'q1') {
+      if (t.priority !== 'high' && t.priority !== 'urgent') {
+        newPriority = 'high';
+      }
+      if (!isUrgent(t)) {
+        newDueDate = todayStr;
+      }
+    } else if (payload.toId === 'q2') {
+      if (t.priority !== 'high' && t.priority !== 'urgent') {
+        newPriority = 'high';
+      }
+      if (isUrgent(t)) {
+        newDueDate = '';
+      }
+    } else if (payload.toId === 'q3') {
+      if (t.priority === 'high' || t.priority === 'urgent') {
+        newPriority = 'medium';
+      }
+      if (!isUrgent(t)) {
+        newDueDate = todayStr;
+      }
+    } else if (payload.toId === 'q4') {
+      if (t.priority === 'high' || t.priority === 'urgent') {
+        newPriority = 'medium';
+      }
+      if (isUrgent(t)) {
+        newDueDate = '';
+      }
+    }
+
+    t.priority = newPriority;
+    t.due_date = newDueDate;
+  });
 
   try {
-    await updateTask(task.project_id || activeProjectId.value, payload.taskId, {
-      priority: newPriority,
-      due_date: newDueDate,
-    });
+    await Promise.all(
+      tasksToUpdate.map((t) =>
+        updateTask(t.project_id || activeProjectId.value, t.id, {
+          priority: t.priority,
+          due_date: t.due_date,
+        })
+      )
+    );
     await fetchViewTasks();
   } catch {
-    task.priority = originalPriority;
-    task.due_date = originalDueDate;
+    // Revert all on failure
+    originalStates.forEach(({ task, priority, dueDate }) => {
+      task.priority = priority;
+      task.due_date = dueDate;
+    });
   }
 };
 

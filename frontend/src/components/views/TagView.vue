@@ -88,22 +88,32 @@ const tagColumns = computed(() => {
 });
 
 const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
-  const task = props.tasks.find((t) => t.id === payload.taskId);
-  if (!task) return;
+  const isSelectedTask = props.isSelected(payload.taskId);
+  const tasksToUpdate = isSelectedTask
+    ? props.tasks.filter((t) => props.isSelected(t.id))
+    : props.tasks.filter((t) => t.id === payload.taskId);
+
+  if (tasksToUpdate.length === 0) return;
 
   if (payload.toId === 'untagged') {
-    await handleTagUpdate({ taskId: payload.taskId, tags: [] });
+    await Promise.all(
+      tasksToUpdate.map((t) => handleTagUpdate({ taskId: t.id, tags: [] }))
+    );
     emit('refresh');
     return;
   }
 
   const newTag = payload.toId;
-  const currentTags = task.tags ?? [];
-  if (!currentTags.includes(newTag)) {
-    const newTags = [...currentTags, newTag];
-    await handleTagUpdate({ taskId: payload.taskId, tags: newTags });
-    emit('refresh');
-  }
+  await Promise.all(
+    tasksToUpdate.map(async (t) => {
+      const currentTags = t.tags ?? [];
+      if (!currentTags.includes(newTag)) {
+        const newTags = [...currentTags, newTag];
+        await handleTagUpdate({ taskId: t.id, tags: newTags });
+      }
+    })
+  );
+  emit('refresh');
 };
 
 const onMarkDone = async (task: Task) => {
