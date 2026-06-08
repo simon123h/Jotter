@@ -11,7 +11,6 @@ const projectStore = useProjectStore();
 const props = defineProps<{
   tasks: Task[];
   projects: Project[];
-  isSelected: (id: string) => boolean;
 }>();
 
 const emit = defineEmits<{
@@ -44,7 +43,6 @@ onMounted(async () => {
         :projects="props.projects"
         group-name="global-time-view"
         :show-project-badge="true"
-        :is-selected="props.isSelected"
         @toggle-select="(task) => emit('toggle-select', task)"
         @refresh="emit('refresh')"
       />

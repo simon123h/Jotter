@@ -10,16 +10,17 @@ import { useUiStore } from '@/stores/ui';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useBuckets } from '@/composables/useBuckets';
 import { ChevronLeft, List, LayoutGrid, Grid, MoreHorizontal } from '@lucide/vue';
+import { useSelectionStore } from '@/stores/selection';
 
 const props = defineProps<{
   tasks: Task[];
   projects?: Project[];
-  isSelected: (id: string) => boolean;
   groupName: string;
   showProjectBadge?: boolean;
 }>();
 
-const selectionCount = computed(() => props.tasks.filter((t) => props.isSelected(t.id)).length);
+const selectionStore = useSelectionStore();
+const selectionCount = computed(() => props.tasks.filter((t) => selectionStore.isSelected(t.id)).length);
 
 const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
@@ -79,9 +80,9 @@ const timeColumns = computed(() => {
 });
 
 const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
-  const isSelectedTask = props.isSelected(payload.taskId);
+  const isSelectedTask = selectionStore.isSelected(payload.taskId);
   const tasksToUpdate = isSelectedTask
-    ? props.tasks.filter((t) => props.isSelected(t.id))
+    ? props.tasks.filter((t) => selectionStore.isSelected(t.id))
     : props.tasks.filter((t) => t.id === payload.taskId);
 
   if (tasksToUpdate.length === 0) return;
@@ -137,8 +138,6 @@ onBeforeUnmount(() => {
       :compact-cards="true"
       :show-project="showProjectBadge"
       :projects="projects"
-      :is-selected="isSelected"
-      :selection-count="selectionCount"
       :is-collapsed="uiStore.isColumnCollapsed(groupName, col.id)"
       :layout="uiStore.getVirtualColumnLayout(groupName, col.id)"
       @mark-done="onMarkDone"

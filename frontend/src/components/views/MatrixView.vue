@@ -15,10 +15,10 @@ const { t } = useI18n();
 
 const props = defineProps<{
   tasks: Task[];
-  isSelected: (id: string) => boolean;
 }>();
 
-const selectionCount = computed(() => props.tasks.filter((t) => props.isSelected(t.id)).length);
+import { useSelectionStore } from '@/stores/selection';
+const selectionStore = useSelectionStore();
 
 const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
@@ -142,9 +142,9 @@ const matrixColumns = computed(() => [
 ]);
 
 const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
-  const isSelectedTask = props.isSelected(payload.taskId);
+  const isSelectedTask = selectionStore.isSelected(payload.taskId);
   const tasksToUpdate = isSelectedTask
-    ? props.tasks.filter((t) => props.isSelected(t.id))
+    ? props.tasks.filter((t) => selectionStore.isSelected(t.id))
     : props.tasks.filter((t) => t.id === payload.taskId);
 
   if (tasksToUpdate.length === 0) return;
@@ -276,8 +276,6 @@ const sliderPercentage = computed(() => {
         :color="col.color"
         :group-name="'matrix-view'"
         :compact-cards="true"
-        :is-selected="isSelected"
-        :selection-count="selectionCount"
         :is-fluid="true"
         :layout="uiStore.getVirtualColumnLayout('matrix-view', col.id, 'grid-3')"
         @card-dropped="handleCardDropped"

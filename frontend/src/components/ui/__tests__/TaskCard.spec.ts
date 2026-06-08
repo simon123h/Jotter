@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, RouterLinkStub } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import TaskCard from '@/components/ui/TaskCard.vue';
 import type { Task } from '@/types';
 
@@ -11,6 +12,10 @@ vi.mock('vue-router', () => ({
 }));
 
 describe('TaskCard.vue', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
   const mockTask: Task = {
     id: '123',
     project_id: 'default',

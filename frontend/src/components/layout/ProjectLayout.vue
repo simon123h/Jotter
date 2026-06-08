@@ -11,8 +11,8 @@ import { useI18n } from '@/composables/useI18n';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { X, Folder } from '@lucide/vue';
 import { useTaskFilters } from '@/composables/useTaskFilters';
-import { useTaskSelection } from '@/composables/useTaskSelection';
 import { useDragSelect } from '@/composables/useDragSelect';
+import { useSelectionStore } from '@/stores/selection';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
 
 const { t } = useI18n();
@@ -25,7 +25,9 @@ const modalStore = useModalStore();
 const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 const { projects, buckets, tasks, loading, projectsLoaded, error: projectError } = storeToRefs(projectStore);
 
-const { isSelected, toggleSelection, selectAll, clearSelection, hasSelection, selectionCount, selectedIds } = useTaskSelection();
+const selectionStore = useSelectionStore();
+const { isSelected, toggleSelection, selectAll, clearSelection } = selectionStore;
+const { hasSelection, selectionCount, selectedIds } = storeToRefs(selectionStore);
 
 const {
   active: isDragSelecting,

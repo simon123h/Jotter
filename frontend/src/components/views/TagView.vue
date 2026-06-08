@@ -19,10 +19,10 @@ const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
 const props = defineProps<{
   tasks: Task[];
-  isSelected: (id: string) => boolean;
 }>();
 
-const selectionCount = computed(() => props.tasks.filter((t) => props.isSelected(t.id)).length);
+import { useSelectionStore } from '@/stores/selection';
+const selectionStore = useSelectionStore();
 
 const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
@@ -90,9 +90,9 @@ const tagColumns = computed(() => {
 });
 
 const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
-  const isSelectedTask = props.isSelected(payload.taskId);
+  const isSelectedTask = selectionStore.isSelected(payload.taskId);
   const tasksToUpdate = isSelectedTask
-    ? props.tasks.filter((t) => props.isSelected(t.id))
+    ? props.tasks.filter((t) => selectionStore.isSelected(t.id))
     : props.tasks.filter((t) => t.id === payload.taskId);
 
   if (tasksToUpdate.length === 0) return;
@@ -138,8 +138,6 @@ const onMarkDone = async (task: Task) => {
       :tasks="col.tasks"
       group-name="tag-view"
       :compact-cards="true"
-      :is-selected="isSelected"
-      :selection-count="selectionCount"
       @mark-done="onMarkDone"
       @card-dropped="handleCardDropped"
       @toggle-select="(task) => emit('toggle-select', task)"

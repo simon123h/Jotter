@@ -32,10 +32,10 @@ const isCollapsed = (bucketName: string) => {
 const props = defineProps<{
   buckets: Bucket[];
   tasks: Task[];
-  isSelected: (id: string) => boolean;
 }>();
 
-const selectionCount = computed(() => props.tasks.filter((t) => props.isSelected(t.id)).length);
+import { useSelectionStore } from '@/stores/selection';
+const selectionStore = useSelectionStore();
 
 const emit = defineEmits<{
   (e: 'add-task-click', bucket: BucketName): void;
@@ -129,7 +129,7 @@ const onColumnReordered = async (payload: any) => {
 
 const onCardDropped = async (payload: any) => {
   // Pass selectedIds if the dropped task is part of selection
-  const selectedIds = new Set(props.tasks.filter((t) => props.isSelected(t.id)).map((t) => t.id));
+  const selectedIds = selectionStore.selectedIds;
   await handleCardDropped({
     taskId: payload.taskId,
     toBucket: payload.toId as BucketName,
@@ -201,8 +201,6 @@ const handleCancelAddColumn = () => {
       :is-limit-exceeded="!!b.max_tasks && (tasksByBucket[b.name] || []).length > b.max_tasks"
       :show-add-task="true"
       group-name="kanban-board"
-      :is-selected="isSelected"
-      :selection-count="selectionCount"
       :is-collapsed="isCollapsed(b.name)"
       @add-task-click="(id) => emit('add-task-click', id as BucketName)"
       @card-dropped="onCardDropped"

@@ -20,10 +20,8 @@ const props = withDefaults(
     compactCards?: boolean;
     showProject?: boolean;
     projects?: any[];
-    isSelected?: (id: string) => boolean;
     isCollapsed?: boolean;
     isFluid?: boolean;
-    selectionCount?: number;
   }>(),
   {
     subtitle: '',
@@ -36,10 +34,8 @@ const props = withDefaults(
     compactCards: false,
     showProject: false,
     projects: () => [],
-    isSelected: () => false,
     isCollapsed: false,
     isFluid: false,
-    selectionCount: 0,
   }
 );
 const emit = defineEmits<{
@@ -328,8 +324,6 @@ watch(
               :compact="compactCards"
               :show-project="showProject"
               :project-title="projects?.find((p) => p.id === task.project_id)?.title"
-              :is-selected="isSelected(task.id)"
-              :selection-count="selectionCount"
               :data-task-id="task.id"
               @mark-done="emit('mark-done', task)"
               @toggle-select="emit('toggle-select', $event)"
@@ -359,8 +353,6 @@ watch(
               :compact="compactCards"
               :show-project="showProject"
               :project-title="projects?.find((p) => p.id === task.project_id)?.title"
-              :is-selected="isSelected(task.id)"
-              :selection-count="selectionCount"
               :data-task-id="task.id"
               @mark-done="emit('mark-done', task)"
               @toggle-select="emit('toggle-select', $event)"
@@ -378,8 +370,6 @@ watch(
             :compact="compactCards"
             :show-project="showProject"
             :project-title="projects?.find((p) => p.id === task.project_id)?.title"
-            :is-selected="isSelected(task.id)"
-            :selection-count="selectionCount"
             :data-task-id="task.id"
             @mark-done="emit('mark-done', task)"
             @toggle-select="emit('toggle-select', $event)"

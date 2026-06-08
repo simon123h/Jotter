@@ -5,8 +5,10 @@ import { marked } from 'marked';
 import { ChevronDown, ClipboardList, Check, Calendar, Clock } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
+import { useSelectionStore } from '@/stores/selection';
 
 const { t, locale } = useI18n();
+const selectionStore = useSelectionStore();
 
 const props = withDefaults(
   defineProps<{
@@ -18,8 +20,6 @@ const props = withDefaults(
     compact?: boolean;
     showProject?: boolean;
     projectTitle?: string;
-    isSelected?: boolean;
-    selectionCount?: number;
   }>(),
   {
     showTags: true,
@@ -29,10 +29,11 @@ const props = withDefaults(
     compact: false,
     showProject: false,
     projectTitle: '',
-    isSelected: false,
-    selectionCount: 0,
   }
 );
+
+const isSelected = computed(() => selectionStore.isSelected(props.task.id));
+const selectionCount = computed(() => selectionStore.selectionCount);
 
 const emit = defineEmits<{
   (e: 'click', task: Task): void;

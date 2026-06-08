@@ -9,7 +9,6 @@ import { storeToRefs } from 'pinia';
 
 defineProps<{
   tasks: Task[];
-  isSelected: (id: string) => boolean;
 }>();
 
 const emit = defineEmits<{
@@ -43,7 +42,6 @@ watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
   <TimelineLayout
     :tasks="tasks"
     group-name="time-view"
-    :is-selected="isSelected"
     @toggle-select="emit('toggle-select', $event)"
     @refresh="emit('refresh')"
   />
