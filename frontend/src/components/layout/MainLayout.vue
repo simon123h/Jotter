@@ -5,8 +5,6 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
-import { useSelectionStore } from '@/stores/selection';
-import { updateTask } from '@/api';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
