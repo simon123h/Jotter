@@ -20,7 +20,7 @@ const emit = defineEmits<{
 }>();
 
 onMounted(async () => {
-  document.title = `Jotter / ${t('views.globalTime') || 'Global Planning'}`;
+  document.title = `${t('views.globalTime') || 'Global Planning'} | Jotter`;
   await projectStore.fetchTasks({
     isGlobal: true,
     excludeBuckets: 'done,archive',

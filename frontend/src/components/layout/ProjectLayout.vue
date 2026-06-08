@@ -58,7 +58,7 @@ const displayedBuckets = computed(() => {
 watchEffect(() => {
   const currentProj = projects.value.find((p) => p.id === projectId.value);
   if (currentProj) {
-    document.title = `Jotter / ${currentProj.title}`;
+    document.title = `${currentProj.title} | Jotter`;
   } else {
     document.title = 'Jotter';
   }
