@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -129,4 +130,114 @@ func TestGitSync(t *testing.T) {
 			t.Error("Git state is not clean; merge --abort might have failed")
 		}
 	})
+
+	t.Run("Option A Backup, Clone, and Semantic App-Level Import Flow", func(t *testing.T) {
+		ctx := context.Background()
+
+		// 1. Configure global user config to ensure commits succeed on freshly cloned repos
+		_ = runGit(ctx, os.TempDir(), "config", "--global", "user.email", "test@example.com")
+		_ = runGit(ctx, os.TempDir(), "config", "--global", "user.name", "Test User")
+		_ = runGit(ctx, os.TempDir(), "config", "--global", "init.defaultBranch", "main")
+
+		// 2. Create a bare remote repository
+		remoteDir, _ := os.MkdirTemp("", "git-remote-opt-a-*")
+		defer os.RemoveAll(remoteDir)
+		_ = runGit(ctx, remoteDir, "init", "--bare")
+		_ = runGit(ctx, remoteDir, "symbolic-ref", "HEAD", "refs/heads/main")
+
+		// 3. Clone remote to a seed folder, write initial files, and push
+		seedDir, _ := os.MkdirTemp("", "git-seed-opt-a-*")
+		defer os.RemoveAll(seedDir)
+		_ = runGit(ctx, seedDir, "clone", remoteDir, ".")
+		
+		remoteProjects := `[{"id": "remote-proj", "title": "Remote Project"}]`
+		remoteBuckets := `[{"name": "remote-bucket", "title": "Remote Bucket"}]`
+		_ = os.WriteFile(filepath.Join(seedDir, "projects.json"), []byte(remoteProjects), 0644)
+		_ = os.WriteFile(filepath.Join(seedDir, "buckets.json"), []byte(remoteBuckets), 0644)
+		_ = os.WriteFile(filepath.Join(seedDir, "remote_note.md"), []byte("remote note content"), 0644)
+
+		_ = runGit(ctx, seedDir, "add", ".")
+		_ = runGit(ctx, seedDir, "commit", "-m", "Seed remote repository")
+		_ = runGit(ctx, seedDir, "push", "origin", "main")
+
+		// 4. Create a non-Git local directory containing user files
+		localDir, _ := os.MkdirTemp("", "git-local-opt-a-*")
+		defer os.RemoveAll(localDir)
+
+		localProjects := `[{"id": "local-proj", "title": "Local Project"}]`
+		localBuckets := `[{"name": "local-bucket", "title": "Local Bucket"}]`
+		_ = os.WriteFile(filepath.Join(localDir, "projects.json"), []byte(localProjects), 0644)
+		_ = os.WriteFile(filepath.Join(localDir, "buckets.json"), []byte(localBuckets), 0644)
+		_ = os.WriteFile(filepath.Join(localDir, "local_note.md"), []byte("local note content"), 0644)
+
+		// 5. Run GitSync - this should trigger the Option A flow (backup, clone, and merge)
+		err := GitSync(localDir, remoteDir)
+		if err != nil {
+			t.Fatalf("GitSync failed with Option A: %v", err)
+		}
+
+		// 6. Verify local directory is now a Git repository
+		if _, err := os.Stat(filepath.Join(localDir, ".git")); os.IsNotExist(err) {
+			t.Error("Expected local directory to be a Git repo, but .git is missing")
+		}
+
+		// 7. Verify semantic merge of projects.json
+		projData, err := os.ReadFile(filepath.Join(localDir, "projects.json"))
+		if err != nil {
+			t.Fatalf("Failed to read merged projects.json: %v", err)
+		}
+		var mergedProjects []map[string]interface{}
+		if err := json.Unmarshal(projData, &mergedProjects); err != nil {
+			t.Fatalf("Failed to parse merged projects.json: %v", err)
+		}
+		if len(mergedProjects) != 2 {
+			t.Errorf("Expected 2 projects in merged projects.json, got: %d (%s)", len(mergedProjects), string(projData))
+		}
+
+		// 8. Verify semantic merge of buckets.json
+		bucketData, err := os.ReadFile(filepath.Join(localDir, "buckets.json"))
+		if err != nil {
+			t.Fatalf("Failed to read merged buckets.json: %v", err)
+		}
+		var mergedBuckets []map[string]interface{}
+		if err := json.Unmarshal(bucketData, &mergedBuckets); err != nil {
+			t.Fatalf("Failed to parse merged buckets.json: %v", err)
+		}
+		if len(mergedBuckets) != 2 {
+			t.Errorf("Expected 2 buckets in merged buckets.json, got: %d (%s)", len(mergedBuckets), string(bucketData))
+		}
+
+		// 9. Verify notes co-exist side-by-side
+		if _, err := os.Stat(filepath.Join(localDir, "remote_note.md")); os.IsNotExist(err) {
+			t.Error("Expected remote_note.md to be imported, but it is missing")
+		}
+		if _, err := os.Stat(filepath.Join(localDir, "local_note.md")); os.IsNotExist(err) {
+			t.Error("Expected local_note.md to be preserved, but it is missing")
+		}
+	})
+}
+
+func TestExpandTilde(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("Failed to retrieve user home dir: %v", err)
+	}
+
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"", ""},
+		{"/abs/path", "/abs/path"},
+		{"~", home},
+		{"~/my-repo.git", filepath.Join(home, "my-repo.git")},
+		{"~\\my-repo.git", filepath.Join(home, "my-repo.git")},
+	}
+
+	for _, tt := range tests {
+		got := expandTilde(tt.input)
+		if got != tt.expected {
+			t.Errorf("expandTilde(%q) = %q; expected %q", tt.input, got, tt.expected)
+		}
+	}
 }
