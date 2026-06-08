@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { Project, Task, Bucket, TaskQuery } from '@/types';
-import { getProjects, getBuckets, getTasks, getAllTasks, syncSystem } from '@/api';
+import { getProjects, getBuckets, getTasks, getAllTasks, syncSystem, updateTask } from '@/api';
 import { useSettingsStore } from '@/stores/settings';
 
 export const useProjectStore = defineStore('project', () => {
@@ -123,6 +123,33 @@ export const useProjectStore = defineStore('project', () => {
     }
   };
 
+  const moveTasksToProject = async (
+    taskIds: string[],
+    targetProjectId: string,
+    options?: { resetToDefaultBucket?: boolean; currentProjectId?: string }
+  ) => {
+    let targetBucket: string | undefined = undefined;
+
+    if (options?.resetToDefaultBucket) {
+      const targetBuckets = await getBuckets(targetProjectId);
+      const defCol = targetBuckets.find((b) => b.is_default);
+      targetBucket = defCol?.name || targetBuckets[0]?.name || 'todo';
+    }
+
+    for (const taskId of taskIds) {
+      const task = tasks.value.find((t) => t.id === taskId);
+      const currentProjId = task ? task.project_id : (options?.currentProjectId || '');
+      if (currentProjId && targetProjectId !== currentProjId) {
+        const payload: any = { project_id: targetProjectId };
+        if (targetBucket) {
+          payload.bucket = targetBucket;
+          payload.position = 1000.0;
+        }
+        await updateTask(currentProjId, taskId, payload);
+      }
+    }
+  };
+
   return {
     projects,
     buckets,
@@ -139,5 +166,6 @@ export const useProjectStore = defineStore('project', () => {
     fetchTasks,
     invalidate,
     triggerSync,
+    moveTasksToProject,
   };
 });

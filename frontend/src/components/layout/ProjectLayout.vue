@@ -256,19 +256,10 @@ const handleBulkSetDueDate = async (date: string) => {
   }
 };
 
-const handleBulkMoveProject = async (projId: string) => {
+const handleBulkMoveProject = (projId: string) => {
   const ids = Array.from(selectedIds.value);
-  try {
-    for (const id of ids) {
-      const task = tasks.value.find((t) => t.id === id);
-      if (task) {
-        await updateTask(task.project_id, id, { project_id: projId } as any);
-      }
-    }
-    clearSelection();
-    await fetchAllData();
-  } catch (err: any) {
-    localError.value = `Bulk project move failed: ${err.message}`;
+  if (ids.length > 0) {
+    modalStore.openMoveTasksConfirm(ids, projId);
   }
 };
 
