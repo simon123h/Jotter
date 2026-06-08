@@ -235,6 +235,7 @@ const handleCreateProject = () => {
           project.id === draggingOverProjectId
             ? '!border-theme-primary !bg-theme-primary/15 scale-[1.03] shadow-lg shadow-theme-primary/10 ring-2 ring-theme-primary/30 z-10 text-theme-accent'
             : '',
+          selectionStore.draggingTaskIds.length > 0 ? 'dragging-active' : ''
         ]"
         @dragover="onDragOver($event, project.id)"
         @dragenter.prevent="onDragEnter(project.id)"
@@ -370,3 +371,9 @@ const handleCreateProject = () => {
     </div>
   </aside>
 </template>
+
+<style scoped>
+.project-item.dragging-active * {
+  pointer-events: none;
+}
+</style>

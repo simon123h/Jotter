@@ -130,21 +130,8 @@ const error = computed({
   },
 });
 
-const handleMoveTasksToProject = async ({ taskIds, projectId: targetProjectId }: { taskIds: string[]; projectId: string }) => {
-  try {
-    for (const taskId of taskIds) {
-      const task = projectStore.tasks.find((t) => t.id === taskId);
-      const currentProjId = task ? task.project_id : activeProjectId.value;
-      if (currentProjId && targetProjectId !== currentProjId) {
-        await updateTask(currentProjId, taskId, { project_id: targetProjectId } as any);
-      }
-    }
-    const selectionStore = useSelectionStore();
-    selectionStore.clearSelection();
-    await projectStore.invalidate();
-  } catch (err: any) {
-    localError.value = `Failed to move tasks: ${err.message}`;
-  }
+const handleMoveTasksToProject = ({ taskIds, projectId: targetProjectId }: { taskIds: string[]; projectId: string }) => {
+  modalStore.openMoveTasksConfirm(taskIds, targetProjectId);
 };
 
 onMounted(async () => {
