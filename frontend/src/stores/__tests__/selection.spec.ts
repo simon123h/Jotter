@@ -30,10 +30,7 @@ describe('Selection Store', () => {
 
   it('can select all tasks', () => {
     const store = useSelectionStore();
-    const mockTasks = [
-      { id: 'task-1' },
-      { id: 'task-2' },
-    ] as Task[];
+    const mockTasks = [{ id: 'task-1' }, { id: 'task-2' }] as Task[];
 
     store.selectAll(mockTasks);
     expect(store.isSelected('task-1')).toBe(true);
@@ -53,7 +50,7 @@ describe('Selection Store', () => {
 
   it('can start and stop dragging', () => {
     const store = useSelectionStore();
-    
+
     // Dragging an unselected task
     store.startDragging('task-1');
     expect(store.draggingTaskIds).toEqual(['task-1']);
@@ -64,7 +61,7 @@ describe('Selection Store', () => {
     // Dragging when tasks are selected
     store.toggleSelection('task-2');
     store.toggleSelection('task-3');
-    
+
     // If we drag one of the selected tasks
     store.startDragging('task-2');
     expect(store.draggingTaskIds).toContain('task-2');

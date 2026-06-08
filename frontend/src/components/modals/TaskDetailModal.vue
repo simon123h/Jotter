@@ -411,7 +411,7 @@ const addChecklistItem = () => {
 };
 
 const hasChecklist = computed(() => {
-  const bodyText = isEditing.value ? editBody.value : (task.value?.body || '');
+  const bodyText = isEditing.value ? editBody.value : task.value?.body || '';
   return /(?:^|\n)\s*[-*+]\s+\[[ xX]\]/.test(bodyText);
 });
 

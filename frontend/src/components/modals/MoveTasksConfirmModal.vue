@@ -59,7 +59,9 @@ onUnmounted(() => {
       <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
 
       <!-- Modal Content -->
-      <div class="relative bg-theme-base border border-theme-border w-full max-w-md rounded shadow-2xl overflow-hidden flex flex-col z-10 animate-scale-in">
+      <div
+        class="relative bg-theme-base border border-theme-border w-full max-w-md rounded shadow-2xl overflow-hidden flex flex-col z-10 animate-scale-in"
+      >
         <!-- Header -->
         <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
           <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">Move Tasks to Project</h3>
@@ -75,8 +77,8 @@ onUnmounted(() => {
         <div class="p-4 space-y-4">
           <p class="text-sm text-theme-text-muted leading-relaxed">
             You are moving <span class="font-bold text-theme-text-main">{{ taskIds.length }}</span> task(s) to
-            <span class="font-bold text-theme-text-main">{{ targetProject?.title || 'another project' }}</span>.
-            Choose how their columns should be handled:
+            <span class="font-bold text-theme-text-main">{{ targetProject?.title || 'another project' }}</span
+            >. Choose how their columns should be handled:
           </p>
 
           <div class="grid grid-cols-1 gap-3">
@@ -91,7 +93,10 @@ onUnmounted(() => {
                   : 'border-theme-border bg-theme-card hover:bg-theme-column/20 text-theme-text-muted hover:text-theme-text-main'
               "
             >
-              <Inbox class="w-5 h-5 shrink-0 mt-0.5" :class="selectedOption === 'default' ? 'text-theme-primary' : 'text-theme-text-muted'" />
+              <Inbox
+                class="w-5 h-5 shrink-0 mt-0.5"
+                :class="selectedOption === 'default' ? 'text-theme-primary' : 'text-theme-text-muted'"
+              />
               <div>
                 <div class="font-bold text-sm text-theme-text-main">Move to Default Column</div>
                 <div class="text-xs text-theme-text-muted mt-0.5">
@@ -111,12 +116,13 @@ onUnmounted(() => {
                   : 'border-theme-border bg-theme-card hover:bg-theme-column/20 text-theme-text-muted hover:text-theme-text-main'
               "
             >
-              <LayoutGrid class="w-5 h-5 shrink-0 mt-0.5" :class="selectedOption === 'keep' ? 'text-theme-primary' : 'text-theme-text-muted'" />
+              <LayoutGrid
+                class="w-5 h-5 shrink-0 mt-0.5"
+                :class="selectedOption === 'keep' ? 'text-theme-primary' : 'text-theme-text-muted'"
+              />
               <div>
                 <div class="font-bold text-sm text-theme-text-main">Keep Current Columns</div>
-                <div class="text-xs text-theme-text-muted mt-0.5">
-                  Maintains the column name/ID from the current project if compatible.
-                </div>
+                <div class="text-xs text-theme-text-muted mt-0.5">Maintains the column name/ID from the current project if compatible.</div>
               </div>
             </button>
           </div>

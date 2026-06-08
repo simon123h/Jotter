@@ -98,9 +98,7 @@ const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
   if (tasksToUpdate.length === 0) return;
 
   if (payload.toId === 'untagged') {
-    await Promise.all(
-      tasksToUpdate.map((t) => handleTagUpdate({ taskId: t.id, tags: [] }))
-    );
+    await Promise.all(tasksToUpdate.map((t) => handleTagUpdate({ taskId: t.id, tags: [] })));
     emit('refresh');
     return;
   }

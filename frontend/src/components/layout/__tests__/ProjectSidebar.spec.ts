@@ -97,7 +97,7 @@ describe('ProjectSidebar.vue', () => {
     // 2. Drag Enter
     await targetItem.trigger('dragenter');
     await wrapper.vm.$nextTick();
-    
+
     // Verify scale or class logic or computed state via wrapper classes/badge
     const badge = wrapper.find('.bg-theme-primary.animate-pulse');
     expect(badge.exists()).toBe(true);
