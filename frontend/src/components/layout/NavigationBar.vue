@@ -68,6 +68,7 @@ const isTabActive = (tab: string) => {
         ref="searchInput"
         :value="modelValue"
         @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+        @keydown.esc="($event.target as HTMLInputElement).blur()"
         type="text"
         :placeholder="t('searchPlaceholder')"
         class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
