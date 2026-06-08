@@ -95,12 +95,14 @@ func GitSync(projectDir string, remoteURL string) error {
 func hasRemoteOrigin(ctx context.Context, dir string) bool {
 	cmd := exec.CommandContext(ctx, "git", "remote", "show", "origin")
 	cmd.Dir = dir
+	prepareCmd(cmd)
 	return cmd.Run() == nil
 }
 
 func getRemoteURL(ctx context.Context, dir string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "remote", "get-url", "origin")
 	cmd.Dir = dir
+	prepareCmd(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err
@@ -111,11 +113,13 @@ func getRemoteURL(ctx context.Context, dir string) (string, error) {
 func hasRemoteBranch(ctx context.Context, dir, branch string) bool {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--verify", branch)
 	cmd.Dir = dir
+	prepareCmd(cmd)
 	return cmd.Run() == nil
 }
 func runGit(ctx context.Context, dir string, args ...string) error {
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
+	prepareCmd(cmd)
 	// We capture combined output to help debugging if needed
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -127,6 +131,7 @@ func runGit(ctx context.Context, dir string, args ...string) error {
 func getCurrentBranch(ctx context.Context, dir string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD")
 	cmd.Dir = dir
+	prepareCmd(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return "main", nil // Fallback
