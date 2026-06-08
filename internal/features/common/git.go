@@ -42,7 +42,7 @@ func GitSync(projectDir string, remoteURL string) error {
 		// Detect if remote actually has commits first
 		hasRemoteCommits := false
 		cmdRemote := exec.CommandContext(ctx, "git", "ls-remote", "--heads", remoteURL)
-		prepareCmd(cmdRemote)
+		PrepareCmd(cmdRemote)
 		if out, err := cmdRemote.Output(); err == nil && len(strings.TrimSpace(string(out))) > 0 {
 			hasRemoteCommits = true
 		}
@@ -164,14 +164,14 @@ func GitSync(projectDir string, remoteURL string) error {
 func hasRemoteOrigin(ctx context.Context, dir string) bool {
 	cmd := exec.CommandContext(ctx, "git", "remote", "show", "origin")
 	cmd.Dir = dir
-	prepareCmd(cmd)
+	PrepareCmd(cmd)
 	return cmd.Run() == nil
 }
 
 func getRemoteURL(ctx context.Context, dir string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "remote", "get-url", "origin")
 	cmd.Dir = dir
-	prepareCmd(cmd)
+	PrepareCmd(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err
@@ -182,15 +182,15 @@ func getRemoteURL(ctx context.Context, dir string) (string, error) {
 func hasRemoteBranch(ctx context.Context, dir, branch string) bool {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--verify", branch)
 	cmd.Dir = dir
-	prepareCmd(cmd)
+	PrepareCmd(cmd)
 	return cmd.Run() == nil
 }
 
-func runGit(ctx context.Context, dir string, args ...string) error {
+func RunGit(ctx context.Context, dir string, args ...string) error {
 	log.Printf("[Git] Running command in directory %q: git %s", dir, strings.Join(args, " "))
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
-	prepareCmd(cmd)
+	PrepareCmd(cmd)
 	// We capture combined output to help debugging if needed
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -201,10 +201,27 @@ func runGit(ctx context.Context, dir string, args ...string) error {
 	return nil
 }
 
+func runGit(ctx context.Context, dir string, args ...string) error {
+	return RunGit(ctx, dir, args...)
+}
+
+func RunGitWithOutput(ctx context.Context, dir string, args ...string) (string, error) {
+	log.Printf("[Git] Running command with output in directory %q: git %s", dir, strings.Join(args, " "))
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Dir = dir
+	PrepareCmd(cmd)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("[Git] Command failed: git %s (error: %v, output: %q)", strings.Join(args, " "), err, string(output))
+		return "", fmt.Errorf("%w (output: %s)", err, string(output))
+	}
+	return string(output), nil
+}
+
 func getCurrentBranch(ctx context.Context, dir string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD")
 	cmd.Dir = dir
-	prepareCmd(cmd)
+	PrepareCmd(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return "main", nil // Fallback

@@ -7,6 +7,7 @@ import ProjectEditModal from './ProjectEditModal.vue';
 import FilterModal from './FilterModal.vue';
 import ImportPlannerModal from './ImportPlannerModal.vue';
 import MoveTasksConfirmModal from './MoveTasksConfirmModal.vue';
+import TimeMachineModal from './TimeMachineModal.vue';
 
 const modalStore = useModalStore();
 const projectStore = useProjectStore();
@@ -62,6 +63,14 @@ const handleTaskCreateSuccess = async () => {
         :is-open="true"
         :task-ids="modalProps.taskIds"
         :target-project-id="modalProps.targetProjectId"
+        @close="modalStore.closeModal"
+      />
+
+      <!-- Time Machine Modal -->
+      <TimeMachineModal
+        v-else-if="activeModal === 'time-machine'"
+        :is-open="true"
+        :project-id="modalProps.projectId"
         @close="modalStore.closeModal"
       />
     </div>

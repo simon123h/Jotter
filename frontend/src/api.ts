@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo } from '@/types';
+import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit } from '@/types';
 import * as demoApi from '@/api.demo';
 
 const API_BASE = '/api';
@@ -379,6 +379,38 @@ export async function getSystemInfo(): Promise<SystemInfo> {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Failed to fetch system info: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function getGitHistory(projectId?: string): Promise<GitCommit[]> {
+  if (IS_DEMO_MODE) {
+    return [];
+  }
+  const url = new URL(`${API_BASE}/system/history`, window.location.origin);
+  if (projectId) {
+    url.searchParams.append('projectId', projectId);
+  }
+  const response = await customFetch(url.toString());
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to fetch git history: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function restoreCommit(commitHash: string, projectId?: string): Promise<{ synchronized_tasks: number }> {
+  if (IS_DEMO_MODE) {
+    return { synchronized_tasks: 0 };
+  }
+  const response = await customFetch(`${API_BASE}/system/restore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ commitHash, projectId }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to restore commit: ${response.statusText}`);
   }
   return response.json();
 }

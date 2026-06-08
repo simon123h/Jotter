@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { Project, Task, Bucket, TaskQuery } from '@/types';
-import { getProjects, getBuckets, getTasks, getAllTasks, syncSystem, updateTask } from '@/api';
+import { getProjects, getBuckets, getTasks, getAllTasks, syncSystem, updateTask, restoreCommit } from '@/api';
 import { useSettingsStore } from '@/stores/settings';
 
 export const useProjectStore = defineStore('project', () => {
@@ -123,6 +123,31 @@ export const useProjectStore = defineStore('project', () => {
     }
   };
 
+  const restoreToCommit = async (commitHash: string, projectId?: string) => {
+    syncLoading.value = true;
+    syncSuccess.value = false;
+    error.value = null;
+    try {
+      await restoreCommit(commitHash, projectId);
+      syncSuccess.value = true;
+      setTimeout(() => {
+        syncSuccess.value = false;
+      }, 2000);
+      await fetchProjects();
+      if (currentQuery.value) {
+        if (currentQuery.value.projectId) {
+          await fetchBuckets(currentQuery.value.projectId);
+        }
+        await invalidate();
+      }
+    } catch (err: any) {
+      error.value = err.message || 'Failed to restore commit';
+      throw err;
+    } finally {
+      syncLoading.value = false;
+    }
+  };
+
   const moveTasksToProject = async (
     taskIds: string[],
     targetProjectId: string,
@@ -166,6 +191,7 @@ export const useProjectStore = defineStore('project', () => {
     fetchTasks,
     invalidate,
     triggerSync,
+    restoreToCommit,
     moveTasksToProject,
   };
 });

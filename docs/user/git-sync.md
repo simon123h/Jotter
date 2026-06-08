@@ -54,6 +54,43 @@ If you prefer HTTPS URLs (`https://github.com/...`):
 
 ---
 
+## Time Machine (Version Rollbacks)
+
+Jotter includes a built-in **Time Machine** feature that allows you to roll your workspace or specific projects back to any snapshot in your Git history directly from the user interface. 
+
+This provides a zero-risk environment for experiments, accidental deletes, or viewing earlier states of your boards.
+
+### How to Access the Time Machine
+1. In the sidebar, locate the **Sync** button at the bottom.
+2. Click the small **Chevron Down** icon on the right side of the Sync button.
+3. This will open the **Time Machine Modal Dialog** - a spacious, dedicated overlay designed to view, search, and navigate your project snapshots comfortably.
+4. Each snapshot shows:
+   * A **Current State** badge (on the latest commit).
+   * The **Message** of the snapshot/commit.
+   * The **Author** who made the change.
+   * The **Date and Time** of the snapshot.
+   * The abbreviated **Git commit hash** (e.g., `8b5f800`) with a "Copy Full Hash" helper.
+
+### Advanced Filtering
+The Time Machine dialog includes a **Search Bar** at the top. You can type keywords to instantly filter snapshots by:
+- Part of a commit message
+- Commit author name
+- Git commit hash (full or abbreviated)
+
+### Restoring a Snapshot (Perfect Undo Mechanism)
+When you click on **Restore State** for any snapshot, Jotter executes a bulletproof, forward-progressing Git restoration behind the scenes:
+
+1. **Automatic pre-restore backup**: Jotter first checks if there are any uncommitted changes or drafts in your directory. If found, it stages and automatically commits them as an auto-saved snapshot (`backup: snapshot before restoring to <hash>`). This ensures **zero data loss**—you can always restore back to the present moment!
+2. **Hard reset**: It runs a clean reset to match the files precisely to the target commit (handling deleted and untracked files properly).
+3. **Soft reset & forward-progressing commit**: It moves the reference pointer back while preserving the Git history as linear and forward-progressing. It then commits the restored state as a new revert-restore commit (`revert: restore workspace to commit <hash>`).
+4. **No history rewrite**: This workflow is highly robust and **never** forces a push, deletes history, or detaches the `HEAD` pointer, guaranteeing that multi-device synchronization remains completely unbroken.
+5. **Database Re-indexing**: Once the files on disk are restored, Jotter automatically re-indexes the SQLite database. Your task board, columns, and filters refresh instantly in the user interface to match the restored snapshot.
+
+> [!TIP]
+> Since every restoration creates an automatic pre-restore backup snapshot, you can use the Time Machine itself to "undo" a restore at any time by simply selecting the backup snapshot in the history list!
+
+---
+
 ## Multi-Device and Team Collaboration
 
 Because Git handles merge conflicts beautifully for plain text files, multiple people (or you, using multiple devices) can work on the same task directory at the same time.
