@@ -13,6 +13,7 @@ import (
 
 type UserConfig struct {
 	DataDir  string `yaml:"data_dir" json:"data_dir"`
+	LogDir   string `yaml:"log_dir" json:"log_dir"`
 	Host     string `yaml:"host" json:"host"`
 	Port     int    `yaml:"port" json:"port"`
 	LogLevel string `yaml:"log_level" json:"log_level"`
@@ -90,6 +91,59 @@ func DefaultDataDir() string {
 		}
 		return filepath.Join(home, ".local", "share", "jotter")
 	}
+}
+
+func DefaultLogDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		cwd, _ := os.Getwd()
+		return filepath.Join(cwd, "logs")
+	}
+
+	switch runtime.GOOS {
+	case "windows":
+		localAppData := os.Getenv("LocalAppData")
+		if localAppData == "" {
+			localAppData = filepath.Join(home, "AppData", "Local")
+		}
+		return filepath.Join(localAppData, "Jotter")
+	case "darwin":
+		return filepath.Join(home, "Library", "Logs", "Jotter")
+	default: // Linux / Unix
+		xdgState := os.Getenv("XDG_STATE_HOME")
+		if xdgState != "" {
+			return filepath.Join(xdgState, "jotter")
+		}
+		xdgCache := os.Getenv("XDG_CACHE_HOME")
+		if xdgCache != "" {
+			return filepath.Join(xdgCache, "jotter")
+		}
+		return filepath.Join(home, ".cache", "jotter")
+	}
+}
+
+func GetLogDir(configPathFlag string) string {
+	// 1. Env Var
+	if env := os.Getenv("JOTTER_LOG_DIR"); env != "" {
+		abs, err := filepath.Abs(env)
+		if err == nil {
+			return abs
+		}
+		return env
+	}
+
+	// 2. Config file
+	cfg := GetConfig(configPathFlag)
+	if cfg.LogDir != "" {
+		abs, err := filepath.Abs(cfg.LogDir)
+		if err == nil {
+			return abs
+		}
+		return cfg.LogDir
+	}
+
+	// 3. Default: OS-specific standard directories
+	return DefaultLogDir()
 }
 
 func DefaultConfigFilePath() string {

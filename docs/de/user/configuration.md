@@ -11,6 +11,7 @@ Du kannst anpassen, wie Jotter ausgeführt wird (z. B. den Netzwerk-Port ändern
 | **Port** | `--port <nummer>` | `port: <nummer>` | _N/A_ | `58271` | Der Netzwerk-Port, auf dem der Server lauscht. |
 | **Host** | `--host <adresse>` | `host: "<adresse>"` | _N/A_ | `127.0.0.1` | Die Host-IP-Adresse, an die sich der Server bindet (z. B. `0.0.0.0`, um Zugriff aus dem lokalen Netzwerk zu erlauben). |
 | **Datenverzeichnis** | `--data-dir <pfad>` | `data_dir: "<pfad>"` | `JOTTER_DATA_DIR` | _Siehe Speicherorte_ | Der Ordner, in dem deine Markdown-Aufgaben gespeichert werden. Unterstützt `~` zur Pfadauflösung des Home-Verzeichnisses. |
+| **Log-Verzeichnis** | _N/A_ | `log_dir: "<pfad>"` | `JOTTER_LOG_DIR` | _Siehe Speicherorte_ | Das Verzeichnis, in dem Jotter die Datei `jotter.log` speichert. Getrennt von den Notizen, um Git-Konflikte zu vermeiden. |
 | **Log-Level** | `--log-level <level>` | `log_level: "<level>"` | `JOTTER_LOG_LEVEL` | `info` (Dev) / `warning` (Prod) | Detailtiefe der Log-Ausgaben (`debug`, `info`, `warning`, `error`, `critical`). |
 | **Konfig-Datei** | `--config <pfad>` / `-c` | _N/A_ | _N/A_ | _Siehe Speicherorte_ | Gibt den Pfad zu einer benutzerdefinierten YAML- oder JSON-Konfigurationsdatei an. Wird automatisch erstellt, wenn sie fehlt. |
 
@@ -26,6 +27,7 @@ Wenn sich im aktuellen Arbeitsverzeichnis (CWD), in dem Jotter gestartet wird, e
 
 * **Datenverzeichnis** ist standardmäßig `./tasks` (der vorhandene Ordner im aktuellen Verzeichnis).
 * **Konfigurationsdatei** wird standardmäßig im selben Verzeichnis als `./jotter.yaml` (oder `./jotter.yml`/`./jotter.json`) gesucht.
+* **Log-Verzeichnis** weicht standardmäßig auf die Systemspezifischen Standardpfade aus (unten beschrieben), um zu verhindern, dass Logdateien direkt in deine lokalen Notizen geschrieben werden.
 
 Dieser Modus ist ideal, um Jotter von externen USB-Sticks oder direkt in lokalen Projektordnern auszuführen, ohne Spuren auf dem System zu hinterlassen.
 
@@ -33,11 +35,22 @@ Dieser Modus ist ideal, um Jotter von externen USB-Sticks oder direkt in lokalen
 
 Wenn kein lokaler `tasks`-Ordner im aktuellen Arbeitsverzeichnis gefunden wird, weicht Jotter auf die folgenden betriebssystemspezifischen Standardpfade aus:
 
-| Betriebssystem | Standard-Datenverzeichnis | Standard-Konfigurationsdatei |
-| :--- | :--- | :--- |
-| **Linux** | `~/.local/share/jotter` | `~/.config/jotter/jotter.yaml` |
-| **macOS** | `~/Library/Application Support/Jotter` | `~/Library/Application Support/jotter/jotter.yaml` |
-| **Windows** | `%APPDATA%\Jotter` | `%APPDATA%\jotter\jotter.yaml` |
+| Betriebssystem | Standard-Datenverzeichnis | Standard-Konfigurationsdatei | Standard-Log-Verzeichnis |
+| :--- | :--- | :--- | :--- |
+| **Linux** | `~/.local/share/jotter` | `~/.config/jotter/jotter.yaml` | `~/.cache/jotter` |
+| **macOS** | `~/Library/Application Support/Jotter` | `~/Library/Application Support/jotter/jotter.yaml` | `~/Library/Logs/Jotter` |
+| **Windows** | `%APPDATA%\Jotter` | `%APPDATA%\jotter\jotter.yaml` | `%LocalAppData%\Jotter` |
+
+---
+
+## Logging & Dual-Writer
+
+Jotter verwendet einen **Dual-Writer-Logging-Mechanismus**. Das bedeutet, dass alle Log-Ausgaben (Startup-Informationen, Synchronisationsberichte, Git-Aktivitäten und Systemfehler) sowohl auf die Standardausgabe (`stdout`) ausgegeben als auch an eine persistente lokale Protokolldatei namens `jotter.log` angehängt werden.
+
+Diese Datei ist von deinem Markdown-Datenverzeichnis isoliert, sodass sie von der automatischen Git-Synchronisation nicht erfasst oder hochgeladen wird.
+
+### Log-Rotation
+Um lokalen Speicherplatz zu sparen, begrenzt Jotter die Größe der Datei `jotter.log` automatisch. Wenn die Datei beim Starten von Jotter größer als **5 MB** ist, wird sie gelöscht und ein neues, leeres Log-File angelegt.
 
 ---
 
@@ -50,6 +63,7 @@ Die erstellte Datei enthält die Parameter als auskommentierte Vorlagen, die sof
 ```yaml
 # Jotter Configuration File
 # data_dir: ""
+# log_dir: ""
 # host: "127.0.0.1"
 # port: 58271
 # log_level: "INFO"

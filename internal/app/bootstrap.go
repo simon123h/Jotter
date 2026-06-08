@@ -2,9 +2,12 @@ package app
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"path/filepath"
 
+	"jotter/backend/internal/config"
 	"jotter/backend/internal/db"
 	"jotter/backend/internal/features/project"
 	"jotter/backend/internal/features/system"
@@ -21,6 +24,28 @@ const asciiLogo = `
 \____/ \___/ \__|\__\___|_|   
                               
 `
+
+// InitLogging sets up Go's log output to write to both stdout and a jotter.log file in the data directory.
+func InitLogging(configPath string) {
+	logDir := config.GetLogDir(configPath)
+	if logDir == "" {
+		return
+	}
+	_ = os.MkdirAll(logDir, 0755)
+	logFilePath := filepath.Join(logDir, "jotter.log")
+
+	if info, err := os.Stat(logFilePath); err == nil {
+		if info.Size() > 5*1024*1024 { // 5 MB limit
+			_ = os.Remove(logFilePath)
+		}
+	}
+
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err == nil {
+		mw := io.MultiWriter(os.Stdout, logFile)
+		log.SetOutput(mw)
+	}
+}
 
 // rebuildDB closes the DB connection, deletes the old DB cache files, and re-initializes a clean DB schema.
 func rebuildDB(dbPath string) error {
@@ -40,6 +65,8 @@ func rebuildDB(dbPath string) error {
 // Bootstrap initializes the database schema, runs the file-to-db synchronization,
 // and prints the startup ASCII banner.
 func Bootstrap(configPath string, dataDir string, dbPath string) {
+	InitLogging(configPath)
+
 	// Print ASCII Art logo and basic startup info
 	fmt.Print(asciiLogo)
 	fmt.Printf("Jotter - Local-first Markdown Kanban Board (Version: %s)\n", Version)

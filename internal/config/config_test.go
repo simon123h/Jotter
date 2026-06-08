@@ -209,3 +209,55 @@ func TestGetConfigDefaultCreation(t *testing.T) {
 	_ = os.Remove(defaultPath)
 	cachedConfig = nil
 }
+
+func TestDefaultLogDir(t *testing.T) {
+	res := DefaultLogDir()
+
+	if !filepath.IsAbs(res) {
+		t.Errorf("Expected absolute path, got: %s", res)
+	}
+
+	// Ensure it maps to standard OS directories or fallbacks
+	var expectedSuffix string
+	switch runtime.GOOS {
+	case "windows":
+		expectedSuffix = "Jotter"
+	case "darwin":
+		expectedSuffix = filepath.Join("Library", "Logs", "Jotter")
+	default:
+		expectedSuffix = filepath.Join(".cache", "jotter")
+	}
+
+	if !strings.HasSuffix(res, expectedSuffix) && !strings.Contains(res, "Jotter") && !strings.Contains(res, "jotter") {
+		t.Errorf("Expected path ending with %s, got: %s", expectedSuffix, res)
+	}
+}
+
+func TestGetLogDir(t *testing.T) {
+	// Reset environment and cache
+	os.Unsetenv("JOTTER_LOG_DIR")
+	cachedConfig = nil
+
+	t.Run("Env Var Override", func(t *testing.T) {
+		expected := "/tmp/jotter-log-env"
+		os.Setenv("JOTTER_LOG_DIR", expected)
+		defer os.Unsetenv("JOTTER_LOG_DIR")
+		if res := GetLogDir(""); res != expected {
+			t.Errorf("Expected %s, got %s", expected, res)
+		}
+	})
+
+	t.Run("Config Override", func(t *testing.T) {
+		tempDir, _ := os.MkdirTemp("", "log-config-test-*")
+		defer os.RemoveAll(tempDir)
+
+		configPath := filepath.Join(tempDir, "jotter.yaml")
+		expected := "/tmp/jotter-log-cfg"
+		os.WriteFile(configPath, []byte("log_dir: "+expected), 0644)
+
+		cachedConfig = nil
+		if res := GetLogDir(configPath); res != expected {
+			t.Errorf("Expected %s, got %s", expected, res)
+		}
+	})
+}

@@ -6,13 +6,14 @@ You can customize how Jotter operates (such as altering the network port or chan
 
 ## Configuration Properties
 
-| Setting            | CLI Option               | Config File Key        | Env Variable       | Default Value                   | Description                                                                                |
-| :----------------- | :----------------------- | :--------------------- | :----------------- | :------------------------------ | :----------------------------------------------------------------------------------------- |
-| **Port**           | `--port <number>`        | `port: <number>`       | _N/A_              | `58271`                         | The network port the server listens on.                                                    |
-| **Host**           | `--host <address>`       | `host: "<address>"`    | _N/A_              | `127.0.0.1`                     | The host IP address to bind to (e.g. `0.0.0.0` to allow local network access).             |
-| **Data Directory** | `--data-dir <path>`      | `data_dir: "<path>"`   | `JOTTER_DATA_DIR`  | _See Storage Locations_         | The folder where your markdown task files are stored. Supports `~` home folder expansion.  |
-| **Log Level**      | `--log-level <level>`    | `log_level: "<level>"` | `JOTTER_LOG_LEVEL` | `info` (dev) / `warning` (prod) | Logging verbosity (`debug`, `info`, `warning`, `error`, `critical`).                       |
-| **Config File**    | `--config <path>` / `-c` | _N/A_                  | _N/A_              | _See Storage Locations_         | Specifies a custom YAML or JSON configuration file path. Automatically created if missing. |
+| Setting            | CLI Option               | Config File Key        | Env Variable       | Default Value                   | Description                                                                                                   |
+| :----------------- | :----------------------- | :--------------------- | :----------------- | :------------------------------ | :------------------------------------------------------------------------------------------------------------ |
+| **Port**           | `--port <number>`        | `port: <number>`       | _N/A_              | `58271`                         | The network port the server listens on.                                                                       |
+| **Host**           | `--host <address>`       | `host: "<address>"`    | _N/A_              | `127.0.0.1`                     | The host IP address to bind to (e.g. `0.0.0.0` to allow local network access).                                |
+| **Data Directory** | `--data-dir <path>`      | `data_dir: "<path>"`   | `JOTTER_DATA_DIR`  | _See Storage Locations_         | The folder where your markdown task files are stored. Supports `~` home folder expansion.                     |
+| **Log Directory**  | _N/A_                    | `log_dir: "<path>"`    | `JOTTER_LOG_DIR`   | _See Storage Locations_         | The directory where Jotter saves its `jotter.log` file. Separated from notes to avoid Git tracking conflicts. |
+| **Log Level**      | `--log-level <level>`    | `log_level: "<level>"` | `JOTTER_LOG_LEVEL` | `info` (dev) / `warning` (prod) | Logging verbosity (`debug`, `info`, `warning`, `error`, `critical`).                                          |
+| **Config File**    | `--config <path>` / `-c` | _N/A_                  | _N/A_              | _See Storage Locations_         | Specifies a custom YAML or JSON configuration file path. Automatically created if missing.                    |
 
 ---
 
@@ -26,6 +27,7 @@ If a folder named `tasks/` is present in the Current Working Directory (CWD) whe
 
 - **Data Directory** defaults to `./tasks` (the existing folder in the CWD).
 - **Configuration File** search defaults to `./jotter.yaml` (or `./jotter.yml`/`./jotter.json`) in the CWD.
+- **Log Directory** defaults to the standard OS cache/logs path (described below) to prevent writing log files directly into your local notes folder.
 
 This is ideal for running Jotter from external flash drives or local project folders without leaving traces elsewhere on the system.
 
@@ -33,11 +35,23 @@ This is ideal for running Jotter from external flash drives or local project fol
 
 If no local `tasks` directory is found in the CWD, Jotter defaults to OS-specific standard paths:
 
-| Operating System | Default Data Directory                 | Default Configuration File                         |
-| :--------------- | :------------------------------------- | :------------------------------------------------- |
-| **Linux**        | `~/.local/share/jotter`                | `~/.config/jotter/jotter.yaml`                     |
-| **macOS**        | `~/Library/Application Support/Jotter` | `~/Library/Application Support/jotter/jotter.yaml` |
-| **Windows**      | `%APPDATA%\Jotter`                     | `%APPDATA%\jotter\jotter.yaml`                     |
+| Operating System | Default Data Directory                 | Default Configuration File                         | Default Log Directory   |
+| :--------------- | :------------------------------------- | :------------------------------------------------- | :---------------------- |
+| **Linux**        | `~/.local/share/jotter`                | `~/.config/jotter/jotter.yaml`                     | `~/.cache/jotter`       |
+| **macOS**        | `~/Library/Application Support/Jotter` | `~/Library/Application Support/jotter/jotter.yaml` | `~/Library/Logs/Jotter` |
+| **Windows**      | `%APPDATA%\Jotter`                     | `%APPDATA%\jotter\jotter.yaml`                     | `%LocalAppData%\Jotter` |
+
+---
+
+## Logging & Dual-Writer
+
+Jotter employs a **Dual-Writer Logging** mechanism. This means that all log statements (starting up information, synchronization reports, git activities, and system errors) are output to both standard output (`stdout`) and appended to a persistent local log file named `jotter.log`.
+
+This file is isolated from your markdown data directory so that it is never automatically tracked or pushed by the Git synchronization feature.
+
+### Log Rotation
+
+To protect local disk space, Jotter automatically limits the size of the `jotter.log` file. On startup, if the file exceeds **5 MB**, it is automatically removed and a clean log file is created.
 
 ---
 
@@ -50,6 +64,7 @@ The created file contains template parameters that are commented out, serving as
 ```yaml
 # Jotter Configuration File
 # data_dir: ""
+# log_dir: ""
 # host: "127.0.0.1"
 # port: 58271
 # log_level: "INFO"
