@@ -39,10 +39,5 @@ watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
 </script>
 
 <template>
-  <TimelineLayout
-    :tasks="tasks"
-    group-name="time-view"
-    @toggle-select="emit('toggle-select', $event)"
-    @refresh="emit('refresh')"
-  />
+  <TimelineLayout :tasks="tasks" group-name="time-view" @toggle-select="emit('toggle-select', $event)" @refresh="emit('refresh')" />
 </template>

@@ -163,7 +163,7 @@ export const useProjectStore = defineStore('project', () => {
 
     for (const taskId of taskIds) {
       const task = tasks.value.find((t) => t.id === taskId);
-      const currentProjId = task ? task.project_id : (options?.currentProjectId || '');
+      const currentProjId = task ? task.project_id : options?.currentProjectId || '';
       if (currentProjId && targetProjectId !== currentProjId) {
         const payload: any = { project_id: targetProjectId };
         if (targetBucket) {

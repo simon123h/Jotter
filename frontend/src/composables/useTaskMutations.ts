@@ -37,9 +37,7 @@ export function useTaskMutations(
     let movingTasks: Task[] = [];
     if (selectedIds && selectedIds.has(taskId)) {
       const selectedSet = new Set(selectedIds);
-      movingTasks = tasks.value
-        .filter((t) => selectedSet.has(t.id))
-        .sort((a, b) => a.position - b.position);
+      movingTasks = tasks.value.filter((t) => selectedSet.has(t.id)).sort((a, b) => a.position - b.position);
     } else {
       movingTasks = [primaryTask];
     }
@@ -142,11 +140,7 @@ export function useTaskMutations(
     });
 
     try {
-      await Promise.all(
-        newPositions.map(({ task, position }) =>
-          moveTask(activeProjectId.value, task.id, toBucket, position)
-        )
-      );
+      await Promise.all(newPositions.map(({ task, position }) => moveTask(activeProjectId.value, task.id, toBucket, position)));
     } catch {
       // Revert if API call fails
       originalStates.forEach(({ task, bucket, position }) => {

@@ -84,7 +84,7 @@ const renderedChecklist = computed<RenderedChecklistItem[]>(() => {
       const leadingSpaces = checklistMatch[1];
       const checked = checklistMatch[2].toLowerCase() === 'x';
       const label = checklistMatch[3].trim();
-      
+
       // Calculate nesting level based on leading spaces (2 spaces or tabs per level)
       const normalizedSpaces = leadingSpaces.replace(/\t/g, '  ');
       const level = Math.floor(normalizedSpaces.length / 2);
@@ -288,7 +288,14 @@ const cardStyle = computed(() => {
 
     <!-- Flexible Combined Row: Tags, Due Date, Planned Date, Priority, and List Counter (when compact or no visible list items) -->
     <div
-      v-if="showFooter && (task.due_date || task.planned_date || task.priority || (showTags && task.tags && task.tags.length) || (checklistStats && (compact || renderedChecklist.length === 0)))"
+      v-if="
+        showFooter &&
+        (task.due_date ||
+          task.planned_date ||
+          task.priority ||
+          (showTags && task.tags && task.tags.length) ||
+          (checklistStats && (compact || renderedChecklist.length === 0)))
+      "
       class="flex flex-wrap items-center gap-2 text-xs text-theme-text-muted select-none mt-1"
     >
       <!-- Tags List inside the combined flexible row -->

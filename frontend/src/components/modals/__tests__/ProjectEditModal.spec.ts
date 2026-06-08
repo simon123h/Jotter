@@ -134,9 +134,7 @@ describe('ProjectEditModal.vue', () => {
       props: defaultProps,
     });
 
-    const cancelBtn = wrapper.findAll('button').find((btn) =>
-      btn.text().includes('Cancel')
-    );
+    const cancelBtn = wrapper.findAll('button').find((btn) => btn.text().includes('Cancel'));
     expect(cancelBtn).toBeDefined();
     await cancelBtn!.trigger('click');
     await nextTick();
@@ -152,9 +150,7 @@ describe('ProjectEditModal.vue', () => {
       props: defaultProps,
     });
 
-    const deleteBtn = wrapper.findAll('button').find((btn) =>
-      btn.text().includes('Delete')
-    );
+    const deleteBtn = wrapper.findAll('button').find((btn) => btn.text().includes('Delete'));
     expect(deleteBtn).toBeDefined();
     await deleteBtn!.trigger('click');
     await nextTick();

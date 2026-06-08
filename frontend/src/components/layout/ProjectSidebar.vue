@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Folder, Hash, MoreHorizontal, Plus, Pin, RefreshCw, Settings, Check, GitBranch, BookOpen, FileSpreadsheet, ChevronDown } from '@lucide/vue';
+import {
+  Folder,
+  Hash,
+  MoreHorizontal,
+  Plus,
+  Pin,
+  RefreshCw,
+  Settings,
+  Check,
+  GitBranch,
+  BookOpen,
+  FileSpreadsheet,
+  ChevronDown,
+} from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import Sortable from 'sortablejs';
 import { useSettingsStore } from '@/stores/settings';
@@ -242,7 +255,7 @@ const openTimeMachineModal = () => {
           project.id === draggingOverProjectId
             ? '!border-theme-primary !bg-theme-primary/15 scale-[1.03] shadow-lg shadow-theme-primary/10 ring-2 ring-theme-primary/30 z-10 text-theme-accent'
             : '',
-          selectionStore.draggingTaskIds.length > 0 ? 'dragging-active' : ''
+          selectionStore.draggingTaskIds.length > 0 ? 'dragging-active' : '',
         ]"
         @dragover="onDragOver($event, project.id)"
         @dragenter.prevent="onDragEnter(project.id)"
@@ -322,7 +335,8 @@ const openTimeMachineModal = () => {
     <!-- Sidebar Footer Actions -->
     <div class="p-3 border-t border-theme-border flex flex-col gap-1.5 shrink-0 bg-transparent">
       <!-- Sync Index Button with Dropdown -->
-      <div class="relative w-full flex items-stretch rounded transition-all duration-300"
+      <div
+        class="relative w-full flex items-stretch rounded transition-all duration-300"
         :class="
           syncSuccess
             ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400'
@@ -412,7 +426,9 @@ const openTimeMachineModal = () => {
 /* Fade/Slide transition for premium micro-animations */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1), transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fade-enter-from,

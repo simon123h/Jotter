@@ -149,7 +149,7 @@ func TestGitSync(t *testing.T) {
 		seedDir, _ := os.MkdirTemp("", "git-seed-opt-a-*")
 		defer os.RemoveAll(seedDir)
 		_ = runGit(ctx, seedDir, "clone", remoteDir, ".")
-		
+
 		remoteProjects := `[{"id": "remote-proj", "title": "Remote Project"}]`
 		remoteBuckets := `[{"name": "remote-bucket", "title": "Remote Bucket"}]`
 		_ = os.WriteFile(filepath.Join(seedDir, "projects.json"), []byte(remoteProjects), 0644)

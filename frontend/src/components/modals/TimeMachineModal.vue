@@ -138,7 +138,9 @@ onUnmounted(() => {
       <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="emit('close')"></div>
 
       <!-- Modal Content -->
-      <div class="relative bg-theme-base border border-theme-border w-full max-w-3xl h-[650px] rounded shadow-2xl overflow-hidden flex flex-col z-10 animate-scale-in">
+      <div
+        class="relative bg-theme-base border border-theme-border w-full max-w-3xl h-[650px] rounded shadow-2xl overflow-hidden flex flex-col z-10 animate-scale-in"
+      >
         <!-- Header -->
         <div class="px-6 py-4 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
           <div class="flex flex-col gap-0.5">
@@ -185,10 +187,12 @@ onUnmounted(() => {
         </div>
 
         <!-- Backup Notice Badge -->
-        <div class="mx-6 mt-4 p-3 rounded-lg bg-theme-primary/10 border border-theme-primary/15 flex items-start gap-2.5 shrink-0 animate-fade-in">
+        <div
+          class="mx-6 mt-4 p-3 rounded-lg bg-theme-primary/10 border border-theme-primary/15 flex items-start gap-2.5 shrink-0 animate-fade-in"
+        >
           <Info class="w-4 h-4 text-theme-accent shrink-0 mt-0.5" />
           <p class="text-xs text-theme-text-muted leading-normal">
-            Restoring to an earlier snapshot is <span class="font-semibold text-theme-text-main">completely safe and reversible</span>. 
+            Restoring to an earlier snapshot is <span class="font-semibold text-theme-text-main">completely safe and reversible</span>.
             Jotter automatically saves your current state in a backup snapshot before performing any restore operation.
           </p>
         </div>
@@ -242,7 +246,9 @@ onUnmounted(() => {
                   >
                     Current State
                   </span>
-                  <span class="text-[10px] font-mono font-bold bg-theme-column px-2 py-0.5 rounded text-theme-text-muted flex items-center gap-1 shrink-0">
+                  <span
+                    class="text-[10px] font-mono font-bold bg-theme-column px-2 py-0.5 rounded text-theme-text-muted flex items-center gap-1 shrink-0"
+                  >
                     {{ commit.short_id }}
                     <!-- Copy Button -->
                     <button
@@ -257,7 +263,9 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Commit Message -->
-                <h4 class="text-sm font-semibold text-theme-text-main leading-snug group-hover:text-theme-accent transition-colors break-words">
+                <h4
+                  class="text-sm font-semibold text-theme-text-main leading-snug group-hover:text-theme-accent transition-colors break-words"
+                >
                   {{ commit.message }}
                 </h4>
 
