@@ -25,6 +25,14 @@ export function useTaskMutations(
     nextTaskId: string | null;
     selectedIds?: Set<string>;
   }) => {
+    const primaryTask = tasks.value.find((t) => t.id === taskId);
+    if (!primaryTask) return;
+
+    // In multi-selection mode, drag&dropping from and to the same column should result in a no-op.
+    if (selectedIds && selectedIds.has(taskId) && selectedIds.size > 1 && primaryTask.bucket === toBucket) {
+      return;
+    }
+
     // Determine the list of tasks to move, sorted by their current positions
     let movingTasks: Task[] = [];
     if (selectedIds && selectedIds.has(taskId)) {
@@ -33,13 +41,8 @@ export function useTaskMutations(
         .filter((t) => selectedSet.has(t.id))
         .sort((a, b) => a.position - b.position);
     } else {
-      const singleTask = tasks.value.find((t) => t.id === taskId);
-      if (singleTask) {
-        movingTasks = [singleTask];
-      }
+      movingTasks = [primaryTask];
     }
-
-    if (movingTasks.length === 0) return;
 
     // Filter out all moving tasks from the target bucket to find other tasks
     const otherTasksInBucket = tasks.value
