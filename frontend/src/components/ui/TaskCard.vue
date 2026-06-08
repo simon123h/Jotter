@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { marked } from 'marked';
-import { ChevronDown, ClipboardList, Check, Calendar, Clock } from '@lucide/vue';
+import { ClipboardList, Check, Calendar, Clock } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { useSelectionStore } from '@/stores/selection';
+import { useProjectStore } from '@/stores/project';
+import { updateTask } from '@/api';
 
 const { t, locale } = useI18n();
 const selectionStore = useSelectionStore();
@@ -20,6 +21,7 @@ const props = withDefaults(
     compact?: boolean;
     showProject?: boolean;
     projectTitle?: string;
+    maxNestingLevel?: number;
   }>(),
   {
     showTags: true,
@@ -29,6 +31,7 @@ const props = withDefaults(
     compact: false,
     showProject: false,
     projectTitle: '',
+    maxNestingLevel: 0,
   }
 );
 
@@ -51,8 +54,6 @@ const targetRoute = computed(() => {
   };
 });
 
-const isExpanded = ref(false);
-
 // Checklist statistics
 const checklistStats = computed(() => {
   if (!props.task.body) return null;
@@ -63,21 +64,67 @@ const checklistStats = computed(() => {
   return { checked, total };
 });
 
-const hasNotes = computed(() => !!props.task.body);
+interface RenderedChecklistItem {
+  label: string;
+  checked: boolean;
+  globalIndex: number;
+  level: number;
+}
 
-const parsedMarkdown = computed(() => {
-  if (!props.task.body) return '';
-  try {
-    return marked.parse(props.task.body);
-  } catch {
-    return props.task.body;
+const renderedChecklist = computed<RenderedChecklistItem[]>(() => {
+  if (!props.task.body) return [];
+  const lines = props.task.body.split('\n');
+  const items: RenderedChecklistItem[] = [];
+  let globalIndex = 0;
+
+  for (const line of lines) {
+    // Check if it's a checklist item (any indentation)
+    const checklistMatch = line.match(/^(\s*)[-*+]\s+\[([ xX])\]\s*(.*)$/);
+    if (checklistMatch) {
+      const leadingSpaces = checklistMatch[1];
+      const checked = checklistMatch[2].toLowerCase() === 'x';
+      const label = checklistMatch[3].trim();
+      
+      // Calculate nesting level based on leading spaces (2 spaces or tabs per level)
+      const normalizedSpaces = leadingSpaces.replace(/\t/g, '  ');
+      const level = Math.floor(normalizedSpaces.length / 2);
+
+      if (level <= props.maxNestingLevel) {
+        items.push({
+          label,
+          checked,
+          globalIndex,
+          level,
+        });
+      }
+      globalIndex++;
+    }
   }
+  return items;
 });
 
-const toggleExpand = (event: Event) => {
-  event.stopPropagation();
-  if (props.allowExpand) {
-    isExpanded.value = !isExpanded.value;
+const toggleChecklistItem = async (targetIndex: number, isChecked: boolean) => {
+  let currentIndex = 0;
+  const regex = /(^|\n)(\s*[-*+]\s+\[)([ xX])(\])/g;
+
+  const newBody = props.task.body.replace(regex, (match, p1, p2, _p3, p4) => {
+    if (currentIndex === targetIndex) {
+      currentIndex++;
+      const newChar = isChecked ? 'x' : ' ';
+      return p1 + p2 + newChar + p4;
+    }
+    currentIndex++;
+    return match;
+  });
+
+  try {
+    await updateTask(props.task.project_id, props.task.id, {
+      body: newBody,
+    });
+    const projectStore = useProjectStore();
+    await projectStore.invalidate();
+  } catch (err: any) {
+    console.error('Failed to update task checklist:', err);
   }
 };
 
@@ -214,10 +261,33 @@ const cardStyle = computed(() => {
       </span>
     </div>
 
-    <!-- Combined Footer Row: Due Date, Priority, Checklist, and Chevron -->
+    <!-- Checklist Items -->
     <div
-      v-if="showFooter && (task.due_date || task.planned_date || task.priority || checklistStats || hasNotes)"
-      class="flex justify-between items-center text-xs text-theme-text-muted select-none flex-wrap"
+      v-if="!compact && renderedChecklist.length > 0"
+      class="task-card-checklist flex flex-col gap-1.5 mt-1 pt-2 border-t border-theme-border/20"
+      @click.stop
+    >
+      <label
+        v-for="item in renderedChecklist"
+        :key="item.globalIndex"
+        class="flex items-start gap-2 text-xs text-theme-text-card cursor-pointer hover:text-theme-text-main transition-colors select-none"
+        :class="{ 'line-through text-theme-text-muted/60': item.checked }"
+        :style="{ paddingLeft: `${item.level * 16}px` }"
+      >
+        <input
+          type="checkbox"
+          :checked="item.checked"
+          @click.stop.prevent="toggleChecklistItem(item.globalIndex, !item.checked)"
+          class="mt-0.5 rounded border-theme-border text-theme-accent focus:ring-theme-accent/30 cursor-pointer"
+        />
+        <span class="leading-snug break-words">{{ item.label }}</span>
+      </label>
+    </div>
+
+    <!-- Combined Footer Row: Due Date, Priority, and Checklist -->
+    <div
+      v-if="showFooter && (task.due_date || task.planned_date || task.priority || checklistStats)"
+      class="flex justify-between items-center text-xs text-theme-text-muted select-none flex-wrap mt-1"
     >
       <!-- Left side: Due Date, Planned date, Priority, Tags -->
       <div class="flex items-center gap-2.5">
@@ -249,12 +319,11 @@ const cardStyle = computed(() => {
         </div>
       </div>
 
-      <!-- Right side: Checklist & Chevron -->
+      <!-- Right side: Checklist -->
       <div class="flex items-center gap-2.5">
         <!-- Checklist Stats -->
         <div
           v-if="checklistStats"
-          @click.stop.prevent="toggleExpand"
           class="flex items-center gap-1 font-semibold"
           :class="[
             checklistStats.checked === checklistStats.total
@@ -266,29 +335,8 @@ const cardStyle = computed(() => {
           <ClipboardList :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
           <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
         </div>
-
-        <!-- Inline Toggle Button -->
-        <button
-          v-if="allowExpand && hasNotes"
-          @click.stop.prevent="toggleExpand"
-          class="p-0.5 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer"
-          :title="isExpanded ? t('taskCard.collapseNotes') : t('taskCard.expandNotes')"
-        >
-          <ChevronDown
-            class="transform transition-transform animate-duration-150"
-            :class="[{ 'rotate-180': isExpanded }, compact ? 'w-3.5 h-3.5' : 'w-4 h-4']"
-          />
-        </button>
       </div>
     </div>
-
-    <!-- Expanded Markdown Content -->
-    <div
-      v-if="allowExpand && hasNotes && isExpanded"
-      class="text-xs max-h-40 overflow-y-auto scroller-thin p-0.5 pt-2 border-t border-theme-border/40"
-      @click.stop
-      v-html="parsedMarkdown"
-    ></div>
   </router-link>
 </template>
 
