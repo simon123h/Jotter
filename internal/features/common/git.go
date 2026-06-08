@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 // GitSync performs a git pull/commit/push cycle on a specific project directory.
 // If a remoteURL is provided, it ensures the project is initialized and connected to it.
 func GitSync(projectDir string, remoteURL string) error {
+	log.Printf("[GitSync] Starting auto-sync for directory %q", projectDir)
 	// 1. Ensure directory exists
 	if _, err := os.Stat(projectDir); os.IsNotExist(err) {
 		_ = os.MkdirAll(projectDir, 0755)
@@ -22,15 +24,21 @@ func GitSync(projectDir string, remoteURL string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	originalRemote := remoteURL
 	remoteURL = expandTilde(remoteURL)
+	if remoteURL != originalRemote {
+		log.Printf("[GitSync] Expanded remote URL tilde shortcut: %q -> %q", originalRemote, remoteURL)
+	}
 
 	// 2. Check if it's already a git repo
 	isGit := true
 	if _, err := os.Stat(filepath.Join(projectDir, ".git")); os.IsNotExist(err) {
 		isGit = false
 	}
+	log.Printf("[GitSync] Directory isGitRepo = %t (remoteURL: %q)", isGit, remoteURL)
 
 	if !isGit && remoteURL != "" {
+		log.Printf("[GitSync] Initializing git remote connection for first time...")
 		// Detect if remote actually has commits first
 		hasRemoteCommits := false
 		cmdRemote := exec.CommandContext(ctx, "git", "ls-remote", "--heads", remoteURL)
@@ -38,6 +46,7 @@ func GitSync(projectDir string, remoteURL string) error {
 		if out, err := cmdRemote.Output(); err == nil && len(strings.TrimSpace(string(out))) > 0 {
 			hasRemoteCommits = true
 		}
+		log.Printf("[GitSync] Checked remote repository. hasRemoteCommits = %t", hasRemoteCommits)
 
 		if hasRemoteCommits {
 			// Check if local directory has any user files (not empty)
@@ -52,8 +61,10 @@ func GitSync(projectDir string, remoteURL string) error {
 					}
 				}
 			}
+			log.Printf("[GitSync] Checked local files. hasLocalFiles = %t", hasLocalFiles)
 
 			if !hasLocalFiles {
+				log.Printf("[GitSync] Local directory is empty. Performing clean clone from: %q", remoteURL)
 				// 1. Directory is empty: do a clean clone directly
 				_ = os.RemoveAll(projectDir) // Remove empty directory so clone can run
 				if errClone := runGit(ctx, filepath.Dir(projectDir), "clone", remoteURL, filepath.Base(projectDir)); errClone != nil {
@@ -63,6 +74,7 @@ func GitSync(projectDir string, remoteURL string) error {
 			} else {
 				// 2. Directory has files: do the backup, clone, and merge strategy (Option A)
 				backupDir := projectDir + "_backup_" + time.Now().Format("20060102150405")
+				log.Printf("[GitSync] Existing local files detected. Moving %q to backup %q and cloning remote %q...", projectDir, backupDir, remoteURL)
 				if errRename := os.Rename(projectDir, backupDir); errRename != nil {
 					return fmt.Errorf("failed to create sync backup: %w", errRename)
 				}
@@ -74,14 +86,17 @@ func GitSync(projectDir string, remoteURL string) error {
 				}
 
 				// Merge the backup files into the newly cloned directory
+				log.Printf("[GitSync] Cloning succeeded. Merging backup files from %q back into %q...", backupDir, projectDir)
 				if errMerge := mergeDirs(backupDir, projectDir); errMerge != nil {
 					return fmt.Errorf("failed to merge backup files: %w", errMerge)
 				}
 
 				// Clean up backup directory once successfully merged
+				log.Printf("[GitSync] Semantic merge completed. Removing temporary backup directory %q", backupDir)
 				_ = os.RemoveAll(backupDir)
 			}
 		} else {
+			log.Printf("[GitSync] Remote is empty or uninitialized. Initializing locally and linking remote...")
 			// Remote is empty or uninitialized: run simple local init
 			_ = runGit(ctx, projectDir, "init")
 			_ = runGit(ctx, projectDir, "remote", "add", "origin", remoteURL)
@@ -172,14 +187,17 @@ func hasRemoteBranch(ctx context.Context, dir, branch string) bool {
 }
 
 func runGit(ctx context.Context, dir string, args ...string) error {
+	log.Printf("[Git] Running command in directory %q: git %s", dir, strings.Join(args, " "))
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
 	prepareCmd(cmd)
 	// We capture combined output to help debugging if needed
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		log.Printf("[Git] Command failed: git %s (error: %v, output: %q)", strings.Join(args, " "), err, string(output))
 		return fmt.Errorf("%s (output: %s)", err, string(output))
 	}
+	log.Printf("[Git] Command completed successfully")
 	return nil
 }
 
