@@ -129,4 +129,57 @@ describe('useTaskMutations handleCardDropped with multi-selection', () => {
 
     expect(error.value).toBe('Failed to persist card movement. Reverted change.');
   });
+
+  it('treats multi-selection drop onto the original column of the dragged task as a no-op', async () => {
+    const tasks = ref<Task[]>([
+      createMockTask({ id: '1', title: 'Task 1', bucket: 'todo', position: 1000.0 }),
+      createMockTask({ id: '2', title: 'Task 2', bucket: 'in-progress', position: 1000.0 }),
+    ]);
+
+    const { handleCardDropped } = useTaskMutations(tasks, activeProjectId, fetchBuckets, fetchAllTasks);
+
+    const selectedIds = new Set<string>(['1', '2']); // Multi-selection
+
+    await handleCardDropped({
+      taskId: '1', // Dragged Task 1 (bucket 'todo')
+      toBucket: 'todo', // Dropped in same bucket 'todo'
+      prevTaskId: null,
+      nextTaskId: null,
+      selectedIds,
+    });
+
+    // Positions and buckets should remain untouched
+    const task1 = tasks.value.find((t) => t.id === '1');
+    const task2 = tasks.value.find((t) => t.id === '2');
+
+    expect(task1?.bucket).toBe('todo');
+    expect(task2?.bucket).toBe('in-progress');
+
+    // No API calls should have been made
+    expect(moveTask).not.toHaveBeenCalled();
+  });
+
+  it('does NOT treat single-task rearrangement within the same column as a no-op', async () => {
+    const tasks = ref<Task[]>([
+      createMockTask({ id: '1', title: 'Task 1', bucket: 'todo', position: 1000.0 }),
+      createMockTask({ id: '2', title: 'Task 2', bucket: 'todo', position: 2000.0 }),
+    ]);
+
+    const { handleCardDropped } = useTaskMutations(tasks, activeProjectId, fetchBuckets, fetchAllTasks);
+
+    await handleCardDropped({
+      taskId: '1', // Dragged Task 1
+      toBucket: 'todo', // Rearranged in same bucket 'todo'
+      prevTaskId: '2', // Placed after Task 2
+      nextTaskId: null,
+    });
+
+    // Task 1 should have been repositioned after Task 2 (2000.0 + 1000.0 = 3000.0)
+    const task1 = tasks.value.find((t) => t.id === '1');
+    expect(task1?.position).toBe(3000.0);
+
+    // API should have been called
+    expect(moveTask).toHaveBeenCalledTimes(1);
+    expect(moveTask).toHaveBeenCalledWith('test-project', '1', 'todo', 3000.0);
+  });
 });
