@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { parseDateFromTitle, extractTagsFromTitle, extractBucketFromTitle, parseTitleState, getPlanningDateForDueDate } from '@/utils/titleParser';
+import {
+  parseDateFromTitle,
+  extractTagsFromTitle,
+  extractBucketFromTitle,
+  parseTitleState,
+  getPlanningDateForDueDate,
+} from '@/utils/titleParser';
 
 describe('titleParser', () => {
   beforeEach(() => {

@@ -198,10 +198,7 @@ const getBucketTitle = (name: string) => {
             :key="task.id"
             @click="openTask(task)"
             class="hover:bg-theme-column/15 transition-colors cursor-pointer group"
-            :class="[
-              isSelected(task.id) ? 'bg-theme-accent/5' : '',
-              selectionStore.draggingTaskIds.includes(task.id) ? 'opacity-40' : ''
-            ]"
+            :class="[isSelected(task.id) ? 'bg-theme-accent/5' : '', selectionStore.draggingTaskIds.includes(task.id) ? 'opacity-40' : '']"
             draggable="true"
             @dragstart="onDragStart($event, task)"
             @dragend="onDragEnd"
@@ -216,7 +213,10 @@ const getBucketTitle = (name: string) => {
             </td>
             <td class="px-4 py-2.5">
               <div class="flex flex-col gap-0.5">
-                <span v-if="activeProjectId === 'all'" class="text-[9px] font-bold uppercase tracking-widest text-theme-accent/70 block mb-0.5 select-none">
+                <span
+                  v-if="activeProjectId === 'all'"
+                  class="text-[9px] font-bold uppercase tracking-widest text-theme-accent/70 block mb-0.5 select-none"
+                >
                   {{ projectStore.projects.find((p) => p.id === task.project_id)?.title || task.project_id }}
                 </span>
                 <router-link

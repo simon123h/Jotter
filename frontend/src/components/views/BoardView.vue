@@ -191,100 +191,100 @@ const handleCancelAddColumn = () => {
   <div class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
     <div ref="columnsContainer" class="flex gap-3.5 items-stretch h-full">
       <GenericColumn
-      v-for="b in buckets"
-      :key="b.name"
-      :id="b.name"
-      :title="t('buckets.' + b.name) !== 'buckets.' + b.name ? t('buckets.' + b.name) : b.title"
-      :subtitle="b.subtitle"
-      :tasks="tasksByBucket[b.name] || []"
-      :layout="b.layout"
-      :color="b.color"
-      :max-tasks="b.max_tasks"
-      :is-limit-exceeded="!!b.max_tasks && (tasksByBucket[b.name] || []).length > b.max_tasks"
-      :show-add-task="activeProjectId !== 'all'"
-      :is-read-only="activeProjectId === 'all'"
-      :show-project="activeProjectId === 'all'"
-      group-name="kanban-board"
-      :is-collapsed="isCollapsed(b.name)"
-      @add-task-click="(id) => emit('add-task-click', id as BucketName)"
-      @card-dropped="onCardDropped"
-      @mark-done="onMarkDone"
-      @toggle-select="(task) => emit('toggle-select', task)"
-      @toggle-collapse="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
-    >
-      <template #header="{ classes }">
-        <div
-          class="px-3 py-2 flex justify-between items-center border-b rounded-t shrink-0 min-h-[48px]"
-          :class="[classes.bg, classes.border, activeProjectId === 'all' ? '' : 'cursor-grab active:cursor-grabbing column-drag-handle']"
-        >
-          <div class="flex-grow flex flex-col justify-center overflow-hidden mr-1">
-            <div class="flex items-center gap-1.5 overflow-hidden">
-              <h3
-                class="font-bold text-sm uppercase tracking-wider truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
-                :class="[classes.text]"
-                @dblclick="openEditColumn(b)"
-                :title="t('doubleClickToRename')"
-              >
-                {{ t('buckets.' + b.name) !== 'buckets.' + b.name ? t('buckets.' + b.name) : b.title }}
-              </h3>
+        v-for="b in buckets"
+        :key="b.name"
+        :id="b.name"
+        :title="t('buckets.' + b.name) !== 'buckets.' + b.name ? t('buckets.' + b.name) : b.title"
+        :subtitle="b.subtitle"
+        :tasks="tasksByBucket[b.name] || []"
+        :layout="b.layout"
+        :color="b.color"
+        :max-tasks="b.max_tasks"
+        :is-limit-exceeded="!!b.max_tasks && (tasksByBucket[b.name] || []).length > b.max_tasks"
+        :show-add-task="activeProjectId !== 'all'"
+        :is-read-only="activeProjectId === 'all'"
+        :show-project="activeProjectId === 'all'"
+        group-name="kanban-board"
+        :is-collapsed="isCollapsed(b.name)"
+        @add-task-click="(id) => emit('add-task-click', id as BucketName)"
+        @card-dropped="onCardDropped"
+        @mark-done="onMarkDone"
+        @toggle-select="(task) => emit('toggle-select', task)"
+        @toggle-collapse="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
+      >
+        <template #header="{ classes }">
+          <div
+            class="px-3 py-2 flex justify-between items-center border-b rounded-t shrink-0 min-h-[48px]"
+            :class="[classes.bg, classes.border, activeProjectId === 'all' ? '' : 'cursor-grab active:cursor-grabbing column-drag-handle']"
+          >
+            <div class="flex-grow flex flex-col justify-center overflow-hidden mr-1">
+              <div class="flex items-center gap-1.5 overflow-hidden">
+                <h3
+                  class="font-bold text-sm uppercase tracking-wider truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
+                  :class="[classes.text]"
+                  @dblclick="openEditColumn(b)"
+                  :title="t('doubleClickToRename')"
+                >
+                  {{ t('buckets.' + b.name) !== 'buckets.' + b.name ? t('buckets.' + b.name) : b.title }}
+                </h3>
+                <span
+                  class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0 transition-all duration-300"
+                  :class="[
+                    b.max_tasks && (tasksByBucket[b.name] || []).length > b.max_tasks
+                      ? 'bg-rose-500/20 border border-rose-500/50 text-rose-400 animate-pulse'
+                      : classes.badge,
+                  ]"
+                >
+                  {{ b.max_tasks ? `${(tasksByBucket[b.name] || []).length}/${b.max_tasks}` : (tasksByBucket[b.name] || []).length }}
+                </span>
+              </div>
               <span
-                class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0 transition-all duration-300"
-                :class="[
-                  b.max_tasks && (tasksByBucket[b.name] || []).length > b.max_tasks
-                    ? 'bg-rose-500/20 border border-rose-500/50 text-rose-400 animate-pulse'
-                    : classes.badge,
-                ]"
+                v-if="b.subtitle"
+                class="text-xs text-theme-text-muted truncate cursor-pointer font-sans italic hover:text-theme-accent leading-normal"
+                @dblclick="openEditColumn(b)"
               >
-                {{ b.max_tasks ? `${(tasksByBucket[b.name] || []).length}/${b.max_tasks}` : (tasksByBucket[b.name] || []).length }}
+                {{ b.subtitle }}
               </span>
             </div>
-            <span
-              v-if="b.subtitle"
-              class="text-xs text-theme-text-muted truncate cursor-pointer font-sans italic hover:text-theme-accent leading-normal"
-              @dblclick="openEditColumn(b)"
-            >
-              {{ b.subtitle }}
-            </span>
+            <div class="flex items-center shrink-0 gap-1">
+              <button
+                @click.stop="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
+                class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer animate-fade-in"
+                :title="t('collapseColumnTooltip')"
+              >
+                <ChevronLeft class="w-4 h-4 shrink-0" />
+              </button>
+              <button
+                v-if="settingsStore.hideAddTaskButton && activeProjectId !== 'all'"
+                @click="emit('add-task-click', b.name)"
+                class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
+              >
+                <Plus class="w-4 h-4 shrink-0" />
+              </button>
+              <button
+                v-if="activeProjectId !== 'all'"
+                @click="openEditColumn(b)"
+                class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
+                :title="t('renameColumnTooltip')"
+              >
+                <MoreHorizontal class="w-4 h-4 shrink-0" />
+              </button>
+            </div>
           </div>
-          <div class="flex items-center shrink-0 gap-1">
-            <button
-              @click.stop="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
-              class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer animate-fade-in"
-              :title="t('collapseColumnTooltip')"
-            >
-              <ChevronLeft class="w-4 h-4 shrink-0" />
-            </button>
-            <button
-              v-if="settingsStore.hideAddTaskButton && activeProjectId !== 'all'"
-              @click="emit('add-task-click', b.name)"
-              class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
-            >
-              <Plus class="w-4 h-4 shrink-0" />
-            </button>
-            <button
-              v-if="activeProjectId !== 'all'"
-              @click="openEditColumn(b)"
-              class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
-              :title="t('renameColumnTooltip')"
-            >
-              <MoreHorizontal class="w-4 h-4 shrink-0" />
-            </button>
-          </div>
-        </div>
-      </template>
+        </template>
 
-      <!-- Custom Add Button -->
-      <template #add-button>
-        <button
-          v-if="!settingsStore.hideAddTaskButton && activeProjectId !== 'all'"
-          @click="emit('add-task-click', b.name)"
-          class="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 mb-2.5 bg-theme-card/35 hover:bg-theme-accent/10 text-theme-text-muted hover:text-theme-accent border border-transparent rounded transition-all cursor-pointer group/btn shrink-0"
-        >
-          <Plus class="w-3.5 h-3.5 shrink-0 transition-transform group-hover/btn:scale-110" />
-          <span class="text-sm font-semibold">{{ t('addTaskButton') }}</span>
-        </button>
-      </template>
-    </GenericColumn>
+        <!-- Custom Add Button -->
+        <template #add-button>
+          <button
+            v-if="!settingsStore.hideAddTaskButton && activeProjectId !== 'all'"
+            @click="emit('add-task-click', b.name)"
+            class="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 mb-2.5 bg-theme-card/35 hover:bg-theme-accent/10 text-theme-text-muted hover:text-theme-accent border border-transparent rounded transition-all cursor-pointer group/btn shrink-0"
+          >
+            <Plus class="w-3.5 h-3.5 shrink-0 transition-transform group-hover/btn:scale-110" />
+            <span class="text-sm font-semibold">{{ t('addTaskButton') }}</span>
+          </button>
+        </template>
+      </GenericColumn>
     </div>
 
     <div class="flex flex-col gap-3 shrink-0 w-72">

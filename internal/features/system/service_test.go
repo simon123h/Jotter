@@ -388,4 +388,3 @@ func TestGitHistoryAndRestoreFallback(t *testing.T) {
 		t.Fatalf("RestoreCommit with fallback failed: %v", err)
 	}
 }
-
