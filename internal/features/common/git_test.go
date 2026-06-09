@@ -11,6 +11,11 @@ import (
 )
 
 func TestGitSync(t *testing.T) {
+	t.Setenv("GIT_AUTHOR_NAME", "Test User")
+	t.Setenv("GIT_AUTHOR_EMAIL", "test@example.com")
+	t.Setenv("GIT_COMMITTER_NAME", "Test User")
+	t.Setenv("GIT_COMMITTER_EMAIL", "test@example.com")
+
 	t.Run("Non-Git Directory", func(t *testing.T) {
 		tempDir, _ := os.MkdirTemp("", "git-test-non-*")
 		defer os.RemoveAll(tempDir)
@@ -133,11 +138,6 @@ func TestGitSync(t *testing.T) {
 
 	t.Run("Option A Backup, Clone, and Semantic App-Level Import Flow", func(t *testing.T) {
 		ctx := context.Background()
-
-		// 1. Configure global user config to ensure commits succeed on freshly cloned repos
-		_ = runGit(ctx, os.TempDir(), "config", "--global", "user.email", "test@example.com")
-		_ = runGit(ctx, os.TempDir(), "config", "--global", "user.name", "Test User")
-		_ = runGit(ctx, os.TempDir(), "config", "--global", "init.defaultBranch", "main")
 
 		// 2. Create a bare remote repository
 		remoteDir, _ := os.MkdirTemp("", "git-remote-opt-a-*")
