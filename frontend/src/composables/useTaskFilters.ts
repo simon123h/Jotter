@@ -1,6 +1,8 @@
 import { ref, computed, watch, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { Task, TaskFilterParams } from '@/types';
+import { parseDSL, stringifyDSL } from '@/utils/dsl';
+import { useProjectStore } from '@/stores/project';
 
 export function useTaskFilters(tasks: Ref<Task[]>) {
   const route = useRoute();
@@ -19,13 +21,14 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
       f.search ||
       f.due_after ||
       f.due_before ||
+      f.project ||
       (f.has_due_date !== undefined && f.has_due_date !== null)
     );
   });
 
   const applyFilters = (filters: TaskFilterParams) => {
     taskFilters.value = filters;
-    searchQuery.value = filters.search || '';
+    searchQuery.value = stringifyDSL(filters);
     selectedTags.value = filters.tags
       ? filters.tags
           .split(',')
@@ -40,16 +43,23 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
     selectedTags.value = [];
   };
 
-  // Sync searchQuery to taskFilters
+  // Parse searchQuery into taskFilters
   watch(searchQuery, (newVal) => {
-    taskFilters.value.search = newVal.trim() || undefined;
+    const parsed = parseDSL(newVal);
+    // Only update taskFilters if parsed values actually differ to avoid infinite cycles
+    if (JSON.stringify(taskFilters.value) !== JSON.stringify(parsed)) {
+      taskFilters.value = parsed;
+    }
   });
 
   // Sync selectedTags to taskFilters
   watch(
     selectedTags,
     (newVal) => {
-      taskFilters.value.tags = newVal.length ? newVal.join(',') : undefined;
+      const tagsStr = newVal.length ? newVal.join(',') : undefined;
+      if (taskFilters.value.tags !== tagsStr) {
+        taskFilters.value.tags = tagsStr;
+      }
     },
     { deep: true }
   );
@@ -71,11 +81,12 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
       has_due_date,
       due_after: (q.due_after as string) || undefined,
       due_before: (q.due_before as string) || undefined,
+      project: (q.project as string) || undefined,
     };
 
     if (JSON.stringify(taskFilters.value) !== JSON.stringify(filters)) {
       taskFilters.value = filters;
-      searchQuery.value = filters.search || '';
+      searchQuery.value = stringifyDSL(filters);
       selectedTags.value = filters.tags
         ? filters.tags
             .split(',')
@@ -86,9 +97,11 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
   };
 
   watch(
-    () => route.query,
+    () => route?.query,
     (newQuery) => {
-      parseFiltersFromQuery(newQuery);
+      if (newQuery) {
+        parseFiltersFromQuery(newQuery);
+      }
     },
     { immediate: true }
   );
@@ -97,7 +110,7 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
   watch(
     taskFilters,
     (newFilters) => {
-      const query = { ...route.query };
+      const query = { ...(route?.query || {}) };
 
       if (newFilters.search) query.search = newFilters.search;
       else delete query.search;
@@ -132,8 +145,17 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
       if (newFilters.due_before) query.due_before = newFilters.due_before;
       else delete query.due_before;
 
-      if (JSON.stringify(route.query) !== JSON.stringify(query)) {
+      if (newFilters.project) query.project = newFilters.project;
+      else delete query.project;
+
+      if (route && JSON.stringify(route.query) !== JSON.stringify(query)) {
         router.replace({ query });
+      }
+
+      // Sync stringified dsl back to searchQuery if they differ
+      const stringified = stringifyDSL(newFilters);
+      if (searchQuery.value !== stringified) {
+        searchQuery.value = stringified;
       }
     },
     { deep: true }
@@ -143,7 +165,7 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
   const filteredTasks = computed(() => {
     let list = tasks.value;
 
-    const searchVal = (taskFilters.value.search || searchQuery.value || '').trim().toLowerCase();
+    const searchVal = (taskFilters.value.search || '').trim().toLowerCase();
     if (searchVal) {
       list = list.filter((task) => {
         return task.title.toLowerCase().includes(searchVal) || (task.body && task.body.toLowerCase().includes(searchVal));
@@ -171,6 +193,28 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
           return priorityList.includes(priority);
         });
       }
+    }
+
+    // Project filtering evaluation
+    if (taskFilters.value.project) {
+      const query = taskFilters.value.project.toLowerCase();
+      let projectStore;
+      try {
+        projectStore = useProjectStore();
+      } catch {
+        // Safe fallback if called outside pinia context
+      }
+      const projectsList = projectStore?.projects || [];
+
+      list = list.filter((task) => {
+        // 1. Direct match on ID
+        if (task.project_id.toLowerCase() === query) return true;
+
+        // 2. Fuzzy match on title
+        const proj = projectsList.find((p) => p.id === task.project_id);
+        const pTitle = (proj?.title || '').toLowerCase();
+        return pTitle.includes(query);
+      });
     }
 
     const modalTags = taskFilters.value.tags
