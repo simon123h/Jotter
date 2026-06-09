@@ -58,15 +58,21 @@ const displayedBuckets = computed(() => {
 
 // Update document title dynamically based on active project
 watchEffect(() => {
+  let title = 'Jotter';
   if (projectId.value === 'all') {
-    document.title = `${t('projects.allProjects') || 'All Projects'} | Jotter`;
+    title = `${t('projects.allProjects') || 'All Projects'} | Jotter`;
   } else {
     const currentProj = projects.value.find((p) => p.id === projectId.value);
     if (currentProj) {
-      document.title = `${currentProj.title} | Jotter`;
-    } else {
-      document.title = 'Jotter';
+      title = `${currentProj.title} | Jotter`;
     }
+  }
+  document.title = title;
+
+  // Update Wails window title if running in a Wails desktop context
+  const w = window as any;
+  if (w.runtime && typeof w.runtime.WindowSetTitle === 'function') {
+    w.runtime.WindowSetTitle(title);
   }
 });
 
