@@ -339,7 +339,8 @@ export const de = {
     globalContext: 'Globale Workspace-Snapshots',
     refreshTooltip: 'Snapshot-Liste aktualisieren',
     searchPlaceholder: 'Snapshots nach Nachricht, Hash oder Autor durchsuchen...',
-    backupNotice: 'Das Wiederherstellen eines früheren Snapshots ist {safeBold}. Jotter speichert deinen aktuellen Zustand automatisch in einem Backup-Snapshot, bevor eine Wiederherstellung durchgeführt wird.',
+    backupNotice:
+      'Das Wiederherstellen eines früheren Snapshots ist {safeBold}. Jotter speichert deinen aktuellen Zustand automatisch in einem Backup-Snapshot, bevor eine Wiederherstellung durchgeführt wird.',
     backupNoticeSafeBold: 'völlig sicher und umkehrbar',
     loading: 'Snapshot-Historie wird geladen...',
     errorTitle: 'Fehler beim Laden der Historie',
@@ -352,9 +353,9 @@ export const de = {
     copiedHashTooltip: 'Kopiert!',
     restoreButton: 'Zustand wiederherstellen',
     closeButton: 'Zeitmaschine schließen',
-    confirmRestore: 'Bist du sicher, dass du den Workspace auf den Snapshot "{message}" ({shortId}) zurücksetzen möchtest?\n\nDeine aktuellen Änderungen werden in einem automatischen Backup-Snapshot gespeichert, sodass diese Aktion völlig sicher und umkehrbar ist.',
+    confirmRestore:
+      'Bist du sicher, dass du den Workspace auf den Snapshot "{message}" ({shortId}) zurücksetzen möchtest?\n\nDeine aktuellen Änderungen werden in einem automatischen Backup-Snapshot gespeichert, sodass diese Aktion völlig sicher und umkehrbar ist.',
     restoreFailed: 'Wiederherstellung fehlgeschlagen: {message}',
     fetchErrorFallback: 'Fehler beim Abrufen des Git-Verlaufs',
   },
 };
-

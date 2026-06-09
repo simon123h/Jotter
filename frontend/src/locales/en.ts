@@ -337,7 +337,8 @@ export const en = {
     globalContext: 'Global Workspace Snapshots',
     refreshTooltip: 'Refresh snapshot list',
     searchPlaceholder: 'Search snapshots by message, hash, author...',
-    backupNotice: 'Restoring to an earlier snapshot is {safeBold}. Jotter automatically saves your current state in a backup snapshot before performing any restore operation.',
+    backupNotice:
+      'Restoring to an earlier snapshot is {safeBold}. Jotter automatically saves your current state in a backup snapshot before performing any restore operation.',
     backupNoticeSafeBold: 'completely safe and reversible',
     loading: 'Loading snapshots history...',
     errorTitle: 'Failed to Load History',
@@ -350,7 +351,8 @@ export const en = {
     copiedHashTooltip: 'Copied!',
     restoreButton: 'Restore State',
     closeButton: 'Close Time Machine',
-    confirmRestore: 'Are you sure you want to restore the workspace to snapshot "{message}" ({shortId})?\n\nYour current changes will be saved in an automatic backup snapshot, so this operation is completely safe and reversible.',
+    confirmRestore:
+      'Are you sure you want to restore the workspace to snapshot "{message}" ({shortId})?\n\nYour current changes will be saved in an automatic backup snapshot, so this operation is completely safe and reversible.',
     restoreFailed: 'Restore failed: {message}',
     fetchErrorFallback: 'Failed to fetch git history',
   },

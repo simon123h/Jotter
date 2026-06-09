@@ -152,7 +152,9 @@ onUnmounted(() => {
               {{ t('timeMachineModal.title') }}
             </h3>
             <p class="text-xs text-theme-text-muted">
-              <span v-if="projectTitle" class="font-medium text-theme-accent">{{ t('timeMachineModal.projectContext', { title: projectTitle }) }}</span>
+              <span v-if="projectTitle" class="font-medium text-theme-accent">{{
+                t('timeMachineModal.projectContext', { title: projectTitle })
+              }}</span>
               <span v-else class="font-medium">{{ t('timeMachineModal.globalContext') }}</span>
             </p>
           </div>
@@ -198,7 +200,7 @@ onUnmounted(() => {
             class="text-xs text-theme-text-muted leading-normal"
             v-html="
               t('timeMachineModal.backupNotice', {
-                safeBold: `<span class='font-semibold text-theme-text-main'>${t('timeMachineModal.backupNoticeSafeBold')}</span>`
+                safeBold: `<span class='font-semibold text-theme-text-main'>${t('timeMachineModal.backupNoticeSafeBold')}</span>`,
               })
             "
           ></p>

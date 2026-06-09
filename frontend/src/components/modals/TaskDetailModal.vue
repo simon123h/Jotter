@@ -90,7 +90,6 @@ const bucketTitle = (bucketName: string, bucketTitle: string) => {
   return translated !== 'buckets.' + bucketName ? translated : bucketTitle;
 };
 
-
 const activeTagQuery = computed(() => {
   const parts = editTags.value.split(',');
   return parts[parts.length - 1].trim().toLowerCase();

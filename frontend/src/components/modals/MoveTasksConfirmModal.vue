@@ -83,7 +83,7 @@ onUnmounted(() => {
             v-html="
               t('moveTasksModal.subtitle', {
                 count: `<span class='font-bold text-theme-text-main'>${taskIds.length}</span>`,
-                project: `<span class='font-bold text-theme-text-main'>${targetProject?.title || 'another project'}</span>`
+                project: `<span class='font-bold text-theme-text-main'>${targetProject?.title || 'another project'}</span>`,
               })
             "
           ></p>
