@@ -188,8 +188,9 @@ const handleCancelAddColumn = () => {
 </script>
 
 <template>
-  <div ref="columnsContainer" class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
-    <GenericColumn
+  <div class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
+    <div ref="columnsContainer" class="flex gap-3.5 items-stretch h-full">
+      <GenericColumn
       v-for="b in buckets"
       :key="b.name"
       :id="b.name"
@@ -284,6 +285,7 @@ const handleCancelAddColumn = () => {
         </button>
       </template>
     </GenericColumn>
+    </div>
 
     <div class="flex flex-col gap-3 shrink-0 w-72">
       <!-- Add Column Card -->
