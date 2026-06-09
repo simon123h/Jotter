@@ -12,7 +12,7 @@ import {
   GitBranch,
   BookOpen,
   FileSpreadsheet,
-  ChevronDown,
+  History,
   Layers,
 } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
@@ -399,7 +399,7 @@ const openTimeMachineModal = () => {
           "
           title="Time Machine / History"
         >
-          <ChevronDown class="w-3.5 h-3.5" />
+          <History class="w-3.5 h-3.5" />
         </button>
       </div>
 

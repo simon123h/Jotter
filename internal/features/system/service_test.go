@@ -334,3 +334,58 @@ func TestGitHistoryAndRestore(t *testing.T) {
 		t.Error("Expected test.md to be deleted/reverted by restore commit, but it still exists")
 	}
 }
+
+func TestGitHistoryAndRestoreFallback(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "jotter-test-fallback-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	ctx := context.Background()
+
+	dbRepo := &mockDBRepository{}
+	fileRepo := NewFileRepository()
+	settingsRepo := &mockSettingsRepository{}
+	svc := NewService(dbRepo, fileRepo, settingsRepo)
+
+	// Initialize git repo in the main workspace directory (tempDir)
+	if err := common.RunGit(ctx, tempDir, "init"); err != nil {
+		t.Fatalf("git init failed: %v", err)
+	}
+	_ = common.RunGit(ctx, tempDir, "checkout", "-b", "main")
+	_ = common.RunGit(ctx, tempDir, "config", "user.email", "test@example.com")
+	_ = common.RunGit(ctx, tempDir, "config", "user.name", "Test User")
+
+	// Create a project subfolder (no .git of its own)
+	projectDir := filepath.Join(tempDir, "project1")
+	if err := os.MkdirAll(projectDir, 0755); err != nil {
+		t.Fatalf("failed to create project dir: %v", err)
+	}
+
+	// Create initial commit in workspace
+	projectsFile := filepath.Join(tempDir, "projects.json")
+	_ = os.WriteFile(projectsFile, []byte(`[]`), 0644)
+	_ = common.RunGit(ctx, tempDir, "add", ".")
+	_ = common.RunGit(ctx, tempDir, "commit", "-m", "Initial workspace commit")
+
+	// Get history specifying "project1" as the project ID
+	// Because project1 has no .git of its own, it should fallback to the workspace git repo!
+	commits, err := svc.GetGitHistory(ctx, tempDir, "project1")
+	if err != nil {
+		t.Fatalf("GetGitHistory fallback failed: %v", err)
+	}
+	if len(commits) != 1 {
+		t.Errorf("Expected 1 commit from fallback history, got: %d", len(commits))
+	} else if commits[0]["message"] != "Initial workspace commit" {
+		t.Errorf("Expected commit message 'Initial workspace commit', got: %q", commits[0]["message"])
+	}
+
+	// Check RestoreCommit with "project1" falls back and works
+	firstCommitHash := commits[0]["id"]
+	_, err = svc.RestoreCommit(ctx, tempDir, "project1", firstCommitHash)
+	if err != nil {
+		t.Fatalf("RestoreCommit with fallback failed: %v", err)
+	}
+}
+

@@ -251,9 +251,19 @@ func (s *systemService) GetGitHistory(ctx context.Context, tasksDir string, proj
 		repoPath = filepath.Join(tasksDir, projectID)
 	}
 
-	// Check if .git directory exists
+	// Check if .git directory exists in repoPath
 	if _, err := os.Stat(filepath.Join(repoPath, ".git")); os.IsNotExist(err) {
-		return []map[string]string{}, nil
+		// FALLBACK: If project directory is requested but doesn't have its own .git,
+		// check if the parent tasksDir has a .git directory.
+		if projectID != "" {
+			if _, errParent := os.Stat(filepath.Join(tasksDir, ".git")); errParent == nil {
+				repoPath = tasksDir
+			} else {
+				return []map[string]string{}, nil
+			}
+		} else {
+			return []map[string]string{}, nil
+		}
 	}
 
 	// Check if HEAD exists (verifies if there are any commits at all)
@@ -289,11 +299,25 @@ func (s *systemService) GetGitHistory(ctx context.Context, tasksDir string, proj
 
 	return commits, nil
 }
-
 func (s *systemService) RestoreCommit(ctx context.Context, tasksDir string, projectID string, commitHash string) (int, error) {
 	repoPath := tasksDir
 	if projectID != "" {
 		repoPath = filepath.Join(tasksDir, projectID)
+	}
+
+	// Check if .git directory exists in repoPath
+	if _, err := os.Stat(filepath.Join(repoPath, ".git")); os.IsNotExist(err) {
+		// FALLBACK: If project directory is requested but doesn't have its own .git,
+		// check if the parent tasksDir has a .git directory.
+		if projectID != "" {
+			if _, errParent := os.Stat(filepath.Join(tasksDir, ".git")); errParent == nil {
+				repoPath = tasksDir
+			} else {
+				return 0, fmt.Errorf("git repository not found for project %s or workspace", projectID)
+			}
+		} else {
+			return 0, fmt.Errorf("git repository not found for workspace")
+		}
 	}
 
 	// 0. Get the current HEAD hash to restore back to
