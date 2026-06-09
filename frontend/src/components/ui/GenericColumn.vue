@@ -2,6 +2,9 @@
 import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue';
 import Sortable from 'sortablejs';
 import type { Task } from '@/types';
+import { useI18n } from '@/composables/useI18n';
+
+const { t } = useI18n();
 import TaskCard from '@/components/ui/TaskCard.vue';
 import { ChevronRight } from '@lucide/vue';
 import { useSelectionStore } from '@/stores/selection';
@@ -404,7 +407,7 @@ watch(
         <button
           @click.stop="emit('toggle-collapse')"
           class="text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card/50 p-1.5 rounded transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
-          title="Expand Column"
+          :title="t('expandColumnTooltip')"
         >
           <ChevronRight class="w-4 h-4" />
         </button>

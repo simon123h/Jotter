@@ -4,6 +4,9 @@ import { X, Clock, RotateCcw, User, Calendar, RefreshCw, Search, Copy, Check, In
 import { useProjectStore } from '@/stores/project';
 import { getGitHistory } from '@/api';
 import type { GitCommit } from '@/types';
+import { useI18n } from '@/composables/useI18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -37,7 +40,7 @@ const fetchHistory = async () => {
   try {
     gitCommits.value = await getGitHistory(props.projectId);
   } catch (err: any) {
-    error.value = err.message || 'Failed to fetch git history';
+    error.value = err.message || t('timeMachineModal.fetchErrorFallback');
   } finally {
     loading.value = false;
   }
@@ -59,13 +62,13 @@ const filteredCommits = computed(() => {
 
 // Restore confirmation & action
 const handleRestore = async (commit: GitCommit) => {
-  const confirmMsg = `Are you sure you want to restore the workspace to snapshot "${commit.message}" (${commit.short_id})?\n\nYour current changes will be saved in an automatic backup snapshot, so this operation is completely safe and reversible.`;
+  const confirmMsg = t('timeMachineModal.confirmRestore', { message: commit.message, shortId: commit.short_id });
   if (confirm(confirmMsg)) {
     try {
       emit('close');
       await projectStore.restoreToCommit(commit.id, props.projectId);
     } catch (err: any) {
-      alert(`Restore failed: ${err.message || err}`);
+      alert(t('timeMachineModal.restoreFailed', { message: err.message || err }));
     }
   }
 };
@@ -146,11 +149,11 @@ onUnmounted(() => {
           <div class="flex flex-col gap-0.5">
             <h3 class="text-base font-bold text-theme-text-main uppercase tracking-wider flex items-center gap-2">
               <Clock class="w-5 h-5 text-theme-primary shrink-0" />
-              Time Machine
+              {{ t('timeMachineModal.title') }}
             </h3>
             <p class="text-xs text-theme-text-muted">
-              <span v-if="projectTitle" class="font-medium text-theme-accent">Project: {{ projectTitle }}</span>
-              <span v-else class="font-medium">Global Workspace Snapshots</span>
+              <span v-if="projectTitle" class="font-medium text-theme-accent">{{ t('timeMachineModal.projectContext', { title: projectTitle }) }}</span>
+              <span v-else class="font-medium">{{ t('timeMachineModal.globalContext') }}</span>
             </p>
           </div>
           <div class="flex items-center gap-2">
@@ -158,7 +161,7 @@ onUnmounted(() => {
             <button
               @click="fetchHistory"
               class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 rounded-lg transition-colors cursor-pointer"
-              title="Refresh snapshot list"
+              :title="t('timeMachineModal.refreshTooltip')"
               :disabled="loading"
             >
               <RefreshCw class="w-4 h-4 shrink-0" :class="{ 'animate-spin': loading }" />
@@ -180,7 +183,7 @@ onUnmounted(() => {
             <input
               v-model="filterText"
               type="text"
-              placeholder="Search snapshots by message, hash, author..."
+              :placeholder="t('timeMachineModal.searchPlaceholder')"
               class="w-full bg-theme-base border border-theme-border rounded-lg pl-9 pr-4 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary"
             />
           </div>
@@ -191,10 +194,14 @@ onUnmounted(() => {
           class="mx-6 mt-4 p-3 rounded-lg bg-theme-primary/10 border border-theme-primary/15 flex items-start gap-2.5 shrink-0 animate-fade-in"
         >
           <Info class="w-4 h-4 text-theme-accent shrink-0 mt-0.5" />
-          <p class="text-xs text-theme-text-muted leading-normal">
-            Restoring to an earlier snapshot is <span class="font-semibold text-theme-text-main">completely safe and reversible</span>.
-            Jotter automatically saves your current state in a backup snapshot before performing any restore operation.
-          </p>
+          <p
+            class="text-xs text-theme-text-muted leading-normal"
+            v-html="
+              t('timeMachineModal.backupNotice', {
+                safeBold: `<span class='font-semibold text-theme-text-main'>${t('timeMachineModal.backupNoticeSafeBold')}</span>`
+              })
+            "
+          ></p>
         </div>
 
         <!-- Snapshot Scroll View -->
@@ -202,7 +209,7 @@ onUnmounted(() => {
           <!-- Loading State -->
           <div v-if="loading && gitCommits.length === 0" class="h-full flex flex-col items-center justify-center p-8">
             <RefreshCw class="w-8 h-8 animate-spin text-theme-primary mb-3" />
-            <p class="text-sm text-theme-text-muted">Loading snapshots history...</p>
+            <p class="text-sm text-theme-text-muted">{{ t('timeMachineModal.loading') }}</p>
           </div>
 
           <!-- Error State -->
@@ -210,22 +217,22 @@ onUnmounted(() => {
             <div class="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center text-red-500 mb-3">
               <X class="w-6 h-6" />
             </div>
-            <p class="text-sm font-semibold text-red-400 mb-1">Failed to Load History</p>
+            <p class="text-sm font-semibold text-red-400 mb-1">{{ t('timeMachineModal.errorTitle') }}</p>
             <p class="text-xs text-theme-text-muted max-w-md mb-4">{{ error }}</p>
             <button
               @click="fetchHistory"
               class="px-4 py-1.5 bg-theme-column/30 hover:bg-theme-column text-theme-text-main rounded-md border border-theme-border text-xs font-semibold cursor-pointer transition-colors"
             >
-              Try Again
+              {{ t('timeMachineModal.tryAgain') }}
             </button>
           </div>
 
           <!-- Empty State -->
           <div v-else-if="filteredCommits.length === 0" class="h-full flex flex-col items-center justify-center p-8 text-center">
             <Clock class="w-8 h-8 text-theme-text-muted/60 mb-2" />
-            <p class="text-sm text-theme-text-main font-semibold">No Snapshots Found</p>
+            <p class="text-sm text-theme-text-main font-semibold">{{ t('timeMachineModal.emptyTitle') }}</p>
             <p class="text-xs text-theme-text-muted mt-1">
-              {{ filterText ? 'Try adjusting your search filters.' : 'No snapshots exist yet in this repository history.' }}
+              {{ filterText ? t('timeMachineModal.emptySearchDesc') : t('timeMachineModal.emptyNoSnapshotsDesc') }}
             </p>
           </div>
 
@@ -244,7 +251,7 @@ onUnmounted(() => {
                     v-if="index === 0 && !filterText"
                     class="text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/15 px-1.5 py-0.5 rounded-full shrink-0"
                   >
-                    Current State
+                    {{ t('timeMachineModal.currentStateBadge') }}
                   </span>
                   <span
                     class="text-[10px] font-mono font-bold bg-theme-column px-2 py-0.5 rounded text-theme-text-muted flex items-center gap-1 shrink-0"
@@ -254,7 +261,7 @@ onUnmounted(() => {
                     <button
                       @click.stop="handleCopyHash(commit.id)"
                       class="text-theme-text-muted/60 hover:text-theme-text-main transition-colors ml-0.5"
-                      :title="copiedHash === commit.id ? 'Copied!' : 'Copy full hash'"
+                      :title="copiedHash === commit.id ? t('timeMachineModal.copiedHashTooltip') : t('timeMachineModal.copyHashTooltip')"
                     >
                       <Check v-if="copiedHash === commit.id" class="w-3 h-3 text-emerald-500" />
                       <Copy v-else class="w-3 h-3" />
@@ -289,7 +296,7 @@ onUnmounted(() => {
                   class="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-theme-column/30 hover:bg-theme-primary/10 text-theme-text-main hover:text-theme-accent border border-theme-border hover:border-theme-primary/20 rounded-lg text-sm font-semibold transition-all duration-200 group-hover:shadow-sm cursor-pointer"
                 >
                   <RotateCcw class="w-4 h-4 shrink-0 text-theme-text-muted group-hover:text-theme-accent" />
-                  Restore State
+                  {{ t('timeMachineModal.restoreButton') }}
                 </button>
               </div>
             </div>
@@ -303,7 +310,7 @@ onUnmounted(() => {
             @click="emit('close')"
             class="px-5 py-2 border border-theme-border rounded-lg text-sm font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer"
           >
-            Close Time Machine
+            {{ t('timeMachineModal.closeButton') }}
           </button>
         </div>
       </div>

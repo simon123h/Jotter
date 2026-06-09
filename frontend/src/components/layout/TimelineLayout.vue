@@ -163,7 +163,7 @@ onBeforeUnmount(() => {
             <button
               @click.stop="uiStore.toggleColumnCollapse(groupName, col.id)"
               class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
-              title="Collapse Column"
+              :title="t('collapseColumnTooltip')"
             >
               <ChevronLeft class="w-4 h-4 shrink-0" />
             </button>
@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
                 @click.stop="toggleMenu(col.id)"
                 class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-all duration-200 cursor-pointer"
                 :class="{ 'text-theme-text-main bg-theme-card/50': activeMenuColId === col.id }"
-                title="Column Layout Options"
+                :title="t('layoutOptions.tooltip')"
               >
                 <MoreHorizontal class="w-4 h-4 shrink-0" />
               </button>
@@ -195,7 +195,7 @@ onBeforeUnmount(() => {
                   <div
                     class="px-2.5 py-1 text-[9px] font-bold text-theme-text-muted/65 uppercase tracking-wider border-b border-theme-border/30 mb-0.5 select-none"
                   >
-                    Layout
+                    {{ t('layoutOptions.label') }}
                   </div>
                   <button
                     @click.stop="
@@ -210,7 +210,7 @@ onBeforeUnmount(() => {
                     ]"
                   >
                     <List class="w-3.5 h-3.5 shrink-0" />
-                    <span>List</span>
+                    <span>{{ t('layoutOptions.list') }}</span>
                   </button>
                   <button
                     @click.stop="
@@ -225,7 +225,7 @@ onBeforeUnmount(() => {
                     ]"
                   >
                     <LayoutGrid class="w-3.5 h-3.5 shrink-0" />
-                    <span>2 Columns</span>
+                    <span>{{ t('layoutOptions.grid2') }}</span>
                   </button>
                   <button
                     @click.stop="
@@ -240,7 +240,7 @@ onBeforeUnmount(() => {
                     ]"
                   >
                     <Grid class="w-3.5 h-3.5 shrink-0" />
-                    <span>3 Columns</span>
+                    <span>{{ t('layoutOptions.grid3') }}</span>
                   </button>
                 </div>
               </transition>

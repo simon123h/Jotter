@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { getKeywordMatches } from '@/utils/titleParser';
+import { useI18n } from '@/composables/useI18n';
+
+const { t: translate } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -176,7 +179,7 @@ defineExpose({
                 'bg-rose-500/15 border-rose-500/35 hover:bg-rose-500/30 text-rose-400':
                   t.type === 'priority' && (t.keyword!.includes('p4') || t.keyword!.includes('p0')),
               }"
-              :title="`Click to ignore as keyword`"
+              :title="translate('clickToIgnoreKeyword')"
             ></span>
             <!-- Hidden text of the keyword to preserve the exact layout and width of the keyword -->
             <span class="relative z-10">{{ t.text }}</span>

@@ -3,6 +3,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { X, Inbox, LayoutGrid } from '@lucide/vue';
 import { useProjectStore } from '@/stores/project';
 import { useSelectionStore } from '@/stores/selection';
+import { useI18n } from '@/composables/useI18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -64,7 +67,7 @@ onUnmounted(() => {
       >
         <!-- Header -->
         <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
-          <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">Move Tasks to Project</h3>
+          <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">{{ t('moveTasksModal.title') }}</h3>
           <button
             @click="emit('close')"
             class="text-theme-text-muted hover:text-theme-text-main transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
@@ -75,11 +78,15 @@ onUnmounted(() => {
 
         <!-- Body -->
         <div class="p-4 space-y-4">
-          <p class="text-sm text-theme-text-muted leading-relaxed">
-            You are moving <span class="font-bold text-theme-text-main">{{ taskIds.length }}</span> task(s) to
-            <span class="font-bold text-theme-text-main">{{ targetProject?.title || 'another project' }}</span
-            >. Choose how their columns should be handled:
-          </p>
+          <p
+            class="text-sm text-theme-text-muted leading-relaxed"
+            v-html="
+              t('moveTasksModal.subtitle', {
+                count: `<span class='font-bold text-theme-text-main'>${taskIds.length}</span>`,
+                project: `<span class='font-bold text-theme-text-main'>${targetProject?.title || 'another project'}</span>`
+              })
+            "
+          ></p>
 
           <div class="grid grid-cols-1 gap-3">
             <!-- Option: Move to Default Bucket -->
@@ -98,9 +105,9 @@ onUnmounted(() => {
                 :class="selectedOption === 'default' ? 'text-theme-primary' : 'text-theme-text-muted'"
               />
               <div>
-                <div class="font-bold text-sm text-theme-text-main">Move to Default Column</div>
+                <div class="font-bold text-sm text-theme-text-main">{{ t('moveTasksModal.defaultColumnTitle') }}</div>
                 <div class="text-xs text-theme-text-muted mt-0.5">
-                  Moves tasks into the target project's primary column (e.g. Inbox / Todo).
+                  {{ t('moveTasksModal.defaultColumnDesc') }}
                 </div>
               </div>
             </button>
@@ -121,8 +128,8 @@ onUnmounted(() => {
                 :class="selectedOption === 'keep' ? 'text-theme-primary' : 'text-theme-text-muted'"
               />
               <div>
-                <div class="font-bold text-sm text-theme-text-main">Keep Current Columns</div>
-                <div class="text-xs text-theme-text-muted mt-0.5">Maintains the column name/ID from the current project if compatible.</div>
+                <div class="font-bold text-sm text-theme-text-main">{{ t('moveTasksModal.keepColumnsTitle') }}</div>
+                <div class="text-xs text-theme-text-muted mt-0.5">{{ t('moveTasksModal.keepColumnsDesc') }}</div>
               </div>
             </button>
           </div>
@@ -134,14 +141,14 @@ onUnmounted(() => {
               @click="emit('close')"
               class="px-4 py-2 border border-theme-border rounded text-sm font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer"
             >
-              Cancel
+              {{ t('moveTasksModal.cancel') }}
             </button>
             <button
               type="button"
               @click="handleProceed"
               class="px-5 py-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-sm font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer"
             >
-              Confirm Move
+              {{ t('moveTasksModal.confirm') }}
             </button>
           </div>
         </div>
