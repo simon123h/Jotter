@@ -32,6 +32,29 @@ export const useProjectStore = defineStore('project', () => {
       buckets.value = [];
       return;
     }
+    if (projectId === 'all') {
+      try {
+        if (projects.value.length === 0) {
+          await fetchProjects();
+        }
+        const allBucketsPromises = projects.value.map((p) => getBuckets(p.id).catch(() => [] as Bucket[]));
+        const allBucketsLists = await Promise.all(allBucketsPromises);
+
+        const aggregatedMap = new Map<string, Bucket>();
+        allBucketsLists.forEach((bucketsList) => {
+          bucketsList.forEach((b) => {
+            if (!aggregatedMap.has(b.name)) {
+              aggregatedMap.set(b.name, { ...b });
+            }
+          });
+        });
+
+        buckets.value = Array.from(aggregatedMap.values()).sort((a, b) => a.position - b.position);
+      } catch (err: any) {
+        error.value = err.message || 'Failed to aggregate columns';
+      }
+      return;
+    }
     try {
       buckets.value = await getBuckets(projectId);
     } catch (err: any) {
@@ -53,7 +76,7 @@ export const useProjectStore = defineStore('project', () => {
   const serializeQuery = (query: TaskQuery): string => {
     return JSON.stringify({
       projectId: query.projectId || '',
-      isGlobal: !!query.isGlobal,
+      isGlobal: !!query.isGlobal || query.projectId === 'all',
       excludeBuckets: resolveExcludeBuckets(query),
     });
   };
@@ -71,7 +94,7 @@ export const useProjectStore = defineStore('project', () => {
 
     loading.value = true;
     try {
-      if (query.isGlobal) {
+      if (query.projectId === 'all' || query.isGlobal) {
         tasks.value = await getAllTasks({
           exclude_buckets: resolvedExclude || undefined,
         });

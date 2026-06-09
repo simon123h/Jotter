@@ -27,6 +27,20 @@ const emit = defineEmits<{
 const projectId = computed(() => String(route.params.projectId));
 const taskId = computed(() => (route.params.taskId ? String(route.params.taskId) : null));
 
+const actualProjectId = computed(() => {
+  if (projectId.value !== 'all') {
+    return projectId.value;
+  }
+  if (task.value) {
+    return task.value.project_id;
+  }
+  const found = tasks.value.find((t) => String(t.id) === taskId.value);
+  if (found) {
+    return found.project_id;
+  }
+  return '';
+});
+
 const task = ref<Task | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -245,7 +259,19 @@ const fetchTaskDetail = async (id: string) => {
   loading.value = true;
   error.value = null;
   try {
-    const fetchedTask = await getTask(projectId.value, id);
+    let resolvedProjId = projectId.value;
+    if (resolvedProjId === 'all') {
+      if (tasks.value.length === 0) {
+        await projectStore.fetchTasks({ projectId: 'all' });
+      }
+      const foundTask = tasks.value.find((t) => String(t.id) === id);
+      if (foundTask) {
+        resolvedProjId = foundTask.project_id;
+      } else {
+        throw new Error('Task not found in global projects list');
+      }
+    }
+    const fetchedTask = await getTask(resolvedProjId, id);
     task.value = fetchedTask;
     // Set edit form values
     editTitle.value = fetchedTask.title;
@@ -377,7 +403,7 @@ const toggleCheckboxInBody = async (targetIndex: number, isChecked: boolean) => 
   });
 
   try {
-    const updated = await updateTask(projectId.value, task.value.id, {
+    const updated = await updateTask(actualProjectId.value, task.value.id, {
       body: newBody,
     });
     task.value = updated;
@@ -429,7 +455,7 @@ const handleFileUpload = async (event: Event) => {
   isUploading.value = true;
   try {
     const file = input.files[0];
-    const updated = await uploadAttachment(projectId.value, task.value.id, file);
+    const updated = await uploadAttachment(actualProjectId.value, task.value.id, file);
     task.value = updated;
     refreshBoard();
   } catch (err: any) {
@@ -444,7 +470,7 @@ const handleRemoveAttachment = async (filename: string) => {
   if (!task.value || !confirm(t('form.deleteAttachmentConfirm'))) return;
 
   try {
-    const updated = await deleteAttachment(projectId.value, task.value.id, filename);
+    const updated = await deleteAttachment(actualProjectId.value, task.value.id, filename);
     task.value = updated;
     refreshBoard();
   } catch (err: any) {
@@ -473,7 +499,7 @@ const handleSave = async () => {
       .map((t) => t.trim().toLowerCase())
       .filter((t) => t.length > 0);
 
-    const updated = await updateTask(projectId.value, task.value.id, {
+    const updated = await updateTask(actualProjectId.value, task.value.id, {
       title: finalTitle,
       bucket: editBucket.value,
       tags: tagArray,
@@ -510,7 +536,7 @@ const handleDelete = async () => {
   loading.value = true;
   error.value = null;
   try {
-    await deleteTask(projectId.value, task.value.id);
+    await deleteTask(actualProjectId.value, task.value.id);
     refreshBoard();
     closeModal();
   } catch (err: any) {
@@ -522,7 +548,7 @@ const handleDelete = async () => {
 const handleMarkDone = async () => {
   if (!task.value) return;
   try {
-    await updateTask(projectId.value, task.value.id, {
+    await updateTask(actualProjectId.value, task.value.id, {
       bucket: 'done',
       position: 1000000.0,
     });
@@ -536,7 +562,7 @@ const handleMarkDone = async () => {
 const handleArchive = async () => {
   if (!task.value) return;
   try {
-    const updated = await updateTask(projectId.value, task.value.id, {
+    const updated = await updateTask(actualProjectId.value, task.value.id, {
       bucket: 'archive',
     });
     task.value = updated;
@@ -552,7 +578,7 @@ const handleUnarchive = async () => {
   try {
     // Try to move back to 'todo' or the default bucket
     const targetBucket = buckets.value.find((b) => b.name === 'todo')?.name || buckets.value[0]?.name || 'todo';
-    const updated = await updateTask(projectId.value, task.value.id, {
+    const updated = await updateTask(actualProjectId.value, task.value.id, {
       bucket: targetBucket,
     });
     task.value = updated;
@@ -780,7 +806,7 @@ onBeforeRouteLeave(async () => {
                     </div>
                     <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity">
                       <a
-                        :href="getAttachmentUrl(projectId, task.id, file)"
+                        :href="getAttachmentUrl(actualProjectId, task.id, file)"
                         target="_blank"
                         class="p-1 text-theme-text-muted hover:text-theme-accent transition-colors cursor-pointer"
                         title="Download"

@@ -58,11 +58,15 @@ const displayedBuckets = computed(() => {
 
 // Update document title dynamically based on active project
 watchEffect(() => {
-  const currentProj = projects.value.find((p) => p.id === projectId.value);
-  if (currentProj) {
-    document.title = `${currentProj.title} | Jotter`;
+  if (projectId.value === 'all') {
+    document.title = `${t('projects.allProjects') || 'All Projects'} | Jotter`;
   } else {
-    document.title = 'Jotter';
+    const currentProj = projects.value.find((p) => p.id === projectId.value);
+    if (currentProj) {
+      document.title = `${currentProj.title} | Jotter`;
+    } else {
+      document.title = 'Jotter';
+    }
   }
 });
 
@@ -329,7 +333,6 @@ const handleBulkMarkDone = async () => {
         <router-view
           :tasks="filteredTasks"
           :buckets="displayedBuckets"
-          :projects="projects"
           :is-selected="isSelected"
           @toggle-select="toggleSelection($event.id)"
           @add-task-click="openCreateModal"

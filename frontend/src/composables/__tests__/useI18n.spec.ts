@@ -24,6 +24,7 @@ describe('useI18n composable', () => {
     locale.value = 'en';
     expect(t('brand.title')).toBe('Jotter');
     expect(t('buttons.cancel')).toBe('Cancel');
+    expect(t('projects.allProjects')).toBe('All Projects');
   });
 
   it('translates keys correctly in German', () => {

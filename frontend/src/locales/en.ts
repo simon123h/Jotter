@@ -151,6 +151,7 @@ export const en = {
     editProject: 'Edit Project',
     gitConnectedTooltip: 'Backed by Git repository',
     offline: 'OFFLINE',
+    allProjects: 'All Projects',
   },
   columnEdit: {
     title: 'Edit Column Details',

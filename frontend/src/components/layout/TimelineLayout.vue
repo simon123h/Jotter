@@ -2,7 +2,7 @@
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import type { Task, Project } from '@/types';
+import type { Task } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
@@ -14,7 +14,6 @@ import { useSelectionStore } from '@/stores/selection';
 
 const props = defineProps<{
   tasks: Task[];
-  projects?: Project[];
   groupName: string;
   showProjectBadge?: boolean;
 }>();
@@ -136,7 +135,6 @@ onBeforeUnmount(() => {
       :group-name="groupName"
       :compact-cards="true"
       :show-project="showProjectBadge"
-      :projects="projects"
       :is-collapsed="uiStore.isColumnCollapsed(groupName, col.id)"
       :layout="uiStore.getVirtualColumnLayout(groupName, col.id)"
       @mark-done="onMarkDone"

@@ -6,6 +6,7 @@ import type { Task, Bucket } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
+import { useSelectionStore } from '@/stores/selection';
 import { storeToRefs } from 'pinia';
 
 const { t, locale } = useI18n();
@@ -13,8 +14,23 @@ const route = useRoute();
 const router = useRouter();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
+const selectionStore = useSelectionStore();
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
 const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+
+const onDragStart = (event: DragEvent, task: Task) => {
+  document.body.classList.add('dragging-active');
+  selectionStore.startDragging(task.id);
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', task.id);
+  }
+};
+
+const onDragEnd = () => {
+  document.body.classList.remove('dragging-active');
+  selectionStore.stopDragging();
+};
 
 const props = defineProps<{
   buckets: Bucket[];
@@ -45,7 +61,10 @@ const getTaskRoute = (task: Task) => {
   const viewMode = String(route?.name || '').replace('-task', '') || 'list';
   return {
     name: `${viewMode}-task`,
-    params: { projectId: task.project_id, taskId: String(task.id) },
+    params: {
+      projectId: route?.params?.projectId === 'all' ? 'all' : task.project_id,
+      taskId: String(task.id),
+    },
     query: route.query,
   };
 };
@@ -179,7 +198,13 @@ const getBucketTitle = (name: string) => {
             :key="task.id"
             @click="openTask(task)"
             class="hover:bg-theme-column/15 transition-colors cursor-pointer group"
-            :class="{ 'bg-theme-accent/5': isSelected(task.id) }"
+            :class="[
+              isSelected(task.id) ? 'bg-theme-accent/5' : '',
+              selectionStore.draggingTaskIds.includes(task.id) ? 'opacity-40' : ''
+            ]"
+            draggable="true"
+            @dragstart="onDragStart($event, task)"
+            @dragend="onDragEnd"
           >
             <td class="px-4 py-2.5" @click.stop>
               <input
@@ -191,6 +216,9 @@ const getBucketTitle = (name: string) => {
             </td>
             <td class="px-4 py-2.5">
               <div class="flex flex-col gap-0.5">
+                <span v-if="activeProjectId === 'all'" class="text-[9px] font-bold uppercase tracking-widest text-theme-accent/70 block mb-0.5 select-none">
+                  {{ projectStore.projects.find((p) => p.id === task.project_id)?.title || task.project_id }}
+                </span>
                 <router-link
                   :to="getTaskRoute(task)"
                   class="text-theme-text-card font-medium hover:text-theme-accent transition-colors truncate max-w-lg block no-underline"

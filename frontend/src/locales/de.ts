@@ -153,6 +153,7 @@ export const de = {
     editProject: 'Projekt bearbeiten',
     gitConnectedTooltip: 'Mit Git-Repository verknüpft',
     offline: 'OFFLINE',
+    allProjects: 'Alle Projekte',
   },
   columnEdit: {
     title: 'Spaltendetails bearbeiten',

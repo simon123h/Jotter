@@ -6,7 +6,6 @@ import ListView from '@/components/views/ListView.vue';
 import MatrixView from '@/components/views/MatrixView.vue';
 import TimeView from '@/components/views/TimeView.vue';
 import TagView from '@/components/views/TagView.vue';
-import GlobalTimeView from '@/components/views/GlobalTimeView.vue';
 import SettingsView from '@/components/views/SettingsView.vue';
 import HomeView from '@/components/views/HomeView.vue';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
@@ -115,21 +114,6 @@ const routes = [
               modal: TaskDetailModal,
             },
             meta: { backRoute: 'tag' },
-          },
-          {
-            path: 'global-time',
-            name: 'global-time',
-            component: GlobalTimeView,
-            meta: { isGlobal: true },
-          },
-          {
-            path: 'global-time/tasks/:taskId',
-            name: 'global-time-task',
-            components: {
-              default: GlobalTimeView,
-              modal: TaskDetailModal,
-            },
-            meta: { isGlobal: true, backRoute: 'global-time' },
           },
         ],
       },

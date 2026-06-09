@@ -99,6 +99,7 @@ const currentEditingBucket = ref<Bucket | null>(null);
 const isEditModalOpen = ref(false);
 
 const openEditColumn = (bucket: Bucket) => {
+  if (activeProjectId.value === 'all') return;
   currentEditingBucket.value = bucket;
   isEditModalOpen.value = true;
 };
@@ -199,7 +200,9 @@ const handleCancelAddColumn = () => {
       :color="b.color"
       :max-tasks="b.max_tasks"
       :is-limit-exceeded="!!b.max_tasks && (tasksByBucket[b.name] || []).length > b.max_tasks"
-      :show-add-task="true"
+      :show-add-task="activeProjectId !== 'all'"
+      :is-read-only="activeProjectId === 'all'"
+      :show-project="activeProjectId === 'all'"
       group-name="kanban-board"
       :is-collapsed="isCollapsed(b.name)"
       @add-task-click="(id) => emit('add-task-click', id as BucketName)"
@@ -208,11 +211,10 @@ const handleCancelAddColumn = () => {
       @toggle-select="(task) => emit('toggle-select', task)"
       @toggle-collapse="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
     >
-      <!-- Header Slot -->
       <template #header="{ classes }">
         <div
-          class="px-3 py-2 flex justify-between items-center border-b rounded-t shrink-0 min-h-[48px] cursor-grab active:cursor-grabbing column-drag-handle"
-          :class="[classes.bg, classes.border]"
+          class="px-3 py-2 flex justify-between items-center border-b rounded-t shrink-0 min-h-[48px]"
+          :class="[classes.bg, classes.border, activeProjectId === 'all' ? '' : 'cursor-grab active:cursor-grabbing column-drag-handle']"
         >
           <div class="flex-grow flex flex-col justify-center overflow-hidden mr-1">
             <div class="flex items-center gap-1.5 overflow-hidden">
@@ -252,13 +254,14 @@ const handleCancelAddColumn = () => {
               <ChevronLeft class="w-4 h-4 shrink-0" />
             </button>
             <button
-              v-if="settingsStore.hideAddTaskButton"
+              v-if="settingsStore.hideAddTaskButton && activeProjectId !== 'all'"
               @click="emit('add-task-click', b.name)"
               class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
             >
               <Plus class="w-4 h-4 shrink-0" />
             </button>
             <button
+              v-if="activeProjectId !== 'all'"
               @click="openEditColumn(b)"
               class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
               :title="t('renameColumnTooltip')"
@@ -272,7 +275,7 @@ const handleCancelAddColumn = () => {
       <!-- Custom Add Button -->
       <template #add-button>
         <button
-          v-if="!settingsStore.hideAddTaskButton"
+          v-if="!settingsStore.hideAddTaskButton && activeProjectId !== 'all'"
           @click="emit('add-task-click', b.name)"
           class="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 mb-2.5 bg-theme-card/35 hover:bg-theme-accent/10 text-theme-text-muted hover:text-theme-accent border border-transparent rounded transition-all cursor-pointer group/btn shrink-0"
         >
@@ -285,7 +288,7 @@ const handleCancelAddColumn = () => {
     <div class="flex flex-col gap-3 shrink-0 w-72">
       <!-- Add Column Card -->
       <button
-        v-if="!isAddingColumn"
+        v-if="!isAddingColumn && activeProjectId !== 'all'"
         @click="isAddingColumn = true"
         class="flex items-center justify-center gap-2 bg-theme-column/20 hover:bg-theme-column/40 border border-dashed border-theme-border/60 hover:border-theme-accent text-theme-text-muted hover:text-theme-text-main font-semibold text-sm cursor-pointer w-full shrink-0 h-[48px] rounded transition-all shadow-sm"
       >

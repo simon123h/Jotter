@@ -50,7 +50,7 @@ watch(
     if (newProjects.length > 0) {
       // If route has a projectId, and it is not in the projects list,
       // redirect the user to the first available project's board view.
-      if (newRouteId && newRouteId !== 'settings') {
+      if (newRouteId && newRouteId !== 'settings' && newRouteId !== 'all') {
         const routeProjectExists = newProjects.some((p) => p.id === newRouteId);
         if (!routeProjectExists) {
           selectProject(newProjects[0].id);

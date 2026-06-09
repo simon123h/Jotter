@@ -22,9 +22,9 @@ const props = withDefaults(
     showAddTask?: boolean;
     compactCards?: boolean;
     showProject?: boolean;
-    projects?: any[];
     isCollapsed?: boolean;
     isFluid?: boolean;
+    isReadOnly?: boolean;
   }>(),
   {
     subtitle: '',
@@ -36,9 +36,9 @@ const props = withDefaults(
     showAddTask: false,
     compactCards: false,
     showProject: false,
-    projects: () => [],
     isCollapsed: false,
     isFluid: false,
+    isReadOnly: false,
   }
 );
 const emit = defineEmits<{
@@ -182,8 +182,19 @@ const setupSortables = () => {
       onEnd: (evt: any) => {
         document.body.classList.remove('dragging-active');
         selectionStore.stopDragging();
-        const { item, to } = evt;
+        const { item, to, from, oldIndex } = evt;
         if (!item || !to) return;
+
+        if (props.isReadOnly) {
+          if (from && oldIndex !== undefined) {
+            if (oldIndex < from.children.length) {
+              from.insertBefore(item, from.children[oldIndex]);
+            } else {
+              from.appendChild(item);
+            }
+          }
+          return;
+        }
 
         const taskId = item.getAttribute('data-task-id') || '';
         const toId = to.getAttribute('data-column-id') || '';
@@ -203,7 +214,6 @@ const setupSortables = () => {
 
         // Revert Sortable.js physical DOM manipulation if the card was moved between columns.
         // This lets Vue's reactivity take full control of rendering, preventing double-rendering or unmount issues.
-        const { from, oldIndex } = evt;
         if (from && from !== to) {
           if (oldIndex !== undefined && oldIndex < from.children.length) {
             from.insertBefore(item, from.children[oldIndex]);
@@ -330,7 +340,6 @@ watch(
               :task="task"
               :compact="compactCards"
               :show-project="showProject"
-              :project-title="projects?.find((p) => p.id === task.project_id)?.title"
               :data-task-id="task.id"
               @mark-done="emit('mark-done', task)"
               @toggle-select="emit('toggle-select', $event)"
@@ -359,7 +368,6 @@ watch(
               :task="task"
               :compact="compactCards"
               :show-project="showProject"
-              :project-title="projects?.find((p) => p.id === task.project_id)?.title"
               :data-task-id="task.id"
               @mark-done="emit('mark-done', task)"
               @toggle-select="emit('toggle-select', $event)"
@@ -376,7 +384,6 @@ watch(
             :task="task"
             :compact="compactCards"
             :show-project="showProject"
-            :project-title="projects?.find((p) => p.id === task.project_id)?.title"
             :data-task-id="task.id"
             @mark-done="emit('mark-done', task)"
             @toggle-select="emit('toggle-select', $event)"

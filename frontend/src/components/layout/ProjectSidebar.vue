@@ -13,6 +13,7 @@ import {
   BookOpen,
   FileSpreadsheet,
   ChevronDown,
+  Layers,
 } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import Sortable from 'sortablejs';
@@ -238,6 +239,28 @@ const openTimeMachineModal = () => {
 
     <!-- Projects List -->
     <div ref="projectsListEl" class="flex-grow overflow-y-auto p-2 space-y-1 scroller-thin">
+      <!-- Virtual "All Projects" Item -->
+      <router-link
+        :to="{
+          name: 'project',
+          params: { projectId: 'all' },
+          query: $route.query,
+        }"
+        class="project-item group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all duration-200 font-medium animate-fade-in border"
+        :class="[
+          activeProjectId === 'all'
+            ? 'bg-theme-primary/10 text-theme-accent border-theme-primary/15'
+            : 'text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main border-transparent',
+        ]"
+      >
+        <div class="flex items-center gap-2 overflow-hidden flex-grow mr-2">
+          <Layers class="w-3.5 h-3.5 text-theme-text-muted shrink-0" :class="{ 'text-theme-accent': activeProjectId === 'all' }" />
+          <span class="truncate font-sans font-semibold">
+            {{ t('projects.allProjects') || 'All Projects' }}
+          </span>
+        </div>
+      </router-link>
+
       <router-link
         v-for="project in sortedProjects"
         :key="project.id"

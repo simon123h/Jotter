@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus, Tag, Zap } from '@lucide/vue';
+import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus, Tag } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Project, BucketName } from '@/types';
 
@@ -162,18 +162,6 @@ const isTabActive = (tab: string) => {
         >
           <Clock class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.time') }}</span>
-        </router-link>
-        <router-link
-          :to="{ name: 'global-time', params: { projectId: activeProjectId || 'default' }, query: $route.query }"
-          class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
-          :class="
-            isTabActive('global-time')
-              ? 'bg-theme-primary text-white shadow-none'
-              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
-          "
-        >
-          <Zap class="w-3.5 h-3.5" />
-          <span class="hidden sm:inline">{{ t('views.globalTime') }}</span>
         </router-link>
       </div>
 

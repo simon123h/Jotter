@@ -10,6 +10,7 @@ import { updateTask } from '@/api';
 
 const { t, locale } = useI18n();
 const selectionStore = useSelectionStore();
+const projectStore = useProjectStore();
 
 const props = withDefaults(
   defineProps<{
@@ -20,7 +21,6 @@ const props = withDefaults(
     allowExpand?: boolean;
     compact?: boolean;
     showProject?: boolean;
-    projectTitle?: string;
     maxNestingLevel?: number;
   }>(),
   {
@@ -30,10 +30,14 @@ const props = withDefaults(
     allowExpand: true,
     compact: false,
     showProject: false,
-    projectTitle: '',
     maxNestingLevel: 0,
   }
 );
+
+const projectTitle = computed(() => {
+  const proj = projectStore.projects.find((p) => p.id === props.task.project_id);
+  return proj ? proj.title : props.task.project_id;
+});
 
 const isSelected = computed(() => selectionStore.isSelected(props.task.id));
 const selectionCount = computed(() => selectionStore.selectionCount);
@@ -49,7 +53,10 @@ const targetRoute = computed(() => {
   const viewMode = String(route?.name || '').replace('-task', '') || 'board';
   return {
     name: `${viewMode}-task`,
-    params: { projectId: props.task.project_id, taskId: String(props.task.id) },
+    params: {
+      projectId: route?.params?.projectId === 'all' ? 'all' : props.task.project_id,
+      taskId: String(props.task.id),
+    },
     query: route?.query || {},
   };
 });
@@ -121,7 +128,6 @@ const toggleChecklistItem = async (targetIndex: number, isChecked: boolean) => {
     await updateTask(props.task.project_id, props.task.id, {
       body: newBody,
     });
-    const projectStore = useProjectStore();
     await projectStore.invalidate();
   } catch (err: any) {
     console.error('Failed to update task checklist:', err);
