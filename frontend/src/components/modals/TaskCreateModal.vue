@@ -7,7 +7,7 @@ import type { BucketName } from '@/types';
 import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
-import { parseTitleState } from '@/utils/dateParser';
+import { parseTitleState } from '@/utils/titleParser';
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 

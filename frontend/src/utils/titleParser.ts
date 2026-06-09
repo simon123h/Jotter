@@ -101,13 +101,13 @@ const getRules = (locale: string): DateRule[] => {
   // Weekdays
   const weekdays = isDe
     ? [
-        { name: 'sonntag', abbr: 'son', day: 0 },
-        { name: 'montag', abbr: 'mon', day: 1 },
-        { name: 'dienstag', abbr: 'die', day: 2 },
-        { name: 'mittwoch', abbr: 'mit', day: 3 },
-        { name: 'donnerstag', abbr: 'don', day: 4 },
-        { name: 'freitag', abbr: 'fre', day: 5 },
-        { name: 'samstag', abbr: 'sam', day: 6 },
+        { name: 'sonntag', abbr: 'so', day: 0 },
+        { name: 'montag', abbr: 'mo', day: 1 },
+        { name: 'dienstag', abbr: 'di', day: 2 },
+        { name: 'mittwoch', abbr: 'mi', day: 3 },
+        { name: 'donnerstag', abbr: 'do', day: 4 },
+        { name: 'freitag', abbr: 'fr', day: 5 },
+        { name: 'samstag', abbr: 'sa', day: 6 },
       ]
     : [
         { name: 'sunday', abbr: 'sun', day: 0 },
@@ -138,6 +138,44 @@ const getRules = (locale: string): DateRule[] => {
   return rules;
 };
 
+export function getPlanningDateForDueDate(dueDate: Date, now: Date = new Date()): string {
+  const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrowZero = new Date(todayZero);
+  tomorrowZero.setDate(todayZero.getDate() + 1);
+
+  const targetZero = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+
+  if (targetZero.getTime() <= todayZero.getTime()) {
+    return 'today';
+  }
+  if (targetZero.getTime() === tomorrowZero.getTime()) {
+    return 'tomorrow';
+  }
+
+  // Sunday of this week (Monday = 1, Sunday = 7)
+  const dayOfWeek = todayZero.getDay() === 0 ? 7 : todayZero.getDay();
+  const sundayOfThisWeek = new Date(todayZero);
+  sundayOfThisWeek.setDate(todayZero.getDate() + (7 - dayOfWeek));
+
+  if (targetZero.getTime() <= sundayOfThisWeek.getTime()) {
+    return 'thisWeek';
+  }
+
+  // Last day of this month
+  const lastDayOfThisMonth = new Date(todayZero.getFullYear(), todayZero.getMonth() + 1, 0);
+  if (targetZero.getTime() <= lastDayOfThisMonth.getTime()) {
+    return 'thisMonth';
+  }
+
+  // Last day of this year
+  const lastDayOfThisYear = new Date(todayZero.getFullYear(), 11, 31);
+  if (targetZero.getTime() <= lastDayOfThisYear.getTime()) {
+    return 'thisYear';
+  }
+
+  return 'sometime';
+}
+
 export function parseDateFromTitle(
   title: string,
   locale: string,
@@ -148,7 +186,6 @@ export function parseDateFromTitle(
   }
 
   const rules = getRules(locale);
-  const isDe = locale === 'de';
 
   for (const rule of rules) {
     const match = rule.pattern.exec(title);
@@ -165,21 +202,8 @@ export function parseDateFromTitle(
       const date = rule.getDate(match);
       const dueDate = formatDate(date);
 
-      // Determine categorical planned date
-      let plannedDate: string | null = 'today';
-      if (isDe) {
-        if (matchedKeyword.includes('morgen')) plannedDate = 'tomorrow';
-        else if (matchedKeyword.includes('nächste woche')) plannedDate = 'thisWeek';
-        else if (matchedKeyword.includes('nächster monat')) plannedDate = 'thisMonth';
-        // Weekdays
-        else if (['son', 'mon', 'die', 'mit', 'don', 'fre', 'sam'].some((abbr) => matchedKeyword.includes(abbr))) plannedDate = 'thisWeek';
-      } else {
-        if (matchedKeyword.includes('tomorrow')) plannedDate = 'tomorrow';
-        else if (matchedKeyword.includes('next week')) plannedDate = 'thisWeek';
-        else if (matchedKeyword.includes('next month')) plannedDate = 'thisMonth';
-        // Weekdays
-        else if (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].some((abbr) => matchedKeyword.includes(abbr))) plannedDate = 'thisWeek';
-      }
+      // Determine categorical planned date dynamically
+      const plannedDate = getPlanningDateForDueDate(date);
 
       let cleanTitle = title.replace(rule.pattern, ' ');
       cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();

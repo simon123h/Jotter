@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { parseDateFromTitle, extractTagsFromTitle, extractBucketFromTitle, parseTitleState } from '@/utils/dateParser';
+import { parseDateFromTitle, extractTagsFromTitle, extractBucketFromTitle, parseTitleState, getPlanningDateForDueDate } from '@/utils/titleParser';
 
-describe('dateParser', () => {
+describe('titleParser', () => {
   beforeEach(() => {
     // Mock system time to Wednesday, June 3, 2026
     vi.useFakeTimers();
@@ -112,6 +112,26 @@ describe('dateParser', () => {
       const result = parseDateFromTitle('montag Meeting', 'de');
       expect(result.dueDate).toBe('2026-06-08');
       expect(result.cleanTitle).toBe('Meeting');
+    });
+
+    it('should parse 2-letter German weekday abbreviations correctly', () => {
+      // June 3, 2026 is Wednesday (Mittwoch).
+      // 'mo' -> next Monday, June 8th
+      const resultMo = parseDateFromTitle('Meeting mo', 'de');
+      expect(resultMo.dueDate).toBe('2026-06-08');
+      expect(resultMo.cleanTitle).toBe('Meeting');
+
+      // 'di' -> next Tuesday, June 9th
+      const resultDi = parseDateFromTitle('Meeting di', 'de');
+      expect(resultDi.dueDate).toBe('2026-06-09');
+
+      // 'mi' -> next Wednesday, June 10th
+      const resultMi = parseDateFromTitle('mi Meeting', 'de');
+      expect(resultMi.dueDate).toBe('2026-06-10');
+
+      // 'do' -> next Thursday (June 4th, tomorrow relative to June 3rd)
+      const resultDo = parseDateFromTitle('Meeting do', 'de');
+      expect(resultDo.dueDate).toBe('2026-06-04');
     });
 
     it('should parse explicit German date DD.MM. correctly', () => {
@@ -269,6 +289,39 @@ describe('dateParser', () => {
       expect(result.bucket).toBeNull();
       expect(result.priority).toBe('high');
       expect(result.cleanTitle).toBe('buy groceries /done');
+    });
+  });
+
+  describe('getPlanningDateForDueDate', () => {
+    it('should map due dates to the appropriate relative planning category', () => {
+      const now = new Date('2026-06-03T12:00:00Z'); // Wednesday
+
+      // Today -> today
+      expect(getPlanningDateForDueDate(new Date('2026-06-03T18:00:00Z'), now)).toBe('today');
+      // Past -> today
+      expect(getPlanningDateForDueDate(new Date('2026-06-02T12:00:00Z'), now)).toBe('today');
+
+      // Tomorrow -> tomorrow
+      expect(getPlanningDateForDueDate(new Date('2026-06-04T12:00:00Z'), now)).toBe('tomorrow');
+
+      // Thursday of same week -> thisWeek
+      expect(getPlanningDateForDueDate(new Date('2026-06-04T12:00:00Z'), now)).toBe('tomorrow'); // wait, tomorrow takes precedence
+      // Friday of same week -> thisWeek
+      expect(getPlanningDateForDueDate(new Date('2026-06-05T12:00:00Z'), now)).toBe('thisWeek');
+      // Sunday of same week -> thisWeek
+      expect(getPlanningDateForDueDate(new Date('2026-06-07T12:00:00Z'), now)).toBe('thisWeek');
+
+      // Monday of next week -> thisMonth (or next week, which is June 8)
+      expect(getPlanningDateForDueDate(new Date('2026-06-08T12:00:00Z'), now)).toBe('thisMonth');
+
+      // End of this month -> thisMonth
+      expect(getPlanningDateForDueDate(new Date('2026-06-30T12:00:00Z'), now)).toBe('thisMonth');
+
+      // Next month -> thisYear
+      expect(getPlanningDateForDueDate(new Date('2026-07-05T12:00:00Z'), now)).toBe('thisYear');
+
+      // Next year -> sometime
+      expect(getPlanningDateForDueDate(new Date('2027-01-01T12:00:00Z'), now)).toBe('sometime');
     });
   });
 });

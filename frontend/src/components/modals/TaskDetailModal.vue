@@ -9,7 +9,7 @@ import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useProjectStore } from '@/stores/project';
 import { X, Slash, Paperclip, Trash2, Download, FileText, Plus, ClipboardList } from '@lucide/vue';
-import { parseTitleState } from '@/utils/dateParser';
+import { parseTitleState, getKeywordMatches } from '@/utils/titleParser';
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 
@@ -367,6 +367,19 @@ watch([editTitle, () => ignoredKeywords.value], ([newTitle, newIgnored]) => {
       editPriority.value = '';
     }
     lastMatchedPriority.value = null;
+  }
+});
+
+// Automatically ignore keywords present in the title when starting to edit
+watch(isEditing, (newVal) => {
+  if (newVal && task.value) {
+    const bucketNames = buckets.value.map((b) => b.name);
+    const matches = getKeywordMatches(task.value.title, locale.value, bucketNames, new Set());
+    if (matches.length > 0) {
+      const updated = new Set(ignoredKeywords.value);
+      matches.forEach((m) => updated.add(m.keyword));
+      ignoredKeywords.value = updated;
+    }
   }
 });
 

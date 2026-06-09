@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { getKeywordMatches } from '@/utils/dateParser';
+import { getKeywordMatches } from '@/utils/titleParser';
 
 const props = withDefaults(
   defineProps<{
@@ -100,6 +100,24 @@ const tokens = computed(() => {
   return segments;
 });
 
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'Backspace' && inputEl.value) {
+    const start = inputEl.value.selectionStart;
+    const end = inputEl.value.selectionEnd;
+    if (start !== null && start === end) {
+      // Find if there is an active match ending exactly at the cursor
+      const matches = getKeywordMatches(props.modelValue, props.locale, props.bucketNames, props.ignoredKeywords);
+      const matchingKeyword = matches.find((m) => m.end === start);
+      if (matchingKeyword) {
+        event.preventDefault();
+        rejectKeyword(matchingKeyword.keyword);
+        return;
+      }
+    }
+  }
+  emit('keydown', event);
+};
+
 // Reject/Ignore a keyword on click
 const rejectKeyword = (keyword: string) => {
   const updated = new Set(props.ignoredKeywords);
@@ -179,7 +197,7 @@ defineExpose({
         emit('input', $event);
       "
       @keyup="emit('keyup', $event)"
-      @keydown="emit('keydown', $event)"
+      @keydown="handleKeyDown($event)"
       @blur="emit('blur', $event)"
       @focus="emit('focus', $event)"
       @click="emit('click', $event)"
