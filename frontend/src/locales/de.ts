@@ -116,6 +116,8 @@ export const de = {
     todo: 'Zu erledigen',
     'in-progress': 'In Bearbeitung',
     done: 'Erledigt',
+    archive: 'Archive',
+    inbox: 'Inbox',
   },
   priorityOptions: {
     none: 'Keine Priorität',

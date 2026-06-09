@@ -115,6 +115,8 @@ export const en = {
     todo: 'To Do',
     'in-progress': 'In Progress',
     done: 'Done',
+    archive: 'Archive',
+    inbox: 'Inbox',
   },
   priorityOptions: {
     none: 'No Priority',
