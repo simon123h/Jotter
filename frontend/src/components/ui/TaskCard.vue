@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { ClipboardList, Check, Calendar, Clock } from '@lucide/vue';
+import { ClipboardList, Check, Calendar, Clock, Paperclip } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { useSelectionStore } from '@/stores/selection';
@@ -299,6 +299,7 @@ const cardStyle = computed(() => {
         (task.due_date ||
           task.planned_date ||
           task.priority ||
+          (task.attachments && task.attachments.length) ||
           (showTags && task.tags && task.tags.length) ||
           (checklistStats && (compact || renderedChecklist.length === 0)))
       "
@@ -330,6 +331,16 @@ const cardStyle = computed(() => {
       >
         <Clock class="w-3 h-3" />
         <span :class="{ 'text-[10px]': compact }">{{ t('plannedDateOptions.' + task.planned_date) }}</span>
+      </div>
+
+      <!-- Attachments -->
+      <div
+        v-if="task.attachments && task.attachments.length"
+        class="flex items-center gap-1 text-theme-text-muted hover:text-theme-text-main transition-colors"
+        :title="t('form.attachmentsCount', { count: task.attachments.length })"
+      >
+        <Paperclip :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0 text-theme-text-muted/80" />
+        <span v-if="task.attachments.length > 1" :class="{ 'text-[10px]': compact }">{{ task.attachments.length }}</span>
       </div>
 
       <!-- Priority -->

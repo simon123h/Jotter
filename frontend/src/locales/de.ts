@@ -68,6 +68,9 @@ export const de = {
     uploading: 'Lade hoch...',
     noAttachments: 'Noch keine Anhänge',
     deleteAttachmentConfirm: 'Bist du sicher, dass du diese Datei entfernen möchtest?',
+    dragDropTitle: 'Dateien hier ablegen',
+    dragDropSubtitle: 'Als Anhänge hochladen',
+    attachmentsCount: '{count} Anhang/Anhänge',
   },
   buttons: {
     cancel: 'Abbrechen',
@@ -78,6 +81,7 @@ export const de = {
     deleteProject: 'Projekt löschen',
     edit: 'Bearbeiten',
     close: 'Schließen',
+    download: 'Herunterladen',
     addColumn: 'Spalte hinzufügen',
     add: 'Hinzufügen',
     markDone: 'Als erledigt markieren',

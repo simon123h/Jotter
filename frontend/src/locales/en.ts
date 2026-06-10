@@ -67,6 +67,9 @@ export const en = {
     uploading: 'Uploading...',
     noAttachments: 'No attachments yet',
     deleteAttachmentConfirm: 'Are you sure you want to remove this file?',
+    dragDropTitle: 'Drop files here',
+    dragDropSubtitle: 'Upload as attachments',
+    attachmentsCount: '{count} attachment(s)',
   },
   buttons: {
     cancel: 'Cancel',
@@ -77,6 +80,7 @@ export const en = {
     deleteProject: 'Delete project',
     edit: 'Edit',
     close: 'Close',
+    download: 'Download',
     addColumn: 'Add Column',
     add: 'Add',
     markDone: 'Mark Done',

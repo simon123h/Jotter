@@ -214,6 +214,15 @@ const handleTitleKeyDown = (event: KeyboardEvent) => {
 };
 
 const handleKeyDown = (event: KeyboardEvent) => {
+  if (previewImageUrl.value) {
+    if (event.key === 'Escape' || event.key === 'Esc') {
+      event.preventDefault();
+      event.stopPropagation();
+      previewImageUrl.value = null;
+      return;
+    }
+  }
+
   // Tag Dropdown
   if (isEditing.value && isTagDropdownOpen.value && tagSuggestions.value.length > 0) {
     if (event.key === 'ArrowDown') {
@@ -462,6 +471,60 @@ const hasChecklist = computed(() => {
 
 const isUploading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+const isDragging = ref(false);
+const previewImageUrl = ref<string | null>(null);
+const previewImageName = ref<string>('');
+
+const isImageFile = (filename: string): boolean => {
+  return /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(filename);
+};
+
+const handlePreviewImage = (filename: string) => {
+  if (!task.value) return;
+  previewImageName.value = filename;
+  previewImageUrl.value = getAttachmentUrl(actualProjectId.value, task.value.id, filename);
+};
+
+const openAttachmentInNewTab = (filename: string) => {
+  if (!task.value) return;
+  const url = getAttachmentUrl(actualProjectId.value, task.value.id, filename);
+  window.open(url, '_blank');
+};
+
+const handleDragOver = (e: DragEvent) => {
+  e.preventDefault();
+  if (e.dataTransfer?.types.includes('Files')) {
+    isDragging.value = true;
+  }
+};
+
+const handleDragLeave = (e: DragEvent) => {
+  e.preventDefault();
+  isDragging.value = false;
+};
+
+const handleDrop = async (e: DragEvent) => {
+  e.preventDefault();
+  isDragging.value = false;
+  if (!task.value) return;
+
+  const files = e.dataTransfer?.files;
+  if (!files || files.length === 0) return;
+
+  isUploading.value = true;
+  try {
+    let lastUpdated = task.value;
+    for (let i = 0; i < files.length; i++) {
+      lastUpdated = await uploadAttachment(actualProjectId.value, task.value.id, files[i]);
+    }
+    task.value = lastUpdated;
+    refreshBoard();
+  } catch (err: any) {
+    error.value = t('errors.updateTask', { message: err.message || err });
+  } finally {
+    isUploading.value = false;
+  }
+};
 
 const triggerFileUpload = () => {
   fileInput.value?.click();
@@ -694,7 +757,23 @@ onBeforeRouteLeave(async () => {
       <div
         class="relative bg-theme-base border border-theme-border w-full max-w-3xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
         @dblclick="handleDblClick"
+        @dragover.prevent="handleDragOver"
+        @dragleave.prevent="handleDragLeave"
+        @drop.prevent="handleDrop"
       >
+        <!-- Drag & Drop Overlay -->
+        <Transition name="fade">
+          <div
+            v-if="isDragging"
+            class="absolute inset-0 z-40 bg-theme-base/95 backdrop-blur-md border-2 border-dashed border-theme-accent m-2 rounded flex flex-col items-center justify-center gap-2 pointer-events-none transition-all duration-200"
+          >
+            <div class="p-3.5 bg-theme-accent/10 text-theme-accent rounded-full animate-bounce">
+              <Paperclip class="w-7 h-7" />
+            </div>
+            <p class="text-theme-text-main font-bold text-sm">{{ t('form.dragDropTitle') }}</p>
+            <p class="text-theme-text-muted text-xs">{{ t('form.dragDropSubtitle') }}</p>
+          </div>
+        </Transition>
         <button
           @click="closeModal"
           class="text-slate-400 transition-colors p-1 rounded cursor-pointer"
@@ -819,23 +898,33 @@ onBeforeRouteLeave(async () => {
                     :key="file"
                     class="group/att flex items-center justify-between p-2 rounded bg-theme-column/20 border border-theme-border/50 hover:border-theme-accent/30 transition-all"
                   >
-                    <div class="flex items-center gap-2 min-w-0">
-                      <FileText class="w-4 h-4 text-theme-text-muted shrink-0" />
-                      <span class="text-xs text-theme-text-main truncate font-medium">{{ file }}</span>
+                    <div
+                      class="flex items-center gap-2 min-w-0 cursor-pointer select-none group/item flex-grow py-0.5"
+                      @click="isImageFile(file) ? handlePreviewImage(file) : openAttachmentInNewTab(file)"
+                    >
+                      <!-- Mini Image Preview Thumbnail -->
+                      <div v-if="isImageFile(file)" class="w-8 h-8 rounded overflow-hidden bg-slate-900 border border-theme-border/50 flex items-center justify-center shrink-0">
+                        <img :src="getAttachmentUrl(actualProjectId, task.id, file)" class="w-full h-full object-cover transition-transform duration-200 group-hover/item:scale-110" />
+                      </div>
+                      <div v-else class="w-8 h-8 rounded bg-theme-card border border-theme-border/50 flex items-center justify-center shrink-0">
+                        <FileText class="w-4 h-4 text-theme-text-muted shrink-0" />
+                      </div>
+                      <span class="text-xs text-theme-text-main truncate font-medium group-hover/item:text-theme-accent transition-colors">{{ file }}</span>
                     </div>
-                    <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity">
+                    <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity shrink-0 ml-2">
                       <a
                         :href="getAttachmentUrl(actualProjectId, task.id, file)"
                         target="_blank"
                         class="p-1 text-theme-text-muted hover:text-theme-accent transition-colors cursor-pointer"
-                        title="Download"
+                        :title="t('buttons.download')"
+                        @click.stop
                       >
                         <Download class="w-3.5 h-3.5" />
                       </a>
                       <button
                         @click="handleRemoveAttachment(file)"
                         class="p-1 text-theme-text-muted hover:text-rose-400 transition-colors cursor-pointer"
-                        title="Delete"
+                        :title="t('buttons.delete')"
                       >
                         <Trash2 class="w-3.5 h-3.5" />
                       </button>
@@ -1120,4 +1209,63 @@ onBeforeRouteLeave(async () => {
       </div>
     </div>
   </Transition>
+
+  <!-- Image Preview Lightbox Overlay -->
+  <Transition name="fade">
+    <div
+      v-if="previewImageUrl"
+      class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md p-4 select-none animate-fade-in"
+      @click="previewImageUrl = null"
+    >
+      <!-- Header Bar inside Lightbox -->
+      <div class="absolute top-0 left-0 right-0 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent z-10 pointer-events-auto">
+        <span class="text-white text-sm font-semibold truncate max-w-[70%] px-2">{{ previewImageName }}</span>
+        <div class="flex items-center gap-3">
+          <a
+            :href="previewImageUrl"
+            target="_blank"
+            download
+            class="text-white/80 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all cursor-pointer flex items-center justify-center"
+            :title="t('buttons.download')"
+            @click.stop
+          >
+            <Download class="w-5 h-5" />
+          </a>
+          <button
+            @click="previewImageUrl = null"
+            class="text-white/80 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all cursor-pointer flex items-center justify-center"
+            :title="t('buttons.close')"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Image Container -->
+      <div class="relative max-w-full max-h-[85vh] flex items-center justify-center animate-scale-in" @click.stop>
+        <img
+          :src="previewImageUrl"
+          :alt="previewImageName"
+          class="max-w-full max-h-[85vh] rounded-lg shadow-2xl object-contain border border-white/10"
+        />
+      </div>
+    </div>
+  </Transition>
 </template>
+
+<style scoped>
+.animate-scale-in {
+  animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+</style>
