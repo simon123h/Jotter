@@ -73,6 +73,16 @@ const openTask = (task: Task) => {
   router.push(getTaskRoute(task));
 };
 
+const handleTagClick = (tag: string) => {
+  const normalizedTag = tag.trim().toLowerCase();
+  router.replace({
+    query: {
+      ...route.query,
+      tags: normalizedTag,
+    },
+  });
+};
+
 type SortKey = 'title' | 'bucket' | 'priority' | 'due_date' | 'planned_date' | 'created_at';
 const sortKey = ref<SortKey>('created_at');
 const sortOrder = ref<'asc' | 'desc'>('desc');
@@ -230,7 +240,8 @@ const getBucketTitle = (name: string) => {
                   <span
                     v-for="tag in task.tags"
                     :key="tag"
-                    class="text-[10px] px-1 py-0 bg-theme-column/40 text-theme-text-muted rounded border border-theme-border/30 uppercase font-bold tracking-tighter"
+                    class="text-[10px] px-1 py-0 bg-theme-column/40 text-theme-text-muted rounded border border-theme-border/30 uppercase font-bold tracking-tighter cursor-pointer transition-transform"
+                    @click.stop.prevent="handleTagClick(tag)"
                   >
                     {{ tag }}
                   </span>

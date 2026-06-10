@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ClipboardList, Check, Calendar, Clock, Paperclip } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
@@ -219,6 +219,18 @@ const cardStyle = computed(() => {
   }
   return styles;
 });
+
+const router = useRouter();
+
+const handleTagClick = (tag: string) => {
+  const normalizedTag = tag.trim().toLowerCase();
+  router.replace({
+    query: {
+      ...route.query,
+      tags: normalizedTag,
+    },
+  });
+};
 </script>
 
 <template>
@@ -337,8 +349,9 @@ const cardStyle = computed(() => {
         <span
           v-for="tag in task.tags"
           :key="tag"
-          class="rounded border uppercase tracking-wider leading-none"
+          class="rounded border uppercase tracking-wider leading-none cursor-pointer transition-transform"
           :class="[getTagClasses(tag), compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold']"
+          @click.stop.prevent="handleTagClick(tag)"
         >
           {{ tag }}
         </span>

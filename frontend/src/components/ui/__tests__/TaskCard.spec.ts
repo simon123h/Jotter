@@ -10,6 +10,10 @@ vi.mock('vue-router', () => ({
     name: 'board',
     query: {},
   }),
+  useRouter: () => ({
+    replace: vi.fn(),
+    push: vi.fn(),
+  }),
 }));
 
 vi.mock('@/api', () => ({

@@ -199,6 +199,19 @@ const closeModal = () => {
   });
 };
 
+const handleTagClick = (tag: string) => {
+  const normalizedTag = tag.trim().toLowerCase();
+  const backRouteName = (route.meta.backRoute as string) || 'board';
+  router.replace({
+    name: backRouteName,
+    params: { projectId: projectId.value },
+    query: {
+      ...route.query,
+      tags: normalizedTag,
+    },
+  });
+};
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
 });
@@ -744,7 +757,8 @@ onBeforeRouteLeave(async () => {
                   <span
                     v-for="tag in task.tags"
                     :key="tag"
-                    class="text-xs font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded"
+                    class="text-xs font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded cursor-pointer transition-transform"
+                    @click="handleTagClick(tag)"
                   >
                     {{ tag }}
                   </span>
