@@ -6,11 +6,13 @@ import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { useSelectionStore } from '@/stores/selection';
 import { useProjectStore } from '@/stores/project';
+import { useSettingsStore } from '@/stores/settings';
 import { updateTask } from '@/api';
 
 const { t, locale } = useI18n();
 const selectionStore = useSelectionStore();
 const projectStore = useProjectStore();
+const settingsStore = useSettingsStore();
 
 const props = withDefaults(
   defineProps<{
@@ -134,8 +136,33 @@ const toggleChecklistItem = async (targetIndex: number, isChecked: boolean) => {
   }
 };
 
+const colorThemes: Record<string, string> = {
+  accent: 'bg-theme-accent/10 text-theme-accent border-theme-accent/20',
+  sky: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+  emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  indigo: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+  violet: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+  amber: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  rose: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  teal: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
+  fuchsia: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20',
+  orange: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  pink: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+  cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+  purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  red: 'bg-red-500/10 text-red-400 border-red-500/20',
+};
+
 // Helper to assign a consistent, pleasant color theme to each tag (matching the professional theme)
 const getTagClasses = (tag: string) => {
+  const normalized = tag.trim().toLowerCase();
+  if (settingsStore.tagColors && settingsStore.tagColors[normalized]) {
+    const custom = settingsStore.tagColors[normalized];
+    if (colorThemes[custom]) {
+      return colorThemes[custom];
+    }
+  }
+
   const hash = tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const themes = [
     'bg-theme-accent/10 text-theme-accent border-theme-accent/20',

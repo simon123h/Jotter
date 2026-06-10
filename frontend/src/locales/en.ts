@@ -199,6 +199,13 @@ export const en = {
     hideAddTask: 'Smaller "Add task" button',
     hideAddTaskDesc: 'Replaces the large quick-add button at the top of each column with a small "+" symbol.',
     subtitle: 'Configure your personal preferences, theme aesthetics, and system language.',
+    tagColorsTitle: 'Custom Tag Colors',
+    tagColorsDesc: 'Manage and customize tag colors globally across your entire workspace.',
+    noTagsFound: 'No tags found in any tasks. Create some tasks with tags first!',
+    tagAutoColor: 'Auto',
+    tagSearchPlaceholder: 'Search tags...',
+    selectTagToCustomize: 'Select Tag to Customize',
+    noMatchingTags: 'No tags match your search',
     gitSync: 'Git Synchronization',
     gitRemoteLabel: 'Global Git Remote URL',
     gitRemoteDesc:

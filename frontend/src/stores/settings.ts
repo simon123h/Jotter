@@ -18,6 +18,7 @@ export const useSettingsStore = defineStore('settings', () => {
     projectOrder: [],
     gitRemoteUrl: '',
     language: '',
+    tagColors: {},
   });
 
   let skipSave = false;
@@ -33,6 +34,7 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!state.projectOrder) state.projectOrder = [];
       if (!state.gitRemoteUrl) state.gitRemoteUrl = '';
       if (!state.language) state.language = '';
+      if (!state.tagColors) state.tagColors = {};
 
       await nextTick();
       skipSave = false;
@@ -135,6 +137,24 @@ export const useSettingsStore = defineStore('settings', () => {
     state.hideAddTaskButton = !state.hideAddTaskButton;
   };
 
+  const setTagColor = (tag: string, color: string) => {
+    if (!state.tagColors) {
+      state.tagColors = {};
+    }
+    const normalized = tag.trim().toLowerCase();
+    if (color) {
+      state.tagColors[normalized] = color;
+    } else {
+      delete state.tagColors[normalized];
+    }
+  };
+
+  const removeTagColor = (tag: string) => {
+    if (state.tagColors) {
+      delete state.tagColors[tag.trim().toLowerCase()];
+    }
+  };
+
   return {
     ...toRefs(state),
     loadSettings,
@@ -147,5 +167,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setSortBy,
     setProjectOrder,
     toggleHideAddTaskButton,
+    setTagColor,
+    removeTagColor,
   };
 });

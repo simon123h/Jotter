@@ -201,6 +201,13 @@ export const de = {
     hideAddTask: 'Kleinere Schaltfläche für "Aufgabe hinzufügen"',
     hideAddTaskDesc: 'Ersetzt die große Schaltfläche zum Erstellen einer neuen Aufgabe in jeder Spalte durch ein Kleines "+"-Symbol.',
     subtitle: 'Passe deine persönlichen Einstellungen, das visuelle Farbschema und die Systemsprache an.',
+    tagColorsTitle: 'Benutzerdefinierte Tag-Farben',
+    tagColorsDesc: 'Verwalte und personalisiere Tag-Farben global für deinen gesamten Arbeitsbereich.',
+    noTagsFound: 'Keine Tags in Aufgaben gefunden. Erstelle zuerst Aufgaben mit Tags!',
+    tagAutoColor: 'Auto',
+    tagSearchPlaceholder: 'Tags suchen...',
+    selectTagToCustomize: 'Wähle einen Tag zum Anpassen',
+    noMatchingTags: 'Keine passenden Tags gefunden',
     gitSync: 'Git-Synchronisation',
     gitRemoteLabel: 'Globale Git-Remote-URL',
     gitRemoteDesc:

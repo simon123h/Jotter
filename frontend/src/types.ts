@@ -78,6 +78,7 @@ export interface AppSettings {
   windowMaximized?: boolean;
   gitRemoteUrl?: string;
   language?: string;
+  tagColors?: Record<string, string>;
 }
 
 export interface SystemInfo {

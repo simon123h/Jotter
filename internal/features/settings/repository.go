@@ -30,22 +30,23 @@ func (r *fileRepository) SaveSettings(tasksDir string, settings AppSettings) err
 // Low-level helper functions (Kept for backwards compatibility and internal repository usage)
 
 type AppSettings struct {
-	HideDoneColumn    bool     `json:"hideDoneColumn"`
-	HideArchiveColumn bool     `json:"hideArchiveColumn"`
-	IsSidebarOpen     bool     `json:"isSidebarOpen"`
-	CurrentTheme      string   `json:"currentTheme"`
-	ThresholdDays     int      `json:"thresholdDays"`
-	PinnedProjectIds  []string `json:"pinnedProjectIds"`
-	SortBy            string   `json:"sortBy"`
-	HideAddTaskButton bool     `json:"hideAddTaskButton"`
-	ProjectOrder      []string `json:"projectOrder"`
-	WindowWidth       int      `json:"windowWidth"`
-	WindowHeight      int      `json:"windowHeight"`
-	WindowX           int      `json:"windowX"`
-	WindowY           int      `json:"windowY"`
-	WindowMaximized   bool     `json:"windowMaximized"`
-	GitRemoteURL      string   `json:"gitRemoteUrl"`
-	Language          string   `json:"language"`
+	HideDoneColumn    bool              `json:"hideDoneColumn"`
+	HideArchiveColumn bool              `json:"hideArchiveColumn"`
+	IsSidebarOpen     bool              `json:"isSidebarOpen"`
+	CurrentTheme      string            `json:"currentTheme"`
+	ThresholdDays     int               `json:"thresholdDays"`
+	PinnedProjectIds  []string          `json:"pinnedProjectIds"`
+	SortBy            string            `json:"sortBy"`
+	HideAddTaskButton bool              `json:"hideAddTaskButton"`
+	ProjectOrder      []string          `json:"projectOrder"`
+	WindowWidth       int               `json:"windowWidth"`
+	WindowHeight      int               `json:"windowHeight"`
+	WindowX           int               `json:"windowX"`
+	WindowY           int               `json:"windowY"`
+	WindowMaximized   bool              `json:"windowMaximized"`
+	GitRemoteURL      string            `json:"gitRemoteUrl"`
+	Language          string            `json:"language"`
+	TagColors         map[string]string `json:"tagColors"`
 }
 
 func GetDefaultSettings() AppSettings {
@@ -66,6 +67,7 @@ func GetDefaultSettings() AppSettings {
 		WindowMaximized:   true,
 		GitRemoteURL:      "",
 		Language:          "",
+		TagColors:         map[string]string{},
 	}
 }
 
@@ -93,6 +95,9 @@ func LoadSettings(tasksDir string) (AppSettings, error) {
 	}
 	if settings.PinnedProjectIds == nil {
 		settings.PinnedProjectIds = []string{}
+	}
+	if settings.TagColors == nil {
+		settings.TagColors = map[string]string{}
 	}
 
 	return settings, nil
