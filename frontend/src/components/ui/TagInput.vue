@@ -12,6 +12,7 @@ const props = withDefaults(
   }>(),
   {
     placeholder: '',
+    suggestionsOverride: undefined,
     inputClass: '',
     placement: 'bottom',
   }
@@ -120,11 +121,15 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 const computedInputClasses = computed(() => {
-  return props.inputClass || 'w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring';
+  return (
+    props.inputClass ||
+    'w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring'
+  );
 });
 
 const computedDropdownClasses = computed(() => {
-  const baseClasses = 'absolute left-0 right-0 max-h-40 overflow-y-auto bg-theme-card border border-theme-border rounded shadow-xl z-50 p-1 space-y-0.5 scroller-thin';
+  const baseClasses =
+    'absolute left-0 right-0 max-h-40 overflow-y-auto bg-theme-card border border-theme-border rounded shadow-xl z-50 p-1 space-y-0.5 scroller-thin';
   const positionClass = props.placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1';
   return `${baseClasses} ${positionClass}`;
 });
@@ -143,10 +148,7 @@ const computedDropdownClasses = computed(() => {
       :placeholder="placeholder"
       :class="computedInputClasses"
     />
-    <div
-      v-if="isDropdownOpen && tagSuggestions.length"
-      :class="computedDropdownClasses"
-    >
+    <div v-if="isDropdownOpen && tagSuggestions.length" :class="computedDropdownClasses">
       <button
         v-for="(suggestion, idx) in tagSuggestions"
         :key="suggestion"

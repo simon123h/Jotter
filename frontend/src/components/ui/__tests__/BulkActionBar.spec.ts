@@ -171,7 +171,7 @@ describe('BulkActionBar.vue', () => {
 
     // Enter comma-separated tags
     await input.setValue('tag-a, tag-b');
-    
+
     // Click the Plus button
     const plusBtn = wrapper.find('button.bg-theme-primary');
     expect(plusBtn.exists()).toBe(true);

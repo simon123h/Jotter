@@ -144,8 +144,6 @@ const selectAutocompleteItem = (bucketName: string) => {
   showAutocomplete.value = false;
 };
 
-
-
 const handleTitleKeyDown = (event: KeyboardEvent) => {
   if (showAutocomplete.value && filteredBuckets.value.length > 0) {
     if (event.key === 'ArrowDown') {
@@ -177,8 +175,6 @@ const handleKeyDown = (event: KeyboardEvent) => {
       return;
     }
   }
-
-
 
   if (event.key === 'Escape' || event.key === 'Esc') {
     closeModal();
@@ -854,13 +850,25 @@ onBeforeRouteLeave(async () => {
                       @click="isImageFile(file) ? handlePreviewImage(file) : openAttachmentInNewTab(file)"
                     >
                       <!-- Mini Image Preview Thumbnail -->
-                      <div v-if="isImageFile(file)" class="w-8 h-8 rounded overflow-hidden bg-slate-900 border border-theme-border/50 flex items-center justify-center shrink-0">
-                        <img :src="getAttachmentUrl(actualProjectId, task.id, file)" class="w-full h-full object-cover transition-transform duration-200 group-hover/item:scale-110" />
+                      <div
+                        v-if="isImageFile(file)"
+                        class="w-8 h-8 rounded overflow-hidden bg-slate-900 border border-theme-border/50 flex items-center justify-center shrink-0"
+                      >
+                        <img
+                          :src="getAttachmentUrl(actualProjectId, task.id, file)"
+                          class="w-full h-full object-cover transition-transform duration-200 group-hover/item:scale-110"
+                        />
                       </div>
-                      <div v-else class="w-8 h-8 rounded bg-theme-card border border-theme-border/50 flex items-center justify-center shrink-0">
+                      <div
+                        v-else
+                        class="w-8 h-8 rounded bg-theme-card border border-theme-border/50 flex items-center justify-center shrink-0"
+                      >
                         <FileText class="w-4 h-4 text-theme-text-muted shrink-0" />
                       </div>
-                      <span class="text-xs text-theme-text-main truncate font-medium group-hover/item:text-theme-accent transition-colors">{{ file }}</span>
+                      <span
+                        class="text-xs text-theme-text-main truncate font-medium group-hover/item:text-theme-accent transition-colors"
+                        >{{ file }}</span
+                      >
                     </div>
                     <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity shrink-0 ml-2">
                       <a
@@ -962,10 +970,7 @@ onBeforeRouteLeave(async () => {
                   <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
                     t('form.tagsLabel')
                   }}</label>
-                  <TagInput
-                    v-model="editTags"
-                    :placeholder="t('form.tagsPlaceholderEdit')"
-                  />
+                  <TagInput v-model="editTags" :placeholder="t('form.tagsPlaceholderEdit')" />
                 </div>
               </div>
 
@@ -1146,7 +1151,9 @@ onBeforeRouteLeave(async () => {
       @click="previewImageUrl = null"
     >
       <!-- Header Bar inside Lightbox -->
-      <div class="absolute top-0 left-0 right-0 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent z-10 pointer-events-auto">
+      <div
+        class="absolute top-0 left-0 right-0 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent z-10 pointer-events-auto"
+      >
         <span class="text-white text-sm font-semibold truncate max-w-[70%] px-2">{{ previewImageName }}</span>
         <div class="flex items-center gap-3">
           <a

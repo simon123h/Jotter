@@ -160,10 +160,13 @@ const handleCustomDueDate = () => {
               v-model="newTagName"
               @enter="handleAddTag"
               :placeholder="t('bulkActions.tagNamePlaceholder')"
-              inputClass="w-full bg-theme-base border border-theme-border rounded px-2 py-1 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+              input-class="w-full bg-theme-base border border-theme-border rounded px-2 py-1 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
               placement="top"
             />
-            <button @click="handleAddTag" class="p-1 bg-theme-primary text-white rounded hover:bg-theme-primary-hover cursor-pointer shrink-0">
+            <button
+              @click="handleAddTag"
+              class="p-1 bg-theme-primary text-white rounded hover:bg-theme-primary-hover cursor-pointer shrink-0"
+            >
               <Plus class="w-3.5 h-3.5" />
             </button>
           </div>

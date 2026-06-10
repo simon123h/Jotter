@@ -397,10 +397,7 @@ const handleSubmit = async () => {
             </div>
             <div class="relative">
               <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.tagsLabel') }}</label>
-              <TagInput
-                v-model="tags"
-                :placeholder="t('form.tagsPlaceholder')"
-              />
+              <TagInput v-model="tags" :placeholder="t('form.tagsPlaceholder')" />
             </div>
           </div>
 

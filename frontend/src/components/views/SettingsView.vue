@@ -171,7 +171,6 @@ const getTagClasses = (tag: string) => {
 
 <template>
   <div class="h-full w-full overflow-y-auto p-6 bg-transparent scroller-thin flex flex-col gap-6 max-w-5xl mx-auto">
-
     <div>
       <h2 class="text-xl font-bold tracking-tight text-theme-text-main flex items-center gap-2">
         <Settings class="w-5 h-5 text-theme-accent" />
@@ -275,17 +274,23 @@ const getTagClasses = (tag: string) => {
         </p>
       </div>
 
-      <div v-if="allTagsInUse.length === 0" class="bg-theme-card/60 border border-theme-border/60 rounded-xl p-6 text-center text-xs text-theme-text-muted">
+      <div
+        v-if="allTagsInUse.length === 0"
+        class="bg-theme-card/60 border border-theme-border/60 rounded-xl p-6 text-center text-xs text-theme-text-muted"
+      >
         {{ t('settingsView.noTagsFound') }}
       </div>
 
-      <div v-else class="bg-theme-card/60 border border-theme-border/60 rounded-xl p-5 flex flex-col md:flex-row md:items-center gap-6 justify-between animate-in fade-in duration-300">
+      <div
+        v-else
+        class="bg-theme-card/60 border border-theme-border/60 rounded-xl p-5 flex flex-col md:flex-row md:items-center gap-6 justify-between animate-in fade-in duration-300"
+      >
         <!-- Selector column (Custom Dropdown Selection) -->
         <div ref="dropdownRef" class="flex flex-col gap-2 w-full md:max-w-xs shrink-0 relative">
           <label class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider select-none">
             {{ t('settingsView.selectTagToCustomize') }}
           </label>
-          
+
           <button
             @click.stop="isDropdownOpen = !isDropdownOpen"
             class="w-full flex items-center justify-between px-3.5 py-2.5 bg-theme-bg border border-theme-border/60 rounded-xl text-xs text-theme-text-main focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary/30 transition-all font-bold cursor-pointer uppercase tracking-wider shadow-sm select-none hover:bg-theme-card/30 text-left"
@@ -303,7 +308,10 @@ const getTagClasses = (tag: string) => {
                 {{ t('settingsView.noTagsFound') }}
               </span>
             </div>
-            <ChevronDown class="w-4 h-4 text-theme-text-muted shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isDropdownOpen }" />
+            <ChevronDown
+              class="w-4 h-4 text-theme-text-muted shrink-0 transition-transform duration-200"
+              :class="{ 'rotate-180': isDropdownOpen }"
+            />
           </button>
 
           <!-- Floating Dropdown Panel -->
@@ -352,7 +360,7 @@ const getTagClasses = (tag: string) => {
                   >
                     {{ tag }}
                   </span>
-                  
+
                   <Check v-if="selectedTag === tag" class="w-3.5 h-3.5 text-theme-primary shrink-0" />
                 </button>
 
@@ -384,7 +392,7 @@ const getTagClasses = (tag: string) => {
               @click="settingsStore.setTagColor(selectedTag, '')"
               class="flex items-center justify-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-theme-border/50 bg-theme-bg/30 text-theme-text-muted hover:text-theme-text-main hover:border-theme-border transition-all cursor-pointer"
               :class="{
-                'bg-theme-primary/10 border-theme-primary text-theme-primary': !tagColors[selectedTag]
+                'bg-theme-primary/10 border-theme-primary text-theme-primary': !tagColors[selectedTag],
               }"
               :title="t('settingsView.tagAutoColor')"
             >
@@ -402,14 +410,16 @@ const getTagClasses = (tag: string) => {
                 colorOpt.color,
                 tagColors[selectedTag] === colorOpt.id
                   ? 'ring-2 ring-offset-2 ring-offset-theme-card ring-theme-primary scale-110'
-                  : 'hover:opacity-90'
+                  : 'hover:opacity-90',
               ]"
               :title="colorOpt.id"
             >
               <!-- Show a small check if selected -->
               <Check v-if="tagColors[selectedTag] === colorOpt.id" class="w-3.5 h-3.5 text-white drop-shadow-md shrink-0" />
               <!-- Micro-tooltip on hover -->
-              <span class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-black/85 text-white text-[9px] rounded font-bold opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity uppercase tracking-wider duration-150 z-50 whitespace-nowrap">
+              <span
+                class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-black/85 text-white text-[9px] rounded font-bold opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity uppercase tracking-wider duration-150 z-50 whitespace-nowrap"
+              >
                 {{ colorOpt.id }}
               </span>
             </button>
