@@ -149,4 +149,41 @@ describe('BulkActionBar.vue', () => {
     expect(emitted).toBeTruthy();
     expect(emitted?.[0][0]).toBe('red');
   });
+
+  it('toggles the tag menu, allows entering tags via TagInput, and emits edit-tag events', async () => {
+    const wrapper = mount(BulkActionBar, {
+      props: defaultProps,
+    });
+
+    const tagBtn = wrapper.find('button[title*="Tag"]');
+    expect(tagBtn.exists()).toBe(true);
+
+    // Toggle menu
+    await tagBtn.trigger('click');
+
+    // Menu should show TagInput component
+    const tagInput = wrapper.findComponent({ name: 'TagInput' });
+    expect(tagInput.exists()).toBe(true);
+
+    // Input should be present
+    const input = tagInput.find('input');
+    expect(input.exists()).toBe(true);
+
+    // Enter comma-separated tags
+    await input.setValue('tag-a, tag-b');
+    
+    // Click the Plus button
+    const plusBtn = wrapper.find('button.bg-theme-primary');
+    expect(plusBtn.exists()).toBe(true);
+    await plusBtn.trigger('click');
+
+    // It should emit 'edit-tag' for each tag entered
+    const emitted = wrapper.emitted('edit-tag');
+    expect(emitted).toBeTruthy();
+    expect(emitted?.length).toBe(2);
+    expect(emitted?.[0][0]).toBe('tag-a');
+    expect(emitted?.[0][1]).toBe(false);
+    expect(emitted?.[1][0]).toBe('tag-b');
+    expect(emitted?.[1][1]).toBe(false);
+  });
 });

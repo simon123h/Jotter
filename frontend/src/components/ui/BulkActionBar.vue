@@ -19,6 +19,7 @@ import {
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket, Project } from '@/types';
+import TagInput from '@/components/ui/TagInput.vue';
 
 const { t } = useI18n();
 
@@ -73,9 +74,15 @@ watch(
 const newTagName = ref('');
 const handleAddTag = () => {
   if (newTagName.value.trim()) {
-    emit('edit-tag', newTagName.value.trim(), false);
+    const tagsToAdd = newTagName.value
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    for (const tag of tagsToAdd) {
+      emit('edit-tag', tag, false);
+    }
     newTagName.value = '';
-    // activeMenu.value = 'none';
   }
 };
 
@@ -148,15 +155,15 @@ const handleCustomDueDate = () => {
             </div>
           </div>
 
-          <div class="flex items-center gap-2">
-            <input
+          <div class="flex items-center gap-2 w-full">
+            <TagInput
               v-model="newTagName"
-              @keyup.enter="handleAddTag"
-              type="text"
+              @enter="handleAddTag"
               :placeholder="t('bulkActions.tagNamePlaceholder')"
-              class="flex-grow bg-theme-base border border-theme-border rounded px-2 py-1 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+              inputClass="w-full bg-theme-base border border-theme-border rounded px-2 py-1 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+              placement="top"
             />
-            <button @click="handleAddTag" class="p-1 bg-theme-primary text-white rounded hover:bg-theme-primary-hover cursor-pointer">
+            <button @click="handleAddTag" class="p-1 bg-theme-primary text-white rounded hover:bg-theme-primary-hover cursor-pointer shrink-0">
               <Plus class="w-3.5 h-3.5" />
             </button>
           </div>
