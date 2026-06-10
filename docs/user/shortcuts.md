@@ -14,6 +14,7 @@ These shortcuts are active on the main kanban board view when you are not active
 | Shortcut | Action | Description |
 | :--- | :--- | :--- |
 | <kbd>q</kbd> | **Create Task** | Instantly opens the task creation modal for the default (first) column. |
+| <kbd>Shift</kbd> + <kbd>Q</kbd> | **Create Urgent Task** | Instantly opens the task creation modal pre-populated with highest priority (urgent), orange card tint, and planned for today. |
 | <kbd>Ctrl</kbd> + <kbd>K</kbd> | **Search Tasks** | Opens the global task search overlay menu (to search and navigate tasks). |
 | <kbd>Ctrl</kbd> + <kbd>A</kbd> | **Select All** | Selects all tasks currently visible on the board. |
 | <kbd>Escape</kbd> | **Clear Selection** | Deselects all currently selected tasks. |

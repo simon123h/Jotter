@@ -14,6 +14,7 @@ Diese Tastenkombinationen sind aktiv, wenn du dich auf der Hauptansicht des Kanb
 | Tastenkombination | Aktion | Beschreibung |
 | :--- | :--- | :--- |
 | <kbd>q</kbd> | **Aufgabe erstellen** | Öffnet sofort das Formular zum Erstellen einer neuen Aufgabe in der Standardspalte. |
+| <kbd>Umschalt</kbd> + <kbd>Q</kbd> | **Dringende Aufgabe erstellen** | Öffnet sofort das Formular zum Erstellen einer neuen Aufgabe, vorausgefüllt mit der höchsten Priorität (dringend), orangefarbener Kartenfarbe und für heute geplant. |
 | <kbd>Strg</kbd> + <kbd>K</kbd> | **Aufgaben suchen** | Öffnet das globale Suchmenü, um Aufgaben zu durchsuchen und direkt zu ihnen zu navigieren. |
 | <kbd>Strg</kbd> + <kbd>A</kbd> | **Alle auswählen** | Wählt alle aktuell sichtbaren Aufgaben auf dem Board aus. |
 | <kbd>Escape</kbd> | **Auswahl aufheben** | Deselektiert alle aktuell ausgewählten Aufgaben auf dem Board. |

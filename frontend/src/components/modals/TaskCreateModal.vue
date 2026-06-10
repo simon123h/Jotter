@@ -2,7 +2,7 @@
 import { ref, watch, nextTick, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { X, ClipboardList } from '@lucide/vue';
+import { X, ClipboardList, Slash } from '@lucide/vue';
 import type { BucketName } from '@/types';
 import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
@@ -15,13 +15,16 @@ import TagInput from '@/components/ui/TagInput.vue';
 const { locale, t } = useI18n();
 const route = useRoute();
 const projectStore = useProjectStore();
-const { buckets, tasks } = storeToRefs(projectStore);
+const { buckets } = storeToRefs(projectStore);
 
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
 
 const props = defineProps<{
   isOpen: boolean;
   defaultBucket?: BucketName;
+  initialPriority?: string;
+  initialColor?: string | null;
+  initialPlanned?: string;
 }>();
 
 const emit = defineEmits<{
@@ -35,9 +38,21 @@ const bucket = ref<BucketName>(props.defaultBucket || 'todo');
 const tags = ref('');
 const body = ref('');
 const dueDate = ref('');
-const priority = ref('');
+const plannedDate = ref(props.initialPlanned || '');
+const priority = ref(props.initialPriority || '');
+const color = ref<string | null>(props.initialColor || null);
 const loading = ref(false);
 const error = ref<string | null>(null);
+
+const colors = [
+  { id: 'red', name: 'Red', bg: 'bg-rose-500', ring: 'ring-rose-500' },
+  { id: 'orange', name: 'Orange', bg: 'bg-amber-600', ring: 'ring-amber-600' },
+  { id: 'yellow', name: 'Yellow', bg: 'bg-yellow-500', ring: 'ring-yellow-500' },
+  { id: 'green', name: 'Green', bg: 'bg-emerald-500', ring: 'ring-emerald-500' },
+  { id: 'blue', name: 'Blue', bg: 'bg-blue-500', ring: 'ring-blue-500' },
+  { id: 'purple', name: 'Purple', bg: 'bg-purple-500', ring: 'ring-purple-500' },
+  { id: 'pink', name: 'Pink', bg: 'bg-pink-500', ring: 'ring-pink-500' },
+];
 
 const titleInput = ref<any>(null);
 const markdownEditor = ref<any>(null);
@@ -164,7 +179,9 @@ watch(
       tags.value = '';
       body.value = '';
       dueDate.value = '';
-      priority.value = '';
+      plannedDate.value = props.initialPlanned || '';
+      priority.value = props.initialPriority || '';
+      color.value = props.initialColor || null;
       error.value = null;
       lastMatchedKeyword.value = null;
       lastMatchedPriority.value = null;
@@ -275,6 +292,8 @@ const handleSubmit = async () => {
       body: body.value,
       due_date: dueDate.value || undefined,
       priority: priority.value || undefined,
+      color: color.value || undefined,
+      planned_date: plannedDate.value || undefined,
     });
 
     emit('success');
@@ -385,7 +404,7 @@ const handleSubmit = async () => {
             </div>
           </div>
 
-          <!-- Due Date & Priority Row -->
+          <!-- Due Date & Planned Date Row -->
           <div class="grid grid-cols-2 gap-3.5">
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
@@ -397,6 +416,27 @@ const handleSubmit = async () => {
                 class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
               />
             </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+                t('form.plannedDateLabel') || 'Planned'
+              }}</label>
+              <select
+                v-model="plannedDate"
+                class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              >
+                <option value="">{{ t('plannedDateOptions.none') }}</option>
+                <option value="today">{{ t('plannedDateOptions.today') }}</option>
+                <option value="tomorrow">{{ t('plannedDateOptions.tomorrow') }}</option>
+                <option value="thisWeek">{{ t('plannedDateOptions.thisWeek') }}</option>
+                <option value="thisMonth">{{ t('plannedDateOptions.thisMonth') }}</option>
+                <option value="thisYear">{{ t('plannedDateOptions.thisYear') }}</option>
+                <option value="sometime">{{ t('plannedDateOptions.sometime') }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Priority & Highlight Color Row -->
+          <div class="grid grid-cols-2 gap-3.5">
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
                 t('form.priorityLabel')
@@ -411,6 +451,38 @@ const handleSubmit = async () => {
                 <option value="high">{{ t('priorityOptions.high') }}</option>
                 <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
               </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+                {{ t('columnEdit.colorLabel') }}
+              </label>
+              <div class="flex flex-wrap gap-2 items-center h-[34px]">
+                <!-- None Option -->
+                <button
+                  type="button"
+                  @click="color = null"
+                  class="w-7 h-7 rounded-full border border-theme-border flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 text-theme-text-muted hover:text-theme-text-main"
+                  :class="[
+                    color === null
+                      ? 'ring-2 ring-theme-accent ring-offset-2 ring-offset-theme-base bg-theme-card/80 border-theme-accent/60'
+                      : 'bg-theme-card/30 hover:bg-theme-card',
+                  ]"
+                  :title="t('columnEdit.colorNone')"
+                >
+                  <Slash class="w-3 h-3 shrink-0 rotate-90" />
+                </button>
+
+                <!-- Colors -->
+                <button
+                  v-for="c in colors"
+                  :key="c.id"
+                  type="button"
+                  @click="color = c.id"
+                  class="w-7 h-7 rounded-full cursor-pointer transition-all hover:scale-110 active:scale-95"
+                  :class="[c.bg, color === c.id ? `ring-2 ring-offset-2 ring-offset-theme-base ${c.ring}` : '']"
+                  :title="c.name"
+                />
+              </div>
             </div>
           </div>
 

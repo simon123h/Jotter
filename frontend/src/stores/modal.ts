@@ -19,8 +19,8 @@ export const useModalStore = defineStore('modal', () => {
   };
 
   // Specific helpers for type safety
-  const openTaskCreate = (defaultBucket: BucketName) => {
-    openModal('task-create', { defaultBucket });
+  const openTaskCreate = (defaultBucket: BucketName, overrides?: Record<string, any>) => {
+    openModal('task-create', { defaultBucket, ...overrides });
   };
 
   const openProjectEdit = (project: Project) => {

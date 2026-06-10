@@ -122,6 +122,19 @@ useKeyboardShortcuts([
     },
   },
   {
+    key: 'q',
+    shiftKey: true,
+    callback: () => {
+      if (!modalStore.activeModal && !route.params.taskId) {
+        modalStore.openTaskCreate(defaultBucketName.value, {
+          priority: 'urgent',
+          color: 'orange',
+          planned: 'today',
+        });
+      }
+    },
+  },
+  {
     key: 'a',
     ctrlKey: true,
     callback: (e: KeyboardEvent) => {

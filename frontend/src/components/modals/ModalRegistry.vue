@@ -27,6 +27,9 @@ const handleTaskCreateSuccess = async () => {
         v-if="activeModal === 'task-create'"
         :is-open="true"
         :default-bucket="modalProps.defaultBucket"
+        :initial-priority="modalProps.priority"
+        :initial-color="modalProps.color"
+        :initial-planned="modalProps.planned"
         @close="modalStore.closeModal"
         @success="handleTaskCreateSuccess"
       />
