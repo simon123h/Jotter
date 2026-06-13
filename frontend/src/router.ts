@@ -6,6 +6,7 @@ import ListView from '@/components/views/ListView.vue';
 import MatrixView from '@/components/views/MatrixView.vue';
 import TimeView from '@/components/views/TimeView.vue';
 import TagView from '@/components/views/TagView.vue';
+import TriageView from '@/components/views/TriageView.vue';
 import SettingsView from '@/components/views/SettingsView.vue';
 import HomeView from '@/components/views/HomeView.vue';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
@@ -115,6 +116,11 @@ const routes = [
             },
             meta: { backRoute: 'tag' },
           },
+          {
+            path: 'triage',
+            name: 'triage',
+            component: TriageView,
+          },
         ],
       },
     ],
@@ -134,7 +140,7 @@ router.afterEach((to) => {
   try {
     const uiStore = useUiStore();
     const currentMode = (to.meta.backRoute as string) || String(to.name || '');
-    if (to.params.projectId && ['board', 'list', 'matrix', 'time', 'tag'].includes(currentMode)) {
+    if (to.params.projectId && ['board', 'list', 'matrix', 'time', 'tag', 'triage'].includes(currentMode)) {
       uiStore.setLastViewMode(currentMode);
     }
   } catch {
