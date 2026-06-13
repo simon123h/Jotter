@@ -8,9 +8,11 @@ import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { parseTitleState } from '@/utils/titleParser';
+import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
+import { TASK_COLORS } from '@/utils/constants';
 
 const { locale, t } = useI18n();
 const route = useRoute();
@@ -44,15 +46,7 @@ const color = ref<string | null>(props.initialColor || null);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-const colors = [
-  { id: 'red', name: 'Red', bg: 'bg-rose-500', ring: 'ring-rose-500' },
-  { id: 'orange', name: 'Orange', bg: 'bg-amber-600', ring: 'ring-amber-600' },
-  { id: 'yellow', name: 'Yellow', bg: 'bg-yellow-500', ring: 'ring-yellow-500' },
-  { id: 'green', name: 'Green', bg: 'bg-emerald-500', ring: 'ring-emerald-500' },
-  { id: 'blue', name: 'Blue', bg: 'bg-blue-500', ring: 'ring-blue-500' },
-  { id: 'purple', name: 'Purple', bg: 'bg-purple-500', ring: 'ring-purple-500' },
-  { id: 'pink', name: 'Pink', bg: 'bg-pink-500', ring: 'ring-pink-500' },
-];
+const colors = TASK_COLORS;
 
 const titleInput = ref<any>(null);
 const markdownEditor = ref<any>(null);
@@ -82,91 +76,15 @@ const lastMatchedKeyword = ref<string | null>(null);
 const lastMatchedPriority = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
-// Autocomplete State
-const showAutocomplete = ref(false);
-const autocompleteSearch = ref('');
-const autocompleteIndex = ref(0);
-
-const filteredBuckets = computed(() => {
-  if (!showAutocomplete.value) return [];
-  const search = autocompleteSearch.value.toLowerCase();
-  return buckets.value.filter(
-    (b) =>
-      b.name.toLowerCase().includes(search) ||
-      t('buckets.' + b.name)
-        .toLowerCase()
-        .includes(search)
-  );
-});
-
-const checkAutocomplete = () => {
-  const input = titleInput.value ? titleInput.value.inputEl || titleInput.value : null;
-  if (!input) {
-    showAutocomplete.value = false;
-    return;
-  }
-
-  const value = title.value;
-  const cursor = input.selectionStart || 0;
-  const textBeforeCursor = value.substring(0, cursor);
-
-  const match = textBeforeCursor.match(/(?:^|\s)\/([a-zA-Z0-9\u00C0-\u017F_-]*)$/);
-  if (match) {
-    showAutocomplete.value = true;
-    autocompleteSearch.value = match[1];
-    if (autocompleteIndex.value >= filteredBuckets.value.length) {
-      autocompleteIndex.value = 0;
-    }
-  } else {
-    showAutocomplete.value = false;
-  }
-};
-
-const selectAutocompleteItem = (bucketName: string) => {
-  const input = titleInput.value ? titleInput.value.inputEl || titleInput.value : null;
-  if (!input) return;
-
-  const value = title.value;
-  const cursor = input.selectionStart || 0;
-  const slashIndex = cursor - autocompleteSearch.value.length - 1;
-
-  if (slashIndex >= 0) {
-    title.value = value.substring(0, slashIndex) + '/' + bucketName + ' ' + value.substring(cursor);
-    const newCursor = slashIndex + bucketName.length + 2;
-    nextTick(() => {
-      if (titleInput.value?.setSelectionRange) {
-        titleInput.value.setSelectionRange(newCursor, newCursor);
-      } else {
-        input.setSelectionRange(newCursor, newCursor);
-      }
-      titleInput.value?.focus();
-      checkAutocomplete();
-    });
-  }
-  showAutocomplete.value = false;
-};
-
-const handleTitleKeyDown = (event: KeyboardEvent) => {
-  if (showAutocomplete.value && filteredBuckets.value.length > 0) {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      event.stopPropagation();
-      autocompleteIndex.value = (autocompleteIndex.value + 1) % filteredBuckets.value.length;
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      event.stopPropagation();
-      autocompleteIndex.value = (autocompleteIndex.value - 1 + filteredBuckets.value.length) % filteredBuckets.value.length;
-    } else if (event.key === 'Enter' || event.key === 'Tab') {
-      event.preventDefault();
-      event.stopPropagation();
-      selectAutocompleteItem(filteredBuckets.value[autocompleteIndex.value].name);
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      showAutocomplete.value = false;
-    }
-  }
-};
+// Autocomplete State and Logic
+const {
+  showAutocomplete,
+  autocompleteIndex,
+  filteredBuckets,
+  checkAutocomplete,
+  selectAutocompleteItem,
+  handleTitleKeyDown,
+} = useTaskAutocomplete(title, titleInput);
 
 // Reset form when modal opens
 watch(

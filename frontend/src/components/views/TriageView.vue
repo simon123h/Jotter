@@ -23,6 +23,7 @@ import { updateTask, deleteTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import TagInput from '@/components/ui/TagInput.vue';
+import { TRIAGE_COLORS, PRIORITY_OPTIONS } from '@/utils/constants';
 
 const props = defineProps<{
   tasks: Task[];
@@ -62,29 +63,9 @@ const lastDeletedTask = ref<Task | null>(null);
 const isCongratsState = ref(false);
 
 // Highlight card colors configuration
-const colorsList = [
-  { id: null, bg: 'bg-theme-column border-theme-border/40', ring: 'ring-theme-border' },
-  { id: 'red', bg: 'bg-rose-500/20 border-rose-500/30', ring: 'ring-rose-500' },
-  { id: 'orange', bg: 'bg-amber-600/20 border-amber-600/30', ring: 'ring-amber-600' },
-  { id: 'yellow', bg: 'bg-yellow-500/20 border-yellow-500/30', ring: 'ring-yellow-500' },
-  { id: 'green', bg: 'bg-emerald-500/20 border-emerald-500/30', ring: 'ring-emerald-500' },
-  { id: 'blue', bg: 'bg-blue-500/20 border-blue-500/30', ring: 'ring-blue-500' },
-  { id: 'purple', bg: 'bg-purple-500/20 border-purple-500/30', ring: 'ring-purple-500' },
-  { id: 'pink', bg: 'bg-pink-500/20 border-pink-500/30', ring: 'ring-pink-500' },
-];
+const colorsList = TRIAGE_COLORS;
 
-const priorityList = [
-  { id: 'none', label: 'priorityOptions.none', color: 'text-theme-text-muted', bg: 'bg-theme-column/30' },
-  { id: 'low', label: 'priorityOptions.low', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-  { id: 'medium', label: 'priorityOptions.medium', color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20' },
-  { id: 'high', label: 'priorityOptions.high', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
-  {
-    id: 'urgent',
-    label: 'priorityOptions.urgent',
-    color: 'text-rose-400 font-bold',
-    bg: 'bg-rose-500/10 border-rose-500/20 animate-pulse',
-  },
-];
+const priorityList = PRIORITY_OPTIONS;
 
 // Computed list of tasks in the active sorting order
 const sortedTasks = computed(() => {
@@ -479,7 +460,7 @@ onUnmounted(() => {
                 v-for="p in [priorityList.find((item) => item.id === currentTask?.priority) || priorityList[0]]"
                 :key="p.id"
                 class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1 shadow-sm"
-                :class="[p.color, p.bg]"
+                :class="[p.color, p.bg, p.id === 'urgent' ? 'animate-pulse' : '']"
               >
                 <Flame v-if="p.id === 'urgent' || p.id === 'high'" class="w-3 h-3 text-orange-400" />
                 {{ t(p.label) }}
