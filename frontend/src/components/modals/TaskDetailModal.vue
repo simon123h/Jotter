@@ -4,19 +4,21 @@ import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { marked } from 'marked';
 import type { Task } from '@/types';
-import { getTask, updateTask, deleteTask, uploadAttachment, deleteAttachment, getAttachmentUrl } from '@/api';
+import { getTask, deleteTask, uploadAttachment, deleteAttachment, getAttachmentUrl } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
+import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useProjectStore } from '@/stores/project';
 import { X, Slash, Paperclip, Trash2, Download, FileText, Plus, ClipboardList } from '@lucide/vue';
 import { parseTitleState, getKeywordMatches } from '@/utils/titleParser';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
+import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import { TASK_COLORS } from '@/utils/constants';
 
-const { locale, t } = useI18n();
+const { locale, t, tBucket } = useI18n();
 const { showDialog } = useDialog();
 const route = useRoute();
 const router = useRouter();
@@ -68,21 +70,20 @@ const lastExtractedTags = ref<string[]>([]);
 
 const titleInput = ref<any>(null);
 
-/** Translate the bucket name, if possible */
-const bucketTitle = (bucketName: string, bucketTitle: string) => {
-  const translated = t('buckets.' + bucketName);
-  return translated !== 'buckets.' + bucketName ? translated : bucketTitle;
-};
-
 // Autocomplete State and Logic
-const {
-  showAutocomplete,
-  autocompleteIndex,
-  filteredBuckets,
-  checkAutocomplete,
-  selectAutocompleteItem,
-  handleTitleKeyDown,
-} = useTaskAutocomplete(editTitle, titleInput);
+const { showAutocomplete, autocompleteIndex, filteredBuckets, checkAutocomplete, selectAutocompleteItem, handleTitleKeyDown } =
+  useTaskAutocomplete(editTitle, titleInput);
+
+const { patchTask } = useTaskMutations(
+  tasks,
+  actualProjectId,
+  async () => {
+    await projectStore.fetchBuckets(actualProjectId.value);
+  },
+  async () => {
+    emit('refresh');
+  }
+);
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (previewImageUrl.value) {
@@ -281,25 +282,11 @@ const parsedMarkdown = computed(() => {
 const toggleCheckboxInBody = async (targetIndex: number, isChecked: boolean) => {
   if (!task.value) return;
 
-  let currentIndex = 0;
-  const regex = /(^|\n)(\s*[-*+]\s+\[)([ xX])(\])/g;
-
-  const newBody = task.value.body.replace(regex, (match, p1, p2, _p3, p4) => {
-    if (currentIndex === targetIndex) {
-      currentIndex++;
-      const newChar = isChecked ? 'x' : ' ';
-      return p1 + p2 + newChar + p4;
-    }
-    currentIndex++;
-    return match;
-  });
+  const newBody = toggleChecklistItemInMarkdown(task.value.body, targetIndex, isChecked);
 
   try {
-    const updated = await updateTask(actualProjectId.value, task.value.id, {
-      body: newBody,
-    });
+    const updated = await patchTask(task.value, { body: newBody });
     task.value = updated;
-    refreshBoard();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
   }
@@ -445,7 +432,7 @@ const handleSave = async () => {
       .map((t) => t.trim().toLowerCase())
       .filter((t) => t.length > 0);
 
-    const updated = await updateTask(actualProjectId.value, task.value.id, {
+    const updated = await patchTask(task.value, {
       title: finalTitle,
       bucket: editBucket.value,
       tags: tagArray,
@@ -459,7 +446,6 @@ const handleSave = async () => {
     task.value = updated;
     task.value.tags = task.value.tags ?? [];
     isEditing.value = false;
-    refreshBoard();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
   } finally {
@@ -494,11 +480,10 @@ const handleDelete = async () => {
 const handleMarkDone = async () => {
   if (!task.value) return;
   try {
-    await updateTask(actualProjectId.value, task.value.id, {
+    await patchTask(task.value, {
       bucket: 'done',
       position: 1000000.0,
     });
-    refreshBoard();
     closeModal();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
@@ -508,11 +493,10 @@ const handleMarkDone = async () => {
 const handleArchive = async () => {
   if (!task.value) return;
   try {
-    const updated = await updateTask(actualProjectId.value, task.value.id, {
+    const updated = await patchTask(task.value, {
       bucket: 'archive',
     });
     task.value = updated;
-    refreshBoard();
     closeModal();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
@@ -524,11 +508,10 @@ const handleUnarchive = async () => {
   try {
     // Try to move back to 'todo' or the default bucket
     const targetBucket = buckets.value.find((b) => b.name === 'todo')?.name || buckets.value[0]?.name || 'todo';
-    const updated = await updateTask(actualProjectId.value, task.value.id, {
+    const updated = await patchTask(task.value, {
       bucket: targetBucket,
     });
     task.value = updated;
-    refreshBoard();
     closeModal();
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
@@ -858,7 +841,7 @@ onBeforeRouteLeave(async () => {
                           class="w-1.5 h-1.5 rounded-full bg-theme-accent"
                           :class="index === autocompleteIndex ? 'bg-white' : ''"
                         ></span>
-                        <span>{{ t('buckets.' + b.name) }}</span>
+                        <span>{{ tBucket(b.name, b.title) }}</span>
                       </div>
                       <span class="text-xs font-mono" :class="index === autocompleteIndex ? 'text-white/80' : 'text-theme-text-muted'"
                         >/{{ b.name }}</span
@@ -881,7 +864,7 @@ onBeforeRouteLeave(async () => {
                     v-model="editBucket"
                     class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
                   >
-                    <option v-for="b in buckets" :key="b.name" :value="b.name">{{ bucketTitle(b.name, b.title) }}</option>
+                    <option v-for="b in buckets" :key="b.name" :value="b.name">{{ tBucket(b.name, b.title) }}</option>
                   </select>
                 </div>
                 <div class="relative">

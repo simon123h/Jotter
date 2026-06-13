@@ -95,9 +95,16 @@ export function useI18n() {
     });
   };
 
+  const tBucket = (name: string, fallback?: string): string => {
+    const key = 'buckets.' + name;
+    const translated = t(key);
+    return translated !== key ? translated : fallback || name;
+  };
+
   return {
     locale,
     t,
+    tBucket,
   };
 }
 export type TranslateFn = ReturnType<typeof useI18n>['t'];

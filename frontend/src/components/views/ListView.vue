@@ -9,7 +9,7 @@ import { useProjectStore } from '@/stores/project';
 import { useSelectionStore } from '@/stores/selection';
 import { storeToRefs } from 'pinia';
 
-const { t, locale } = useI18n();
+const { t, locale, tBucket } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const settingsStore = useSettingsStore();
@@ -143,7 +143,7 @@ const getPriorityClasses = (prio?: string) => {
 
 const getBucketTitle = (name: string) => {
   const b = props.buckets.find((b) => b.name === name);
-  return t('buckets.' + name) !== 'buckets.' + name ? t('buckets.' + name) : b?.title || name;
+  return tBucket(name, b?.title);
 };
 </script>
 

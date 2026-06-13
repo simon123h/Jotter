@@ -14,7 +14,7 @@ import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import { TASK_COLORS } from '@/utils/constants';
 
-const { locale, t } = useI18n();
+const { locale, t, tBucket } = useI18n();
 const route = useRoute();
 const projectStore = useProjectStore();
 const { buckets } = storeToRefs(projectStore);
@@ -57,12 +57,6 @@ const addChecklistItem = () => {
   });
 };
 
-/** Translate the bucket name, if possible */
-const bucketTitle = (bucketName: string, bucketTitle: string) => {
-  const translated = t('buckets.' + bucketName);
-  return translated !== 'buckets.' + bucketName ? translated : bucketTitle;
-};
-
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Escape' || event.key === 'Esc') {
     emit('close');
@@ -77,14 +71,8 @@ const lastMatchedPriority = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
 // Autocomplete State and Logic
-const {
-  showAutocomplete,
-  autocompleteIndex,
-  filteredBuckets,
-  checkAutocomplete,
-  selectAutocompleteItem,
-  handleTitleKeyDown,
-} = useTaskAutocomplete(title, titleInput);
+const { showAutocomplete, autocompleteIndex, filteredBuckets, checkAutocomplete, selectAutocompleteItem, handleTitleKeyDown } =
+  useTaskAutocomplete(title, titleInput);
 
 // Reset form when modal opens
 watch(
@@ -289,7 +277,7 @@ const handleSubmit = async () => {
                 >
                   <div class="flex items-center gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-theme-accent" :class="index === autocompleteIndex ? 'bg-white' : ''"></span>
-                    <span>{{ bucketTitle(b.name, b.title) }}</span>
+                    <span>{{ tBucket(b.name, b.title) }}</span>
                   </div>
                   <span class="text-xs font-mono" :class="index === autocompleteIndex ? 'text-white/80' : 'text-theme-text-muted'"
                     >/{{ b.name }}</span
@@ -310,7 +298,7 @@ const handleSubmit = async () => {
                 v-model="bucket"
                 class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
               >
-                <option v-for="b in buckets" :key="b.name" :value="b.name">{{ bucketTitle(b.name, b.title) }}</option>
+                <option v-for="b in buckets" :key="b.name" :value="b.name">{{ tBucket(b.name, b.title) }}</option>
               </select>
             </div>
             <div class="relative">

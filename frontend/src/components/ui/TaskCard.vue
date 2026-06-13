@@ -8,6 +8,7 @@ import { useSelectionStore } from '@/stores/selection';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
 import { updateTask } from '@/api';
+import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
 
 const { t, locale } = useI18n();
 const selectionStore = useSelectionStore();
@@ -113,18 +114,7 @@ const renderedChecklist = computed<RenderedChecklistItem[]>(() => {
 });
 
 const toggleChecklistItem = async (targetIndex: number, isChecked: boolean) => {
-  let currentIndex = 0;
-  const regex = /(^|\n)(\s*[-*+]\s+\[)([ xX])(\])/g;
-
-  const newBody = props.task.body.replace(regex, (match, p1, p2, _p3, p4) => {
-    if (currentIndex === targetIndex) {
-      currentIndex++;
-      const newChar = isChecked ? 'x' : ' ';
-      return p1 + p2 + newChar + p4;
-    }
-    currentIndex++;
-    return match;
-  });
+  const newBody = toggleChecklistItemInMarkdown(props.task.body, targetIndex, isChecked);
 
   try {
     await updateTask(props.task.project_id, props.task.id, {

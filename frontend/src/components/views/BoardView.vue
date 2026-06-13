@@ -14,7 +14,7 @@ import { useBuckets } from '@/composables/useBuckets';
 import { useUiStore } from '@/stores/ui';
 import { storeToRefs } from 'pinia';
 
-const { t } = useI18n();
+const { t, tBucket } = useI18n();
 const route = useRoute();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
@@ -194,7 +194,7 @@ const handleCancelAddColumn = () => {
         v-for="b in buckets"
         :key="b.name"
         :id="b.name"
-        :title="t('buckets.' + b.name) !== 'buckets.' + b.name ? t('buckets.' + b.name) : b.title"
+        :title="tBucket(b.name, b.title)"
         :subtitle="b.subtitle"
         :tasks="tasksByBucket[b.name] || []"
         :layout="b.layout"
@@ -225,7 +225,7 @@ const handleCancelAddColumn = () => {
                   @dblclick="openEditColumn(b)"
                   :title="t('doubleClickToRename')"
                 >
-                  {{ t('buckets.' + b.name) !== 'buckets.' + b.name ? t('buckets.' + b.name) : b.title }}
+                  {{ tBucket(b.name, b.title) }}
                 </h3>
                 <span
                   class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0 transition-all duration-300"

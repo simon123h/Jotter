@@ -15,7 +15,8 @@ vi.mock('@/api', () => ({
 describe('TriageView.vue', () => {
   let pinia: any;
 
-  const mockTasks: Task[] = [
+  let mockTasks: Task[];
+  const getMockTasks = (): Task[] => [
     {
       id: 'task-1',
       project_id: 'proj-1',
@@ -24,7 +25,10 @@ describe('TriageView.vue', () => {
       bucket: 'todo',
       priority: 'none',
       tags: ['bug'],
+      position: 1.0,
+      attachments: [],
       created_at: '2026-06-01T12:00:00Z',
+      updated_at: '2026-06-01T12:00:00Z',
     },
     {
       id: 'task-2',
@@ -34,7 +38,10 @@ describe('TriageView.vue', () => {
       bucket: 'todo',
       priority: 'high',
       tags: ['feature'],
+      position: 2.0,
+      attachments: [],
       created_at: '2026-06-02T12:00:00Z',
+      updated_at: '2026-06-02T12:00:00Z',
     },
     {
       id: 'task-3',
@@ -44,15 +51,18 @@ describe('TriageView.vue', () => {
       bucket: 'progress',
       priority: 'urgent',
       tags: [],
+      position: 3.0,
+      attachments: [],
       created_at: '2026-06-03T12:00:00Z',
+      updated_at: '2026-06-03T12:00:00Z',
       due_date: '2026-06-15T12:00:00Z',
     },
   ];
 
   const mockBuckets: Bucket[] = [
-    { name: 'todo', title: 'To Do', limit: 10, project_id: 'proj-1' },
-    { name: 'progress', title: 'In Progress', limit: 5, project_id: 'proj-1' },
-    { name: 'done', title: 'Done', limit: 0, project_id: 'proj-1' },
+    { name: 'todo', title: 'To Do', subtitle: '', position: 1, max_tasks: 10 },
+    { name: 'progress', title: 'In Progress', subtitle: '', position: 2, max_tasks: 5 },
+    { name: 'done', title: 'Done', subtitle: '', position: 3, max_tasks: 0 },
   ];
 
   beforeAll(() => {
@@ -61,6 +71,7 @@ describe('TriageView.vue', () => {
   });
 
   beforeEach(() => {
+    mockTasks = getMockTasks();
     vi.clearAllMocks();
     // Stub confirm to return true by default
     vi.spyOn(window, 'confirm').mockImplementation(() => true);
@@ -296,7 +307,7 @@ describe('TriageView.vue', () => {
     expect(removeTagBtn.exists()).toBe(true);
     await removeTagBtn.trigger('click');
 
-    expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { tags: [] });
+    expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { tags: ['refactor'] });
   });
 
   it('allows inline editing of title and description', async () => {

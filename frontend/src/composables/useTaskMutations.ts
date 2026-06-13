@@ -207,8 +207,30 @@ export function useTaskMutations(
     }
   };
 
+  const patchTask = async (task: Task, payload: Partial<Task>, updateStoreOptimistically = true) => {
+    const originalState = { ...task };
+    if (updateStoreOptimistically) {
+      Object.assign(task, payload);
+    }
+    try {
+      const pId = task.project_id || activeProjectId.value;
+      const updated = await updateTask(pId, task.id, payload);
+      Object.assign(task, updated);
+      await fetchBuckets();
+      await fetchAllTasks();
+      return updated;
+    } catch (err: any) {
+      if (updateStoreOptimistically) {
+        Object.assign(task, originalState);
+      }
+      error.value = err.message || 'Failed to update task';
+      throw err;
+    }
+  };
+
   return {
     error,
+    patchTask,
     handleCardDropped,
     handleMarkTaskDone,
     handleTimeViewPlannedDateUpdate,

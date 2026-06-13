@@ -1,5 +1,5 @@
 export interface ColorOption {
-  id: string | null;
+  id: string;
   name: string;
   bg: string;
   ring: string;

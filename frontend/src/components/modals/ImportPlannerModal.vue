@@ -19,7 +19,7 @@ import { useProjectStore } from '@/stores/project';
 import { createTask, createBucket } from '@/api';
 import { read, utils } from 'xlsx';
 
-const { t } = useI18n();
+const { t, tBucket } = useI18n();
 const projectStore = useProjectStore();
 
 const props = defineProps<{
@@ -408,7 +408,7 @@ const getDestinationBucketInfo = (row: Record<string, any>) => {
 
 const getBucketTitle = (name: string): string => {
   const b = projectStore.buckets.find((bucket) => bucket.name === name);
-  return b ? b.title : name;
+  return tBucket(name, b?.title);
 };
 
 // Main Run Import Routine

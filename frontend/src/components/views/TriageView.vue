@@ -19,9 +19,11 @@ import {
   Sparkle,
 } from '@lucide/vue';
 import type { Task, Bucket } from '@/types';
-import { updateTask, deleteTask } from '@/api';
+import { deleteTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
+import { useTaskMutations } from '@/composables/useTaskMutations';
+import { toRef } from 'vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import { TRIAGE_COLORS, PRIORITY_OPTIONS } from '@/utils/constants';
 
@@ -34,7 +36,17 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
 
-const { t } = useI18n();
+const { t, tBucket } = useI18n();
+
+const activeProjectId = computed(() => currentTask.value?.project_id || '');
+const { patchTask } = useTaskMutations(
+  toRef(props, 'tasks'),
+  activeProjectId,
+  async () => {},
+  async () => {
+    emit('refresh');
+  }
+);
 
 // Local triage states
 const currentTaskIndex = ref(0);
@@ -125,12 +137,6 @@ watch(
   { immediate: true }
 );
 
-// Bucket title translation fallback
-const bucketTitle = (bucketName: string, fallback: string) => {
-  const trans = t('buckets.' + bucketName);
-  return trans !== 'buckets.' + bucketName ? trans : fallback;
-};
-
 // Markdown compiler for task description
 const compiledDescription = computed(() => {
   if (!currentTask.value || !currentTask.value.body) return '';
@@ -141,9 +147,8 @@ const compiledDescription = computed(() => {
 const patchCurrentTask = async (payload: Partial<Task>) => {
   if (!currentTask.value) return;
   try {
-    await updateTask(currentTask.value.project_id, currentTask.value.id, payload);
+    await patchTask(currentTask.value, payload);
     editedCount.value++;
-    emit('refresh');
   } catch (err) {
     console.error('Triage save failed', err);
   }
@@ -185,10 +190,13 @@ const cycleColor = () => {
 const markTaskDone = async () => {
   if (!currentTask.value) return;
   const taskToComplete = currentTask.value;
-  await updateTask(taskToComplete.project_id, taskToComplete.id, { bucket: 'done' });
-  completedCount.value++;
-  emit('refresh');
-  next();
+  try {
+    await patchTask(taskToComplete, { bucket: 'done' });
+    completedCount.value++;
+    next();
+  } catch (err) {
+    console.error('Failed to mark task done', err);
+  }
 };
 
 const removeCurrentTask = async () => {
@@ -470,7 +478,7 @@ onUnmounted(() => {
               <span
                 class="px-2.5 py-1 rounded-full bg-theme-column border border-theme-border/40 text-theme-text-muted text-[10px] font-bold uppercase tracking-wider"
               >
-                {{ bucketTitle(currentTask.bucket, currentTask.bucket) }}
+                {{ tBucket(currentTask.bucket, currentTask.bucket) }}
               </span>
             </div>
 
@@ -887,7 +895,7 @@ onUnmounted(() => {
             @click="moveToBucket(b.name)"
             class="w-full text-left flex items-center justify-between px-3 py-2 rounded-lg bg-theme-column/40 hover:bg-theme-column text-sm font-semibold transition-colors border border-theme-border/30 cursor-pointer"
           >
-            <span class="truncate">{{ bucketTitle(b.name, b.title) }}</span>
+            <span class="truncate">{{ tBucket(b.name, b.title) }}</span>
             <kbd class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-theme-card border border-theme-border text-theme-text-muted">
               {{ idx + 1 }}
             </kbd>

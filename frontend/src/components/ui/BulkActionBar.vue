@@ -21,7 +21,7 @@ import { useI18n } from '@/composables/useI18n';
 import type { Bucket, Project } from '@/types';
 import TagInput from '@/components/ui/TagInput.vue';
 
-const { t } = useI18n();
+const { t, tBucket } = useI18n();
 
 const props = defineProps<{
   selectedCount: number;
@@ -129,7 +129,7 @@ const handleCustomDueDate = () => {
             class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left cursor-pointer"
           >
             <div v-if="b.color" class="w-2 h-2 rounded-full" :style="{ backgroundColor: b.color }"></div>
-            {{ t('buckets.' + b.name) !== 'buckets.' + b.name ? t('buckets.' + b.name) : b.title }}
+            {{ tBucket(b.name, b.title) }}
           </button>
         </div>
 

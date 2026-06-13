@@ -11,7 +11,7 @@ import { useProjectStore } from '@/stores/project';
  * @param titleInputRef - A Vue Ref pointing to the input component or HTMLInputElement
  */
 export function useTaskAutocomplete(titleRef: Ref<string>, titleInputRef: Ref<any>) {
-  const { t } = useI18n();
+  const { tBucket } = useI18n();
   const projectStore = useProjectStore();
   const { buckets } = storeToRefs(projectStore);
 
@@ -22,13 +22,7 @@ export function useTaskAutocomplete(titleRef: Ref<string>, titleInputRef: Ref<an
   const filteredBuckets = computed(() => {
     if (!showAutocomplete.value) return [];
     const search = autocompleteSearch.value.toLowerCase();
-    return buckets.value.filter(
-      (b) =>
-        b.name.toLowerCase().includes(search) ||
-        t('buckets.' + b.name)
-          .toLowerCase()
-          .includes(search)
-    );
+    return buckets.value.filter((b) => b.name.toLowerCase().includes(search) || tBucket(b.name, b.title).toLowerCase().includes(search));
   });
 
   const checkAutocomplete = () => {
