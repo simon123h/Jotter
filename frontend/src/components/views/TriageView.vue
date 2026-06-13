@@ -22,6 +22,7 @@ import type { Task, Bucket } from '@/types';
 import { updateTask, deleteTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
+import TagInput from '@/components/ui/TagInput.vue';
 
 const props = defineProps<{
   tasks: Task[];
@@ -51,7 +52,7 @@ const descriptionInputRef = ref<HTMLTextAreaElement | null>(null);
 // Tag adding state
 const showTagInput = ref(false);
 const newTagText = ref('');
-const tagInputRef = ref<HTMLInputElement | null>(null);
+const tagInputRef = ref<InstanceType<typeof TagInput> | null>(null);
 
 // Session stats tracking
 const editedCount = ref(0);
@@ -563,16 +564,15 @@ onUnmounted(() => {
               </span>
 
               <!-- Inline Quick Tag Add Input -->
-              <div v-if="showTagInput" class="flex items-center gap-1">
-                <input
+              <div v-if="showTagInput" class="flex items-center gap-1 w-44">
+                <TagInput
                   v-model="newTagText"
                   ref="tagInputRef"
-                  type="text"
                   @blur="saveTag"
-                  @keydown.enter="saveTag"
+                  @enter="saveTag"
                   @keydown.esc="showTagInput = false"
                   placeholder="Comma separated tags..."
-                  class="bg-theme-base border border-theme-border rounded px-2 py-0.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+                  input-class="bg-theme-base border border-theme-border rounded px-2 py-0.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary w-full"
                 />
               </div>
               <button

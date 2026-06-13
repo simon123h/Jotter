@@ -285,7 +285,9 @@ describe('TriageView.vue', () => {
     const input = wrapper.find('input[placeholder="Comma separated tags..."]');
     expect(input.exists()).toBe(true);
     await input.setValue('refactor');
+    await nextTick();
     await input.trigger('keydown.enter');
+    await nextTick();
 
     expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { tags: ['bug', 'refactor'] });
 

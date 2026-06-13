@@ -21,6 +21,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void;
   (e: 'enter'): void;
+  (e: 'blur'): void;
 }>();
 
 const projectStore = useProjectStore();
@@ -87,27 +88,28 @@ const selectTagSuggestion = (suggestion: string) => {
 };
 
 const handleKeyDown = (event: KeyboardEvent) => {
+  const keyLower = event.key.toLowerCase();
   if (isDropdownOpen.value && tagSuggestions.value.length > 0) {
-    if (event.key === 'ArrowDown') {
+    if (keyLower === 'arrowdown') {
       event.preventDefault();
       event.stopPropagation();
       activeSuggestionIndex.value = (activeSuggestionIndex.value + 1) % tagSuggestions.value.length;
       return;
     }
-    if (event.key === 'ArrowUp') {
+    if (keyLower === 'arrowup') {
       event.preventDefault();
       event.stopPropagation();
       activeSuggestionIndex.value = (activeSuggestionIndex.value - 1 + tagSuggestions.value.length) % tagSuggestions.value.length;
       return;
     }
-    if (event.key === 'Enter' || event.key === 'Tab') {
+    if (keyLower === 'enter' || keyLower === 'tab') {
       event.preventDefault();
       event.stopPropagation();
       selectTagSuggestion(tagSuggestions.value[activeSuggestionIndex.value]);
       isDropdownOpen.value = false;
       return;
     }
-    if (event.key === 'Escape' || event.key === 'Esc') {
+    if (keyLower === 'escape' || keyLower === 'esc') {
       event.preventDefault();
       event.stopPropagation();
       isDropdownOpen.value = false;
@@ -115,7 +117,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
     }
   }
 
-  if (event.key === 'Enter') {
+  if (keyLower === 'enter') {
     emit('enter');
   }
 };
@@ -133,6 +135,10 @@ const computedDropdownClasses = computed(() => {
   const positionClass = props.placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1';
   return `${baseClasses} ${positionClass}`;
 });
+
+defineExpose({
+  focus: () => inputRef.value?.focus(),
+});
 </script>
 
 <template>
@@ -143,7 +149,10 @@ const computedDropdownClasses = computed(() => {
       :value="modelValue"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       @focus="isDropdownOpen = true"
-      @blur="isDropdownOpen = false"
+      @blur="
+        isDropdownOpen = false;
+        emit('blur');
+      "
       @keydown="handleKeyDown"
       :placeholder="placeholder"
       :class="computedInputClasses"
