@@ -2,21 +2,23 @@
 import { ref, watch, computed, onUnmounted, nextTick, onMounted } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { marked } from 'marked';
 import type { Task } from '@/types';
-import { getTask, deleteTask, uploadAttachment, deleteAttachment, getAttachmentUrl } from '@/api';
+import { getTask, deleteTask, getAttachmentUrl } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useProjectStore } from '@/stores/project';
-import { X, Slash, Paperclip, Trash2, Download, FileText, Plus, ClipboardList } from '@lucide/vue';
-import { parseTitleState, getKeywordMatches } from '@/utils/titleParser';
-import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
-import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
+import { X, Slash, ClipboardList } from '@lucide/vue';
+import { parseTitleState } from '@/utils/titleParser';
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import { TASK_COLORS } from '@/utils/constants';
+
+// Refactored modular sub-components and composables
+import { useTaskEditor } from '@/features/task-editor/composables/useTaskEditor';
+import TaskChecklist from '@/features/task-editor/components/TaskChecklist.vue';
+import TaskAttachments from '@/features/task-editor/components/TaskAttachments.vue';
 
 const { locale, t, tBucket } = useI18n();
 const { showDialog } = useDialog();
@@ -49,30 +51,11 @@ const actualProjectId = computed(() => {
 const task = ref<Task | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
-const isEditing = ref(false);
-
-// Edit state
-const editTitle = ref('');
-const ignoredKeywords = ref<Set<string>>(new Set());
-const editBucket = ref<string>('todo');
-const editTags = ref('');
-const editBody = ref('');
-const editDueDate = ref('');
-const editPlannedDate = ref('');
-const editPriority = ref('');
-const editColor = ref<string | null>(null);
 
 const colors = TASK_COLORS;
-
-const lastMatchedKeyword = ref<string | null>(null);
-const lastMatchedPriority = ref<string | null>(null);
-const lastExtractedTags = ref<string[]>([]);
-
 const titleInput = ref<any>(null);
-
-// Autocomplete State and Logic
-const { showAutocomplete, autocompleteIndex, filteredBuckets, checkAutocomplete, selectAutocompleteItem, handleTitleKeyDown } =
-  useTaskAutocomplete(editTitle, titleInput);
+const markdownEditor = ref<any>(null);
+const attachmentsRef = ref<any>(null);
 
 const { patchTask } = useTaskMutations(
   tasks,
@@ -84,6 +67,41 @@ const { patchTask } = useTaskMutations(
     emit('refresh');
   }
 );
+
+// Modular local edit state orchestration
+const {
+  isEditing,
+  editTitle,
+  ignoredKeywords,
+  editBucket,
+  editTags,
+  editBody,
+  editDueDate,
+  editPlannedDate,
+  editPriority,
+  editColor,
+  showAutocomplete,
+  autocompleteIndex,
+  filteredBuckets,
+  checkAutocomplete,
+  selectAutocompleteItem,
+  handleTitleKeyDown,
+  initEditState,
+  cancelEdit,
+  handleSave: editorHandleSave,
+  addChecklistItem: editorAddChecklistItem,
+  hasChecklist,
+} = useTaskEditor({
+  task,
+  buckets,
+  locale,
+  patchTask,
+  titleInput,
+});
+
+// Full-screen Image preview lightbox state
+const previewImageUrl = ref<string | null>(null);
+const previewImageName = ref<string>('');
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (previewImageUrl.value) {
@@ -153,19 +171,7 @@ const fetchTaskDetail = async (id: string) => {
     }
     const fetchedTask = await getTask(resolvedProjId, id);
     task.value = fetchedTask;
-    // Set edit form values
-    editTitle.value = fetchedTask.title;
-    ignoredKeywords.value = new Set();
-    editBucket.value = fetchedTask.bucket;
-    editTags.value = fetchedTask.tags.join(', ');
-    editBody.value = fetchedTask.body;
-    editDueDate.value = fetchedTask.due_date || '';
-    editPlannedDate.value = fetchedTask.planned_date || '';
-    editPriority.value = fetchedTask.priority || '';
-    editColor.value = fetchedTask.color || null;
-    lastMatchedKeyword.value = null;
-    lastMatchedPriority.value = null;
-    lastExtractedTags.value = [];
+    initEditState(fetchedTask);
   } catch (err: any) {
     error.value = t('errors.loadTask', { message: err.message || err });
   } finally {
@@ -187,103 +193,8 @@ watch(
   { immediate: true }
 );
 
-// Watch for date keywords, hashtags, and bucket routing in the title in real-time while editing
-watch([editTitle, () => ignoredKeywords.value], ([newTitle, newIgnored]) => {
-  if (!isEditing.value) return;
-  const bucketNames = buckets.value.map((b) => b.name);
-  const result = parseTitleState(newTitle, locale.value, bucketNames, newIgnored);
-
-  // 1. Due & Planned Date Sync
-  if (result.matchedKeyword) {
-    if (result.matchedKeyword !== lastMatchedKeyword.value) {
-      editDueDate.value = result.dueDate || '';
-      editPlannedDate.value = result.plannedDate || '';
-      lastMatchedKeyword.value = result.matchedKeyword;
-    }
-  } else {
-    if (lastMatchedKeyword.value) {
-      editDueDate.value = '';
-      editPlannedDate.value = '';
-    }
-    lastMatchedKeyword.value = null;
-  }
-
-  // 2. Tags Sync
-  const currentTags = result.tags;
-  const lastTags = lastExtractedTags.value;
-  const isTagsEqual = currentTags.length === lastTags.length && currentTags.every((t, idx) => t === lastTags[idx]);
-  if (!isTagsEqual) {
-    const inputTags = editTags.value
-      .split(',')
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0);
-
-    const tagsToRemove = lastTags.filter((t) => !currentTags.includes(t));
-    let updatedTags = inputTags.filter((t) => !tagsToRemove.includes(t));
-
-    currentTags.forEach((t) => {
-      if (!updatedTags.includes(t)) {
-        updatedTags.push(t);
-      }
-    });
-
-    editTags.value = updatedTags.join(', ');
-    lastExtractedTags.value = [...currentTags];
-  }
-
-  // 3. Bucket/Column Sync
-  if (result.bucket) {
-    editBucket.value = result.bucket;
-  }
-
-  // 4. Priority Sync
-  if (result.matchedPriority) {
-    if (result.matchedPriority !== lastMatchedPriority.value) {
-      editPriority.value = result.priority || '';
-      lastMatchedPriority.value = result.matchedPriority;
-    }
-  } else {
-    if (lastMatchedPriority.value) {
-      editPriority.value = '';
-    }
-    lastMatchedPriority.value = null;
-  }
-});
-
-// Automatically ignore keywords present in the title when starting to edit
-watch(isEditing, (newVal) => {
-  if (newVal && task.value) {
-    const bucketNames = buckets.value.map((b) => b.name);
-    const matches = getKeywordMatches(task.value.title, locale.value, bucketNames, new Set());
-    if (matches.length > 0) {
-      const updated = new Set(ignoredKeywords.value);
-      matches.forEach((m) => updated.add(m.keyword));
-      ignoredKeywords.value = updated;
-    }
-  }
-});
-
-// Compile Markdown body safely
-const parsedMarkdown = computed(() => {
-  if (!task.value || !task.value.body) return '';
-  try {
-    let checkboxIndex = 0;
-    const renderer = new marked.Renderer();
-    renderer.checkbox = ({ checked }) => {
-      const idx = checkboxIndex++;
-      return `<input type="checkbox" data-checkbox-index="${idx}" ${checked ? 'checked' : ''} />`;
-    };
-    return marked.parse(task.value.body, { renderer });
-  } catch {
-    return task.value.body;
-  }
-});
-
-const toggleCheckboxInBody = async (targetIndex: number, isChecked: boolean) => {
+const toggleCheckboxInBody = async (newBody: string) => {
   if (!task.value) return;
-
-  const newBody = toggleChecklistItemInMarkdown(task.value.body, targetIndex, isChecked);
-
   try {
     const updated = await patchTask(task.value, { body: newBody });
     task.value = updated;
@@ -292,55 +203,12 @@ const toggleCheckboxInBody = async (targetIndex: number, isChecked: boolean) => 
   }
 };
 
-const handleMarkdownClick = async (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  if (target && target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
-    const dataIndex = target.getAttribute('data-checkbox-index');
-    if (dataIndex !== null) {
-      const idx = parseInt(dataIndex, 10);
-      const isChecked = (target as HTMLInputElement).checked;
-      await toggleCheckboxInBody(idx, isChecked);
-    }
-  }
-};
-
-const markdownEditor = ref<any>(null);
-
 const addChecklistItem = () => {
-  if (!isEditing.value) {
-    isEditing.value = true;
-  }
-  nextTick(() => {
-    markdownEditor.value?.appendTextAndFocus('- [ ] ');
-  });
+  editorAddChecklistItem(markdownEditor);
 };
 
-const hasChecklist = computed(() => {
-  const bodyText = isEditing.value ? editBody.value : task.value?.body || '';
-  return /(?:^|\n)\s*[-*+]\s+\[[ xX]\]/.test(bodyText);
-});
-
-const isUploading = ref(false);
-const fileInput = ref<HTMLInputElement | null>(null);
+// Full-modal Drag & Drop orchestration mapped straight into `<TaskAttachments>`
 const isDragging = ref(false);
-const previewImageUrl = ref<string | null>(null);
-const previewImageName = ref<string>('');
-
-const isImageFile = (filename: string): boolean => {
-  return /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(filename);
-};
-
-const handlePreviewImage = (filename: string) => {
-  if (!task.value) return;
-  previewImageName.value = filename;
-  previewImageUrl.value = getAttachmentUrl(actualProjectId.value, task.value.id, filename);
-};
-
-const openAttachmentInNewTab = (filename: string) => {
-  if (!task.value) return;
-  const url = getAttachmentUrl(actualProjectId.value, task.value.id, filename);
-  window.open(url, '_blank');
-};
 
 const handleDragOver = (e: DragEvent) => {
   e.preventDefault();
@@ -357,100 +225,47 @@ const handleDragLeave = (e: DragEvent) => {
 const handleDrop = async (e: DragEvent) => {
   e.preventDefault();
   isDragging.value = false;
-  if (!task.value) return;
-
   const files = e.dataTransfer?.files;
-  if (!files || files.length === 0) return;
-
-  isUploading.value = true;
-  try {
-    let lastUpdated = task.value;
-    for (let i = 0; i < files.length; i++) {
-      lastUpdated = await uploadAttachment(actualProjectId.value, task.value.id, files[i]);
-    }
-    task.value = lastUpdated;
-    refreshBoard();
-  } catch (err: any) {
-    error.value = t('errors.updateTask', { message: err.message || err });
-  } finally {
-    isUploading.value = false;
+  if (files && files.length > 0 && attachmentsRef.value) {
+    await attachmentsRef.value.uploadFiles(files);
   }
 };
 
-const triggerFileUpload = () => {
-  fileInput.value?.click();
+const handleUpdateTaskFromAttachments = (updated: Task) => {
+  task.value = updated;
+  refreshBoard();
 };
 
-const handleFileUpload = async (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (!input.files?.length || !task.value) return;
-
-  isUploading.value = true;
-  try {
-    const file = input.files[0];
-    const updated = await uploadAttachment(actualProjectId.value, task.value.id, file);
-    task.value = updated;
-    refreshBoard();
-  } catch (err: any) {
-    error.value = t('errors.updateTask', { message: err.message || err });
-  } finally {
-    isUploading.value = false;
-    input.value = ''; // Reset input
-  }
+const handleAttachmentsError = (message: string) => {
+  error.value = message;
 };
 
-const handleRemoveAttachment = async (filename: string) => {
-  if (!task.value || !confirm(t('form.deleteAttachmentConfirm'))) return;
-
-  try {
-    const updated = await deleteAttachment(actualProjectId.value, task.value.id, filename);
-    task.value = updated;
-    refreshBoard();
-  } catch (err: any) {
-    error.value = t('errors.updateTask', { message: err.message || err });
-  }
+const handlePreviewImage = (filename: string) => {
+  if (!task.value) return;
+  previewImageName.value = filename;
+  previewImageUrl.value = getAttachmentUrl(actualProjectId.value, task.value.id, filename);
 };
 
 const handleSave = async () => {
-  if (!task.value) return;
-
-  const bucketNames = buckets.value.map((b) => b.name);
-  const parseResult = parseTitleState(editTitle.value, locale.value, bucketNames, ignoredKeywords.value);
-  const finalTitle = parseResult.cleanTitle;
-
-  if (!finalTitle) {
-    error.value = t('errors.titleRequired');
-    return;
-  }
-
   loading.value = true;
   error.value = null;
-  try {
-    // Process tags (split by comma and trim)
-    const tagArray = editTags.value
-      .split(',')
-      .map((t) => t.trim().toLowerCase())
-      .filter((t) => t.length > 0);
-
-    const updated = await patchTask(task.value, {
-      title: finalTitle,
-      bucket: editBucket.value,
-      tags: tagArray,
-      body: editBody.value,
-      due_date: editDueDate.value,
-      planned_date: editPlannedDate.value,
-      priority: editPriority.value,
-      color: editColor.value,
-    });
-
-    task.value = updated;
-    task.value.tags = task.value.tags ?? [];
-    isEditing.value = false;
-  } catch (err: any) {
-    error.value = t('errors.updateTask', { message: err.message || err });
-  } finally {
-    loading.value = false;
-  }
+  await editorHandleSave(
+    (updated) => {
+      task.value = updated;
+      if (task.value) {
+        task.value.tags = task.value.tags ?? [];
+      }
+      loading.value = false;
+    },
+    (err) => {
+      if (err.message === 'titleRequired') {
+        error.value = t('errors.titleRequired');
+      } else {
+        error.value = t('errors.updateTask', { message: err.message || err });
+      }
+      loading.value = false;
+    }
+  );
 };
 
 const handleDelete = async () => {
@@ -506,7 +321,6 @@ const handleArchive = async () => {
 const handleUnarchive = async () => {
   if (!task.value) return;
   try {
-    // Try to move back to 'todo' or the default bucket
     const targetBucket = buckets.value.find((b) => b.name === 'todo')?.name || buckets.value[0]?.name || 'todo';
     const updated = await patchTask(task.value, {
       bucket: targetBucket,
@@ -520,26 +334,6 @@ const handleUnarchive = async () => {
 
 const refreshBoard = () => {
   emit('refresh');
-};
-
-const cancelEdit = () => {
-  if (task.value) {
-    editTitle.value = task.value.title;
-    ignoredKeywords.value = new Set();
-    editBucket.value = task.value.bucket;
-    editTags.value = task.value.tags.join(', ');
-    editBody.value = task.value.body;
-    editDueDate.value = task.value.due_date || '';
-    editPlannedDate.value = task.value.planned_date || '';
-    editPriority.value = task.value.priority || '';
-    editColor.value = task.value.color || null;
-    lastMatchedKeyword.value = null;
-    lastMatchedPriority.value = null;
-    lastExtractedTags.value = [];
-  }
-  isEditing.value = false;
-  showAutocomplete.value = false;
-  autocompleteIndex.value = 0;
 };
 
 const getPriorityClasses = (prio: string) => {
@@ -608,26 +402,28 @@ onBeforeRouteLeave(async () => {
         @dragleave.prevent="handleDragLeave"
         @drop.prevent="handleDrop"
       >
-        <!-- Drag & Drop Overlay -->
+        <!-- Full Drag & Drop Overlay -->
         <Transition name="fade">
           <div
             v-if="isDragging"
             class="absolute inset-0 z-40 bg-theme-base/95 backdrop-blur-md border-2 border-dashed border-theme-accent m-2 rounded flex flex-col items-center justify-center gap-2 pointer-events-none transition-all duration-200"
           >
             <div class="p-3.5 bg-theme-accent/10 text-theme-accent rounded-full animate-bounce">
-              <Paperclip class="w-7 h-7" />
+              <span class="text-2xl">📎</span>
             </div>
             <p class="text-theme-text-main font-bold text-sm">{{ t('form.dragDropTitle') }}</p>
             <p class="text-theme-text-muted text-xs">{{ t('form.dragDropSubtitle') }}</p>
           </div>
         </Transition>
+
         <button
           @click="closeModal"
-          class="text-slate-400 transition-colors p-1 rounded cursor-pointer"
+          class="text-slate-400 transition-colors p-1 rounded cursor-pointer hover:text-white"
           style="position: absolute; top: 10px; right: 10px"
         >
           <X class="w-4 h-4 shrink-0" />
         </button>
+
         <!-- Error alert -->
         <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
           {{ error }}
@@ -654,7 +450,7 @@ onBeforeRouteLeave(async () => {
                   <span
                     v-for="tag in task.tags"
                     :key="tag"
-                    class="text-xs font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded cursor-pointer transition-transform"
+                    class="text-xs font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded cursor-pointer transition-transform hover:scale-105"
                     @click="handleTagClick(tag)"
                   >
                     {{ tag }}
@@ -701,14 +497,12 @@ onBeforeRouteLeave(async () => {
                   </button>
                 </div>
 
-                <!-- Rendered Markdown -->
-                <div
-                  v-if="task.body"
-                  class="markdown-content text-theme-text-card prose prose-invert max-w-none space-y-3 break-all"
-                  v-html="parsedMarkdown"
-                  @click="handleMarkdownClick"
-                ></div>
-                <div v-else class="text-theme-text-muted italic text-xs py-2">{{ t('noDescription') }}</div>
+                <!-- Rendered Markdown with interactive checkboxes -->
+                <TaskChecklist
+                  :body="task.body"
+                  @update:body="toggleCheckboxInBody"
+                  @error="error = $event"
+                />
               </div>
 
               <div class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono">
@@ -716,85 +510,16 @@ onBeforeRouteLeave(async () => {
                 <span>{{ t('timestampUpdated', { date: new Date(task.updated_at).toLocaleString() }) }}</span>
               </div>
 
-              <!-- Attachments Section -->
-              <div class="mt-4 pt-4 border-t border-theme-border">
-                <div class="flex items-center justify-between mb-3">
-                  <h3 class="text-xs font-bold uppercase tracking-widest text-theme-text-muted flex items-center gap-1.5">
-                    <Paperclip class="w-3.5 h-3.5" />
-                    {{ t('form.attachmentsLabel') }}
-                  </h3>
-                  <button
-                    @click="triggerFileUpload"
-                    class="text-[10px] font-bold uppercase tracking-wider text-theme-accent hover:text-theme-primary transition-colors flex items-center gap-1 cursor-pointer"
-                    :disabled="isUploading"
-                  >
-                    <template v-if="isUploading">
-                      <Slash class="w-3 h-3 animate-spin" />
-                      {{ t('form.uploading') }}
-                    </template>
-                    <template v-else>
-                      <Plus class="w-3 h-3" />
-                      {{ t('form.addAttachment') }}
-                    </template>
-                  </button>
-                  <input ref="fileInput" type="file" class="hidden" @change="handleFileUpload" />
-                </div>
-
-                <div v-if="task.attachments && task.attachments.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div
-                    v-for="file in task.attachments"
-                    :key="file"
-                    class="group/att flex items-center justify-between p-2 rounded bg-theme-column/20 border border-theme-border/50 hover:border-theme-accent/30 transition-all"
-                  >
-                    <div
-                      class="flex items-center gap-2 min-w-0 cursor-pointer select-none group/item flex-grow py-0.5"
-                      @click="isImageFile(file) ? handlePreviewImage(file) : openAttachmentInNewTab(file)"
-                    >
-                      <!-- Mini Image Preview Thumbnail -->
-                      <div
-                        v-if="isImageFile(file)"
-                        class="w-8 h-8 rounded overflow-hidden bg-slate-900 border border-theme-border/50 flex items-center justify-center shrink-0"
-                      >
-                        <img
-                          :src="getAttachmentUrl(actualProjectId, task.id, file)"
-                          class="w-full h-full object-cover transition-transform duration-200 group-hover/item:scale-110"
-                        />
-                      </div>
-                      <div
-                        v-else
-                        class="w-8 h-8 rounded bg-theme-card border border-theme-border/50 flex items-center justify-center shrink-0"
-                      >
-                        <FileText class="w-4 h-4 text-theme-text-muted shrink-0" />
-                      </div>
-                      <span
-                        class="text-xs text-theme-text-main truncate font-medium group-hover/item:text-theme-accent transition-colors"
-                        >{{ file }}</span
-                      >
-                    </div>
-                    <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity shrink-0 ml-2">
-                      <a
-                        :href="getAttachmentUrl(actualProjectId, task.id, file)"
-                        target="_blank"
-                        class="p-1 text-theme-text-muted hover:text-theme-accent transition-colors cursor-pointer"
-                        :title="t('buttons.download')"
-                        @click.stop
-                      >
-                        <Download class="w-3.5 h-3.5" />
-                      </a>
-                      <button
-                        @click="handleRemoveAttachment(file)"
-                        class="p-1 text-theme-text-muted hover:text-rose-400 transition-colors cursor-pointer"
-                        :title="t('buttons.delete')"
-                      >
-                        <Trash2 class="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="text-xs text-theme-text-muted italic opacity-50 py-2">
-                  {{ t('form.noAttachments') }}
-                </div>
-              </div>
+              <!-- Attachments subcomponent -->
+              <TaskAttachments
+                ref="attachmentsRef"
+                :project-id="actualProjectId"
+                :task-id="task.id"
+                :attachments="task.attachments ?? []"
+                @update-task="handleUpdateTaskFromAttachments"
+                @error="handleAttachmentsError"
+                @preview-image="handlePreviewImage"
+              />
             </div>
 
             <!-- Edit Mode -->
@@ -1065,7 +790,10 @@ onBeforeRouteLeave(async () => {
             :title="t('buttons.download')"
             @click.stop
           >
-            <Download class="w-5 h-5" />
+            <!-- Custom simple SVG or Lucide to avoid downloads breaking -->
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
           </a>
           <button
             @click="previewImageUrl = null"
