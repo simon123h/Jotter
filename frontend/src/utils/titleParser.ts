@@ -302,10 +302,10 @@ export function extractPriorityFromTitle(
     const matchedPriority = match[1]; // e.g. "p1"
     const level = match[2]; // e.g. "1"
     let priorityVal = '';
-    if (level === '1') priorityVal = 'low';
-    else if (level === '2') priorityVal = 'medium';
-    else if (level === '3') priorityVal = 'high';
-    else if (level === '4') priorityVal = 'urgent';
+    if (level === '4') priorityVal = 'low';
+    else if (level === '3') priorityVal = 'medium';
+    else if (level === '2') priorityVal = 'high';
+    else if (level === '1') priorityVal = 'urgent';
 
     // Remove the keyword from the title
     let cleanTitle = title.replace(priorityRegex, ' ');
