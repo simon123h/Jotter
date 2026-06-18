@@ -261,7 +261,7 @@ describe('useBoardNavigation composable', () => {
   it('ignores shortcuts when a modal is active', () => {
     const selectionStore = useSelectionStore();
     const modalStore = useModalStore();
-    modalStore.activeModal = 'some-modal';
+    modalStore.activeModal = 'task-create';
 
     const wrapper = mount(TestComponent, {
       props: {
