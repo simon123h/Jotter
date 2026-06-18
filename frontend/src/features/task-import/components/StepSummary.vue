@@ -38,8 +38,8 @@ defineProps<{
 
     <!-- Informational message -->
     <p class="text-[11px] text-theme-text-muted max-w-md mx-auto leading-relaxed">
-      Jotter indexing automatically rebuilt the local index. Your new tasks will immediately appear on the Kanban board and in the
-      schedule views.
+      Jotter indexing automatically rebuilt the local index. Your new tasks will immediately appear on the Kanban board and in the schedule
+      views.
     </p>
   </div>
 </template>

@@ -30,18 +30,13 @@ const selectedSheetName = defineModel<string>('selectedSheetName', { required: t
           <FileSpreadsheet class="w-4 h-4 text-emerald-500" />
           <span class="text-xs font-bold text-theme-text-main font-mono">{{ fileName }}</span>
         </div>
-        <span
-          class="text-[11px] px-2 py-0.5 bg-theme-primary/10 border border-theme-primary/15 text-theme-accent rounded font-semibold"
-        >
+        <span class="text-[11px] px-2 py-0.5 bg-theme-primary/10 border border-theme-primary/15 text-theme-accent rounded font-semibold">
           {{ excelRowsLength }} rows detected
         </span>
       </div>
 
       <!-- Sheet Selector if there are multiple sheets -->
-      <div
-        v-if="sheetNames.length > 1"
-        class="flex flex-col sm:flex-row sm:items-center gap-2 pt-2 border-t border-theme-border/50"
-      >
+      <div v-if="sheetNames.length > 1" class="flex flex-col sm:flex-row sm:items-center gap-2 pt-2 border-t border-theme-border/50">
         <span class="text-xs text-theme-text-muted shrink-0 font-semibold">Select Sheet:</span>
         <select
           :value="selectedSheetName"

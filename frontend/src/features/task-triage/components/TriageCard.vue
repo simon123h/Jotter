@@ -1,19 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { marked } from 'marked';
-import {
-  X,
-  Flame,
-  Calendar,
-  Clock,
-  Check,
-  Tag,
-  CheckCircle,
-  FolderInput,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
-} from '@lucide/vue';
+import { X, Flame, Calendar, Clock, Check, Tag, CheckCircle, FolderInput, Trash2, ChevronLeft, ChevronRight } from '@lucide/vue';
 import type { Task, Bucket } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import TagInput from '@/components/ui/TagInput.vue';
@@ -365,9 +353,7 @@ defineExpose({
         >
           <ChevronLeft class="w-4 h-4 shrink-0" />
         </button>
-        <span class="text-xs font-extrabold text-theme-text-muted px-1.5">
-          {{ currentTaskIndex + 1 }} / {{ totalTasks }}
-        </span>
+        <span class="text-xs font-extrabold text-theme-text-muted px-1.5"> {{ currentTaskIndex + 1 }} / {{ totalTasks }} </span>
         <button
           @click="emit('next')"
           class="p-2 bg-theme-column hover:bg-theme-column/80 border border-theme-border/60 text-theme-text-muted hover:text-theme-text-main rounded-lg cursor-pointer transition-colors"

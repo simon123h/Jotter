@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, watch } from 'vue';
-import {
-  X,
-  FileSpreadsheet,
-  ChevronRight,
-  ChevronLeft,
-  ArrowRight,
-} from '@lucide/vue';
+import { X, FileSpreadsheet, ChevronRight, ChevronLeft, ArrowRight } from '@lucide/vue';
 import { useImportWizard } from '@/features/task-import/composables/useImportWizard';
 import StepUpload from '@/features/task-import/components/StepUpload.vue';
 import StepColumnMapper from '@/features/task-import/components/StepColumnMapper.vue';
@@ -169,10 +163,7 @@ watch(
           />
 
           <!-- STEP 5: SUCCESS / SUMMARY -->
-          <StepSummary
-            v-if="currentStep === 5"
-            :import-summary="importSummary"
-          />
+          <StepSummary v-if="currentStep === 5" :import-summary="importSummary" />
         </div>
 
         <!-- Footer Buttons -->

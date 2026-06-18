@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import { Upload, AlertCircle, Info } from '@lucide/vue';
 
-
 defineProps<{
   isDragging: boolean;
   fileError: string | null;

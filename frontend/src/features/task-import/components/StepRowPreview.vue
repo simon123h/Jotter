@@ -39,7 +39,12 @@ const emit = defineEmits<{
         <thead class="bg-theme-card/50 border-b border-theme-border sticky top-0 z-10">
           <tr>
             <th class="p-3 w-10 text-center">
-              <input type="checkbox" :checked="selectedRows.size === excelRows.length" @change="emit('toggle-select-all')" class="rounded" />
+              <input
+                type="checkbox"
+                :checked="selectedRows.size === excelRows.length"
+                @change="emit('toggle-select-all')"
+                class="rounded"
+              />
             </th>
             <th class="p-3 font-semibold text-theme-text-muted">Title</th>
             <th class="p-3 font-semibold text-theme-text-muted">Dest. Column / Status</th>

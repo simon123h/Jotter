@@ -125,16 +125,12 @@ defineExpose({
               class="w-full h-full object-cover transition-transform duration-200 group-hover/item:scale-110"
             />
           </div>
-          <div
-            v-else
-            class="w-8 h-8 rounded bg-theme-card border border-theme-border/50 flex items-center justify-center shrink-0"
-          >
+          <div v-else class="w-8 h-8 rounded bg-theme-card border border-theme-border/50 flex items-center justify-center shrink-0">
             <FileText class="w-4 h-4 text-theme-text-muted shrink-0" />
           </div>
-          <span
-            class="text-xs text-theme-text-main truncate font-medium group-hover/item:text-theme-accent transition-colors"
-            >{{ file }}</span
-          >
+          <span class="text-xs text-theme-text-main truncate font-medium group-hover/item:text-theme-accent transition-colors">{{
+            file
+          }}</span>
         </div>
         <div class="flex items-center gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity shrink-0 ml-2">
           <a

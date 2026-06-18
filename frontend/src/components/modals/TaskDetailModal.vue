@@ -498,11 +498,7 @@ onBeforeRouteLeave(async () => {
                 </div>
 
                 <!-- Rendered Markdown with interactive checkboxes -->
-                <TaskChecklist
-                  :body="task.body"
-                  @update:body="toggleCheckboxInBody"
-                  @error="error = $event"
-                />
+                <TaskChecklist :body="task.body" @update:body="toggleCheckboxInBody" @error="error = $event" />
               </div>
 
               <div class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono">

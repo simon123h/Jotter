@@ -91,11 +91,7 @@ describe('useImportWizard Composable', () => {
 
   it('manages row selections correctly', () => {
     const wizard = useImportWizard('test-project');
-    wizard.excelRows.value = [
-      { Title: 'Task 1' },
-      { Title: 'Task 2' },
-      { Title: 'Task 3' },
-    ];
+    wizard.excelRows.value = [{ Title: 'Task 1' }, { Title: 'Task 2' }, { Title: 'Task 3' }];
 
     // Toggle individual row selections
     wizard.toggleRow(1);

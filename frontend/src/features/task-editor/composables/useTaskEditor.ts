@@ -11,13 +11,7 @@ export interface UseTaskEditorOptions {
   titleInput: Ref<any>;
 }
 
-export function useTaskEditor({
-  task,
-  buckets,
-  locale,
-  patchTask,
-  titleInput,
-}: UseTaskEditorOptions) {
+export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: UseTaskEditorOptions) {
   const isEditing = ref(false);
 
   // Edit state refs
@@ -36,14 +30,8 @@ export function useTaskEditor({
   const lastExtractedTags = ref<string[]>([]);
 
   // Autocomplete State and Logic
-  const {
-    showAutocomplete,
-    autocompleteIndex,
-    filteredBuckets,
-    checkAutocomplete,
-    selectAutocompleteItem,
-    handleTitleKeyDown,
-  } = useTaskAutocomplete(editTitle, titleInput);
+  const { showAutocomplete, autocompleteIndex, filteredBuckets, checkAutocomplete, selectAutocompleteItem, handleTitleKeyDown } =
+    useTaskAutocomplete(editTitle, titleInput);
 
   // Method to initialize/reset the edit state
   const initEditState = (taskVal: Task | null) => {
@@ -97,9 +85,7 @@ export function useTaskEditor({
     // 2. Tags Sync
     const currentTags = result.tags;
     const lastTags = lastExtractedTags.value;
-    const isTagsEqual =
-      currentTags.length === lastTags.length &&
-      currentTags.every((t, idx) => t === lastTags[idx]);
+    const isTagsEqual = currentTags.length === lastTags.length && currentTags.every((t, idx) => t === lastTags[idx]);
     if (!isTagsEqual) {
       const inputTags = editTags.value
         .split(',')
@@ -152,11 +138,15 @@ export function useTaskEditor({
   });
 
   // Watch for external task changes to update the form fields
-  watch(task, (newTask) => {
-    if (!isEditing.value) {
-      initEditState(newTask);
-    }
-  }, { immediate: true });
+  watch(
+    task,
+    (newTask) => {
+      if (!isEditing.value) {
+        initEditState(newTask);
+      }
+    },
+    { immediate: true }
+  );
 
   const cancelEdit = () => {
     initEditState(task.value);
@@ -169,12 +159,7 @@ export function useTaskEditor({
     if (!task.value) return;
 
     const bucketNames = buckets.value.map((b) => b.name);
-    const parseResult = parseTitleState(
-      editTitle.value,
-      locale.value,
-      bucketNames,
-      ignoredKeywords.value
-    );
+    const parseResult = parseTitleState(editTitle.value, locale.value, bucketNames, ignoredKeywords.value);
     const finalTitle = parseResult.cleanTitle;
 
     if (!finalTitle) {

@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, toRef } from 'vue';
-import {
-  Sparkles,
-  Keyboard,
-  X,
-  FolderInput,
-  Sparkle,
-  CheckSquare,
-} from '@lucide/vue';
+import { Sparkles, Keyboard, X, FolderInput, Sparkle, CheckSquare } from '@lucide/vue';
 import type { Task, Bucket } from '@/types';
 import { deleteTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
@@ -225,11 +218,7 @@ useKeyboardShortcuts([
   {
     key: 'Enter',
     callback: () => {
-      if (
-        triageCardRef.value &&
-        !triageCardRef.value.isEditingTitle &&
-        !triageCardRef.value.isEditingDescription
-      ) {
+      if (triageCardRef.value && !triageCardRef.value.isEditingTitle && !triageCardRef.value.isEditingDescription) {
         triageCardRef.value.startEditTitle();
       }
     },
