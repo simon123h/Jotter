@@ -215,6 +215,65 @@ func TestGitSync(t *testing.T) {
 			t.Error("Expected local_note.md to be preserved, but it is missing")
 		}
 	})
+
+	t.Run("Conflict-Free Rebase Sync Flow", func(t *testing.T) {
+		// 1. Setup remote and local
+		remoteDir, _ := os.MkdirTemp("", "git-rebase-remote-*")
+		defer os.RemoveAll(remoteDir)
+		ctx := context.Background()
+		_ = runGit(ctx, remoteDir, "init", "--bare")
+		_ = runGit(ctx, remoteDir, "symbolic-ref", "HEAD", "refs/heads/main")
+
+		localDir, _ := os.MkdirTemp("", "git-rebase-local-*")
+		defer os.RemoveAll(localDir)
+		_ = runGit(ctx, localDir, "init")
+		_ = runGit(ctx, localDir, "checkout", "-b", "main")
+		_ = runGit(ctx, localDir, "remote", "add", "origin", remoteDir)
+		_ = runGit(ctx, localDir, "config", "user.email", "test@example.com")
+		_ = runGit(ctx, localDir, "config", "user.name", "Test User")
+
+		// Initial setup
+		_ = os.WriteFile(filepath.Join(localDir, "initial.md"), []byte("initial"), 0644)
+		_ = runGit(ctx, localDir, "add", ".")
+		_ = runGit(ctx, localDir, "commit", "-m", "Initial")
+		_ = runGit(ctx, localDir, "push", "-u", "origin", "main")
+
+		// 2. Create another local to simulate remote change
+		otherDir, _ := os.MkdirTemp("", "git-rebase-other-*")
+		defer os.RemoveAll(otherDir)
+		_ = runGit(ctx, otherDir, "clone", remoteDir, ".")
+		_ = runGit(ctx, otherDir, "config", "user.email", "test@example.com")
+		_ = runGit(ctx, otherDir, "config", "user.name", "Test User")
+		_ = os.WriteFile(filepath.Join(otherDir, "remote_only.md"), []byte("remote changes"), 0644)
+		_ = runGit(ctx, otherDir, "add", ".")
+		_ = runGit(ctx, otherDir, "commit", "-m", "Remote update")
+		_ = runGit(ctx, otherDir, "push", "origin", "main")
+
+		// 3. Edit distinct file in localDir to create a non-conflicting diverged history
+		_ = os.WriteFile(filepath.Join(localDir, "local_only.md"), []byte("local changes"), 0644)
+
+		// 4. Run GitSync - should automatically resolve conflict-free divergence using rebase/merge and succeed
+		err := GitSync(localDir, "")
+		if err != nil {
+			t.Fatalf("Expected conflict-free sync to succeed, but got error: %v", err)
+		}
+
+		// 5. Verify local state has both changes
+		if _, err := os.Stat(filepath.Join(localDir, "remote_only.md")); os.IsNotExist(err) {
+			t.Error("Expected remote_only.md to exist in local repo after sync, but it is missing")
+		}
+		if _, err := os.Stat(filepath.Join(localDir, "local_only.md")); os.IsNotExist(err) {
+			t.Error("Expected local_only.md to exist in local repo after sync, but it is missing")
+		}
+
+		// 6. Verify remote repo now has the local changes too
+		verifyDir, _ := os.MkdirTemp("", "git-rebase-verify-*")
+		defer os.RemoveAll(verifyDir)
+		_ = runGit(ctx, verifyDir, "clone", remoteDir, ".")
+		if _, err := os.Stat(filepath.Join(verifyDir, "local_only.md")); os.IsNotExist(err) {
+			t.Error("Expected local changes to be pushed to remote repo after sync, but they are missing")
+		}
+	})
 }
 
 func TestExpandTilde(t *testing.T) {

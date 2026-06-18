@@ -142,14 +142,30 @@ func GitSync(projectDir string, remoteURL string) error {
 
 	// 7. Try FF-only merge (only if remote branch exists)
 	if hasRemoteBranch(ctx, projectDir, remoteBranch) {
+		log.Printf("[GitSync] Remote branch %q exists. Attempting to sync changes...", remoteBranch)
 		errFF := runGit(ctx, projectDir, "merge", "--ff-only", remoteBranch)
 		if errFF != nil {
-			// Real merge
-			errMerge := runGit(ctx, projectDir, "merge", "--no-rebase", remoteBranch)
-			if errMerge != nil {
-				_ = runGit(ctx, projectDir, "merge", "--abort")
-				return fmt.Errorf("merge conflict detected - please solve manually in project folder")
+			log.Printf("[GitSync] Fast-forward merge not possible. Attempting to rebase local branch on top of %q...", remoteBranch)
+			// Try to rebase
+			errRebase := runGit(ctx, projectDir, "rebase", remoteBranch)
+			if errRebase != nil {
+				log.Printf("[GitSync] Rebase failed or produced conflicts. Aborting rebase...")
+				_ = runGit(ctx, projectDir, "rebase", "--abort")
+
+				log.Printf("[GitSync] Rebase aborted. Falling back to non-interactive merge...")
+				// Try a non-interactive merge as a fallback
+				errMerge := runGit(ctx, projectDir, "merge", "--no-edit", remoteBranch)
+				if errMerge != nil {
+					log.Printf("[GitSync] Fallback merge failed or produced conflicts. Aborting merge...")
+					_ = runGit(ctx, projectDir, "merge", "--abort")
+					return fmt.Errorf("merge conflict detected - please solve manually in project folder")
+				}
+				log.Printf("[GitSync] Fallback merge completed successfully without conflicts")
+			} else {
+				log.Printf("[GitSync] Rebase completed successfully without conflicts")
 			}
+		} else {
+			log.Printf("[GitSync] Fast-forward merge completed successfully")
 		}
 	}
 
