@@ -211,6 +211,15 @@ export const en = {
     gitRemoteLabel: 'Global Git Remote URL',
     gitRemoteDesc:
       'Configures a central Git repository for your entire Jotter workspace (all projects and files). Jotter will automatically synchronize additions, updates, and deletions on index rebuilds. Projects that manage their own separate Git repository and remote URL will be auto-ignored by this global sync.',
+    autoSyncIntervalLabel: 'Auto-Sync Interval',
+    autoSyncIntervalDesc: 'Automatically synchronize local notes with your Git remote at the specified frequency in the background.',
+    autoSyncOptions: {
+      disabled: '0 (no sync)',
+      '10min': '10 minutes',
+      '30min': '30 minutes',
+      '60min': '60 minutes',
+      '120min': '120 minutes',
+    },
     systemInfo: 'System Information',
     versionLabel: 'Jotter Version',
     dataDirLabel: 'Data Directory',

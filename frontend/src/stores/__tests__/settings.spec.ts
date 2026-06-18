@@ -34,6 +34,7 @@ describe('Settings Store', () => {
     expect(store.thresholdDays).toBe(7);
     expect(store.pinnedProjectIds).toEqual([]);
     expect(store.sortBy).toBe('alpha');
+    expect(store.autoSyncInterval).toBe(0);
   });
 
   it('can toggle hideDoneColumn', () => {
@@ -56,5 +57,12 @@ describe('Settings Store', () => {
     const store = useSettingsStore();
     store.setProjectOrder(['project-2', 'project-1']);
     expect(store.projectOrder).toEqual(['project-2', 'project-1']);
+  });
+
+  it('can set auto-sync interval', () => {
+    const store = useSettingsStore();
+    expect(store.autoSyncInterval).toBe(0);
+    store.setAutoSyncInterval(60);
+    expect(store.autoSyncInterval).toBe(60);
   });
 });

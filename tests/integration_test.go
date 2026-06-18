@@ -522,6 +522,7 @@ func TestIntegration(t *testing.T) {
 		// Save Settings
 		loadedSettings.CurrentTheme = "nordic-dark"
 		loadedSettings.HideDoneColumn = false
+		loadedSettings.AutoSyncInterval = 30
 
 		body, _ := json.Marshal(loadedSettings)
 		reqPost := httptest.NewRequest("POST", "/api/settings", bytes.NewBuffer(body))
@@ -540,8 +541,8 @@ func TestIntegration(t *testing.T) {
 		var verifiedSettings settings.AppSettings
 		_ = json.Unmarshal(wGet2.Body.Bytes(), &verifiedSettings)
 
-		if verifiedSettings.CurrentTheme != "nordic-dark" || verifiedSettings.HideDoneColumn != false {
-			t.Errorf("Expected theme 'nordic-dark' and HideDoneColumn false, got: %+v", verifiedSettings)
+		if verifiedSettings.CurrentTheme != "nordic-dark" || verifiedSettings.HideDoneColumn != false || verifiedSettings.AutoSyncInterval != 30 {
+			t.Errorf("Expected theme 'nordic-dark', HideDoneColumn false, AutoSyncInterval 30, got: %+v", verifiedSettings)
 		}
 	})
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
@@ -21,6 +21,7 @@ const projectStore = useProjectStore();
 const modalStore = useModalStore();
 
 const { isSidebarOpen, currentTheme } = storeToRefs(settingsStore);
+const autoSyncInterval = computed(() => settingsStore.autoSyncInterval ?? 0);
 const { projects, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
 
 const localError = ref<string | null>(null);
@@ -111,10 +112,36 @@ const handleCreateProject = async (title: string) => {
 const triggerSync = async () => {
   try {
     await projectStore.triggerSync();
+    localStorage.setItem('jotter-last-sync-time', String(Date.now()));
   } catch {
     // Error is stored in projectStore.error and displayed automatically
   }
 };
+
+let autoSyncCheckInterval: any = null;
+
+const checkAutoSync = () => {
+  const interval = autoSyncInterval?.value;
+  if (!interval || interval <= 0) return;
+
+  const lastSyncTimeStr = localStorage.getItem('jotter-last-sync-time');
+  const lastSyncTime = lastSyncTimeStr ? Number(lastSyncTimeStr) : 0;
+  const now = Date.now();
+
+  if (!lastSyncTime || now - lastSyncTime >= interval * 60 * 1000) {
+    console.log(`[Auto-Sync] Triggering automatic sync (interval: ${interval} minutes)`);
+    triggerSync();
+  }
+};
+
+watch(
+  () => autoSyncInterval?.value,
+  (newVal) => {
+    if (newVal && newVal > 0) {
+      checkAutoSync();
+    }
+  }
+);
 
 const error = computed({
   get() {
@@ -135,6 +162,16 @@ const handleMoveTasksToProject = ({ taskIds, projectId: targetProjectId }: { tas
 onMounted(async () => {
   await projectStore.fetchProjects();
   setTheme(currentTheme.value);
+
+  // Set up auto-sync periodic check
+  checkAutoSync(); // run once on startup
+  autoSyncCheckInterval = setInterval(checkAutoSync, 15000); // check every 15 seconds
+});
+
+onBeforeUnmount(() => {
+  if (autoSyncCheckInterval) {
+    clearInterval(autoSyncCheckInterval);
+  }
 });
 </script>
 

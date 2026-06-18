@@ -19,6 +19,7 @@ export const useSettingsStore = defineStore('settings', () => {
     gitRemoteUrl: '',
     language: '',
     tagColors: {},
+    autoSyncInterval: 0,
   });
 
   let skipSave = false;
@@ -35,6 +36,7 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!state.gitRemoteUrl) state.gitRemoteUrl = '';
       if (!state.language) state.language = '';
       if (!state.tagColors) state.tagColors = {};
+      if (state.autoSyncInterval === undefined) state.autoSyncInterval = 0;
 
       await nextTick();
       skipSave = false;
@@ -155,6 +157,10 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   };
 
+  const setAutoSyncInterval = (minutes: number) => {
+    state.autoSyncInterval = minutes;
+  };
+
   return {
     ...toRefs(state),
     loadSettings,
@@ -169,5 +175,6 @@ export const useSettingsStore = defineStore('settings', () => {
     toggleHideAddTaskButton,
     setTagColor,
     removeTagColor,
+    setAutoSyncInterval,
   };
 });

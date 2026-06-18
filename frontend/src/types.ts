@@ -79,6 +79,7 @@ export interface AppSettings {
   gitRemoteUrl?: string;
   language?: string;
   tagColors?: Record<string, string>;
+  autoSyncInterval?: number;
 }
 
 export interface SystemInfo {

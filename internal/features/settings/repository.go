@@ -47,6 +47,7 @@ type AppSettings struct {
 	GitRemoteURL      string            `json:"gitRemoteUrl"`
 	Language          string            `json:"language"`
 	TagColors         map[string]string `json:"tagColors"`
+	AutoSyncInterval  int               `json:"autoSyncInterval"`
 }
 
 func GetDefaultSettings() AppSettings {
@@ -68,6 +69,7 @@ func GetDefaultSettings() AppSettings {
 		GitRemoteURL:      "",
 		Language:          "",
 		TagColors:         map[string]string{},
+		AutoSyncInterval:  0,
 	}
 }
 
