@@ -12,6 +12,7 @@ import { useProjectStore } from '@/stores/project';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useBuckets } from '@/composables/useBuckets';
 import { useUiStore } from '@/stores/ui';
+import { useBoardNavigation } from '@/composables/useBoardNavigation';
 import { storeToRefs } from 'pinia';
 
 const { t, tBucket } = useI18n();
@@ -185,6 +186,14 @@ const handleCancelAddColumn = () => {
   newColumnSubtitle.value = '';
   isAddingColumn.value = false;
 };
+const visibleBuckets = computed(() => props.buckets.filter((b) => !isCollapsed(b.name)));
+const tasksRef = computed(() => props.tasks);
+
+useBoardNavigation({
+  visibleBuckets,
+  tasksByBucket,
+  tasks: tasksRef,
+});
 </script>
 
 <template>
