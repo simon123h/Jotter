@@ -144,6 +144,29 @@ describe('TaskCard.vue', () => {
     expect(checklistLabels[1].attributes('style')).toContain('padding-left: 16px');
   });
 
+  it('normalizes nesting levels relative to the minimum indentation level found', () => {
+    const taskWithChecklist: Task = {
+      ...mockTask,
+      body: `- Some bullet group header\n  - [ ] Level 1 Checklist Item 1\n  - [ ] Level 1 Checklist Item 2\n    - [ ] Level 2 Checklist Item 3`,
+    };
+
+    const wrapper = mount(TaskCard, {
+      ...mountOptions,
+      props: {
+        task: taskWithChecklist,
+        maxNestingLevel: 0, // Should render Level 1 items because they are at minLevel (which is 1), but ignore Level 2 (which is 2)
+      },
+    });
+
+    const checklistLabels = wrapper.findAll('.task-card-checklist label');
+    expect(checklistLabels).toHaveLength(2); // Only Level 1 items
+    expect(checklistLabels[0].text()).toContain('Level 1 Checklist Item 1');
+    expect(checklistLabels[0].attributes('style')).toContain('padding-left: 0px'); // Level 1 normalized to 0px padding
+
+    expect(checklistLabels[1].text()).toContain('Level 1 Checklist Item 2');
+    expect(checklistLabels[1].attributes('style')).toContain('padding-left: 0px');
+  });
+
   it('does not render checklist items if compact is true', () => {
     const taskWithChecklist: Task = {
       ...mockTask,

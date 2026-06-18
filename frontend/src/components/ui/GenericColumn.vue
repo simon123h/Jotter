@@ -28,6 +28,7 @@ const props = withDefaults(
     isCollapsed?: boolean;
     isFluid?: boolean;
     isReadOnly?: boolean;
+    maxNestingLevel?: number;
   }>(),
   {
     subtitle: '',
@@ -42,6 +43,7 @@ const props = withDefaults(
     isCollapsed: false,
     isFluid: false,
     isReadOnly: false,
+    maxNestingLevel: 0,
   }
 );
 const emit = defineEmits<{
@@ -343,6 +345,7 @@ watch(
               :task="task"
               :compact="compactCards"
               :show-project="showProject"
+              :max-nesting-level="maxNestingLevel"
               :data-task-id="task.id"
               @mark-done="emit('mark-done', task)"
               @toggle-select="emit('toggle-select', $event)"
@@ -371,6 +374,7 @@ watch(
               :task="task"
               :compact="compactCards"
               :show-project="showProject"
+              :max-nesting-level="maxNestingLevel"
               :data-task-id="task.id"
               @mark-done="emit('mark-done', task)"
               @toggle-select="emit('toggle-select', $event)"
@@ -387,6 +391,7 @@ watch(
             :task="task"
             :compact="compactCards"
             :show-project="showProject"
+            :max-nesting-level="maxNestingLevel"
             :data-task-id="task.id"
             @mark-done="emit('mark-done', task)"
             @toggle-select="emit('toggle-select', $event)"

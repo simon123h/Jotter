@@ -87,6 +87,10 @@ const renderedChecklist = computed<RenderedChecklistItem[]>(() => {
   const items: RenderedChecklistItem[] = [];
   let globalIndex = 0;
 
+  // First pass: find all checklist items and their minimum level
+  const rawItems: { label: string; checked: boolean; globalIndex: number; level: number }[] = [];
+  let minLevel = Infinity;
+
   for (const line of lines) {
     // Check if it's a checklist item (any indentation)
     const checklistMatch = line.match(/^(\s*)[-*+]\s+\[([ xX])\]\s*(.*)$/);
@@ -99,17 +103,34 @@ const renderedChecklist = computed<RenderedChecklistItem[]>(() => {
       const normalizedSpaces = leadingSpaces.replace(/\t/g, '  ');
       const level = Math.floor(normalizedSpaces.length / 2);
 
-      if (level <= props.maxNestingLevel) {
-        items.push({
-          label,
-          checked,
-          globalIndex,
-          level,
-        });
+      if (level < minLevel) {
+        minLevel = level;
       }
+
+      rawItems.push({
+        label,
+        checked,
+        globalIndex,
+        level,
+      });
       globalIndex++;
     }
   }
+
+  // Second pass: filter and normalize nesting levels relative to minLevel
+  const effectiveMaxLevel = minLevel === Infinity ? props.maxNestingLevel : minLevel + props.maxNestingLevel;
+
+  for (const item of rawItems) {
+    if (item.level <= effectiveMaxLevel) {
+      items.push({
+        label: item.label,
+        checked: item.checked,
+        globalIndex: item.globalIndex,
+        level: item.level - minLevel, // Normalize relative to the lowest indentation level found
+      });
+    }
+  }
+
   return items;
 });
 
