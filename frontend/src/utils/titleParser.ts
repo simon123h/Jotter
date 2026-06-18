@@ -1,6 +1,7 @@
 interface DateRule {
   pattern: RegExp;
   getDate: (matches: RegExpExecArray) => Date;
+  isExplicit?: boolean;
 }
 
 const formatDate = (date: Date): string => {
@@ -38,6 +39,7 @@ const getRules = (locale: string): DateRule[] => {
           return new Date(year, month - 1, day);
         }
       },
+      isExplicit: true,
     },
     // 2. Explicit dates (US style, slash): 5/21/2026, 5/21/26, 5/21
     {
@@ -63,6 +65,7 @@ const getRules = (locale: string): DateRule[] => {
           return new Date(year, month - 1, day);
         }
       },
+      isExplicit: true,
     },
     // 3. Today / Heute
     {
@@ -200,7 +203,7 @@ export function parseDateFromTitle(
       }
 
       const date = rule.getDate(match);
-      const dueDate = formatDate(date);
+      const dueDate = rule.isExplicit ? formatDate(date) : null;
 
       // Determine categorical planned date dynamically
       const plannedDate = getPlanningDateForDueDate(date);

@@ -116,15 +116,17 @@ watch([title, () => ignoredKeywords.value], ([newTitle, newIgnored]) => {
   const bucketNames = buckets.value.map((b) => b.name);
   const result = parseTitleState(newTitle, locale.value, bucketNames, newIgnored);
 
-  // 1. Due Date Sync
+  // 1. Due & Planned Date Sync
   if (result.matchedKeyword) {
     if (result.matchedKeyword !== lastMatchedKeyword.value) {
       dueDate.value = result.dueDate || '';
+      plannedDate.value = result.plannedDate || '';
       lastMatchedKeyword.value = result.matchedKeyword;
     }
   } else {
     if (lastMatchedKeyword.value) {
       dueDate.value = '';
+      plannedDate.value = '';
     }
     lastMatchedKeyword.value = null;
   }
