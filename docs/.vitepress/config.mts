@@ -154,5 +154,10 @@ export default defineConfig({
 			message: 'Released under the Apache-2.0 License.',
 			copyright: 'Copyright © 2026 simon123h'
 		}
+	},
+	vite: {
+		build: {
+			target: 'es2022'
+		}
 	}
 })
