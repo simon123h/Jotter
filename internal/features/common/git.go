@@ -111,20 +111,42 @@ func GitSync(projectDir string, remoteURL string) error {
 	// 3. Ensure remote matches if provided
 	if remoteURL != "" {
 		// Check current remote
-		currentRemote, _ := getRemoteURL(ctx, projectDir)
-		if currentRemote != remoteURL {
+		currentRemote, hasRemote := getRemoteURLFromConfig(projectDir)
+		if !hasRemote {
+			var errRemote error
+			currentRemote, errRemote = getRemoteURL(ctx, projectDir)
+			hasRemote = errRemote == nil
+		}
+		if !hasRemote {
+			_ = runGit(ctx, projectDir, "remote", "add", "origin", remoteURL)
+		} else if currentRemote != remoteURL {
 			_ = runGit(ctx, projectDir, "remote", "set-url", "origin", remoteURL)
 		}
 	}
 
 	// 4. Check if origin exists before proceeding
-	if !hasRemoteOrigin(ctx, projectDir) {
+	_, hasOrigin := getRemoteURLFromConfig(projectDir)
+	if !hasOrigin {
+		hasOrigin = hasRemoteOrigin(ctx, projectDir)
+	}
+	if !hasOrigin {
 		return nil // No remote configured, nothing to sync with
 	}
 
-	// 5. Add and Commit local changes
-	_ = runGit(ctx, projectDir, "add", ".")
-	_ = runGit(ctx, projectDir, "commit", "-m", fmt.Sprintf("Auto-sync from Jotter: %s", time.Now().Format(time.RFC3339)))
+	// 5. Add and Commit local changes (only if there are working tree modifications)
+	hasChanges := false
+	statusOut, errStatus := RunGitWithOutput(ctx, projectDir, "status", "--porcelain")
+	if errStatus == nil && len(strings.TrimSpace(statusOut)) > 0 {
+		hasChanges = true
+	}
+
+	if hasChanges {
+		log.Printf("[GitSync] Local changes detected. Adding and committing...")
+		_ = runGit(ctx, projectDir, "add", ".")
+		_ = runGit(ctx, projectDir, "commit", "-m", fmt.Sprintf("Auto-sync from Jotter: %s", time.Now().Format(time.RFC3339)))
+	} else {
+		log.Printf("[GitSync] No local changes to commit.")
+	}
 
 	// 6. Fetch
 	if err := runGit(ctx, projectDir, "fetch", "origin"); err != nil {
@@ -132,10 +154,14 @@ func GitSync(projectDir string, remoteURL string) error {
 		// We ignore this for now to allow the first push
 	}
 
-	// 6. Branch handling
-	branch, err := getCurrentBranch(ctx, projectDir)
-	if err != nil {
-		branch = "main"
+	// 7. Branch handling
+	branch, hasBranch := getCurrentBranchFromConfig(projectDir)
+	if !hasBranch {
+		var errBranch error
+		branch, errBranch = getCurrentBranch(ctx, projectDir)
+		if errBranch != nil {
+			branch = "main"
+		}
 	}
 
 	remoteBranch := "origin/" + branch
@@ -428,4 +454,45 @@ func expandTilde(path string) string {
 		}
 	}
 	return path
+}
+
+func getRemoteURLFromConfig(projectDir string) (string, bool) {
+	configPath := filepath.Join(projectDir, ".git", "config")
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return "", false
+	}
+	lines := strings.Split(string(data), "\n")
+	inRemoteOrigin := false
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "[remote \"origin\"]") {
+			inRemoteOrigin = true
+			continue
+		}
+		if inRemoteOrigin && strings.HasPrefix(trimmed, "[") {
+			// Started another section
+			inRemoteOrigin = false
+		}
+		if inRemoteOrigin && strings.HasPrefix(trimmed, "url =") {
+			parts := strings.SplitN(trimmed, "=", 2)
+			if len(parts) == 2 {
+				return strings.TrimSpace(parts[1]), true
+			}
+		}
+	}
+	return "", false
+}
+
+func getCurrentBranchFromConfig(projectDir string) (string, bool) {
+	headPath := filepath.Join(projectDir, ".git", "HEAD")
+	data, err := os.ReadFile(headPath)
+	if err != nil {
+		return "", false
+	}
+	content := strings.TrimSpace(string(data))
+	if strings.HasPrefix(content, "ref: refs/heads/") {
+		return content[len("ref: refs/heads/"):], true
+	}
+	return "", false
 }

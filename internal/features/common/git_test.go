@@ -300,3 +300,79 @@ func TestExpandTilde(t *testing.T) {
 		}
 	}
 }
+
+func TestGetRemoteURLFromConfig(t *testing.T) {
+	tempDir, _ := os.MkdirTemp("", "git-config-test-*")
+	defer os.RemoveAll(tempDir)
+
+	gitDir := filepath.Join(tempDir, ".git")
+	_ = os.MkdirAll(gitDir, 0755)
+
+	t.Run("Missing config file", func(t *testing.T) {
+		_, ok := getRemoteURLFromConfig(tempDir)
+		if ok {
+			t.Error("Expected getRemoteURLFromConfig to return false for missing config file")
+		}
+	})
+
+	t.Run("Valid config file with origin", func(t *testing.T) {
+		configContent := `[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = https://github.com/simon123h/jotter.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main`
+		_ = os.WriteFile(filepath.Join(gitDir, "config"), []byte(configContent), 0644)
+
+		url, ok := getRemoteURLFromConfig(tempDir)
+		if !ok {
+			t.Error("Expected getRemoteURLFromConfig to return true for valid config")
+		}
+		expectedURL := "https://github.com/simon123h/jotter.git"
+		if url != expectedURL {
+			t.Errorf("Expected URL %q, got: %q", expectedURL, url)
+		}
+	})
+}
+
+func TestGetCurrentBranchFromConfig(t *testing.T) {
+	tempDir, _ := os.MkdirTemp("", "git-head-test-*")
+	defer os.RemoveAll(tempDir)
+
+	gitDir := filepath.Join(tempDir, ".git")
+	_ = os.MkdirAll(gitDir, 0755)
+
+	t.Run("Missing HEAD file", func(t *testing.T) {
+		_, ok := getCurrentBranchFromConfig(tempDir)
+		if ok {
+			t.Error("Expected getCurrentBranchFromConfig to return false for missing HEAD file")
+		}
+	})
+
+	t.Run("Valid branch ref in HEAD", func(t *testing.T) {
+		_ = os.WriteFile(filepath.Join(gitDir, "HEAD"), []byte("ref: refs/heads/feature/rebase-sync\n"), 0644)
+
+		branch, ok := getCurrentBranchFromConfig(tempDir)
+		if !ok {
+			t.Error("Expected getCurrentBranchFromConfig to return true for valid HEAD ref")
+		}
+		expectedBranch := "feature/rebase-sync"
+		if branch != expectedBranch {
+			t.Errorf("Expected branch %q, got: %q", expectedBranch, branch)
+		}
+	})
+
+	t.Run("Detached HEAD", func(t *testing.T) {
+		_ = os.WriteFile(filepath.Join(gitDir, "HEAD"), []byte("2d628f804ae889c2bc54a0136d8f8a1562916b9b\n"), 0644)
+
+		_, ok := getCurrentBranchFromConfig(tempDir)
+		if ok {
+			t.Error("Expected getCurrentBranchFromConfig to return false for detached HEAD")
+		}
+	})
+}
