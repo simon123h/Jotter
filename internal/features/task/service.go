@@ -103,20 +103,21 @@ func (s *taskService) CreateTask(ctx context.Context, tasksDir string, projectID
 	}
 
 	taskMap := map[string]interface{}{
-		"id":           newID,
-		"project_id":   projectID,
-		"title":        req.Title,
-		"bucket":       req.Bucket,
-		"position":     newPosition,
-		"tags":         tags,
-		"attachments":  []string{},
-		"body":         req.Body,
-		"due_date":     req.DueDate,
-		"planned_date": req.PlannedDate,
-		"priority":     req.Priority,
-		"color":        req.Color,
-		"created_at":   nowStr,
-		"updated_at":   nowStr,
+		"id":              newID,
+		"project_id":      projectID,
+		"title":           req.Title,
+		"bucket":          req.Bucket,
+		"position":        newPosition,
+		"tags":            tags,
+		"attachments":     []string{},
+		"body":            req.Body,
+		"due_date":        req.DueDate,
+		"planned_date":    req.PlannedDate,
+		"priority":        req.Priority,
+		"color":           req.Color,
+		"postponed_until": req.PostponedUntil,
+		"created_at":      nowStr,
+		"updated_at":      nowStr,
 	}
 
 	// Write to Disk File
@@ -126,20 +127,21 @@ func (s *taskService) CreateTask(ctx context.Context, tasksDir string, projectID
 	}
 
 	res := Response{
-		ID:          newID,
-		ProjectID:   projectID,
-		Title:       req.Title,
-		Bucket:      req.Bucket,
-		Position:    newPosition,
-		Tags:        tags,
-		Attachments: []string{},
-		Body:        req.Body,
-		DueDate:     req.DueDate,
-		PlannedDate: req.PlannedDate,
-		Priority:    req.Priority,
-		Color:       req.Color,
-		CreatedAt:   nowStr,
-		UpdatedAt:   nowStr,
+		ID:             newID,
+		ProjectID:      projectID,
+		Title:          req.Title,
+		Bucket:         req.Bucket,
+		Position:       newPosition,
+		Tags:           tags,
+		Attachments:    []string{},
+		Body:           req.Body,
+		DueDate:        req.DueDate,
+		PlannedDate:    req.PlannedDate,
+		Priority:       req.Priority,
+		Color:          req.Color,
+		PostponedUntil: req.PostponedUntil,
+		CreatedAt:      nowStr,
+		UpdatedAt:      nowStr,
 	}
 
 	// Save to DB
@@ -182,9 +184,29 @@ func (s *taskService) UpdateTask(ctx context.Context, tasksDir string, projectID
 		updatedTitle = *req.Title
 	}
 
+	updatedPostponedUntil := existing.PostponedUntil
 	updatedBucket := existing.Bucket
 	if _, ok := raw["bucket"]; ok && req.Bucket != nil {
-		updatedBucket = *req.Bucket
+		if *req.Bucket == "postponed" {
+			// Keep original bucket!
+			updatedBucket = existing.Bucket
+			if _, okDate := raw["postponed_until"]; okDate && req.PostponedUntil != nil {
+				updatedPostponedUntil = req.PostponedUntil
+			}
+			if updatedPostponedUntil == nil || *updatedPostponedUntil == "" {
+				tomorrow := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
+				updatedPostponedUntil = &tomorrow
+			}
+		} else {
+			// Moved to another column explicitly
+			updatedBucket = *req.Bucket
+			updatedPostponedUntil = nil
+		}
+	} else {
+		// Bucket not explicitly changed. Check if postponed_until is updated.
+		if _, okDate := raw["postponed_until"]; okDate {
+			updatedPostponedUntil = req.PostponedUntil
+		}
 	}
 
 	updatedPosition := existing.Position
@@ -237,19 +259,20 @@ func (s *taskService) UpdateTask(ctx context.Context, tasksDir string, projectID
 	}
 
 	taskMap := map[string]interface{}{
-		"project_id":   updatedProjectID,
-		"title":        updatedTitle,
-		"bucket":       updatedBucket,
-		"position":     updatedPosition,
-		"tags":         updatedTags,
-		"attachments":  updatedAttachments,
-		"body":         updatedBody,
-		"due_date":     updatedDueDate,
-		"planned_date": updatedPlannedDate,
-		"priority":     updatedPriority,
-		"color":        updatedColor,
-		"created_at":   existing.CreatedAt,
-		"updated_at":   nowStr,
+		"project_id":      updatedProjectID,
+		"title":           updatedTitle,
+		"bucket":          updatedBucket,
+		"position":        updatedPosition,
+		"tags":            updatedTags,
+		"attachments":     updatedAttachments,
+		"body":            updatedBody,
+		"due_date":        updatedDueDate,
+		"planned_date":    updatedPlannedDate,
+		"priority":        updatedPriority,
+		"color":           updatedColor,
+		"postponed_until": updatedPostponedUntil,
+		"created_at":      existing.CreatedAt,
+		"updated_at":      nowStr,
 	}
 
 	// Write to Disk
@@ -259,20 +282,21 @@ func (s *taskService) UpdateTask(ctx context.Context, tasksDir string, projectID
 	}
 
 	res := Response{
-		ID:          taskID,
-		ProjectID:   updatedProjectID,
-		Title:       updatedTitle,
-		Bucket:      updatedBucket,
-		Position:    updatedPosition,
-		Tags:        updatedTags,
-		Attachments: updatedAttachments,
-		Body:        updatedBody,
-		DueDate:     updatedDueDate,
-		PlannedDate: updatedPlannedDate,
-		Priority:    updatedPriority,
-		Color:       updatedColor,
-		CreatedAt:   existing.CreatedAt,
-		UpdatedAt:   nowStr,
+		ID:             taskID,
+		ProjectID:      updatedProjectID,
+		Title:          updatedTitle,
+		Bucket:         updatedBucket,
+		Position:       updatedPosition,
+		Tags:           updatedTags,
+		Attachments:    updatedAttachments,
+		Body:           updatedBody,
+		DueDate:        updatedDueDate,
+		PlannedDate:    updatedPlannedDate,
+		Priority:       updatedPriority,
+		Color:          updatedColor,
+		PostponedUntil: updatedPostponedUntil,
+		CreatedAt:      existing.CreatedAt,
+		UpdatedAt:      nowStr,
 	}
 
 	// Update DB (handles transaction and automatic Done/Archive column creation)
@@ -320,20 +344,33 @@ func (s *taskService) MoveTask(ctx context.Context, tasksDir string, projectID s
 	nowStr := time.Now().UTC().Format(time.RFC3339Nano)
 	nowStr = strings.Replace(nowStr, "+00:00", "Z", 1)
 
+	targetBucket := req.Bucket
+	updatedPostponedUntil := existing.PostponedUntil
+	if req.Bucket == "postponed" {
+		targetBucket = existing.Bucket
+		if updatedPostponedUntil == nil || *updatedPostponedUntil == "" {
+			tomorrow := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
+			updatedPostponedUntil = &tomorrow
+		}
+	} else {
+		updatedPostponedUntil = nil
+	}
+
 	taskMap := map[string]interface{}{
-		"project_id":   projectID,
-		"title":        existing.Title,
-		"bucket":       req.Bucket,
-		"position":     req.Position,
-		"tags":         existing.Tags,
-		"attachments":  existing.Attachments,
-		"body":         existing.Body,
-		"due_date":     existing.DueDate,
-		"planned_date": existing.PlannedDate,
-		"priority":     existing.Priority,
-		"color":        existing.Color,
-		"created_at":   existing.CreatedAt,
-		"updated_at":   nowStr,
+		"project_id":      projectID,
+		"title":           existing.Title,
+		"bucket":          targetBucket,
+		"position":        req.Position,
+		"tags":            existing.Tags,
+		"attachments":     existing.Attachments,
+		"body":            existing.Body,
+		"due_date":        existing.DueDate,
+		"planned_date":    existing.PlannedDate,
+		"priority":        existing.Priority,
+		"color":           existing.Color,
+		"postponed_until": updatedPostponedUntil,
+		"created_at":      existing.CreatedAt,
+		"updated_at":      nowStr,
 	}
 
 	filename, errWrite := s.fileRepo.WriteTaskFile(tasksDir, taskID, taskMap)
@@ -342,20 +379,21 @@ func (s *taskService) MoveTask(ctx context.Context, tasksDir string, projectID s
 	}
 
 	res := Response{
-		ID:          taskID,
-		ProjectID:   projectID,
-		Title:       existing.Title,
-		Bucket:      req.Bucket,
-		Position:    req.Position,
-		Tags:        existing.Tags,
-		Attachments: existing.Attachments,
-		Body:        existing.Body,
-		DueDate:     existing.DueDate,
-		PlannedDate: existing.PlannedDate,
-		Priority:    existing.Priority,
-		Color:       existing.Color,
-		CreatedAt:   existing.CreatedAt,
-		UpdatedAt:   nowStr,
+		ID:             taskID,
+		ProjectID:      projectID,
+		Title:          existing.Title,
+		Bucket:         targetBucket,
+		Position:       req.Position,
+		Tags:           existing.Tags,
+		Attachments:    existing.Attachments,
+		Body:           existing.Body,
+		DueDate:        existing.DueDate,
+		PlannedDate:    existing.PlannedDate,
+		Priority:       existing.Priority,
+		Color:          existing.Color,
+		PostponedUntil: updatedPostponedUntil,
+		CreatedAt:      existing.CreatedAt,
+		UpdatedAt:      nowStr,
 	}
 
 	if err := s.dbRepo.Update(ctx, projectID, res, filename); err != nil {

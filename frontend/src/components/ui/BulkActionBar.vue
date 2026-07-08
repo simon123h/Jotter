@@ -16,6 +16,7 @@ import {
   Calendar,
   Palette,
   Slash,
+  Hourglass,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket, Project } from '@/types';
@@ -44,6 +45,7 @@ const emit = defineEmits<{
   (e: 'set-due-date', date: string): void;
   (e: 'move-project', projectId: string): void;
   (e: 'set-color', color: string | null): void;
+  (e: 'set-postponed-date', date: string): void;
 }>();
 
 const colors = [
@@ -56,7 +58,7 @@ const colors = [
   { id: 'pink', name: 'Pink', bg: 'bg-pink-500', ring: 'ring-pink-500' },
 ];
 
-const activeMenu = ref<'none' | 'bucket' | 'tag' | 'priority' | 'planned' | 'project' | 'dueDate' | 'color'>('none');
+const activeMenu = ref<'none' | 'bucket' | 'tag' | 'priority' | 'planned' | 'project' | 'dueDate' | 'color' | 'postponedDate'>('none');
 
 const toggleMenu = (menu: typeof activeMenu.value) => {
   activeMenu.value = activeMenu.value === menu ? 'none' : menu;
@@ -108,6 +110,31 @@ const setDueDatePreset = (preset: 'today' | 'tomorrow' | 'nextWeek' | 'clear') =
 
 const handleCustomDueDate = () => {
   emit('set-due-date', customDueDate.value);
+  // activeMenu.value = 'none';
+};
+
+const customPostponedDate = ref('');
+
+const setPostponedPreset = (preset: 'tomorrow' | 'nextWeek' | 'clear') => {
+  if (preset === 'clear') {
+    emit('set-postponed-date', '');
+  } else {
+    const date = new Date();
+    if (preset === 'tomorrow') {
+      date.setDate(date.getDate() + 1);
+    } else if (preset === 'nextWeek') {
+      date.setDate(date.getDate() + 7);
+    }
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    emit('set-postponed-date', `${year}-${month}-${day}`);
+  }
+  // activeMenu.value = 'none';
+};
+
+const handleCustomPostponedDate = () => {
+  emit('set-postponed-date', customPostponedDate.value);
   // activeMenu.value = 'none';
 };
 </script>
@@ -311,6 +338,47 @@ const handleCustomDueDate = () => {
             />
           </div>
         </div>
+
+        <!-- Postponed Date Menu -->
+        <div v-if="activeMenu === 'postponedDate'" class="p-3 space-y-3 min-w-[200px] text-left">
+          <div class="text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
+            {{ t('form.postponedUntilLabel') || 'Postponed Until' }}
+          </div>
+          <div class="flex flex-col gap-2">
+            <button
+              @click="setPostponedPreset('tomorrow')"
+              class="w-full text-left px-2 py-1.5 hover:bg-theme-column rounded text-xs text-theme-text-main transition-colors font-semibold cursor-pointer"
+            >
+              {{ t('filterModal.postponedTomorrow') || 'Tomorrow' }}
+            </button>
+            <button
+              @click="setPostponedPreset('nextWeek')"
+              class="w-full text-left px-2 py-1.5 hover:bg-theme-column rounded text-xs text-theme-text-main transition-colors font-semibold cursor-pointer"
+            >
+              {{ t('filterModal.postponedNextWeek') || 'Next Week' }}
+            </button>
+            <button
+              @click="setPostponedPreset('clear')"
+              class="w-full text-left px-2 py-1.5 hover:bg-theme-column rounded text-xs text-red-400 hover:bg-red-500/10 transition-colors font-semibold cursor-pointer"
+            >
+              {{ t('filterModal.postponedClear') || 'Clear Postponed' }}
+            </button>
+            <div class="border-t border-theme-border/40 my-1"></div>
+            <div class="flex items-center gap-1.5">
+              <input
+                v-model="customPostponedDate"
+                type="date"
+                class="flex-grow bg-theme-base border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              />
+              <button
+                @click="handleCustomPostponedDate"
+                class="p-1.5 bg-theme-primary text-white rounded hover:bg-theme-primary-hover cursor-pointer"
+              >
+                <Check class="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Main Action Bar -->
@@ -389,6 +457,14 @@ const handleCustomDueDate = () => {
             :title="t('bulkActions.setDueDate')"
           >
             <Calendar class="w-4.5 h-4.5" />
+          </button>
+
+          <button
+            @click="toggleMenu('postponedDate')"
+            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
+            :title="t('bulkActions.postpone') || 'Postpone'"
+          >
+            <Hourglass class="w-4.5 h-4.5" />
           </button>
 
           <button

@@ -30,46 +30,48 @@ func (r *fileRepository) SaveSettings(tasksDir string, settings AppSettings) err
 // Low-level helper functions (Kept for backwards compatibility and internal repository usage)
 
 type AppSettings struct {
-	HideDoneColumn    bool              `json:"hideDoneColumn"`
-	HideArchiveColumn bool              `json:"hideArchiveColumn"`
-	IsSidebarOpen     bool              `json:"isSidebarOpen"`
-	CurrentTheme      string            `json:"currentTheme"`
-	ThresholdDays     int               `json:"thresholdDays"`
-	PinnedProjectIds  []string          `json:"pinnedProjectIds"`
-	SortBy            string            `json:"sortBy"`
-	HideAddTaskButton bool              `json:"hideAddTaskButton"`
-	ProjectOrder      []string          `json:"projectOrder"`
-	WindowWidth       int               `json:"windowWidth"`
-	WindowHeight      int               `json:"windowHeight"`
-	WindowX           int               `json:"windowX"`
-	WindowY           int               `json:"windowY"`
-	WindowMaximized   bool              `json:"windowMaximized"`
-	GitRemoteURL      string            `json:"gitRemoteUrl"`
-	Language          string            `json:"language"`
-	TagColors         map[string]string `json:"tagColors"`
-	AutoSyncInterval  int               `json:"autoSyncInterval"`
+	HideDoneColumn      bool              `json:"hideDoneColumn"`
+	HideArchiveColumn   bool              `json:"hideArchiveColumn"`
+	HidePostponedColumn bool              `json:"hidePostponedColumn"`
+	IsSidebarOpen       bool              `json:"isSidebarOpen"`
+	CurrentTheme        string            `json:"currentTheme"`
+	ThresholdDays       int               `json:"thresholdDays"`
+	PinnedProjectIds    []string          `json:"pinnedProjectIds"`
+	SortBy              string            `json:"sortBy"`
+	HideAddTaskButton   bool              `json:"hideAddTaskButton"`
+	ProjectOrder        []string          `json:"projectOrder"`
+	WindowWidth         int               `json:"windowWidth"`
+	WindowHeight        int               `json:"windowHeight"`
+	WindowX             int               `json:"windowX"`
+	WindowY             int               `json:"windowY"`
+	WindowMaximized     bool              `json:"windowMaximized"`
+	GitRemoteURL        string            `json:"gitRemoteUrl"`
+	Language            string            `json:"language"`
+	TagColors           map[string]string `json:"tagColors"`
+	AutoSyncInterval    int               `json:"autoSyncInterval"`
 }
 
 func GetDefaultSettings() AppSettings {
 	return AppSettings{
-		HideDoneColumn:    true,
-		HideArchiveColumn: true,
-		IsSidebarOpen:     true,
-		CurrentTheme:      "nordic-light",
-		ThresholdDays:     7,
-		PinnedProjectIds:  []string{},
-		SortBy:            "alpha",
-		HideAddTaskButton: true,
-		ProjectOrder:      []string{},
-		WindowWidth:       1024,
-		WindowHeight:      768,
-		WindowX:           -1,
-		WindowY:           -1,
-		WindowMaximized:   true,
-		GitRemoteURL:      "",
-		Language:          "",
-		TagColors:         map[string]string{},
-		AutoSyncInterval:  0,
+		HideDoneColumn:      true,
+		HideArchiveColumn:   true,
+		HidePostponedColumn: true,
+		IsSidebarOpen:       true,
+		CurrentTheme:        "nordic-light",
+		ThresholdDays:       7,
+		PinnedProjectIds:    []string{},
+		SortBy:              "alpha",
+		HideAddTaskButton:   true,
+		ProjectOrder:        []string{},
+		WindowWidth:         1024,
+		WindowHeight:        768,
+		WindowX:             -1,
+		WindowY:             -1,
+		WindowMaximized:     true,
+		GitRemoteURL:        "",
+		Language:            "",
+		TagColors:           map[string]string{},
+		AutoSyncInterval:    0,
 	}
 }
 

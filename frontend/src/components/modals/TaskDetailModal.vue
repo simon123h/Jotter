@@ -80,6 +80,7 @@ const {
   editPlannedDate,
   editPriority,
   editColor,
+  editPostponedUntil,
   showAutocomplete,
   autocompleteIndex,
   filteredBuckets,
@@ -471,6 +472,12 @@ onBeforeRouteLeave(async () => {
                       {{ t('plannedDateOptions.' + task.planned_date) }}
                     </span>
                   </div>
+                  <div v-if="task.postponed_until" class="flex items-center gap-1.5 text-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Postponed Until:</span>
+                    <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
+                      {{ new Date(task.postponed_until).toLocaleDateString() }}
+                    </span>
+                  </div>
                   <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
                     <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Priority:</span>
                     <span
@@ -594,6 +601,19 @@ onBeforeRouteLeave(async () => {
                   }}</label>
                   <TagInput v-model="editTags" :placeholder="t('form.tagsPlaceholderEdit')" />
                 </div>
+              </div>
+
+              <!-- Postponed Until Row (Only shown when bucket is set to postponed) -->
+              <div v-if="editBucket === 'postponed'">
+                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
+                  {{ t('form.postponedUntilLabel') || 'Postponed Until' }}
+                </label>
+                <input
+                  v-model="editPostponedUntil"
+                  type="date"
+                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                  required
+                />
               </div>
 
               <!-- Due Date, Planned Date & Priority Row -->

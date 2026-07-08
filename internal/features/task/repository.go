@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -47,7 +48,7 @@ func NewSQLRepository(db *sql.DB) DBRepository {
 }
 
 func (r *sqlRepository) GetTasks(ctx context.Context, filter TaskFilter) ([]Response, error) {
-	query := "SELECT id, project_id, title, bucket, position, tags, attachments, body, due_date, planned_date, priority, color, created_at, updated_at FROM tasks WHERE 1=1"
+	query := "SELECT id, project_id, title, bucket, position, tags, attachments, body, due_date, planned_date, priority, color, postponed_until, created_at, updated_at FROM tasks WHERE 1=1"
 	var args []interface{}
 
 	if filter.ProjectID != "" {
@@ -56,11 +57,31 @@ func (r *sqlRepository) GetTasks(ctx context.Context, filter TaskFilter) ([]Resp
 	}
 
 	if filter.Bucket != "" {
-		query += " AND bucket = ?"
-		args = append(args, filter.Bucket)
+		if filter.Bucket == "postponed" {
+			query += " AND postponed_until IS NOT NULL AND postponed_until > ?"
+			args = append(args, time.Now().Format("2006-01-02"))
+		} else {
+			query += " AND bucket = ? AND (postponed_until IS NULL OR postponed_until = '' OR postponed_until <= ?)"
+			args = append(args, filter.Bucket, time.Now().Format("2006-01-02"))
+		}
+	} else {
+		// If bucket is not specified, check if we should exclude active postponed tasks
+		excludePostponed := false
+		if filter.ExcludeBucket == "postponed" {
+			excludePostponed = true
+		}
+		for _, b := range filter.ExcludeBuckets {
+			if strings.TrimSpace(b) == "postponed" {
+				excludePostponed = true
+			}
+		}
+		if excludePostponed {
+			query += " AND (postponed_until IS NULL OR postponed_until = '' OR postponed_until <= ?)"
+			args = append(args, time.Now().Format("2006-01-02"))
+		}
 	}
 
-	if filter.ExcludeBucket != "" {
+	if filter.ExcludeBucket != "" && filter.ExcludeBucket != "postponed" {
 		query += " AND bucket != ?"
 		args = append(args, filter.ExcludeBucket)
 	}
@@ -69,7 +90,7 @@ func (r *sqlRepository) GetTasks(ctx context.Context, filter TaskFilter) ([]Resp
 		var placeholders []string
 		for _, b := range filter.ExcludeBuckets {
 			b = strings.TrimSpace(b)
-			if b != "" {
+			if b != "" && b != "postponed" {
 				placeholders = append(placeholders, "?")
 				args = append(args, b)
 			}
@@ -126,9 +147,9 @@ func (r *sqlRepository) GetTasks(ctx context.Context, filter TaskFilter) ([]Resp
 	for rows.Next() {
 		var t Response
 		var tagsJSON, attachmentsJSON string
-		var dueDate, plannedDate, priority, color sql.NullString
+		var dueDate, plannedDate, priority, color, postponedUntil sql.NullString
 
-		err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.Bucket, &t.Position, &tagsJSON, &attachmentsJSON, &t.Body, &dueDate, &plannedDate, &priority, &color, &t.CreatedAt, &t.UpdatedAt)
+		err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.Bucket, &t.Position, &tagsJSON, &attachmentsJSON, &t.Body, &dueDate, &plannedDate, &priority, &color, &postponedUntil, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -146,6 +167,9 @@ func (r *sqlRepository) GetTasks(ctx context.Context, filter TaskFilter) ([]Resp
 		}
 		if color.Valid {
 			t.Color = &color.String
+		}
+		if postponedUntil.Valid {
+			t.PostponedUntil = &postponedUntil.String
 		}
 
 		taskList = append(taskList, t)
@@ -185,7 +209,7 @@ func (r *sqlRepository) GetMaxTaskPosition(ctx context.Context, projectID string
 func (r *sqlRepository) Create(ctx context.Context, task Response, filename string) error {
 	tagsJSON, _ := json.Marshal(task.Tags)
 	attachmentsJSON, _ := json.Marshal(task.Attachments)
-	var dbDueDate, dbPlannedDate, dbPriority, dbColor sql.NullString
+	var dbDueDate, dbPlannedDate, dbPriority, dbColor, dbPostponedUntil sql.NullString
 	if task.DueDate != nil {
 		dbDueDate = sql.NullString{String: *task.DueDate, Valid: true}
 	}
@@ -198,9 +222,12 @@ func (r *sqlRepository) Create(ctx context.Context, task Response, filename stri
 	if task.Color != nil {
 		dbColor = sql.NullString{String: *task.Color, Valid: true}
 	}
+	if task.PostponedUntil != nil {
+		dbPostponedUntil = sql.NullString{String: *task.PostponedUntil, Valid: true}
+	}
 
-	_, err := r.db.ExecContext(ctx, "INSERT INTO tasks (id, project_id, title, bucket, position, tags, attachments, filename, body, due_date, planned_date, priority, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		task.ID, task.ProjectID, task.Title, task.Bucket, task.Position, string(tagsJSON), string(attachmentsJSON), filename, task.Body, dbDueDate, dbPlannedDate, dbPriority, dbColor, task.CreatedAt, task.UpdatedAt)
+	_, err := r.db.ExecContext(ctx, "INSERT INTO tasks (id, project_id, title, bucket, position, tags, attachments, filename, body, due_date, planned_date, priority, color, postponed_until, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		task.ID, task.ProjectID, task.Title, task.Bucket, task.Position, string(tagsJSON), string(attachmentsJSON), filename, task.Body, dbDueDate, dbPlannedDate, dbPriority, dbColor, dbPostponedUntil, task.CreatedAt, task.UpdatedAt)
 	return err
 }
 
@@ -238,6 +265,8 @@ func (r *sqlRepository) Update(ctx context.Context, oldProjectID string, task Re
 			title = "Done"
 		} else if task.Bucket == "archive" {
 			title = "Archive"
+		} else if task.Bucket == "postponed" {
+			title = "Postponed"
 		}
 
 		_, err = tx.ExecContext(ctx, "INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default) VALUES (?, ?, ?, '', ?, NULL, 'list', NULL, 0)",
@@ -252,7 +281,7 @@ func (r *sqlRepository) Update(ctx context.Context, oldProjectID string, task Re
 	// 3. Update task
 	tagsJSON, _ := json.Marshal(task.Tags)
 	attachmentsJSON, _ := json.Marshal(task.Attachments)
-	var dbDueDate, dbPlannedDate, dbPriority, dbColor sql.NullString
+	var dbDueDate, dbPlannedDate, dbPriority, dbColor, dbPostponedUntil sql.NullString
 	if task.DueDate != nil {
 		dbDueDate = sql.NullString{String: *task.DueDate, Valid: true}
 	}
@@ -265,9 +294,12 @@ func (r *sqlRepository) Update(ctx context.Context, oldProjectID string, task Re
 	if task.Color != nil {
 		dbColor = sql.NullString{String: *task.Color, Valid: true}
 	}
+	if task.PostponedUntil != nil {
+		dbPostponedUntil = sql.NullString{String: *task.PostponedUntil, Valid: true}
+	}
 
-	_, err = tx.ExecContext(ctx, "UPDATE tasks SET project_id = ?, title = ?, bucket = ?, position = ?, tags = ?, attachments = ?, filename = ?, body = ?, due_date = ?, planned_date = ?, priority = ?, color = ?, updated_at = ? WHERE id = ? AND project_id = ?",
-		task.ProjectID, task.Title, task.Bucket, task.Position, string(tagsJSON), string(attachmentsJSON), filename, task.Body, dbDueDate, dbPlannedDate, dbPriority, dbColor, task.UpdatedAt, task.ID, oldProjectID)
+	_, err = tx.ExecContext(ctx, "UPDATE tasks SET project_id = ?, title = ?, bucket = ?, position = ?, tags = ?, attachments = ?, filename = ?, body = ?, due_date = ?, planned_date = ?, priority = ?, color = ?, postponed_until = ?, updated_at = ? WHERE id = ? AND project_id = ?",
+		task.ProjectID, task.Title, task.Bucket, task.Position, string(tagsJSON), string(attachmentsJSON), filename, task.Body, dbDueDate, dbPlannedDate, dbPriority, dbColor, dbPostponedUntil, task.UpdatedAt, task.ID, oldProjectID)
 	if err != nil {
 		return err
 	}
@@ -417,20 +449,21 @@ func ReadTaskFile(tasksDir string, taskID string) (*Response, error) {
 	}
 
 	return &Response{
-		ID:          taskID,
-		ProjectID:   projectID,
-		Title:       fm.Title,
-		Bucket:      fm.Bucket,
-		Position:    fm.Position,
-		Tags:        fm.Tags,
-		Attachments: fm.Attachments,
-		Body:        body,
-		DueDate:     fm.DueDate,
-		PlannedDate: fm.PlannedDate,
-		Priority:    fm.Priority,
-		Color:       fm.Color,
-		CreatedAt:   fm.CreatedAt,
-		UpdatedAt:   fm.UpdatedAt,
+		ID:             taskID,
+		ProjectID:      projectID,
+		Title:          fm.Title,
+		Bucket:         fm.Bucket,
+		Position:       fm.Position,
+		Tags:           fm.Tags,
+		Attachments:    fm.Attachments,
+		Body:           body,
+		DueDate:        fm.DueDate,
+		PlannedDate:    fm.PlannedDate,
+		Priority:       fm.Priority,
+		Color:          fm.Color,
+		PostponedUntil: fm.PostponedUntil,
+		CreatedAt:      fm.CreatedAt,
+		UpdatedAt:      fm.UpdatedAt,
 	}, nil
 }
 
@@ -459,7 +492,7 @@ func WriteTaskFile(tasksDir string, taskID string, taskData map[string]interface
 		}
 	}
 
-	var dueDate, plannedDate, priority, color *string
+	var dueDate, plannedDate, priority, color, postponedUntil *string
 	if val, okVal := taskData["due_date"].(*string); okVal {
 		dueDate = val
 	} else if val, okVal := taskData["due_date"].(string); okVal && val != "" {
@@ -484,20 +517,27 @@ func WriteTaskFile(tasksDir string, taskID string, taskData map[string]interface
 		color = &val
 	}
 
+	if val, okVal := taskData["postponed_until"].(*string); okVal {
+		postponedUntil = val
+	} else if val, okVal := taskData["postponed_until"].(string); okVal && val != "" {
+		postponedUntil = &val
+	}
+
 	fm := Frontmatter{
-		ID:          taskID,
-		ProjectID:   projectID,
-		Title:       taskData["title"].(string),
-		Bucket:      taskData["bucket"].(string),
-		Position:    taskData["position"].(float64),
-		Tags:        tags,
-		Attachments: attachments,
-		DueDate:     dueDate,
-		PlannedDate: plannedDate,
-		Priority:    priority,
-		Color:       color,
-		CreatedAt:   taskData["created_at"].(string),
-		UpdatedAt:   taskData["updated_at"].(string),
+		ID:             taskID,
+		ProjectID:      projectID,
+		Title:          taskData["title"].(string),
+		Bucket:         taskData["bucket"].(string),
+		Position:       taskData["position"].(float64),
+		Tags:           tags,
+		Attachments:    attachments,
+		DueDate:        dueDate,
+		PlannedDate:    plannedDate,
+		Priority:       priority,
+		Color:          color,
+		PostponedUntil: postponedUntil,
+		CreatedAt:      taskData["created_at"].(string),
+		UpdatedAt:      taskData["updated_at"].(string),
 	}
 
 	body, _ := taskData["body"].(string)

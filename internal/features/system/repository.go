@@ -33,21 +33,22 @@ type BucketSyncInfo struct {
 
 // TaskSyncInfo represents SQLite task attributes to rebuild
 type TaskSyncInfo struct {
-	ID          string
-	ProjectID   string
-	Title       string
-	Bucket      string
-	Position    float64
-	Tags        []string
-	Attachments []string
-	Filename    string
-	Body        string
-	DueDate     *string
-	PlannedDate *string
-	Priority    *string
-	Color       *string
-	CreatedAt   string
-	UpdatedAt   string
+	ID             string
+	ProjectID      string
+	Title          string
+	Bucket         string
+	Position       float64
+	Tags           []string
+	Attachments    []string
+	Filename       string
+	Body           string
+	DueDate        *string
+	PlannedDate    *string
+	Priority       *string
+	Color          *string
+	PostponedUntil *string
+	CreatedAt      string
+	UpdatedAt      string
 }
 
 // DBRepository defines the database operations for system sync
@@ -168,7 +169,7 @@ func (r *sqlRepository) RebuildIndex(ctx context.Context, projects []map[string]
 	for _, t := range tasks {
 		tagsJSON, _ := json.Marshal(t.Tags)
 		attachmentsJSON, _ := json.Marshal(t.Attachments)
-		var fmDueDate, fmPlannedDate, fmPriority, fmColor sql.NullString
+		var fmDueDate, fmPlannedDate, fmPriority, fmColor, fmPostponedUntil sql.NullString
 		if t.DueDate != nil {
 			fmDueDate = sql.NullString{String: *t.DueDate, Valid: true}
 		}
@@ -181,9 +182,12 @@ func (r *sqlRepository) RebuildIndex(ctx context.Context, projects []map[string]
 		if t.Color != nil {
 			fmColor = sql.NullString{String: *t.Color, Valid: true}
 		}
+		if t.PostponedUntil != nil {
+			fmPostponedUntil = sql.NullString{String: *t.PostponedUntil, Valid: true}
+		}
 
-		_, errT := tx.ExecContext(ctx, "INSERT INTO tasks (id, project_id, title, bucket, position, tags, attachments, filename, body, due_date, planned_date, priority, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-			t.ID, t.ProjectID, t.Title, t.Bucket, t.Position, string(tagsJSON), string(attachmentsJSON), t.Filename, t.Body, fmDueDate, fmPlannedDate, fmPriority, fmColor, t.CreatedAt, t.UpdatedAt)
+		_, errT := tx.ExecContext(ctx, "INSERT INTO tasks (id, project_id, title, bucket, position, tags, attachments, filename, body, due_date, planned_date, priority, color, postponed_until, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			t.ID, t.ProjectID, t.Title, t.Bucket, t.Position, string(tagsJSON), string(attachmentsJSON), t.Filename, t.Body, fmDueDate, fmPlannedDate, fmPriority, fmColor, fmPostponedUntil, t.CreatedAt, t.UpdatedAt)
 		if errT != nil {
 			continue
 		}

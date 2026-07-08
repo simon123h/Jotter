@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ClipboardList, Check, Calendar, Clock, Paperclip } from '@lucide/vue';
+import { ClipboardList, Check, Calendar, Clock, Paperclip, Hourglass } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { useSelectionStore } from '@/stores/selection';
@@ -349,6 +349,7 @@ const handleTagClick = (tag: string) => {
         (task.due_date ||
           task.planned_date ||
           task.priority ||
+          task.postponed_until ||
           (task.attachments && task.attachments.length) ||
           (showTags && task.tags && task.tags.length) ||
           (checklistStats && (compact || renderedChecklist.length === 0)))
@@ -382,6 +383,16 @@ const handleTagClick = (tag: string) => {
       >
         <Clock class="w-3 h-3" />
         <span :class="{ 'text-[10px]': compact }">{{ t('plannedDateOptions.' + task.planned_date) }}</span>
+      </div>
+
+      <!-- Postponed date -->
+      <div
+        v-if="task.postponed_until"
+        class="flex items-center gap-1 text-yellow-500/80"
+        :title="'Postponed Until: ' + formatDate(task.postponed_until)"
+      >
+        <Hourglass :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
+        <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.postponed_until) }}</span>
       </div>
 
       <!-- Attachments -->

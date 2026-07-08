@@ -63,6 +63,7 @@ export const de = {
     plannedDateLabel: 'Geplant für',
     priorityLabel: 'Priorität',
     noBucketsFound: 'Keine Spalten gefunden',
+    postponedUntilLabel: 'Zurückgestellt bis',
     attachmentsLabel: 'Anhänge',
     addAttachment: 'Datei hinzufügen',
     uploading: 'Lade hoch...',
@@ -137,10 +138,16 @@ export const de = {
     hideText: 'Erledigte ausblenden',
   },
   archiveBucket: {
-    show: '"Archiv"-Spalte anzeigen',
-    hide: '"Archiv"-Spalte ausblenden',
-    showText: 'Archiv zeigen',
+    show: 'Spalte "Archiv" anzeigen',
+    hide: 'Spalte "Archiv" ausblenden',
+    showText: 'Archiv anzeigen',
     hideText: 'Archiv ausblenden',
+  },
+  postponedBucket: {
+    show: 'Spalte "Zurückgestellt" anzeigen',
+    hide: 'Spalte "Zurückgestellt" ausblenden',
+    showText: 'Zurückgestellt anzeigen',
+    hideText: 'Zurückgestellt ausblenden',
   },
   projects: {
     sidebarTitle: 'Projekte',
@@ -305,6 +312,9 @@ export const de = {
     apply: 'Filter anwenden',
     buttonTooltip: 'Filter öffnen',
     activeFilters: 'Aktive Filter',
+    postponedTomorrow: 'Morgen',
+    postponedNextWeek: 'Nächste Woche',
+    postponedClear: 'Zurückstellung löschen',
   },
   plannedDateOptions: {
     none: 'Nicht geplant',
@@ -336,6 +346,7 @@ export const de = {
     dueDateTomorrow: 'Morgen',
     dueDateNextWeek: 'Nächste Woche',
     dueDateClear: 'Datum löschen',
+    postpone: 'Aufschieben...',
   },
   clickToIgnoreKeyword: 'Klicken, um als Schlüsselwort zu ignorieren',
   layoutOptions: {

@@ -21,7 +21,7 @@ const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const uiStore = useUiStore();
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
-const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+const { hideDoneColumn, hideArchiveColumn, hidePostponedColumn } = storeToRefs(settingsStore);
 
 const isCollapsed = (bucketName: string) => {
   return (
@@ -55,7 +55,7 @@ onMounted(async () => {
   await fetchViewTasks();
 });
 
-watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
+watch([activeProjectId, hideDoneColumn, hideArchiveColumn, hidePostponedColumn], async () => {
   await fetchViewTasks();
 });
 
@@ -65,8 +65,12 @@ const tasksByBucket = computed(() => {
     groups[b.name] = [];
   });
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  console.log('BoardView tasks to group:', props.tasks.map(t => ({ title: t.title, bucket: t.bucket, postponed_until: t.postponed_until })));
   props.tasks.forEach((task) => {
-    const b = task.bucket;
+    const isPostponed = !!(task.postponed_until && task.postponed_until > todayStr);
+    console.log(`Task "${task.title}": postponed_until=${task.postponed_until}, todayStr=${todayStr}, isPostponed=${isPostponed}`);
+    const b = isPostponed ? 'postponed' : task.bucket;
     if (groups[b] === undefined) {
       groups[b] = [];
     }
@@ -83,7 +87,8 @@ const tasksByBucket = computed(() => {
 const { fetchBuckets, handleCreateColumn, handleRenameColumn, handleDeleteColumn, handleColumnReordered } = useBuckets(
   activeProjectId,
   hideDoneColumn,
-  hideArchiveColumn
+  hideArchiveColumn,
+  hidePostponedColumn
 );
 
 const { tasks: storeTasks } = storeToRefs(projectStore);
@@ -385,6 +390,19 @@ useBoardNavigation({
             class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
           />
           <span class="font-semibold">{{ t('archiveBucket.hide') }}</span>
+        </label>
+
+        <!-- hide postponed column check -->
+        <label
+          class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+        >
+          <input
+            type="checkbox"
+            :checked="settingsStore.hidePostponedColumn"
+            @change="settingsStore.hidePostponedColumn = ($event.target as HTMLInputElement).checked"
+            class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
+          />
+          <span class="font-semibold">{{ t('postponedBucket.hide') }}</span>
         </label>
       </div>
     </div>

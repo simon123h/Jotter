@@ -24,6 +24,7 @@ function seedDemoData() {
       { name: 'backlog', title: 'Backlog', subtitle: 'Ideas and incoming items', position: 1000.0, is_default: true },
       { name: 'todo', title: 'To Do', subtitle: 'Ready to work on', position: 2000.0, is_default: false },
       { name: 'in-progress', title: 'In Progress', subtitle: 'Work in progress', position: 3000.0, is_default: false },
+      { name: 'postponed', title: 'Postponed', subtitle: 'Postponed items', position: 3500.0, is_default: false },
       { name: 'done', title: 'Done', subtitle: 'Completed tasks', position: 4000.0, is_default: false, color: 'green' },
     ],
   };
@@ -261,9 +262,32 @@ export async function getTasks(projectId: string, filters?: TaskFilterParams): P
   pruneDemoTasks(projectId);
   let list = getDemoTasksMap()[projectId] || [];
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   if (filters) {
     if (filters.bucket) {
-      list = list.filter((t) => t.bucket === filters.bucket);
+      if (filters.bucket === 'postponed') {
+        list = list.filter((t) => !!t.postponed_until && t.postponed_until > todayStr);
+      } else {
+        list = list.filter((t) => t.bucket === filters.bucket && (!t.postponed_until || todayStr >= t.postponed_until));
+      }
+    } else {
+      let excludePostponed = false;
+      if (filters.exclude_bucket === 'postponed') {
+        excludePostponed = true;
+      }
+      if (filters.exclude_buckets) {
+        const bucketList = filters.exclude_buckets
+          .split(',')
+          .map((b) => b.trim().toLowerCase())
+          .filter(Boolean);
+        if (bucketList.includes('postponed')) {
+          excludePostponed = true;
+        }
+      }
+      if (excludePostponed) {
+        list = list.filter((t) => !t.postponed_until || todayStr >= t.postponed_until);
+      }
     }
     if (filters.buckets) {
       const bucketList = filters.buckets
@@ -271,11 +295,24 @@ export async function getTasks(projectId: string, filters?: TaskFilterParams): P
         .map((b) => b.trim().toLowerCase())
         .filter(Boolean);
       if (bucketList.length) {
-        list = list.filter((t) => bucketList.includes(t.bucket.toLowerCase()));
+        list = list.filter((t) => {
+          const mappedBucket = (t.postponed_until && t.postponed_until > todayStr) ? 'postponed' : t.bucket;
+          return bucketList.includes(mappedBucket.toLowerCase());
+        });
       }
     }
-    if (filters.exclude_bucket) {
+    if (filters.exclude_bucket && filters.exclude_bucket !== 'postponed') {
       list = list.filter((t) => t.bucket !== filters.exclude_bucket);
+    }
+    if (filters.exclude_buckets) {
+      const bucketList = filters.exclude_buckets
+        .split(',')
+        .map((b) => b.trim().toLowerCase())
+        .filter(Boolean);
+      const regularBuckets = bucketList.filter((b) => b !== 'postponed');
+      if (regularBuckets.length) {
+        list = list.filter((t) => !regularBuckets.includes(t.bucket.toLowerCase()));
+      }
     }
     if (filters.tag) {
       list = list.filter((t) => t.tags.some((tg) => tg.toLowerCase() === filters.tag!.toLowerCase()));
@@ -392,9 +429,21 @@ export async function updateTask(projectId: string, id: string, task: Partial<Ta
   const idx = list.findIndex((t) => t.id === id);
   if (idx !== -1) {
     const now = new Date().toISOString();
+    const updatedBucket = task.bucket === 'postponed' ? list[idx].bucket : (task.bucket || list[idx].bucket);
+    let postponedUntil = task.postponed_until;
+    if (task.bucket === 'postponed') {
+      if (postponedUntil === undefined || postponedUntil === '') {
+        postponedUntil = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      }
+    } else if (task.bucket !== undefined) {
+      postponedUntil = '';
+    }
+
     list[idx] = {
       ...list[idx],
       ...task,
+      bucket: updatedBucket,
+      postponed_until: postponedUntil || undefined,
       updated_at: now,
       tags: task.tags ? task.tags.map((t) => t.toLowerCase()) : list[idx].tags,
     };
@@ -411,7 +460,18 @@ export async function moveTask(projectId: string, id: string, bucket: string, po
   const idx = list.findIndex((t) => t.id === id);
   if (idx !== -1) {
     const now = new Date().toISOString();
-    list[idx].bucket = bucket;
+    const targetBucket = bucket === 'postponed' ? list[idx].bucket : bucket;
+    let postponedUntil = list[idx].postponed_until;
+    if (bucket === 'postponed') {
+      if (!postponedUntil) {
+        postponedUntil = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      }
+    } else {
+      postponedUntil = undefined;
+    }
+
+    list[idx].bucket = targetBucket;
+    list[idx].postponed_until = postponedUntil;
     list[idx].position = position;
     list[idx].updated_at = now;
     tasksMap[projectId] = list;
@@ -435,6 +495,7 @@ export async function getBuckets(projectId: string): Promise<Bucket[]> {
       { name: 'backlog', title: 'Backlog', subtitle: '', position: 1000.0, is_default: true },
       { name: 'todo', title: 'To Do', subtitle: '', position: 2000.0, is_default: false },
       { name: 'in-progress', title: 'In Progress', subtitle: '', position: 3000.0, is_default: false },
+      { name: 'postponed', title: 'Postponed', subtitle: '', position: 3500.0, is_default: false },
       { name: 'done', title: 'Done', subtitle: '', position: 4000.0, is_default: false },
     ];
     saveDemoBucketsMap(bucketsMap);

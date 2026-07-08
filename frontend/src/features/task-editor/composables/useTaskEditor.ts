@@ -24,6 +24,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
   const editPlannedDate = ref('');
   const editPriority = ref('');
   const editColor = ref<string | null>(null);
+  const editPostponedUntil = ref('');
 
   const lastMatchedKeyword = ref<string | null>(null);
   const lastMatchedPriority = ref<string | null>(null);
@@ -45,6 +46,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       editPlannedDate.value = taskVal.planned_date || '';
       editPriority.value = taskVal.priority || '';
       editColor.value = taskVal.color || null;
+      editPostponedUntil.value = taskVal.postponed_until || '';
     } else {
       editTitle.value = '';
       ignoredKeywords.value = new Set();
@@ -55,6 +57,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       editPlannedDate.value = '';
       editPriority.value = '';
       editColor.value = null;
+      editPostponedUntil.value = '';
     }
     lastMatchedKeyword.value = null;
     lastMatchedPriority.value = null;
@@ -184,6 +187,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
         planned_date: editPlannedDate.value,
         priority: editPriority.value,
         color: editColor.value,
+        postponed_until: editBucket.value === 'postponed' ? editPostponedUntil.value : '',
       });
 
       isEditing.value = false;
@@ -222,6 +226,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
     editPlannedDate,
     editPriority,
     editColor,
+    editPostponedUntil,
     showAutocomplete,
     autocompleteIndex,
     filteredBuckets,

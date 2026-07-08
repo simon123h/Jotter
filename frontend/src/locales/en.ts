@@ -62,6 +62,7 @@ export const en = {
     plannedDateLabel: 'Planned For',
     priorityLabel: 'Priority',
     noBucketsFound: 'No columns found',
+    postponedUntilLabel: 'Postponed Until',
     attachmentsLabel: 'Attachments',
     addAttachment: 'Add File',
     uploading: 'Uploading...',
@@ -140,6 +141,12 @@ export const en = {
     hide: 'Hide "Archive" column',
     showText: 'Show Archive',
     hideText: 'Hide Archive',
+  },
+  postponedBucket: {
+    show: 'Show "Postponed" column',
+    hide: 'Hide "Postponed" column',
+    showText: 'Show Postponed',
+    hideText: 'Hide Postponed',
   },
   projects: {
     sidebarTitle: 'Projects',
@@ -303,6 +310,9 @@ export const en = {
     apply: 'Apply Filters',
     buttonTooltip: 'Open Filters',
     activeFilters: 'Active Filters',
+    postponedTomorrow: 'Tomorrow',
+    postponedNextWeek: 'Next Week',
+    postponedClear: 'Clear Postponed',
   },
   plannedDateOptions: {
     none: 'Not Planned',
@@ -334,6 +344,7 @@ export const en = {
     dueDateTomorrow: 'Tomorrow',
     dueDateNextWeek: 'Next Week',
     dueDateClear: 'Clear Due Date',
+    postpone: 'Postpone...',
   },
   clickToIgnoreKeyword: 'Click to ignore as keyword',
   layoutOptions: {

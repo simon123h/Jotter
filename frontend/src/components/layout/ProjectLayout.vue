@@ -22,7 +22,7 @@ const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const modalStore = useModalStore();
 
-const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+const { hideDoneColumn, hideArchiveColumn, hidePostponedColumn } = storeToRefs(settingsStore);
 const { projects, buckets, tasks, loading, projectsLoaded, error: projectError } = storeToRefs(projectStore);
 
 const selectionStore = useSelectionStore();
@@ -49,9 +49,24 @@ const isGlobalView = computed(() => !!route.meta.isGlobal);
 const { filteredTasks, clearFilters } = useTaskFilters(tasks);
 
 const displayedBuckets = computed(() => {
-  return buckets.value.filter((b) => {
+  const list = [...buckets.value];
+  const hasPostponed = list.some((b) => b.name === 'postponed');
+  if (!hasPostponed && !hidePostponedColumn.value) {
+    const doneBucket = list.find((b) => b.name === 'done');
+    const pos = doneBucket ? doneBucket.position - 50 : 2500;
+    list.push({
+      name: 'postponed',
+      title: 'Postponed',
+      subtitle: 'Postponed tasks',
+      position: pos,
+    });
+    list.sort((a, b) => a.position - b.position);
+  }
+
+  return list.filter((b) => {
     if (hideDoneColumn.value && b.name === 'done') return false;
     if (hideArchiveColumn.value && b.name === 'archive') return false;
+    if (hidePostponedColumn.value && b.name === 'postponed') return false;
     return true;
   });
 });
@@ -279,6 +294,19 @@ const handleBulkSetDueDate = async (date: string) => {
   }
 };
 
+const handleBulkSetPostponedDate = async (date: string) => {
+  const ids = Array.from(selectedIds.value);
+  try {
+    for (const id of ids) {
+      const task = tasks.value.find((t) => t.id === id);
+      if (task) await updateTask(task.project_id, id, { postponed_until: date });
+    }
+    await fetchAllData();
+  } catch (err: any) {
+    localError.value = `Bulk postpone failed: ${err.message}`;
+  }
+};
+
 const handleBulkMoveProject = (projId: string) => {
   const ids = Array.from(selectedIds.value);
   if (ids.length > 0) {
@@ -379,6 +407,7 @@ const handleBulkMarkDone = async () => {
       @set-due-date="handleBulkSetDueDate"
       @move-project="handleBulkMoveProject"
       @set-color="handleBulkSetColor"
+      @set-postponed-date="handleBulkSetPostponedDate"
     />
 
     <!-- MODAL ROUTER VIEW (Task Detail nested in layout) -->

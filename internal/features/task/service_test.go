@@ -122,7 +122,7 @@ func (m *mockFileRepository) ReadTaskFile(tasksDir string, taskID string) (*Resp
 			attachments = att
 		}
 
-		var dueDate, plannedDate, priority, color *string
+		var dueDate, plannedDate, priority, color, postponedUntil *string
 		if d, ok := t["due_date"].(*string); ok {
 			dueDate = d
 		}
@@ -135,22 +135,26 @@ func (m *mockFileRepository) ReadTaskFile(tasksDir string, taskID string) (*Resp
 		if cl, ok := t["color"].(*string); ok {
 			color = cl
 		}
+		if po, ok := t["postponed_until"].(*string); ok {
+			postponedUntil = po
+		}
 
 		return &Response{
-			ID:          taskID,
-			ProjectID:   t["project_id"].(string),
-			Title:       t["title"].(string),
-			Bucket:      t["bucket"].(string),
-			Position:    t["position"].(float64),
-			Tags:        tags,
-			Attachments: attachments,
-			Body:        t["body"].(string),
-			DueDate:     dueDate,
-			PlannedDate: plannedDate,
-			Priority:    priority,
-			Color:       color,
-			CreatedAt:   t["created_at"].(string),
-			UpdatedAt:   t["updated_at"].(string),
+			ID:             taskID,
+			ProjectID:      t["project_id"].(string),
+			Title:          t["title"].(string),
+			Bucket:         t["bucket"].(string),
+			Position:       t["position"].(float64),
+			Tags:           tags,
+			Attachments:    attachments,
+			Body:           t["body"].(string),
+			DueDate:        dueDate,
+			PlannedDate:    plannedDate,
+			Priority:       priority,
+			Color:          color,
+			PostponedUntil: postponedUntil,
+			CreatedAt:      t["created_at"].(string),
+			UpdatedAt:      t["updated_at"].(string),
 		}, nil
 	}
 	return nil, errors.New("file not found")

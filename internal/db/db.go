@@ -71,6 +71,7 @@ func InitDB(dbPath string) error {
 		planned_date TEXT DEFAULT NULL,
 		priority TEXT DEFAULT NULL,
 		color TEXT DEFAULT NULL,
+		postponed_until TEXT DEFAULT NULL,
 		created_at TEXT NOT NULL,
 		updated_at TEXT NOT NULL,
 		FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
@@ -83,6 +84,11 @@ func InitDB(dbPath string) error {
 
 	if _, err := DB.Exec(schema); err != nil {
 		return err
+	}
+
+	// Migration: check if postponed_until column exists, if not add it
+	if _, errCol := DB.Exec("SELECT postponed_until FROM tasks LIMIT 0"); errCol != nil {
+		_, _ = DB.Exec("ALTER TABLE tasks ADD COLUMN postponed_until TEXT DEFAULT NULL")
 	}
 
 	return nil

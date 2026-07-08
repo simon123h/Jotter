@@ -9,6 +9,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const state = reactive<AppSettings>({
     hideDoneColumn: true,
     hideArchiveColumn: true,
+    hidePostponedColumn: true,
     isSidebarOpen: true,
     currentTheme: 'nordic-light',
     thresholdDays: 7,
@@ -37,6 +38,7 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!state.language) state.language = '';
       if (!state.tagColors) state.tagColors = {};
       if (state.autoSyncInterval === undefined) state.autoSyncInterval = 0;
+      if (state.hidePostponedColumn === undefined) state.hidePostponedColumn = true;
 
       await nextTick();
       skipSave = false;

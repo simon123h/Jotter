@@ -19,6 +19,7 @@ export interface Task {
   planned_date?: string;
   priority?: string;
   color?: string | null;
+  postponed_until?: string;
   created_at: string;
   updated_at: string;
 }
@@ -64,6 +65,7 @@ export interface TaskQuery {
 export interface AppSettings {
   hideDoneColumn: boolean;
   hideArchiveColumn: boolean;
+  hidePostponedColumn: boolean;
   isSidebarOpen: boolean;
   currentTheme: string;
   thresholdDays: number;

@@ -423,6 +423,7 @@ const DEMO_SETTINGS_KEY = 'jotter-demo-settings';
 const DEFAULT_DEMO_SETTINGS: AppSettings = {
   hideDoneColumn: true,
   hideArchiveColumn: true,
+  hidePostponedColumn: true,
   isSidebarOpen: true,
   currentTheme: 'nordic-light',
   thresholdDays: 7,

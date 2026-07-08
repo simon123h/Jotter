@@ -221,21 +221,22 @@ func (s *systemService) SyncDBOnly(ctx context.Context, tasksDir string) (int, e
 				}
 
 				tasks = append(tasks, TaskSyncInfo{
-					ID:          idVal,
-					ProjectID:   pID,
-					Title:       fm.Title,
-					Bucket:      fm.Bucket,
-					Position:    fm.Position,
-					Tags:        fm.Tags,
-					Attachments: fm.Attachments,
-					Filename:    f.Name(),
-					Body:        body,
-					DueDate:     fm.DueDate,
-					PlannedDate: fm.PlannedDate,
-					Priority:    fm.Priority,
-					Color:       fm.Color,
-					CreatedAt:   fm.CreatedAt,
-					UpdatedAt:   fm.UpdatedAt,
+					ID:             idVal,
+					ProjectID:      pID,
+					Title:          fm.Title,
+					Bucket:         fm.Bucket,
+					Position:       fm.Position,
+					Tags:           fm.Tags,
+					Attachments:    fm.Attachments,
+					Filename:       f.Name(),
+					Body:           body,
+					DueDate:        fm.DueDate,
+					PlannedDate:    fm.PlannedDate,
+					Priority:       fm.Priority,
+					Color:          fm.Color,
+					PostponedUntil: fm.PostponedUntil,
+					CreatedAt:      fm.CreatedAt,
+					UpdatedAt:      fm.UpdatedAt,
 				})
 			}
 		}
