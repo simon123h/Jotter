@@ -66,7 +66,10 @@ const tasksByBucket = computed(() => {
   });
 
   const todayStr = new Date().toISOString().split('T')[0];
-  console.log('BoardView tasks to group:', props.tasks.map(t => ({ title: t.title, bucket: t.bucket, postponed_until: t.postponed_until })));
+  console.log(
+    'BoardView tasks to group:',
+    props.tasks.map((t) => ({ title: t.title, bucket: t.bucket, postponed_until: t.postponed_until }))
+  );
   props.tasks.forEach((task) => {
     const isPostponed = !!(task.postponed_until && task.postponed_until > todayStr);
     console.log(`Task "${task.title}": postponed_until=${task.postponed_until}, todayStr=${todayStr}, isPostponed=${isPostponed}`);

@@ -296,7 +296,7 @@ export async function getTasks(projectId: string, filters?: TaskFilterParams): P
         .filter(Boolean);
       if (bucketList.length) {
         list = list.filter((t) => {
-          const mappedBucket = (t.postponed_until && t.postponed_until > todayStr) ? 'postponed' : t.bucket;
+          const mappedBucket = t.postponed_until && t.postponed_until > todayStr ? 'postponed' : t.bucket;
           return bucketList.includes(mappedBucket.toLowerCase());
         });
       }
@@ -429,7 +429,7 @@ export async function updateTask(projectId: string, id: string, task: Partial<Ta
   const idx = list.findIndex((t) => t.id === id);
   if (idx !== -1) {
     const now = new Date().toISOString();
-    const updatedBucket = task.bucket === 'postponed' ? list[idx].bucket : (task.bucket || list[idx].bucket);
+    const updatedBucket = task.bucket === 'postponed' ? list[idx].bucket : task.bucket || list[idx].bucket;
     let postponedUntil = task.postponed_until;
     if (task.bucket === 'postponed') {
       if (postponedUntil === undefined || postponedUntil === '') {
