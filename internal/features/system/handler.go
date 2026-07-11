@@ -26,6 +26,7 @@ func RegisterRoutes(r chi.Router, tasksDir string, version string) {
 	h := &Handler{svc: svc, tasksDir: tasksDir, version: version}
 
 	r.Post("/system/sync", h.Sync)
+	r.Get("/system/sync", h.Sync)
 	r.Get("/system/info", h.GetInfo)
 	r.Get("/system/history", h.GetHistory)
 	r.Post("/system/restore", h.Restore)

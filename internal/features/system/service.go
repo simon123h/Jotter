@@ -98,6 +98,20 @@ func (s *systemService) Sync(ctx context.Context, tasksDir string) (int, error) 
 	return s.SyncDBOnly(ctx, tasksDir)
 }
 
+type taskFileToRead struct {
+	pID             string
+	projectDir      string
+	f               os.DirEntry
+	doneCleanPeriod int64
+}
+
+type parseResult struct {
+	taskInfo        *TaskSyncInfo
+	pruned          bool
+	filePath        string
+	attachmentsPath string
+}
+
 func (s *systemService) SyncDBOnly(ctx context.Context, tasksDir string) (int, error) {
 	// 1. Load Projects registry
 	projectsData, err := s.fileRepo.LoadProjectsFile(tasksDir)
@@ -112,7 +126,7 @@ func (s *systemService) SyncDBOnly(ctx context.Context, tasksDir string) (int, e
 	}
 
 	var buckets []BucketSyncInfo
-	var tasks []TaskSyncInfo
+	var filesToProcess []taskFileToRead
 
 	for _, entry := range entries {
 		if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
@@ -163,7 +177,7 @@ func (s *systemService) SyncDBOnly(ctx context.Context, tasksDir string) (int, e
 			}
 		}
 
-		// 2. Load Tasks
+		// 2. Load Tasks metadata to process concurrently
 		files, err := s.fileRepo.ReadDir(projectDir)
 		if err != nil {
 			continue
@@ -191,44 +205,70 @@ func (s *systemService) SyncDBOnly(ctx context.Context, tasksDir string) (int, e
 			if f.IsDir() || !strings.HasSuffix(f.Name(), ".md") {
 				continue
 			}
+			filesToProcess = append(filesToProcess, taskFileToRead{
+				pID:             pID,
+				projectDir:      projectDir,
+				f:               f,
+				doneCleanPeriod: doneCleanPeriod,
+			})
+		}
+	}
 
-			filePath := filepath.Join(projectDir, f.Name())
+	numFiles := len(filesToProcess)
+	resultsChan := make(chan parseResult, numFiles)
+	sem := make(chan struct{}, 32) // Limit to 32 concurrent file readers
+
+	for _, fileInfo := range filesToProcess {
+		go func(info taskFileToRead) {
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			filePath := filepath.Join(info.projectDir, info.f.Name())
 			fileContent, errRead := s.fileRepo.ReadFile(filePath)
 			if errRead != nil {
-				continue
+				resultsChan <- parseResult{}
+				return
 			}
 
 			fm, body, errParse := task.ParseFrontmatter(string(fileContent))
-			if errParse == nil {
-				taskID := strings.TrimSuffix(f.Name(), ".md")
+			if errParse != nil {
+				resultsChan <- parseResult{}
+				return
+			}
 
-				// --- Done Task Auto-Pruning ---
-				if doneCleanPeriod > 0 && fm.Bucket == "done" {
-					updatedAt, errTime := time.Parse(time.RFC3339Nano, fm.UpdatedAt)
-					if errTime == nil {
-						ageDays := int64(time.Since(updatedAt).Hours() / 24)
-						if ageDays >= doneCleanPeriod {
-							_ = s.fileRepo.RemoveFile(filePath)
-							_ = s.fileRepo.RemoveDirAll(filepath.Join(projectDir, taskID+".attachments"))
-							continue
+			taskID := strings.TrimSuffix(info.f.Name(), ".md")
+
+			// --- Done Task Auto-Pruning ---
+			if info.doneCleanPeriod > 0 && fm.Bucket == "done" {
+				updatedAt, errTime := time.Parse(time.RFC3339Nano, fm.UpdatedAt)
+				if errTime == nil {
+					ageDays := int64(time.Since(updatedAt).Hours() / 24)
+					if ageDays >= info.doneCleanPeriod {
+						resultsChan <- parseResult{
+							pruned:          true,
+							filePath:        filePath,
+							attachmentsPath: filepath.Join(info.projectDir, taskID+".attachments"),
 						}
+						return
 					}
 				}
+			}
 
-				idVal := fm.ID
-				if idVal == "" {
-					idVal = taskID
-				}
+			idVal := fm.ID
+			if idVal == "" {
+				idVal = taskID
+			}
 
-				tasks = append(tasks, TaskSyncInfo{
+			resultsChan <- parseResult{
+				taskInfo: &TaskSyncInfo{
 					ID:             idVal,
-					ProjectID:      pID,
+					ProjectID:      info.pID,
 					Title:          fm.Title,
 					Bucket:         fm.Bucket,
 					Position:       fm.Position,
 					Tags:           fm.Tags,
 					Attachments:    fm.Attachments,
-					Filename:       f.Name(),
+					Filename:       info.f.Name(),
 					Body:           body,
 					DueDate:        fm.DueDate,
 					PlannedDate:    fm.PlannedDate,
@@ -237,8 +277,19 @@ func (s *systemService) SyncDBOnly(ctx context.Context, tasksDir string) (int, e
 					PostponedUntil: fm.PostponedUntil,
 					CreatedAt:      fm.CreatedAt,
 					UpdatedAt:      fm.UpdatedAt,
-				})
+				},
 			}
+		}(fileInfo)
+	}
+
+	var tasks []TaskSyncInfo
+	for i := 0; i < numFiles; i++ {
+		res := <-resultsChan
+		if res.pruned {
+			_ = s.fileRepo.RemoveFile(res.filePath)
+			_ = s.fileRepo.RemoveDirAll(res.attachmentsPath)
+		} else if res.taskInfo != nil {
+			tasks = append(tasks, *res.taskInfo)
 		}
 	}
 

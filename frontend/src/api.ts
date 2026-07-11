@@ -359,9 +359,7 @@ export async function syncSystem(): Promise<{ status: string; synchronized_tasks
   if (IS_DEMO_MODE) {
     return demoApi.syncSystem();
   }
-  const response = await customFetch(`${API_BASE}/system/sync`, {
-    method: 'POST',
-  });
+  const response = await customFetch(`${API_BASE}/system/sync`);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Failed to synchronize: ${response.statusText}`);
