@@ -5,11 +5,16 @@ package app
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
+	goRuntime "runtime"
 	"strings"
+	"time"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
@@ -18,6 +23,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"jotter/backend/internal/features/settings"
+	"jotter/backend/internal/features/system"
 )
 
 type DesktopApp struct {
@@ -48,6 +54,7 @@ func IsWailsProbing() bool {
 	}
 	for _, arg := range os.Args {
 		if strings.Contains(arg, "generate") ||
+			strings.Contains(arg, "wails") ||
 			strings.HasPrefix(arg, "-ts") ||
 			arg == "-v" || arg == "-h" || arg == "--help" {
 			return true
@@ -63,6 +70,11 @@ func RunWailsProbing() {
 }
 
 func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
+	if checkAndFocusExisting(cfg.Addr, cfg.DataDir) {
+		log.Printf("Jotter is already running on port %s for directory %s. Existing instance focused. Exiting...", cfg.Addr, cfg.DataDir)
+		return
+	}
+
 	Bootstrap(cfg.ConfigPath, cfg.DataDir, cfg.DBPath)
 
 	// Load settings for window state
@@ -89,6 +101,19 @@ func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
 	assetsSub, _ := fs.Sub(assets, "frontend/dist")
 
 	app := NewDesktopApp(cfg)
+	system.OnFocusCallback = func() {
+		if app.ctx != nil {
+			if runtime.WindowIsMinimised(app.ctx) {
+				runtime.WindowUnminimise(app.ctx)
+			}
+			runtime.WindowShow(app.ctx)
+			runtime.WindowSetAlwaysOnTop(app.ctx, true)
+			go func() {
+				time.Sleep(50 * time.Millisecond)
+				runtime.WindowSetAlwaysOnTop(app.ctx, false)
+			}()
+		}
+	}
 
 	var wailsLogLevel logger.LogLevel
 	switch strings.ToUpper(cfg.LogLevel) {
@@ -154,4 +179,75 @@ func RunDesktop(cfg *AppConfig, assets embed.FS, icon []byte) {
 	if err != nil {
 		log.Fatalf("Wails launch failed: %v", err)
 	}
+}
+
+func checkAndFocusExisting(addr string, dataDir string) bool {
+	host := addr
+	if strings.HasPrefix(host, ":") {
+		host = "127.0.0.1" + host
+	}
+	baseURL := host
+	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
+		baseURL = "http://" + baseURL
+	}
+
+	client := http.Client{
+		Timeout: 500 * time.Millisecond,
+	}
+
+	resp, err := client.Get(baseURL + "/api/system/info")
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return false
+	}
+
+	var info struct {
+		Version string `json:"version"`
+		DataDir string `json:"data_dir"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return false
+	}
+
+	// Clean paths to ensure accurate comparison
+	cleanExisting := filepath.Clean(info.DataDir)
+	cleanCurrent := filepath.Clean(dataDir)
+
+	if cleanExisting != cleanCurrent {
+		return false
+	}
+
+	// Try switching workspace using wmctrl on Linux/X11 if available
+	if isLinuxX11() && hasWmctrl() {
+		log.Printf("Linux X11 with wmctrl detected. Switching workspace...")
+		_ = runWmctrlFocus()
+	}
+
+	// Always trigger the HTTP post focus endpoint to unminimize/show/raise the window
+	focusResp, err := client.Post(baseURL+"/api/system/focus", "application/json", nil)
+	if err == nil {
+		focusResp.Body.Close()
+		return true
+	}
+
+	return false
+}
+
+func isLinuxX11() bool {
+	return goRuntime.GOOS == "linux" && os.Getenv("DISPLAY") != ""
+}
+
+func hasWmctrl() bool {
+	_, err := exec.LookPath("wmctrl")
+	return err == nil
+}
+
+func runWmctrlFocus() bool {
+	cmd := exec.Command("wmctrl", "-a", "Jotter")
+	err := cmd.Run()
+	return err == nil
 }

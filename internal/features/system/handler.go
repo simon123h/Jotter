@@ -18,6 +18,8 @@ type Handler struct {
 	version  string
 }
 
+var OnFocusCallback func()
+
 func RegisterRoutes(r chi.Router, tasksDir string, version string) {
 	dbRepo := NewSQLRepository(db.DB)
 	fileRepo := NewFileRepository()
@@ -30,6 +32,7 @@ func RegisterRoutes(r chi.Router, tasksDir string, version string) {
 	r.Get("/system/info", h.GetInfo)
 	r.Get("/system/history", h.GetHistory)
 	r.Post("/system/restore", h.Restore)
+	r.Post("/system/focus", h.Focus)
 }
 
 // Sync godoc
@@ -126,5 +129,21 @@ func (h *Handler) Restore(w http.ResponseWriter, r *http.Request) {
 	common.SendJSON(w, http.StatusOK, map[string]interface{}{
 		"status":             "success",
 		"synchronized_tasks": count,
+	})
+}
+
+// Focus godoc
+// @Summary      Focus the application window
+// @Description  Request the desktop app to bring its window to the front.
+// @Tags         system
+// @Produce      json
+// @Success      200  {object}  map[string]string
+// @Router       /system/focus [post]
+func (h *Handler) Focus(w http.ResponseWriter, r *http.Request) {
+	if OnFocusCallback != nil {
+		OnFocusCallback()
+	}
+	common.SendJSON(w, http.StatusOK, map[string]string{
+		"status": "focused",
 	})
 }
