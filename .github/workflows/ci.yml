@@ -12,19 +12,11 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build-and-test:
+  lint-and-format:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.25.0'
-          cache: true
-          cache-dependency-path: 'go.sum'
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -55,13 +47,89 @@ jobs:
           touch frontend/dist/hello.txt
           npm run lint
 
-      - name: Build Frontend
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.0'
+          cache: true
+          cache-dependency-path: 'go.sum'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Cache Node Modules
+        uses: actions/cache@v5
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install All Dependencies
         run: |
-          cd frontend && npm run build
+          npm run install:all
 
       - name: Run Tests and Generate Combined Coverage
         run: |
           npm run test:coverage
+
+      - name: Upload Backend Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.out
+          flags: backend
+          fail_ci_if_error: false
+
+      - name: Upload Frontend Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: frontend/coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: false
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.0'
+          cache: true
+          cache-dependency-path: 'go.sum'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Cache Node Modules
+        uses: actions/cache@v5
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install All Dependencies
+        run: |
+          npm run install:all
 
       - name: Cache Playwright Binaries
         uses: actions/cache@v5
@@ -86,6 +154,42 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report/
           retention-days: 15
+
+  build-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.0'
+          cache: true
+          cache-dependency-path: 'go.sum'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Cache Node Modules
+        uses: actions/cache@v5
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install All Dependencies
+        run: |
+          npm run install:all
+
+      - name: Build Frontend
+        run: |
+          cd frontend && npm run build
 
       - name: Verify Binary Compilation
         run: |
@@ -118,19 +222,3 @@ jobs:
 
           # Verify desktop binary (using wails tags)
           go build -v -tags wails -o /dev/null main_desktop.go shared_assets.go
-
-      - name: Upload Backend Coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.out
-          flags: backend
-          fail_ci_if_error: false
-
-      - name: Upload Frontend Coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: frontend/coverage/lcov.info
-          flags: frontend
-          fail_ci_if_error: false
