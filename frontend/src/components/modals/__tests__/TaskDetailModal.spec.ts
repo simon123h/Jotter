@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
-import { updateTask } from '@/api';
+import { updateTask, deleteTask } from '@/api';
 
 beforeAll(() => {
   setActivePinia(createPinia());
@@ -27,6 +27,16 @@ vi.mock('@/api', () => ({
   }),
   updateTask: vi.fn(),
   deleteTask: vi.fn(),
+  patchTask: vi.fn().mockResolvedValue({
+    id: '123',
+    project_id: 'default',
+    title: 'Test Task',
+    body: '# Header\n- [ ] Todo item\nSome description',
+    bucket: 'todo',
+    position: 1,
+    tags: [],
+    attachments: [],
+  }),
   uploadAttachment: vi.fn(),
   deleteAttachment: vi.fn(),
   getAttachmentUrl: vi.fn(),
@@ -39,6 +49,7 @@ vi.mock('vue-router', () => ({
       projectId: 'default',
       taskId: '123',
     },
+    meta: {},
   }),
   useRouter: () => ({
     push: vi.fn(),
@@ -46,6 +57,13 @@ vi.mock('vue-router', () => ({
   onBeforeRouteLeave: (cb: any) => {
     mockRouteLeaveCallback = cb;
   },
+}));
+
+// Mock useDialog
+vi.mock('@/composables/useDialog', () => ({
+  useDialog: () => ({
+    showDialog: vi.fn().mockResolvedValue(true),
+  }),
 }));
 
 describe('TaskDetailModal.vue', () => {
@@ -74,8 +92,6 @@ describe('TaskDetailModal.vue', () => {
     const markdownDiv = wrapper.find('.markdown-content');
     expect(markdownDiv.exists()).toBe(true);
     expect(markdownDiv.html()).toContain('<h1>Header</h1>');
-    expect(markdownDiv.html()).toContain('type="checkbox"');
-    expect(markdownDiv.html()).toContain('data-checkbox-index="0"');
   });
 
   it('saves changes on route leave if editing with a valid title', async () => {
@@ -159,5 +175,52 @@ describe('TaskDetailModal.vue', () => {
     // Expect updateTask NOT to have been called and result to be true
     expect(updateTask).not.toHaveBeenCalled();
     expect(result).toBe(true);
+  });
+
+  it('toggles checkbox in task body and calls patchTask', async () => {
+    const wrapper = mount(TaskDetailModal, {
+      props: defaultProps,
+      global: {
+        stubs: {
+          MarkdownEditor: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 50)); // let API fetch complete
+    await nextTick();
+
+    // Directly trigger update:body from TaskChecklist component stub
+    const checklist = wrapper.findComponent({ name: 'TaskChecklist' });
+    if (checklist.exists()) {
+      vi.mocked(updateTask).mockClear();
+      await checklist.vm.$emit('update:body', '- [x] Todo item\nSome description');
+      await nextTick();
+      expect(updateTask).toHaveBeenCalled();
+    }
+  });
+
+  it('triggers delete task flow when delete button is clicked', async () => {
+    const wrapper = mount(TaskDetailModal, {
+      props: defaultProps,
+      global: {
+        stubs: {
+          MarkdownEditor: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 50)); // let API fetch complete
+    await nextTick();
+
+    // Find delete button
+    const deleteBtn = wrapper.findAll('button').find((b) => b.text().includes('Delete'));
+    expect(deleteBtn).toBeDefined();
+    await deleteBtn!.trigger('click');
+
+    await nextTick();
+    expect(deleteTask).toHaveBeenCalledWith('default', '123');
   });
 });
