@@ -67,10 +67,20 @@ const targetRoute = computed(() => {
 // Checklist statistics
 const checklistStats = computed(() => {
   if (!props.task.body) return null;
-  const matches = props.task.body.match(/- \[[ xX]\]/g);
-  if (!matches) return null;
-  const total = matches.length;
-  const checked = (props.task.body.match(/- \[[xX]\]/g) || []).length;
+  const normalizedBody = props.task.body.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalizedBody.split('\n');
+  let total = 0;
+  let checked = 0;
+  for (const line of lines) {
+    const checklistMatch = line.match(/^(\s*)[-*+]\s+\[([ xX])\]\s*(.*)$/);
+    if (checklistMatch) {
+      total++;
+      if (checklistMatch[2].toLowerCase() === 'x') {
+        checked++;
+      }
+    }
+  }
+  if (total === 0) return null;
   return { checked, total };
 });
 
@@ -83,7 +93,8 @@ interface RenderedChecklistItem {
 
 const renderedChecklist = computed<RenderedChecklistItem[]>(() => {
   if (!props.task.body) return [];
-  const lines = props.task.body.split('\n');
+  const normalizedBody = props.task.body.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalizedBody.split('\n');
   const items: RenderedChecklistItem[] = [];
   let globalIndex = 0;
 
