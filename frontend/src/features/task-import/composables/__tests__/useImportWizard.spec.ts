@@ -215,7 +215,7 @@ describe('useImportWizard Composable', () => {
     const wizard = useImportWizard('test-project');
     const { useProjectStore } = await import('@/stores/project');
     const store = useProjectStore();
-    store.buckets = [{ name: 'todo', title: 'To Do' }];
+    store.buckets = [{ name: 'todo', title: 'To Do' }] as any;
     store.tasks = [];
 
     // Stub store methods

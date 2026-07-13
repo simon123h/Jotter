@@ -28,13 +28,13 @@ describe('TagInput.vue', () => {
     store.tasks = [
       { id: '1', title: 'Task 1', tags: ['frontend', 'bug'] },
       { id: '2', title: 'Task 2', tags: ['backend', 'feature'] },
-    ];
+    ] as any;
 
     const wrapper = mount(TagInput, {
       props: {
         modelValue: 'bug, ',
       },
-    });
+    }) as any;
 
     // Existing tags should be populated
     expect(wrapper.vm.existingTags).toEqual(['backend', 'bug', 'feature', 'frontend']);
@@ -53,7 +53,7 @@ describe('TagInput.vue', () => {
         modelValue: 'bug, f',
         suggestionsOverride: ['frontend', 'feature', 'docs'],
       },
-    });
+    }) as any;
 
     const input = wrapper.find('input');
     await input.trigger('focus');
@@ -73,7 +73,7 @@ describe('TagInput.vue', () => {
         modelValue: 'bug, f',
         suggestionsOverride: ['frontend', 'feature'],
       },
-    });
+    }) as any;
 
     const input = wrapper.find('input');
     await input.trigger('focus');
@@ -100,7 +100,7 @@ describe('TagInput.vue', () => {
         modelValue: 'bug, f',
         suggestionsOverride: ['frontend', 'feature'],
       },
-    });
+    }) as any;
 
     const input = wrapper.find('input');
     await input.trigger('focus');
@@ -142,7 +142,7 @@ describe('TagInput.vue', () => {
       props: {
         modelValue: 'bug',
       },
-    });
+    }) as any;
 
     const input = wrapper.find('input');
     await input.trigger('focus');
@@ -156,7 +156,7 @@ describe('TagInput.vue', () => {
   it('exposes focus method', () => {
     const wrapper = mount(TagInput, {
       props: { modelValue: '' },
-    });
+    }) as any;
     expect(typeof wrapper.vm.focus).toBe('function');
   });
 });
