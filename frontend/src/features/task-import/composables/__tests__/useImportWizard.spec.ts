@@ -178,4 +178,71 @@ describe('useImportWizard Composable', () => {
     const info7 = wizard.getDestinationBucketInfo(row7);
     expect(info7.bucketName).toBe('in-progress');
   });
+
+  it('detects header mappings automatically', () => {
+    const wizard = useImportWizard('test-project');
+
+    wizard.excelHeaders.value = ['Aufgabenname', 'Beschreibung', 'Eimer', 'Priorität', 'Deadline', 'Tags', 'Checklist'];
+
+    wizard.autoDetectMappings();
+
+    expect(wizard.mappings.value.title).toBe('Aufgabenname');
+    expect(wizard.mappings.value.description).toBe('Beschreibung');
+    expect(wizard.mappings.value.bucket).toBe('Eimer');
+    expect(wizard.mappings.value.priority).toBe('Priorität');
+    expect(wizard.mappings.value.dueDate).toBe('Deadline');
+    expect(wizard.mappings.value.labels).toBe('Tags');
+    expect(wizard.mappings.value.checklist).toBe('Checklist');
+  });
+
+  it('validates required title before proceeding to preview', () => {
+    const wizard = useImportWizard('test-project');
+
+    // Missing title mapping
+    wizard.mappings.value.title = '';
+    wizard.nextToPreview();
+    expect(wizard.fileError.value).toContain('required');
+    expect(wizard.currentStep.value).toBe(1);
+
+    // Title mapped
+    wizard.mappings.value.title = 'Title Col';
+    wizard.nextToPreview();
+    expect(wizard.fileError.value).toBeNull();
+    expect(wizard.currentStep.value).toBe(3);
+  });
+
+  it('runs the import process successfully', async () => {
+    const wizard = useImportWizard('test-project');
+    const { useProjectStore } = await import('@/stores/project');
+    const store = useProjectStore();
+    store.buckets = [{ name: 'todo', title: 'To Do' }];
+    store.tasks = [];
+
+    // Stub store methods
+    store.invalidate = vi.fn().mockResolvedValue(undefined);
+    store.fetchBuckets = vi.fn().mockResolvedValue(undefined);
+
+    wizard.excelRows.value = [
+      {
+        'Task Name': 'Task A',
+        'Bucket Col': 'todo',
+        'Priority Col': 'High',
+        'Label Col': 'bug',
+      },
+    ];
+    wizard.mappings.value.title = 'Task Name';
+    wizard.mappings.value.bucket = 'Bucket Col';
+    wizard.mappings.value.priority = 'Priority Col';
+    wizard.mappings.value.labels = 'Label Col';
+
+    wizard.selectedRows.value.add(0);
+
+    const successCallback = vi.fn();
+    await wizard.runImport(successCallback);
+
+    expect(wizard.importSummary.value.success).toBe(1);
+    expect(wizard.importSummary.value.failed).toBe(0);
+    expect(wizard.currentStep.value).toBe(5);
+    expect(successCallback).toHaveBeenCalled();
+  });
 });
