@@ -376,3 +376,37 @@ func TestGetCurrentBranchFromConfig(t *testing.T) {
 		}
 	})
 }
+
+func TestGitSyncOfflineHandling(t *testing.T) {
+	t.Run("Offline Network Remote Error Handling", func(t *testing.T) {
+		tempDir, _ := os.MkdirTemp("", "git-offline-test-*")
+		defer os.RemoveAll(tempDir)
+
+		ctx := context.Background()
+		_ = runGit(ctx, tempDir, "init")
+		_ = runGit(ctx, tempDir, "checkout", "-b", "main")
+
+		// Configure a remote URL pointing to a non-existent network drive path
+		nonExistentPath := "/nonexistent/network/drive/path/to/repo"
+		_ = runGit(ctx, tempDir, "remote", "add", "origin", nonExistentPath)
+
+		// Set committer credentials to commit locally
+		t.Setenv("GIT_AUTHOR_NAME", "Test User")
+		t.Setenv("GIT_AUTHOR_EMAIL", "test@example.com")
+		t.Setenv("GIT_COMMITTER_NAME", "Test User")
+		t.Setenv("GIT_COMMITTER_EMAIL", "test@example.com")
+		_ = runGit(ctx, tempDir, "config", "user.email", "test@example.com")
+		_ = runGit(ctx, tempDir, "config", "user.name", "Test User")
+
+		// Create a local changes commit
+		_ = os.WriteFile(filepath.Join(tempDir, "local_change.md"), []byte("data"), 0644)
+
+		// Trigger GitSync with the non-existent remote URL
+		err := GitSync(tempDir, nonExistentPath)
+
+		// GitSync should catch the offline error gracefully and return nil!
+		if err != nil {
+			t.Errorf("Expected GitSync to return nil on unreachable/offline network remote error, but got: %v", err)
+		}
+	})
+}

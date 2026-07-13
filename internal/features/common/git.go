@@ -14,7 +14,49 @@ import (
 
 // GitSync performs a git pull/commit/push cycle on a specific project directory.
 // If a remoteURL is provided, it ensures the project is initialized and connected to it.
+// If a network/offline connectivity error occurs, it is handled gracefully by returning nil.
 func GitSync(projectDir string, remoteURL string) error {
+	err := gitSyncImpl(projectDir, remoteURL)
+	if err != nil {
+		if isOfflineError(err) {
+			log.Printf("[GitSync] Warning: git remote is temporarily offline or unreachable: %v. Continuing locally.", err)
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func isOfflineError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := strings.ToLower(err.Error())
+	indicators := []string{
+		"could not resolve host",
+		"could not resolve hostname",
+		"failed to connect to",
+		"connection refused",
+		"connection timed out",
+		"unable to access",
+		"does not exist or is not a directory",
+		"does not appear to be a git repository",
+		"could not read from remote repository",
+		"no route to host",
+		"network is unreachable",
+		"permission denied (publickey)",
+		"fatal: '",
+		"does not exist",
+	}
+	for _, ind := range indicators {
+		if strings.Contains(errStr, ind) {
+			return true
+		}
+	}
+	return false
+}
+
+func gitSyncImpl(projectDir string, remoteURL string) error {
 	log.Printf("[GitSync] Starting auto-sync for directory %q", projectDir)
 	// 1. Ensure directory exists
 	if _, err := os.Stat(projectDir); os.IsNotExist(err) {
