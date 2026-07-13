@@ -103,7 +103,7 @@ const welcomeParts = computed(() => {
               v-for="project in sortedProjects"
               :key="project.id"
               @click="selectProject(project.id)"
-              class="group relative bg-theme-card hover:bg-theme-column/20 border border-theme-border/60 hover:border-theme-primary/40 rounded-xl p-4.5 cursor-pointer shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between h-36 overflow-hidden"
+              class="group relative bg-theme-card hover:bg-theme-column/20 border border-theme-border/60 hover:border-theme-primary/40 rounded-xl p-4.5 cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md flex flex-col justify-between h-36 overflow-hidden"
             >
               <!-- Highlight background on hover -->
               <div
