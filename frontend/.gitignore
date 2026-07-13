@@ -23,8 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
-# Coverage
+# Coverage & tests
 coverage/
+playwright-report
+test-results
+tests/e2e/temp_data
 
 # Wails bindings
 src/wailsjs/
