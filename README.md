@@ -5,6 +5,7 @@
   <img src="https://codecov.io/gh/simon123h/jotter/branch/main/graph/badge.svg" alt="Coverage">
   <img src="https://img.shields.io/badge/Go-v1.25-00ADD8?logo=go&logoColor=white" alt="Go Version">
   <img src="https://img.shields.io/badge/Vue.js-v3.5+-4FC08D?logo=vue.js&logoColor=white" alt="Vue Version">
+  <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2Fsimon123h%2Fjotter%2Flines" alt="Lines of Code">
   <img src="https://badgen.net/github/release/simon123h/jotter?color=orange" alt="Latest Release">
   <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License">
 </p>
