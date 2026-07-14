@@ -22,11 +22,11 @@
     "@tailwindcss/vite": "^4.3.2",
     "codemirror": "^6.0.2",
     "marked": "^18.0.6",
-    "pinia": "^3.0.4",
+    "pinia": "^4.0.0",
     "sortablejs": "^1.15.7",
     "tailwindcss": "^4.3.0",
     "vue": "^3.5.39",
-    "vue-router": "^4.6.4",
+    "vue-router": "^5.1.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz"
   },
   "devDependencies": {
@@ -51,5 +51,10 @@
     "vitest": "^4.1.10",
     "vue-tsc": "^3.3.7",
     "wait-on": "^9.0.10"
+  },
+  "overrides": {
+    "vue-router": {
+      "pinia": "^4.0.0"
+    }
   }
 }
