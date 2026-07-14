@@ -67,7 +67,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
 
 <template>
   <header class="flex items-center justify-between gap-3 border-b border-theme-border px-4 py-3 shrink-0 bg-theme-card z-[110]">
-    <div class="flex items-center gap-2.5 overflow-hidden mr-2 shrink-0">
+    <div class="flex items-center gap-2.5 overflow-hidden mr-2 min-w-0">
       <!-- Hamburger Menu Button -->
       <button
         @click="emit('toggle-sidebar')"
@@ -87,7 +87,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
     </div>
 
     <!-- Search (Flex-grow to fill remaining space) -->
-    <div v-if="activeProjectId" class="flex-grow mx-3 relative min-w-[120px] sm:min-w-[200px] md:min-w-[280px]">
+    <div v-if="activeProjectId" class="flex-grow mx-3 relative min-w-[100px] sm:min-w-[180px] lg:min-w-[280px]">
       <input
         ref="searchInput"
         :value="modelValue"
@@ -115,7 +115,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         :title="t('filterModal.buttonTooltip')"
       >
         <SlidersHorizontal class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
-        <span class="hidden md:inline">
+        <span class="hidden lg:inline">
           {{ t('filterModal.title') }}
         </span>
         <span
@@ -127,7 +127,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
       </button>
 
       <!-- View Mode Toggle -->
-      <div class="hidden md:flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
+      <div class="hidden lg:flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
         <router-link
           :to="{ name: 'board', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
@@ -215,8 +215,8 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
           v-if="showOverflowMenu"
           class="absolute right-0 mt-1 w-48 bg-theme-base border border-theme-border rounded shadow-lg z-[120] py-1 text-xs"
         >
-          <!-- Views Section (only visible on mobile/small screens < md) -->
-          <div class="md:hidden">
+          <!-- Views Section (only visible on mobile/small screens < lg) -->
+          <div class="lg:hidden">
             <div class="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-theme-text-muted border-b border-theme-border/50 mb-1">
               {{ t('overflowMenu.views') || 'Views' }}
             </div>
@@ -304,7 +304,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         :title="t('shortcuts.createTask')"
       >
         <Plus class="w-3.5 h-3.5 shrink-0" />
-        <span class="hidden sm:inline">{{ t('addTaskButton') }}</span>
+        <span class="hidden lg:inline">{{ t('addTaskButton') }}</span>
       </button>
     </div>
   </header>
