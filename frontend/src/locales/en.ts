@@ -528,4 +528,7 @@ export const en = {
     toExcel: 'Export to Excel (.xlsx)',
     toCSV: 'Export to CSV (.csv)',
   },
+  overflowMenu: {
+    title: 'More options',
+  },
 };

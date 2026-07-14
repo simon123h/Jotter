@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus, Tag, Sparkles, Download } from '@lucide/vue';
+import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus, Tag, Sparkles, MoreVertical, FileSpreadsheet, FileText } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Project, BucketName } from '@/types';
 
@@ -41,26 +41,26 @@ const isTabActive = (tab: string) => {
   return currentMode === tab;
 };
 
-// Export Dropdown State & Click-away handling
-const showExportMenu = ref(false);
+// Overflow Menu State & Click-away handling
+const showOverflowMenu = ref(false);
 
-const closeExportMenu = (e: MouseEvent) => {
+const closeOverflowMenu = (e: MouseEvent) => {
   const el = e.target as HTMLElement;
-  if (!el.closest('.export-dropdown-container')) {
-    showExportMenu.value = false;
+  if (!el.closest('.overflow-menu-container')) {
+    showOverflowMenu.value = false;
   }
 };
 
 onMounted(() => {
-  window.addEventListener('click', closeExportMenu);
+  window.addEventListener('click', closeOverflowMenu);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('click', closeExportMenu);
+  window.removeEventListener('click', closeOverflowMenu);
 });
 
 const triggerExport = (format: 'xlsx' | 'csv') => {
-  showExportMenu.value = false;
+  showOverflowMenu.value = false;
   emit('export-tasks', format);
 };
 </script>
@@ -87,7 +87,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
     </div>
 
     <!-- Search (Flex-grow to fill remaining space) -->
-    <div v-if="activeProjectId" class="flex-grow mx-3 relative">
+    <div v-if="activeProjectId" class="flex-grow mx-3 relative min-w-[120px] sm:min-w-[200px] md:min-w-[280px]">
       <input
         ref="searchInput"
         :value="modelValue"
@@ -102,34 +102,6 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
 
     <!-- Toolbar Actions -->
     <div v-if="activeProjectId" class="flex items-center gap-2 shrink-0">
-      <!-- Export Button / Dropdown -->
-      <div class="relative shrink-0 export-dropdown-container">
-        <button
-          @click="showExportMenu = !showExportMenu"
-          class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main transition-all cursor-pointer"
-          :title="t('export.buttonTooltip') || 'Export tasks'"
-        >
-          <Download class="w-3.5 h-3.5 shrink-0" />
-          <span class="hidden md:inline">{{ t('export.buttonText') || 'Export' }}</span>
-        </button>
-        <div
-          v-if="showExportMenu"
-          class="absolute right-0 mt-1 w-44 bg-theme-base border border-theme-border rounded shadow-lg z-[120] py-1 text-xs"
-        >
-          <button
-            @click="triggerExport('xlsx')"
-            class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer"
-          >
-            {{ t('export.toExcel') || 'Export to Excel (.xlsx)' }}
-          </button>
-          <button
-            @click="triggerExport('csv')"
-            class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer"
-          >
-            {{ t('export.toCSV') || 'Export to CSV (.csv)' }}
-          </button>
-        </div>
-      </div>
 
       <!-- Advanced Filter Button -->
       <button
@@ -228,6 +200,39 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
           <Sparkles class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.triage') }}</span>
         </router-link>
+      </div>
+
+      <!-- Overflow Menu (Three dots) -->
+      <div class="relative shrink-0 overflow-menu-container">
+        <button
+          @click="showOverflowMenu = !showOverflowMenu"
+          class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 rounded transition-all cursor-pointer"
+          :title="t('overflowMenu.title') || 'More options'"
+        >
+          <MoreVertical class="w-4 h-4 shrink-0" />
+        </button>
+        <div
+          v-if="showOverflowMenu"
+          class="absolute right-0 mt-1 w-48 bg-theme-base border border-theme-border rounded shadow-lg z-[120] py-1 text-xs"
+        >
+          <div class="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-theme-text-muted border-b border-theme-border/50 mb-1">
+            {{ t('export.buttonText') || 'Export' }}
+          </div>
+          <button
+            @click="triggerExport('xlsx')"
+            class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
+          >
+            <FileSpreadsheet class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            {{ t('export.toExcel') || 'Export to Excel (.xlsx)' }}
+          </button>
+          <button
+            @click="triggerExport('csv')"
+            class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
+          >
+            <FileText class="w-3.5 h-3.5 text-blue-500 shrink-0" />
+            {{ t('export.toCSV') || 'Export to CSV (.csv)' }}
+          </button>
+        </div>
       </div>
 
       <!-- New Task Button -->
