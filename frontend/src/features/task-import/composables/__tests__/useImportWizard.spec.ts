@@ -195,6 +195,19 @@ describe('useImportWizard Composable', () => {
     expect(wizard.mappings.value.checklist).toBe('Checklist');
   });
 
+  it('detects general and CSV keywords automatically', () => {
+    const wizard = useImportWizard('test-project');
+
+    wizard.excelHeaders.value = ['Subject', 'Text', 'Category', 'Keywords'];
+
+    wizard.autoDetectMappings();
+
+    expect(wizard.mappings.value.title).toBe('Subject');
+    expect(wizard.mappings.value.description).toBe('Text');
+    expect(wizard.mappings.value.bucket).toBe('Category');
+    expect(wizard.mappings.value.labels).toBe('Keywords');
+  });
+
   it('validates required title before proceeding to preview', () => {
     const wizard = useImportWizard('test-project');
 

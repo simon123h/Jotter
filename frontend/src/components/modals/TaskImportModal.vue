@@ -95,8 +95,8 @@ watch(
           <div class="flex items-center gap-2">
             <FileSpreadsheet class="w-5 h-5 text-emerald-500" />
             <div>
-              <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">Import from Microsoft Planner</h3>
-              <p class="text-[11px] text-theme-text-muted">Import tasks directly from exported Planner Excel sheets.</p>
+              <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider">Import Tasks from Spreadsheet</h3>
+              <p class="text-[11px] text-theme-text-muted">Import tasks directly from Excel (.xlsx, .xls) or CSV (.csv) files.</p>
             </div>
           </div>
           <button

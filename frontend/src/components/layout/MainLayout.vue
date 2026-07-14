@@ -201,7 +201,7 @@ onBeforeUnmount(() => {
           @create-project="handleCreateProject"
           @edit-project="modalStore.openProjectEdit"
           @sync="triggerSync"
-          @import-planner="modalStore.openImportPlanner"
+          @import-spreadsheet="modalStore.openImportSpreadsheet"
           @move-tasks-to-project="handleMoveTasksToProject"
         />
       </transition>
