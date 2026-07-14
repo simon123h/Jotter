@@ -69,3 +69,7 @@ frontend/tests/e2e/temp_data/
 
 # Antigravity CLI / Tooling
 .antigravitycli
+
+# Generated LOC history files
+loc_history.txt
+loc_chart.png
