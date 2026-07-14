@@ -32,7 +32,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
-    "@types/marked": "^5.0.2",
+    "@types/marked": "^6.0.0",
     "@types/node": "^24.12.3",
     "@types/sortablejs": "^1.15.9",
     "@vitejs/plugin-vue": "^6.0.6",
