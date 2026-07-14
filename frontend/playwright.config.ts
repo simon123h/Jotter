@@ -12,7 +12,7 @@ export default defineConfig({
     ['html', { open: 'never' }]
   ],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5174',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
@@ -26,17 +26,20 @@ export default defineConfig({
   webServer: [
     {
       command: 'go run ../main_server.go ../shared_assets.go',
-      port: 58271,
+      port: 58273,
       reuseExistingServer: !process.env.CI,
       env: {
-        JOTTER_PORT: '58271',
+        JOTTER_PORT: '58273',
         JOTTER_DATA_DIR: path.resolve('./tests/e2e/temp_data'),
       },
     },
     {
-      command: 'npm run dev',
-      port: 5173,
+      command: 'npm run dev -- --port 5174',
+      port: 5174,
       reuseExistingServer: !process.env.CI,
+      env: {
+        JOTTER_PORT: '58273',
+      },
     },
   ],
 });

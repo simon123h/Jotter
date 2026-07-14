@@ -12,7 +12,7 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': 'http://localhost:58271',
+      '/api': `http://localhost:${process.env.JOTTER_PORT || '58271'}`,
     },
   },
   resolve: {

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"jotter/backend/internal/config"
@@ -32,6 +33,13 @@ func LoadConfig() *AppConfig {
 	cfg := config.GetConfig(*configFlag)
 
 	port := *portFlag
+	if port == 0 {
+		if envPort := os.Getenv("JOTTER_PORT"); envPort != "" {
+			if p, err := strconv.Atoi(envPort); err == nil {
+				port = p
+			}
+		}
+	}
 	if port == 0 {
 		port = cfg.Port
 	}
