@@ -61,7 +61,7 @@ jobs:
           cp -R frontend/dist/. dist-pages/demo/
 
       - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist-pages
 
