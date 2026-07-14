@@ -26,15 +26,15 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
 
       - name: Cache Node Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             node_modules
@@ -61,11 +61,11 @@ jobs:
           cp -R frontend/dist/. dist-pages/demo/
 
       - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist-pages
 
       - name: Deploy to GitHub Pages
           # Identical deployment step
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

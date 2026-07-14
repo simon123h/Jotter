@@ -22,10 +22,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
 
@@ -37,7 +37,7 @@ jobs:
           cache-dependency-path: 'go.sum'
 
       - name: Cache Node Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             node_modules
@@ -151,7 +151,7 @@ jobs:
           Compress-Archive -Path jotter-server.exe, jotter-desktop.exe, README.md, LICENSE.md, jotter.yaml.example -DestinationPath jotter-${{ github.ref_name }}-windows.zip
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: jotter-binaries-${{ matrix.platform }}
           path: |
@@ -166,14 +166,14 @@ jobs:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           path: dist
           pattern: jotter-binaries-*
           merge-multiple: true
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             dist/jotter-*.tar.gz
