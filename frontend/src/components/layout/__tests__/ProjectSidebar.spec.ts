@@ -111,4 +111,12 @@ describe('ProjectSidebar.vue', () => {
     expect(moveEvents).toBeTruthy();
     expect(moveEvents?.[0]).toEqual([{ taskIds: ['task-1', 'task-2'], projectId: '2' }]);
   });
+
+  it('emits import-spreadsheet when import button is clicked', async () => {
+    const wrapper = mount(ProjectSidebar, getMountOptions());
+    const importBtn = wrapper.findAll('button').find((b) => b.text().includes('Import'));
+    expect(importBtn).toBeDefined();
+    await importBtn!.trigger('click');
+    expect(wrapper.emitted('import-spreadsheet')).toBeTruthy();
+  });
 });

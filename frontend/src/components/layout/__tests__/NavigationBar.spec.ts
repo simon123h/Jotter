@@ -67,4 +67,57 @@ describe('NavigationBar.vue', () => {
 
     expect(blurSpy).toHaveBeenCalled();
   });
+
+  it('toggles overflow menu on click', async () => {
+    const wrapper = mount(NavigationBar, mountOptions);
+
+    expect(wrapper.find('.overflow-menu-container').exists()).toBe(true);
+    expect(wrapper.find('.overflow-menu-container .absolute').exists()).toBe(false);
+
+    const toggleBtn = wrapper.find('.overflow-menu-container button');
+    await toggleBtn.trigger('click');
+
+    expect(wrapper.find('.overflow-menu-container .absolute').exists()).toBe(true);
+  });
+
+  it('emits export-tasks with xlsx when clicking the Excel export button', async () => {
+    const wrapper = mount(NavigationBar, mountOptions);
+    const toggleBtn = wrapper.find('.overflow-menu-container button');
+    await toggleBtn.trigger('click');
+
+    const buttons = wrapper.findAll('.overflow-menu-container button');
+    const excelBtn = buttons.find((b) => b.text().includes('Excel'));
+    expect(excelBtn).toBeDefined();
+    await excelBtn!.trigger('click');
+
+    expect(wrapper.emitted('export-tasks')).toBeTruthy();
+    expect(wrapper.emitted('export-tasks')![0]).toEqual(['xlsx']);
+  });
+
+  it('emits export-tasks with csv when clicking the CSV export button', async () => {
+    const wrapper = mount(NavigationBar, mountOptions);
+    const toggleBtn = wrapper.find('.overflow-menu-container button');
+    await toggleBtn.trigger('click');
+
+    const buttons = wrapper.findAll('.overflow-menu-container button');
+    const csvBtn = buttons.find((b) => b.text().includes('CSV'));
+    expect(csvBtn).toBeDefined();
+    await csvBtn!.trigger('click');
+
+    expect(wrapper.emitted('export-tasks')).toBeTruthy();
+    expect(wrapper.emitted('export-tasks')![0]).toEqual(['csv']);
+  });
+
+  it('closes overflow menu when clicking outside', async () => {
+    const wrapper = mount(NavigationBar, mountOptions);
+    const toggleBtn = wrapper.find('.overflow-menu-container button');
+    await toggleBtn.trigger('click');
+    expect(wrapper.find('.overflow-menu-container .absolute').exists()).toBe(true);
+
+    const event = new MouseEvent('click', { bubbles: true });
+    document.dispatchEvent(event);
+
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.overflow-menu-container .absolute').exists()).toBe(false);
+  });
 });

@@ -59,7 +59,11 @@ const showOverflowMenu = ref(false);
 
 const closeOverflowMenu = (e: MouseEvent) => {
   const el = e.target as HTMLElement;
-  if (!el.closest('.overflow-menu-container')) {
+  if (el && typeof el.closest === 'function') {
+    if (!el.closest('.overflow-menu-container')) {
+      showOverflowMenu.value = false;
+    }
+  } else {
     showOverflowMenu.value = false;
   }
 };
