@@ -127,7 +127,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
       </button>
 
       <!-- View Mode Toggle -->
-      <div class="flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
+      <div class="hidden md:flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
         <router-link
           :to="{ name: 'board', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
@@ -215,6 +215,68 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
           v-if="showOverflowMenu"
           class="absolute right-0 mt-1 w-48 bg-theme-base border border-theme-border rounded shadow-lg z-[120] py-1 text-xs"
         >
+          <!-- Views Section (only visible on mobile/small screens < md) -->
+          <div class="md:hidden">
+            <div class="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-theme-text-muted border-b border-theme-border/50 mb-1">
+              {{ t('overflowMenu.views') || 'Views' }}
+            </div>
+            <router-link
+              :to="{ name: 'board', params: { projectId: activeProjectId }, query: $route.query }"
+              class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
+              :class="{ 'text-theme-primary bg-theme-primary/5': isTabActive('board') }"
+              @click="showOverflowMenu = false"
+            >
+              <LayoutGrid class="w-3.5 h-3.5" />
+              <span>{{ t('views.board') }}</span>
+            </router-link>
+            <router-link
+              :to="{ name: 'list', params: { projectId: activeProjectId }, query: $route.query }"
+              class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
+              :class="{ 'text-theme-primary bg-theme-primary/5': isTabActive('list') }"
+              @click="showOverflowMenu = false"
+            >
+              <List class="w-3.5 h-3.5" />
+              <span>{{ t('views.list') }}</span>
+            </router-link>
+            <router-link
+              :to="{ name: 'matrix', params: { projectId: activeProjectId }, query: $route.query }"
+              class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
+              :class="{ 'text-theme-primary bg-theme-primary/5': isTabActive('matrix') }"
+              @click="showOverflowMenu = false"
+            >
+              <Grid class="w-3.5 h-3.5" />
+              <span>{{ t('views.matrix') }}</span>
+            </router-link>
+            <router-link
+              :to="{ name: 'tag', params: { projectId: activeProjectId }, query: $route.query }"
+              class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
+              :class="{ 'text-theme-primary bg-theme-primary/5': isTabActive('tag') }"
+              @click="showOverflowMenu = false"
+            >
+              <Tag class="w-3.5 h-3.5" />
+              <span>{{ t('views.tag') }}</span>
+            </router-link>
+            <router-link
+              :to="{ name: 'time', params: { projectId: activeProjectId }, query: $route.query }"
+              class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
+              :class="{ 'text-theme-primary bg-theme-primary/5': isTabActive('time') }"
+              @click="showOverflowMenu = false"
+            >
+              <Clock class="w-3.5 h-3.5" />
+              <span>{{ t('views.time') }}</span>
+            </router-link>
+            <router-link
+              :to="{ name: 'triage', params: { projectId: activeProjectId }, query: $route.query }"
+              class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
+              :class="{ 'text-theme-primary bg-theme-primary/5': isTabActive('triage') }"
+              @click="showOverflowMenu = false"
+            >
+              <Sparkles class="w-3.5 h-3.5" />
+              <span>{{ t('views.triage') }}</span>
+            </router-link>
+            <div class="border-t border-theme-border/50 my-1"></div>
+          </div>
+
           <div class="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-theme-text-muted border-b border-theme-border/50 mb-1">
             {{ t('export.buttonText') || 'Export' }}
           </div>

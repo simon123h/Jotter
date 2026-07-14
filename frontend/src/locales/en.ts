@@ -530,5 +530,6 @@ export const en = {
   },
   overflowMenu: {
     title: 'More options',
+    views: 'Views',
   },
 };

@@ -535,5 +535,6 @@ export const de = {
   },
   overflowMenu: {
     title: 'Weitere Optionen',
+    views: 'Ansichten',
   },
 };
