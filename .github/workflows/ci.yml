@@ -24,7 +24,7 @@ jobs:
           node-version: '22'
 
       - name: Cache Node Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             node_modules
@@ -66,7 +66,7 @@ jobs:
           node-version: '22'
 
       - name: Cache Node Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             node_modules
@@ -118,7 +118,7 @@ jobs:
           node-version: '22'
 
       - name: Cache Node Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             node_modules
@@ -132,7 +132,7 @@ jobs:
           npm run install:all
 
       - name: Cache Playwright Binaries
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
@@ -178,7 +178,7 @@ jobs:
           node-version: '22'
 
       - name: Cache Node Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             node_modules
