@@ -12,6 +12,13 @@ updates:
     labels:
       - "dependencies"
       - "go"
+    groups:
+      go-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Maintain npm dependencies at the root level
   - package-ecosystem: "npm"
@@ -25,6 +32,13 @@ updates:
     labels:
       - "dependencies"
       - "npm"
+    groups:
+      npm-root-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Maintain npm dependencies in the frontend directory
   - package-ecosystem: "npm"
@@ -39,6 +53,13 @@ updates:
       - "dependencies"
       - "npm"
       - "frontend"
+    groups:
+      npm-frontend-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Maintain GitHub Actions dependencies
   - package-ecosystem: "github-actions"
@@ -52,3 +73,10 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    groups:
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
