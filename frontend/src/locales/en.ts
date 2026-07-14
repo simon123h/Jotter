@@ -521,4 +521,11 @@ export const en = {
     importFooterInfo:
       'Jotter indexing automatically rebuilt the local index. Your new tasks will immediately appear on the Kanban board and in the schedule views.',
   },
+  export: {
+    buttonText: 'Export',
+    buttonTooltip: 'Export tasks from current view',
+    noTasks: 'No tasks to export in the current view.',
+    toExcel: 'Export to Excel (.xlsx)',
+    toCSV: 'Export to CSV (.csv)',
+  },
 };

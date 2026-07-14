@@ -12,6 +12,7 @@ import { useProjects } from '@/composables/useProjects';
 import { useTaskFilters } from '@/composables/useTaskFilters';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { X } from '@lucide/vue';
+import { useTaskExport } from '@/composables/useTaskExport';
 
 const route = useRoute();
 const router = useRouter();
@@ -88,7 +89,7 @@ const setTheme = (theme: string) => {
 };
 
 // Hook into task filters to bind the search query and filter modal to NavigationBar
-const { searchQuery, taskFilters, hasActiveFilters, applyFilters } = useTaskFilters(ref([]));
+const { searchQuery, taskFilters, hasActiveFilters, applyFilters, filteredTasks } = useTaskFilters(computed(() => projectStore.tasks));
 
 const openFilterModal = () => {
   modalStore.openModal('filter', {
@@ -96,6 +97,8 @@ const openFilterModal = () => {
     onApply: applyFilters,
   });
 };
+
+const { exportTasks } = useTaskExport(filteredTasks, activeProjectId);
 
 const openCreateModal = (bucket: string) => {
   modalStore.openTaskCreate(bucket);
@@ -188,6 +191,7 @@ onBeforeUnmount(() => {
       @toggle-sidebar="toggleSidebar"
       @open-filter="openFilterModal"
       @create-task="openCreateModal"
+      @export-tasks="exportTasks"
     />
 
     <div class="flex-grow flex overflow-hidden w-full relative">

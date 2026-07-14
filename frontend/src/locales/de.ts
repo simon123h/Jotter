@@ -526,4 +526,11 @@ export const de = {
     importFooterInfo:
       'Jotter hat das lokale Verzeichnis automatisch neu indiziert. Deine neuen Aufgaben erscheinen sofort auf dem Kanban-Board und im Zeitplan.',
   },
+  export: {
+    buttonText: 'Exportieren',
+    buttonTooltip: 'Aufgaben aus der aktuellen Ansicht exportieren',
+    noTasks: 'Keine Aufgaben zum Exportieren in der aktuellen Ansicht.',
+    toExcel: 'Als Excel exportieren (.xlsx)',
+    toCSV: 'Als CSV exportieren (.csv)',
+  },
 };

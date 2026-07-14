@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus, Tag, Sparkles } from '@lucide/vue';
+import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus, Tag, Sparkles, Download } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Project, BucketName } from '@/types';
 
@@ -22,6 +22,7 @@ const emit = defineEmits<{
   (e: 'toggle-sidebar'): void;
   (e: 'open-filter'): void;
   (e: 'create-task', defaultBucket: BucketName): void;
+  (e: 'export-tasks', format: 'xlsx' | 'csv'): void;
 }>();
 
 const searchInput = ref<HTMLInputElement | null>(null);
@@ -38,6 +39,29 @@ defineExpose({
 const isTabActive = (tab: string) => {
   const currentMode = (route.meta.backRoute as string) || String(route.name || '');
   return currentMode === tab;
+};
+
+// Export Dropdown State & Click-away handling
+const showExportMenu = ref(false);
+
+const closeExportMenu = (e: MouseEvent) => {
+  const el = e.target as HTMLElement;
+  if (!el.closest('.export-dropdown-container')) {
+    showExportMenu.value = false;
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('click', closeExportMenu);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('click', closeExportMenu);
+});
+
+const triggerExport = (format: 'xlsx' | 'csv') => {
+  showExportMenu.value = false;
+  emit('export-tasks', format);
 };
 </script>
 
@@ -78,6 +102,35 @@ const isTabActive = (tab: string) => {
 
     <!-- Toolbar Actions -->
     <div v-if="activeProjectId" class="flex items-center gap-2 shrink-0">
+      <!-- Export Button / Dropdown -->
+      <div class="relative shrink-0 export-dropdown-container">
+        <button
+          @click="showExportMenu = !showExportMenu"
+          class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main transition-all cursor-pointer"
+          :title="t('export.buttonTooltip') || 'Export tasks'"
+        >
+          <Download class="w-3.5 h-3.5 shrink-0" />
+          <span class="hidden md:inline">{{ t('export.buttonText') || 'Export' }}</span>
+        </button>
+        <div
+          v-if="showExportMenu"
+          class="absolute right-0 mt-1 w-44 bg-theme-base border border-theme-border rounded shadow-lg z-[120] py-1 text-xs"
+        >
+          <button
+            @click="triggerExport('xlsx')"
+            class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer"
+          >
+            {{ t('export.toExcel') || 'Export to Excel (.xlsx)' }}
+          </button>
+          <button
+            @click="triggerExport('csv')"
+            class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer"
+          >
+            {{ t('export.toCSV') || 'Export to CSV (.csv)' }}
+          </button>
+        </div>
+      </div>
+
       <!-- Advanced Filter Button -->
       <button
         @click="emit('open-filter')"
