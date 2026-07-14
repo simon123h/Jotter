@@ -1,7 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { Menu, SlidersHorizontal, LayoutGrid, List, Grid, Clock, Plus, Tag, Sparkles, MoreVertical, FileSpreadsheet, FileText } from '@lucide/vue';
+import {
+  Menu,
+  SlidersHorizontal,
+  LayoutGrid,
+  List,
+  Grid,
+  Clock,
+  Plus,
+  Tag,
+  Sparkles,
+  MoreVertical,
+  FileSpreadsheet,
+  FileText,
+} from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Project, BucketName } from '@/types';
 
@@ -102,7 +115,6 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
 
     <!-- Toolbar Actions -->
     <div v-if="activeProjectId" class="flex items-center gap-2 shrink-0">
-
       <!-- Advanced Filter Button -->
       <button
         @click="emit('open-filter')"
@@ -217,7 +229,9 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         >
           <!-- Views Section (only visible on mobile/small screens < lg) -->
           <div class="lg:hidden">
-            <div class="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-theme-text-muted border-b border-theme-border/50 mb-1">
+            <div
+              class="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-theme-text-muted border-b border-theme-border/50 mb-1"
+            >
               {{ t('overflowMenu.views') || 'Views' }}
             </div>
             <router-link
