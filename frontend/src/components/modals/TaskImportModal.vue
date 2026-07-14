@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { X, FileSpreadsheet, ChevronRight, ChevronLeft, ArrowRight } from '@lucide/vue';
+import { useI18n } from '@/composables/useI18n';
 import { useImportWizard } from '@/features/task-import/composables/useImportWizard';
 import StepUpload from '@/features/task-import/components/StepUpload.vue';
 import StepColumnMapper from '@/features/task-import/components/StepColumnMapper.vue';
@@ -55,6 +56,8 @@ const {
   getDestinationBucketInfo,
   getBucketTitle,
 } = useImportWizard(computed(() => props.projectId));
+
+const { t } = useI18n();
 
 // Escape Key Closes Modal
 const handleKeyDown = (e: KeyboardEvent) => {
@@ -175,7 +178,7 @@ watch(
             @click="emit('close')"
             class="px-4 py-2 border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer"
           >
-            Cancel
+            {{ t('importWizard.cancel') }}
           </button>
 
           <!-- Back Button (Step 2 & 3) -->
@@ -185,7 +188,7 @@ watch(
             @click="prevStep"
             class="px-4 py-2 border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all flex items-center gap-1 cursor-pointer mr-auto"
           >
-            <ChevronLeft class="w-3.5 h-3.5" /> Back
+            <ChevronLeft class="w-3.5 h-3.5" /> {{ t('importWizard.back') }}
           </button>
 
           <!-- Next Button (Step 2) -->
@@ -195,7 +198,7 @@ watch(
             @click="nextToPreview"
             class="px-4 py-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md flex items-center gap-1 cursor-pointer"
           >
-            Preview Tasks <ChevronRight class="w-3.5 h-3.5" />
+            {{ t('importWizard.previewTasks') }} <ChevronRight class="w-3.5 h-3.5" />
           </button>
 
           <!-- Start Import (Step 3) -->
@@ -206,7 +209,7 @@ watch(
             :disabled="selectedRows.size === 0"
             class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md flex items-center gap-1 cursor-pointer"
           >
-            Start Import <ArrowRight class="w-3.5 h-3.5" />
+            {{ t('importWizard.startImport') }} <ArrowRight class="w-3.5 h-3.5" />
           </button>
 
           <!-- Finish Button (Step 5) -->
@@ -216,7 +219,7 @@ watch(
             @click="emit('close')"
             class="px-5 py-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer"
           >
-            Done
+            {{ t('importWizard.done') }}
           </button>
         </div>
       </div>

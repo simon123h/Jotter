@@ -448,4 +448,82 @@ export const de = {
       deleteTask: 'Aufgabe löschen',
     },
   },
+  importWizard: {
+    modalTitle: 'Aufgaben aus Tabelle importieren',
+    modalSubtitle: 'Aufgaben direkt aus Excel- (.xlsx, .xls) oder CSV-Dateien (.csv) importieren.',
+    cancel: 'Abbrechen',
+    back: 'Zurück',
+    previewTasks: 'Aufgaben vorschauen',
+    startImport: 'Import starten',
+    done: 'Fertig',
+
+    // StepUpload
+    dragDropText: 'Ziehe deine Tabellendatei hierher oder klicke zum Hochladen',
+    dragDropSubtitle: 'Unterstützt Excel- (.xlsx, .xls) und CSV-Dateien (.csv).',
+    browseFiles: 'Dateien durchsuchen',
+    formattingTipTitle: 'Formatierungstipp:',
+    formattingTipText:
+      'Stelle sicher, dass deine Tabelle eine Kopfzeile enthält (z. B. Titel, Beschreibung, Spalte/Status). Wenn du aus Microsoft Planner importierst, kannst du die exportierte Excel-Datei direkt hochladen.',
+
+    // StepColumnMapper
+    rowsDetected: '{count} Zeilen erkannt',
+    selectSheet: 'Blatt auswählen:',
+    configureMappings: 'Feldzuordnungen konfigurieren',
+    configureMappingsDesc:
+      'Ordne die Spaltenköpfe deiner Tabelle den Jotter-Aufgabenattributen zu. Wir haben passende Spalten bereits vorausgewählt.',
+    selectColumn: 'Spalte auswählen...',
+    skipField: '-- Feld überspringen --',
+
+    // Field Labels
+    fieldTaskTitle: 'Aufgabentitel',
+    fieldDescription: 'Notizen & Beschreibung',
+    fieldBucket: 'Spaltenname (Buckets)',
+    fieldStatus: 'Status (Fortschritt)',
+    fieldPriority: 'Priorität',
+    fieldLabels: 'Labels (Tags)',
+    fieldStartDate: 'Startdatum',
+    fieldDueDate: 'Fälligkeitsdatum',
+    fieldChecklist: 'Checklisten-Einträge',
+
+    // Strategy & Options
+    destinationStrategy: 'Zielstrategie',
+    strategyBucketTitle: 'Eimername (Bucket) aus Tabelle verwenden',
+    strategyBucketDesc:
+      'Aufgaben werden in Spalten erstellt, die nach ihrem Eimer in der Tabelle benannt sind. Fehlende Spalten werden automatisch erstellt.',
+    strategyStatusTitle: 'Nach Fortschrittsstatus zuordnen',
+    strategyStatusDesc:
+      'Ordnet Aufgaben den Standardspalten "Backlog", "In Bearbeitung" oder "Erledigt" basierend auf ihrem Fortschrittsstatus zu.',
+    strategySingleTitle: 'Alle in einer Spalte ablegen',
+    strategySingleDesc: 'Umfährt die Zuordnung und importiert alle Aufgaben direkt in eine ausgewählte Spalte.',
+    fallbackColumnLabel: 'Fallback-Spalte:',
+    skipDuplicatesTitle: 'Bereits existierende Titel überspringen',
+    skipDuplicatesDesc: 'Verhindert das Erstellen von Duplikaten, wenn eine Aufgabe mit genau demselben Titel bereits existiert.',
+    appendTagsLabel: 'Tags an alle importierten Aufgaben anhängen (kommagetrennt)',
+    appendTagsPlaceholder: 'z.B. planner-import, 2026-q3',
+
+    // StepRowPreview
+    selectedTasksCount: '{count} von {total} Aufgaben ausgewählt',
+    selectAll: 'Alle auswählen',
+    deselectAll: 'Auswahl aufheben',
+    tableHeaderTitle: 'Titel',
+    tableHeaderColumn: 'Zielspalte / Status',
+    tableHeaderPriority: 'Priorität',
+    tableHeaderDueDate: 'Fälligkeitsdatum',
+    emptyTitlePlaceholder: '(Leer)',
+    doneOverride: '→ Erledigt (Überschrieben)',
+
+    // StepProgress
+    importingTasks: 'Aufgaben werden importiert...',
+    importingDesc: 'Bitte warten, während wir die Tabellendatei parsen und lokale Markdown-Dateien schreiben.',
+    progressLabel: 'Fortschritt',
+
+    // StepSummary
+    importCompleted: 'Import abgeschlossen!',
+    importCompletedDesc: 'Aufgaben wurden erfolgreich verarbeitet und in dein lokales Markdown-Repository übertragen.',
+    statCreated: 'Erstellt',
+    statSkipped: 'Übersprungen',
+    statFailed: 'Fehlgeschlagen',
+    importFooterInfo:
+      'Jotter hat das lokale Verzeichnis automatisch neu indiziert. Deine neuen Aufgaben erscheinen sofort auf dem Kanban-Board und im Zeitplan.',
+  },
 };

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Mappings } from '../composables/useImportWizard';
+import { useI18n } from '@/composables/useI18n';
 
 defineProps<{
   excelRows: Record<string, any>[];
@@ -17,20 +18,21 @@ const emit = defineEmits<{
   (e: 'toggle-row', idx: number): void;
   (e: 'toggle-select-all'): void;
 }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
   <div class="space-y-4">
     <div class="flex justify-between items-center bg-theme-card/30 border border-theme-border/60 rounded px-4 py-2 text-xs">
       <span class="text-theme-text-muted">
-        Selected <span class="font-bold text-theme-text-main">{{ selectedRows.size }}</span> of
-        <span class="font-bold text-theme-text-main">{{ excelRows.length }}</span> tasks
+        {{ t('importWizard.selectedTasksCount', { count: selectedRows.size, total: excelRows.length }) }}
       </span>
       <button
         @click="emit('toggle-select-all')"
         class="text-theme-primary hover:text-theme-primary-hover font-semibold transition-colors cursor-pointer animate-none"
       >
-        {{ selectedRows.size === excelRows.length ? 'Deselect All' : 'Select All' }}
+        {{ selectedRows.size === excelRows.length ? t('importWizard.deselectAll') : t('importWizard.selectAll') }}
       </button>
     </div>
 
@@ -46,10 +48,10 @@ const emit = defineEmits<{
                 class="rounded"
               />
             </th>
-            <th class="p-3 font-semibold text-theme-text-muted">Title</th>
-            <th class="p-3 font-semibold text-theme-text-muted">Dest. Column / Status</th>
-            <th class="p-3 font-semibold text-theme-text-muted">Priority</th>
-            <th class="p-3 font-semibold text-theme-text-muted">Due Date</th>
+            <th class="p-3 font-semibold text-theme-text-muted">{{ t('importWizard.tableHeaderTitle') }}</th>
+            <th class="p-3 font-semibold text-theme-text-muted">{{ t('importWizard.tableHeaderColumn') }}</th>
+            <th class="p-3 font-semibold text-theme-text-muted">{{ t('importWizard.tableHeaderPriority') }}</th>
+            <th class="p-3 font-semibold text-theme-text-muted">{{ t('importWizard.tableHeaderDueDate') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-theme-border/40">
@@ -63,14 +65,14 @@ const emit = defineEmits<{
               <input type="checkbox" :checked="selectedRows.has(idx)" @change="emit('toggle-row', idx)" class="rounded" />
             </td>
             <td class="p-3 font-semibold text-theme-text-main max-w-xs truncate" :title="row[mappings.title]">
-              {{ row[mappings.title] || '(Empty)' }}
+              {{ row[mappings.title] || t('importWizard.emptyTitlePlaceholder') }}
             </td>
             <td class="p-3 text-theme-text-muted font-mono text-[11px]">
               <span v-if="getDestinationBucketInfo(row).isOverride" class="block">
                 <span class="text-theme-text-muted line-through mr-1 text-[10px]">
                   {{ getBucketTitle(getDestinationBucketInfo(row).originalBucket) }}
                 </span>
-                <span class="text-emerald-500 font-semibold">&rarr; Done (Override)</span>
+                <span class="text-emerald-500 font-semibold">{{ t('importWizard.doneOverride') }}</span>
               </span>
               <span
                 v-else-if="bucketStrategy === 'excel-bucket' && mappings.bucket"
