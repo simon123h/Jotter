@@ -1,26 +1,29 @@
 <script setup lang="ts">
 import { Loader2 } from '@lucide/vue';
 import type { LogEntry } from '../composables/useImportWizard';
+import { useI18n } from '@/composables/useI18n';
 
 defineProps<{
   importProgressCurrent: number;
   importProgressTotal: number;
   logs: LogEntry[];
 }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
   <div class="space-y-6 py-6 text-center">
     <div class="flex flex-col items-center">
       <Loader2 class="w-10 h-10 text-theme-primary animate-spin mb-4" />
-      <h4 class="text-sm font-bold text-theme-text-main">Importing Tasks...</h4>
-      <p class="text-xs text-theme-text-muted mt-1">Please wait while we parse Excel files and write local Markdown entries.</p>
+      <h4 class="text-sm font-bold text-theme-text-main">{{ t('importWizard.importingTasks') }}</h4>
+      <p class="text-xs text-theme-text-muted mt-1">{{ t('importWizard.importingDesc') }}</p>
     </div>
 
     <!-- Progress Bar -->
     <div class="space-y-2">
       <div class="flex justify-between text-xs font-mono text-theme-text-muted">
-        <span>Progress</span>
+        <span>{{ t('importWizard.progressLabel') }}</span>
         <span
           >{{ importProgressCurrent }} / {{ importProgressTotal }} ({{
             importProgressTotal > 0 ? Math.round((importProgressCurrent / importProgressTotal) * 100) : 0

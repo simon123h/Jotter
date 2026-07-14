@@ -21,6 +21,12 @@ async function createProject(page: Page): Promise<string> {
 
 test.describe('Jotter Kanban E2E Flow', () => {
   test.beforeEach(async ({ page }) => {
+    await page.route('**/settings', async (route) => {
+      const response = await route.fetch();
+      const json = await response.json();
+      json.language = 'en';
+      await route.fulfill({ json });
+    });
     await page.goto('/');
   });
 

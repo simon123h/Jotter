@@ -97,7 +97,7 @@ export const en = {
     deleteTask: 'Failed to delete task: {message}',
     moveTask: 'Failed to persist card movement. Reverted change.',
     loadTask: 'Failed to load task details: {message}',
-    invalidFileType: 'Only Excel files (.xlsx, .xls) are supported.',
+    invalidFileType: 'Only Excel (.xlsx, .xls) and CSV (.csv) files are supported.',
   },
   doubleClickToRename: 'Double click to rename',
   columnTitlePlaceholder: 'Column title...',
@@ -445,5 +445,91 @@ export const en = {
       cycleColor: 'Cycle Card Color',
       deleteTask: 'Delete Task',
     },
+  },
+  importWizard: {
+    modalTitle: 'Import Tasks from Spreadsheet',
+    modalSubtitle: 'Import tasks directly from Excel (.xlsx, .xls) or CSV (.csv) files.',
+    cancel: 'Cancel',
+    back: 'Back',
+    previewTasks: 'Preview Tasks',
+    startImport: 'Start Import',
+    done: 'Done',
+
+    // StepUpload
+    dragDropText: 'Drag & drop your spreadsheet file here',
+    dragDropSubtitle: 'Supports Excel (.xlsx, .xls) and CSV (.csv) files.',
+    browseFiles: 'Browse Files',
+    formattingTipTitle: 'Formatting Tip:',
+    formattingTipText:
+      'Ensure your spreadsheet has a header row (e.g. Title, Description, Column/Status). If importing from Microsoft Planner, you can upload the exported Excel spreadsheet directly.',
+
+    // StepColumnMapper
+    rowsDetected: '{count} rows detected',
+    selectSheet: 'Select Sheet:',
+    configureMappings: 'Configure Field Mappings',
+    configureMappingsDesc: 'Match spreadsheet column headers with Jotter task attributes. We have pre-mapped matches for you.',
+    selectColumn: 'Select Column...',
+    skipField: '-- Skip Field --',
+
+    // Field Labels
+    fieldTaskTitle: 'Task Title',
+    fieldDescription: 'Notes & Description',
+    fieldBucket: 'Bucket Name (Columns)',
+    fieldStatus: 'Status (Progress)',
+    fieldPriority: 'Priority',
+    fieldLabels: 'Labels (Tags)',
+    fieldStartDate: 'Start Date',
+    fieldDueDate: 'Due Date',
+    fieldChecklist: 'Checklist Items',
+
+    // Strategy & Options
+    destinationStrategy: 'Destination Strategy',
+    strategyBucketTitle: "Use Excel's Bucket Name column",
+    strategyBucketDesc: 'Tasks are created inside columns named after their Excel bucket. Missing columns will be created automatically.',
+    strategyStatusTitle: 'Map by Progress Status',
+    strategyStatusDesc: 'Maps Tasks to standard "To Do", "In Progress", or "Done" columns based on task\'s progress state.',
+    strategySingleTitle: 'Place all in a single column',
+    strategySingleDesc: 'Bypasses sorting and imports all tasks into one specific selected column below.',
+    fallbackColumnLabel: 'Fallback Column:',
+    skipDuplicatesTitle: 'Skip existing duplicate titles',
+    skipDuplicatesDesc: 'Prevents duplicate tasks if a task with the exact title already exists in this project.',
+    appendTagsLabel: 'Append tags to all imported tasks (comma-separated)',
+    appendTagsPlaceholder: 'e.g. planner-import, 2026-q3',
+
+    // StepRowPreview
+    selectedTasksCount: 'Selected {count} of {total} tasks',
+    selectAll: 'Select All',
+    deselectAll: 'Deselect All',
+    tableHeaderTitle: 'Title',
+    tableHeaderColumn: 'Dest. Column / Status',
+    tableHeaderPriority: 'Priority',
+    tableHeaderDueDate: 'Due Date',
+    emptyTitlePlaceholder: '(Empty)',
+    doneOverride: '→ Done (Override)',
+
+    // StepProgress
+    importingTasks: 'Importing Tasks...',
+    importingDesc: 'Please wait while we parse spreadsheet files and write local Markdown entries.',
+    progressLabel: 'Progress',
+
+    // StepSummary
+    importCompleted: 'Import Completed!',
+    importCompletedDesc: "Tasks have been parsed and synced to Jotter's local markdown repository.",
+    statCreated: 'Created',
+    statSkipped: 'Skipped',
+    statFailed: 'Failed',
+    importFooterInfo:
+      'Jotter indexing automatically rebuilt the local index. Your new tasks will immediately appear on the Kanban board and in the schedule views.',
+  },
+  export: {
+    buttonText: 'Export',
+    buttonTooltip: 'Export tasks from current view',
+    noTasks: 'No tasks to export in the current view.',
+    toExcel: 'Export to Excel (.xlsx)',
+    toCSV: 'Export to CSV (.csv)',
+  },
+  overflowMenu: {
+    title: 'More options',
+    views: 'Views',
   },
 };

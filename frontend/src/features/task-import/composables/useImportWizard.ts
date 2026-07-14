@@ -132,14 +132,14 @@ export function useImportWizard(projectId: string | Ref<string>) {
       );
     };
 
-    mappings.value.title = findMatch(['tasktitle', 'taskname', 'title', 'task name', 'aufgabenname']);
-    mappings.value.description = findMatch(['description', 'notes', 'body', 'details', 'notizen', 'beschreibung']);
-    mappings.value.bucket = findMatch(['bucketname', 'bucket', 'column', 'eimer']);
+    mappings.value.title = findMatch(['tasktitle', 'taskname', 'title', 'task name', 'aufgabenname', 'name', 'subject', 'thema']);
+    mappings.value.description = findMatch(['description', 'notes', 'body', 'details', 'notizen', 'beschreibung', 'text']);
+    mappings.value.bucket = findMatch(['bucketname', 'bucket', 'column', 'eimer', 'spalte', 'category']);
     mappings.value.status = findMatch(['status', 'progress', 'state']);
     mappings.value.priority = findMatch(['priority', 'prioritat', 'priorit']);
     mappings.value.startDate = findMatch(['startdate', 'start', 'startdatum']);
     mappings.value.dueDate = findMatch(['duedate', 'due', 'deadline', 'falligkeitsdatum', 'falligkeit']);
-    mappings.value.labels = findMatch(['labels', 'tags', 'categories', 'bezeichnungen']);
+    mappings.value.labels = findMatch(['labels', 'tags', 'categories', 'bezeichnungen', 'keywords']);
     mappings.value.checklist = findMatch(['checklist', 'checklistitems', 'checklists', 'checklistenpunkte']);
 
     // Adjust Strategy based on auto-detection
@@ -188,8 +188,8 @@ export function useImportWizard(projectId: string | Ref<string>) {
 
   const processFile = async (file: File) => {
     fileError.value = null;
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      fileError.value = t('errors.invalidFileType') || 'Only Excel files (.xlsx, .xls) are supported.';
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.csv')) {
+      fileError.value = t('errors.invalidFileType') || 'Only Excel (.xlsx, .xls) and CSV (.csv) files are supported.';
       return;
     }
 
@@ -198,7 +198,7 @@ export function useImportWizard(projectId: string | Ref<string>) {
       const data = await file.arrayBuffer();
       const workbook = read(data, { type: 'array' });
       if (workbook.SheetNames.length === 0) {
-        fileError.value = 'The uploaded Excel file contains no sheets.';
+        fileError.value = 'The uploaded file contains no sheets/data.';
         return;
       }
 

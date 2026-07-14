@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Upload, AlertCircle, Info } from '@lucide/vue';
+import { useI18n } from '@/composables/useI18n';
 
 defineProps<{
   isDragging: boolean;
@@ -15,6 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const fileInput = ref<HTMLInputElement | null>(null);
+const { t } = useI18n();
 
 const triggerFileSelect = () => {
   fileInput.value?.click();
@@ -35,18 +37,16 @@ const triggerFileSelect = () => {
       ]"
       @click="triggerFileSelect"
     >
-      <input ref="fileInput" type="file" accept=".xlsx,.xls" class="hidden" @change="emit('file-select', $event)" />
+      <input ref="fileInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="emit('file-select', $event)" />
       <div class="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4 text-emerald-500">
         <Upload class="w-7 h-7" :class="{ 'animate-bounce': isDragging }" />
       </div>
-      <p class="text-sm font-semibold text-theme-text-main">Drag & drop your Planner Excel file here</p>
-      <p class="text-xs text-theme-text-muted mt-1 max-w-sm">
-        Only standard Microsoft Planner `.xlsx` spreadsheets exported via 'Export plan to Excel' are accepted.
-      </p>
+      <p class="text-sm font-semibold text-theme-text-main">{{ t('importWizard.dragDropText') }}</p>
+      <p class="text-xs text-theme-text-muted mt-1 max-w-sm">{{ t('importWizard.dragDropSubtitle') }}</p>
       <span
         class="mt-4 px-3 py-1.5 bg-theme-card border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary transition-all"
       >
-        Browse Files
+        {{ t('importWizard.browseFiles') }}
       </span>
     </div>
 
@@ -59,11 +59,9 @@ const triggerFileSelect = () => {
     <div class="p-4 bg-theme-card/30 border border-theme-border/50 rounded-lg flex gap-3">
       <Info class="w-5 h-5 text-theme-accent shrink-0 mt-0.5" />
       <div class="space-y-1">
-        <h4 class="text-xs font-bold text-theme-text-main uppercase tracking-wider">How to export from MS Planner:</h4>
+        <h4 class="text-xs font-bold text-theme-text-main uppercase tracking-wider">{{ t('importWizard.formattingTipTitle') }}</h4>
         <p class="text-[11px] text-theme-text-muted leading-relaxed">
-          Open Microsoft Planner in your browser, select your plan, click the
-          <span class="font-bold text-theme-text-main">"..." (More)</span> option next to "Schedule" in the header, and select
-          <span class="font-bold text-theme-text-main">"Export plan to Excel"</span>.
+          {{ t('importWizard.formattingTipText') }}
         </p>
       </div>
     </div>
