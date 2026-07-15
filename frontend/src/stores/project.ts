@@ -123,6 +123,7 @@ export const useProjectStore = defineStore('project', () => {
   };
 
   const triggerSync = async () => {
+    if (syncLoading.value) return;
     syncLoading.value = true;
     syncSuccess.value = false;
     error.value = null;

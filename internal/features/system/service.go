@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"jotter/backend/internal/features/common"
@@ -27,6 +28,7 @@ type systemService struct {
 	dbRepo       DBRepository
 	fileRepo     FileRepository
 	settingsRepo settings.FileRepository
+	syncMutex    sync.Mutex
 }
 
 // NewService creates a new system service instance
@@ -39,6 +41,9 @@ func NewService(dbRepo DBRepository, fileRepo FileRepository, settingsRepo setti
 }
 
 func (s *systemService) Sync(ctx context.Context, tasksDir string) (int, error) {
+	s.syncMutex.Lock()
+	defer s.syncMutex.Unlock()
+
 	// Load global settings
 	globalSettings, err := s.settingsRepo.LoadSettings(tasksDir)
 	if err != nil {
@@ -352,6 +357,9 @@ func (s *systemService) GetGitHistory(ctx context.Context, tasksDir string, proj
 	return commits, nil
 }
 func (s *systemService) RestoreCommit(ctx context.Context, tasksDir string, projectID string, commitHash string) (int, error) {
+	s.syncMutex.Lock()
+	defer s.syncMutex.Unlock()
+
 	repoPath := tasksDir
 	if projectID != "" {
 		repoPath = filepath.Join(tasksDir, projectID)
