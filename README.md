@@ -30,7 +30,7 @@ Jotter is a **local-first, privacy-focused task management application** designe
 - **Selective Per-Project Git Sync**: Enable synchronization for individual projects by connecting them to different Git remotes. Keep "Home" local while sharing "Work" with a team.
 - **Git-Backed Time Machine**: Roll your workspace or individual projects back to any historical snapshot in your Git history using a dedicated, searchable, and spacious dialog. Automatically creates pre-restore backup commits so you can revert any rollback operation at any time.
 - **Multi-Language Support**: Fully localized in English and German.
-- **Microsoft Planner Importer**: Seamlessly import your tasks and columns from official MS Planner Excel exports (`.xlsx`), with complete support for localized formats (English & German), multi-sheet workbook selection, and custom completed status overrides.
+- **Excel & CSV Import & Export**: Seamlessly import tasks, checklists, priorities, and custom columns from any standard Excel or CSV spreadsheet with support for sheet auto-detection, interactive previews, and custom mappings. Export all tasks from your current filtered view as `.xlsx` or `.csv` client-side.
 
 ---
 
@@ -69,7 +69,7 @@ Alternatively, you can refer to the raw Markdown source files in the `docs/` fol
 
 - **User Guide & Setup**:
   - [Configuring Jotter (Ports, Directories, logs)](docs/user/configuration.md)
-  - [Importing from Microsoft Planner](docs/user/import-planner.md)
+  - [Importing & Exporting Data (Excel & CSV)](docs/user/import-export.md)
 - **Installation**:
   - [Running Pre-compiled Binaries (Windows/Linux/macOS)](docs/installation/precompiled.md)
   - [Running from Source (For Developers)](docs/installation/development.md)

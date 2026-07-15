@@ -29,7 +29,7 @@ export default defineConfig({
 							items: [
 								{ text: 'Configuration', link: '/user/configuration' },
 								{ text: 'Search & Filtering DSL', link: '/user/searching-filtering' },
-								{ text: 'MS Planner Import', link: '/user/import-planner' },
+								{ text: 'Spreadsheet Import & Export', link: '/user/import-export' },
 								{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' },
 								{ text: 'Postponing Tasks', link: '/user/postponing' },
 								{ text: 'Markdown File Spec', link: '/user/format-spec' },
@@ -52,7 +52,7 @@ export default defineConfig({
 							items: [
 								{ text: 'Configuration', link: '/user/configuration' },
 								{ text: 'Search & Filtering DSL', link: '/user/searching-filtering' },
-								{ text: 'MS Planner Import', link: '/user/import-planner' },
+								{ text: 'Spreadsheet Import & Export', link: '/user/import-export' },
 								{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' },
 								{ text: 'Postponing Tasks', link: '/user/postponing' },
 								{ text: 'Markdown File Spec', link: '/user/format-spec' },
@@ -100,7 +100,7 @@ export default defineConfig({
 							items: [
 								{ text: 'Konfiguration', link: '/de/user/configuration' },
 								{ text: 'Suche & DSL-Filter', link: '/de/user/searching-filtering' },
-								{ text: 'MS Planner Import', link: '/de/user/import-planner' },
+								{ text: 'Tabellen-Import & -Export', link: '/de/user/import-export' },
 								{ text: 'Tastaturkurzbefehle', link: '/de/user/shortcuts' },
 								{ text: 'Aufgaben aufschieben', link: '/de/user/postponing' },
 								{ text: 'Markdown-Spezifikation', link: '/de/user/format-spec' },
@@ -123,7 +123,7 @@ export default defineConfig({
 							items: [
 								{ text: 'Konfiguration', link: '/de/user/configuration' },
 								{ text: 'Suche & DSL-Filter', link: '/de/user/searching-filtering' },
-								{ text: 'MS Planner Import', link: '/de/user/import-planner' },
+								{ text: 'Tabellen-Import & -Export', link: '/de/user/import-export' },
 								{ text: 'Tastaturkurzbefehle', link: '/de/user/shortcuts' },
 								{ text: 'Aufgaben aufschieben', link: '/de/user/postponing' },
 								{ text: 'Markdown-Spezifikation', link: '/de/user/format-spec' },
