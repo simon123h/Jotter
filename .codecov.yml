@@ -7,3 +7,11 @@ coverage:
     patch:
       default:
         informational: true
+  range: "50...75"
+
+ignore:
+  - "frontend/wailsjs/**/*"
+  - "frontend/dist/**/*"
+  - "main_desktop.go"
+  - "main_server.go"
+  - "shared_assets.go"
