@@ -8,7 +8,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	github.com/wailsapp/wails/v2 v2.13.0
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.54.0
+	modernc.org/sqlite v1.55.0
 )
 
 require (
