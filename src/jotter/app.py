@@ -14,7 +14,7 @@ from jotter.features.sync import SyncApplicationService
 from jotter.features.sync import router as system_router
 from jotter.features.tasks import router as tasks_router
 from jotter.shared.db import get_db
-from jotter.shared.exceptions import EntityNotFoundError, ValidationError, DomainException
+from jotter.shared.exceptions import DomainException, EntityNotFoundError, ValidationError
 
 try:
     from jotter._version import __version__ as app_version

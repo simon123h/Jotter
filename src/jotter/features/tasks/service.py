@@ -1,6 +1,5 @@
 """Application service orchestrating Task use cases."""
 
-from pathlib import Path
 
 from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository

@@ -1,8 +1,8 @@
 """SQLite repository for indexing and querying tasks."""
 
-from datetime import datetime, timezone
 import json
 import sqlite3
+from datetime import datetime, timezone
 from typing import Any
 
 from jotter.features.tasks.domain import Task

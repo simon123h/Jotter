@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+
 import yaml
 
 from jotter.features.tasks.domain import Task
