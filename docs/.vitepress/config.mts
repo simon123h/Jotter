@@ -20,7 +20,7 @@ export default defineConfig({
 						{
 							text: 'Getting Started',
 							items: [
-								{ text: 'Precompiled Binaries', link: '/installation/precompiled' },
+								{ text: 'Installation & Setup', link: '/installation/precompiled' },
 								{ text: 'Running from Source', link: '/installation/development' }
 							]
 						},
@@ -43,7 +43,7 @@ export default defineConfig({
 						{
 							text: 'Getting Started',
 							items: [
-								{ text: 'Precompiled Binaries', link: '/installation/precompiled' },
+								{ text: 'Installation & Setup', link: '/installation/precompiled' },
 								{ text: 'Running from Source', link: '/installation/development' }
 							]
 						},
@@ -91,7 +91,7 @@ export default defineConfig({
 						{
 							text: 'Erste Schritte',
 							items: [
-								{ text: 'Vorkompilierte Binärdateien', link: '/de/installation/precompiled' },
+								{ text: 'Installation & Schnellstart', link: '/de/installation/precompiled' },
 								{ text: 'Aus Quellcode ausführen', link: '/de/installation/development' }
 							]
 						},
@@ -114,7 +114,7 @@ export default defineConfig({
 						{
 							text: 'Erste Schritte',
 							items: [
-								{ text: 'Vorkompilierte Binärdateien', link: '/de/installation/precompiled' },
+								{ text: 'Installation & Schnellstart', link: '/de/installation/precompiled' },
 								{ text: 'Aus Quellcode ausführen', link: '/de/installation/development' }
 							]
 						},
