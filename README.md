@@ -36,9 +36,23 @@ Jotter is a **local-first, privacy-focused task management web application** des
 
 ## 📦 Quick Start
 
-Jotter runs as a lightweight local web application powered by Python (FastAPI) and a Vue 3 frontend:
+### Option 1: Run directly with `pipx` (Recommended)
 
-1. Clone or download the repository:
+No cloning or Node.js required—just Python:
+
+```bash
+pipx run jotter-app
+```
+
+Or install globally in an isolated environment:
+```bash
+pipx install jotter-app
+jotter
+```
+
+### Option 2: Run from Source
+
+1. Clone the repository:
    ```bash
    git clone https://github.com/simon123h/jotter.git
    cd jotter
@@ -49,9 +63,11 @@ Jotter runs as a lightweight local web application powered by Python (FastAPI) a
    ```
 3. Start the server:
    ```bash
-   python3 run.py
+   jotter
+   # or: python3 run.py
    ```
-4. Open your browser at **`http://localhost:58271`**.
+
+Open your browser at **`http://localhost:58271`**.
 
 Jotter automatically handles both portable and global configurations out of the box:
 

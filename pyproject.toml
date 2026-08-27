@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "jotter"
+name = "jotter-app"
 version = "2.9.1"
-description = "Local-first Markdown Kanban Board backend API (Python)"
+description = "Local-first Markdown Kanban Board web application"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
@@ -34,6 +34,9 @@ jotter = "backend.main:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["backend*"]
+
+[tool.setuptools.package-data]
+"backend" = ["dist/**/*", "dist/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/backend"]
