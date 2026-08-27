@@ -19,9 +19,25 @@ def sync_db_only(data_dir: str) -> int:
     tasks_path.mkdir(parents=True, exist_ok=True)
 
     projects_data = load_projects_file(data_dir)
-    clean_periods: Dict[str, Optional[int]] = {
-        p["id"]: p.get("done_clean_period") for p in projects_data
-    }
+    registered_project_ids = {p["id"] for p in projects_data}
+
+    # Auto-register any existing directories that might not yet be in projects.json
+    now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    for entry in tasks_path.iterdir():
+        if entry.is_dir() and not entry.name.startswith(".") and entry.name not in registered_project_ids:
+            p_id = entry.name
+            projects_data.append(
+                {
+                    "id": p_id,
+                    "title": p_id.replace("-", " ").title(),
+                    "created_at": now_str,
+                    "done_clean_period": None,
+                    "git_remote": None,
+                }
+            )
+            registered_project_ids.add(p_id)
+
+    clean_periods: Dict[str, Optional[int]] = {p["id"]: p.get("done_clean_period") for p in projects_data}
 
     all_buckets: List[Dict[str, Any]] = []
     all_tasks: List[Dict[str, Any]] = []
