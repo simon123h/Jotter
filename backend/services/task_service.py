@@ -1,16 +1,18 @@
 import json
 import shutil
 import tempfile
-import yaml
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple
+from typing import Any, BinaryIO
+
+import yaml
+
 from backend.db import get_db
 from backend.models.task import TaskCreate, TaskFrontmatter, TaskMove, TaskResponse, TaskUpdate
 from backend.utils.ulid import generate_ulid
 
 
-def parse_frontmatter(content: str) -> Tuple[TaskFrontmatter, str]:
+def parse_frontmatter(content: str) -> tuple[TaskFrontmatter, str]:
     lines = content.split("\n")
     if len(lines) < 2 or lines[0].strip() != "---":
         raise ValueError("Invalid frontmatter: missing start separator '---'")
@@ -50,7 +52,7 @@ def parse_frontmatter(content: str) -> Tuple[TaskFrontmatter, str]:
 
 
 def dump_frontmatter(fm: TaskFrontmatter, body: str) -> str:
-    data: Dict[str, Any] = {
+    data: dict[str, Any] = {
         "id": fm.id,
         "project_id": fm.project_id,
         "title": fm.title,
@@ -77,7 +79,7 @@ def dump_frontmatter(fm: TaskFrontmatter, body: str) -> str:
     return f"---\n{yaml_str}---\n{body}"
 
 
-def get_task_file_path(data_dir: str, task_id: str) -> Tuple[Path, str, str]:
+def get_task_file_path(data_dir: str, task_id: str) -> tuple[Path, str, str]:
     tasks_path = Path(data_dir)
     target_filename = f"{task_id}.md"
 
@@ -119,7 +121,7 @@ def read_task_file(data_dir: str, task_id: str) -> TaskResponse:
     )
 
 
-def write_task_file(data_dir: str, task_id: str, fm: TaskFrontmatter, body: str) -> Tuple[Path, str]:
+def write_task_file(data_dir: str, task_id: str, fm: TaskFrontmatter, body: str) -> tuple[Path, str]:
     project_dir = Path(data_dir) / fm.project_id
     project_dir.mkdir(parents=True, exist_ok=True)
 
@@ -128,8 +130,8 @@ def write_task_file(data_dir: str, task_id: str, fm: TaskFrontmatter, body: str)
     content = dump_frontmatter(fm, body)
 
     # Check if existing task is in a different project directory
-    old_file: Optional[Path] = None
-    old_project_id: Optional[str] = None
+    old_file: Path | None = None
+    old_project_id: str | None = None
     try:
         old_file, _, old_project_id = get_task_file_path(data_dir, task_id)
     except FileNotFoundError:
@@ -169,21 +171,21 @@ def delete_task_file(data_dir: str, task_id: str) -> bool:
 
 
 def get_tasks(
-    project_id: Optional[str] = None,
-    bucket: Optional[str] = None,
-    buckets: Optional[List[str]] = None,
-    tag: Optional[str] = None,
-    tags: Optional[List[str]] = None,
+    project_id: str | None = None,
+    bucket: str | None = None,
+    buckets: list[str] | None = None,
+    tag: str | None = None,
+    tags: list[str] | None = None,
     tag_mode: str = "any",
-    exclude_bucket: Optional[str] = None,
-    exclude_buckets: Optional[List[str]] = None,
-    priorities: Optional[List[str]] = None,
-    search: Optional[str] = None,
-    due_before: Optional[str] = None,
-    due_after: Optional[str] = None,
-    planned_date: Optional[str] = None,
-    has_due_date: Optional[bool] = None,
-) -> List[TaskResponse]:
+    exclude_bucket: str | None = None,
+    exclude_buckets: list[str] | None = None,
+    priorities: list[str] | None = None,
+    search: str | None = None,
+    due_before: str | None = None,
+    due_after: str | None = None,
+    planned_date: str | None = None,
+    has_due_date: bool | None = None,
+) -> list[TaskResponse]:
     conn = get_db()
     cursor = conn.cursor()
 
@@ -193,7 +195,7 @@ def get_tasks(
     FROM tasks
     WHERE 1=1
     """
-    args: List[Any] = []
+    args: list[Any] = []
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     if project_id:
@@ -286,7 +288,7 @@ def get_tasks(
     cursor.execute(query, tuple(args))
     rows = cursor.fetchall()
 
-    tasks_list: List[TaskResponse] = []
+    tasks_list: list[TaskResponse] = []
     # Combine tag filters
     effective_tags = list(tags) if tags else ([tag] if tag else [])
 

@@ -1,6 +1,6 @@
-from typing import List, Optional
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse
+
 from backend.models.task import TaskCreate, TaskMove, TaskResponse, TaskUpdate
 from backend.services.task_service import (
     create_task,
@@ -18,10 +18,10 @@ router = APIRouter(tags=["tasks"])
 
 
 # Global tasks endpoint
-@router.get("/api/tasks", response_model=List[TaskResponse])
+@router.get("/api/tasks", response_model=list[TaskResponse])
 def list_all_tasks(
-    exclude_buckets: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
+    exclude_buckets: str | None = Query(None),
+    search: str | None = Query(None),
 ):
     ex_list = [b.strip() for b in exclude_buckets.split(",")] if exclude_buckets else None
     return get_tasks(
@@ -31,22 +31,22 @@ def list_all_tasks(
 
 
 # Project-scoped tasks endpoints
-@router.get("/api/projects/{project_id}/tasks", response_model=List[TaskResponse])
+@router.get("/api/projects/{project_id}/tasks", response_model=list[TaskResponse])
 def list_project_tasks(
     project_id: str,
-    bucket: Optional[str] = Query(None),
-    buckets: Optional[str] = Query(None),
-    tag: Optional[str] = Query(None),
-    tags: Optional[str] = Query(None),
+    bucket: str | None = Query(None),
+    buckets: str | None = Query(None),
+    tag: str | None = Query(None),
+    tags: str | None = Query(None),
     tag_mode: str = Query("any"),
-    exclude_bucket: Optional[str] = Query(None),
-    exclude_buckets: Optional[str] = Query(None),
-    priorities: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
-    due_before: Optional[str] = Query(None),
-    due_after: Optional[str] = Query(None),
-    planned_date: Optional[str] = Query(None),
-    has_due_date: Optional[bool] = Query(None),
+    exclude_bucket: str | None = Query(None),
+    exclude_buckets: str | None = Query(None),
+    priorities: str | None = Query(None),
+    search: str | None = Query(None),
+    due_before: str | None = Query(None),
+    due_after: str | None = Query(None),
+    planned_date: str | None = Query(None),
+    has_due_date: bool | None = Query(None),
 ):
     b_list = [b.strip() for b in buckets.split(",")] if buckets else None
     t_list = [t.strip() for t in tags.split(",")] if tags else None

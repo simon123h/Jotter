@@ -1,4 +1,3 @@
-from typing import Dict, List
 from pydantic import BaseModel
 
 
@@ -9,10 +8,10 @@ class AppSettings(BaseModel):
     isSidebarOpen: bool = True
     currentTheme: str = "nordic-light"
     thresholdDays: int = 7
-    pinnedProjectIds: List[str] = []
+    pinnedProjectIds: list[str] = []
     sortBy: str = "alpha"
     hideAddTaskButton: bool = True
-    projectOrder: List[str] = []
+    projectOrder: list[str] = []
     windowWidth: int = 1200
     windowHeight: int = 800
     windowX: int = 0
@@ -20,5 +19,5 @@ class AppSettings(BaseModel):
     windowMaximized: bool = False
     gitRemoteUrl: str = ""
     language: str = "en"
-    tagColors: Dict[str, str] = {}
+    tagColors: dict[str, str] = {}
     autoSyncInterval: int = 0

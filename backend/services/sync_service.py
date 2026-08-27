@@ -3,7 +3,8 @@ import shutil
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
+
 from backend.db import get_db
 from backend.services.bucket_service import load_buckets_file
 from backend.services.git_service import git_sync
@@ -37,11 +38,11 @@ def sync_db_only(data_dir: str) -> int:
             )
             registered_project_ids.add(p_id)
 
-    clean_periods: Dict[str, Optional[int]] = {p["id"]: p.get("done_clean_period") for p in projects_data}
+    clean_periods: dict[str, int | None] = {p["id"]: p.get("done_clean_period") for p in projects_data}
 
-    all_buckets: List[Dict[str, Any]] = []
-    bucket_lookup: Dict[str, Set[str]] = {}
-    all_tasks: List[Dict[str, Any]] = []
+    all_buckets: list[dict[str, Any]] = []
+    bucket_lookup: dict[str, set[str]] = {}
+    all_tasks: list[dict[str, Any]] = []
 
     now = datetime.now(timezone.utc)
 
@@ -218,7 +219,7 @@ def full_sync(data_dir: str) -> int:
         settings = load_settings(data_dir)
         projects = load_projects_file(data_dir)
 
-        git_errors: List[str] = []
+        git_errors: list[str] = []
 
         # 1. Global Sync
         if settings.gitRemoteUrl:
