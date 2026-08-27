@@ -25,26 +25,10 @@ class ProjectApplicationService:
             self.bucket_repo.get_all("default")
             projects = [default_p]
 
-        res: list[ProjectResponse] = []
-        for p in projects:
-            res.append(
-                ProjectResponse(
-                    id=p.id,
-                    title=p.name,
-                    git_remote=p.git_remote,
-                    created_at=p.created_at,
-                )
-            )
-        return res
+        return [self._to_response(p) for p in projects]
 
     def get_project(self, project_id: str) -> ProjectResponse:
-        p = self.project_repo.get(project_id)
-        return ProjectResponse(
-            id=p.id,
-            title=p.name,
-            git_remote=p.git_remote,
-            created_at=p.created_at,
-        )
+        return self._to_response(self.project_repo.get(project_id))
 
     def create_project(self, req: ProjectCreate, default_buckets: list[dict[str, Any]] | None = None) -> ProjectResponse:
         title = (getattr(req, "title", None) or getattr(req, "name", "")).strip()
@@ -70,12 +54,7 @@ class ProjectApplicationService:
         # Seed default buckets for new project
         self.bucket_repo.get_all(project.id)
 
-        return ProjectResponse(
-            id=project.id,
-            title=project.name,
-            git_remote=project.git_remote,
-            created_at=project.created_at,
-        )
+        return self._to_response(project)
 
     def update_project(self, project_id: str, req: ProjectUpdate) -> ProjectResponse:
         project = self.project_repo.get(project_id)
@@ -87,15 +66,17 @@ class ProjectApplicationService:
         )
 
         self.project_repo.save(project)
-
-        return ProjectResponse(
-            id=project.id,
-            title=project.name,
-            git_remote=project.git_remote,
-            created_at=project.created_at,
-        )
+        return self._to_response(project)
 
     def delete_project(self, project_id: str) -> None:
         if not self.project_repo.exists(project_id):
             raise EntityNotFoundError(f"Project '{project_id}' not found")
         self.project_repo.delete(project_id)
+
+    def _to_response(self, p: Project) -> ProjectResponse:
+        return ProjectResponse(
+            id=p.id,
+            title=p.name,
+            git_remote=p.git_remote,
+            created_at=p.created_at,
+        )
