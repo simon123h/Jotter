@@ -15,6 +15,7 @@ __pycache__/
 *.egg-info/
 .eggs/
 dist/
+dist-pyz/
 build/
 backend/dist/
 backend/_version.py
