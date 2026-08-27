@@ -75,8 +75,7 @@ const displayedBuckets = computed(() => {
 watchEffect(() => {
   const isPwa =
     typeof window !== 'undefined' &&
-    (window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true);
+    (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true);
 
   let pageTitle = '';
   if (projectId.value === 'all') {
