@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://github.com/simon123h/jotter/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build Status">
   <img src="https://codecov.io/gh/simon123h/jotter/branch/main/graph/badge.svg" alt="Coverage">
-  <img src="https://img.shields.io/badge/Go-v1.25-00ADD8?logo=go&logoColor=white" alt="Go Version">
+  <img src="https://img.shields.io/badge/Python-v3.10+-3776AB?logo=python&logoColor=white" alt="Python Version">
   <img src="https://img.shields.io/badge/Vue.js-v3.5+-4FC08D?logo=vue.js&logoColor=white" alt="Vue Version">
   <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2Fsimon123h%2Fjotter%2Flines" alt="Lines of Code">
   <img src="https://badgen.net/github/release/simon123h/jotter?color=orange" alt="Latest Release">
@@ -12,7 +12,7 @@
 
 🚀 **Try the Online Demo**: [simon123h.github.io/Jotter/demo/](https://simon123h.github.io/Jotter/demo/)
 
-Jotter is a **local-first, privacy-focused task management application** designed to help you organize tasks without losing data ownership. Modeled as a Markdown Kanban board, Jotter helps combat "task flooding" through filtering, intuitive UI, all while keeping your data stored locally in simple, plain-text files on your own machine. The integrated git support allows for syncing the tasks across devices.
+Jotter is a **local-first, privacy-focused task management web application** designed to help you organize tasks without losing data ownership. Modeled as a Markdown Kanban board, Jotter helps combat "task flooding" through filtering, intuitive UI, all while keeping your data stored locally in simple, plain-text files on your own machine. The integrated git support allows for syncing the tasks across devices.
 
 **Documentation**: [simon123h.github.io/Jotter](https://simon123h.github.io/Jotter/)
 
@@ -34,22 +34,24 @@ Jotter is a **local-first, privacy-focused task management application** designe
 
 ---
 
-## 📦 Installation
+## 📦 Quick Start
 
-Jotter is provided as a portable tool with two distinct versions. No dependencies required.
+Jotter runs as a lightweight local web application powered by Python (FastAPI) and a Vue 3 frontend:
 
-1. Download the package for your operating system from the [Latest Releases](https://github.com/simon123h/jotter/releases).
-2. Extract the archive.
-3. Choose your preferred way to run Jotter:
-   - **Standalone Desktop App**: Double-click `jotter-desktop` (or `.exe` on Windows). This opens Jotter in its own dedicated window.
-   - **Headless Server**: Run `jotter-server` from your terminal. This starts a web server (default: `http://localhost:58271`) that you can access with your preferred browser. (On Linux, double-clicking this binary will automatically open a terminal).
-
-   **Example (Linux / macOS terminal):**
-
+1. Clone or download the repository:
    ```bash
-   chmod +x jotter-*
-   ./jotter-desktop
+   git clone https://github.com/simon123h/jotter.git
+   cd jotter
    ```
+2. Install dependencies:
+   ```bash
+   pip install -e .
+   ```
+3. Start the server:
+   ```bash
+   python3 run.py
+   ```
+4. Open your browser at **`http://localhost:58271`**.
 
 Jotter automatically handles both portable and global configurations out of the box:
 
@@ -61,6 +63,24 @@ For advanced customization and full directory details, please see [the user conf
 
 ---
 
+## 🛠️ Development & Testing
+
+```bash
+# Install frontend and backend dependencies
+npm run install:all
+
+# Run backend and frontend dev servers concurrently
+npm run dev
+
+# Run all test suites (Pytest + Vitest)
+npm run test
+
+# Run frontend E2E browser tests (Playwright)
+cd frontend && npx playwright test
+```
+
+---
+
 ## 📖 Documentation
 
 The complete documentation is available at **[simon123h.github.io/Jotter/](https://simon123h.github.io/Jotter/)**.
@@ -68,12 +88,16 @@ The complete documentation is available at **[simon123h.github.io/Jotter/](https
 Alternatively, you can refer to the raw Markdown source files in the `docs/` folder:
 
 - **User Guide & Setup**:
-  - [Configuring Jotter (Ports, Directories, logs)](docs/user/configuration.md)
+  - [Configuring Jotter (Ports, Directories, Logs)](docs/user/configuration.md)
+  - [Search & Filtering DSL](docs/user/searching-filtering.md)
   - [Importing & Exporting Data (Excel & CSV)](docs/user/import-export.md)
-- **Installation**:
-  - [Running Pre-compiled Binaries (Windows/Linux/macOS)](docs/installation/precompiled.md)
-  - [Running from Source (For Developers)](docs/installation/development.md)
+  - [Keyboard Shortcuts](docs/user/shortcuts.md)
+  - [Postponing Tasks](docs/user/postponing.md)
+  - [Markdown File Format Specification](docs/user/format-spec.md)
+  - [Obsidian & PKM Sync](docs/user/obsidian.md)
+  - [Git Sync & Collaboration](docs/user/git-sync.md)
+  - [Data Safety & Recovery](docs/user/safety.md)
 - **Developer Reference**:
   - [Architectural Design (arc42)](docs/developer/architecture.md)
-  - [API Documentation (Swagger UI)](http://localhost:58271/swagger/index.html) _(Only available when running the backend headless server)_
+  - [API Documentation (Interactive OpenAPI/Swagger)](http://localhost:58271/docs) _(Available when running the server)_
   - [Contributing Guidelines](CONTRIBUTING.md)
