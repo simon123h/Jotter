@@ -71,23 +71,29 @@ const displayedBuckets = computed(() => {
   });
 });
 
-// Update document title dynamically based on active project
+// Update document title dynamically based on active project (handling PWA standalone mode)
 watchEffect(() => {
-  let title = 'Jotter';
+  const isPwa =
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true);
+
+  let pageTitle = '';
   if (projectId.value === 'all') {
-    title = `${t('projects.allProjects') || 'All Projects'} | Jotter`;
+    pageTitle = t('projects.allProjects') || 'All Projects';
   } else {
     const currentProj = projects.value.find((p) => p.id === projectId.value);
     if (currentProj) {
-      title = `${currentProj.title} | Jotter`;
+      pageTitle = currentProj.title;
     }
   }
-  document.title = title;
 
-  // Update Wails window title if running in a Wails desktop context
-  const w = window as any;
-  if (w.runtime && typeof w.runtime.WindowSetTitle === 'function') {
-    w.runtime.WindowSetTitle(title);
+  // In PWA standalone mode, Chrome/OS already prefixes the window title with the app name ("Jotter - ")
+  // In a standard browser tab, we append " | Jotter" for clear tab identification
+  if (isPwa) {
+    document.title = pageTitle || 'Jotter';
+  } else {
+    document.title = pageTitle ? `${pageTitle} | Jotter` : 'Jotter';
   }
 });
 
