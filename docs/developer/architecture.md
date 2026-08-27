@@ -24,9 +24,9 @@ Jotter is a local-first, non-commercial task management application designed to 
 
 ## 2. Architecture Constraints
 
-- **Platform Independent**: Executable binaries must be provided for Linux, macOS, and Windows.
-- **Offline-First**: Must run locally without requiring any network access.
-- **Zero Dependency Startup**: Pre-compiled single-file binaries must run without requiring Python/Node runtimes on the host machine.
+- **Platform Independent**: Python 3.10+ runtime support across Linux, macOS, and Windows.
+- **Offline-First**: Must run locally without requiring external cloud access.
+- **Script-Based Security Compliance**: Pure source script execution (no opaque compiled binary executables).
 
 ---
 
@@ -34,13 +34,13 @@ Jotter is a local-first, non-commercial task management application designed to 
 
 ```mermaid
 flowchart TD
-    User([User Browser]) <-->|localhost:58271| Jotter[Jotter App]
+    User([User Browser]) <-->|localhost:58271| Jotter[Jotter Python App]
     Jotter <-->|File Read/Write| FS[(Local Filesystem)]
 ```
 
 - **User**: Interacts with Jotter through a modern web browser.
-- **Jotter App**: Serves the frontend bundle and exposes a local REST API.
-- **Local Filesystem**: Contains the user's tasks stored as `.md` files in a structured directories format.
+- **Jotter App**: FastAPI application serving the Vue 3 frontend bundle and exposing a local REST API.
+- **Local Filesystem**: Contains the user's tasks stored as `.md` files in a structured directory format.
 
 ---
 
@@ -50,7 +50,7 @@ Jotter employs the **"Ephemeral Index" Pattern** to combine the benefits of rela
 
 ```mermaid
 flowchart TD
-    API[Go Chi Backend] <-->|Write JSON Frontmatter| Files[(Markdown Files)]
+    API[FastAPI Python Backend] <-->|Write YAML Frontmatter| Files[(Markdown Files)]
     API <-->|Read / Write| DB[(SQLite Index)]
     DB -.->|Fully reconstructed from| Files
 ```
@@ -70,41 +70,39 @@ flowchart LR
         Store <--> Client[API Client]
     end
 
-    subgraph Backend [Backend Server - Go Chi / Wails]
+    subgraph Backend [Backend Server - FastAPI / Python]
         direction TB
-        Router[API Routers / chi.Router] <--> Handlers[Layered Handlers / Controllers]
-        Handlers <--> Services[Domain Services / Business Layer]
-        Services <--> DBRepo[Database Repositories]
-        Services <--> FileRepo[File Repositories]
-        DBRepo <--> Database[(SQLite DB Index)]
+        Router[API Routers / APIRouter] <--> Controllers[Route Endpoints]
+        Controllers <--> Services[Domain Services / Business Layer]
+        Services <--> Database[(SQLite DB Index)]
+        Services <--> Disk[(Local Disk .md)]
     end
 
     Client <-->|REST API / CORS| Router
-    FileRepo <-->|Read / Write| Disk[(Local Disk .md)]
 ```
 
 ### 5.1 Frontend (Vue 3 Single Page Application)
 
-- **Kanban UI Components**: Vue components (`BoardView.vue`, `TaskCard.vue`) styled with Tailwind CSS.
-- **Pinia Store**: Manages client-side settings (such as local preference persistence) synced with `localStorage`.
-- **API Client**: Interacts with the backend routes.
+- **Kanban UI Components**: Vue 3 Composition API components styled with Tailwind CSS.
+- **Pinia Store**: Manages client-side settings, current project, active filters, and selection states.
+- **API Client**: Interacts with the FastAPI backend routes.
 
-### 5.2 Backend (Go Chi / Wails)
+### 5.2 Backend (FastAPI Python Application)
 
-Jotter is built using a clean, layered architectural design divided into modular feature packages (`internal/features/...`): `project`, `bucket`, `task`, `settings`, and `system`. Each feature package consists of three decoupled layers (perfectly matching Spring Boot's Controller-Service-Repository separation):
+Jotter is built using a clean, layered architectural design divided into modular packages (`backend/...`): `models`, `routes`, `services`, `utils`, and `db`.
 
-1. **Handlers (Controller Layer)**:
-   - Registers feature-specific REST endpoints (`RegisterRoutes`).
-   - Acts as the entry point for HTTP requests.
-   - Parses request parameters and decodes request payloads into Go struct DTOs (Data Transfer Objects).
-   - Translates domain-level responses or errors into standard HTTP status codes and JSON responses.
-2. **Services (Business Logic / Domain Layer)**:
-   - Contains pure business logic, input validation, and business rule evaluation.
-   - Coordinates multi-repository operations (e.g., ensuring disk storage and the SQLite index remain synchronized).
+1. **Routes (Controller Layer)**:
+   - Registers feature-specific REST endpoints (`projects.py`, `buckets.py`, `tasks.py`, `settings.py`, `system.py`).
+   - Parses request parameters, query filters, and validates request payloads into Pydantic DTO models.
+   - Translates domain-level responses and exceptions into standard HTTP status codes and JSON responses.
+
+2. **Services (Business Logic Layer)**:
+   - Contains pure business logic, input validation, and coordinate operations between disk files and the SQLite index.
    - Handles advanced file-system operations such as multi-part attachment uploads, task list filtering, and project-scoped auto-pruning.
-3. **Repositories (Data Access / Persistence Layer)**:
-   - **Database Repository (SQLite Repositories)**: Interacts directly with the local ephemeral SQLite index database (`modernc.org/sqlite`) using structured SQL queries.
-   - **File Repository (Disk Repositories)**: Directly interacts with the host filesystem to read/write Markdown YAML frontmatter files, JSON configuration registries (`projects.json`), and binary/text attachment files.
+
+3. **Data Access (SQLite Index & Filesystem)**:
+   - **Database Index**: Interacts directly with the local ephemeral SQLite index database (`tasks.db`) using structured SQL queries with WAL mode enabled.
+   - **Filesystem**: Reads and writes Markdown YAML frontmatter files, JSON configuration registries (`projects.json`, `buckets.json`, `settings.json`), and binary/text attachment files.
 
 ---
 
@@ -116,43 +114,38 @@ When Jotter starts, it goes through a synchronization phase to align the databas
 
 ```mermaid
 sequenceDiagram
-    participant Main as main_server.go / main_desktop.go
-    participant Bootstrap as internal/app/bootstrap.go
-    participant DB as internal/db/db.go
-    participant SysSvc as system.Service (internal/features/system)
-    participant FileRepo as system.FileRepository (internal/features/system)
-    participant DBRepo as system.DBRepository (internal/features/system)
+    participant Main as backend/main.py
+    participant App as backend/app.py
+    participant DB as backend/db.py
+    participant Sync as backend/services/sync_service.py
     participant Disk as Local Disk (.md)
 
-    Main->>Bootstrap: Bootstrap(dataDir, dbPath)
-    Bootstrap->>DB: InitDB()
-    DB-->>Bootstrap: DB initialized (SQLite schema setup)
-    Bootstrap->>SysSvc: SyncDBWithFiles()
-    SysSvc->>SysSvc: Instantiate Service + Repositories
-    SysSvc->>FileRepo: LoadProjectsFile() & ReadDir()
-    FileRepo->>Disk: Read projects.json and project directories
-    Disk-->>FileRepo: Return directories & files
-    FileRepo-->>SysSvc: Project configurations & task list
-    SysSvc->>SysSvc: Parse yaml frontmatter from markdown files
-    SysSvc->>DBRepo: Clear & bulk insert buckets/tasks/projects
-    DBRepo-->>SysSvc: Sync complete
-    SysSvc-->>Bootstrap: Return sync count
-    Bootstrap-->>Main: Ready to serve
+    Main->>App: create_app(config)
+    App->>DB: get_db(db_path)
+    DB-->>App: SQLite connection ready (WAL enabled)
+    App->>Sync: sync_db_only(data_dir)
+    Sync->>Disk: Read projects.json, buckets.json & *.md files
+    Disk-->>Sync: Frontmatter & body contents
+    Sync->>DB: Atomic batch INSERT (projects, buckets, tasks)
+    DB-->>Sync: Sync complete
+    Sync-->>App: Return synchronized tasks count
+    App-->>Main: FastAPI server ready to accept requests
 ```
 
 ---
 
 ## 7. Deployment View
 
-Jotter is packaged into two separate native binaries:
+Jotter is deployed as a lightweight client-server web application:
 
-1. **`jotter-desktop` (GUI)**: A full desktop application bundled using **Wails**. It opens a native webview window and runs the embedded frontend.
-2. **`jotter-server` (Server)**: A lightweight CLI binary that starts a standard HTTP server and serves the frontend to any modern web browser.
+1. **Backend**: Python 3 (FastAPI + Uvicorn) serving REST endpoints and static files.
+2. **Frontend**: Built Single Page Application (Vue 3 + Vite + Tailwind CSS) served directly from `frontend/dist/`.
 
-### Shared Packaging Features:
-
-- **Assets Bundling**: The compiled frontend SPA bundle (`dist/`) is embedded inside the Go binary using `go:embed` and served natively.
-- **Internal Logic**: Both binaries share the exact same underlying logic from the `internal/` packages, ensuring consistent behavior across modes.
+Running Jotter:
+```bash
+pip install -r requirements.txt
+python3 run.py
+```
 
 ---
 
