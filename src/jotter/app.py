@@ -13,7 +13,7 @@ from jotter.features.settings import router as settings_router
 from jotter.features.sync import SyncApplicationService
 from jotter.features.sync import router as system_router
 from jotter.features.tasks import router as tasks_router
-from jotter.shared.db import get_db
+from jotter.shared.db import create_sqlite_connection
 from jotter.shared.exceptions import DomainException, EntityNotFoundError, ValidationError
 
 try:
@@ -31,12 +31,13 @@ def create_app(config: UserConfig, version: str = app_version) -> FastAPI:
     app.state.config = config
     app.state.version = version
 
-    # Setup database
+    # Setup database connection on app state
     db_path = str(Path(config.data_dir) / "tasks.db")
-    get_db(db_path)
+    conn = create_sqlite_connection(db_path)
+    app.state.db = conn
 
     # Initial DB sync from disk
-    SyncApplicationService(config.data_dir).sync_db_only()
+    SyncApplicationService.from_data_dir(config.data_dir, conn).sync_db_only()
 
     # Global Domain Exception Handlers
     @app.exception_handler(EntityNotFoundError)

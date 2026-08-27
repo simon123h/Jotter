@@ -6,18 +6,13 @@ from datetime import datetime, timezone
 from typing import Any
 
 from jotter.features.tasks.domain import Task
-from jotter.shared.db import get_db
 from jotter.shared.exceptions import EntityNotFoundError
 from jotter.shared.value_objects import DueDate, Priority, Tag, TaskId
 
 
 class SqliteTaskRepository:
-    def __init__(self, conn: sqlite3.Connection | None = None):
-        self._conn = conn
-
-    @property
-    def conn(self) -> sqlite3.Connection:
-        return self._conn if self._conn is not None else get_db()
+    def __init__(self, conn: sqlite3.Connection):
+        self.conn = conn
 
     def upsert_task(self, task: Task) -> None:
         """Indexes or updates a task in SQLite."""

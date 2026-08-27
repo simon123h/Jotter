@@ -6,18 +6,13 @@ from pathlib import Path
 from typing import Any
 
 from jotter.features.buckets.domain import DEFAULT_DOMAIN_BUCKETS, Bucket
-from jotter.shared.db import get_db
 from jotter.shared.exceptions import EntityNotFoundError
 
 
 class BucketRepository:
-    def __init__(self, data_dir: str = "", conn: sqlite3.Connection | None = None):
+    def __init__(self, data_dir: Path | str, conn: sqlite3.Connection):
         self.data_dir = Path(data_dir) if data_dir else None
-        self._conn = conn
-
-    @property
-    def conn(self) -> sqlite3.Connection:
-        return self._conn if self._conn is not None else get_db()
+        self.conn = conn
 
     def get_project_dir(self, project_id: str) -> Path | None:
         if not self.data_dir:
@@ -58,13 +53,16 @@ class BucketRepository:
     def save(self, project_id: str, bucket: Bucket) -> None:
         cursor = self.conn.cursor()
         if bucket.is_default:
-            cursor.execute("UPDATE buckets SET is_default = 0 WHERE project_id = ?", (project_id,))
+            # Unset is_default on other buckets for this project
+            cursor.execute(
+                "UPDATE buckets SET is_default = 0 WHERE project_id = ? AND name != ?",
+                (project_id, bucket.name),
+            )
 
         cursor.execute(
             """
-            INSERT INTO buckets (
-                project_id, name, title, subtitle, position, color, layout, max_tasks, is_default
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(project_id, name) DO UPDATE SET
                 title = excluded.title,
                 subtitle = excluded.subtitle,
@@ -90,51 +88,29 @@ class BucketRepository:
 
     def delete(self, project_id: str, name: str) -> None:
         cursor = self.conn.cursor()
-        cursor.execute("DELETE FROM buckets WHERE project_id = ? AND name = ?", (project_id, name))
+        cursor.execute(
+            "DELETE FROM buckets WHERE project_id = ? AND name = ?",
+            (project_id, name),
+        )
         self.sync_buckets_file(project_id)
 
-    def count_tasks_in_bucket(self, project_id: str, name: str) -> int:
+    def count_tasks_in_bucket(self, project_id: str, bucket_name: str) -> int:
         cursor = self.conn.cursor()
-        cursor.execute("SELECT COUNT(*) as cnt FROM tasks WHERE project_id = ? AND bucket = ?", (project_id, name))
+        cursor.execute(
+            "SELECT COUNT(*) as cnt FROM tasks WHERE project_id = ? AND bucket = ?",
+            (project_id, bucket_name),
+        )
         row = cursor.fetchone()
         return int(row["cnt"]) if row else 0
 
-    def load_buckets_file(self, project_id: str) -> list[dict[str, Any]]:
-        project_dir = self.get_project_dir(project_id)
-        if not project_dir:
-            return DEFAULT_DOMAIN_BUCKETS
-        buckets_file = project_dir / "buckets.json"
-
-        if not buckets_file.is_file():
-            self.write_buckets_file(project_id, DEFAULT_DOMAIN_BUCKETS)
-            return DEFAULT_DOMAIN_BUCKETS
-
-        try:
-            with open(buckets_file, encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data, list) and len(data) > 0:
-                    return data
-        except Exception:
-            pass
-
-        self.write_buckets_file(project_id, DEFAULT_DOMAIN_BUCKETS)
-        return DEFAULT_DOMAIN_BUCKETS
-
-    def write_buckets_file(self, project_id: str, buckets: list[dict[str, Any]]) -> None:
-        project_dir = self.get_project_dir(project_id)
-        if not project_dir:
-            return
-        buckets_file = project_dir / "buckets.json"
-        tmp_file = buckets_file.with_suffix(".tmp")
-        with open(tmp_file, "w", encoding="utf-8") as f:
-            json.dump(buckets, f, indent=2)
-        tmp_file.replace(buckets_file)
-
     def sync_buckets_file(self, project_id: str) -> None:
-        if not self.data_dir:
+        """Persists current SQLite buckets configuration to disk `buckets.json`."""
+        proj_dir = self.get_project_dir(project_id)
+        if not proj_dir:
             return
+
         buckets = self.get_all(project_id)
-        buckets_data = [
+        data = [
             {
                 "name": b.name,
                 "title": b.title,
@@ -147,7 +123,33 @@ class BucketRepository:
             }
             for b in buckets
         ]
-        self.write_buckets_file(project_id, buckets_data)
+        self.write_buckets_file(project_id, data)
+
+    def load_buckets_file(self, project_id: str) -> list[dict[str, Any]]:
+        proj_dir = self.get_project_dir(project_id)
+        if not proj_dir:
+            return DEFAULT_DOMAIN_BUCKETS
+
+        file_path = proj_dir / "buckets.json"
+        if not file_path.is_file():
+            self.write_buckets_file(project_id, DEFAULT_DOMAIN_BUCKETS)
+            return DEFAULT_DOMAIN_BUCKETS
+
+        try:
+            with open(file_path, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return DEFAULT_DOMAIN_BUCKETS
+
+    def write_buckets_file(self, project_id: str, buckets: list[dict[str, Any]]) -> None:
+        proj_dir = self.get_project_dir(project_id)
+        if not proj_dir:
+            return
+        file_path = proj_dir / "buckets.json"
+        tmp_path = file_path.with_suffix(".tmp")
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(buckets, f, indent=2)
+        tmp_path.replace(file_path)
 
     def _row_to_bucket(self, row: sqlite3.Row) -> Bucket:
         return Bucket(

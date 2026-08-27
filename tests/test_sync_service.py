@@ -4,12 +4,14 @@ from jotter.features.buckets.service import BucketApplicationService
 from jotter.features.sync.service import SyncApplicationService
 from jotter.features.tasks.schemas import TaskCreate
 from jotter.features.tasks.service import TaskApplicationService
+from jotter.shared.db import get_db
 
 
 def test_sync_auto_creates_missing_buckets_from_markdown(temp_dir, test_env):
-    task_svc = TaskApplicationService(temp_dir)
-    sync_svc = SyncApplicationService(temp_dir)
-    bucket_svc = BucketApplicationService(temp_dir)
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
 
     # Directly create a task with a brand new bucket on disk
     task = task_svc.create_task("default", TaskCreate(title="Experiment 1", bucket="experiments"))
@@ -24,8 +26,9 @@ def test_sync_auto_creates_missing_buckets_from_markdown(temp_dir, test_env):
 
 
 def test_sync_removes_deleted_markdown_files_from_index(temp_dir, test_env):
-    task_svc = TaskApplicationService(temp_dir)
-    sync_svc = SyncApplicationService(temp_dir)
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
 
     task = task_svc.create_task("default", TaskCreate(title="Temporary Task", bucket="todo"))
     assert len(task_svc.get_tasks("default")) >= 1

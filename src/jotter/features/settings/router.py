@@ -9,17 +9,19 @@ from jotter.shared.deps import get_data_dir
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 
-def get_service(data_dir: str = Depends(get_data_dir)) -> SettingsApplicationService:
+def get_settings_service(
+    data_dir: str = Depends(get_data_dir),
+) -> SettingsApplicationService:
     return SettingsApplicationService(data_dir)
 
 
 @router.get("", response_model=AppSettings)
-def get_settings(svc: SettingsApplicationService = Depends(get_service)):
+def get_settings(svc: SettingsApplicationService = Depends(get_settings_service)):
     return svc.load_settings()
 
 
 @router.put("", response_model=AppSettings)
 @router.patch("", response_model=AppSettings)
 @router.post("", response_model=AppSettings)
-def update_settings(updates: SettingsUpdate, svc: SettingsApplicationService = Depends(get_service)):
+def update_settings(updates: SettingsUpdate, svc: SettingsApplicationService = Depends(get_settings_service)):
     return svc.update_settings(updates)

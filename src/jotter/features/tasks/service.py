@@ -1,5 +1,8 @@
 """Application service orchestrating Task use cases."""
 
+import sqlite3
+from pathlib import Path
+from typing import Self
 
 from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository
@@ -18,12 +21,26 @@ from jotter.shared.value_objects import Priority
 
 
 class TaskApplicationService:
-    def __init__(self, data_dir: str = ""):
-        self.data_dir = data_dir
-        self.disk_repo = DiskTaskRepository(data_dir)
-        self.sqlite_repo = SqliteTaskRepository()
-        self.bucket_repo = BucketRepository(data_dir)
-        self.project_repo = ProjectRepository(data_dir)
+    def __init__(
+        self,
+        disk_repo: DiskTaskRepository,
+        sqlite_repo: SqliteTaskRepository,
+        bucket_repo: BucketRepository,
+        project_repo: ProjectRepository,
+    ):
+        self.disk_repo = disk_repo
+        self.sqlite_repo = sqlite_repo
+        self.bucket_repo = bucket_repo
+        self.project_repo = project_repo
+
+    @classmethod
+    def from_data_dir(cls, data_dir: Path | str, conn: sqlite3.Connection) -> Self:
+        return cls(
+            disk_repo=DiskTaskRepository(data_dir),
+            sqlite_repo=SqliteTaskRepository(conn),
+            bucket_repo=BucketRepository(data_dir, conn),
+            project_repo=ProjectRepository(data_dir, conn),
+        )
 
     def get_task(self, project_id: str, task_id: str) -> TaskResponse:
         try:

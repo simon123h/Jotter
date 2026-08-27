@@ -5,18 +5,13 @@ import sqlite3
 from pathlib import Path
 
 from jotter.features.projects.domain import Project
-from jotter.shared.db import get_db
 from jotter.shared.exceptions import EntityNotFoundError
 
 
 class ProjectRepository:
-    def __init__(self, data_dir: str = "", conn: sqlite3.Connection | None = None):
+    def __init__(self, data_dir: Path | str, conn: sqlite3.Connection):
         self.data_dir = Path(data_dir) if data_dir else None
-        self._conn = conn
-
-    @property
-    def conn(self) -> sqlite3.Connection:
-        return self._conn if self._conn is not None else get_db()
+        self.conn = conn
 
     def exists(self, project_id: str) -> bool:
         cursor = self.conn.cursor()

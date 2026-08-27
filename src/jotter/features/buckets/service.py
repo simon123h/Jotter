@@ -1,17 +1,22 @@
 """Application service orchestrating Bucket use cases."""
 
+import sqlite3
+from pathlib import Path
+from typing import Self
+
 from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository
 from jotter.features.buckets.schemas import BucketCreate, BucketResponse, BucketUpdate
-from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 from jotter.shared.exceptions import ValidationError
 
 
 class BucketApplicationService:
-    def __init__(self, data_dir: str = ""):
-        self.data_dir = data_dir
-        self.bucket_repo = BucketRepository(data_dir)
-        self.sqlite_task_repo = SqliteTaskRepository()
+    def __init__(self, bucket_repo: BucketRepository):
+        self.bucket_repo = bucket_repo
+
+    @classmethod
+    def from_data_dir(cls, data_dir: Path | str, conn: sqlite3.Connection) -> Self:
+        return cls(bucket_repo=BucketRepository(data_dir, conn))
 
     def get_all_buckets(self, project_id: str) -> list[BucketResponse]:
         buckets = self.bucket_repo.get_all(project_id)

@@ -1,5 +1,6 @@
 """FastAPI routes for System Sync, Git history, Info, and Restore."""
 
+import sqlite3
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -11,7 +12,7 @@ from jotter.features.sync.git_adapter import (
     is_git_installed,
 )
 from jotter.features.sync.service import SyncApplicationService
-from jotter.shared.deps import get_data_dir
+from jotter.shared.deps import get_data_dir, get_db_conn
 
 router = APIRouter(prefix="/api/system", tags=["system"])
 
@@ -20,12 +21,15 @@ class RestoreRequest(BaseModel):
     commitHash: str
 
 
-def get_service(data_dir: str = Depends(get_data_dir)) -> SyncApplicationService:
-    return SyncApplicationService(data_dir)
+def get_sync_service(
+    data_dir: str = Depends(get_data_dir),
+    conn: sqlite3.Connection = Depends(get_db_conn),
+) -> SyncApplicationService:
+    return SyncApplicationService.from_data_dir(data_dir, conn)
 
 
 @router.post("/sync")
-def trigger_sync(svc: SyncApplicationService = Depends(get_service)):
+def trigger_sync(svc: SyncApplicationService = Depends(get_sync_service)):
     synced_count = svc.full_sync()
     return {"status": "success", "synced": synced_count}
 
@@ -57,7 +61,7 @@ def restore_project_commit(
     project_id: str,
     req: RestoreRequest,
     data_dir: str = Depends(get_data_dir),
-    svc: SyncApplicationService = Depends(get_service),
+    svc: SyncApplicationService = Depends(get_sync_service),
 ):
     if not req.commitHash or not req.commitHash.strip():
         raise HTTPException(status_code=400, detail="commitHash is required")
@@ -76,6 +80,6 @@ def restore_project_commit(
 def restore_default_commit(
     req: RestoreRequest,
     data_dir: str = Depends(get_data_dir),
-    svc: SyncApplicationService = Depends(get_service),
+    svc: SyncApplicationService = Depends(get_sync_service),
 ):
     return restore_project_commit("default", req, data_dir, svc)

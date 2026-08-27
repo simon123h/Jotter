@@ -1,42 +1,37 @@
-"""Centralized SQLite connection lifecycle and schema setup."""
+"""SQLite connection creation and schema setup."""
 
 import sqlite3
 import threading
 from pathlib import Path
 
 _db_lock = threading.Lock()
-_connection: sqlite3.Connection | None = None
+_global_connection: sqlite3.Connection | None = None
 
 
-def get_db(db_path: str | None = None) -> sqlite3.Connection:
-    global _connection
-    with _db_lock:
-        if _connection is None:
-            if db_path is None:
-                raise ValueError("Database path must be provided on first connection initialization.")
+def create_sqlite_connection(db_path: Path | str) -> sqlite3.Connection:
+    """Creates a configured SQLite connection and initializes the database schema."""
+    path = Path(db_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
-            path = Path(db_path)
-            path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(
+        str(path),
+        check_same_thread=False,
+        timeout=30.0,
+        isolation_level=None,  # autocommit mode, transactions managed explicitly
+    )
+    conn.row_factory = sqlite3.Row
 
-            _connection = sqlite3.connect(
-                str(path),
-                check_same_thread=False,
-                timeout=30.0,
-                isolation_level=None,  # autocommit mode, transactions managed explicitly
-            )
-            _connection.row_factory = sqlite3.Row
+    # Performance and integrity pragmas
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA foreign_keys=ON;")
 
-            # Pragmas
-            _connection.execute("PRAGMA journal_mode=WAL;")
-            _connection.execute("PRAGMA foreign_keys=ON;")
-
-            # Create Schema
-            _init_schema(_connection)
-
-        return _connection
+    # Initialize schema
+    init_schema(conn)
+    return conn
 
 
-def _init_schema(conn: sqlite3.Connection) -> None:
+def init_schema(conn: sqlite3.Connection) -> None:
+    """Creates required database tables and indexes if they do not exist."""
     schema = """
     CREATE TABLE IF NOT EXISTS projects (
         id TEXT PRIMARY KEY,
@@ -86,19 +81,31 @@ def _init_schema(conn: sqlite3.Connection) -> None:
     """
     conn.executescript(schema)
 
-    # Migration for postponed_until column if needed
+    # Column migrations
     try:
         conn.execute("SELECT postponed_until FROM tasks LIMIT 0")
     except sqlite3.OperationalError:
         conn.execute("ALTER TABLE tasks ADD COLUMN postponed_until TEXT DEFAULT NULL")
 
 
-def close_db() -> None:
-    global _connection
+def get_db(db_path: Path | str | None = None) -> sqlite3.Connection:
+    """Convenience helper / fallback for scripts and tests."""
+    global _global_connection
     with _db_lock:
-        if _connection is not None:
+        if _global_connection is None:
+            if db_path is None:
+                raise ValueError("Database path must be provided on first connection initialization.")
+            _global_connection = create_sqlite_connection(db_path)
+        return _global_connection
+
+
+def close_db() -> None:
+    """Closes global fallback connection if open."""
+    global _global_connection
+    with _db_lock:
+        if _global_connection is not None:
             try:
-                _connection.close()
+                _global_connection.close()
             except Exception:
                 pass
-            _connection = None
+            _global_connection = None

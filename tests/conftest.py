@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 
 from jotter.app import create_app
 from jotter.config import UserConfig
-from jotter.features.sync import SyncApplicationService
 from jotter.shared.db import close_db, get_db
 
 
@@ -24,8 +23,6 @@ def test_env(temp_dir: str) -> Generator[tuple[TestClient, str], None, None]:
 
     config = UserConfig(data_dir=temp_dir, port=8000)
     app = create_app(config)
-
-    SyncApplicationService(temp_dir).sync_db_only()
 
     with TestClient(app) as client:
         yield client, temp_dir

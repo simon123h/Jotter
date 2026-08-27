@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from jotter.features.tasks.disk_repo import DiskTaskRepository
 from jotter.features.tasks.schemas import (
     TaskCreate,
@@ -5,6 +7,7 @@ from jotter.features.tasks.schemas import (
     TaskUpdate,
 )
 from jotter.features.tasks.service import TaskApplicationService
+from jotter.shared.db import get_db
 
 
 def test_frontmatter_parse_and_dump():
@@ -39,7 +42,8 @@ Here are details.
 
 
 def test_task_crud_and_positioning(temp_dir, test_env):
-    task_svc = TaskApplicationService(temp_dir)
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
 
     # Create task
     t1 = task_svc.create_task(
@@ -76,7 +80,8 @@ def test_task_crud_and_positioning(temp_dir, test_env):
 
 
 def test_task_search_and_filtering(temp_dir, test_env):
-    task_svc = TaskApplicationService(temp_dir)
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
 
     task_svc.create_task(
         "default",

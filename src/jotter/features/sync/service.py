@@ -1,6 +1,8 @@
 """Application service for disk <-> SQLite synchronization and Git reconciliation."""
 
+import sqlite3
 from pathlib import Path
+from typing import Self
 
 from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository
@@ -12,12 +14,29 @@ from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 
 
 class SyncApplicationService:
-    def __init__(self, data_dir: str):
-        self.data_dir = data_dir
-        self.disk_task_repo = DiskTaskRepository(data_dir)
-        self.sqlite_task_repo = SqliteTaskRepository()
-        self.bucket_repo = BucketRepository(data_dir)
-        self.project_repo = ProjectRepository(data_dir)
+    def __init__(
+        self,
+        data_dir: Path | str,
+        disk_task_repo: DiskTaskRepository,
+        sqlite_task_repo: SqliteTaskRepository,
+        bucket_repo: BucketRepository,
+        project_repo: ProjectRepository,
+    ):
+        self.data_dir = str(data_dir)
+        self.disk_task_repo = disk_task_repo
+        self.sqlite_task_repo = sqlite_task_repo
+        self.bucket_repo = bucket_repo
+        self.project_repo = project_repo
+
+    @classmethod
+    def from_data_dir(cls, data_dir: Path | str, conn: sqlite3.Connection) -> Self:
+        return cls(
+            data_dir=data_dir,
+            disk_task_repo=DiskTaskRepository(data_dir),
+            sqlite_task_repo=SqliteTaskRepository(conn),
+            bucket_repo=BucketRepository(data_dir, conn),
+            project_repo=ProjectRepository(data_dir, conn),
+        )
 
     def sync_db_only(self) -> int:
         """Reconciles SQLite database index against disk files."""

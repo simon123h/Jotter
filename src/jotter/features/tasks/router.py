@@ -1,5 +1,6 @@
 """FastAPI routes for Tasks and Attachments."""
 
+import sqlite3
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
@@ -7,13 +8,16 @@ from fastapi.responses import FileResponse
 
 from jotter.features.tasks.schemas import TaskCreate, TaskMove, TaskResponse, TaskUpdate
 from jotter.features.tasks.service import TaskApplicationService
-from jotter.shared.deps import get_data_dir
+from jotter.shared.deps import get_data_dir, get_db_conn
 
 router = APIRouter(tags=["tasks"])
 
 
-def get_service(data_dir: str = Depends(get_data_dir)) -> TaskApplicationService:
-    return TaskApplicationService(data_dir)
+def get_task_service(
+    data_dir: str = Depends(get_data_dir),
+    conn: sqlite3.Connection = Depends(get_db_conn),
+) -> TaskApplicationService:
+    return TaskApplicationService.from_data_dir(data_dir, conn)
 
 
 def _extract_query_param(request: Request, *names: str, default: str | None = None) -> str | None:
@@ -38,7 +42,7 @@ def _extract_query_list(request: Request, *names: str) -> list[str] | None:
 
 # Global tasks endpoint - full filtering support
 @router.get("/api/tasks", response_model=list[TaskResponse])
-def list_all_tasks(request: Request, svc: TaskApplicationService = Depends(get_service)):
+def list_all_tasks(request: Request, svc: TaskApplicationService = Depends(get_task_service)):
     project_id = _extract_query_param(request, "projectId", "project_id", "project")
     bucket = _extract_query_param(request, "bucket")
     buckets = _extract_query_list(request, "buckets", "bucket")
@@ -78,7 +82,7 @@ def list_all_tasks(request: Request, svc: TaskApplicationService = Depends(get_s
 
 # Project tasks endpoint
 @router.get("/api/projects/{project_id}/tasks", response_model=list[TaskResponse])
-def list_project_tasks(project_id: str, request: Request, svc: TaskApplicationService = Depends(get_service)):
+def list_project_tasks(project_id: str, request: Request, svc: TaskApplicationService = Depends(get_task_service)):
     bucket = _extract_query_param(request, "bucket")
     buckets = _extract_query_list(request, "buckets")
     tag = _extract_query_param(request, "tag")
@@ -116,12 +120,12 @@ def list_project_tasks(project_id: str, request: Request, svc: TaskApplicationSe
 
 
 @router.get("/api/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
-def get_single_task(project_id: str, task_id: str, svc: TaskApplicationService = Depends(get_service)):
+def get_single_task(project_id: str, task_id: str, svc: TaskApplicationService = Depends(get_task_service)):
     return svc.get_task(project_id, task_id)
 
 
 @router.post("/api/projects/{project_id}/tasks", response_model=TaskResponse, status_code=201)
-def create_new_task(project_id: str, req: TaskCreate, svc: TaskApplicationService = Depends(get_service)):
+def create_new_task(project_id: str, req: TaskCreate, svc: TaskApplicationService = Depends(get_task_service)):
     return svc.create_task(project_id, req)
 
 
@@ -131,7 +135,7 @@ def update_existing_task(
     project_id: str,
     task_id: str,
     req: TaskUpdate,
-    svc: TaskApplicationService = Depends(get_service),
+    svc: TaskApplicationService = Depends(get_task_service),
 ):
     return svc.update_task(project_id, task_id, req)
 
@@ -141,13 +145,13 @@ def move_existing_task(
     project_id: str,
     task_id: str,
     req: TaskMove,
-    svc: TaskApplicationService = Depends(get_service),
+    svc: TaskApplicationService = Depends(get_task_service),
 ):
     return svc.move_task(project_id, task_id, req)
 
 
 @router.delete("/api/projects/{project_id}/tasks/{task_id}", status_code=204)
-def delete_existing_task(project_id: str, task_id: str, svc: TaskApplicationService = Depends(get_service)):
+def delete_existing_task(project_id: str, task_id: str, svc: TaskApplicationService = Depends(get_task_service)):
     svc.delete_task(project_id, task_id)
 
 
@@ -157,7 +161,7 @@ def upload_task_attachment(
     project_id: str,
     task_id: str,
     file: UploadFile = File(...),
-    svc: TaskApplicationService = Depends(get_service),
+    svc: TaskApplicationService = Depends(get_task_service),
 ):
     filename = file.filename or "attachment"
     content = file.file.read()
@@ -169,7 +173,7 @@ def delete_task_attachment(
     project_id: str,
     task_id: str,
     filename: str,
-    svc: TaskApplicationService = Depends(get_service),
+    svc: TaskApplicationService = Depends(get_task_service),
 ):
     return svc.remove_attachment(project_id, task_id, filename)
 

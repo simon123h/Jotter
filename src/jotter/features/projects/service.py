@@ -1,6 +1,8 @@
 """Application service orchestrating Project use cases."""
 
-from typing import Any
+import sqlite3
+from pathlib import Path
+from typing import Any, Self
 
 from jotter.features.buckets.repo import BucketRepository
 from jotter.features.projects.domain import Project
@@ -11,10 +13,16 @@ from jotter.shared.slug import slugify
 
 
 class ProjectApplicationService:
-    def __init__(self, data_dir: str = ""):
-        self.data_dir = data_dir
-        self.project_repo = ProjectRepository(data_dir)
-        self.bucket_repo = BucketRepository(data_dir)
+    def __init__(self, project_repo: ProjectRepository, bucket_repo: BucketRepository):
+        self.project_repo = project_repo
+        self.bucket_repo = bucket_repo
+
+    @classmethod
+    def from_data_dir(cls, data_dir: Path | str, conn: sqlite3.Connection) -> Self:
+        return cls(
+            project_repo=ProjectRepository(data_dir, conn),
+            bucket_repo=BucketRepository(data_dir, conn),
+        )
 
     def get_all_projects(self) -> list[ProjectResponse]:
         projects = self.project_repo.get_all()
