@@ -54,7 +54,7 @@ export const useSettingsStore = defineStore('settings', () => {
   // Trigger load immediately when store is instantiated
   loadSettings();
 
-  // Watch for theme changes and apply to document element
+  // Watch for theme changes and apply to document element & meta theme-color
   const applyThemeToDocument = (theme: string) => {
     if (typeof document === 'undefined') return;
     const docClasses = document.documentElement.classList;
@@ -65,6 +65,20 @@ export const useSettingsStore = defineStore('settings', () => {
     });
     if (theme && theme !== 'nordic-light') {
       docClasses.add('theme-' + theme);
+    }
+
+    // Sync PWA window title bar color via meta theme-color
+    try {
+      const bgBase =
+        typeof window !== 'undefined'
+          ? window.getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-base').trim()
+          : '';
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor && bgBase) {
+        metaThemeColor.setAttribute('content', bgBase);
+      }
+    } catch {
+      // Ignore errors in non-browser environments
     }
   };
 
