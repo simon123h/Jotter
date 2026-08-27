@@ -5,7 +5,7 @@ import webbrowser
 
 import uvicorn
 
-from backend.app import create_app
+from backend.app import app_version, create_app
 from backend.config import load_config
 
 
@@ -21,6 +21,13 @@ def open_browser_delayed(url: str, delay_seconds: float = 0.5):
 
 def main():
     parser = argparse.ArgumentParser(description="Jotter - Local-First Markdown Kanban Board")
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"Jotter {app_version}",
+        help="Show Jotter version and exit",
+    )
     parser.add_argument("--host", type=str, default=None, help="Host address to bind to")
     parser.add_argument("--port", type=int, default=None, help="Port to listen on")
     parser.add_argument("--data-dir", type=str, default=None, help="Directory to store markdown tasks and database")
