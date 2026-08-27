@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from backend.db import get_db
 from backend.models.project import ProjectCreate, ProjectResponse, ProjectUpdate
 from backend.utils.slug import slugify
@@ -84,13 +84,15 @@ def create_project(data_dir: str, req: ProjectCreate, default_buckets: List[Dict
 
     # 2. Update filesystem
     projects = load_projects_file(data_dir)
-    projects.append({
-        "id": project_id,
-        "title": title,
-        "created_at": now_str,
-        "done_clean_period": req.done_clean_period,
-        "git_remote": req.git_remote,
-    })
+    projects.append(
+        {
+            "id": project_id,
+            "title": title,
+            "created_at": now_str,
+            "done_clean_period": req.done_clean_period,
+            "git_remote": req.git_remote,
+        }
+    )
     write_projects_file(data_dir, projects)
 
     # Ensure project directory and default buckets.json
@@ -98,6 +100,7 @@ def create_project(data_dir: str, req: ProjectCreate, default_buckets: List[Dict
     project_dir.mkdir(parents=True, exist_ok=True)
 
     from backend.services.bucket_service import write_buckets_file
+
     write_buckets_file(data_dir, project_id, default_buckets)
 
     return ProjectResponse(
@@ -112,7 +115,9 @@ def create_project(data_dir: str, req: ProjectCreate, default_buckets: List[Dict
 def update_project(data_dir: str, project_id: str, req: ProjectUpdate) -> ProjectResponse:
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, title, created_at, done_clean_period, git_remote FROM projects WHERE id = ?", (project_id,))
+    cursor.execute(
+        "SELECT id, title, created_at, done_clean_period, git_remote FROM projects WHERE id = ?", (project_id,)
+    )
     row = cursor.fetchone()
     if not row:
         raise KeyError(f"Project '{project_id}' not found")
@@ -172,13 +177,15 @@ def load_projects_file(data_dir: str) -> List[Dict[str, Any]]:
     path = Path(data_dir) / "projects.json"
     if not path.is_file():
         now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        default_proj = [{
-            "id": "default",
-            "title": "Default Project",
-            "created_at": now_str,
-            "done_clean_period": None,
-            "git_remote": None,
-        }]
+        default_proj = [
+            {
+                "id": "default",
+                "title": "Default Project",
+                "created_at": now_str,
+                "done_clean_period": None,
+                "git_remote": None,
+            }
+        ]
         (Path(data_dir) / "default").mkdir(parents=True, exist_ok=True)
         write_projects_file(data_dir, default_proj)
         return default_proj

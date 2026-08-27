@@ -1,5 +1,3 @@
-import json
-import os
 import shutil
 import tempfile
 import pytest
@@ -111,7 +109,9 @@ def test_buckets_and_tasks_workflow(test_env):
     assert tasks[0]["id"] == task_id
 
     # 6. Move task
-    res = client.patch(f"/api/projects/default/tasks/{task_id}/move", json={"bucket": "in-progress", "position": 1500.0})
+    res = client.patch(
+        f"/api/projects/default/tasks/{task_id}/move", json={"bucket": "in-progress", "position": 1500.0}
+    )
     assert res.status_code == 200
     assert res.json()["bucket"] == "in-progress"
 
@@ -130,18 +130,31 @@ def test_task_filters_and_queries(test_env):
     client, _ = test_env
 
     # Seed 3 tasks
-    t1 = client.post("/api/projects/default/tasks", json={
-        "title": "Task One", "bucket": "todo", "tags": ["frontend", "urgent"],
-        "priority": "urgent", "due_date": "2026-06-01", "planned_date": "today"
-    }).json()
-    t2 = client.post("/api/projects/default/tasks", json={
-        "title": "Task Two", "bucket": "in-progress", "tags": ["backend", "urgent"],
-        "priority": "low", "due_date": "2026-06-15"
-    }).json()
-    t3 = client.post("/api/projects/default/tasks", json={
-        "title": "Task Three", "bucket": "done", "tags": ["frontend"],
-        "postponed_until": "2099-01-01"
-    }).json()
+    t1 = client.post(
+        "/api/projects/default/tasks",
+        json={
+            "title": "Task One",
+            "bucket": "todo",
+            "tags": ["frontend", "urgent"],
+            "priority": "urgent",
+            "due_date": "2026-06-01",
+            "planned_date": "today",
+        },
+    ).json()
+    t2 = client.post(
+        "/api/projects/default/tasks",
+        json={
+            "title": "Task Two",
+            "bucket": "in-progress",
+            "tags": ["backend", "urgent"],
+            "priority": "low",
+            "due_date": "2026-06-15",
+        },
+    ).json()
+    t3 = client.post(
+        "/api/projects/default/tasks",
+        json={"title": "Task Three", "bucket": "done", "tags": ["frontend"], "postponed_until": "2099-01-01"},
+    ).json()
 
     # Filter by multiple tags (AND mode)
     res = client.get("/api/projects/default/tasks", params={"tags": "frontend,urgent", "tag_mode": "all"})
@@ -151,6 +164,10 @@ def test_task_filters_and_queries(test_env):
     # Filter by multiple tags (OR mode)
     res = client.get("/api/projects/default/tasks", params={"tags": "frontend,backend", "tag_mode": "any"})
     assert len(res.json()) == 3
+    found_ids = {t["id"] for t in res.json()}
+    assert t1["id"] in found_ids
+    assert t2["id"] in found_ids
+    assert t3["id"] in found_ids
 
     # Filter by priority
     res = client.get("/api/projects/default/tasks", params={"priorities": "urgent,low"})
