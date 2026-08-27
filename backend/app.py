@@ -13,7 +13,13 @@ from backend.routes.tasks import router as tasks_router
 from backend.services.sync_service import sync_db_only
 
 
-def create_app(config: UserConfig, version: str = "2.9.1") -> FastAPI:
+try:
+    from backend._version import __version__ as app_version
+except ImportError:
+    app_version = "3.0.0b1"
+
+
+def create_app(config: UserConfig, version: str = app_version) -> FastAPI:
     app = FastAPI(
         title="Jotter API",
         version=version,
