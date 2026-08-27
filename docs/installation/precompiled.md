@@ -9,7 +9,23 @@ Jotter is a lightweight, local-first web application powered by Python (FastAPI)
 
 ---
 
-## Quick Start
+## Quick Start with `pipx` (Recommended)
+
+Run Jotter instantly without cloning or building:
+
+```bash
+pipx run jotter-app
+```
+
+Or install it globally:
+```bash
+pipx install jotter-app
+jotter
+```
+
+---
+
+## Running from Source
 
 1. Clone or download the repository:
    ```bash
@@ -17,14 +33,15 @@ Jotter is a lightweight, local-first web application powered by Python (FastAPI)
    cd jotter
    ```
 
-2. Install Python dependencies:
+2. Install dependencies:
    ```bash
    pip install -e .
    ```
 
 3. Launch the server:
    ```bash
-   python3 run.py
+   jotter
+   # or: python3 run.py
    ```
 
 4. Open your browser at **`http://localhost:58271`**.

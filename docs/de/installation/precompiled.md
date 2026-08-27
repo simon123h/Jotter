@@ -11,7 +11,23 @@ Jotter ist eine leichtgewichtige, lokale Webanwendung, die auf Python (FastAPI) 
 
 ---
 
-## Schnellstart
+## Schnellstart mit `pipx` (Empfohlen)
+
+Führe Jotter direkt ohne manuelles Klonen oder Bauen aus:
+
+```bash
+pipx run jotter-app
+```
+
+Oder global installieren:
+```bash
+pipx install jotter-app
+jotter
+```
+
+---
+
+## Aus dem Quellcode ausführen
 
 1. Repository klonen:
    ```bash
@@ -26,7 +42,8 @@ Jotter ist eine leichtgewichtige, lokale Webanwendung, die auf Python (FastAPI) 
 
 3. Server starten:
    ```bash
-   python3 run.py
+   jotter
+   # oder: python3 run.py
    ```
 
 4. Öffne deinen Webbrowser unter **`http://localhost:58271`**.
