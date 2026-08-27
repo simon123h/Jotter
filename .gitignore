@@ -43,6 +43,7 @@ htmlcov/
 *.db-wal
 *.db-shm
 /tasks/
+!src/jotter/features/tasks/
 
 # Node & Frontend
 node_modules/
