@@ -45,9 +45,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" dist/* \
-            --title "${{ github.ref_name }}" \
-            --generate-notes
+          TAG="${{ github.ref_name }}"
+          EXTRA_FLAGS=()
+
+          # If the tag contains alpha, beta, rc, or dev -> mark as GitHub pre-release
+          if [[ "$TAG" =~ (alpha|beta|rc|dev|[0-9]+[ab][0-9]+) ]]; then
+            EXTRA_FLAGS+=(--prerelease)
+          else
+            # For a stable release, find the most recent previous STABLE tag (ignoring alpha/beta/rc tags)
+            PREV_STABLE_TAG=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^${TAG}$" | head -n 1 || true)
+            if [ -n "$PREV_STABLE_TAG" ]; then
+              EXTRA_FLAGS+=(--notes-start-tag "$PREV_STABLE_TAG")
+            fi
+          fi
+
+          gh release create "$TAG" dist/* \
+            --title "$TAG" \
+            --generate-notes \
+            "${EXTRA_FLAGS[@]}"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
