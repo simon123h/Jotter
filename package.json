@@ -11,7 +11,7 @@
     "docs:preview": "vitepress preview docs",
     "dev": "concurrently --kill-others-on-fail --names \"Backend,Frontend\" --prefix-colors \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "cd frontend && npm run build",
-    "build:package": "npm run build:frontend && rm -rf backend/dist && cp -r frontend/dist backend/dist && python3 -m build",
+    "build:package": "npm run build:frontend && rm -rf backend/dist build && cp -r frontend/dist backend/dist && pyproject-build",
     "build": "npm run build:package",
     "test:backend": "python3 -m pytest tests/backend/",
     "test:frontend": "cd frontend && npm run test",
