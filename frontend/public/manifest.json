@@ -22,6 +22,30 @@
   ],
   "shortcuts": [
     {
+      "name": "Kanban Board",
+      "short_name": "Board",
+      "description": "Open default Kanban board",
+      "url": "/#/project/default/board",
+      "icons": [
+        {
+          "src": "/pwa-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Task Triage",
+      "short_name": "Triage",
+      "description": "Rapidly triage and organize tasks",
+      "url": "/#/project/default/triage",
+      "icons": [
+        {
+          "src": "/pwa-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "Eisenhower Matrix",
       "short_name": "Matrix",
       "description": "View tasks grouped by priority matrix",
