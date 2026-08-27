@@ -13,7 +13,7 @@ permissions:
   id-token: write  # Required for PyPI Trusted Publishing (OIDC)
 
 jobs:
-  build-and-release:
+  build-and-publish-pypi:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -56,3 +56,65 @@ jobs:
           packages-dir: dist/
           skip-existing: true
           print-hash: true
+
+  build-standalone-binaries:
+    needs: build-and-publish-pypi
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: jotter-server-linux-amd64
+            binary_name: jotter-server
+          - os: windows-latest
+            artifact_name: jotter-server-windows-amd64
+            binary_name: jotter-server.exe
+          - os: macos-latest
+            artifact_name: jotter-server-darwin-amd64
+            binary_name: jotter-server
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Install Dependencies & PyInstaller
+        shell: bash
+        run: |
+          pip install pyinstaller .
+          npm run install:all
+
+      - name: Build Frontend
+        shell: bash
+        run: |
+          npm run build:frontend
+
+      - name: Build Standalone Binary with PyInstaller
+        shell: bash
+        run: |
+          pyinstaller jotter.spec --clean --distpath dist-bin
+
+      - name: Archive and Upload Binary to GitHub Release
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd dist-bin
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a "${{ matrix.artifact_name }}.zip" "${{ matrix.binary_name }}"
+            gh release upload "${{ github.ref_name }}" "${{ matrix.artifact_name }}.zip" --clobber
+          else
+            tar -czvf "${{ matrix.artifact_name }}.tar.gz" "${{ matrix.binary_name }}"
+            gh release upload "${{ github.ref_name }}" "${{ matrix.artifact_name }}.tar.gz" --clobber
+          fi

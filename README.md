@@ -36,7 +36,7 @@ Jotter is a **local-first, privacy-focused task management web application** des
 
 ## 📦 Quick Start
 
-### Option 1: Run directly with `pipx` (Recommended)
+### Option 1: Run directly with `pipx` (Recommended for Python users)
 
 No cloning or Node.js required—just Python:
 
@@ -50,7 +50,11 @@ pipx install jotter-app
 jotter
 ```
 
-### Option 2: Run from Source
+### Option 2: Standalone Executable (Zero Python Required)
+
+Download the pre-compiled `jotter-server` executable from [GitHub Releases](https://github.com/simon123h/jotter/releases) for Windows, Linux, or macOS. No runtime or build tools needed.
+
+### Option 3: Run from Source
 
 1. Clone the repository:
    ```bash

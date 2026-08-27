@@ -9,7 +9,7 @@ Jotter is a lightweight, local-first web application powered by Python (FastAPI)
 
 ---
 
-## Quick Start with `pipx` (Recommended)
+## Option 1: Quick Start with `pipx` (Recommended for Python users)
 
 Run Jotter instantly via PyPI without cloning or manual virtual environment management:
 
@@ -22,6 +22,18 @@ Or install it in an isolated global environment:
 pipx install jotter-app
 jotter
 ```
+
+---
+
+## Option 2: Standalone Executable Binary (Zero Python Required)
+
+If you don't have Python installed, you can download a pre-built standalone executable (`jotter-server`) from the [GitHub Releases](https://github.com/simon123h/jotter/releases) page:
+
+- **Windows**: Download `jotter-server-windows-amd64.zip`, extract, and double-click `jotter-server.exe`.
+- **Linux**: Download `jotter-server-linux-amd64.tar.gz`, extract, and run `./jotter-server`.
+- **macOS**: Download `jotter-server-darwin-amd64.tar.gz`, extract, and run `./jotter-server`.
+
+Your default web browser will automatically open to `http://localhost:58271`. Pass `--no-browser` if running on a headless server.
 
 ---
 

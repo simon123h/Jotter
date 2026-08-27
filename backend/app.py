@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -52,10 +53,18 @@ def create_app(config: UserConfig, version: str = app_version) -> FastAPI:
     app.include_router(settings_router)
     app.include_router(system_router)
 
-    # Locate static frontend distribution (bundled package dist or local dev frontend/dist)
+    # Locate static frontend distribution (PyInstaller MEIPASS, bundled package dist, or local dev frontend/dist)
+    meipass = getattr(sys, "_MEIPASS", None)
+    pyinstaller_dist = (Path(meipass) / "backend" / "dist") if meipass else None
     pkg_dist = Path(__file__).resolve().parent / "dist"
     dev_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
-    dist_dir = pkg_dist if (pkg_dist.is_dir() and (pkg_dist / "index.html").is_file()) else dev_dist
+
+    if pyinstaller_dist and pyinstaller_dist.is_dir() and (pyinstaller_dist / "index.html").is_file():
+        dist_dir = pyinstaller_dist
+    elif pkg_dist.is_dir() and (pkg_dist / "index.html").is_file():
+        dist_dir = pkg_dist
+    else:
+        dist_dir = dev_dist
 
     if dist_dir.is_dir() and (dist_dir / "index.html").is_file():
         # Mount assets folder
