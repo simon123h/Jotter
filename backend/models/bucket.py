@@ -1,24 +1,23 @@
-from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 
 class BucketCreate(BaseModel):
     title: str
-    subtitle: Optional[str] = ""
-    color: Optional[str] = None
-    layout: Optional[str] = "list"
-    max_tasks: Optional[int] = None
-    is_default: Optional[bool] = False
+    subtitle: str | None = ""
+    color: str | None = None
+    layout: str | None = "list"
+    max_tasks: int | None = None
+    is_default: bool | None = False
 
 
 class BucketUpdate(BaseModel):
-    title: Optional[str] = None
-    subtitle: Optional[str] = None
-    position: Optional[float] = None
-    color: Optional[str] = None
-    layout: Optional[str] = None
-    max_tasks: Optional[int] = None
-    is_default: Optional[bool] = None
+    title: str | None = None
+    subtitle: str | None = None
+    position: float | None = None
+    color: str | None = None
+    layout: str | None = None
+    max_tasks: int | None = None
+    is_default: bool | None = None
 
 
 class BucketResponse(BaseModel):
@@ -28,7 +27,7 @@ class BucketResponse(BaseModel):
     title: str
     subtitle: str = ""
     position: float
-    color: Optional[str] = None
+    color: str | None = None
     layout: str = "list"
-    max_tasks: Optional[int] = None
+    max_tasks: int | None = None
     is_default: bool = False

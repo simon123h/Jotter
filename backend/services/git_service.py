@@ -3,8 +3,6 @@ import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-
 
 OFFLINE_INDICATORS = [
     "could not resolve host",
@@ -29,7 +27,7 @@ def is_offline_error(err_msg: str) -> bool:
     return any(ind in err_lower for ind in OFFLINE_INDICATORS)
 
 
-def run_git(args: List[str], cwd: str, timeout: int = 30) -> Tuple[bool, str, str]:
+def run_git(args: list[str], cwd: str, timeout: int = 30) -> tuple[bool, str, str]:
     try:
         proc = subprocess.run(
             ["git"] + args,
@@ -45,7 +43,7 @@ def run_git(args: List[str], cwd: str, timeout: int = 30) -> Tuple[bool, str, st
         return False, "", str(e)
 
 
-def git_sync(project_dir: str, remote_url: Optional[str]) -> Optional[str]:
+def git_sync(project_dir: str, remote_url: str | None) -> str | None:
     p_path = Path(project_dir)
     p_path.mkdir(parents=True, exist_ok=True)
 
@@ -131,7 +129,7 @@ def git_sync(project_dir: str, remote_url: Optional[str]) -> Optional[str]:
     return None
 
 
-def get_git_history(tasks_dir: str, project_id: Optional[str] = None) -> List[Dict[str, str]]:
+def get_git_history(tasks_dir: str, project_id: str | None = None) -> list[dict[str, str]]:
     repo_path = tasks_dir
     if project_id:
         proj_dir = Path(tasks_dir) / project_id
@@ -145,7 +143,7 @@ def get_git_history(tasks_dir: str, project_id: Optional[str] = None) -> List[Di
     if not ok or not out.strip():
         return []
 
-    commits: List[Dict[str, str]] = []
+    commits: list[dict[str, str]] = []
     for line in out.strip().split("\n"):
         parts = line.split("\x1f")
         if len(parts) >= 4:
@@ -160,7 +158,7 @@ def get_git_history(tasks_dir: str, project_id: Optional[str] = None) -> List[Di
     return commits
 
 
-def restore_commit(tasks_dir: str, project_id: Optional[str], commit_hash: str) -> None:
+def restore_commit(tasks_dir: str, project_id: str | None, commit_hash: str) -> None:
     repo_path = tasks_dir
     if project_id:
         proj_dir = Path(tasks_dir) / project_id

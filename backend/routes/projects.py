@@ -1,5 +1,5 @@
-from typing import List
 from fastapi import APIRouter, HTTPException, Request
+
 from backend.models.project import ProjectCreate, ProjectResponse, ProjectUpdate
 from backend.services.bucket_service import DEFAULT_BUCKETS
 from backend.services.project_service import (
@@ -12,7 +12,7 @@ from backend.services.project_service import (
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
-@router.get("", response_model=List[ProjectResponse])
+@router.get("", response_model=list[ProjectResponse])
 def list_projects(request: Request):
     data_dir = request.app.state.config.data_dir
     return get_all_projects(data_dir)

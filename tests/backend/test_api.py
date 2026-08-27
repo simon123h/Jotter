@@ -1,8 +1,9 @@
 import shutil
 import tempfile
-import pytest
 from io import BytesIO
 from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.app import create_app

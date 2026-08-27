@@ -3,13 +3,14 @@ import shutil
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
+
 from backend.db import get_db
 from backend.models.project import ProjectCreate, ProjectResponse, ProjectUpdate
 from backend.utils.slug import slugify
 
 
-def get_all_projects(data_dir: str) -> List[ProjectResponse]:
+def get_all_projects(data_dir: str) -> list[ProjectResponse]:
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT id, title, created_at, done_clean_period, git_remote FROM projects ORDER BY created_at ASC")
@@ -33,7 +34,7 @@ def project_exists(project_id: str) -> bool:
     return cursor.fetchone() is not None
 
 
-def create_project(data_dir: str, req: ProjectCreate, default_buckets: List[Dict[str, Any]]) -> ProjectResponse:
+def create_project(data_dir: str, req: ProjectCreate, default_buckets: list[dict[str, Any]]) -> ProjectResponse:
     title = req.title.strip()
     if not title:
         raise ValueError("Project title cannot be empty")
@@ -173,7 +174,7 @@ def delete_project(data_dir: str, project_id: str) -> None:
         shutil.rmtree(project_dir, ignore_errors=True)
 
 
-def load_projects_file(data_dir: str) -> List[Dict[str, Any]]:
+def load_projects_file(data_dir: str) -> list[dict[str, Any]]:
     path = Path(data_dir) / "projects.json"
     if not path.is_file():
         now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -191,7 +192,7 @@ def load_projects_file(data_dir: str) -> List[Dict[str, Any]]:
         return default_proj
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             projects = json.load(f)
             if not isinstance(projects, list):
                 return []
@@ -203,7 +204,7 @@ def load_projects_file(data_dir: str) -> List[Dict[str, Any]]:
         return []
 
 
-def write_projects_file(data_dir: str, projects: List[Dict[str, Any]]) -> None:
+def write_projects_file(data_dir: str, projects: list[dict[str, Any]]) -> None:
     path = Path(data_dir) / "projects.json"
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
