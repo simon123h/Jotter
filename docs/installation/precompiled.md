@@ -31,7 +31,7 @@ If you don't have Python installed, you can download a pre-built standalone exec
 
 - **Windows**: Download `jotter-server-windows-amd64.zip`, extract, and double-click `jotter-server.exe`.
 - **Linux**: Download `jotter-server-linux-amd64.tar.gz`, extract, and run `./jotter-server`.
-- **macOS**: Download `jotter-server-darwin-amd64.tar.gz`, extract, and run `./jotter-server`.
+- **macOS**: Download `jotter-server-macos-arm64.tar.gz`, extract, and run `./jotter-server`.
 
 Your default web browser will automatically open to `http://localhost:58271`. Pass `--no-browser` if running on a headless server.
 

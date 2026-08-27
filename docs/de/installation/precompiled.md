@@ -33,7 +33,7 @@ Falls du kein Python installiert hast, kannst du eine vorkompilierte Einzeldatei
 
 - **Windows**: `jotter-server-windows-amd64.zip` herunterladen, entpacken und `jotter-server.exe` per Doppelklick starten.
 - **Linux**: `jotter-server-linux-amd64.tar.gz` herunterladen, entpacken und `./jotter-server` ausführen.
-- **macOS**: `jotter-server-darwin-amd64.tar.gz` herunterladen, entpacken und `./jotter-server` ausführen.
+- **macOS**: `jotter-server-macos-arm64.tar.gz` herunterladen, entpacken und `./jotter-server` ausführen.
 
 Dein Standard-Webbrowser öffnet sich automatisch unter `http://localhost:58271`. Verwende `--no-browser`, falls du Jotter auf einem Headless-Server betreibst.
 

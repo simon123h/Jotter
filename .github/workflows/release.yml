@@ -128,7 +128,7 @@ jobs:
             artifact_name: jotter-server-windows-amd64
             binary_name: jotter-server.exe
           - os: macos-latest
-            artifact_name: jotter-server-darwin-amd64
+            artifact_name: jotter-server-macos-arm64
             binary_name: jotter-server
     runs-on: ${{ matrix.os }}
     steps:
