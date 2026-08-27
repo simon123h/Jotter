@@ -34,23 +34,18 @@ jobs:
 
       - name: Install Build Tools & Dependencies
         run: |
-          pip install build shiv
+          pip install build
           npm run install:all
 
       - name: Build Bundled Python Package (Wheel & Sdist)
         run: |
           npm run build:package
 
-      - name: Build Standalone ZipApp (jotter.pyz)
-        run: |
-          mkdir -p dist-pyz
-          shiv -e backend.main:main -o dist-pyz/jotter.pyz .
-
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" dist/* dist-pyz/* \
+          gh release create "${{ github.ref_name }}" dist/* \
             --title "${{ github.ref_name }}" \
             --generate-notes
 

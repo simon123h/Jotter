@@ -9,27 +9,28 @@ Jotter is a lightweight, local-first web application powered by Python (FastAPI)
 
 ---
 
-## Option 1: Standalone Single-File Script (`jotter.pyz`)
+## Quick Start with `pipx` (Recommended)
 
-You can download the standalone `jotter.pyz` directly from the [GitHub Releases](https://github.com/simon123h/jotter/releases) page. It contains all dependencies and the built frontend in a single file with zero install step required:
-
-```bash
-python3 jotter.pyz
-```
-
----
-
-## Option 2: Quick Start with `pipx`
-
-Run Jotter instantly via PyPI without cloning:
+Run Jotter instantly via PyPI without cloning or manual virtual environment management:
 
 ```bash
 pipx run jotter-app
 ```
 
-Or install it globally:
+Or install it in an isolated global environment:
 ```bash
 pipx install jotter-app
+jotter
+```
+
+---
+
+## Offline Installation (`.whl`)
+
+If you are on an air-gapped machine without internet access, you can download the release wheel (`jotter_app-*.whl`) from the [GitHub Releases](https://github.com/simon123h/jotter/releases) page and install it directly:
+
+```bash
+pip install ./jotter_app-3.0.0-py3-none-any.whl
 jotter
 ```
 
