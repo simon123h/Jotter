@@ -30,21 +30,21 @@ dev = [
 ]
 
 [project.scripts]
-jotter = "backend.main:main"
+jotter = "jotter.main:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["backend*"]
+where = ["src"]
 
 [tool.setuptools.package-data]
-"backend" = ["dist/**/*", "dist/*"]
+"jotter" = ["dist/**/*", "dist/*"]
 
 [tool.setuptools_scm]
-write_to = "backend/_version.py"
+write_to = "src/jotter/_version.py"
 local_scheme = "no-local-version"
 
 [tool.pytest.ini_options]
-testpaths = ["tests/backend"]
+testpaths = ["tests"]
+pythonpath = ["src"]
 python_files = ["test_*.py"]
 addopts = "-v"
 

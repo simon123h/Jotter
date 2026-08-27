@@ -5,12 +5,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from backend.db import get_db
-from backend.services.bucket_service import load_buckets_file
-from backend.services.git_service import git_sync
-from backend.services.project_service import load_projects_file
-from backend.services.settings_service import load_settings
-from backend.services.task_service import parse_frontmatter
+from jotter.db import get_db
+from jotter.services.bucket_service import load_buckets_file
+from jotter.services.git_service import git_sync
+from jotter.services.project_service import load_projects_file
+from jotter.services.settings_service import load_settings
+from jotter.services.task_service import parse_frontmatter
 
 _sync_lock = threading.Lock()
 

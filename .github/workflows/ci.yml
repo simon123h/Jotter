@@ -90,7 +90,7 @@ jobs:
 
       - name: Run Backend Tests with Coverage
         run: |
-          python3 -m pytest --cov=backend --cov-report=xml --cov-report=term tests/backend/
+          python3 -m pytest --cov=src/jotter --cov-report=xml --cov-report=term tests/
 
       - name: Run Frontend Tests with Coverage
         run: |

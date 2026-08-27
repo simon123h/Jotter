@@ -6,15 +6,15 @@ block_cipher = None
 datas = []
 # Bundle frontend static distribution if built
 frontend_dist = Path('frontend/dist')
-backend_dist = Path('backend/dist')
+jotter_dist = Path('src/jotter/dist')
 if frontend_dist.is_dir() and (frontend_dist / 'index.html').is_file():
-    datas.append(('frontend/dist', 'backend/dist'))
-elif backend_dist.is_dir() and (backend_dist / 'index.html').is_file():
-    datas.append(('backend/dist', 'backend/dist'))
+    datas.append(('frontend/dist', 'jotter/dist'))
+elif jotter_dist.is_dir() and (jotter_dist / 'index.html').is_file():
+    datas.append(('src/jotter/dist', 'jotter/dist'))
 
 a = Analysis(
     ['run.py'],
-    pathex=['.'],
+    pathex=['.', 'src'],
     binaries=[],
     datas=datas,
     hiddenimports=[

@@ -5,8 +5,8 @@ import webbrowser
 
 import uvicorn
 
-from backend.app import app_version, create_app
-from backend.config import load_config
+from jotter.app import app_version, create_app
+from jotter.config import load_config
 
 
 def open_browser_delayed(url: str, delay_seconds: float = 0.5):

@@ -6,17 +6,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.config import UserConfig
-from backend.db import get_db
-from backend.routes.buckets import router as buckets_router
-from backend.routes.projects import router as projects_router
-from backend.routes.settings import router as settings_router
-from backend.routes.system import router as system_router
-from backend.routes.tasks import router as tasks_router
-from backend.services.sync_service import sync_db_only
+from jotter.config import UserConfig
+from jotter.db import get_db
+from jotter.routes.buckets import router as buckets_router
+from jotter.routes.projects import router as projects_router
+from jotter.routes.settings import router as settings_router
+from jotter.routes.system import router as system_router
+from jotter.routes.tasks import router as tasks_router
+from jotter.services.sync_service import sync_db_only
 
 try:
-    from backend._version import __version__ as app_version
+    from jotter._version import __version__ as app_version
 except ImportError:
     app_version = "3.0.0b1"
 
@@ -55,9 +55,9 @@ def create_app(config: UserConfig, version: str = app_version) -> FastAPI:
 
     # Locate static frontend distribution (PyInstaller MEIPASS, bundled package dist, or local dev frontend/dist)
     meipass = getattr(sys, "_MEIPASS", None)
-    pyinstaller_dist = (Path(meipass) / "backend" / "dist") if meipass else None
+    pyinstaller_dist = (Path(meipass) / "jotter" / "dist") if meipass else None
     pkg_dist = Path(__file__).resolve().parent / "dist"
-    dev_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+    dev_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
     if pyinstaller_dist and pyinstaller_dist.is_dir() and (pyinstaller_dist / "index.html").is_file():
         dist_dir = pyinstaller_dist

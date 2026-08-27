@@ -3,9 +3,9 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from backend.db import get_db
-from backend.models.bucket import BucketCreate, BucketResponse, BucketUpdate
-from backend.utils.slug import slugify
+from jotter.db import get_db
+from jotter.models.bucket import BucketCreate, BucketResponse, BucketUpdate
+from jotter.utils.slug import slugify
 
 DEFAULT_BUCKETS: list[dict[str, Any]] = [
     {

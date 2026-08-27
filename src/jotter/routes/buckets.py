@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 
-from backend.models.bucket import BucketCreate, BucketResponse, BucketUpdate
-from backend.services.bucket_service import (
+from jotter.models.bucket import BucketCreate, BucketResponse, BucketUpdate
+from jotter.services.bucket_service import (
     create_bucket,
     delete_bucket,
     get_all_buckets,

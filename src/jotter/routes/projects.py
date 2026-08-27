@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request
 
-from backend.models.project import ProjectCreate, ProjectResponse, ProjectUpdate
-from backend.services.bucket_service import DEFAULT_BUCKETS
-from backend.services.project_service import (
+from jotter.models.project import ProjectCreate, ProjectResponse, ProjectUpdate
+from jotter.services.bucket_service import DEFAULT_BUCKETS
+from jotter.services.project_service import (
     create_project,
     delete_project,
     get_all_projects,

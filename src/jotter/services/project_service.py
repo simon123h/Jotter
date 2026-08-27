@@ -5,9 +5,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from backend.db import get_db
-from backend.models.project import ProjectCreate, ProjectResponse, ProjectUpdate
-from backend.utils.slug import slugify
+from jotter.db import get_db
+from jotter.models.project import ProjectCreate, ProjectResponse, ProjectUpdate
+from jotter.utils.slug import slugify
 
 
 def get_all_projects(data_dir: str) -> list[ProjectResponse]:
@@ -100,7 +100,7 @@ def create_project(data_dir: str, req: ProjectCreate, default_buckets: list[dict
     project_dir = Path(data_dir) / project_id
     project_dir.mkdir(parents=True, exist_ok=True)
 
-    from backend.services.bucket_service import write_buckets_file
+    from jotter.services.bucket_service import write_buckets_file
 
     write_buckets_file(data_dir, project_id, default_buckets)
 

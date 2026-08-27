@@ -1,8 +1,8 @@
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse
 
-from backend.models.task import TaskCreate, TaskMove, TaskResponse, TaskUpdate
-from backend.services.task_service import (
+from jotter.models.task import TaskCreate, TaskMove, TaskResponse, TaskUpdate
+from jotter.services.task_service import (
     create_task,
     delete_attachment,
     delete_task,

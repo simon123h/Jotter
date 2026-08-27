@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app import create_app
-from backend.config import UserConfig
-from backend.db import close_db
+from jotter.app import create_app
+from jotter.config import UserConfig
+from jotter.db import close_db
 
 
 @pytest.fixture

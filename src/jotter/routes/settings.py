@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 
-from backend.models.settings import AppSettings
-from backend.services.settings_service import load_settings, save_settings
+from jotter.models.settings import AppSettings
+from jotter.services.settings_service import load_settings, save_settings
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 

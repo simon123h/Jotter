@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 
-from backend.services.git_service import get_git_history, restore_commit
-from backend.services.sync_service import full_sync
+from jotter.services.git_service import get_git_history, restore_commit
+from jotter.services.sync_service import full_sync
 
 router = APIRouter(prefix="/api/system", tags=["system"])
 

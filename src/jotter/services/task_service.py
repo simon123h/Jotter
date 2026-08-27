@@ -7,9 +7,9 @@ from typing import Any, BinaryIO
 
 import yaml
 
-from backend.db import get_db
-from backend.models.task import TaskCreate, TaskFrontmatter, TaskMove, TaskResponse, TaskUpdate
-from backend.utils.ulid import generate_ulid
+from jotter.db import get_db
+from jotter.models.task import TaskCreate, TaskFrontmatter, TaskMove, TaskResponse, TaskUpdate
+from jotter.utils.ulid import generate_ulid
 
 
 def parse_frontmatter(content: str) -> tuple[TaskFrontmatter, str]:
@@ -348,7 +348,7 @@ def get_tasks(
 
 
 def create_task(data_dir: str, project_id: str, req: TaskCreate) -> TaskResponse:
-    from backend.services.project_service import project_exists
+    from jotter.services.project_service import project_exists
 
     if not project_exists(project_id):
         raise KeyError(f"Project '{project_id}' not found")

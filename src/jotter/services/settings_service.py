@@ -2,7 +2,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from backend.models.settings import AppSettings
+from jotter.models.settings import AppSettings
 
 
 def load_settings(data_dir: str) -> AppSettings:
