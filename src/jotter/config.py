@@ -5,6 +5,28 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel
 
+VALID_LOG_LEVELS: dict[str, str] = {
+    "debug": "DEBUG",
+    "info": "INFO",
+    "warn": "WARNING",
+    "warning": "WARNING",
+    "error": "ERROR",
+    "err": "ERROR",
+    "critical": "CRITICAL",
+    "fatal": "CRITICAL",
+    "trace": "TRACE",
+}
+
+
+def normalize_log_level(level: str | None) -> str:
+    if not level:
+        return "INFO"
+    clean = str(level).strip().lower()
+    if clean in VALID_LOG_LEVELS:
+        return VALID_LOG_LEVELS[clean]
+    print(f"[Config] Warning: Unknown log_level '{level}', falling back to 'INFO'")
+    return "INFO"
+
 
 class UserConfig(BaseModel):
     data_dir: str = ""
@@ -82,7 +104,7 @@ def load_config() -> UserConfig:
                         if data.get("port"):
                             config.port = int(data["port"])
                         if data.get("log_level"):
-                            config.log_level = data["log_level"]
+                            config.log_level = normalize_log_level(data["log_level"])
                 break
             except Exception as e:
                 print(f"[Config] Warning: Failed to read config from {path}: {e}")
@@ -98,7 +120,10 @@ def load_config() -> UserConfig:
     if os.environ.get("JOTTER_HOST"):
         config.host = os.environ["JOTTER_HOST"]
     if os.environ.get("JOTTER_LOG_LEVEL"):
-        config.log_level = os.environ["JOTTER_LOG_LEVEL"]
+        config.log_level = normalize_log_level(os.environ["JOTTER_LOG_LEVEL"])
+
+    # Final normalization
+    config.log_level = normalize_log_level(config.log_level)
 
     # Ensure data directory exists
     Path(config.data_dir).mkdir(parents=True, exist_ok=True)

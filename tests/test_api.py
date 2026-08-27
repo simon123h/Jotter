@@ -284,3 +284,19 @@ Sample body
     assert res.status_code == 200
     assert res.json()["tags"] == []
     assert res.json()["attachments"] == []
+
+
+def test_log_level_normalization():
+    from jotter.config import normalize_log_level
+
+    assert normalize_log_level("WARN") == "WARNING"
+    assert normalize_log_level("warn") == "WARNING"
+    assert normalize_log_level("warning") == "WARNING"
+    assert normalize_log_level("ERR") == "ERROR"
+    assert normalize_log_level("error") == "ERROR"
+    assert normalize_log_level("debug") == "DEBUG"
+    assert normalize_log_level("info") == "INFO"
+    assert normalize_log_level("FATAL") == "CRITICAL"
+    # Invalid log level falls back gracefully to INFO without crashing
+    assert normalize_log_level("non_existent_level") == "INFO"
+    assert normalize_log_level(None) == "INFO"

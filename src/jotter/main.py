@@ -6,7 +6,7 @@ import webbrowser
 import uvicorn
 
 from jotter.app import app_version, create_app
-from jotter.config import load_config
+from jotter.config import load_config, normalize_log_level
 
 
 def open_browser_delayed(url: str, delay_seconds: float = 0.5):
@@ -54,7 +54,7 @@ def main():
     if args.data_dir:
         config.data_dir = args.data_dir
     if args.log_level:
-        config.log_level = args.log_level
+        config.log_level = normalize_log_level(args.log_level)
 
     # Determine browser launch behavior
     if args.no_browser or os.environ.get("JOTTER_NO_BROWSER") in ("1", "true", "yes"):
