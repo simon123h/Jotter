@@ -3,7 +3,7 @@ import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 OFFLINE_INDICATORS = [
@@ -59,10 +59,7 @@ def git_sync(project_dir: str, remote_url: Optional[str]) -> Optional[str]:
         ok, out, _ = run_git(["ls-remote", "--heads", remote_url], cwd=project_dir, timeout=15)
         has_remote = ok and bool(out.strip())
         if has_remote:
-            has_files = any(
-                e.name not in [".", "..", ".git", ".gitignore"]
-                for e in p_path.iterdir()
-            )
+            has_files = any(e.name not in [".", "..", ".git", ".gitignore"] for e in p_path.iterdir())
             if not has_files:
                 run_git(["clone", remote_url, "."], cwd=project_dir)
             else:
@@ -152,12 +149,14 @@ def get_git_history(tasks_dir: str, project_id: Optional[str] = None) -> List[Di
     for line in out.strip().split("\n"):
         parts = line.split("\x1f")
         if len(parts) >= 4:
-            commits.append({
-                "hash": parts[0],
-                "author": parts[1],
-                "date": parts[2],
-                "message": parts[3],
-            })
+            commits.append(
+                {
+                    "hash": parts[0],
+                    "author": parts[1],
+                    "date": parts[2],
+                    "message": parts[3],
+                }
+            )
     return commits
 
 

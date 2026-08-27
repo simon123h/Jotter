@@ -7,11 +7,56 @@ from backend.models.bucket import BucketCreate, BucketResponse, BucketUpdate
 from backend.utils.slug import slugify
 
 DEFAULT_BUCKETS: List[Dict[str, Any]] = [
-    {"name": "backlog", "title": "Backlog", "subtitle": "", "position": 1000.0, "is_default": True, "layout": "list", "color": None, "max_tasks": None},
-    {"name": "todo", "title": "To Do", "subtitle": "", "position": 2000.0, "is_default": False, "layout": "list", "color": None, "max_tasks": None},
-    {"name": "in-progress", "title": "In Progress", "subtitle": "", "position": 3000.0, "is_default": False, "layout": "list", "color": None, "max_tasks": None},
-    {"name": "done", "title": "Done", "subtitle": "", "position": 4000.0, "is_default": False, "layout": "list", "color": None, "max_tasks": None},
-    {"name": "archive", "title": "Archive", "subtitle": "", "position": 5000.0, "is_default": False, "layout": "list", "color": None, "max_tasks": None},
+    {
+        "name": "backlog",
+        "title": "Backlog",
+        "subtitle": "",
+        "position": 1000.0,
+        "is_default": True,
+        "layout": "list",
+        "color": None,
+        "max_tasks": None,
+    },
+    {
+        "name": "todo",
+        "title": "To Do",
+        "subtitle": "",
+        "position": 2000.0,
+        "is_default": False,
+        "layout": "list",
+        "color": None,
+        "max_tasks": None,
+    },
+    {
+        "name": "in-progress",
+        "title": "In Progress",
+        "subtitle": "",
+        "position": 3000.0,
+        "is_default": False,
+        "layout": "list",
+        "color": None,
+        "max_tasks": None,
+    },
+    {
+        "name": "done",
+        "title": "Done",
+        "subtitle": "",
+        "position": 4000.0,
+        "is_default": False,
+        "layout": "list",
+        "color": None,
+        "max_tasks": None,
+    },
+    {
+        "name": "archive",
+        "title": "Archive",
+        "subtitle": "",
+        "position": 5000.0,
+        "is_default": False,
+        "layout": "list",
+        "color": None,
+        "max_tasks": None,
+    },
 ]
 
 

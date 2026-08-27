@@ -1,5 +1,5 @@
-from typing import Dict, List, Optional
-from pydantic import BaseModel, Field
+from typing import Dict, List
+from pydantic import BaseModel
 
 
 class AppSettings(BaseModel):

@@ -13,25 +13,25 @@ def get_db(db_path: Optional[str] = None) -> sqlite3.Connection:
         if _connection is None:
             if db_path is None:
                 raise ValueError("Database path must be provided on first connection initialization.")
-            
+
             path = Path(db_path)
             path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             _connection = sqlite3.connect(
                 str(path),
                 check_same_thread=False,
                 timeout=30.0,
-                isolation_level=None  # autocommit mode, transactions managed explicitly
+                isolation_level=None,  # autocommit mode, transactions managed explicitly
             )
             _connection.row_factory = sqlite3.Row
-            
+
             # Pragmas
             _connection.execute("PRAGMA journal_mode=WAL;")
             _connection.execute("PRAGMA foreign_keys=ON;")
-            
+
             # Create Schema
             _init_schema(_connection)
-            
+
         return _connection
 
 

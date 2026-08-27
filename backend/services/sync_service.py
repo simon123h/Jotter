@@ -3,7 +3,7 @@ import shutil
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set
 from backend.db import get_db
 from backend.services.bucket_service import load_buckets_file
 from backend.services.git_service import git_sync
@@ -40,34 +40,38 @@ def sync_db_only(data_dir: str) -> int:
     clean_periods: Dict[str, Optional[int]] = {p["id"]: p.get("done_clean_period") for p in projects_data}
 
     all_buckets: List[Dict[str, Any]] = []
+    bucket_lookup: Dict[str, Set[str]] = {}
     all_tasks: List[Dict[str, Any]] = []
 
     now = datetime.now(timezone.utc)
 
-    # Scan project folders
-    for entry in tasks_path.iterdir():
-        if not entry.is_dir() or entry.name.startswith("."):
+    # 1. Scan project folders & buckets
+    for p in projects_data:
+        p_id = p["id"]
+        project_dir = tasks_path / p_id
+        if not project_dir.is_dir():
             continue
 
-        p_id = entry.name
-        project_dir = entry
-
-        # Load Buckets
         raw_buckets = load_buckets_file(data_dir, p_id)
+        bucket_lookup[p_id] = set()
         for b in raw_buckets:
-            all_buckets.append({
-                "project_id": p_id,
-                "name": b["name"],
-                "title": b["title"],
-                "subtitle": b.get("subtitle", ""),
-                "position": float(b.get("position", 1000.0)),
-                "color": b.get("color"),
-                "layout": b.get("layout", "list"),
-                "max_tasks": b.get("max_tasks"),
-                "is_default": bool(b.get("is_default", False)),
-            })
+            b_name = b["name"]
+            bucket_lookup[p_id].add(b_name)
+            all_buckets.append(
+                {
+                    "project_id": p_id,
+                    "name": b_name,
+                    "title": b["title"],
+                    "subtitle": b.get("subtitle", ""),
+                    "position": float(b.get("position", 1000.0)),
+                    "color": b.get("color"),
+                    "layout": b.get("layout", "list"),
+                    "max_tasks": b.get("max_tasks"),
+                    "is_default": bool(b.get("is_default", False)),
+                }
+            )
 
-        # Scan Task Files
+        # 2. Scan Task Files
         clean_days = clean_periods.get(p_id)
 
         for file_path in project_dir.iterdir():
@@ -93,24 +97,45 @@ def sync_db_only(data_dir: str) -> int:
                     except Exception:
                         pass
 
-                all_tasks.append({
-                    "id": fm.id or task_id,
-                    "project_id": p_id,
-                    "title": fm.title,
-                    "bucket": fm.bucket,
-                    "position": fm.position,
-                    "tags": fm.tags,
-                    "attachments": fm.attachments or [],
-                    "filename": file_path.name,
-                    "body": body,
-                    "due_date": fm.due_date,
-                    "planned_date": fm.planned_date,
-                    "priority": fm.priority,
-                    "color": fm.color,
-                    "postponed_until": fm.postponed_until,
-                    "created_at": fm.created_at,
-                    "updated_at": fm.updated_at,
-                })
+                # If task references a bucket not present in buckets.json, ensure bucket exists
+                target_bucket = fm.bucket or "backlog"
+                if target_bucket not in bucket_lookup[p_id]:
+                    # Create the missing bucket dynamically in the index
+                    all_buckets.append(
+                        {
+                            "project_id": p_id,
+                            "name": target_bucket,
+                            "title": target_bucket.replace("-", " ").title(),
+                            "subtitle": "",
+                            "position": 9999.0,
+                            "color": None,
+                            "layout": "list",
+                            "max_tasks": None,
+                            "is_default": False,
+                        }
+                    )
+                    bucket_lookup[p_id].add(target_bucket)
+
+                all_tasks.append(
+                    {
+                        "id": fm.id or task_id,
+                        "project_id": p_id,
+                        "title": fm.title,
+                        "bucket": target_bucket,
+                        "position": fm.position,
+                        "tags": fm.tags,
+                        "attachments": fm.attachments or [],
+                        "filename": file_path.name,
+                        "body": body,
+                        "due_date": fm.due_date,
+                        "planned_date": fm.planned_date,
+                        "priority": fm.priority,
+                        "color": fm.color,
+                        "postponed_until": fm.postponed_until,
+                        "created_at": fm.created_at,
+                        "updated_at": fm.updated_at,
+                    }
+                )
             except Exception:
                 continue
 
@@ -150,32 +175,35 @@ def sync_db_only(data_dir: str) -> int:
             )
 
         for t in all_tasks:
-            cursor.execute(
-                """
-                INSERT INTO tasks (
-                    id, project_id, title, bucket, position, tags, attachments, filename, body,
-                    due_date, planned_date, priority, color, postponed_until, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    t["id"],
-                    t["project_id"],
-                    t["title"],
-                    t["bucket"],
-                    t["position"],
-                    json.dumps(t["tags"]),
-                    json.dumps(t["attachments"]),
-                    t["filename"],
-                    t["body"],
-                    t["due_date"],
-                    t["planned_date"],
-                    t["priority"],
-                    t["color"],
-                    t["postponed_until"],
-                    t["created_at"],
-                    t["updated_at"],
-                ),
-            )
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO tasks (
+                        id, project_id, title, bucket, position, tags, attachments, filename, body,
+                        due_date, planned_date, priority, color, postponed_until, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        t["id"],
+                        t["project_id"],
+                        t["title"],
+                        t["bucket"],
+                        t["position"],
+                        json.dumps(t["tags"]),
+                        json.dumps(t["attachments"]),
+                        t["filename"],
+                        t["body"],
+                        t["due_date"],
+                        t["planned_date"],
+                        t["priority"],
+                        t["color"],
+                        t["postponed_until"],
+                        t["created_at"],
+                        t["updated_at"],
+                    ),
+                )
+            except Exception as e:
+                print(f"[Sync] Warning: Skipping invalid task record {t.get('id')}: {e}")
 
         cursor.execute("COMMIT;")
     except Exception as e:
