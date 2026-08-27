@@ -243,3 +243,44 @@ def test_system_sync_and_info(test_env):
     res = client.post("/api/system/sync")
     assert res.status_code == 200
     assert res.json()["status"] == "success"
+
+
+def test_null_tags_and_attachments_handling(test_env):
+    client, temp_dir = test_env
+
+    # Write a task file on disk with explicit null tags and null attachments
+    task_file = Path(temp_dir) / "default" / "01HXYZ1234567890ABCDEF001.md"
+    task_file.parent.mkdir(parents=True, exist_ok=True)
+    task_file.write_text(
+        """---
+id: 01HXYZ1234567890ABCDEF001
+project_id: default
+title: Task with null lists
+bucket: todo
+position: 1000.0
+tags: null
+attachments: null
+created_at: '2026-08-27T20:00:00Z'
+updated_at: '2026-08-27T20:00:00Z'
+---
+Sample body
+""",
+        encoding="utf-8",
+    )
+
+    # Sync and query tasks
+    res = client.post("/api/system/sync")
+    assert res.status_code == 200
+
+    res = client.get("/api/projects/default/tasks")
+    assert res.status_code == 200
+    tasks = res.json()
+    assert len(tasks) == 1
+    assert tasks[0]["tags"] == []
+    assert tasks[0]["attachments"] == []
+
+    # Get single task
+    res = client.get("/api/projects/default/tasks/01HXYZ1234567890ABCDEF001")
+    assert res.status_code == 200
+    assert res.json()["tags"] == []
+    assert res.json()["attachments"] == []

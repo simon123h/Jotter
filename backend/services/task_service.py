@@ -30,7 +30,15 @@ def parse_frontmatter(content: str) -> tuple[TaskFrontmatter, str]:
     body = "\n".join(lines[yaml_end + 1 :])
 
     data = yaml.safe_load(yaml_block) or {}
-    tags = [str(t).lower() for t in data.get("tags", []) if t is not None]
+    raw_tags = data.get("tags")
+    tags = [str(t).lower() for t in raw_tags if t is not None] if isinstance(raw_tags, list) else []
+
+    raw_attachments = data.get("attachments")
+    attachments = (
+        [str(a) for a in raw_attachments if a is not None]
+        if isinstance(raw_attachments, list)
+        else []
+    )
 
     fm = TaskFrontmatter(
         id=str(data.get("id", "")),
@@ -39,7 +47,7 @@ def parse_frontmatter(content: str) -> tuple[TaskFrontmatter, str]:
         bucket=str(data.get("bucket", "backlog")),
         position=float(data.get("position", 1000.0)),
         tags=tags,
-        attachments=data.get("attachments", []),
+        attachments=attachments,
         due_date=data.get("due_date"),
         planned_date=data.get("planned_date"),
         priority=data.get("priority"),
@@ -294,7 +302,12 @@ def get_tasks(
 
     for r in rows:
         tags_raw = json.loads(r["tags"]) if r["tags"] else []
+        if not isinstance(tags_raw, list):
+            tags_raw = []
+
         att_raw = json.loads(r["attachments"]) if r["attachments"] else []
+        if not isinstance(att_raw, list):
+            att_raw = []
 
         # In-memory Tag & Search filtering for maximum precision
         if effective_tags:
