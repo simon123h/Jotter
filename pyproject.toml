@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=64.0", "setuptools-scm>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "jotter-app"
-version = "2.9.1"
+dynamic = ["version"]
 description = "Local-first Markdown Kanban Board web application"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -26,6 +26,7 @@ dev = [
     "httpx>=0.28.0",
     "pytest-cov>=5.0.0",
     "ruff>=0.8.0",
+    "setuptools-scm>=8.0",
 ]
 
 [project.scripts]
@@ -37,6 +38,10 @@ include = ["backend*"]
 
 [tool.setuptools.package-data]
 "backend" = ["dist/**/*", "dist/*"]
+
+[tool.setuptools_scm]
+write_to = "backend/_version.py"
+fallback_version = "3.0.0b1"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/backend"]
@@ -55,4 +60,5 @@ exclude = [
     "node_modules",
     "frontend",
     "docs",
+    "backend/_version.py",
 ]
