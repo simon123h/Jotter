@@ -9,9 +9,19 @@ Jotter is a lightweight, local-first web application powered by Python (FastAPI)
 
 ---
 
-## Quick Start with `pipx` (Recommended)
+## Option 1: Standalone Single-File Script (`jotter.pyz`)
 
-Run Jotter instantly without cloning or building:
+You can download the standalone `jotter.pyz` directly from the [GitHub Releases](https://github.com/simon123h/jotter/releases) page. It contains all dependencies and the built frontend in a single file with zero install step required:
+
+```bash
+python3 jotter.pyz
+```
+
+---
+
+## Option 2: Quick Start with `pipx`
+
+Run Jotter instantly via PyPI without cloning:
 
 ```bash
 pipx run jotter-app

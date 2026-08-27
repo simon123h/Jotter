@@ -18,6 +18,7 @@ dist/
 build/
 backend/dist/
 *.egg
+*.pyz
 
 # Testing & Coverage
 .pytest_cache/
