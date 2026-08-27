@@ -6,12 +6,8 @@ This guide walks you through setting up a local development environment to run a
 
 Ensure you have the following installed on your machine:
 
-- **Node.js** (v22 or higher recommended) and **npm**
-- **Go** (v1.25.0 or higher)
-- **Wails CLI** (optional, required to build/run the desktop app from source):
-  ```bash
-  go install github.com/wailsapp/wails/v2/cmd/wails@latest
-  ```
+- **Python** (v3.10 or higher) and **pip**
+- **Node.js** (v20 or higher recommended) and **npm**
 - A terminal shell (Bash, Zsh, PowerShell)
 
 ## Setup Steps
@@ -25,55 +21,61 @@ cd jotter
 
 ### 2. Dependency Installation
 
-A workspace helper script is provided to install Node dependencies for both the root and frontend, and download all Go backend dependencies:
+A workspace helper script is provided to install Node dependencies for both the root and frontend, and install Python dependencies in editable mode:
 
 ```bash
 npm run install:all
+```
+
+Or manually:
+
+```bash
+# Backend dependencies
+pip install -e .[dev]
+
+# Frontend dependencies
+npm install
+cd frontend && npm install && cd ..
 ```
 
 ---
 
 ## Running in Development Mode
 
-You can run Jotter in either Browser/Web mode or as a native Wails Desktop Application.
-
-### Option A: Wails Desktop Mode (Recommended)
-
-To run Jotter in developer desktop mode (interactive desktop window with hot-reloading support for both Go and Vue):
+To run both the Python FastAPI backend and the Vue 3 frontend concurrently with hot-reloading:
 
 ```bash
 npm run dev
-# or directly
-wails dev
 ```
 
-### Option B: Web / Server Mode
-
-To run both the Go REST API server and the frontend (Vue 3 / Vite) concurrently in your web browser with hot-reloading:
+Or run each service separately in dedicated terminal sessions:
 
 ```bash
+# Terminal 1: Python Backend
 npm run dev:backend
-# and in another terminal
+# or: python3 run.py
+
+# Terminal 2: Vue 3 Frontend
 npm run dev:frontend
+# or: cd frontend && npm run dev
 ```
+
+The frontend will run at `http://localhost:5173` (proxying `/api` requests to the Python server at `http://localhost:58271`).
 
 ---
 
-## Workspace Scripts
+## Running Tests
 
-Several npm script wrappers are available at the root level for convenient development workflow:
+```bash
+# Run all tests (Backend Pytest + Frontend Vitest)
+npm run test
 
-| Command                 | Description                                                           |
-| :---------------------- | :-------------------------------------------------------------------- |
-| `npm run dev`           | Standard dev mode: launches the Wails desktop window with hot-reload. |
-| `npm run build`         | Builds both the `jotter` (server) and `jotter-desktop` binaries.      |
-| `npm run build:server`  | Builds only the server binary.                                        |
-| `npm run build:desktop` | Builds only the desktop binary.                                       |
-| `npm run test`          | Executes both backend (Go test) and frontend (Vitest) test suites.    |
-| `npm run lint`          | Lints the entire codebase.                                            |
-| `npm run format`        | Auto-formats code.                                                    |
+# Run backend tests only
+npm run test:backend
 
-For individual components:
+# Run frontend tests only
+npm run test:frontend
 
-- **Backend commands** can be run in the root directory: `go test -v ./...`, `go vet ./...`, `go fmt ./...`, etc.
-- **Frontend commands** can be run inside the `frontend/` directory using standard npm commands: `npm run dev`, `npm run test`, `npm run lint`, etc.
+# Run Playwright full-stack browser E2E tests
+cd frontend && npx playwright test
+```

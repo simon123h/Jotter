@@ -26,7 +26,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'go run ../main_server.go ../shared_assets.go',
+      command: 'python3 ../run.py',
       port: 58273,
       reuseExistingServer: !process.env.CI,
       env: {
