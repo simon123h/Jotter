@@ -276,7 +276,9 @@ def test_api_error_responses(test_env):
     assert res.status_code == 404
 
     # 4. Non-existent task move 404
-    res = client.patch("/api/projects/default/tasks/non-existent-task-id/move", json={"bucket": "done", "position": 1.0})
+    res = client.patch(
+        "/api/projects/default/tasks/non-existent-task-id/move", json={"bucket": "done", "position": 1.0}
+    )
     assert res.status_code == 404
 
     # 5. Non-existent task attachment download 404
