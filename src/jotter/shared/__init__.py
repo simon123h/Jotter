@@ -1,6 +1,7 @@
-"""Shared domain primitives, database lifecycle, and utilities."""
+"""Shared domain primitives and technical foundations."""
 
 from jotter.shared.db import close_db, get_db
+from jotter.shared.deps import get_data_dir
 from jotter.shared.exceptions import (
     DomainException,
     EntityNotFoundError,
@@ -12,6 +13,9 @@ from jotter.shared.ulid import generate_ulid
 from jotter.shared.value_objects import DueDate, Priority, Tag, TaskId
 
 __all__ = [
+    "get_db",
+    "close_db",
+    "get_data_dir",
     "DomainException",
     "EntityNotFoundError",
     "ValidationError",
@@ -20,8 +24,6 @@ __all__ = [
     "TaskId",
     "DueDate",
     "Tag",
-    "get_db",
-    "close_db",
     "slugify",
     "generate_ulid",
 ]

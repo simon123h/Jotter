@@ -2,13 +2,18 @@
 
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from jotter.features.tasks.schemas import TaskCreate, TaskMove, TaskResponse, TaskUpdate
 from jotter.features.tasks.service import TaskApplicationService
+from jotter.shared.deps import get_data_dir
 
 router = APIRouter(tags=["tasks"])
+
+
+def get_service(data_dir: str = Depends(get_data_dir)) -> TaskApplicationService:
+    return TaskApplicationService(data_dir)
 
 
 def _extract_query_param(request: Request, *names: str, default: str | None = None) -> str | None:
@@ -33,8 +38,7 @@ def _extract_query_list(request: Request, *names: str) -> list[str] | None:
 
 # Global tasks endpoint - full filtering support
 @router.get("/api/tasks", response_model=list[TaskResponse])
-def list_all_tasks(request: Request):
-    data_dir = request.app.state.config.data_dir
+def list_all_tasks(request: Request, svc: TaskApplicationService = Depends(get_service)):
     project_id = _extract_query_param(request, "projectId", "project_id", "project")
     bucket = _extract_query_param(request, "bucket")
     buckets = _extract_query_list(request, "buckets", "bucket")
@@ -54,7 +58,7 @@ def list_all_tasks(request: Request):
     if has_due_str is not None:
         has_due_date = has_due_str.lower() in ("true", "1", "yes")
 
-    return TaskApplicationService(data_dir).get_tasks(
+    return svc.get_tasks(
         project_id=project_id,
         bucket=bucket,
         buckets=buckets,
@@ -74,8 +78,7 @@ def list_all_tasks(request: Request):
 
 # Project tasks endpoint
 @router.get("/api/projects/{project_id}/tasks", response_model=list[TaskResponse])
-def list_project_tasks(project_id: str, request: Request):
-    data_dir = request.app.state.config.data_dir
+def list_project_tasks(project_id: str, request: Request, svc: TaskApplicationService = Depends(get_service)):
     bucket = _extract_query_param(request, "bucket")
     buckets = _extract_query_list(request, "buckets")
     tag = _extract_query_param(request, "tag")
@@ -94,7 +97,7 @@ def list_project_tasks(project_id: str, request: Request):
     if has_due_str is not None:
         has_due_date = has_due_str.lower() in ("true", "1", "yes")
 
-    return TaskApplicationService(data_dir).get_tasks(
+    return svc.get_tasks(
         project_id=project_id,
         bucket=bucket,
         buckets=buckets,
@@ -113,34 +116,39 @@ def list_project_tasks(project_id: str, request: Request):
 
 
 @router.get("/api/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
-def get_single_task(project_id: str, task_id: str, request: Request):
-    data_dir = request.app.state.config.data_dir
-    return TaskApplicationService(data_dir).get_task(project_id, task_id)
+def get_single_task(project_id: str, task_id: str, svc: TaskApplicationService = Depends(get_service)):
+    return svc.get_task(project_id, task_id)
 
 
 @router.post("/api/projects/{project_id}/tasks", response_model=TaskResponse, status_code=201)
-def create_new_task(project_id: str, req: TaskCreate, request: Request):
-    data_dir = request.app.state.config.data_dir
-    return TaskApplicationService(data_dir).create_task(project_id, req)
+def create_new_task(project_id: str, req: TaskCreate, svc: TaskApplicationService = Depends(get_service)):
+    return svc.create_task(project_id, req)
 
 
 @router.patch("/api/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
 @router.put("/api/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
-def update_existing_task(project_id: str, task_id: str, req: TaskUpdate, request: Request):
-    data_dir = request.app.state.config.data_dir
-    return TaskApplicationService(data_dir).update_task(project_id, task_id, req)
+def update_existing_task(
+    project_id: str,
+    task_id: str,
+    req: TaskUpdate,
+    svc: TaskApplicationService = Depends(get_service),
+):
+    return svc.update_task(project_id, task_id, req)
 
 
 @router.patch("/api/projects/{project_id}/tasks/{task_id}/move", response_model=TaskResponse)
-def move_existing_task(project_id: str, task_id: str, req: TaskMove, request: Request):
-    data_dir = request.app.state.config.data_dir
-    return TaskApplicationService(data_dir).move_task(project_id, task_id, req)
+def move_existing_task(
+    project_id: str,
+    task_id: str,
+    req: TaskMove,
+    svc: TaskApplicationService = Depends(get_service),
+):
+    return svc.move_task(project_id, task_id, req)
 
 
 @router.delete("/api/projects/{project_id}/tasks/{task_id}", status_code=204)
-def delete_existing_task(project_id: str, task_id: str, request: Request):
-    data_dir = request.app.state.config.data_dir
-    TaskApplicationService(data_dir).delete_task(project_id, task_id)
+def delete_existing_task(project_id: str, task_id: str, svc: TaskApplicationService = Depends(get_service)):
+    svc.delete_task(project_id, task_id)
 
 
 # Attachments
@@ -149,23 +157,30 @@ def upload_task_attachment(
     project_id: str,
     task_id: str,
     file: UploadFile = File(...),
-    request: Request = None,
+    svc: TaskApplicationService = Depends(get_service),
 ):
-    data_dir = request.app.state.config.data_dir
     filename = file.filename or "attachment"
     content = file.file.read()
-    return TaskApplicationService(data_dir).add_attachment(project_id, task_id, filename, content)
+    return svc.add_attachment(project_id, task_id, filename, content)
 
 
 @router.delete("/api/projects/{project_id}/tasks/{task_id}/attachments/{filename}", response_model=TaskResponse)
-def delete_task_attachment(project_id: str, task_id: str, filename: str, request: Request):
-    data_dir = request.app.state.config.data_dir
-    return TaskApplicationService(data_dir).remove_attachment(project_id, task_id, filename)
+def delete_task_attachment(
+    project_id: str,
+    task_id: str,
+    filename: str,
+    svc: TaskApplicationService = Depends(get_service),
+):
+    return svc.remove_attachment(project_id, task_id, filename)
 
 
 @router.get("/api/projects/{project_id}/tasks/{task_id}/attachments/{filename}")
-def serve_task_attachment(project_id: str, task_id: str, filename: str, request: Request):
-    data_dir = request.app.state.config.data_dir
+def serve_task_attachment(
+    project_id: str,
+    task_id: str,
+    filename: str,
+    data_dir: str = Depends(get_data_dir),
+):
     path = Path(data_dir) / project_id / "attachments" / task_id / filename
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Attachment file not found")
