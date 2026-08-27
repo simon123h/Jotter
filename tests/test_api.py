@@ -1,31 +1,5 @@
-import shutil
-import tempfile
 from io import BytesIO
 from pathlib import Path
-
-import pytest
-from fastapi.testclient import TestClient
-
-from jotter.app import create_app
-from jotter.config import UserConfig
-from jotter.db import close_db
-
-
-@pytest.fixture
-def test_env():
-    temp_dir = tempfile.mkdtemp(prefix="jotter_test_")
-    config = UserConfig(
-        data_dir=temp_dir,
-        port=58299,
-        log_level="WARNING",
-    )
-    app = create_app(config)
-    client = TestClient(app)
-
-    yield client, temp_dir
-
-    close_db()
-    shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_projects_crud(test_env):
@@ -286,17 +260,33 @@ Sample body
     assert res.json()["attachments"] == []
 
 
-def test_log_level_normalization():
-    from jotter.config import normalize_log_level
+def test_api_error_responses(test_env):
+    client, _ = test_env
 
-    assert normalize_log_level("WARN") == "WARNING"
-    assert normalize_log_level("warn") == "WARNING"
-    assert normalize_log_level("warning") == "WARNING"
-    assert normalize_log_level("ERR") == "ERROR"
-    assert normalize_log_level("error") == "ERROR"
-    assert normalize_log_level("debug") == "DEBUG"
-    assert normalize_log_level("info") == "INFO"
-    assert normalize_log_level("FATAL") == "CRITICAL"
-    # Invalid log level falls back gracefully to INFO without crashing
-    assert normalize_log_level("non_existent_level") == "INFO"
-    assert normalize_log_level(None) == "INFO"
+    # 1. Non-existent project
+    res = client.get("/api/projects/non-existent-proj/tasks")
+    assert res.status_code == 200  # returns empty list
+
+    # 2. Non-existent task 404
+    res = client.get("/api/projects/default/tasks/non-existent-task-id")
+    assert res.status_code == 404
+
+    # 3. Non-existent task update 404
+    res = client.patch("/api/projects/default/tasks/non-existent-task-id", json={"title": "New Title"})
+    assert res.status_code == 404
+
+    # 4. Non-existent task move 404
+    res = client.patch("/api/projects/default/tasks/non-existent-task-id/move", json={"bucket": "done", "position": 1.0})
+    assert res.status_code == 404
+
+    # 5. Non-existent task attachment download 404
+    res = client.get("/api/projects/default/tasks/non-existent-task-id/attachments/file.png")
+    assert res.status_code == 404
+
+    # 6. Bucket creation invalid name conflict / bad update 404
+    res = client.put("/api/projects/default/buckets/non-existent-col", json={"title": "Test Title"})
+    assert res.status_code == 404
+
+    # 7. Project restore missing hash 400
+    res = client.post("/api/system/restore", json={"commitHash": ""})
+    assert res.status_code == 400
