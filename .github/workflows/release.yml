@@ -41,12 +41,15 @@ jobs:
 
       - name: Build Standalone ZipApp (jotter.pyz)
         run: |
-          shiv -e backend.main:main -o dist/jotter.pyz .
+          mkdir -p dist-pyz
+          shiv -e backend.main:main -o dist-pyz/jotter.pyz .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: |
+            dist/*
+            dist-pyz/*
           generate_release_notes: true
           draft: false
           prerelease: false
