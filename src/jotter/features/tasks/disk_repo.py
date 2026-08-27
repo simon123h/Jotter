@@ -47,7 +47,7 @@ class DiskTaskRepository:
         return [f for f in p.glob("*.md") if f.is_file()]
 
     def serialize_task(self, task: Task) -> str:
-        """Dumps frontmatter and body into markdown format."""
+        """Dumps frontmatter and body into clean markdown format."""
         fm_dict: dict[str, object] = {
             "id": str(task.id),
             "project_id": task.project_id,
@@ -108,7 +108,7 @@ class DiskTaskRepository:
             body = content
 
         tid = str(fm_data.get("id") or fallback_id)
-        proj_id = str(fm_data.get("project_id") or default_project_id)
+        proj_id = str(fm_data.get("project_id") or fm_data.get("projectId") or default_project_id)
         title = str(fm_data.get("title") or "Untitled Task")
         bucket = str(fm_data.get("bucket") or "todo")
         pos = float(fm_data.get("position") or 1000.0)
@@ -134,11 +134,11 @@ class DiskTaskRepository:
             except Exception:
                 attachments = [raw_att.strip()]
 
-        due_date = str(fm_data["due_date"]) if fm_data.get("due_date") else None
-        planned_date = str(fm_data["planned_date"]) if fm_data.get("planned_date") else None
-        priority = str(fm_data["priority"]) if fm_data.get("priority") else None
-        color = str(fm_data["color"]) if fm_data.get("color") else None
-        postponed_until = str(fm_data["postponed_until"]) if fm_data.get("postponed_until") else None
+        due_date = fm_data.get("due_date") or fm_data.get("dueDate")
+        planned_date = fm_data.get("planned_date") or fm_data.get("plannedDate")
+        priority = fm_data.get("priority")
+        color = fm_data.get("color")
+        postponed_until = fm_data.get("postponed_until") or fm_data.get("postponedUntil")
 
         task = Task.create(
             project_id=proj_id,
@@ -148,17 +148,17 @@ class DiskTaskRepository:
             tags=tags,
             attachments=attachments,
             body=body,
-            due_date=due_date,
-            planned_date=planned_date,
-            priority=priority,
-            color=color,
-            postponed_until=postponed_until,
+            due_date=str(due_date) if due_date else None,
+            planned_date=str(planned_date) if planned_date else None,
+            priority=str(priority) if priority else None,
+            color=str(color) if color else None,
+            postponed_until=str(postponed_until) if postponed_until else None,
             task_id=tid,
         )
 
-        if fm_data.get("created_at"):
-            task.created_at = str(fm_data["created_at"])
-        if fm_data.get("updated_at"):
-            task.updated_at = str(fm_data["updated_at"])
+        if fm_data.get("created_at") or fm_data.get("createdAt"):
+            task.created_at = str(fm_data.get("created_at") or fm_data.get("createdAt"))
+        if fm_data.get("updated_at") or fm_data.get("updatedAt"):
+            task.updated_at = str(fm_data.get("updated_at") or fm_data.get("updatedAt"))
 
         return task
