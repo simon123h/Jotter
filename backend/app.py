@@ -45,8 +45,11 @@ def create_app(config: UserConfig, version: str = "2.9.1") -> FastAPI:
     app.include_router(settings_router)
     app.include_router(system_router)
 
-    # Serve built frontend if frontend/dist exists
-    dist_dir = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+    # Locate static frontend distribution (bundled package dist or local dev frontend/dist)
+    pkg_dist = Path(__file__).resolve().parent / "dist"
+    dev_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+    dist_dir = pkg_dist if (pkg_dist.is_dir() and (pkg_dist / "index.html").is_file()) else dev_dist
+
     if dist_dir.is_dir() and (dist_dir / "index.html").is_file():
         # Mount assets folder
         assets_dir = dist_dir / "assets"
