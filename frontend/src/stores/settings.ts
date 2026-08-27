@@ -70,9 +70,7 @@ export const useSettingsStore = defineStore('settings', () => {
     // Sync PWA window title bar color via meta theme-color
     try {
       const bgBase =
-        typeof window !== 'undefined'
-          ? window.getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-base').trim()
-          : '';
+        typeof window !== 'undefined' ? window.getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-base').trim() : '';
       const metaThemeColor = document.querySelector('meta[name="theme-color"]');
       if (metaThemeColor && bgBase) {
         metaThemeColor.setAttribute('content', bgBase);

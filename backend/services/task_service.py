@@ -34,11 +34,7 @@ def parse_frontmatter(content: str) -> tuple[TaskFrontmatter, str]:
     tags = [str(t).lower() for t in raw_tags if t is not None] if isinstance(raw_tags, list) else []
 
     raw_attachments = data.get("attachments")
-    attachments = (
-        [str(a) for a in raw_attachments if a is not None]
-        if isinstance(raw_attachments, list)
-        else []
-    )
+    attachments = [str(a) for a in raw_attachments if a is not None] if isinstance(raw_attachments, list) else []
 
     fm = TaskFrontmatter(
         id=str(data.get("id", "")),
