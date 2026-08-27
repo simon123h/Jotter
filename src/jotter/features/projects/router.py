@@ -27,6 +27,7 @@ def create_new_project(req: ProjectCreate, request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.patch("/{project_id}", response_model=ProjectResponse)
 @router.put("/{project_id}", response_model=ProjectResponse)
 def update_existing_project(project_id: str, req: ProjectUpdate, request: Request):
     data_dir = request.app.state.config.data_dir

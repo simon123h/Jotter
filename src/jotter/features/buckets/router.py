@@ -26,6 +26,7 @@ def create_new_bucket(project_id: str, req: BucketCreate, request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.patch("/{name}", response_model=BucketResponse)
 @router.put("/{name}", response_model=BucketResponse)
 def update_existing_bucket(project_id: str, name: str, req: BucketUpdate, request: Request):
     data_dir = request.app.state.config.data_dir

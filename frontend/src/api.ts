@@ -123,15 +123,31 @@ export async function deleteProject(id: string): Promise<void> {
 // SCOPED TASK API
 // ==========================================
 
+function appendTaskFilterParams(url: URL, filters?: TaskFilterParams) {
+  if (!filters) return;
+  if (filters.bucket) url.searchParams.append('bucket', filters.bucket);
+  if (filters.buckets) url.searchParams.append('buckets', filters.buckets);
+  if (filters.tag) url.searchParams.append('tag', filters.tag);
+  if (filters.tags) url.searchParams.append('tags', filters.tags);
+  if (filters.tag_mode) url.searchParams.append('tag_mode', filters.tag_mode);
+  if (filters.exclude_bucket) url.searchParams.append('exclude_bucket', filters.exclude_bucket);
+  if (filters.exclude_buckets) url.searchParams.append('exclude_buckets', filters.exclude_buckets);
+  if (filters.priorities) url.searchParams.append('priorities', filters.priorities);
+  if (filters.search) url.searchParams.append('search', filters.search);
+  if (filters.due_before) url.searchParams.append('due_before', filters.due_before);
+  if (filters.due_after) url.searchParams.append('due_after', filters.due_after);
+  if (filters.planned_date) url.searchParams.append('planned_date', filters.planned_date);
+  if (filters.has_due_date !== undefined && filters.has_due_date !== null) {
+    url.searchParams.append('has_due_date', String(filters.has_due_date));
+  }
+}
+
 export async function getAllTasks(filters?: TaskFilterParams): Promise<Task[]> {
   if (IS_DEMO_MODE) {
     return demoApi.getTasks('default', filters); // Demo mode doesn't support global yet
   }
   const url = new URL(`${API_BASE}/tasks`, window.location.origin);
-  if (filters) {
-    if (filters.exclude_buckets) url.searchParams.append('exclude_buckets', filters.exclude_buckets);
-    if (filters.search) url.searchParams.append('search', filters.search);
-  }
+  appendTaskFilterParams(url, filters);
 
   const response = await customFetch(url.toString());
   if (!response.ok) {
@@ -145,23 +161,7 @@ export async function getTasks(projectId: string, filters?: TaskFilterParams): P
     return demoApi.getTasks(projectId, filters);
   }
   const url = new URL(`${API_BASE}/projects/${projectId}/tasks`, window.location.origin);
-  if (filters) {
-    if (filters.bucket) url.searchParams.append('bucket', filters.bucket);
-    if (filters.buckets) url.searchParams.append('buckets', filters.buckets);
-    if (filters.tag) url.searchParams.append('tag', filters.tag);
-    if (filters.tags) url.searchParams.append('tags', filters.tags);
-    if (filters.tag_mode) url.searchParams.append('tag_mode', filters.tag_mode);
-    if (filters.exclude_bucket) url.searchParams.append('exclude_bucket', filters.exclude_bucket);
-    if (filters.exclude_buckets) url.searchParams.append('exclude_buckets', filters.exclude_buckets);
-    if (filters.priorities) url.searchParams.append('priorities', filters.priorities);
-    if (filters.search) url.searchParams.append('search', filters.search);
-    if (filters.due_before) url.searchParams.append('due_before', filters.due_before);
-    if (filters.due_after) url.searchParams.append('due_after', filters.due_after);
-    if (filters.planned_date) url.searchParams.append('planned_date', filters.planned_date);
-    if (filters.has_due_date !== undefined && filters.has_due_date !== null) {
-      url.searchParams.append('has_due_date', String(filters.has_due_date));
-    }
-  }
+  appendTaskFilterParams(url, filters);
 
   const response = await customFetch(url.toString());
   if (!response.ok) {
