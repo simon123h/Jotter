@@ -34,7 +34,7 @@
     "install:all": "npm install && cd frontend && npm install && go mod download"
   },
   "devDependencies": {
-    "concurrently": "^10.0.4",
+    "concurrently": "^10.0.5",
     "vitepress": "^1.6.4"
   },
   "overrides": {
