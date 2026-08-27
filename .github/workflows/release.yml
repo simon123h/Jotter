@@ -51,17 +51,61 @@ jobs:
           # If the tag contains alpha, beta, rc, or dev -> mark as GitHub pre-release
           if [[ "$TAG" =~ (alpha|beta|rc|dev|[0-9]+[ab][0-9]+) ]]; then
             EXTRA_FLAGS+=(--prerelease)
+            START_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
           else
             # For a stable release, find the most recent previous STABLE tag (ignoring alpha/beta/rc tags)
-            PREV_STABLE_TAG=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^${TAG}$" | head -n 1 || true)
-            if [ -n "$PREV_STABLE_TAG" ]; then
-              EXTRA_FLAGS+=(--notes-start-tag "$PREV_STABLE_TAG")
+            START_TAG=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^${TAG}$" | head -n 1 || true)
+            if [ -z "$START_TAG" ]; then
+              START_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
             fi
+          fi
+
+          RANGE="${START_TAG}..${TAG}"
+          if [ -z "$START_TAG" ]; then
+            RANGE="${TAG}"
+          fi
+
+          REPO_URL="https://github.com/${{ github.repository }}"
+          NOTES_FILE="/tmp/release_notes.md"
+          echo "## What's Changed" > "$NOTES_FILE"
+          echo "" >> "$NOTES_FILE"
+
+          FEATS=$(git log "$RANGE" --grep="^feat" --pretty=format:"* %s ([%h]($REPO_URL/commit/%H))" || true)
+          FIXES=$(git log "$RANGE" --grep="^fix" --pretty=format:"* %s ([%h]($REPO_URL/commit/%H))" || true)
+          MAINT=$(git log "$RANGE" --grep="^chore" --grep="^perf" --grep="^refactor" --grep="^docs" --pretty=format:"* %s ([%h]($REPO_URL/commit/%H))" || true)
+          OTHER=$(git log "$RANGE" --invert-grep --grep="^feat" --grep="^fix" --grep="^chore" --grep="^perf" --grep="^refactor" --grep="^docs" --grep="^style" --grep="^test" --grep="^Merge " --pretty=format:"* %s ([%h]($REPO_URL/commit/%H))" || true)
+
+          if [ -n "$FEATS" ]; then
+            echo "### 🚀 Features" >> "$NOTES_FILE"
+            echo "$FEATS" >> "$NOTES_FILE"
+            echo "" >> "$NOTES_FILE"
+          fi
+
+          if [ -n "$FIXES" ]; then
+            echo "### 🐛 Bug Fixes" >> "$NOTES_FILE"
+            echo "$FIXES" >> "$NOTES_FILE"
+            echo "" >> "$NOTES_FILE"
+          fi
+
+          if [ -n "$MAINT" ]; then
+            echo "### 🧰 Maintenance & Dependencies" >> "$NOTES_FILE"
+            echo "$MAINT" >> "$NOTES_FILE"
+            echo "" >> "$NOTES_FILE"
+          fi
+
+          if [ -n "$OTHER" ]; then
+            echo "### 📦 Other Changes" >> "$NOTES_FILE"
+            echo "$OTHER" >> "$NOTES_FILE"
+            echo "" >> "$NOTES_FILE"
+          fi
+
+          if [ -n "$START_TAG" ]; then
+            echo "**Full Changelog**: $REPO_URL/compare/${START_TAG}...${TAG}" >> "$NOTES_FILE"
           fi
 
           gh release create "$TAG" dist/* \
             --title "$TAG" \
-            --generate-notes \
+            --notes-file "$NOTES_FILE" \
             "${EXTRA_FLAGS[@]}"
 
       - name: Publish to PyPI
