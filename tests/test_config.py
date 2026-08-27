@@ -81,3 +81,9 @@ def test_load_config_env_overrides(tmp_path):
         assert cfg.port == 6000
         assert cfg.log_level == "DEBUG"
         assert cfg.data_dir == str((tmp_path / "env_data").resolve())
+
+
+def test_module_execution_main():
+    import jotter.__main__ as jmain
+
+    assert hasattr(jmain, "main")
