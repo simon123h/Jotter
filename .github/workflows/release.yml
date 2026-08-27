@@ -47,14 +47,12 @@ jobs:
           shiv -e backend.main:main -o dist-pyz/jotter.pyz .
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/*
-            dist-pyz/*
-          generate_release_notes: true
-          draft: false
-          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" dist/* dist-pyz/* \
+            --title "${{ github.ref_name }}" \
+            --generate-notes
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
