@@ -23,24 +23,15 @@ def temp_dir():
 
 
 @pytest.fixture
-def test_config(temp_dir):
-    return UserConfig(
-        data_dir=temp_dir,
+def test_env():
+    d = tempfile.mkdtemp(prefix="jotter_test_")
+    cfg = UserConfig(
+        data_dir=d,
         port=58299,
         log_level="WARNING",
     )
-
-
-@pytest.fixture
-def test_app(test_config):
-    return create_app(test_config)
-
-
-@pytest.fixture
-def client(test_app):
-    return TestClient(test_app)
-
-
-@pytest.fixture
-def test_env(temp_dir, test_config, test_app, client):
-    yield client, temp_dir
+    app = create_app(cfg)
+    test_client = TestClient(app)
+    yield test_client, d
+    close_db()
+    shutil.rmtree(d, ignore_errors=True)

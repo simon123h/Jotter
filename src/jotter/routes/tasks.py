@@ -7,9 +7,9 @@ from jotter.services.task_service import (
     delete_attachment,
     delete_task,
     get_attachment_path,
+    get_task,
     get_tasks,
     move_task,
-    read_task_file,
     save_attachment,
     update_task,
 )
@@ -74,10 +74,10 @@ def list_project_tasks(
 @router.get("/api/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
 def get_single_task(project_id: str, task_id: str, request: Request):
     data_dir = request.app.state.config.data_dir
-    try:
-        return read_task_file(data_dir, task_id)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    task = get_task(data_dir, project_id, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
 
 
 @router.post("/api/projects/{project_id}/tasks", response_model=TaskResponse, status_code=201)
