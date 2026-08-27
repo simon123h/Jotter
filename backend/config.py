@@ -12,6 +12,7 @@ class UserConfig(BaseModel):
     host: str = "127.0.0.1"
     port: int = 58271
     log_level: str = "INFO"
+    open_browser: bool = True
 
 
 def get_default_data_dir() -> str:
