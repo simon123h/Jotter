@@ -16,6 +16,9 @@ class Priority(str, Enum):
     HIGH = "high"
     URGENT = "urgent"
 
+    def __str__(self) -> str:
+        return self.value
+
     @classmethod
     def from_str(cls, val: str | None) -> Self:
         if not val:
@@ -24,7 +27,7 @@ class Priority(str, Enum):
         for p in cls:
             if p.value == clean:
                 return p
-        return cls.NONE
+        raise ValidationError(f"Invalid priority: '{val}'")
 
 
 @dataclass(frozen=True)
@@ -39,6 +42,14 @@ class TaskId:
     def generate(cls) -> Self:
         return cls(value=generate_ulid())
 
+    @classmethod
+    def create(cls) -> Self:
+        return cls.generate()
+
+    @classmethod
+    def from_str(cls, val: str) -> Self:
+        return cls(value=val.strip())
+
     def __str__(self) -> str:
         return self.value
 
@@ -46,6 +57,20 @@ class TaskId:
 @dataclass(frozen=True)
 class DueDate:
     value: str | None  # "YYYY-MM-DD" or natural strings like "today", "someday", etc.
+
+    @classmethod
+    def from_str(cls, val: str | None) -> Self:
+        if not val or not str(val).strip():
+            return cls(value=None)
+        clean = str(val).strip()
+        # Validate format if YYYY-MM-DD or standard natural words
+        if clean.lower() in ("today", "tomorrow", "someday", "this-week", "next-week"):
+            return cls(value=clean.lower())
+        try:
+            datetime.strptime(clean, "%Y-%m-%d")
+            return cls(value=clean)
+        except ValueError:
+            raise ValidationError(f"Invalid due date format: '{val}' (expected YYYY-MM-DD)")
 
     @property
     def as_date(self) -> date | None:
@@ -83,11 +108,17 @@ class Tag:
     value: str
 
     def __post_init__(self):
-        clean = self.value.strip().lower()
-        if not clean:
-            raise ValidationError("Tag cannot be empty")
-        # Ensure immutable clean string
+        clean = self.value.strip().lstrip("#").lower()
+        if not clean or " " in clean:
+            raise ValidationError(f"Invalid tag: '{self.value}'")
         object.__setattr__(self, "value", clean)
+
+    @classmethod
+    def from_str(cls, val: str) -> Self:
+        clean = val.strip().lstrip("#").lower()
+        if not clean or " " in clean:
+            raise ValidationError(f"Invalid tag: '{val}'")
+        return cls(value=clean)
 
     def __str__(self) -> str:
         return self.value

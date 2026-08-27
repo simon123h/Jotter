@@ -1,117 +1,111 @@
-from jotter.models.task import (
+from jotter.features.tasks.disk_repo import DiskTaskRepository
+from jotter.features.tasks.schemas import (
     TaskCreate,
-    TaskFrontmatter,
     TaskMove,
     TaskUpdate,
 )
-from jotter.services.task_service import (
-    create_task,
-    delete_task,
-    dump_frontmatter,
-    get_tasks,
-    move_task,
-    parse_frontmatter,
-    update_task,
-)
+from jotter.features.tasks.service import TaskApplicationService
 
 
 def test_frontmatter_parse_and_dump():
-    original_body = "## Checklists\n- [x] Item 1\n- [ ] Item 2\n"
-    fm = TaskFrontmatter(
-        id="01HXYZ00000000000000000001",
-        project_id="work",
-        title="Complex Frontmatter Task",
-        bucket="in-progress",
-        position=1500.0,
-        tags=["backend", "pydantic"],
-        due_date="2026-09-01",
-        planned_date="2026-08-30",
-        priority="high",
-        color="#3b82f6",
-        postponed_until="2026-08-29",
-        created_at="2026-08-27T20:00:00Z",
-        updated_at="2026-08-27T20:00:00Z",
+    disk_repo = DiskTaskRepository("")
+    raw_markdown = """---
+id: "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+projectId: "default"
+title: "Sample Task"
+bucket: "todo"
+position: 1500.0
+tags:
+  - backend
+  - python
+priority: "high"
+due_date: "2026-08-30"
+---
+
+# Task Description
+Here are details.
+"""
+    task = disk_repo.parse_task_content(raw_markdown, fallback_id="01ARZ3NDEKTSV4RRFFQ69G5FAV", default_project_id="default")
+    assert str(task.id) == "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+    assert task.title == "Sample Task"
+    assert task.bucket == "todo"
+    assert len(task.tags) == 2
+    assert task.body.strip() == "# Task Description\nHere are details."
+
+    # Round trip serialize
+    dumped = disk_repo.serialize_task(task)
+    assert "Sample Task" in dumped
+    assert "# Task Description" in dumped
+
+
+def test_task_crud_and_positioning(temp_dir, test_env):
+    task_svc = TaskApplicationService(temp_dir)
+
+    # Create task
+    t1 = task_svc.create_task(
+        "default",
+        TaskCreate(
+            title="First Task",
+            bucket="todo",
+            tags=["urgent"],
+            body="First task body",
+            priority="urgent",
+            due_date="2026-08-31",
+        ),
     )
+    assert t1.title == "First Task"
+    assert t1.position == 1000.0
 
-    dumped = dump_frontmatter(fm, original_body)
-    assert "---" in dumped
-    assert "Complex Frontmatter Task" in dumped
-
-    parsed_fm, parsed_body = parse_frontmatter(dumped)
-    assert parsed_fm.id == fm.id
-    assert parsed_fm.title == fm.title
-    assert parsed_fm.priority == "high"
-    assert parsed_fm.tags == ["backend", "pydantic"]
-    assert parsed_body.strip() == original_body.strip()
-
-
-def test_task_crud_and_positioning(temp_dir):
-    t1 = create_task(temp_dir, "default", TaskCreate(title="Task 1", bucket="todo"))
-    t2 = create_task(temp_dir, "default", TaskCreate(title="Task 2", bucket="todo"))
-
-    assert t2.position > t1.position
+    # Create second task
+    t2 = task_svc.create_task("default", TaskCreate(title="Second Task", bucket="todo"))
+    assert t2.position == 2000.0
 
     # Update task
-    updated = update_task(
-        temp_dir,
-        "default",
-        t1.id,
-        TaskUpdate(title="Task 1 Updated", priority="urgent", body="New body details"),
-    )
-    assert updated.title == "Task 1 Updated"
-    assert updated.priority == "urgent"
-    assert updated.body == "New body details"
+    up_t1 = task_svc.update_task("default", t1.id, TaskUpdate(title="First Task (Updated)", priority="low"))
+    assert up_t1.title == "First Task (Updated)"
+    assert up_t1.priority == "low"
 
     # Move task
-    moved = move_task(temp_dir, "default", t1.id, TaskMove(bucket="done", position=500.0))
-    assert moved.bucket == "done"
-    assert moved.position == 500.0
+    mv_t1 = task_svc.move_task("default", t1.id, TaskMove(bucket="done", position=500.0))
+    assert mv_t1.bucket == "done"
+    assert mv_t1.position == 500.0
 
     # Delete task
-    delete_task(temp_dir, "default", t1.id)
-    tasks = get_tasks("default")
-    assert not any(t.id == t1.id for t in tasks)
+    task_svc.delete_task("default", t2.id)
+    assert len(task_svc.get_tasks("default")) == 1
 
 
-def test_task_search_and_filtering(temp_dir):
-    create_task(
-        temp_dir,
+def test_task_search_and_filtering(temp_dir, test_env):
+    task_svc = TaskApplicationService(temp_dir)
+
+    task_svc.create_task(
         "default",
-        TaskCreate(
-            title="Deploy release to production",
-            bucket="todo",
-            tags=["ops", "release"],
-            body="Follow production checklist",
-            due_date="2026-09-01",
-        ),
+        TaskCreate(title="Alpha feature", bucket="todo", tags=["frontend", "release"], priority="high", due_date="2026-09-01"),
     )
-    create_task(
-        temp_dir,
+    task_svc.create_task(
         "default",
-        TaskCreate(
-            title="Write documentation",
-            bucket="backlog",
-            tags=["docs"],
-            body="Update arc42 documentation",
-            due_date=None,
-        ),
+        TaskCreate(title="Beta API endpoint", bucket="in-progress", tags=["backend"], priority="low", due_date="2026-09-10"),
+    )
+    task_svc.create_task(
+        "default",
+        TaskCreate(title="Gamma release notes", bucket="done", tags=["release"], priority="none", due_date="2026-08-15"),
     )
 
-    # Search in title
-    res_title = get_tasks("default", search="production")
-    assert len(res_title) == 1
-    assert "Deploy" in res_title[0].title
+    # Filter by bucket
+    todos = task_svc.get_tasks("default", bucket="todo")
+    assert len(todos) == 1
+    assert todos[0].title == "Alpha feature"
 
-    # Search in body
-    res_body = get_tasks("default", search="arc42")
-    assert len(res_body) == 1
-    assert "Write documentation" in res_body[0].title
+    # Filter by tag
+    releases = task_svc.get_tasks("default", tag="release")
+    assert len(releases) == 2
 
-    # Filter has_due_date
-    with_due = get_tasks("default", has_due_date=True)
-    assert len(with_due) == 1
-    assert with_due[0].due_date == "2026-09-01"
+    # Filter by search
+    searched = task_svc.get_tasks("default", search="Beta")
+    assert len(searched) == 1
+    assert searched[0].title == "Beta API endpoint"
 
-    without_due = get_tasks("default", has_due_date=False)
-    assert len(without_due) == 1
-    assert without_due[0].due_date is None
+    # Filter by due_before
+    before_sep = task_svc.get_tasks("default", due_before="2026-08-20")
+    assert len(before_sep) == 1
+    assert before_sep[0].title == "Gamma release notes"

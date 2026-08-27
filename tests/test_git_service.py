@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from jotter.services.git_service import (
+from jotter.features.sync.git_adapter import (
     get_git_history,
     git_sync,
     is_offline_error,
