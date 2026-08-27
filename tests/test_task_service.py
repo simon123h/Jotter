@@ -28,7 +28,9 @@ due_date: "2026-08-30"
 # Task Description
 Here are details.
 """
-    task = disk_repo.parse_task_content(raw_markdown, fallback_id="01ARZ3NDEKTSV4RRFFQ69G5FAV", default_project_id="default")
+    task = disk_repo.parse_task_content(
+        raw_markdown, fallback_id="01ARZ3NDEKTSV4RRFFQ69G5FAV", default_project_id="default"
+    )
     assert str(task.id) == "01ARZ3NDEKTSV4RRFFQ69G5FAV"
     assert task.title == "Sample Task"
     assert task.bucket == "todo"
@@ -85,15 +87,21 @@ def test_task_search_and_filtering(temp_dir, test_env):
 
     task_svc.create_task(
         "default",
-        TaskCreate(title="Alpha feature", bucket="todo", tags=["frontend", "release"], priority="high", due_date="2026-09-01"),
+        TaskCreate(
+            title="Alpha feature", bucket="todo", tags=["frontend", "release"], priority="high", due_date="2026-09-01"
+        ),
     )
     task_svc.create_task(
         "default",
-        TaskCreate(title="Beta API endpoint", bucket="in-progress", tags=["backend"], priority="low", due_date="2026-09-10"),
+        TaskCreate(
+            title="Beta API endpoint", bucket="in-progress", tags=["backend"], priority="low", due_date="2026-09-10"
+        ),
     )
     task_svc.create_task(
         "default",
-        TaskCreate(title="Gamma release notes", bucket="done", tags=["release"], priority="none", due_date="2026-08-15"),
+        TaskCreate(
+            title="Gamma release notes", bucket="done", tags=["release"], priority="none", due_date="2026-08-15"
+        ),
     )
 
     # Filter by bucket

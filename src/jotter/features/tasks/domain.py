@@ -88,7 +88,9 @@ class Task:
         position: float | None = None,
     ) -> None:
         effective_bucket = target_bucket or new_bucket or self.bucket
-        effective_pos = new_position if new_position is not None else (position if position is not None else self.position)
+        effective_pos = (
+            new_position if new_position is not None else (position if position is not None else self.position)
+        )
         clean_bucket = effective_bucket.strip()
         if not clean_bucket:
             raise ValidationError("Target bucket cannot be empty")
