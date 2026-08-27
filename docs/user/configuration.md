@@ -13,6 +13,7 @@ You can customize how Jotter operates (such as altering the network port or chan
 | **Data Directory** | `--data-dir <path>`      | `data_dir: "<path>"`   | `JOTTER_DATA_DIR`  | _See Storage Locations_         | The folder where your markdown task files are stored. Supports `~` home folder expansion.                     |
 | **Log Directory**  | _N/A_                    | `log_dir: "<path>"`    | `JOTTER_LOG_DIR`   | _See Storage Locations_         | The directory where Jotter saves its `jotter.log` file. Separated from notes to avoid Git tracking conflicts. |
 | **Log Level**      | `--log-level <level>`    | `log_level: "<level>"` | `JOTTER_LOG_LEVEL` | `info` (dev) / `warning` (prod) | Logging verbosity (`debug`, `info`, `warning`, `error`, `critical`).                                          |
+| **Log Colors**     | `--no-color`             | `use_colors: false`    | `NO_COLOR` / `JOTTER_USE_COLORS` | `true` (auto)                   | Toggle ANSI colored terminal log output. Useful if legacy Windows terminals show escape codes (`[32m`).       |
 | **Config File**    | `--config <path>` / `-c` | _N/A_                  | _N/A_              | _See Storage Locations_         | Specifies a custom YAML or JSON configuration file path. Automatically created if missing.                    |
 
 ---

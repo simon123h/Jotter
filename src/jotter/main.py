@@ -44,6 +44,21 @@ def main():
         default=False,
         help="Force opening the default web browser on launch",
     )
+    parser.add_argument(
+        "--no-color",
+        "--no-colors",
+        dest="no_color",
+        action="store_true",
+        default=False,
+        help="Disable ANSI colored output in terminal logs (useful on legacy Windows terminals)",
+    )
+    parser.add_argument(
+        "--use-colors",
+        dest="use_colors",
+        action="store_true",
+        default=None,
+        help="Force ANSI colored output in terminal logs",
+    )
     args = parser.parse_args()
 
     config = load_config()
@@ -55,6 +70,10 @@ def main():
         config.data_dir = args.data_dir
     if args.log_level:
         config.log_level = normalize_log_level(args.log_level)
+    if args.no_color:
+        config.use_colors = False
+    elif args.use_colors is not None:
+        config.use_colors = args.use_colors
 
     # Determine browser launch behavior
     if args.no_browser or os.environ.get("JOTTER_NO_BROWSER") in ("1", "true", "yes"):
@@ -80,6 +99,7 @@ def main():
         port=config.port,
         log_level=config.log_level.lower(),
         access_log=access_log,
+        use_colors=config.use_colors,
     )
 
 

@@ -13,6 +13,7 @@ Du kannst anpassen, wie Jotter ausgeführt wird (z. B. den Netzwerk-Port ändern
 | **Datenverzeichnis** | `--data-dir <pfad>` | `data_dir: "<pfad>"` | `JOTTER_DATA_DIR` | _Siehe Speicherorte_ | Der Ordner, in dem deine Markdown-Aufgaben gespeichert werden. Unterstützt `~` zur Pfadauflösung des Home-Verzeichnisses. |
 | **Log-Verzeichnis** | _N/A_ | `log_dir: "<pfad>"` | `JOTTER_LOG_DIR` | _Siehe Speicherorte_ | Das Verzeichnis, in dem Jotter die Datei `jotter.log` speichert. Getrennt von den Notizen, um Git-Konflikte zu vermeiden. |
 | **Log-Level** | `--log-level <level>` | `log_level: "<level>"` | `JOTTER_LOG_LEVEL` | `info` (Dev) / `warning` (Prod) | Detailtiefe der Log-Ausgaben (`debug`, `info`, `warning`, `error`, `critical`). |
+| **Log-Farben** | `--no-color` | `use_colors: false` | `NO_COLOR` / `JOTTER_USE_COLORS` | `true` (Auto) | ANSI-Farbausgabe in Terminal-Logs umschalten. Hilfreich, falls ältere Windows-Terminals Escape-Codes (`[32m`) anzeigen. |
 | **Konfig-Datei** | `--config <pfad>` / `-c` | _N/A_ | _N/A_ | _Siehe Speicherorte_ | Gibt den Pfad zu einer benutzerdefinierten YAML- oder JSON-Konfigurationsdatei an. Wird automatisch erstellt, wenn sie fehlt. |
 
 ---

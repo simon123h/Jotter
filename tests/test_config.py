@@ -83,6 +83,29 @@ def test_load_config_env_overrides(tmp_path):
         assert cfg.data_dir == str((tmp_path / "env_data").resolve())
 
 
+def test_load_config_with_colors_setting(tmp_path):
+    config_file = tmp_path / "jotter.yaml"
+    config_file.write_text("use_colors: false\n", encoding="utf-8")
+
+    with patch("jotter.config.get_default_config_paths", return_value=[config_file]):
+        cfg = load_config()
+        assert cfg.use_colors is False
+
+
+def test_no_color_environment_variable(tmp_path):
+    with patch.dict(os.environ, {"NO_COLOR": "1"}, clear=True):
+        cfg = load_config()
+        assert cfg.use_colors is False
+
+    with patch.dict(os.environ, {"JOTTER_USE_COLORS": "0"}, clear=True):
+        cfg = load_config()
+        assert cfg.use_colors is False
+
+    with patch.dict(os.environ, {"JOTTER_USE_COLORS": "1"}, clear=True):
+        cfg = load_config()
+        assert cfg.use_colors is True
+
+
 def test_module_execution_main():
     import jotter.__main__ as jmain
 
