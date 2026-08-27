@@ -1,7 +1,7 @@
 version: 2
 updates:
-  # Maintain Go dependencies
-  - package-ecosystem: "gomod"
+  # Maintain Python dependencies in pyproject.toml
+  - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -11,9 +11,9 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-      - "go"
+      - "python"
     groups:
-      go-minor-patch:
+      pip-minor-patch:
         patterns:
           - "*"
         update-types:
