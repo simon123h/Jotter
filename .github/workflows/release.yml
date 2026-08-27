@@ -8,176 +8,56 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+permissions:
+  contents: write
+  id-token: write  # Required for PyPI Trusted Publishing (OIDC)
+
 jobs:
-  build-binaries:
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            platform: linux
-          - os: windows-latest
-            platform: windows
-          - os: macos-latest
-            platform: macos
-    runs-on: ${{ matrix.os }}
+  build-and-release:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
           node-version: '22'
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version: '1.25.0'
-          cache: true
-          cache-dependency-path: 'go.sum'
-
-      - name: Cache Node Modules
-        uses: actions/cache@v6
-        with:
-          path: |
-            node_modules
-            frontend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install All Dependencies
-        shell: bash
+      - name: Install Build Tools & Dependencies
         run: |
-          npm install
-          cd frontend && npm install
+          pip install build shiv
+          npm run install:all
 
-      - name: Build Frontend
-        shell: bash
+      - name: Build Bundled Python Package (Wheel & Sdist)
         run: |
-          cd frontend && npm run build
+          npm run build:package
 
-      - name: Install Linux build dependencies
-        if: matrix.platform == 'linux'
+      - name: Build Standalone ZipApp (jotter.pyz)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+          mkdir -p dist-pyz
+          shiv -e backend.main:main -o dist-pyz/jotter.pyz .
 
-      - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-      - name: Build Wails Application
-        shell: bash
-        run: |
-          VERSION=${{ github.ref_name }}
-          mkdir -p build/windows build/darwin
-          cp docs/assets/icon.png build/appicon.png
-          cp docs/assets/icon.ico build/windows/icon.ico
-          cp docs/assets/icon.png build/darwin/icon.png
-          
-          # Generate professional OS metadata on the fly
-          cat <<EOF > build/windows/info.json
-          {
-            "companyName": "Jotter",
-            "productName": "Jotter",
-            "productVersion": "$VERSION",
-            "copyright": "simon123h@users.noreply.github.com",
-            "comments": "Local-First Markdown Kanban App"
-          }
-          EOF
-          
-          cat <<EOF > build/darwin/info.json
-          {
-            "bundleIdentifier": "com.jotter.app",
-            "productName": "Jotter",
-            "productVersion": "$VERSION",
-            "copyright": "simon123h@users.noreply.github.com"
-          }
-          EOF
-
-          if [ "${{ matrix.platform }}" = "linux" ]; then
-            wails build -tags webkit2_41 -ldflags "-X jotter/backend/internal/app.Version=$VERSION"
-          else
-            wails build -ldflags "-X jotter/backend/internal/app.Version=$VERSION"
-          fi
-
-      - name: Build Server Binary
-        shell: bash
-        run: |
-          # The frontend was already built by the Build Frontend step above
-          if [ "${{ matrix.platform }}" = "windows" ]; then
-            go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter-server.exe main_server.go shared_assets.go
-          else
-            go build -ldflags "-X jotter/backend/internal/app.Version=${{ github.ref_name }}" -o build/bin/jotter-server main_server.go shared_assets.go
-          fi
-
-      - name: Prepare Release Files
-        shell: bash
-        run: |
-          mkdir -p dist
-          if [ "${{ matrix.platform }}" = "windows" ]; then
-            cp build/bin/jotter-desktop.exe dist/
-            cp build/bin/jotter-server.exe dist/
-          elif [ "${{ matrix.platform }}" = "linux" ]; then
-            cp build/bin/jotter-desktop dist/
-            cp build/bin/jotter-server dist/
-            cp scripts/install.sh dist/
-            cp scripts/uninstall.sh dist/
-            cp docs/assets/icon.png dist/jotter.png
-            chmod +x dist/*.sh
-          fi
-          cp README.md dist/
-          cp LICENSE.md dist/
-          cp docs/assets/jotter.sample.yaml dist/jotter.yaml.example
-
-      - name: Package (Linux)
-        if: matrix.platform == 'linux'
-        run: |
-          cd dist
-          tar -czf jotter-${{ github.ref_name }}-linux.tar.gz jotter-server jotter-desktop install.sh uninstall.sh jotter.png README.md LICENSE.md jotter.yaml.example
-
-      - name: Package (macOS)
-        if: matrix.platform == 'macos'
-        run: |
-          cd build/bin
-          # For macOS, we zip the .app bundle and the CLI binary separately or together. 
-          # Convention is usually to have the CLI inside or alongside.
-          zip -r ../../dist/jotter-${{ github.ref_name }}-macos.zip jotter-desktop.app jotter-server README.md LICENSE.md jotter.yaml.example
-
-      - name: Package (Windows)
-        if: matrix.platform == 'windows'
-        run: |
-          cd dist
-          Compress-Archive -Path jotter-server.exe, jotter-desktop.exe, README.md, LICENSE.md, jotter.yaml.example -DestinationPath jotter-${{ github.ref_name }}-windows.zip
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: jotter-binaries-${{ matrix.platform }}
-          path: |
-            dist/*.tar.gz
-            dist/*.zip
-          retention-days: 1
-
-  release:
-    needs: build-binaries
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v8
-        with:
-          path: dist
-          pattern: jotter-binaries-*
-          merge-multiple: true
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v3
-        with:
-          files: |
-            dist/jotter-*.tar.gz
-            dist/jotter-*.zip
-          generate_release_notes: true
+      - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" dist/* dist-pyz/* \
+            --title "${{ github.ref_name }}" \
+            --generate-notes
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        continue-on-error: true  # Allow release to succeed if PyPI credentials/Trusted Publishing are not yet configured
+        with:
+          packages-dir: dist/
+          skip-existing: true
+          print-hash: true

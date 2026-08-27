@@ -1,38 +1,71 @@
-# Vorkompilierte Binärdateien ausführen
+# Installation & Schnellstart
 
-Jotter ist so konzipiert, dass es vollständig eigenständig ist. Du benötigst weder Python, Node.js noch andere Build-Tools auf deinem System, um es auszuführen.
-
-Wir stellen vorkompilierte Einzeldatei-Anwendungen für Windows, Linux und macOS zur Verfügung.
+Jotter ist eine leichtgewichtige, lokale Webanwendung, die auf Python (FastAPI) und einem Vue 3-Frontend basiert.
 
 ---
 
-## Welche Version sollte ich verwenden?
+## Voraussetzungen
 
-Das Release-Paket enthält zwei verschiedene Versionen von Jotter:
-
-* **`jotter-desktop` (Für die meisten Benutzer empfohlen)**: Dies ist eine eigenständige Desktop-Anwendung. Sie öffnet sich in einem eigenen Fenster und verhält sich wie ein normales Desktop-Programm (ähnlich wie Obsidian oder Trello).
-* **`jotter-server`**: Dies ist eine leichtgewichtige CLI/Server-Version. Sie läuft im Terminal und startet einen Webserver. Verwende diese Version, wenn du Jotter auf einem Headless-Server, in Docker oder einfach im eigenen Webbrowser nutzen möchtest.
+- **Python 3.10+** und **pip**
+- Ein moderner Webbrowser (Chrome, Firefox, Safari, Edge)
 
 ---
 
-## Installationsschritte
+## Option 1: Eigenständige Einzeldatei-Skriptdatei (`jotter.pyz`)
 
-1. Gehe auf die [GitHub Releases](https://github.com/simon123h/jotter/releases) Seite des Repositories.
-2. Lade das Paket herunter, das zu deinem Betriebssystem passt.
-3. Entpacke das heruntergeladene Archiv.
-4. Führe die Anwendung aus:
-   * **Windows**: Doppelklicke auf `jotter-desktop.exe` für das App-Fenster oder führe `jotter-server.exe` in der Eingabeaufforderung für den Server-Modus aus.
-   * **Linux / macOS**: Öffne dein Terminal, navigiere in den entpackten Ordner und führe Folgendes aus:
-     ```bash
-     chmod +x jotter*
-     ./jotter-desktop  # Für die Desktop-App
-     # ODER
-     ./jotter-server   # Für den Server-Modus
-     ```
+Du kannst die fertige Einzeldatei `jotter.pyz` direkt von den [GitHub Releases](https://github.com/simon123h/jotter/releases) herunterladen. Sie enthält alle Abhängigkeiten sowie das gebaute Frontend in einer einzigen Datei ohne Installationsschritt:
+
+```bash
+python3 jotter.pyz
+```
 
 ---
 
-## Nach dem Start
+## Option 2: Schnellstart mit `pipx`
 
-* Wenn du **`jotter-desktop`** startest, öffnet sich das Anwendungsfenster sofort.
-* Wenn du **`jotter-server`** ausführst, wird ein lokaler Webserver gestartet (Standard-Port: `http://localhost:58271`). Du kannst dann auf die Benutzeroberfläche zugreifen, indem du diese Adresse in deinem Webbrowser öffnest.
+Führe Jotter direkt über PyPI aus:
+
+```bash
+pipx run jotter-app
+```
+
+Oder global installieren:
+```bash
+pipx install jotter-app
+jotter
+```
+
+---
+
+## Aus dem Quellcode ausführen
+
+1. Repository klonen:
+   ```bash
+   git clone https://github.com/simon123h/jotter.git
+   cd jotter
+   ```
+
+2. Python-Abhängigkeiten installieren:
+   ```bash
+   pip install -e .
+   ```
+
+3. Server starten:
+   ```bash
+   jotter
+   # oder: python3 run.py
+   ```
+
+4. Öffne deinen Webbrowser unter **`http://localhost:58271`**.
+
+---
+
+## Konfigurationsmodi
+
+Jotter unterstützt sowohl portable als auch globale Speicherorte:
+
+- **Portabler Modus**: Wenn im aktuellen Verzeichnis ein Ordner `tasks/` existiert, werden Aufgaben standardmäßig in `./tasks` und die Konfiguration in `./jotter.yaml` abgelegt.
+- **Globaler Modus**: Andernfalls nutzt Jotter die Standard-Verzeichnisse des Betriebssystems (XDG-Pfade unter Linux, AppData unter Windows, Application Support unter macOS).
+- **Automatische Vorlagenerstellung**: Falls beim Start keine Konfigurationsdatei vorhanden ist, wird automatisch eine kommentierte Vorlage `jotter.yaml` am Standardspeicherort erstellt.
+
+Weitere Details findest du im [Konfigurationshandbuch](/de/user/configuration).

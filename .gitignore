@@ -1,30 +1,72 @@
-.venv
-venv
-*.db
-.vscode
-tasks
-node_modules/
-dist/
+# Python Virtual Environments
+.venv/
+venv/
+env/
+ENV/
 
-# Test Coverage
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Python Packaging & Builds
+*.egg-info/
+.eggs/
+dist/
+dist-pyz/
+build/
+backend/dist/
+backend/_version.py
+*.egg
+*.pyz
+
+# Testing & Coverage
+.pytest_cache/
 .coverage
+.coverage.*
 coverage.json
 coverage.xml
 coverage.out
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
 
-.antigravitycli
-build/
+# Type Checking & Linting
+.mypy_cache/
+.ruff_cache/
+.pytype/
 
-# config files
-jotter.yaml
+# Databases & Runtime Files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+tasks/
 
-# binaries
-jotter-desktop
-jotter-server
-main_server
-main_desktop
-
-# documentation / Pages builds
+# Node & Frontend
+node_modules/
+frontend/dist/
 dist-pages/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+
+# Local Configurations & Editor Settings
+jotter.yaml
+jotter.yml
+jotter.json
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary Test Data
+frontend/tests/e2e/temp_data/
+*.tmp
+
+# Antigravity CLI / Tooling
+.antigravitycli
