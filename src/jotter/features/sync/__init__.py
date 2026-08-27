@@ -1,4 +1,4 @@
-"""Git service facade delegating to features.sync.git_adapter."""
+"""Sync & Git feature package."""
 
 from jotter.features.sync.git_adapter import (
     get_git_history,
@@ -8,12 +8,12 @@ from jotter.features.sync.git_adapter import (
     init_git_repo,
     is_git_installed,
     is_git_repo,
-    is_offline_error,
-    restore_commit,
-    run_git,
 )
+from jotter.features.sync.router import router
+from jotter.features.sync.service import SyncApplicationService
 
 __all__ = [
+    "SyncApplicationService",
     "is_git_installed",
     "is_git_repo",
     "init_git_repo",
@@ -21,7 +21,5 @@ __all__ = [
     "git_sync",
     "get_git_history",
     "git_restore",
-    "restore_commit",
-    "run_git",
-    "is_offline_error",
+    "router",
 ]

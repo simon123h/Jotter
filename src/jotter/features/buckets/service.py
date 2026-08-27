@@ -1,14 +1,14 @@
 """Application service orchestrating Bucket use cases."""
 
-from jotter.domain.bucket import Bucket
-from jotter.domain.exceptions import ValidationError
-from jotter.infrastructure.repositories.bucket_repository import BucketRepository
-from jotter.infrastructure.repositories.sqlite_task_repository import SqliteTaskRepository
-from jotter.models.bucket import BucketCreate, BucketResponse, BucketUpdate
+from jotter.features.buckets.domain import Bucket
+from jotter.features.buckets.repo import BucketRepository
+from jotter.features.buckets.schemas import BucketCreate, BucketResponse, BucketUpdate
+from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
+from jotter.shared.exceptions import ValidationError
 
 
 class BucketApplicationService:
-    def __init__(self, data_dir: str):
+    def __init__(self, data_dir: str = ""):
         self.data_dir = data_dir
         self.bucket_repo = BucketRepository(data_dir)
         self.sqlite_task_repo = SqliteTaskRepository()

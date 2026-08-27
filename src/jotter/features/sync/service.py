@@ -1,14 +1,14 @@
-"""Application service for disk <-> SQLite synchronization and reconciliation."""
+"""Application service for disk <-> SQLite synchronization and Git reconciliation."""
 
 from pathlib import Path
 
-from jotter.domain.bucket import Bucket
-from jotter.domain.project import Project
-from jotter.infrastructure.repositories.bucket_repository import BucketRepository
-from jotter.infrastructure.repositories.disk_task_repository import DiskTaskRepository
-from jotter.infrastructure.repositories.project_repository import ProjectRepository
-from jotter.infrastructure.repositories.sqlite_task_repository import SqliteTaskRepository
-from jotter.services.git_service import git_sync
+from jotter.features.buckets.domain import Bucket
+from jotter.features.buckets.repo import BucketRepository
+from jotter.features.projects.domain import Project
+from jotter.features.projects.repo import ProjectRepository
+from jotter.features.sync.git_adapter import git_sync
+from jotter.features.tasks.disk_repo import DiskTaskRepository
+from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 
 
 class SyncApplicationService:

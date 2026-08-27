@@ -4,9 +4,9 @@ import shutil
 import sqlite3
 from pathlib import Path
 
-from jotter.db import get_db
-from jotter.domain.exceptions import EntityNotFoundError
-from jotter.domain.project import Project
+from jotter.features.projects.domain import Project
+from jotter.shared.db import get_db
+from jotter.shared.exceptions import EntityNotFoundError
 
 
 class ProjectRepository:

@@ -1,12 +1,12 @@
-"""Bucket service facade delegating to BucketApplicationService and BucketRepository."""
+"""Bucket service facade delegating to features.buckets."""
 
 from typing import Any
 
-from jotter.application.services.bucket_service import BucketApplicationService
-from jotter.domain.bucket import DEFAULT_DOMAIN_BUCKETS
-from jotter.domain.exceptions import EntityNotFoundError, ValidationError
-from jotter.infrastructure.repositories.bucket_repository import BucketRepository
-from jotter.models.bucket import BucketCreate, BucketResponse, BucketUpdate
+from jotter.features.buckets.domain import DEFAULT_DOMAIN_BUCKETS
+from jotter.features.buckets.repo import BucketRepository
+from jotter.features.buckets.schemas import BucketCreate, BucketResponse, BucketUpdate
+from jotter.features.buckets.service import BucketApplicationService
+from jotter.shared.exceptions import EntityNotFoundError, ValidationError
 
 DEFAULT_BUCKETS = DEFAULT_DOMAIN_BUCKETS
 

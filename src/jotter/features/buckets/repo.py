@@ -5,9 +5,9 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from jotter.db import get_db
-from jotter.domain.bucket import DEFAULT_DOMAIN_BUCKETS, Bucket
-from jotter.domain.exceptions import EntityNotFoundError
+from jotter.features.buckets.domain import DEFAULT_DOMAIN_BUCKETS, Bucket
+from jotter.shared.db import get_db
+from jotter.shared.exceptions import EntityNotFoundError
 
 
 class BucketRepository:

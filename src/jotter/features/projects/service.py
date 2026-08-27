@@ -1,15 +1,17 @@
 """Application service orchestrating Project use cases."""
 
-from jotter.domain.exceptions import EntityNotFoundError, ValidationError
-from jotter.domain.project import Project
-from jotter.infrastructure.repositories.bucket_repository import BucketRepository
-from jotter.infrastructure.repositories.project_repository import ProjectRepository
-from jotter.models.project import ProjectCreate, ProjectResponse, ProjectUpdate
-from jotter.utils.slug import slugify
+from typing import Any
+
+from jotter.features.buckets.repo import BucketRepository
+from jotter.features.projects.domain import Project
+from jotter.features.projects.repo import ProjectRepository
+from jotter.features.projects.schemas import ProjectCreate, ProjectResponse, ProjectUpdate
+from jotter.shared.exceptions import EntityNotFoundError, ValidationError
+from jotter.shared.slug import slugify
 
 
 class ProjectApplicationService:
-    def __init__(self, data_dir: str):
+    def __init__(self, data_dir: str = ""):
         self.data_dir = data_dir
         self.project_repo = ProjectRepository(data_dir)
         self.bucket_repo = BucketRepository(data_dir)
@@ -44,7 +46,7 @@ class ProjectApplicationService:
             created_at=p.created_at,
         )
 
-    def create_project(self, req: ProjectCreate) -> ProjectResponse:
+    def create_project(self, req: ProjectCreate, default_buckets: list[dict[str, Any]] | None = None) -> ProjectResponse:
         title = (getattr(req, "title", None) or getattr(req, "name", "")).strip()
         if not title:
             raise ValidationError("Project title cannot be empty")

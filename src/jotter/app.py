@@ -7,13 +7,13 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from jotter.config import UserConfig
-from jotter.db import get_db
-from jotter.routes.buckets import router as buckets_router
-from jotter.routes.projects import router as projects_router
-from jotter.routes.settings import router as settings_router
-from jotter.routes.system import router as system_router
-from jotter.routes.tasks import router as tasks_router
-from jotter.services.sync_service import sync_db_only
+from jotter.features.buckets import router as buckets_router
+from jotter.features.projects import router as projects_router
+from jotter.features.settings import router as settings_router
+from jotter.features.sync import SyncApplicationService
+from jotter.features.sync import router as system_router
+from jotter.features.tasks import router as tasks_router
+from jotter.shared.db import get_db
 
 try:
     from jotter._version import __version__ as app_version
@@ -35,7 +35,7 @@ def create_app(config: UserConfig, version: str = app_version) -> FastAPI:
     get_db(db_path)
 
     # Initial DB sync from disk
-    sync_db_only(config.data_dir)
+    SyncApplicationService(config.data_dir).sync_db_only()
 
     # CORS Middleware
     app.add_middleware(

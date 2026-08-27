@@ -1,14 +1,14 @@
-"""Domain exports compatibility facade."""
+"""Shared domain primitives, database lifecycle, and utilities."""
 
-from jotter.features.buckets.domain import DEFAULT_DOMAIN_BUCKETS, Bucket
-from jotter.features.projects.domain import Project
-from jotter.features.tasks.domain import Task
+from jotter.shared.db import close_db, get_db
 from jotter.shared.exceptions import (
     DomainException,
     EntityNotFoundError,
     TaskOperationError,
     ValidationError,
 )
+from jotter.shared.slug import slugify
+from jotter.shared.ulid import generate_ulid
 from jotter.shared.value_objects import DueDate, Priority, Tag, TaskId
 
 __all__ = [
@@ -20,8 +20,8 @@ __all__ = [
     "TaskId",
     "DueDate",
     "Tag",
-    "Task",
-    "Bucket",
-    "DEFAULT_DOMAIN_BUCKETS",
-    "Project",
+    "get_db",
+    "close_db",
+    "slugify",
+    "generate_ulid",
 ]

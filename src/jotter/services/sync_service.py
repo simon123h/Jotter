@@ -1,6 +1,6 @@
-"""Sync service facade delegating to SyncApplicationService."""
+"""Sync service facade delegating to features.sync."""
 
-from jotter.application.services.sync_service import SyncApplicationService
+from jotter.features.sync.service import SyncApplicationService
 
 
 def sync_db_only(data_dir: str) -> int:

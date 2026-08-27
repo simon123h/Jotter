@@ -1,18 +1,18 @@
-"""Task service facade delegating to TaskApplicationService for clean architecture."""
+"""Task service facade delegating to features.tasks."""
 
 from pathlib import Path
 from typing import BinaryIO
 
-from jotter.application.services.task_service import TaskApplicationService
-from jotter.domain.exceptions import EntityNotFoundError
-from jotter.infrastructure.repositories.disk_task_repository import DiskTaskRepository
-from jotter.models.task import (
+from jotter.features.tasks.disk_repo import DiskTaskRepository
+from jotter.features.tasks.schemas import (
     TaskCreate,
     TaskFrontmatter,
     TaskMove,
     TaskResponse,
     TaskUpdate,
 )
+from jotter.features.tasks.service import TaskApplicationService
+from jotter.shared.exceptions import EntityNotFoundError
 
 
 def get_task_file_path(data_dir: str, project_id: str, task_id: str) -> Path:

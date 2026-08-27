@@ -1,12 +1,12 @@
-"""Project service facade delegating to ProjectApplicationService and ProjectRepository."""
+"""Project service facade delegating to features.projects."""
 
 from typing import Any
 
-from jotter.application.services.project_service import ProjectApplicationService
-from jotter.domain.exceptions import EntityNotFoundError, ValidationError
-from jotter.domain.project import Project
-from jotter.infrastructure.repositories.project_repository import ProjectRepository
-from jotter.models.project import ProjectCreate, ProjectResponse, ProjectUpdate
+from jotter.features.projects.domain import Project
+from jotter.features.projects.repo import ProjectRepository
+from jotter.features.projects.schemas import ProjectCreate, ProjectResponse, ProjectUpdate
+from jotter.features.projects.service import ProjectApplicationService
+from jotter.shared.exceptions import EntityNotFoundError, ValidationError
 
 
 def get_all_projects(data_dir: str) -> list[ProjectResponse]:
@@ -22,7 +22,7 @@ def get_project(data_dir: str, project_id: str) -> ProjectResponse | None:
 
 def create_project(data_dir: str, req: ProjectCreate, default_buckets: list[dict[str, Any]] | None = None) -> ProjectResponse:
     try:
-        return ProjectApplicationService(data_dir).create_project(req)
+        return ProjectApplicationService(data_dir).create_project(req, default_buckets)
     except ValidationError as e:
         raise ValueError(str(e))
 
