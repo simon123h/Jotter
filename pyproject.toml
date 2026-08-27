@@ -41,7 +41,7 @@ include = ["backend*"]
 
 [tool.setuptools_scm]
 write_to = "backend/_version.py"
-fallback_version = "3.0.0b1"
+local_scheme = "no-local-version"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/backend"]
