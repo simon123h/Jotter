@@ -1,13 +1,12 @@
 import sqlite3
 import threading
 from pathlib import Path
-from typing import Optional
 
 _db_lock = threading.Lock()
-_connection: Optional[sqlite3.Connection] = None
+_connection: sqlite3.Connection | None = None
 
 
-def get_db(db_path: Optional[str] = None) -> sqlite3.Connection:
+def get_db(db_path: str | None = None) -> sqlite3.Connection:
     global _connection
     with _db_lock:
         if _connection is None:

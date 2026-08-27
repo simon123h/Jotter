@@ -1,8 +1,8 @@
 import os
 import sys
-import yaml
 from pathlib import Path
-from typing import List
+
+import yaml
 from pydantic import BaseModel
 
 
@@ -35,8 +35,8 @@ def get_default_data_dir() -> str:
         return str((base / "jotter").resolve())
 
 
-def get_default_config_paths() -> List[Path]:
-    paths: List[Path] = []
+def get_default_config_paths() -> list[Path]:
+    paths: list[Path] = []
     cwd = Path.cwd()
 
     # Portable search
@@ -69,7 +69,7 @@ def load_config() -> UserConfig:
     for path in get_default_config_paths():
         if path.is_file():
             try:
-                with open(path, "r", encoding="utf-8") as f:
+                with open(path, encoding="utf-8") as f:
                     data = yaml.safe_load(f)
                     if isinstance(data, dict):
                         if data.get("data_dir"):

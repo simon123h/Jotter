@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+
 from backend.models.settings import AppSettings
 from backend.services.settings_service import load_settings, save_settings
 

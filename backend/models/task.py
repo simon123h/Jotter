@@ -1,32 +1,31 @@
-from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
 
 class TaskCreate(BaseModel):
     title: str
     bucket: str
-    tags: List[str] = []
+    tags: list[str] = []
     body: str = ""
-    due_date: Optional[str] = None
-    planned_date: Optional[str] = None
-    priority: Optional[str] = None
-    color: Optional[str] = None
-    postponed_until: Optional[str] = None
+    due_date: str | None = None
+    planned_date: str | None = None
+    priority: str | None = None
+    color: str | None = None
+    postponed_until: str | None = None
 
 
 class TaskUpdate(BaseModel):
-    project_id: Optional[str] = None
-    title: Optional[str] = None
-    bucket: Optional[str] = None
-    position: Optional[float] = None
-    tags: Optional[List[str]] = None
-    attachments: Optional[List[str]] = None
-    body: Optional[str] = None
-    due_date: Optional[str] = None
-    planned_date: Optional[str] = None
-    priority: Optional[str] = None
-    color: Optional[str] = None
-    postponed_until: Optional[str] = None
+    project_id: str | None = None
+    title: str | None = None
+    bucket: str | None = None
+    position: float | None = None
+    tags: list[str] | None = None
+    attachments: list[str] | None = None
+    body: str | None = None
+    due_date: str | None = None
+    planned_date: str | None = None
+    priority: str | None = None
+    color: str | None = None
+    postponed_until: str | None = None
 
 
 class TaskMove(BaseModel):
@@ -42,14 +41,14 @@ class TaskResponse(BaseModel):
     title: str
     bucket: str
     position: float
-    tags: List[str] = []
-    attachments: List[str] = []
+    tags: list[str] = []
+    attachments: list[str] = []
     body: str = ""
-    due_date: Optional[str] = None
-    planned_date: Optional[str] = None
-    priority: Optional[str] = None
-    color: Optional[str] = None
-    postponed_until: Optional[str] = None
+    due_date: str | None = None
+    planned_date: str | None = None
+    priority: str | None = None
+    color: str | None = None
+    postponed_until: str | None = None
     created_at: str
     updated_at: str
 
@@ -60,12 +59,12 @@ class TaskFrontmatter(BaseModel):
     title: str
     bucket: str
     position: float
-    tags: List[str] = []
-    attachments: Optional[List[str]] = None
-    due_date: Optional[str] = None
-    planned_date: Optional[str] = None
-    priority: Optional[str] = None
-    color: Optional[str] = None
-    postponed_until: Optional[str] = None
+    tags: list[str] = []
+    attachments: list[str] | None = None
+    due_date: str | None = None
+    planned_date: str | None = None
+    priority: str | None = None
+    color: str | None = None
+    postponed_until: str | None = None
     created_at: str
     updated_at: str

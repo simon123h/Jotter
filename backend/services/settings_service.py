@@ -1,6 +1,7 @@
 import json
 import tempfile
 from pathlib import Path
+
 from backend.models.settings import AppSettings
 
 
@@ -12,7 +13,7 @@ def load_settings(data_dir: str) -> AppSettings:
         return default_settings
 
     try:
-        with open(settings_file, "r", encoding="utf-8") as f:
+        with open(settings_file, encoding="utf-8") as f:
             data = json.load(f)
             return AppSettings(**data)
     except Exception:

@@ -1,12 +1,13 @@
 import json
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from backend.db import get_db
 from backend.models.bucket import BucketCreate, BucketResponse, BucketUpdate
 from backend.utils.slug import slugify
 
-DEFAULT_BUCKETS: List[Dict[str, Any]] = [
+DEFAULT_BUCKETS: list[dict[str, Any]] = [
     {
         "name": "backlog",
         "title": "Backlog",
@@ -60,7 +61,7 @@ DEFAULT_BUCKETS: List[Dict[str, Any]] = [
 ]
 
 
-def get_all_buckets(project_id: str) -> List[BucketResponse]:
+def get_all_buckets(project_id: str) -> list[BucketResponse]:
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
@@ -88,7 +89,7 @@ def get_all_buckets(project_id: str) -> List[BucketResponse]:
     ]
 
 
-def get_bucket(project_id: str, name: str) -> Optional[BucketResponse]:
+def get_bucket(project_id: str, name: str) -> BucketResponse | None:
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
@@ -247,7 +248,7 @@ def sync_buckets_file(data_dir: str, project_id: str) -> None:
     write_buckets_file(data_dir, project_id, buckets_data)
 
 
-def load_buckets_file(data_dir: str, project_id: str) -> List[Dict[str, Any]]:
+def load_buckets_file(data_dir: str, project_id: str) -> list[dict[str, Any]]:
     project_dir = Path(data_dir) / project_id
     project_dir.mkdir(parents=True, exist_ok=True)
     buckets_file = project_dir / "buckets.json"
@@ -257,7 +258,7 @@ def load_buckets_file(data_dir: str, project_id: str) -> List[Dict[str, Any]]:
         return DEFAULT_BUCKETS
 
     try:
-        with open(buckets_file, "r", encoding="utf-8") as f:
+        with open(buckets_file, encoding="utf-8") as f:
             buckets = json.load(f)
             if not isinstance(buckets, list):
                 return DEFAULT_BUCKETS
@@ -272,7 +273,7 @@ def load_buckets_file(data_dir: str, project_id: str) -> List[Dict[str, Any]]:
         return DEFAULT_BUCKETS
 
 
-def write_buckets_file(data_dir: str, project_id: str, buckets: List[Dict[str, Any]]) -> None:
+def write_buckets_file(data_dir: str, project_id: str, buckets: list[dict[str, Any]]) -> None:
     project_dir = Path(data_dir) / project_id
     project_dir.mkdir(parents=True, exist_ok=True)
     buckets_file = project_dir / "buckets.json"

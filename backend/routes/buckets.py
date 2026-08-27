@@ -1,5 +1,5 @@
-from typing import List
 from fastapi import APIRouter, HTTPException, Request
+
 from backend.models.bucket import BucketCreate, BucketResponse, BucketUpdate
 from backend.services.bucket_service import (
     create_bucket,
@@ -11,7 +11,7 @@ from backend.services.bucket_service import (
 router = APIRouter(prefix="/api/projects/{project_id}/buckets", tags=["buckets"])
 
 
-@router.get("", response_model=List[BucketResponse])
+@router.get("", response_model=list[BucketResponse])
 def list_buckets(project_id: str):
     return get_all_buckets(project_id)
 

@@ -62,3 +62,7 @@ exclude = [
     "docs",
     "backend/_version.py",
 ]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501"]

@@ -1,6 +1,6 @@
-from typing import Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
+
 from backend.services.git_service import get_git_history, restore_commit
 from backend.services.sync_service import full_sync
 
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/system", tags=["system"])
 
 class RestoreRequest(BaseModel):
     commitHash: str
-    projectId: Optional[str] = None
+    projectId: str | None = None
 
 
 @router.api_route("/sync", methods=["GET", "POST"])
@@ -35,8 +35,8 @@ def get_system_info(request: Request):
     }
 
 
-@router.get("/history", response_model=List[Dict[str, str]])
-def get_history(projectId: Optional[str] = Query(None), request: Request = None):
+@router.get("/history", response_model=list[dict[str, str]])
+def get_history(projectId: str | None = Query(None), request: Request = None):
     data_dir = request.app.state.config.data_dir
     return get_git_history(data_dir, projectId)
 

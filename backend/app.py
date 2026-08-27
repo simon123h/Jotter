@@ -1,8 +1,10 @@
 from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+
 from backend.config import UserConfig
 from backend.db import get_db
 from backend.routes.buckets import router as buckets_router
@@ -11,7 +13,6 @@ from backend.routes.settings import router as settings_router
 from backend.routes.system import router as system_router
 from backend.routes.tasks import router as tasks_router
 from backend.services.sync_service import sync_db_only
-
 
 try:
     from backend._version import __version__ as app_version
