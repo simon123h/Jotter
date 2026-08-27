@@ -1,5 +1,4 @@
 import argparse
-import sys
 import uvicorn
 from backend.app import create_app
 from backend.config import load_config

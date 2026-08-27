@@ -1,5 +1,4 @@
 import json
-import os
 import shutil
 import tempfile
 import yaml
@@ -215,7 +214,9 @@ def get_tasks(
         clauses = []
         if normal_buckets:
             placeholders = ",".join("?" * len(normal_buckets))
-            clauses.append(f"(bucket IN ({placeholders}) AND (postponed_until IS NULL OR postponed_until = '' OR postponed_until <= ?))")
+            clauses.append(
+                f"(bucket IN ({placeholders}) AND (postponed_until IS NULL OR postponed_until = '' OR postponed_until <= ?))"
+            )
             args.extend(normal_buckets)
             args.append(today_str)
         if has_postponed:
@@ -292,7 +293,7 @@ def get_tasks(
     for r in rows:
         tags_raw = json.loads(r["tags"]) if r["tags"] else []
         att_raw = json.loads(r["attachments"]) if r["attachments"] else []
-        
+
         # In-memory Tag & Search filtering for maximum precision
         if effective_tags:
             task_tags_lower = [t.lower() for t in tags_raw]
@@ -337,6 +338,7 @@ def get_tasks(
 
 def create_task(data_dir: str, project_id: str, req: TaskCreate) -> TaskResponse:
     from backend.services.project_service import project_exists
+
     if not project_exists(project_id):
         raise KeyError(f"Project '{project_id}' not found")
 
@@ -347,7 +349,9 @@ def create_task(data_dir: str, project_id: str, req: TaskCreate) -> TaskResponse
     cursor = conn.cursor()
 
     # Calculate max position
-    cursor.execute("SELECT MAX(position) as max_pos FROM tasks WHERE project_id = ? AND bucket = ?", (project_id, req.bucket))
+    cursor.execute(
+        "SELECT MAX(position) as max_pos FROM tasks WHERE project_id = ? AND bucket = ?", (project_id, req.bucket)
+    )
     row = cursor.fetchone()
     position = (row["max_pos"] + 1000.0) if row and row["max_pos"] is not None else 1000.0
 
