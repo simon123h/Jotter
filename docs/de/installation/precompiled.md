@@ -11,9 +11,19 @@ Jotter ist eine leichtgewichtige, lokale Webanwendung, die auf Python (FastAPI) 
 
 ---
 
-## Schnellstart mit `pipx` (Empfohlen)
+## Option 1: Eigenständige Einzeldatei-Skriptdatei (`jotter.pyz`)
 
-Führe Jotter direkt ohne manuelles Klonen oder Bauen aus:
+Du kannst die fertige Einzeldatei `jotter.pyz` direkt von den [GitHub Releases](https://github.com/simon123h/jotter/releases) herunterladen. Sie enthält alle Abhängigkeiten sowie das gebaute Frontend in einer einzigen Datei ohne Installationsschritt:
+
+```bash
+python3 jotter.pyz
+```
+
+---
+
+## Option 2: Schnellstart mit `pipx`
+
+Führe Jotter direkt über PyPI aus:
 
 ```bash
 pipx run jotter-app
