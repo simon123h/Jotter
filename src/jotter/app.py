@@ -1,9 +1,9 @@
 import sys
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from jotter.config import UserConfig
@@ -14,6 +14,7 @@ from jotter.features.sync import SyncApplicationService
 from jotter.features.sync import router as system_router
 from jotter.features.tasks import router as tasks_router
 from jotter.shared.db import get_db
+from jotter.shared.exceptions import EntityNotFoundError, ValidationError, DomainException
 
 try:
     from jotter._version import __version__ as app_version
@@ -37,6 +38,19 @@ def create_app(config: UserConfig, version: str = app_version) -> FastAPI:
     # Initial DB sync from disk
     SyncApplicationService(config.data_dir).sync_db_only()
 
+    # Global Domain Exception Handlers
+    @app.exception_handler(EntityNotFoundError)
+    async def not_found_handler(request: Request, exc: EntityNotFoundError):
+        return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+    @app.exception_handler(ValidationError)
+    async def validation_handler(request: Request, exc: ValidationError):
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+    @app.exception_handler(DomainException)
+    async def domain_exception_handler(request: Request, exc: DomainException):
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+
     # CORS Middleware
     app.add_middleware(
         CORSMiddleware,
@@ -59,25 +73,26 @@ def create_app(config: UserConfig, version: str = app_version) -> FastAPI:
     pkg_dist = Path(__file__).resolve().parent / "dist"
     dev_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
-    if pyinstaller_dist and pyinstaller_dist.is_dir() and (pyinstaller_dist / "index.html").is_file():
-        dist_dir = pyinstaller_dist
-    elif pkg_dist.is_dir() and (pkg_dist / "index.html").is_file():
-        dist_dir = pkg_dist
-    else:
-        dist_dir = dev_dist
+    static_dir: Path | None = None
+    for candidate in [pyinstaller_dist, pkg_dist, dev_dist]:
+        if candidate and candidate.is_dir() and (candidate / "index.html").is_file():
+            static_dir = candidate
+            break
 
-    if dist_dir.is_dir() and (dist_dir / "index.html").is_file():
-        # Mount assets folder
-        assets_dir = dist_dir / "assets"
+    if static_dir:
+        # Mount assets
+        assets_dir = static_dir / "assets"
         if assets_dir.is_dir():
             app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
-        # Catch-all route to serve index.html for SPA routing
+        # SPA fallback route
         @app.get("/{full_path:path}", include_in_schema=False)
-        def serve_spa(full_path: str):
-            target = dist_dir / full_path
-            if target.is_file():
-                return FileResponse(target)
-            return FileResponse(dist_dir / "index.html")
+        async def serve_spa(full_path: str):
+            if full_path.startswith("api/"):
+                return JSONResponse(status_code=404, content={"detail": "Not found"})
+            file_path = static_dir / full_path
+            if file_path.is_file():
+                return FileResponse(file_path)
+            return FileResponse(static_dir / "index.html")
 
     return app

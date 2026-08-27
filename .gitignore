@@ -42,7 +42,7 @@ htmlcov/
 *.db-journal
 *.db-wal
 *.db-shm
-tasks/
+/tasks/
 
 # Node & Frontend
 node_modules/
