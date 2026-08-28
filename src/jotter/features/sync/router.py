@@ -28,7 +28,7 @@ def get_sync_service(
     return SyncApplicationService.from_data_dir(data_dir, conn)
 
 
-@router.post("/sync")
+@router.api_route("/sync", methods=["GET", "POST"])
 def trigger_sync(svc: SyncApplicationService = Depends(get_sync_service)):
     synced_count = svc.full_sync()
     return {"status": "success", "synced": synced_count}
