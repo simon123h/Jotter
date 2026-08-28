@@ -55,8 +55,15 @@ class DueDate:
         if not val or not str(val).strip():
             return cls(value=None)
         clean = str(val).strip()
-        if clean.lower() in ("today", "tomorrow", "someday", "this-week", "next-week"):
-            return cls(value=clean.lower())
+        if clean.lower() in ("today", "tomorrow", "someday", "this-week", "next-week", "thisweek", "thismonth", "thisyear"):
+            return cls(value=clean)
+        if len(clean) >= 10 and clean[4] == "-" and clean[7] == "-":
+            clean_date = clean[:10]
+            try:
+                datetime.strptime(clean_date, "%Y-%m-%d")
+                return cls(value=clean_date)
+            except ValueError:
+                pass
         try:
             datetime.strptime(clean, "%Y-%m-%d")
             return cls(value=clean)

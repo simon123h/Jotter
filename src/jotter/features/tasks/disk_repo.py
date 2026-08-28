@@ -7,6 +7,7 @@ import yaml
 
 from jotter.features.tasks.domain import Task
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
+from jotter.shared.value_objects import DueDate
 
 
 class DiskTaskRepository:
@@ -111,7 +112,7 @@ class DiskTaskRepository:
             body = content
 
         tid = str(fm_data.get("id") or fallback_id)
-        proj_id = str(fm_data.get("project_id") or fm_data.get("projectId") or default_project_id)
+        proj_id = str(default_project_id or fm_data.get("project_id") or fm_data.get("projectId") or "default")
         title = str(fm_data.get("title") or "Untitled Task")
         bucket = str(fm_data.get("bucket") or "todo")
         pos = float(fm_data.get("position") or 1000.0)
@@ -143,6 +144,34 @@ class DiskTaskRepository:
         color = fm_data.get("color")
         postponed_until = fm_data.get("postponed_until") or fm_data.get("postponedUntil")
 
+        # Normalize dates and planned keywords gracefully
+        clean_due: str | None = None
+        clean_planned: str | None = str(planned_date).strip() if planned_date else None
+        if due_date:
+            due_str = str(due_date).strip()
+            if due_str in ("today", "tomorrow", "thisWeek", "nextWeek", "thisMonth", "nextMonth", "thisYear", "nextYear", "someday"):
+                if not clean_planned:
+                    clean_planned = due_str
+            else:
+                if len(due_str) >= 10 and due_str[4] == "-" and due_str[7] == "-":
+                    clean_due = due_str[:10]
+                else:
+                    try:
+                        clean_due = DueDate.from_str(due_str).value
+                    except Exception:
+                        clean_due = None
+
+        clean_postponed: str | None = None
+        if postponed_until:
+            post_str = str(postponed_until).strip()
+            if len(post_str) >= 10 and post_str[4] == "-" and post_str[7] == "-":
+                clean_postponed = post_str[:10]
+            else:
+                try:
+                    clean_postponed = DueDate.from_str(post_str).value
+                except Exception:
+                    clean_postponed = None
+
         task = Task.create(
             project_id=proj_id,
             title=title,
@@ -151,11 +180,11 @@ class DiskTaskRepository:
             tags=tags,
             attachments=attachments,
             body=body,
-            due_date=str(due_date) if due_date else None,
-            planned_date=str(planned_date) if planned_date else None,
+            due_date=clean_due,
+            planned_date=clean_planned,
             priority=str(priority) if priority else None,
             color=str(color) if color else None,
-            postponed_until=str(postponed_until) if postponed_until else None,
+            postponed_until=clean_postponed,
             task_id=tid,
         )
 
