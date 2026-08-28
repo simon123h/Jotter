@@ -55,7 +55,7 @@ class Task:
         if not clean_title:
             raise ValidationError("Task title cannot be empty")
 
-        tid = TaskId.from_str(task_id) if task_id else TaskId.generate()
+        tid = TaskId(task_id.strip()) if task_id else TaskId.generate()
         now_str = datetime.now(timezone.utc).isoformat()
 
         clean_tags = [Tag(t) for t in tags] if tags else []
@@ -79,31 +79,12 @@ class Task:
             updated_at=now_str,
         )
 
-    def move(
-        self,
-        target_bucket: str | None = None,
-        new_position: float | None = None,
-        *,
-        new_bucket: str | None = None,
-        position: float | None = None,
-    ) -> None:
-        effective_bucket = target_bucket or new_bucket or self.bucket
-        effective_pos = (
-            new_position if new_position is not None else (position if position is not None else self.position)
-        )
-        clean_bucket = effective_bucket.strip()
+    def move(self, bucket: str, position: float) -> None:
+        clean_bucket = bucket.strip()
         if not clean_bucket:
             raise ValidationError("Target bucket cannot be empty")
         self.bucket = clean_bucket
-        self.position = float(effective_pos)
-        self.touch()
-
-    def postpone(self, until: str) -> None:
-        self.postponed_until = DueDate.from_str(until)
-        self.touch()
-
-    def unpostpone(self) -> None:
-        self.postponed_until = DueDate(None)
+        self.position = float(position)
         self.touch()
 
     def update_details(

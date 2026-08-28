@@ -35,20 +35,12 @@ class TaskId:
     value: str
 
     def __post_init__(self):
-        if not self.value or len(self.value.strip()) == 0:
+        if not self.value or not self.value.strip():
             raise ValidationError("TaskId cannot be empty")
 
     @classmethod
     def generate(cls) -> Self:
         return cls(value=generate_ulid())
-
-    @classmethod
-    def create(cls) -> Self:
-        return cls.generate()
-
-    @classmethod
-    def from_str(cls, val: str) -> Self:
-        return cls(value=val.strip())
 
     def __str__(self) -> str:
         return self.value
@@ -63,7 +55,6 @@ class DueDate:
         if not val or not str(val).strip():
             return cls(value=None)
         clean = str(val).strip()
-        # Validate format if YYYY-MM-DD or standard natural words
         if clean.lower() in ("today", "tomorrow", "someday", "this-week", "next-week"):
             return cls(value=clean.lower())
         try:
@@ -112,13 +103,6 @@ class Tag:
         if not clean or " " in clean:
             raise ValidationError(f"Invalid tag: '{self.value}'")
         object.__setattr__(self, "value", clean)
-
-    @classmethod
-    def from_str(cls, val: str) -> Self:
-        clean = val.strip().lstrip("#").lower()
-        if not clean or " " in clean:
-            raise ValidationError(f"Invalid tag: '{val}'")
-        return cls(value=clean)
 
     def __str__(self) -> str:
         return self.value

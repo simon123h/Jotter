@@ -23,14 +23,14 @@ def test_priority_value_object():
 
 
 def test_task_id_value_object():
-    tid = TaskId.create()
+    tid = TaskId.generate()
     assert len(tid.value) == 26
 
-    parsed = TaskId.from_str("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+    parsed = TaskId("01ARZ3NDEKTSV4RRFFQ69G5FAV")
     assert parsed.value == "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 
     with pytest.raises(ValidationError):
-        TaskId.from_str("")
+        TaskId("")
 
 
 def test_due_date_value_object():
@@ -45,14 +45,14 @@ def test_due_date_value_object():
 
 
 def test_tag_value_object():
-    t1 = Tag.from_str("#backend")
+    t1 = Tag("#backend")
     assert t1.value == "backend"
 
-    t2 = Tag.from_str("  frontend  ")
+    t2 = Tag("  frontend  ")
     assert t2.value == "frontend"
 
     with pytest.raises(ValidationError):
-        Tag.from_str("invalid tag with spaces")
+        Tag("invalid tag with spaces")
 
 
 def test_task_aggregate_creation_and_mutations():
@@ -73,12 +73,12 @@ def test_task_aggregate_creation_and_mutations():
     assert task.due_date.value == "2026-09-01"
 
     # Invariant: Move task
-    task.move(new_bucket="done", new_position=2500.0)
+    task.move("done", 2500.0)
     assert task.bucket == "done"
     assert task.position == 2500.0
 
-    # Invariant: Postpone
-    task.postpone(until="2026-09-10")
+    # Invariant: Update details / Postpone
+    task.update_details(postponed_until="2026-09-10")
     assert task.postponed_until.value == "2026-09-10"
 
     # Invariant: Attachments
