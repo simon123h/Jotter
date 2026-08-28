@@ -10,7 +10,7 @@ import { updateTask, deleteTask, moveTask, createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
-import { X, Folder } from '@lucide/vue';
+import { Folder } from '@lucide/vue';
 import { useTaskFilters } from '@/composables/useTaskFilters';
 import { useDragSelect } from '@/composables/useDragSelect';
 import { useSelectionStore } from '@/stores/selection';
@@ -26,7 +26,7 @@ const projectStore = useProjectStore();
 const modalStore = useModalStore();
 
 const { hideDoneColumn, hideArchiveColumn, hidePostponedColumn } = storeToRefs(settingsStore);
-const { projects, buckets, tasks, loading, projectsLoaded, error: projectError } = storeToRefs(projectStore);
+const { projects, buckets, tasks, loading, projectsLoaded } = storeToRefs(projectStore);
 
 const selectionStore = useSelectionStore();
 const { isSelected, toggleSelection, selectAll, clearSelection } = selectionStore;
@@ -104,6 +104,9 @@ const isNoProjects = computed(() => projectsLoaded.value && projects.value.lengt
 const fetchAllData = async () => {
   localError.value = null;
   if (isNoProjects.value || !projectId.value) return;
+  if (projectsLoaded.value && projectId.value !== 'all' && projects.value.length > 0 && !projects.value.some((p) => p.id === projectId.value)) {
+    return;
+  }
   try {
     await projectStore.fetchBuckets(projectId.value);
     await projectStore.invalidate();
@@ -176,18 +179,6 @@ useKeyboardShortcuts([
     },
   },
 ]);
-
-const error = computed({
-  get() {
-    return localError.value || projectError.value;
-  },
-  set(val) {
-    localError.value = val;
-    if (!val) {
-      projectStore.error = null;
-    }
-  },
-});
 
 const commonTags = computed(() => {
   const selectedTasks = tasks.value.filter((t) => isSelected(t.id));
@@ -414,16 +405,6 @@ const handleBulkConsolidate = async () => {
 
 <template>
   <div class="h-full flex flex-col overflow-hidden">
-    <div
-      v-if="error"
-      class="mt-2 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded flex justify-between items-center shrink-0"
-    >
-      <span>{{ error }}</span>
-      <button @click="error = null" class="hover:text-white cursor-pointer">
-        <X class="w-4 h-4" />
-      </button>
-    </div>
-
     <div @mousedown="handleDragSelectMouseDown" class="flex-grow overflow-hidden relative">
       <div v-if="loading && !tasks.length" class="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <div class="w-10 h-10 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>

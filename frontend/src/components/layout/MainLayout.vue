@@ -55,6 +55,8 @@ watch(
       if (newRouteId && newRouteId !== 'settings' && newRouteId !== 'all') {
         const routeProjectExists = newProjects.some((p) => p.id === newRouteId);
         if (!routeProjectExists) {
+          localError.value = null;
+          projectStore.error = null;
           selectProject(newProjects[0].id);
         }
       }
@@ -64,6 +66,8 @@ watch(
 );
 
 const selectProject = (projectId: string) => {
+  localError.value = null;
+  projectStore.error = null;
   router.push({
     name: 'project',
     params: { projectId },
