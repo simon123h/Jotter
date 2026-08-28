@@ -26,6 +26,24 @@ describe('useToastStore', () => {
     expect(store.toasts).toHaveLength(0);
   });
 
+  it('deduplicates identical active toasts and resets timer', () => {
+    const store = useToastStore();
+    const id1 = store.error('Network failure', undefined, 3000);
+    expect(store.toasts).toHaveLength(1);
+
+    vi.advanceTimersByTime(2000); // 1s left on timer
+
+    const id2 = store.error('Network failure', undefined, 3000);
+    expect(store.toasts).toHaveLength(1);
+    expect(id2).toBe(id1);
+
+    vi.advanceTimersByTime(2000); // would have expired on old timer, but timer was refreshed
+    expect(store.toasts).toHaveLength(1);
+
+    vi.advanceTimersByTime(1000); // expires now
+    expect(store.toasts).toHaveLength(0);
+  });
+
   it('adds success toast and supports manual remove', () => {
     const store = useToastStore();
     const id = store.success('Task created successfully');

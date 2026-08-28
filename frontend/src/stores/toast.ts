@@ -13,26 +13,50 @@ export interface Toast {
 
 export const useToastStore = defineStore('toast', () => {
   const toasts = ref<Toast[]>([]);
+  const timerMap = new Map<string, ReturnType<typeof setTimeout>>();
+
+  const scheduleRemoval = (id: string, duration: number) => {
+    if (timerMap.has(id)) {
+      clearTimeout(timerMap.get(id)!);
+    }
+    const timer = setTimeout(() => {
+      removeToast(id);
+    }, duration);
+    timerMap.set(id, timer);
+  };
 
   const addToast = (toast: Omit<Toast, 'id'>): string => {
+    // Deduplicate: If an identical toast is already active on screen, refresh its timer instead of stacking
+    const existing = toasts.value.find((t) => t.message === toast.message && t.type === toast.type);
+    if (existing) {
+      const duration = toast.duration ?? existing.duration ?? 4000;
+      if (duration > 0) {
+        scheduleRemoval(existing.id, duration);
+      }
+      return existing.id;
+    }
+
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const duration = toast.duration ?? 4000;
     const newToast: Toast = {
       id,
-      duration: toast.duration ?? 4000,
+      duration,
       ...toast,
     };
     toasts.value.push(newToast);
 
-    if (newToast.duration && newToast.duration > 0) {
-      setTimeout(() => {
-        removeToast(id);
-      }, newToast.duration);
+    if (duration > 0) {
+      scheduleRemoval(id, duration);
     }
 
     return id;
   };
 
   const removeToast = (id: string) => {
+    if (timerMap.has(id)) {
+      clearTimeout(timerMap.get(id)!);
+      timerMap.delete(id);
+    }
     const index = toasts.value.findIndex((t) => t.id === id);
     if (index !== -1) {
       toasts.value.splice(index, 1);
@@ -56,6 +80,8 @@ export const useToastStore = defineStore('toast', () => {
   };
 
   const clear = () => {
+    timerMap.forEach((timer) => clearTimeout(timer));
+    timerMap.clear();
     toasts.value = [];
   };
 
