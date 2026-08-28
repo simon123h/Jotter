@@ -394,14 +394,21 @@ export async function getGitHistory(projectId?: string): Promise<GitCommit[]> {
     return [];
   }
   const url = new URL(`${API_BASE}/system/history`, window.location.origin);
-  if (projectId) {
+  if (projectId && projectId !== 'all') {
     url.searchParams.append('projectId', projectId);
   }
   const response = await customFetch(url.toString());
   if (!response.ok) {
     await handleResponseError(response, 'Failed to fetch git history');
   }
-  return response.json();
+  const data = await response.json();
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && Array.isArray(data.history)) {
+    return data.history;
+  }
+  return [];
 }
 
 export async function restoreCommit(commitHash: string, projectId?: string): Promise<{ synchronized_tasks: number }> {

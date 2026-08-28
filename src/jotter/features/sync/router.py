@@ -2,8 +2,9 @@
 
 import sqlite3
 from pathlib import Path
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from jotter.features.sync.git_adapter import (
@@ -19,6 +20,8 @@ router = APIRouter(prefix="/api/system", tags=["system"])
 
 class RestoreRequest(BaseModel):
     commitHash: str
+    projectId: str | None = None
+    project_id: str | None = None
 
 
 def get_sync_service(
@@ -49,11 +52,19 @@ def get_system_info(request: Request, data_dir: str = Depends(get_data_dir)):
     }
 
 
+@router.get("/history")
 @router.get("/history/{project_id}")
-def get_project_git_history(project_id: str, data_dir: str = Depends(get_data_dir)):
-    proj_dir = str(Path(data_dir) / project_id)
-    history = get_git_history(proj_dir)
-    return {"history": history}
+def get_git_history_endpoint(
+    project_id: str | None = None,
+    projectId: str | None = Query(default=None),
+    data_dir: str = Depends(get_data_dir),
+) -> list[dict[str, Any]]:
+    target_pid = project_id or projectId
+    if target_pid and target_pid != "all":
+        proj_dir = str(Path(data_dir) / target_pid)
+    else:
+        proj_dir = data_dir
+    return get_git_history(proj_dir)
 
 
 @router.post("/restore/{project_id}")
@@ -82,4 +93,5 @@ def restore_default_commit(
     data_dir: str = Depends(get_data_dir),
     svc: SyncApplicationService = Depends(get_sync_service),
 ):
-    return restore_project_commit("default", req, data_dir, svc)
+    target_pid = req.projectId or req.project_id or "default"
+    return restore_project_commit(target_pid, req, data_dir, svc)

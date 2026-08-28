@@ -139,11 +139,15 @@ def get_git_history(project_dir: str | Path, limit: int = 50) -> list[dict[str, 
     for line in res.stdout.strip().split("\n"):
         parts = line.split("\x1f")
         if len(parts) >= 4:
+            commit_id = parts[0]
             history.append(
                 {
-                    "hash": parts[0],
-                    "commit_hash": parts[0],
+                    "id": commit_id,
+                    "short_id": commit_id[:7],
+                    "hash": commit_id,
+                    "commit_hash": commit_id,
                     "message": parts[1],
+                    "date": parts[2],
                     "timestamp": parts[2],
                     "author": parts[3],
                 }
