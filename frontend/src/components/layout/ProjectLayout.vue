@@ -104,7 +104,12 @@ const isNoProjects = computed(() => projectsLoaded.value && projects.value.lengt
 const fetchAllData = async () => {
   localError.value = null;
   if (isNoProjects.value || !projectId.value) return;
-  if (projectsLoaded.value && projectId.value !== 'all' && projects.value.length > 0 && !projects.value.some((p) => p.id === projectId.value)) {
+  if (
+    projectsLoaded.value &&
+    projectId.value !== 'all' &&
+    projects.value.length > 0 &&
+    !projects.value.some((p) => p.id === projectId.value)
+  ) {
     return;
   }
   try {
