@@ -1,5 +1,7 @@
 """Pydantic schemas and DTOs for Tasks."""
 
+from dataclasses import dataclass
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -86,3 +88,23 @@ class TaskFrontmatter(BaseModel):
     postponed_until: str | None = None
     created_at: str
     updated_at: str
+
+
+@dataclass
+class TaskFilterParams:
+    """Parsed query parameters for task listing and filtering."""
+
+    project_id: str | None = None
+    bucket: str | None = None
+    buckets: list[str] | None = None
+    tag: str | None = None
+    tags: list[str] | None = None
+    tag_mode: str = "any"
+    exclude_bucket: str | None = None
+    exclude_buckets: list[str] | None = None
+    priorities: list[str] | None = None
+    search: str | None = None
+    due_before: str | None = None
+    due_after: str | None = None
+    planned_date: str | None = None
+    has_due_date: bool | None = None

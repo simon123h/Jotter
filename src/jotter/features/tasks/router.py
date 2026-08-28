@@ -1,12 +1,18 @@
 """FastAPI routes for Tasks and Attachments."""
 
-import sqlite3
 from pathlib import Path
+import sqlite3
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
-from jotter.features.tasks.schemas import TaskCreate, TaskMove, TaskResponse, TaskUpdate
+from jotter.features.tasks.schemas import (
+    TaskCreate,
+    TaskFilterParams,
+    TaskMove,
+    TaskResponse,
+    TaskUpdate,
+)
 from jotter.features.tasks.service import TaskApplicationService
 from jotter.shared.deps import get_data_dir, get_db_conn
 
@@ -40,83 +46,47 @@ def _extract_query_list(request: Request, *names: str) -> list[str] | None:
     return None
 
 
-# Global tasks endpoint - full filtering support
-@router.get("/api/tasks", response_model=list[TaskResponse])
-def list_all_tasks(request: Request, svc: TaskApplicationService = Depends(get_task_service)):
-    project_id = _extract_query_param(request, "projectId", "project_id", "project")
-    bucket = _extract_query_param(request, "bucket")
-    buckets = _extract_query_list(request, "buckets", "bucket")
-    tag = _extract_query_param(request, "tag")
-    tags = _extract_query_list(request, "tags", "tag")
-    tag_mode = _extract_query_param(request, "tagMode", "tag_mode", default="any") or "any"
-    exclude_bucket = _extract_query_param(request, "excludeBucket", "exclude_bucket")
-    exclude_buckets = _extract_query_list(request, "excludeBuckets", "exclude_buckets")
-    priorities = _extract_query_list(request, "priorities", "priority")
-    search = _extract_query_param(request, "search")
-    due_before = _extract_query_param(request, "dueBefore", "due_before")
-    due_after = _extract_query_param(request, "dueAfter", "due_after")
-    planned_date = _extract_query_param(request, "plannedDate", "planned_date")
-
+def extract_task_filter_params(request: Request) -> TaskFilterParams:
+    """Dependency extracting and normalizing all task query parameters."""
     has_due_str = _extract_query_param(request, "hasDueDate", "has_due_date")
-    has_due_date = None
-    if has_due_str is not None:
-        has_due_date = has_due_str.lower() in ("true", "1", "yes")
+    has_due_date = has_due_str.lower() in ("true", "1", "yes") if has_due_str is not None else None
 
-    return svc.get_tasks(
-        project_id=project_id,
-        bucket=bucket,
-        buckets=buckets,
-        tag=tag,
-        tags=tags,
-        tag_mode=tag_mode,
-        exclude_bucket=exclude_bucket,
-        exclude_buckets=exclude_buckets,
-        priorities=priorities,
-        search=search,
-        due_before=due_before,
-        due_after=due_after,
-        planned_date=planned_date,
+    return TaskFilterParams(
+        project_id=_extract_query_param(request, "projectId", "project_id", "project"),
+        bucket=_extract_query_param(request, "bucket"),
+        buckets=_extract_query_list(request, "buckets", "bucket"),
+        tag=_extract_query_param(request, "tag"),
+        tags=_extract_query_list(request, "tags", "tag"),
+        tag_mode=_extract_query_param(request, "tagMode", "tag_mode", default="any") or "any",
+        exclude_bucket=_extract_query_param(request, "excludeBucket", "exclude_bucket"),
+        exclude_buckets=_extract_query_list(request, "excludeBuckets", "exclude_buckets"),
+        priorities=_extract_query_list(request, "priorities", "priority"),
+        search=_extract_query_param(request, "search"),
+        due_before=_extract_query_param(request, "dueBefore", "due_before"),
+        due_after=_extract_query_param(request, "dueAfter", "due_after"),
+        planned_date=_extract_query_param(request, "plannedDate", "planned_date"),
         has_due_date=has_due_date,
     )
+
+
+# Global tasks endpoint - full filtering support
+@router.get("/api/tasks", response_model=list[TaskResponse])
+def list_all_tasks(
+    filters: TaskFilterParams = Depends(extract_task_filter_params),
+    svc: TaskApplicationService = Depends(get_task_service),
+):
+    return svc.get_tasks(**vars(filters))
 
 
 # Project tasks endpoint
 @router.get("/api/projects/{project_id}/tasks", response_model=list[TaskResponse])
-def list_project_tasks(project_id: str, request: Request, svc: TaskApplicationService = Depends(get_task_service)):
-    bucket = _extract_query_param(request, "bucket")
-    buckets = _extract_query_list(request, "buckets")
-    tag = _extract_query_param(request, "tag")
-    tags = _extract_query_list(request, "tags")
-    tag_mode = _extract_query_param(request, "tagMode", "tag_mode", default="any") or "any"
-    exclude_bucket = _extract_query_param(request, "excludeBucket", "exclude_bucket")
-    exclude_buckets = _extract_query_list(request, "excludeBuckets", "exclude_buckets")
-    priorities = _extract_query_list(request, "priorities", "priority")
-    search = _extract_query_param(request, "search")
-    due_before = _extract_query_param(request, "dueBefore", "due_before")
-    due_after = _extract_query_param(request, "dueAfter", "due_after")
-    planned_date = _extract_query_param(request, "plannedDate", "planned_date")
-
-    has_due_str = _extract_query_param(request, "hasDueDate", "has_due_date")
-    has_due_date = None
-    if has_due_str is not None:
-        has_due_date = has_due_str.lower() in ("true", "1", "yes")
-
-    return svc.get_tasks(
-        project_id=project_id,
-        bucket=bucket,
-        buckets=buckets,
-        tag=tag,
-        tags=tags,
-        tag_mode=tag_mode,
-        exclude_bucket=exclude_bucket,
-        exclude_buckets=exclude_buckets,
-        priorities=priorities,
-        search=search,
-        due_before=due_before,
-        due_after=due_after,
-        planned_date=planned_date,
-        has_due_date=has_due_date,
-    )
+def list_project_tasks(
+    project_id: str,
+    filters: TaskFilterParams = Depends(extract_task_filter_params),
+    svc: TaskApplicationService = Depends(get_task_service),
+):
+    filters.project_id = project_id
+    return svc.get_tasks(**vars(filters))
 
 
 @router.get("/api/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
