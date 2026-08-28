@@ -1,9 +1,12 @@
+import logging
 import os
-import sys
 from pathlib import Path
+import sys
 
-import yaml
 from pydantic import BaseModel
+import yaml
+
+logger = logging.getLogger(__name__)
 
 VALID_LOG_LEVELS: dict[str, str] = {
     "debug": "DEBUG",
@@ -24,7 +27,7 @@ def normalize_log_level(level: str | None) -> str:
     clean = str(level).strip().lower()
     if clean in VALID_LOG_LEVELS:
         return VALID_LOG_LEVELS[clean]
-    print(f"[Config] Warning: Unknown log_level '{level}', falling back to 'INFO'")
+    logger.warning("Unknown log_level '%s', falling back to 'INFO'", level)
     return "INFO"
 
 
@@ -117,7 +120,7 @@ def load_config() -> UserConfig:
                             config.use_colors = bool(data["colors"])
                 break
             except Exception as e:
-                print(f"[Config] Warning: Failed to read config from {path}: {e}")
+                logger.warning("Failed to read config from %s: %s", path, e)
 
     # Environment variables override
     if os.environ.get("JOTTER_DATA_DIR"):

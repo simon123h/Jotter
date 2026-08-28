@@ -1,7 +1,8 @@
 """Application service for disk <-> SQLite synchronization and Git reconciliation."""
 
-import sqlite3
+import logging
 from pathlib import Path
+import sqlite3
 from typing import Self
 
 from jotter.features.buckets.domain import Bucket
@@ -11,6 +12,8 @@ from jotter.features.projects.repo import ProjectRepository
 from jotter.features.sync.git_adapter import git_sync
 from jotter.features.tasks.disk_repo import DiskTaskRepository
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
+
+logger = logging.getLogger(__name__)
 
 
 class SyncApplicationService:
@@ -76,7 +79,7 @@ class SyncApplicationService:
                     self.sqlite_task_repo.upsert_task(task)
                     total_synced += 1
                 except Exception as e:
-                    print(f"[Sync] Warning: Failed to sync task file {file_path}: {e}")
+                    logger.warning("Failed to sync task file %s: %s", file_path, e)
 
             # 3. Clean up deleted markdown tasks from SQLite
             sqlite_tasks = self.sqlite_task_repo.find_tasks(project_id=p_id)
@@ -95,6 +98,6 @@ class SyncApplicationService:
                 try:
                     git_sync(proj_dir, p.git_remote)
                 except Exception as e:
-                    print(f"[Sync] Git sync warning for project '{p.id}': {e}")
+                    logger.warning("Git sync error for project '%s': %s", p.id, e)
 
         return self.sync_db_only()
