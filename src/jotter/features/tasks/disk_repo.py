@@ -149,7 +149,17 @@ class DiskTaskRepository:
         clean_planned: str | None = str(planned_date).strip() if planned_date else None
         if due_date:
             due_str = str(due_date).strip()
-            if due_str in ("today", "tomorrow", "thisWeek", "nextWeek", "thisMonth", "nextMonth", "thisYear", "nextYear", "someday"):
+            if due_str in (
+                "today",
+                "tomorrow",
+                "thisWeek",
+                "nextWeek",
+                "thisMonth",
+                "nextMonth",
+                "thisYear",
+                "nextYear",
+                "someday",
+            ):
                 if not clean_planned:
                     clean_planned = due_str
             else:
