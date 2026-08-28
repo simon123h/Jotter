@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 import threading
 import webbrowser
 
@@ -20,6 +21,13 @@ def open_browser_delayed(url: str, delay_seconds: float = 0.5):
 
 
 def main():
+    # Direct MCP subcommand fast-path
+    if len(sys.argv) > 1 and sys.argv[1] == "mcp":
+        from jotter.mcp_server import run_mcp_server
+
+        run_mcp_server()
+        return
+
     parser = argparse.ArgumentParser(description="Jotter - Local-First Markdown Kanban Board")
     parser.add_argument(
         "-v",
@@ -27,6 +35,13 @@ def main():
         action="version",
         version=f"Jotter {app_version}",
         help="Show Jotter version and exit",
+    )
+    parser.add_argument(
+        "command",
+        nargs="?",
+        default=None,
+        choices=["mcp", "serve"],
+        help="Subcommand to run ('mcp' to start the Model Context Protocol server)",
     )
     parser.add_argument("--host", type=str, default=None, help="Host address to bind to")
     parser.add_argument("--port", type=int, default=None, help="Port to listen on")
@@ -60,6 +75,12 @@ def main():
         help="Force ANSI colored output in terminal logs",
     )
     args = parser.parse_args()
+
+    if args.command == "mcp":
+        from jotter.mcp_server import run_mcp_server
+
+        run_mcp_server()
+        return
 
     config = load_config()
     if args.host:
