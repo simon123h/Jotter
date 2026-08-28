@@ -204,7 +204,7 @@ const handleBulkDelete = async () => {
     clearSelection();
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk delete failed: ${err.message}`);
+    toast.error(t('toasts.bulkDeleteError', { message: err.message || err }));
   }
 };
 
@@ -217,7 +217,7 @@ const handleBulkMoveBucket = async (bucket: string) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk move failed: ${err.message}`);
+    toast.error(t('toasts.bulkMoveError', { message: err.message || err }));
   }
 };
 
@@ -237,7 +237,7 @@ const handleBulkEditTag = async (tag: string, remove: boolean) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk tagging failed: ${err.message}`);
+    toast.error(t('toasts.bulkTagError', { message: err.message || err }));
   }
 };
 
@@ -250,7 +250,7 @@ const handleBulkSetPriority = async (priority: string) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk priority set failed: ${err.message}`);
+    toast.error(t('toasts.bulkPriorityError', { message: err.message || err }));
   }
 };
 
@@ -263,7 +263,7 @@ const handleBulkSetColor = async (color: string | null) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk color change failed: ${err.message}`);
+    toast.error(t('toasts.bulkColorError', { message: err.message || err }));
   }
 };
 
@@ -276,7 +276,7 @@ const handleBulkSetPlanned = async (planned: string) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk planning failed: ${err.message}`);
+    toast.error(t('toasts.bulkPlanError', { message: err.message || err }));
   }
 };
 
@@ -289,7 +289,7 @@ const handleBulkSetDueDate = async (date: string) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk due date set failed: ${err.message}`);
+    toast.error(t('toasts.bulkDueDateError', { message: err.message || err }));
   }
 };
 
@@ -302,7 +302,7 @@ const handleBulkSetPostponedDate = async (date: string) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk postpone failed: ${err.message}`);
+    toast.error(t('toasts.bulkPostponeError', { message: err.message || err }));
   }
 };
 
@@ -323,7 +323,7 @@ const handleBulkArchive = async () => {
     clearSelection();
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk archive failed: ${err.message}`);
+    toast.error(t('toasts.bulkArchiveError', { message: err.message || err }));
   }
 };
 
@@ -339,7 +339,7 @@ const handleBulkMarkDone = async () => {
     clearSelection();
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk mark done failed: ${err.message}`);
+    toast.error(t('toasts.bulkMarkDoneError', { message: err.message || err }));
   }
 };
 
@@ -398,7 +398,7 @@ const handleBulkConsolidate = async () => {
     clearSelection();
     await fetchAllData();
   } catch (err: any) {
-    toast.error(`Bulk consolidate failed: ${err.message}`);
+    toast.error(t('toasts.bulkConsolidateError', { message: err.message || err }));
   }
 };
 </script>

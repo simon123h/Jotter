@@ -12,8 +12,10 @@ import { useProjects } from '@/composables/useProjects';
 import { useTaskFilters } from '@/composables/useTaskFilters';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useToast } from '@/composables/useToast';
+import { useI18n } from '@/composables/useI18n';
 import { useTaskExport } from '@/composables/useTaskExport';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -120,7 +122,7 @@ const handleCreateProject = async (title: string) => {
     await runCreateProject(title);
     await projectStore.fetchProjects(); // sync global project store list
   } catch (err: any) {
-    toast.error(err.message || 'Failed to create project');
+    toast.error(t('toasts.projectCreateError', { message: err.message || err }));
   }
 };
 
@@ -129,11 +131,11 @@ const triggerSync = async (isManual = false) => {
     await projectStore.triggerSync();
     localStorage.setItem('jotter-last-sync-time', String(Date.now()));
     if (isManual) {
-      toast.success('Workspace synchronized');
+      toast.success(t('toasts.syncSuccess'));
     }
   } catch (err: any) {
     if (isManual) {
-      toast.error(err.message || 'Sync failed', 'Sync Error');
+      toast.error(t('toasts.syncError', { message: err.message || err }), t('toasts.syncErrorTitle'));
     }
   }
 };
