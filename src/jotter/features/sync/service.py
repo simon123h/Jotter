@@ -1,8 +1,8 @@
 """Application service for disk <-> SQLite synchronization and Git reconciliation."""
 
 import logging
-from pathlib import Path
 import sqlite3
+from pathlib import Path
 from typing import Self
 
 from jotter.features.buckets.domain import Bucket

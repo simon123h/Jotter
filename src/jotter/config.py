@@ -1,10 +1,10 @@
 import logging
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
-from pydantic import BaseModel
 import yaml
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
