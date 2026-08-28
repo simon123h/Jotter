@@ -130,9 +130,6 @@ const triggerSync = async (isManual = false) => {
   try {
     await projectStore.triggerSync();
     localStorage.setItem('jotter-last-sync-time', String(Date.now()));
-    if (isManual) {
-      toast.success(t('toasts.syncSuccess'));
-    }
   } catch (err: any) {
     if (isManual) {
       toast.error(t('toasts.syncError', { message: err.message || err }), t('toasts.syncErrorTitle'));
