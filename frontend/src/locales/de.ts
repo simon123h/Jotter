@@ -59,6 +59,10 @@ export const de = {
     markdownPlaceholder: 'Schreibe Notizen, Checklisten oder Schritte in Markdown...',
     markdownPlaceholderEdit: 'Markdown-Details kommen hierhin...',
     quickAddChecklist: 'Liste hinzufügen',
+    splitSubtasks: 'Unteraufgaben in Karten umwandeln',
+    splitSubtasksTooltip: 'Alle Checklisten-Einträge als eigenständige Aufgabenkarten extrahieren',
+    splitSubtasksConfirm:
+      'Möchtest du wirklich {count} Checklisten-Eintrag/-Einträge in eigenständige Aufgabenkarten umwandeln? Sie werden aus dieser Beschreibung entfernt.',
     dueDateLabel: 'Fälligkeitsdatum',
     plannedDateLabel: 'Geplant für',
     priorityLabel: 'Priorität',
@@ -88,6 +92,7 @@ export const de = {
     markDone: 'Als erledigt markieren',
     archive: 'Archivieren',
     unarchive: 'Wiederherstellen',
+    convertToTask: 'In Aufgabenkarte umwandeln',
   },
   errors: {
     titleRequired: 'Titel ist erforderlich',
@@ -347,6 +352,8 @@ export const de = {
     dueDateNextWeek: 'Nächste Woche',
     dueDateClear: 'Datum löschen',
     postpone: 'Aufschieben...',
+    consolidate: 'In einzelne Aufgabe zusammenführen',
+    confirmConsolidate: 'Möchtest du wirklich {count} Aufgaben in eine einzelne Aufgabe mit Checkliste zusammenführen?',
   },
   clickToIgnoreKeyword: 'Klicken, um als Schlüsselwort zu ignorieren',
   layoutOptions: {

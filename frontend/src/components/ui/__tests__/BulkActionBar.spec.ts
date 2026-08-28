@@ -186,4 +186,16 @@ describe('BulkActionBar.vue', () => {
     expect(emitted?.[1][0]).toBe('tag-b');
     expect(emitted?.[1][1]).toBe(false);
   });
+
+  it('emits consolidate event when consolidate button is clicked', async () => {
+    const wrapper = mount(BulkActionBar, {
+      props: defaultProps,
+    });
+
+    const consolidateBtn = wrapper.find('button[title*="Consolidate"]');
+    expect(consolidateBtn.exists()).toBe(true);
+
+    await consolidateBtn.trigger('click');
+    expect(wrapper.emitted('consolidate')).toBeTruthy();
+  });
 });

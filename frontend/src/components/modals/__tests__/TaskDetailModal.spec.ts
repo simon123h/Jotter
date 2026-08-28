@@ -1,9 +1,9 @@
 import { beforeAll, describe, it, expect, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
-import { updateTask, deleteTask } from '@/api';
+import { getTask, updateTask, deleteTask, createTask } from '@/api';
 
 beforeAll(() => {
   setActivePinia(createPinia());
@@ -26,6 +26,12 @@ vi.mock('@/api', () => ({
     updated_at: new Date().toISOString(),
   }),
   updateTask: vi.fn(),
+  createTask: vi.fn().mockResolvedValue({
+    id: '999',
+    project_id: 'default',
+    title: 'Todo item',
+    bucket: 'todo',
+  }),
   deleteTask: vi.fn(),
   patchTask: vi.fn().mockResolvedValue({
     id: '123',
@@ -222,5 +228,59 @@ describe('TaskDetailModal.vue', () => {
 
     await nextTick();
     expect(deleteTask).toHaveBeenCalledWith('default', '123');
+  });
+
+  it('splits all subtasks into independent task cards when Split Subtasks button is clicked', async () => {
+    vi.mocked(getTask).mockResolvedValue({
+      id: '123',
+      project_id: 'default',
+      title: 'Task with subtasks',
+      body: '# Header\n- [ ] Todo item\nSome description',
+      bucket: 'todo',
+      position: 1,
+      tags: [],
+      attachments: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    const wrapper = mount(TaskDetailModal, {
+      props: defaultProps,
+      global: {
+        stubs: {
+          MarkdownEditor: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await nextTick();
+
+    const splitBtn = wrapper
+      .findAll('button')
+      .find(
+        (b) =>
+          b.attributes('aria-label') === 'Split subtasks' ||
+          b.attributes('title')?.includes('Extract') ||
+          b.attributes('title')?.includes('extrahieren')
+      );
+    expect(splitBtn).toBeDefined();
+
+    vi.mocked(createTask).mockClear();
+    vi.mocked(updateTask).mockClear();
+
+    await splitBtn!.trigger('click');
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await nextTick();
+
+    expect(createTask).toHaveBeenCalledWith(
+      'default',
+      expect.objectContaining({
+        title: 'Todo item',
+        bucket: 'todo',
+      })
+    );
   });
 });

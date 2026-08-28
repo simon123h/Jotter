@@ -58,6 +58,10 @@ export const en = {
     markdownPlaceholder: 'Write notes, checklists, or steps in markdown...',
     markdownPlaceholderEdit: 'Markdown details go here...',
     quickAddChecklist: 'Add List',
+    splitSubtasks: 'Convert Subtasks to Tasks',
+    splitSubtasksTooltip: 'Extract all checklist items into separate task cards',
+    splitSubtasksConfirm:
+      'Are you sure you want to convert {count} checklist item(s) into separate task cards? They will be removed from this description.',
     dueDateLabel: 'Due Date',
     plannedDateLabel: 'Planned For',
     priorityLabel: 'Priority',
@@ -87,6 +91,7 @@ export const en = {
     markDone: 'Mark Done',
     archive: 'Archive',
     unarchive: 'Unarchive',
+    convertToTask: 'Convert to task card',
   },
   errors: {
     titleRequired: 'Title is required',
@@ -345,6 +350,8 @@ export const en = {
     dueDateNextWeek: 'Next Week',
     dueDateClear: 'Clear Due Date',
     postpone: 'Postpone...',
+    consolidate: 'Consolidate into single task',
+    confirmConsolidate: 'Are you sure you want to combine {count} tasks into a single task with a checklist?',
   },
   clickToIgnoreKeyword: 'Click to ignore as keyword',
   layoutOptions: {

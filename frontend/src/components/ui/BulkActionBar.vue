@@ -17,6 +17,7 @@ import {
   Palette,
   Slash,
   Hourglass,
+  ListCollapse,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket, Project } from '@/types';
@@ -38,6 +39,7 @@ const emit = defineEmits<{
   (e: 'delete'): void;
   (e: 'archive'): void;
   (e: 'mark-done'): void;
+  (e: 'consolidate'): void;
   (e: 'move-bucket', bucket: string): void;
   (e: 'edit-tag', tag: string, forceRemove: boolean): void;
   (e: 'set-priority', priority: string): void;
@@ -407,6 +409,14 @@ const handleCustomPostponedDate = () => {
             :title="t('bulkActions.archive')"
           >
             <Archive class="w-4.5 h-4.5" />
+          </button>
+
+          <button
+            @click="emit('consolidate')"
+            class="p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 rounded-full transition-all cursor-pointer"
+            :title="t('bulkActions.consolidate')"
+          >
+            <ListCollapse class="w-4.5 h-4.5" />
           </button>
 
           <div class="w-px h-6 bg-theme-border/50 mx-1"></div>

@@ -3,13 +3,14 @@ import { ref, watch, computed, onUnmounted, nextTick, onMounted } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import type { Task } from '@/types';
-import { getTask, deleteTask, getAttachmentUrl } from '@/api';
+import { getTask, deleteTask, getAttachmentUrl, createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useProjectStore } from '@/stores/project';
-import { X, Slash, ClipboardList } from '@lucide/vue';
+import { X, Slash, ClipboardList, Split } from '@lucide/vue';
 import { parseTitleState } from '@/utils/titleParser';
+import { extractAllChecklistItems } from '@/utils/markdown';
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
@@ -201,6 +202,50 @@ const toggleCheckboxInBody = async (newBody: string) => {
     task.value = updated;
   } catch (err: any) {
     error.value = t('errors.updateTask', { message: err.message || err });
+  }
+};
+
+const handleSplitAllSubtasks = async () => {
+  if (!task.value || !task.value.body) return;
+
+  const { items, cleanedBody } = extractAllChecklistItems(task.value.body);
+  if (items.length === 0) return;
+
+  const confirmed = await showDialog({
+    title: t('form.splitSubtasks'),
+    message: t('form.splitSubtasksConfirm', { count: items.length }),
+    type: 'info',
+    showCancel: true,
+    confirmText: t('form.splitSubtasks'),
+    cancelText: t('buttons.cancel'),
+  });
+  if (!confirmed) return;
+
+  loading.value = true;
+  error.value = null;
+
+  try {
+    // 1. Create independent task cards for all subtasks in the current bucket
+    for (const item of items) {
+      await createTask(actualProjectId.value, {
+        title: item.title,
+        bucket: task.value.bucket,
+        tags: [...(task.value.tags || [])],
+        priority: task.value.priority || undefined,
+      });
+    }
+
+    // 2. Update current task body removing the checklist items
+    const updated = await patchTask(task.value, { body: cleanedBody });
+    task.value = updated;
+    editBody.value = cleanedBody;
+
+    // 3. Refresh board to show all newly created cards
+    refreshBoard();
+  } catch (err: any) {
+    error.value = t('errors.createTask', { message: err.message || err });
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -493,15 +538,27 @@ onBeforeRouteLeave(async () => {
               <div class="border-t border-theme-border pt-4">
                 <div class="flex items-center justify-between mb-2">
                   <h4 class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('notesLabel') }}</h4>
-                  <button
-                    v-if="!hasChecklist"
-                    type="button"
-                    @click="addChecklistItem"
-                    class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
-                  >
-                    <ClipboardList class="w-3.5 h-3.5" />
-                    {{ t('form.quickAddChecklist') }}
-                  </button>
+                  <div class="flex items-center gap-2">
+                    <button
+                      v-if="hasChecklist"
+                      type="button"
+                      @click="handleSplitAllSubtasks"
+                      class="p-1 text-theme-text-muted hover:text-theme-accent hover:bg-theme-border/20 rounded transition-colors cursor-pointer opacity-70 hover:opacity-100"
+                      :title="t('form.splitSubtasksTooltip')"
+                      aria-label="Split subtasks"
+                    >
+                      <Split class="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      v-if="!hasChecklist"
+                      type="button"
+                      @click="addChecklistItem"
+                      class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
+                    >
+                      <ClipboardList class="w-3.5 h-3.5" />
+                      {{ t('form.quickAddChecklist') }}
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Rendered Markdown with interactive checkboxes -->

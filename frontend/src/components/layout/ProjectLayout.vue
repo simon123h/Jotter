@@ -6,16 +6,19 @@ import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
 import type { BucketName } from '@/types';
-import { updateTask, deleteTask, moveTask } from '@/api';
+import { updateTask, deleteTask, moveTask, createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
+import { useDialog } from '@/composables/useDialog';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { X, Folder } from '@lucide/vue';
 import { useTaskFilters } from '@/composables/useTaskFilters';
 import { useDragSelect } from '@/composables/useDragSelect';
 import { useSelectionStore } from '@/stores/selection';
+import { consolidateTasksIntoChecklist } from '@/utils/markdown';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
 
 const { t } = useI18n();
+const { showDialog } = useDialog();
 const route = useRoute();
 
 const settingsStore = useSettingsStore();
@@ -348,6 +351,65 @@ const handleBulkMarkDone = async () => {
     localError.value = `Bulk mark done failed: ${err.message}`;
   }
 };
+
+const handleBulkConsolidate = async () => {
+  const ids = Array.from(selectedIds.value);
+  if (ids.length < 2) return;
+
+  const selectedTasks = tasks.value.filter((t) => selectedIds.value.has(t.id));
+  if (selectedTasks.length === 0) return;
+
+  const confirmed = await showDialog({
+    title: t('bulkActions.consolidate'),
+    message: t('bulkActions.confirmConsolidate', { count: selectedTasks.length }),
+    type: 'info',
+    showCancel: true,
+    confirmText: t('bulkActions.consolidate'),
+    cancelText: t('buttons.cancel'),
+  });
+  if (!confirmed) return;
+
+  try {
+    const primaryTask = selectedTasks[0];
+    const targetProject = primaryTask.project_id || (projectId.value !== 'all' ? projectId.value : 'default');
+    const targetBucket = primaryTask.bucket || 'todo';
+
+    // Merge unique tags from all selected tasks
+    const mergedTags = Array.from(new Set(selectedTasks.flatMap((t) => t.tags || [])));
+
+    // Pick highest priority if present
+    const prioWeight: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
+    let highestPrio: string | undefined = undefined;
+    let maxWeight = 0;
+    for (const t of selectedTasks) {
+      if (t.priority && prioWeight[t.priority] && prioWeight[t.priority] > maxWeight) {
+        maxWeight = prioWeight[t.priority];
+        highestPrio = t.priority;
+      }
+    }
+
+    const consolidatedBody = consolidateTasksIntoChecklist(selectedTasks);
+
+    // 1. Create consolidated parent task
+    await createTask(targetProject, {
+      title: primaryTask.title,
+      bucket: targetBucket,
+      tags: mergedTags,
+      priority: highestPrio,
+      body: consolidatedBody,
+    });
+
+    // 2. Delete original individual tasks
+    for (const t of selectedTasks) {
+      await deleteTask(t.project_id, t.id);
+    }
+
+    clearSelection();
+    await fetchAllData();
+  } catch (err: any) {
+    localError.value = `Bulk consolidate failed: ${err.message}`;
+  }
+};
 </script>
 
 <template>
@@ -405,6 +467,7 @@ const handleBulkMarkDone = async () => {
       @delete="handleBulkDelete"
       @archive="handleBulkArchive"
       @mark-done="handleBulkMarkDone"
+      @consolidate="handleBulkConsolidate"
       @move-bucket="handleBulkMoveBucket"
       @edit-tag="handleBulkEditTag"
       @set-priority="handleBulkSetPriority"
