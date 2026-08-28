@@ -349,6 +349,8 @@ export const en = {
     dueDateNextWeek: 'Next Week',
     dueDateClear: 'Clear Due Date',
     postpone: 'Postpone...',
+    consolidate: 'Consolidate into single task',
+    confirmConsolidate: 'Are you sure you want to combine {count} tasks into a single task with a checklist?',
   },
   clickToIgnoreKeyword: 'Click to ignore as keyword',
   layoutOptions: {

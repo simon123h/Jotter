@@ -351,6 +351,8 @@ export const de = {
     dueDateNextWeek: 'Nächste Woche',
     dueDateClear: 'Datum löschen',
     postpone: 'Aufschieben...',
+    consolidate: 'In einzelne Aufgabe zusammenführen',
+    confirmConsolidate: 'Möchtest du wirklich {count} Aufgaben in eine einzelne Aufgabe mit Checkliste zusammenführen?',
   },
   clickToIgnoreKeyword: 'Klicken, um als Schlüsselwort zu ignorieren',
   layoutOptions: {

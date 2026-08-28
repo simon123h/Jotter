@@ -62,3 +62,34 @@ export function extractAllChecklistItems(body: string): {
     cleanedBody: cleaned,
   };
 }
+
+export interface TaskToConsolidate {
+  title: string;
+  body?: string | null;
+}
+
+/**
+ * Combines multiple tasks into a single Markdown checklist string.
+ * If any of the tasks have detailed markdown descriptions, they are preserved under a "Details" section.
+ *
+ * @param tasks - The list of tasks to consolidate
+ * @returns Markdown string with checklist items and preserved notes
+ */
+export function consolidateTasksIntoChecklist(tasks: TaskToConsolidate[]): string {
+  if (!tasks.length) return '';
+
+  const checklistLines = tasks.map((t) => `- [ ] ${t.title.trim()}`);
+  const detailedNotes: string[] = [];
+
+  for (const t of tasks) {
+    if (t.body && t.body.trim()) {
+      detailedNotes.push(`#### ${t.title.trim()}\n${t.body.trim()}`);
+    }
+  }
+
+  if (detailedNotes.length > 0) {
+    return `${checklistLines.join('\n')}\n\n### Details\n\n${detailedNotes.join('\n\n')}`;
+  }
+
+  return checklistLines.join('\n');
+}
