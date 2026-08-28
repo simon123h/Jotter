@@ -55,11 +55,13 @@ class DiskTaskRepository:
             "title": task.title,
             "bucket": task.bucket,
             "position": float(task.position),
-            "tags": [t.value for t in task.tags],
-            "attachments": list(task.attachments),
             "created_at": task.created_at,
             "updated_at": task.updated_at,
         }
+        if task.tags:
+            fm_dict["tags"] = [t.value for t in task.tags]
+        if task.attachments:
+            fm_dict["attachments"] = list(task.attachments)
         if task.due_date.value:
             fm_dict["due_date"] = task.due_date.value
         if task.planned_date.value:

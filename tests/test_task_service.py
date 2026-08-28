@@ -42,6 +42,14 @@ Here are details.
     assert "Sample Task" in dumped
     assert "# Task Description" in dumped
 
+    # Minimal task without tags or attachments
+    minimal_task = disk_repo.parse_task_content("title: Minimal Task", "01ARZ3NDEKTSV4RRFFQ69G5FAV", "default")
+    minimal_dump = disk_repo.serialize_task(minimal_task)
+    assert "tags:" not in minimal_dump
+    assert "attachments:" not in minimal_dump
+    assert "priority:" not in minimal_dump
+    assert "due_date:" not in minimal_dump
+
 
 def test_task_crud_and_positioning(temp_dir, test_env):
     conn = get_db(str(Path(temp_dir) / "tasks.db"))
