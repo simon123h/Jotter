@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import GlobalDialog from '@/components/ui/GlobalDialog.vue';
+import ToastContainer from '@/components/ui/ToastContainer.vue';
 </script>
 
 <template>
   <div class="h-dvh bg-theme-base text-theme-text-main flex flex-col font-sans selection:bg-theme-primary/30 overflow-hidden">
     <router-view />
     <GlobalDialog />
+    <ToastContainer />
   </div>
 </template>
 
