@@ -1,81 +1,90 @@
-# REST-API und OpenAPI-Referenz
+# REST-API und MCP-Referenz
 
-Jotter wird von einem leichtgewichtigen REST-API-Server begleitet, der in Go geschrieben ist. Diese API steuert die Frontend-Webanwendung und ermöglicht es Entwicklern, eigene Skripte, Browser-Erweiterungen oder Terminal-Hooks zu schreiben, um programmatisch mit ihren Taskboards zu interagieren.
-
-Diese Seite beschreibt den Standard-API-Port, die Endpunktstruktur, die automatische Dokumentation und Beispiele für die Nutzung der API.
+Jotter bietet sowohl einen leichtgewichtigen FastAPI-Backend-Server als auch einen integrierten **Model Context Protocol (MCP)** Server. Dies ermöglicht es Entwicklern, eigene Skripte, Browser-Erweiterungen oder Terminal-Hooks zu schreiben sowie KI-Assistenten (Claude Desktop, Cursor, Antigravity) direkt mit ihren Kanban-Boards zu verbinden.
 
 ---
 
 ## Server-Port und Konfiguration
 
-Wenn du Jotter im Servermodus startest, bindet sich der Backend-Dienst standardmäßig an einen voreingestellten, hohen Port:
+Wenn du Jotter im Servermodus startest, bindet sich der Backend-Dienst standardmäßig an:
 
 * **Standard-URL**: `http://localhost:58271`
-* **Port-Konfiguration**: Der Port kann beim Start angepasst werden, indem du den Parameter `--port` an das Binary übergibst oder die Umgebungsvariable `PORT` setzt.
+* **Port-Konfiguration**: Der Port kann beim Start angepasst werden, indem du den Parameter `--port` übergibst oder die Umgebungsvariable `JOTTER_PORT` setzt:
 
 ```bash
-./jotter-server --port 8080
+jotter --port 8080
 ```
 
 ---
 
-## Swagger UI und interaktive Dokumentation
+## OpenAPI und interaktive Dokumentation
 
-Jotter verfügt über eine interaktive, automatisch generierte OpenAPI-Dokumentation und die integrierte Swagger UI.
+Jotter verfügt über eine automatisch generierte OpenAPI-Dokumentation direkt im Server:
 
-* **Swagger UI Playground**: Du erreichst die interaktive Oberfläche direkt über deinen Browser unter:
-  `http://localhost:58271/swagger/index.html`
-* **Rohe OpenAPI-JSON-Spezifikation**: Das rohe OpenAPI v2 (Swagger) Dokument kann abgerufen werden unter:
-  `http://localhost:58271/swagger/doc.json`
-
-Über das Swagger UI kannst du API-Abfragen live im Browser ausführen, payloads testen und die strukturierten JSON-Rückgaben einsehen.
+* **Swagger UI**: `http://localhost:58271/docs`
+* **ReDoc**: `http://localhost:58271/redoc`
+* **OpenAPI-JSON**: `http://localhost:58271/openapi.json`
 
 ---
 
 ## Wichtige API-Endpunkte
 
-Die API ist um Standard-CRUD-Operationen für Projekte, Spalten (Buckets) und Aufgabenkarten herum aufgebaut. Alle Abfragen liefern und erwarten strukturierte JSON-Inhalte.
-
 ### Projekte
-* `GET /api/v1/projects` - Listet alle aktiven Projekte im Arbeitsbereich auf.
-* `POST /api/v1/projects` - Erstellt ein neues Projektverzeichnis.
-* `PUT /api/v1/projects/{projectId}` - Bearbeitet Projektdetails oder benennt das Projekt um.
-* `DELETE /api/v1/projects/{projectId}` - Löscht ein Projekt samt allen darin enthaltenen Aufgaben.
+* `GET /api/projects` - Listet alle aktiven Projekte im Arbeitsbereich auf.
+* `POST /api/projects` - Erstellt ein neues Projekt.
+* `PUT /api/projects/{id}` - Bearbeitet Projektdetails.
+* `DELETE /api/projects/{id}` - Löscht ein Projekt samt allen Aufgaben.
+
+### Spalten / Buckets
+* `GET /api/projects/{id}/buckets` - Listet alle Spalten eines Projekts auf.
+* `POST /api/projects/{id}/buckets` - Erstellt eine neue Spalte.
+* `PUT /api/projects/{id}/buckets/{bucket_name}` - Aktualisiert Spalteneigenschaften (Titel, Farbe, Layout).
+* `DELETE /api/projects/{id}/buckets/{bucket_name}` - Löscht eine Spalte.
 
 ### Aufgaben (Tasks)
-* `GET /api/v1/projects/{projectId}/tasks` - Listet alle Aufgabenkarten eines bestimmten Projekts auf.
-* `GET /api/v1/tasks/{taskId}` - Ruft die detaillierten Metadaten und die Beschreibung einer einzelnen Aufgabe ab.
-* `POST /api/v1/tasks` - Erstellt eine neue Aufgabe (schreibt in Echtzeit eine entsprechende `.md`-Datei im Projektordner).
-* `PUT /api/v1/tasks/{taskId}` - Aktualisiert Aufgabendetails, Tags, Checklistenstände oder die Beschreibung.
-* `DELETE /api/v1/tasks/{taskId}` - Löscht eine Aufgabe (entfernt die `.md`-Datei physisch von der Festplatte).
+* `GET /api/tasks` oder `GET /api/projects/{id}/tasks` - Listet Aufgaben auf (unterstützt Filter für `bucket`, `tags`, `priority`, `search`, `due_before`, `due_after`).
+* `GET /api/projects/{id}/tasks/{taskId}` - Ruft Details und Markdown-Inhalt einer einzelnen Aufgabe ab.
+* `POST /api/projects/{id}/tasks` - Erstellt eine neue Aufgabe (schreibt `.md`-Datei auf die Festplatte).
+* `PATCH /api/projects/{id}/tasks/{taskId}` - Aktualisiert Aufgabendetails, Priorität, Fälligkeitsdatum oder Beschreibung.
+* `PATCH /api/projects/{id}/tasks/{taskId}/move` - Verschiebt eine Aufgabe in eine andere Spalte.
+* `DELETE /api/projects/{id}/tasks/{taskId}` - Löscht eine Aufgabe und entfernt deren `.md`-Datei.
 
 ### System und Synchronisation
-* `POST /api/v1/sync` - Triggert manuell eine vollständige Neusynchronisation des Dateisystems, um alle Markdown-Dateien in den SQLite-Index einzupflegen.
-* `GET /api/v1/health` - Prüft den Online-Status des API-Servers.
+* `POST /api/system/sync` - Gleicht Markdown-Dateien mit dem SQLite-Index ab und führt Git-Sync aus.
+* `GET /api/system/info` - Liefert Systeminformationen (Datenverzeichnis, Version, Git-Status).
 
 ---
 
-## Codebeispiel zur API-Integration
+## Model Context Protocol (MCP) Integration
 
-Da die API Standard-JSON-Payloads verwendet, lassen sich Workflows spielend leicht automatisieren.
+Jotter verfügt über einen integrierten MCP-Server, mit dem KI-Assistenten (Claude Desktop, Cursor, Antigravity usw.) Aufgaben direkt auf dem Board abfragen, erstellen, verschieben und bearbeiten können.
 
-### Eine Aufgabe per curl erstellen
-Folgendes Beispiel zeigt, wie du eine neue Aufgabe im Standardprojekt direkt aus deinem Terminal heraus erstellst:
-
+### MCP-Server starten
 ```bash
-curl -X POST http://localhost:58271/api/v1/tasks \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project_id": "default",
-    "title": "Automatisierte Aufgabe per Shell-Skript",
-    "bucket": "todo",
-    "priority": "medium",
-    "tags": ["automation", "cli"],
-    "body": "Diese Aufgabenkarte wurde vollautomatisch bei einem Git-Push generiert."
-  }'
+jotter mcp
 ```
 
-Sobald dieser Befehl erfolgreich ausgeführt wird:
-1. Schreibt Jotter im Hintergrund eine neue `.md`-Datei mit einer eindeutigen ID im `tasks`-Ordner.
-2. Der SQLite-Index wird in Echtzeit aktualisiert.
-3. Die Karte erscheint sofort im Web-Interface in der Spalte "To Do".
+### Claude Desktop Konfiguration
+Füge Jotter zu deiner `claude_desktop_config.json` hinzu:
+
+```json
+{
+  "mcpServers": {
+    "jotter": {
+      "command": "jotter",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+### Verfügbare MCP-Tools
+* `list_projects`: Alle Projekte auflisten.
+* `list_buckets`: Kanban-Spalten für ein Projekt auflisten.
+* `list_tasks`: Aufgaben nach Spalte, Tag, Priorität, Datum oder Suchbegriff filtern.
+* `get_task`: Vollständige Aufgabendetails und Markdown-Beschreibung abrufen.
+* `create_task`: Neue Aufgabe auf dem Board erstellen.
+* `update_task`: Metadaten oder Beschreibung einer Aufgabe bearbeiten.
+* `move_task`: Aufgabe zwischen Spalten verschieben.
+* `delete_task`: Aufgabe löschen.
+* `sync_database`: Dateisystem-Markdown-Dateien mit dem Suchindex abgleichen.

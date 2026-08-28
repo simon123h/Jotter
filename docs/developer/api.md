@@ -1,81 +1,90 @@
-# REST API and OpenAPI Reference
+# REST API and MCP Reference
 
-Jotter is accompanied by a lightweight REST API server built in Go. This API drives the frontend web application and allows developers to write custom scripts, browser integrations, or terminal hooks to interact programmatically with their task boards.
-
-This page documents the default API port, endpoint structure, automatic documentation, and examples of how to consume the API.
+Jotter provides both a lightweight FastAPI backend server and a **Model Context Protocol (MCP)** server. This allows developers to write custom scripts, browser integrations, terminal hooks, or connect AI coding assistants (Claude Desktop, Cursor, Antigravity) directly to their Kanban boards.
 
 ---
 
 ## Server Port and Configuration
 
-By default, when you launch Jotter in server mode, the backend binds to a specific high-range port:
+By default, when you launch Jotter in server mode, the backend binds to:
 
 * **Default URL**: `http://localhost:58271`
-* **Port Selection**: The port can be customized on launch by passing the `--port` flag to the binary or by setting the `PORT` environment variable.
+* **Custom Port**: Pass `--port` to the command or set the `JOTTER_PORT` environment variable:
 
 ```bash
-./jotter-server --port 8080
+jotter --port 8080
 ```
 
 ---
 
-## Swagger UI and Interactive Documentation
+## OpenAPI and Interactive Documentation
 
-Jotter comes with interactive, auto-generated OpenAPI documentation and Swagger UI built directly into the application.
+Jotter comes with auto-generated interactive OpenAPI documentation built directly into the server:
 
-* **Swagger UI Playground**: Access the playground in your web browser at:
-  `http://localhost:58271/swagger/index.html`
-* **Raw OpenAPI JSON Spec**: You can fetch the raw OpenAPI v2 (Swagger) spec file at:
-  `http://localhost:58271/swagger/doc.json`
-
-You can use the interactive Swagger UI playground to test requests directly, inspect endpoint payloads, and view responses live.
+* **Swagger UI**: `http://localhost:58271/docs`
+* **ReDoc**: `http://localhost:58271/redoc`
+* **OpenAPI JSON Spec**: `http://localhost:58271/openapi.json`
 
 ---
 
 ## Key API Endpoints
 
-The API is structured around standard CRUD operations on projects, columns (buckets), and task cards. All payload responses are returned as structured JSON.
-
 ### Projects
-* `GET /api/v1/projects` - List all active projects in the workspace.
-* `POST /api/v1/projects` - Create a new project folder.
-* `PUT /api/v1/projects/{projectId}` - Edit project metadata or rename it.
-* `DELETE /api/v1/projects/{projectId}` - Delete a project and all its associated tasks.
+* `GET /api/projects` - List all projects in the workspace.
+* `POST /api/projects` - Create a new project.
+* `PUT /api/projects/{id}` - Edit project metadata.
+* `DELETE /api/projects/{id}` - Delete a project and its associated tasks.
+
+### Columns / Buckets
+* `GET /api/projects/{id}/buckets` - List all column buckets for a project.
+* `POST /api/projects/{id}/buckets` - Create a custom column bucket.
+* `PUT /api/projects/{id}/buckets/{bucket_name}` - Update column properties (title, color, layout).
+* `DELETE /api/projects/{id}/buckets/{bucket_name}` - Delete a column bucket.
 
 ### Tasks
-* `GET /api/v1/projects/{projectId}/tasks` - List all task cards within a specific project.
-* `GET /api/v1/tasks/{taskId}` - Retrieve detailed properties and description body of a single task.
-* `POST /api/v1/tasks` - Create a new task. (This writes a new `.md` file to your project storage in real-time).
-* `PUT /api/v1/tasks/{taskId}` - Update task details, tags, checklist state, or content body.
-* `DELETE /api/v1/tasks/{taskId}` - Safely delete a task card (deleting its `.md` file from disk).
+* `GET /api/tasks` or `GET /api/projects/{id}/tasks` - List and filter tasks (supports `bucket`, `tags`, `priority`, `search`, `due_before`, `due_after`).
+* `GET /api/projects/{id}/tasks/{taskId}` - Retrieve detailed properties and description body of a task.
+* `POST /api/projects/{id}/tasks` - Create a new task (writes `.md` file to disk).
+* `PATCH /api/projects/{id}/tasks/{taskId}` - Update task details, priority, due date, tags, or description body.
+* `PATCH /api/projects/{id}/tasks/{taskId}/move` - Move a task to a different column.
+* `DELETE /api/projects/{id}/tasks/{taskId}` - Delete a task and remove its Markdown file.
 
-### System and Sync
-* `POST /api/v1/sync` - Manually trigger a full file system scan to re-index all Markdown files into the SQLite database.
-* `GET /api/v1/health` - Check if the backend server is running and online.
+### System & Sync
+* `POST /api/system/sync` - Reconcile Markdown files with SQLite index and run Git sync.
+* `GET /api/system/info` - Get system information (data directory, version, Git status).
 
 ---
 
-## Programmatic Integration Example
+## Model Context Protocol (MCP) Integration
 
-Because the API uses standard JSON payloads, you can write short scripts to automate your workflow. 
+Jotter includes a built-in MCP server that allows AI assistants (Claude Desktop, Cursor, Antigravity, etc.) to query, create, update, and move tasks on your board.
 
-### Creating a Task via curl
-Below is an example of creating a task in your default project using a single command in your terminal:
-
+### Running the MCP Server
 ```bash
-curl -X POST http://localhost:58271/api/v1/tasks \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project_id": "default",
-    "title": "Automated task from shell script",
-    "bucket": "todo",
-    "priority": "medium",
-    "tags": ["automation", "cli"],
-    "body": "This card was generated automatically on branch push."
-  }'
+jotter mcp
 ```
 
-As soon as this command executes successfully:
-1. Jotter immediately writes a corresponding `.md` file with a unique ID inside your workspace's `tasks` directory.
-2. The ephemeral SQLite database is updated with the new record.
-3. The card immediately appears in your "To Do" column on the frontend sidebar board.
+### Claude Desktop Configuration
+Add Jotter to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "jotter": {
+      "command": "jotter",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+### Available MCP Tools
+* `list_projects`: List all projects.
+* `list_buckets`: List Kanban columns for a project.
+* `list_tasks`: Query tasks with filters (`project_id`, `bucket`, `tag`, `search`, `priority`, `due_before`, `due_after`).
+* `get_task`: Retrieve task details and markdown content.
+* `create_task`: Create a new task on the board.
+* `update_task`: Update task properties or notes.
+* `move_task`: Move a task between columns.
+* `delete_task`: Delete a task.
+* `sync_database`: Reconcile Markdown files on disk with the search index.
