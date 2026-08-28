@@ -257,7 +257,7 @@ describe('TaskDetailModal.vue', () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
     await nextTick();
 
-    const splitBtn = wrapper.findAll('button').find((b) => b.text().includes('Convert Subtasks') || b.text().includes('Unteraufgaben') || b.attributes('title')?.includes('Extract') || b.attributes('title')?.includes('extrahieren'));
+    const splitBtn = wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'Split subtasks' || b.attributes('title')?.includes('Extract') || b.attributes('title')?.includes('extrahieren'));
     expect(splitBtn).toBeDefined();
 
     vi.mocked(createTask).mockClear();

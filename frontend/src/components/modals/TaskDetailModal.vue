@@ -543,11 +543,11 @@ onBeforeRouteLeave(async () => {
                       v-if="hasChecklist"
                       type="button"
                       @click="handleSplitAllSubtasks"
-                      class="text-xs text-theme-text-muted hover:text-theme-accent transition-colors flex items-center gap-1.5 cursor-pointer py-0.5 px-1.5 rounded hover:bg-theme-column/40"
+                      class="p-1 text-theme-text-muted hover:text-theme-accent hover:bg-theme-border/20 rounded transition-colors cursor-pointer opacity-70 hover:opacity-100"
                       :title="t('form.splitSubtasksTooltip')"
+                      aria-label="Split subtasks"
                     >
-                      <Split class="w-3.5 h-3.5 opacity-70" />
-                      <span class="font-normal">{{ t('form.splitSubtasks') }}</span>
+                      <Split class="w-3.5 h-3.5" />
                     </button>
                     <button
                       v-if="!hasChecklist"
