@@ -9,6 +9,7 @@ import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
 import { updateTask } from '@/api';
 import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
+import PriorityIcon from '@/components/ui/PriorityIcon.vue';
 
 const { t, locale } = useI18n();
 const selectionStore = useSelectionStore();
@@ -203,21 +204,6 @@ const formatDate = (dateStr: string) => {
     return d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' });
   } catch {
     return dateStr;
-  }
-};
-
-const getPriorityClasses = (prio: string) => {
-  switch (prio) {
-    case 'low':
-      return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-    case 'medium':
-      return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-    case 'high':
-      return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
-    case 'urgent':
-      return 'bg-red-500/10 text-red-400 border-red-500/20 animate-pulse';
-    default:
-      return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
   }
 };
 
@@ -417,16 +403,7 @@ const handleTagClick = (tag: string) => {
       </div>
 
       <!-- Priority -->
-      <div
-        v-if="task.priority"
-        class="rounded border uppercase tracking-wider leading-none"
-        :class="[
-          getPriorityClasses(task.priority),
-          compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold',
-        ]"
-      >
-        {{ task.priority }}
-      </div>
+      <PriorityIcon v-if="task.priority" :priority="task.priority" :compact="compact" />
 
       <!-- Checklist Stats (Only displayed in footer row if not already shown inside the checklist bounding box) -->
       <div

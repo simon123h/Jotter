@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useSelectionStore } from '@/stores/selection';
 import { storeToRefs } from 'pinia';
+import PriorityIcon from '@/components/ui/PriorityIcon.vue';
 
 const { t, locale, tBucket } = useI18n();
 const route = useRoute();
@@ -256,9 +257,7 @@ const getBucketTitle = (name: string) => {
               </span>
             </td>
             <td class="px-4 py-2.5 text-center">
-              <span v-if="task.priority" class="text-xs uppercase tracking-widest" :class="getPriorityClasses(task.priority)">
-                {{ task.priority }}
-              </span>
+              <PriorityIcon v-if="task.priority" :priority="task.priority" show-label />
               <span v-else class="text-theme-text-muted opacity-30">-</span>
             </td>
             <td class="px-4 py-2.5 text-center text-xs text-theme-text-card">
