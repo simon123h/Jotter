@@ -127,21 +127,6 @@ const formatDate = (dateStr?: string) => {
   }
 };
 
-const getPriorityClasses = (prio?: string) => {
-  switch (prio) {
-    case 'low':
-      return 'text-blue-400';
-    case 'medium':
-      return 'text-yellow-400';
-    case 'high':
-      return 'text-orange-400';
-    case 'urgent':
-      return 'text-red-400 font-bold';
-    default:
-      return 'text-theme-text-muted';
-  }
-};
-
 const getBucketTitle = (name: string) => {
   const b = props.buckets.find((b) => b.name === name);
   return tBucket(name, b?.title);
