@@ -186,8 +186,8 @@ export async function createTask(
   task: {
     title: string;
     bucket: string;
-    tags: string[];
-    body: string;
+    tags?: string[];
+    body?: string;
     due_date?: string;
     planned_date?: string;
     priority?: string;

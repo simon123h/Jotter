@@ -374,7 +374,16 @@ export async function getTask(projectId: string, id: string): Promise<Task> {
 
 export async function createTask(
   projectId: string,
-  task: { title: string; bucket: string; tags: string[]; body: string; due_date?: string; priority?: string; color?: string | null }
+  task: {
+    title: string;
+    bucket: string;
+    tags?: string[];
+    body?: string;
+    due_date?: string;
+    planned_date?: string;
+    priority?: string;
+    color?: string | null;
+  }
 ): Promise<Task> {
   const tasksMap = getDemoTasksMap();
   const list = tasksMap[projectId] || [];
@@ -406,10 +415,11 @@ export async function createTask(
     title: task.title,
     bucket: task.bucket,
     position: pos,
-    tags: task.tags.map((t) => t.toLowerCase()),
+    tags: (task.tags || []).map((t) => t.toLowerCase()),
     attachments: [],
-    body: task.body,
+    body: task.body || '',
     due_date: task.due_date,
+    planned_date: task.planned_date,
     priority: task.priority,
     color: task.color || null,
     created_at: now,
