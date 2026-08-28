@@ -1,8 +1,8 @@
 """SQLite repository for indexing and querying tasks."""
 
+from datetime import datetime, timezone
 import json
 import sqlite3
-from datetime import datetime, timezone
 from typing import Any
 
 from jotter.features.tasks.domain import Task
@@ -199,34 +199,49 @@ class SqliteTaskRepository:
         rows = cursor.fetchall()
         tasks = [self._row_to_task(row) for row in rows]
 
-        # Tag in-memory filtering
         effective_tags = list(tags) if tags else ([tag] if tag else [])
-        if effective_tags or search:
-            filtered: list[Task] = []
-            for t in tasks:
-                task_tag_vals = [tag_obj.value for tag_obj in t.tags]
+        if not effective_tags and not search:
+            return tasks
 
-                if effective_tags:
-                    filter_tags_lower = [ft.lower() for ft in effective_tags if ft]
-                    if tag_mode == "all":
-                        if not all(ft in task_tag_vals for ft in filter_tags_lower):
-                            continue
-                    else:  # any
-                        if not any(ft in task_tag_vals for ft in filter_tags_lower):
-                            continue
+        return [
+            t
+            for t in tasks
+            if self._matches_tags_and_search(
+                task=t,
+                effective_tags=effective_tags,
+                tag_mode=tag_mode,
+                search=search,
+            )
+        ]
 
-                if search:
-                    s_lower = search.lower()
-                    matches_title = s_lower in t.title.lower()
-                    matches_body = s_lower in (t.body or "").lower()
-                    matches_tags = any(s_lower in tv for tv in task_tag_vals)
-                    if not (matches_title or matches_body or matches_tags):
-                        continue
+    def _matches_tags_and_search(
+        self,
+        task: Task,
+        effective_tags: list[str],
+        tag_mode: str,
+        search: str | None,
+    ) -> bool:
+        """Predicate checking whether a task matches tag and text search filters."""
+        task_tag_vals = [tag_obj.value for tag_obj in task.tags]
 
-                filtered.append(t)
-            return filtered
+        if effective_tags:
+            filter_tags_lower = [ft.lower() for ft in effective_tags if ft]
+            if tag_mode == "all":
+                if not all(ft in task_tag_vals for ft in filter_tags_lower):
+                    return False
+            else:  # any
+                if not any(ft in task_tag_vals for ft in filter_tags_lower):
+                    return False
 
-        return tasks
+        if search:
+            s_lower = search.lower()
+            matches_title = s_lower in task.title.lower()
+            matches_body = s_lower in (task.body or "").lower()
+            matches_tags = any(s_lower in tv for tv in task_tag_vals)
+            if not (matches_title or matches_body or matches_tags):
+                return False
+
+        return True
 
     def _row_to_task(self, row: sqlite3.Row) -> Task:
         tags_raw = row["tags"]
