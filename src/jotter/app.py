@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from jotter.config import UserConfig
+from jotter.config import UserConfig, load_config
 from jotter.features.buckets import router as buckets_router
 from jotter.features.projects import router as projects_router
 from jotter.features.settings import router as settings_router
@@ -22,22 +22,23 @@ except ImportError:
     app_version = "3.0.0b1"
 
 
-def create_app(config: UserConfig, version: str = app_version) -> FastAPI:
+def create_app(config: UserConfig | None = None, version: str = app_version) -> FastAPI:
+    cfg = config or load_config()
     app = FastAPI(
         title="Jotter API",
         version=version,
         description="Local-first Markdown Kanban Board backend API (Python)",
     )
-    app.state.config = config
+    app.state.config = cfg
     app.state.version = version
 
     # Setup database connection on app state
-    db_path = str(Path(config.data_dir) / "tasks.db")
+    db_path = str(Path(cfg.data_dir) / "tasks.db")
     conn = create_sqlite_connection(db_path)
     app.state.db = conn
 
     # Initial DB sync from disk
-    SyncApplicationService.from_data_dir(config.data_dir, conn).sync_db_only()
+    SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_db_only()
 
     # Global Domain Exception Handlers
     @app.exception_handler(EntityNotFoundError)

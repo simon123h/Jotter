@@ -4,7 +4,7 @@
   "private": true,
   "description": "Jotter - Local-First Markdown Kanban Board",
   "scripts": {
-    "dev:backend": "python3 run.py",
+    "dev:backend": "python3 run.py --reload --no-browser",
     "dev:frontend": "cd frontend && npm run dev",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",

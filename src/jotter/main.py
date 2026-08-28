@@ -71,8 +71,13 @@ def main():
         "--use-colors",
         dest="use_colors",
         action="store_true",
-        default=None,
         help="Force ANSI colored output in terminal logs",
+    )
+    parser.add_argument(
+        "--reload",
+        action="store_true",
+        default=False,
+        help="Enable auto-reload on backend code changes (development mode)",
     )
     args = parser.parse_args()
 
@@ -113,15 +118,28 @@ def main():
 
     access_log = config.log_level.lower() == "debug"
 
-    app = create_app(config)
-    uvicorn.run(
-        app,
-        host=config.host,
-        port=config.port,
-        log_level=config.log_level.lower(),
-        access_log=access_log,
-        use_colors=config.use_colors,
-    )
+    if args.reload:
+        uvicorn.run(
+            "jotter.app:create_app",
+            factory=True,
+            host=config.host,
+            port=config.port,
+            reload=True,
+            reload_dirs=["src"],
+            log_level=config.log_level.lower(),
+            access_log=access_log,
+            use_colors=config.use_colors,
+        )
+    else:
+        app = create_app(config)
+        uvicorn.run(
+            app,
+            host=config.host,
+            port=config.port,
+            log_level=config.log_level.lower(),
+            access_log=access_log,
+            use_colors=config.use_colors,
+        )
 
 
 if __name__ == "__main__":
