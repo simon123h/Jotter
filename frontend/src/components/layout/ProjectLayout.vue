@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, watchEffect } from 'vue';
+import { onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
@@ -10,15 +10,17 @@ import { updateTask, deleteTask, moveTask, createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
-import { X, Folder } from '@lucide/vue';
+import { Folder } from '@lucide/vue';
 import { useTaskFilters } from '@/composables/useTaskFilters';
 import { useDragSelect } from '@/composables/useDragSelect';
 import { useSelectionStore } from '@/stores/selection';
+import { useToast } from '@/composables/useToast';
 import { consolidateTasksIntoChecklist } from '@/utils/markdown';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
 
 const { t } = useI18n();
 const { showDialog } = useDialog();
+const toast = useToast();
 const route = useRoute();
 
 const settingsStore = useSettingsStore();
@@ -26,7 +28,7 @@ const projectStore = useProjectStore();
 const modalStore = useModalStore();
 
 const { hideDoneColumn, hideArchiveColumn, hidePostponedColumn } = storeToRefs(settingsStore);
-const { projects, buckets, tasks, loading, projectsLoaded, error: projectError } = storeToRefs(projectStore);
+const { projects, buckets, tasks, loading, projectsLoaded } = storeToRefs(projectStore);
 
 const selectionStore = useSelectionStore();
 const { isSelected, toggleSelection, selectAll, clearSelection } = selectionStore;
@@ -39,8 +41,6 @@ const {
 } = useDragSelect({
   selectedIds,
 });
-
-const localError = ref<string | null>(null);
 
 // Get the active projectId directly from the route params
 const projectId = computed(() => (route.params.projectId as string) || '');
@@ -102,13 +102,20 @@ watchEffect(() => {
 const isNoProjects = computed(() => projectsLoaded.value && projects.value.length === 0);
 
 const fetchAllData = async () => {
-  localError.value = null;
   if (isNoProjects.value || !projectId.value) return;
+  if (
+    projectsLoaded.value &&
+    projectId.value !== 'all' &&
+    projects.value.length > 0 &&
+    !projects.value.some((p) => p.id === projectId.value)
+  ) {
+    return;
+  }
   try {
     await projectStore.fetchBuckets(projectId.value);
     await projectStore.invalidate();
   } catch (err: any) {
-    localError.value = t('errors.fetchData', { message: err.message || err });
+    toast.error(t('errors.fetchData', { message: err.message || err }));
   }
 };
 
@@ -148,13 +155,8 @@ useKeyboardShortcuts([
     key: 'q',
     shiftKey: true,
     callback: () => {
-      if (!modalStore.activeModal && !route.params.taskId) {
-        modalStore.openTaskCreate(defaultBucketName.value, {
-          priority: 'urgent',
-          color: 'orange',
-          planned: 'today',
-        });
-      }
+      const defCol = buckets.value.find((b) => b.is_default);
+      openCreateModal(defCol?.name || 'todo');
     },
   },
   {
@@ -169,6 +171,7 @@ useKeyboardShortcuts([
   },
   {
     key: 'Escape',
+    allowInInputs: false,
     callback: () => {
       if (hasSelection.value) {
         clearSelection();
@@ -176,18 +179,6 @@ useKeyboardShortcuts([
     },
   },
 ]);
-
-const error = computed({
-  get() {
-    return localError.value || projectError.value;
-  },
-  set(val) {
-    localError.value = val;
-    if (!val) {
-      projectStore.error = null;
-    }
-  },
-});
 
 const commonTags = computed(() => {
   const selectedTasks = tasks.value.filter((t) => isSelected(t.id));
@@ -213,7 +204,7 @@ const handleBulkDelete = async () => {
     clearSelection();
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk delete failed: ${err.message}`;
+    toast.error(`Bulk delete failed: ${err.message}`);
   }
 };
 
@@ -226,7 +217,7 @@ const handleBulkMoveBucket = async (bucket: string) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk move failed: ${err.message}`;
+    toast.error(`Bulk move failed: ${err.message}`);
   }
 };
 
@@ -246,7 +237,7 @@ const handleBulkEditTag = async (tag: string, remove: boolean) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk tagging failed: ${err.message}`;
+    toast.error(`Bulk tagging failed: ${err.message}`);
   }
 };
 
@@ -259,7 +250,7 @@ const handleBulkSetPriority = async (priority: string) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk priority set failed: ${err.message}`;
+    toast.error(`Bulk priority set failed: ${err.message}`);
   }
 };
 
@@ -272,7 +263,7 @@ const handleBulkSetColor = async (color: string | null) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk color change failed: ${err.message}`;
+    toast.error(`Bulk color change failed: ${err.message}`);
   }
 };
 
@@ -285,7 +276,7 @@ const handleBulkSetPlanned = async (planned: string) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk planning failed: ${err.message}`;
+    toast.error(`Bulk planning failed: ${err.message}`);
   }
 };
 
@@ -298,7 +289,7 @@ const handleBulkSetDueDate = async (date: string) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk due date set failed: ${err.message}`;
+    toast.error(`Bulk due date set failed: ${err.message}`);
   }
 };
 
@@ -311,7 +302,7 @@ const handleBulkSetPostponedDate = async (date: string) => {
     }
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk postpone failed: ${err.message}`;
+    toast.error(`Bulk postpone failed: ${err.message}`);
   }
 };
 
@@ -332,7 +323,7 @@ const handleBulkArchive = async () => {
     clearSelection();
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk archive failed: ${err.message}`;
+    toast.error(`Bulk archive failed: ${err.message}`);
   }
 };
 
@@ -348,7 +339,7 @@ const handleBulkMarkDone = async () => {
     clearSelection();
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk mark done failed: ${err.message}`;
+    toast.error(`Bulk mark done failed: ${err.message}`);
   }
 };
 
@@ -407,23 +398,13 @@ const handleBulkConsolidate = async () => {
     clearSelection();
     await fetchAllData();
   } catch (err: any) {
-    localError.value = `Bulk consolidate failed: ${err.message}`;
+    toast.error(`Bulk consolidate failed: ${err.message}`);
   }
 };
 </script>
 
 <template>
   <div class="h-full flex flex-col overflow-hidden">
-    <div
-      v-if="error"
-      class="mt-2 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded flex justify-between items-center shrink-0"
-    >
-      <span>{{ error }}</span>
-      <button @click="error = null" class="hover:text-white cursor-pointer">
-        <X class="w-4 h-4" />
-      </button>
-    </div>
-
     <div @mousedown="handleDragSelectMouseDown" class="flex-grow overflow-hidden relative">
       <div v-if="loading && !tasks.length" class="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <div class="w-10 h-10 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>

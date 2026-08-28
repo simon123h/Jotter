@@ -26,6 +26,20 @@ function updateStatusFromResponse(response: Response) {
   }
 }
 
+// Helper to extract detailed, user-friendly error messages from backend JSON responses
+async function handleResponseError(response: Response, fallbackPrefix: string): Promise<never> {
+  let detail: string | undefined;
+  try {
+    const errorData = await response.json();
+    if (errorData && errorData.detail) {
+      detail = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+    }
+  } catch {
+    // Ignore non-json response bodies
+  }
+  throw new Error(detail || `${fallbackPrefix}: ${response.statusText || response.status}`);
+}
+
 // Centralized status checker using raw fetch to avoid loop overhead
 export async function checkServerStatus(): Promise<boolean> {
   if (IS_DEMO_MODE) {
@@ -69,7 +83,7 @@ export async function getProjects(): Promise<Project[]> {
   }
   const response = await customFetch(`${API_BASE}/projects`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch projects: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to fetch projects');
   }
   return response.json();
 }
@@ -84,8 +98,7 @@ export async function createProject(title: string, git_remote?: string | null): 
     body: JSON.stringify({ title, git_remote }),
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to create project: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to create project');
   }
   return response.json();
 }
@@ -100,8 +113,7 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
     body: JSON.stringify(updates),
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to update project: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to update project');
   }
   return response.json();
 }
@@ -114,8 +126,7 @@ export async function deleteProject(id: string): Promise<void> {
     method: 'DELETE',
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to delete project: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to delete project');
   }
 }
 
@@ -144,14 +155,14 @@ function appendTaskFilterParams(url: URL, filters?: TaskFilterParams) {
 
 export async function getAllTasks(filters?: TaskFilterParams): Promise<Task[]> {
   if (IS_DEMO_MODE) {
-    return demoApi.getTasks('default', filters); // Demo mode doesn't support global yet
+    return demoApi.getTasks('default', filters);
   }
   const url = new URL(`${API_BASE}/tasks`, window.location.origin);
   appendTaskFilterParams(url, filters);
 
   const response = await customFetch(url.toString());
   if (!response.ok) {
-    throw new Error(`Failed to fetch all tasks: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to fetch all tasks');
   }
   return response.json();
 }
@@ -165,7 +176,7 @@ export async function getTasks(projectId: string, filters?: TaskFilterParams): P
 
   const response = await customFetch(url.toString());
   if (!response.ok) {
-    throw new Error(`Failed to fetch tasks: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to fetch tasks');
   }
   return response.json();
 }
@@ -176,7 +187,7 @@ export async function getTask(projectId: string, id: string): Promise<Task> {
   }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/tasks/${id}`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch task ${id}: ${response.statusText}`);
+    await handleResponseError(response, `Failed to fetch task ${id}`);
   }
   return response.json();
 }
@@ -203,7 +214,7 @@ export async function createTask(
     body: JSON.stringify(task),
   });
   if (!response.ok) {
-    throw new Error(`Failed to create task: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to create task');
   }
   return response.json();
 }
@@ -218,7 +229,7 @@ export async function updateTask(projectId: string, id: string, task: Partial<Ta
     body: JSON.stringify(task),
   });
   if (!response.ok) {
-    throw new Error(`Failed to update task ${id}: ${response.statusText}`);
+    await handleResponseError(response, `Failed to update task ${id}`);
   }
   return response.json();
 }
@@ -233,7 +244,7 @@ export async function moveTask(projectId: string, id: string, bucket: string, po
     body: JSON.stringify({ bucket, position }),
   });
   if (!response.ok) {
-    throw new Error(`Failed to move task ${id}: ${response.statusText}`);
+    await handleResponseError(response, `Failed to move task ${id}`);
   }
   return response.json();
 }
@@ -246,7 +257,7 @@ export async function deleteTask(projectId: string, id: string): Promise<void> {
     method: 'DELETE',
   });
   if (!response.ok) {
-    throw new Error(`Failed to delete task: ${response.statusText}`);
+    await handleResponseError(response, `Failed to delete task ${id}`);
   }
 }
 
@@ -262,7 +273,7 @@ export async function uploadAttachment(projectId: string, taskId: string, file: 
     body: formData,
   });
   if (!response.ok) {
-    throw new Error(`Failed to upload attachment: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to upload attachment');
   }
   return response.json();
 }
@@ -275,7 +286,7 @@ export async function deleteAttachment(projectId: string, taskId: string, filena
     method: 'DELETE',
   });
   if (!response.ok) {
-    throw new Error(`Failed to delete attachment: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to delete attachment');
   }
   return response.json();
 }
@@ -294,7 +305,7 @@ export async function getBuckets(projectId: string): Promise<Bucket[]> {
   }
   const response = await customFetch(`${API_BASE}/projects/${projectId}/buckets`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch columns: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to fetch columns');
   }
   return response.json();
 }
@@ -316,8 +327,7 @@ export async function createBucket(
     body: JSON.stringify({ title, subtitle, color, layout, max_tasks }),
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to create column: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to create column');
   }
   return response.json();
 }
@@ -332,8 +342,7 @@ export async function updateBucket(projectId: string, name: string, bucketUpdate
     body: JSON.stringify(bucketUpdates),
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to update column: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to update column');
   }
   return response.json();
 }
@@ -346,8 +355,7 @@ export async function deleteBucket(projectId: string, name: string): Promise<voi
     method: 'DELETE',
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to delete column: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to delete column');
   }
 }
 
@@ -359,10 +367,11 @@ export async function syncSystem(): Promise<{ status: string; synchronized_tasks
   if (IS_DEMO_MODE) {
     return demoApi.syncSystem();
   }
-  const response = await customFetch(`${API_BASE}/system/sync`);
+  const response = await customFetch(`${API_BASE}/system/sync`, {
+    method: 'POST',
+  });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to synchronize: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to synchronize');
   }
   return response.json();
 }
@@ -375,8 +384,7 @@ export async function getSystemInfo(): Promise<SystemInfo> {
     method: 'GET',
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to fetch system info: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to fetch system info');
   }
   return response.json();
 }
@@ -391,8 +399,7 @@ export async function getGitHistory(projectId?: string): Promise<GitCommit[]> {
   }
   const response = await customFetch(url.toString());
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to fetch git history: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to fetch git history');
   }
   return response.json();
 }
@@ -407,8 +414,7 @@ export async function restoreCommit(commitHash: string, projectId?: string): Pro
     body: JSON.stringify({ commitHash, projectId }),
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to restore commit: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to restore commit');
   }
   return response.json();
 }
@@ -447,7 +453,7 @@ export async function getSettings(): Promise<AppSettings> {
 
   const response = await customFetch(`${API_BASE}/settings`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch settings: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to fetch settings');
   }
   return response.json();
 }
@@ -464,6 +470,6 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     body: JSON.stringify(settings),
   });
   if (!response.ok) {
-    throw new Error(`Failed to save settings: ${response.statusText}`);
+    await handleResponseError(response, 'Failed to save settings');
   }
 }

@@ -11,11 +11,12 @@ import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useProjects } from '@/composables/useProjects';
 import { useTaskFilters } from '@/composables/useTaskFilters';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
-import { X } from '@lucide/vue';
+import { useToast } from '@/composables/useToast';
 import { useTaskExport } from '@/composables/useTaskExport';
 
 const route = useRoute();
 const router = useRouter();
+const toast = useToast();
 
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
@@ -25,7 +26,12 @@ const { isSidebarOpen, currentTheme } = storeToRefs(settingsStore);
 const autoSyncInterval = computed(() => settingsStore.autoSyncInterval ?? 0);
 const { projects, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
 
-const localError = ref<string | null>(null);
+// Watch for global project errors and notify non-intrusively via toast
+watch(projectError, (newErr) => {
+  if (newErr) {
+    toast.error(newErr);
+  }
+});
 
 // Derive active project ID strictly from the current route params
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
@@ -55,6 +61,7 @@ watch(
       if (newRouteId && newRouteId !== 'settings' && newRouteId !== 'all') {
         const routeProjectExists = newProjects.some((p) => p.id === newRouteId);
         if (!routeProjectExists) {
+          projectStore.error = null;
           selectProject(newProjects[0].id);
         }
       }
@@ -64,6 +71,7 @@ watch(
 );
 
 const selectProject = (projectId: string) => {
+  projectStore.error = null;
   router.push({
     name: 'project',
     params: { projectId },
@@ -98,26 +106,35 @@ const openFilterModal = () => {
   });
 };
 
-const { exportTasks } = useTaskExport(filteredTasks, activeProjectId);
-
-const openCreateModal = (bucket: string) => {
-  modalStore.openTaskCreate(bucket);
+const openCreateModal = (bucketName?: string) => {
+  modalStore.openTaskCreate(bucketName || 'todo');
 };
+
+const { exportTasks } = useTaskExport(filteredTasks, activeProjectId);
 
 // Project creation handling using standard projects composable
 const { handleCreateProject: runCreateProject } = useProjects(selectProject);
 
 const handleCreateProject = async (title: string) => {
-  await runCreateProject(title);
-  await projectStore.fetchProjects(); // sync global project store list
+  try {
+    await runCreateProject(title);
+    await projectStore.fetchProjects(); // sync global project store list
+  } catch (err: any) {
+    toast.error(err.message || 'Failed to create project');
+  }
 };
 
-const triggerSync = async () => {
+const triggerSync = async (isManual = false) => {
   try {
     await projectStore.triggerSync();
     localStorage.setItem('jotter-last-sync-time', String(Date.now()));
-  } catch {
-    // Error is stored in projectStore.error and displayed automatically
+    if (isManual) {
+      toast.success('Workspace synchronized');
+    }
+  } catch (err: any) {
+    if (isManual) {
+      toast.error(err.message || 'Sync failed', 'Sync Error');
+    }
   }
 };
 
@@ -132,8 +149,7 @@ const checkAutoSync = () => {
   const now = Date.now();
 
   if (!lastSyncTime || now - lastSyncTime >= interval * 60 * 1000) {
-    console.log(`[Auto-Sync] Triggering automatic sync (interval: ${interval} minutes)`);
-    triggerSync();
+    triggerSync(false);
   }
 };
 
@@ -145,18 +161,6 @@ watch(
     }
   }
 );
-
-const error = computed({
-  get() {
-    return localError.value || projectError.value;
-  },
-  set(val) {
-    localError.value = val;
-    if (!val) {
-      projectStore.error = null;
-    }
-  },
-});
 
 const handleMoveTasksToProject = ({ taskIds, projectId: targetProjectId }: { taskIds: string[]; projectId: string }) => {
   modalStore.openMoveTasksConfirm(taskIds, targetProjectId);
@@ -204,24 +208,14 @@ onBeforeUnmount(() => {
           :sync-success="syncSuccess"
           @create-project="handleCreateProject"
           @edit-project="modalStore.openProjectEdit"
-          @sync="triggerSync"
+          @sync="() => triggerSync(true)"
           @import-spreadsheet="modalStore.openImportSpreadsheet"
           @move-tasks-to-project="handleMoveTasksToProject"
         />
       </transition>
 
       <div class="flex-grow flex flex-col p-3 overflow-hidden">
-        <div
-          v-if="error"
-          class="mt-2 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded flex justify-between items-center shrink-0"
-        >
-          <span>{{ error }}</span>
-          <button @click="error = null" class="hover:text-white cursor-pointer">
-            <X class="w-4 h-4" />
-          </button>
-        </div>
-
-        <div class="flex-grow overflow-hidden mt-2.5 relative">
+        <div class="flex-grow overflow-hidden relative">
           <!-- Main layout content rendering either global views or ProjectLayout -->
           <router-view />
         </div>
