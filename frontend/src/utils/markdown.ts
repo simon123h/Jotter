@@ -55,7 +55,10 @@ export function extractAllChecklistItems(body: string): {
     }
   }
 
-  const cleaned = remainingLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const cleaned = remainingLines
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 
   return {
     items,

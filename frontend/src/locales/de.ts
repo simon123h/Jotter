@@ -61,7 +61,8 @@ export const de = {
     quickAddChecklist: 'Liste hinzufügen',
     splitSubtasks: 'Unteraufgaben in Karten umwandeln',
     splitSubtasksTooltip: 'Alle Checklisten-Einträge als eigenständige Aufgabenkarten extrahieren',
-    splitSubtasksConfirm: 'Möchtest du wirklich {count} Checklisten-Eintrag/-Einträge in eigenständige Aufgabenkarten umwandeln? Sie werden aus dieser Beschreibung entfernt.',
+    splitSubtasksConfirm:
+      'Möchtest du wirklich {count} Checklisten-Eintrag/-Einträge in eigenständige Aufgabenkarten umwandeln? Sie werden aus dieser Beschreibung entfernt.',
     dueDateLabel: 'Fälligkeitsdatum',
     plannedDateLabel: 'Geplant für',
     priorityLabel: 'Priorität',
