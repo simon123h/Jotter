@@ -5,22 +5,30 @@ import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/vi
 import { basicSetup } from 'codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { indentWithTab } from '@codemirror/commands';
+import { Mic, MicOff } from '@lucide/vue';
+import { useSpeechRecognition } from '@/composables/useSpeechRecognition';
+import { useI18n } from '@/composables/useI18n';
 
 interface Props {
   modelValue?: string;
   placeholder?: string;
   rows?: number;
+  showDictation?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
   placeholder: '',
   rows: 10,
+  showDictation: true,
 });
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void;
 }>();
+
+const { t } = useI18n();
+const { isSupported, isListening, startListening, stopListening } = useSpeechRecognition();
 
 const editorContainer = ref<HTMLDivElement | null>(null);
 let view: EditorView | null = null;
@@ -141,6 +149,21 @@ const appendTextAndFocus = (text: string) => {
   view.focus();
 };
 
+const handleDictationToggle = () => {
+  if (isListening.value) {
+    stopListening();
+  } else {
+    startListening({
+      continuous: false,
+      onResult: (spokenText, isFinal) => {
+        if (isFinal && spokenText.trim()) {
+          appendTextAndFocus(spokenText.trim());
+        }
+      },
+    });
+  }
+};
+
 const focus = () => {
   if (view) {
     view.focus();
@@ -154,8 +177,26 @@ defineExpose({
 </script>
 
 <template>
-  <div class="codemirror-wrapper w-full">
+  <div class="codemirror-wrapper w-full relative group">
     <div ref="editorContainer" class="w-full"></div>
+
+    <!-- Dictation Mic button in top-right corner of editor -->
+    <button
+      v-if="showDictation && isSupported"
+      type="button"
+      @click.stop.prevent="handleDictationToggle"
+      class="absolute top-2 right-2 p-1.5 rounded-md transition-all focus:outline-none z-10 cursor-pointer shadow-sm border border-theme-border/40"
+      :class="
+        isListening
+          ? 'text-rose-400 bg-rose-500/20 border-rose-500/40 animate-pulse'
+          : 'text-theme-muted hover:text-theme-primary bg-theme-base/80 hover:bg-theme-hover opacity-60 group-hover:opacity-100'
+      "
+      :title="isListening ? t('speech.stopListening') : t('speech.startDictation')"
+      tabindex="-1"
+    >
+      <Mic v-if="!isListening" class="w-3.5 h-3.5" />
+      <MicOff v-else class="w-3.5 h-3.5" />
+    </button>
   </div>
 </template>
 

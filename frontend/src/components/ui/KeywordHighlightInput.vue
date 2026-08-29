@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { Mic, MicOff } from '@lucide/vue';
 import { getKeywordMatches } from '@/utils/titleParser';
 import { useI18n } from '@/composables/useI18n';
+import { useSpeechRecognition } from '@/composables/useSpeechRecognition';
 
 const { t: translate } = useI18n();
+const { isSupported, isListening, startListening, stopListening } = useSpeechRecognition();
 
 const props = withDefaults(
   defineProps<{
@@ -13,12 +16,14 @@ const props = withDefaults(
     locale?: string;
     ignoredKeywords: Set<string>;
     required?: boolean;
+    showDictation?: boolean;
   }>(),
   {
     placeholder: '',
     bucketNames: () => [],
     locale: 'en',
     required: false,
+    showDictation: true,
   }
 );
 
@@ -35,6 +40,24 @@ const emit = defineEmits<{
 
 const inputEl = ref<HTMLInputElement | null>(null);
 const overlayEl = ref<HTMLDivElement | null>(null);
+
+let baseTextBeforeDictation = '';
+
+const handleDictationToggle = () => {
+  if (isListening.value) {
+    stopListening();
+  } else {
+    baseTextBeforeDictation = props.modelValue.trim();
+    startListening({
+      lang: props.locale === 'de' ? 'de-DE' : 'en-US',
+      onResult: (spokenText) => {
+        const textToSet = baseTextBeforeDictation ? `${baseTextBeforeDictation} ${spokenText}` : spokenText;
+        emit('update:modelValue', textToSet);
+        emit('input', new Event('input'));
+      },
+    });
+  }
+};
 
 // Sync scroll left
 const handleScroll = () => {
@@ -104,6 +127,13 @@ const tokens = computed(() => {
 });
 
 const handleKeyDown = (event: KeyboardEvent) => {
+  // Shortcut Alt+D to toggle dictation
+  if (event.altKey && event.key.toLowerCase() === 'd' && props.showDictation && isSupported.value) {
+    event.preventDefault();
+    handleDictationToggle();
+    return;
+  }
+
   if (event.key === 'Backspace' && inputEl.value) {
     const start = inputEl.value.selectionStart;
     const end = inputEl.value.selectionEnd;
@@ -155,6 +185,7 @@ defineExpose({
     <div
       ref="overlayEl"
       class="absolute inset-0 px-3 py-1.5 text-sm font-sans pointer-events-none select-none overflow-hidden border border-transparent whitespace-pre flex items-center leading-normal bg-transparent"
+      :class="{ 'pr-9': showDictation && isSupported }"
     >
       <!-- Sub-container to mimic scrolling and text layout perfectly -->
       <div class="inline-block whitespace-pre leading-normal align-middle">
@@ -207,7 +238,22 @@ defineExpose({
       :placeholder="placeholder"
       :required="required"
       class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring font-sans"
+      :class="{ 'pr-9': showDictation && isSupported }"
     />
+
+    <!-- Subtle Mic Dictation Button -->
+    <button
+      v-if="showDictation && isSupported"
+      type="button"
+      @click.stop.prevent="handleDictationToggle"
+      class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded transition-all focus:outline-none z-20 cursor-pointer"
+      :class="isListening ? 'text-rose-400 bg-rose-500/20 animate-pulse' : 'text-theme-muted hover:text-theme-primary hover:bg-theme-hover'"
+      :title="isListening ? translate('speech.stopListening') : `${translate('speech.startDictation')} (Alt+D)`"
+      tabindex="-1"
+    >
+      <Mic v-if="!isListening" class="w-3.5 h-3.5" />
+      <MicOff v-else class="w-3.5 h-3.5" />
+    </button>
   </div>
 </template>
 

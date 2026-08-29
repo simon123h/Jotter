@@ -29,3 +29,4 @@ Diese Tastenkombinationen gelten, wenn ein modales Dialogfenster (z. B. Aufgaben
 | :--- | :--- | :--- |
 | <kbd>Escape</kbd> | **Schließen** | Schließt das aktive Dialogfenster und kehrt zum Board zurück. |
 | <kbd>Strg</kbd> + <kbd>Enter</kbd> | **Speichern** | Speichert deine Änderungen im Editor der Aufgabendetail-Ansicht. |
+| <kbd>Alt</kbd> + <kbd>D</kbd> | **Diktat umschalten** | Startet oder stoppt das Sprachdiktat in Titeleingabefeldern. |

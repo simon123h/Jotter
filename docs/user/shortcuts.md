@@ -29,3 +29,4 @@ These shortcuts apply when a modal (such as Task Detail, Task Create, or Setting
 | :--- | :--- | :--- |
 | <kbd>Escape</kbd> | **Close Modal** | Closes the active dialog or modal and returns you to the board. |
 | <kbd>Ctrl</kbd> + <kbd>Enter</kbd> | **Save Changes** | Saves your edits inside the Task Detail editor view. |
+| <kbd>Alt</kbd> + <kbd>D</kbd> | **Toggle Dictation** | Starts or stops voice dictation while focused in task title inputs. |
