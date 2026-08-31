@@ -40,6 +40,10 @@ def test_due_date_value_object():
     d_none = DueDate.from_str(None)
     assert d_none.value is None
 
+    assert DueDate.from_str("sometime").value == "sometime"
+    assert DueDate.from_str("thisWeek").value == "thisWeek"
+    assert DueDate.from_str("this-month").value == "this-month"
+
     with pytest.raises(ValidationError):
         DueDate.from_str("invalid-date-format")
 

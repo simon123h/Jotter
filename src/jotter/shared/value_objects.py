@@ -59,11 +59,14 @@ class DueDate:
             "today",
             "tomorrow",
             "someday",
+            "sometime",
             "this-week",
             "next-week",
             "thisweek",
             "thismonth",
             "thisyear",
+            "this-month",
+            "this-year",
         ):
             return cls(value=clean)
         if len(clean) >= 10 and clean[4] == "-" and clean[7] == "-":
