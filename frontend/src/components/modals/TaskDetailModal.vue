@@ -58,6 +58,13 @@ const titleInput = ref<any>(null);
 const markdownEditor = ref<any>(null);
 const attachmentsRef = ref<any>(null);
 
+const formatTimestamp = (isoString?: string | null): string => {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
+  return d.toLocaleString();
+};
+
 const { patchTask } = useTaskMutations(
   tasks,
   actualProjectId,
@@ -565,9 +572,12 @@ onBeforeRouteLeave(async () => {
                 <TaskChecklist :body="task.body" @update:body="toggleCheckboxInBody" @error="error = $event" />
               </div>
 
-              <div class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono">
-                <span>{{ t('timestampCreated', { date: new Date(task.created_at).toLocaleString() }) }}</span>
-                <span>{{ t('timestampUpdated', { date: new Date(task.updated_at).toLocaleString() }) }}</span>
+              <div
+                v-if="task.created_at || task.updated_at"
+                class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono"
+              >
+                <span v-if="task.created_at">{{ t('timestampCreated', { date: formatTimestamp(task.created_at) }) }}</span>
+                <span v-if="task.updated_at">{{ t('timestampUpdated', { date: formatTimestamp(task.updated_at) }) }}</span>
               </div>
 
               <!-- Attachments subcomponent -->
