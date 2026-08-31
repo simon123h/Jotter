@@ -7,7 +7,7 @@ import matplotlib.dates as mdates
 
 def plot_loc():
     dates = []
-    go_loc = []
+    backend_loc = []
     frontend_loc = []
     total_loc = []
 
@@ -18,7 +18,7 @@ def plot_loc():
             # Parse the date
             date_val = datetime.strptime(row["Date"], "%Y-%m-%d")
             dates.append(date_val)
-            go_loc.append(int(row["Go_LOC"]))
+            backend_loc.append(int(row["Backend_LOC"]))
             frontend_loc.append(int(row["TS_Vue_CSS_LOC"]))
             total_loc.append(int(row["Total_LOC"]))
 
@@ -27,7 +27,7 @@ def plot_loc():
 
     # Plot each line
     ax.plot(dates, total_loc, label="Total LOC", color="#1f77b4", linewidth=2.5)
-    ax.plot(dates, go_loc, label="Go (Backend) LOC", color="#2ca02c", linewidth=1.8, linestyle="--")
+    ax.plot(dates, backend_loc, label="Backend LOC", color="#2ca02c", linewidth=1.8, linestyle="--")
     ax.plot(dates, frontend_loc, label="TS/Vue/CSS (Frontend) LOC", color="#d62728", linewidth=1.8, linestyle=":")
 
     # Format the title and labels
