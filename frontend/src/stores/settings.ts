@@ -21,6 +21,9 @@ export const useSettingsStore = defineStore('settings', () => {
     language: '',
     tagColors: {},
     autoSyncInterval: 0,
+    timeboxWeekMode: 'workweek',
+    timeboxStartHour: 8,
+    timeboxEndHour: 18,
   });
 
   let skipSave = false;
@@ -39,6 +42,9 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!state.tagColors) state.tagColors = {};
       if (state.autoSyncInterval === undefined) state.autoSyncInterval = 0;
       if (state.hidePostponedColumn === undefined) state.hidePostponedColumn = true;
+      if (!state.timeboxWeekMode) state.timeboxWeekMode = 'workweek';
+      if (state.timeboxStartHour === undefined) state.timeboxStartHour = 8;
+      if (state.timeboxEndHour === undefined) state.timeboxEndHour = 18;
 
       await nextTick();
       skipSave = false;
@@ -175,8 +181,14 @@ export const useSettingsStore = defineStore('settings', () => {
     state.autoSyncInterval = minutes;
   };
 
+  const updateSettings = (updates: Partial<AppSettings>) => {
+    Object.assign(state, updates);
+  };
+
   return {
     ...toRefs(state),
+    settings: state,
+    updateSettings,
     loadSettings,
     toggleHideDoneColumn,
     toggleSidebar,

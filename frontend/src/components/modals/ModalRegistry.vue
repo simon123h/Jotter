@@ -8,6 +8,7 @@ import FilterModal from './FilterModal.vue';
 import TaskImportModal from './TaskImportModal.vue';
 import MoveTasksConfirmModal from './MoveTasksConfirmModal.vue';
 import TimeMachineModal from './TimeMachineModal.vue';
+import TimeboxEditModal from './TimeboxEditModal.vue';
 
 const modalStore = useModalStore();
 const projectStore = useProjectStore();
@@ -74,6 +75,17 @@ const handleTaskCreateSuccess = async () => {
         v-else-if="activeModal === 'time-machine'"
         :is-open="true"
         :project-id="modalProps.projectId"
+        @close="modalStore.closeModal"
+      />
+
+      <!-- Timebox Edit Modal -->
+      <TimeboxEditModal
+        v-else-if="activeModal === 'timebox-edit'"
+        :is-open="true"
+        :timebox="modalProps.timebox"
+        :initial-date="modalProps.initialDate"
+        :initial-start-time="modalProps.initialStartTime"
+        :initial-end-time="modalProps.initialEndTime"
         @close="modalStore.closeModal"
       />
     </div>

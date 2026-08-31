@@ -82,6 +82,9 @@ export interface AppSettings {
   language?: string;
   tagColors?: Record<string, string>;
   autoSyncInterval?: number;
+  timeboxWeekMode?: 'workweek' | 'fullweek';
+  timeboxStartHour?: number;
+  timeboxEndHour?: number;
 }
 
 export interface SystemInfo {
@@ -95,4 +98,14 @@ export interface GitCommit {
   author: string;
   date: string;
   message: string;
+}
+
+export interface Timebox {
+  id: string;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  color?: string | null;
+  taskIds: string[];
 }

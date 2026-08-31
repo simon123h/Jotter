@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit } from '@/types';
+import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timebox } from '@/types';
 import * as demoApi from '@/api.demo';
 
 const API_BASE = '/api';
@@ -479,4 +479,145 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
   if (!response.ok) {
     await handleResponseError(response, 'Failed to save settings');
   }
+}
+
+// ---------------------------------------------------------------------------
+// Timebox API
+// ---------------------------------------------------------------------------
+
+const DEMO_TIMEBOXES_KEY = 'jotter_demo_timeboxes';
+
+export async function getTimeboxes(params?: { startDate?: string; endDate?: string }): Promise<Timebox[]> {
+  if (IS_DEMO_MODE) {
+    const stored = localStorage.getItem(DEMO_TIMEBOXES_KEY);
+    let items: Timebox[] = stored ? JSON.parse(stored) : [];
+    if (params?.startDate) {
+      items = items.filter((tb) => tb.date >= params.startDate!);
+    }
+    if (params?.endDate) {
+      items = items.filter((tb) => tb.date <= params.endDate!);
+    }
+    return items;
+  }
+
+  const url = new URL(`${API_BASE}/timeboxes`, window.location.origin);
+  if (params?.startDate) url.searchParams.append('startDate', params.startDate);
+  if (params?.endDate) url.searchParams.append('endDate', params.endDate);
+
+  const response = await customFetch(url.toString());
+  if (!response.ok) {
+    await handleResponseError(response, 'Failed to fetch timeboxes');
+  }
+  return response.json();
+}
+
+export async function getTimebox(id: string): Promise<Timebox> {
+  if (IS_DEMO_MODE) {
+    const list = await getTimeboxes();
+    const item = list.find((tb) => tb.id === id);
+    if (!item) throw new Error('Timebox not found');
+    return item;
+  }
+
+  const response = await customFetch(`${API_BASE}/timeboxes/${encodeURIComponent(id)}`);
+  if (!response.ok) {
+    await handleResponseError(response, 'Failed to fetch timebox');
+  }
+  return response.json();
+}
+
+export async function createTimebox(timebox: Omit<Timebox, 'id'>): Promise<Timebox> {
+  if (IS_DEMO_MODE) {
+    const list = await getTimeboxes();
+    const newTb: Timebox = {
+      id: `tb_${Date.now()}`,
+      ...timebox,
+      taskIds: timebox.taskIds || [],
+    };
+    list.push(newTb);
+    localStorage.setItem(DEMO_TIMEBOXES_KEY, JSON.stringify(list));
+    return newTb;
+  }
+
+  const response = await customFetch(`${API_BASE}/timeboxes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(timebox),
+  });
+  if (!response.ok) {
+    await handleResponseError(response, 'Failed to create timebox');
+  }
+  return response.json();
+}
+
+export async function updateTimebox(id: string, updates: Partial<Timebox>): Promise<Timebox> {
+  if (IS_DEMO_MODE) {
+    const list = await getTimeboxes();
+    const idx = list.findIndex((tb) => tb.id === id);
+    if (idx === -1) throw new Error('Timebox not found');
+    list[idx] = { ...list[idx], ...updates };
+    localStorage.setItem(DEMO_TIMEBOXES_KEY, JSON.stringify(list));
+    return list[idx];
+  }
+
+  const response = await customFetch(`${API_BASE}/timeboxes/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  if (!response.ok) {
+    await handleResponseError(response, 'Failed to update timebox');
+  }
+  return response.json();
+}
+
+export async function deleteTimebox(id: string): Promise<void> {
+  if (IS_DEMO_MODE) {
+    const list = await getTimeboxes();
+    const filtered = list.filter((tb) => tb.id !== id);
+    localStorage.setItem(DEMO_TIMEBOXES_KEY, JSON.stringify(filtered));
+    return;
+  }
+
+  const response = await customFetch(`${API_BASE}/timeboxes/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    await handleResponseError(response, 'Failed to delete timebox');
+  }
+}
+
+export async function allocateTaskToTimebox(timeboxId: string, taskId: string, action: 'add' | 'remove' = 'add'): Promise<Timebox> {
+  if (IS_DEMO_MODE) {
+    const list = await getTimeboxes();
+    if (action === 'add') {
+      // Remove from any other box first
+      list.forEach((tb) => {
+        tb.taskIds = tb.taskIds.filter((t: string) => t !== taskId);
+      });
+      const target = list.find((tb) => tb.id === timeboxId);
+      if (target && !target.taskIds.includes(taskId)) {
+        target.taskIds.push(taskId);
+      }
+    } else {
+      const target = list.find((tb) => tb.id === timeboxId);
+      if (target) {
+        target.taskIds = target.taskIds.filter((t: string) => t !== taskId);
+      }
+    }
+    localStorage.setItem(DEMO_TIMEBOXES_KEY, JSON.stringify(list));
+    const updated = list.find((tb) => tb.id === timeboxId);
+    if (!updated) throw new Error('Timebox not found');
+    return updated;
+  }
+
+  const response = await customFetch(`${API_BASE}/timeboxes/${encodeURIComponent(timeboxId)}/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ taskId, action }),
+  });
+  if (!response.ok) {
+    await handleResponseError(response, 'Failed to allocate task to timebox');
+  }
+  return response.json();
 }

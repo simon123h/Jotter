@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ClipboardList, Check, Calendar, Clock, Paperclip, Hourglass } from '@lucide/vue';
+import { ClipboardList, Check, Calendar, Clock, Paperclip, Hourglass, Box } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { useSelectionStore } from '@/stores/selection';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
+import { useTimeboxStore } from '@/stores/timebox';
 import { updateTask } from '@/api';
 import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
 
@@ -14,6 +15,11 @@ const { t, locale } = useI18n();
 const selectionStore = useSelectionStore();
 const projectStore = useProjectStore();
 const settingsStore = useSettingsStore();
+const timeboxStore = useTimeboxStore();
+
+const allocatedTimebox = computed(() => {
+  return timeboxStore.timeboxForTask(props.task.id);
+});
 
 const props = withDefaults(
   defineProps<{
@@ -426,6 +432,16 @@ const handleTagClick = (tag: string) => {
         ]"
       >
         {{ task.priority }}
+      </div>
+
+      <!-- Timebox Allocation Badge -->
+      <div
+        v-if="allocatedTimebox"
+        class="inline-flex items-center gap-1 px-1.5 py-0.25 rounded text-[10px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30"
+        :title="`${allocatedTimebox.date} ${allocatedTimebox.startTime}-${allocatedTimebox.endTime}: ${allocatedTimebox.title}`"
+      >
+        <Box :class="compact ? 'w-2.5 h-2.5' : 'w-3 h-3'" class="text-indigo-400 shrink-0" />
+        <span class="truncate max-w-[100px]">{{ allocatedTimebox.title }}</span>
       </div>
 
       <!-- Checklist Stats (Only displayed in footer row if not already shown inside the checklist bounding box) -->

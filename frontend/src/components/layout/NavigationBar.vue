@@ -14,6 +14,7 @@ import {
   MoreVertical,
   FileSpreadsheet,
   FileText,
+  Box,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Project, BucketName } from '@/types';
@@ -203,6 +204,18 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         >
           <Clock class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.time') }}</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'timeboxing', params: { projectId: activeProjectId }, query: $route.query }"
+          class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+          :class="
+            isTabActive('timeboxing')
+              ? 'bg-theme-primary text-white shadow-none'
+              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+          "
+        >
+          <Box class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">{{ t('views.timeboxing') }}</span>
         </router-link>
         <router-link
           :to="{ name: 'triage', params: { projectId: activeProjectId }, query: $route.query }"

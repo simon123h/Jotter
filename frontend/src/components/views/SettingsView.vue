@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
-import { Settings, Check, Globe, GitBranch, Info, Folder, Tag, RotateCcw, ChevronDown, Search } from '@lucide/vue';
+import { Settings, Check, Globe, GitBranch, Info, Folder, Tag, RotateCcw, ChevronDown, Search, Box } from '@lucide/vue';
 import { getSystemInfo } from '@/api';
 import type { SystemInfo } from '@/types';
 
@@ -479,6 +479,85 @@ const getTagClasses = (tag: string) => {
               'Automatically synchronize local notes with your Git remote at the specified frequency.'
             }}
           </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-theme-border/30"></div>
+
+    <!-- Time Boxing Section -->
+    <div class="flex flex-col gap-4">
+      <h3 class="text-xs font-bold text-theme-text-main uppercase tracking-wider flex items-center gap-1.5">
+        <Box class="w-4 h-4 text-theme-accent shrink-0" />
+        {{ t('settingsView.timeboxingTitle') }}
+      </h3>
+      <div class="bg-theme-card/60 border border-theme-border/60 rounded-xl p-5 flex flex-col gap-4">
+        <!-- Default Week Mode -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex flex-col gap-1">
+            <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.timeboxWeekModeLabel') }}</span>
+            <span class="text-xs text-theme-text-muted">{{ t('settingsView.timeboxWeekModeDesc') }}</span>
+          </div>
+          <div class="flex items-center bg-theme-bg border border-theme-border/60 rounded-xl p-1 text-xs font-semibold shrink-0">
+            <button
+              type="button"
+              @click="settingsStore.updateSettings({ timeboxWeekMode: 'workweek' })"
+              class="px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+              :class="
+                (settingsStore.settings.timeboxWeekMode || 'workweek') === 'workweek'
+                  ? 'bg-theme-primary text-white shadow-xs'
+                  : 'text-theme-text-muted hover:text-theme-text-main'
+              "
+            >
+              {{ t('timebox.workweek') }}
+            </button>
+            <button
+              type="button"
+              @click="settingsStore.updateSettings({ timeboxWeekMode: 'fullweek' })"
+              class="px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+              :class="
+                settingsStore.settings.timeboxWeekMode === 'fullweek'
+                  ? 'bg-theme-primary text-white shadow-xs'
+                  : 'text-theme-text-muted hover:text-theme-text-main'
+              "
+            >
+              {{ t('timebox.fullweek') }}
+            </button>
+          </div>
+        </div>
+
+        <div class="border-t border-theme-border/20"></div>
+
+        <!-- Start & End Hours -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label for="timebox-start-hour" class="text-xs font-bold text-theme-text-main">
+              {{ t('settingsView.timeboxStartHourLabel') }}
+            </label>
+            <input
+              id="timebox-start-hour"
+              type="number"
+              min="0"
+              max="23"
+              :value="settingsStore.settings.timeboxStartHour ?? 8"
+              @change="(e) => settingsStore.updateSettings({ timeboxStartHour: Number((e.target as HTMLInputElement).value) })"
+              class="w-full px-3.5 py-2 bg-theme-bg border border-theme-border/60 rounded-xl text-xs text-theme-text-main focus:outline-none focus:border-theme-primary"
+            />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label for="timebox-end-hour" class="text-xs font-bold text-theme-text-main">
+              {{ t('settingsView.timeboxEndHourLabel') }}
+            </label>
+            <input
+              id="timebox-end-hour"
+              type="number"
+              min="1"
+              max="24"
+              :value="settingsStore.settings.timeboxEndHour ?? 18"
+              @change="(e) => settingsStore.updateSettings({ timeboxEndHour: Number((e.target as HTMLInputElement).value) })"
+              class="w-full px-3.5 py-2 bg-theme-bg border border-theme-border/60 rounded-xl text-xs text-theme-text-main focus:outline-none focus:border-theme-primary"
+            />
+          </div>
         </div>
       </div>
     </div>
