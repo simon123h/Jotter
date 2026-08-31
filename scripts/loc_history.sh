@@ -17,7 +17,8 @@ echo "Date,Commit,Backend_LOC,TS_Vue_CSS_LOC,Total_LOC" > "$output_file"
 echo "Calculating LOC history..."
 
 # Get all commits in chronological order
-commits=$(git log --reverse --pretty=format:"%H|%ad" --date=short)
+commits=$(git log --reverse --pretty=format:"%H|%cd" --date=short)
+
 
 count_lines() {
     local pattern=$1
