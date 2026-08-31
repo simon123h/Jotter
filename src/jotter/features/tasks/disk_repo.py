@@ -198,9 +198,18 @@ class DiskTaskRepository:
             task_id=tid,
         )
 
-        if fm_data.get("created_at") or fm_data.get("createdAt"):
-            task.created_at = str(fm_data.get("created_at") or fm_data.get("createdAt"))
-        if fm_data.get("updated_at") or fm_data.get("updatedAt"):
-            task.updated_at = str(fm_data.get("updated_at") or fm_data.get("updatedAt"))
+        created_val = fm_data.get("created_at") or fm_data.get("createdAt")
+        if created_val:
+            if hasattr(created_val, "isoformat"):
+                task.created_at = created_val.isoformat()
+            else:
+                task.created_at = str(created_val).strip()
+
+        updated_val = fm_data.get("updated_at") or fm_data.get("updatedAt")
+        if updated_val:
+            if hasattr(updated_val, "isoformat"):
+                task.updated_at = updated_val.isoformat()
+            else:
+                task.updated_at = str(updated_val).strip()
 
         return task
