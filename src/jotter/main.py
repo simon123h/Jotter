@@ -3,17 +3,17 @@ import os
 import sys
 import threading
 import webbrowser
+from pathlib import Path
 
 import uvicorn
-from pathlib import Path
 
 # Ensure local src/ directory is prioritized on sys.path
 _src_dir = str(Path(__file__).resolve().parent.parent)
 if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
 
-from jotter.app import app_version, create_app
-from jotter.config import load_config, normalize_log_level
+from jotter.app import app_version, create_app  # noqa: E402
+from jotter.config import load_config, normalize_log_level  # noqa: E402
 
 
 def open_browser_delayed(url: str, delay_seconds: float = 0.5):
