@@ -56,3 +56,20 @@ def test_bucket_delete_safety_and_task_move(temp_dir, test_env):
 
     # Now deletion should succeed
     bucket_svc.delete_bucket("default", "deployments")
+
+
+def test_bucket_row_to_bucket_with_none_position(temp_dir, test_env):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
+
+    # Insert a bucket row directly into sqlite where position is NULL
+    conn.execute(
+        """
+        INSERT INTO buckets (project_id, name, title, subtitle, position, color, layout, max_tasks, is_default)
+        VALUES ('default', 'unpositioned', 'Unpositioned', '', NULL, NULL, 'list', NULL, 0)
+        """
+    )
+
+    bucket = bucket_svc.get_bucket("default", "unpositioned")
+    assert bucket.name == "unpositioned"
+    assert bucket.position == 1000.0

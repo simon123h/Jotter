@@ -46,7 +46,7 @@ def init_schema(conn: sqlite3.Connection) -> None:
         name TEXT NOT NULL,
         title TEXT NOT NULL,
         subtitle TEXT DEFAULT '',
-        position REAL NOT NULL,
+        position REAL DEFAULT 1000.0,
         color TEXT DEFAULT NULL,
         layout TEXT DEFAULT 'list',
         max_tasks INTEGER DEFAULT NULL,
@@ -80,6 +80,12 @@ def init_schema(conn: sqlite3.Connection) -> None:
     CREATE INDEX IF NOT EXISTS idx_buckets_project ON buckets(project_id);
     """
     conn.executescript(schema)
+
+    # Clean up any existing NULL positions in buckets
+    try:
+        conn.execute("UPDATE buckets SET position = 1000.0 WHERE position IS NULL")
+    except sqlite3.OperationalError:
+        pass
 
     # Column migrations
     try:

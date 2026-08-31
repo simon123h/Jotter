@@ -152,11 +152,12 @@ class BucketRepository:
         tmp_path.replace(file_path)
 
     def _row_to_bucket(self, row: sqlite3.Row) -> Bucket:
+        pos = row["position"]
         return Bucket(
             name=row["name"],
             title=row["title"],
             subtitle=row["subtitle"] or "",
-            position=float(row["position"]),
+            position=float(pos) if pos is not None else 1000.0,
             color=row["color"],
             layout=row["layout"] or "list",
             max_tasks=row["max_tasks"],
