@@ -12,7 +12,7 @@ cleanup() {
 trap cleanup EXIT
 
 output_file="loc_history.txt"
-echo "Date,Commit,Go_LOC,TS_Vue_CSS_LOC,Total_LOC" > "$output_file"
+echo "Date,Commit,Backend_LOC,TS_Vue_CSS_LOC,Total_LOC" > "$output_file"
 
 echo "Calculating LOC history..."
 
@@ -42,10 +42,15 @@ while IFS='|' read -r commit date; do
     echo "Processing commit ${commit:0:7} ($date)..."
     git checkout -q "$commit"
     
-    # Count Go lines
-    go_loc=$(count_lines "*.go")
-    if [[ ! "$go_loc" =~ ^[0-9]+$ ]]; then go_loc=0; fi
-    
+    # Count Backend lines
+    backend_loc=0
+    for ext in "*.go" "*.py"; do
+        ext_loc=$(count_lines "$ext")
+        if [[ "$ext_loc" =~ ^[0-9]+$ ]]; then
+            backend_loc=$((backend_loc + ext_loc))
+        fi
+    done
+
     # Count Frontend lines (TS, Vue, CSS)
     ts_vue_css_loc=0
     for ext in "*.ts" "*.vue" "*.css"; do
@@ -55,9 +60,9 @@ while IFS='|' read -r commit date; do
         fi
     done
     
-    total_loc=$((go_loc + ts_vue_css_loc))
+    total_loc=$((backend_loc + ts_vue_css_loc))
     
-    echo "$date,${commit:0:7},$go_loc,$ts_vue_css_loc,$total_loc" >> "$output_file"
+    echo "$date,${commit:0:7},$backend_loc,$ts_vue_css_loc,$total_loc" >> "$output_file"
 done <<< "$commits"
 
 echo "Done! LOC history written to $output_file"
