@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """Calculates lines of code (LOC) across repository commit history without git checkout."""
 
-import os
 import subprocess
-import sys
 import time
 
 EXCLUDED_PATHS = (

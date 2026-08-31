@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import csv
 from datetime import datetime
-import matplotlib.pyplot as plt
+
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 
 
 def plot_loc():
@@ -12,7 +13,7 @@ def plot_loc():
     total_loc = []
 
     # Read the data from the CSV file
-    with open("loc_history.txt", mode="r") as file:
+    with open("loc_history.txt") as file:
         reader = csv.DictReader(file)
         for row in reader:
             # Parse the date
