@@ -25,6 +25,7 @@ count_lines() {
     files=$(find . -type f -name "$pattern" \
         -not -path "*/node_modules/*" \
         -not -path "*/dist/*" \
+        -not -path "venv/*" \
         -not -path "*/.git/*" \
         -not -path "*/.github/*" \
         -not -name "*.d.ts" 2>/dev/null)
