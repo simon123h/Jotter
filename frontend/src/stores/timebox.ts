@@ -84,7 +84,7 @@ export const useTimeboxStore = defineStore('timebox', () => {
     try {
       // Optimistic update
       timeboxes.value.forEach((tb) => {
-        if (tb.taskIds) {
+        if (tb.id !== timeboxId && tb.taskIds) {
           tb.taskIds = tb.taskIds.filter((t) => t !== taskId);
         }
       });

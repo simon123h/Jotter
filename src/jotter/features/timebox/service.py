@@ -90,11 +90,13 @@ class TimeboxApplicationService:
         # If adding, remove task from any other box first so task belongs to max 1 timebox
         if action == "add":
             for tb in all_boxes:
-                ids = tb.get("task_ids", [])
-                if task_id in ids:
-                    tb["task_ids"] = [t for t in ids if t != task_id]
-                    self.repo.save(tb)
+                if tb.get("id") != timebox_id:
+                    ids = tb.get("task_ids", [])
+                    if task_id in ids:
+                        tb["task_ids"] = [t for t in ids if t != task_id]
+                        self.repo.save(tb)
 
+            target_tb = self.get_timebox(timebox_id)
             current_ids = target_tb.get("task_ids", [])
             if task_id not in current_ids:
                 current_ids.append(task_id)

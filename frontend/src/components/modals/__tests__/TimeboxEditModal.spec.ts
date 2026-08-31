@@ -42,7 +42,7 @@ describe('TimeboxEditModal.vue', () => {
       },
     });
 
-    expect(wrapper.text()).toContain('Create Timebox');
+    expect(wrapper.text()).toContain('Create Time Block');
     const titleInput = wrapper.find('input[type="text"]');
     expect(titleInput.exists()).toBe(true);
   });
@@ -66,7 +66,7 @@ describe('TimeboxEditModal.vue', () => {
       },
     });
 
-    expect(wrapper.text()).toContain('Edit Timebox');
+    expect(wrapper.text()).toContain('Edit Time Block');
     const titleInput = wrapper.find('input[type="text"]');
     expect((titleInput.element as HTMLInputElement).value).toBe('Deep Architecture Focus');
   });

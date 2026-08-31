@@ -7,6 +7,7 @@ import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
+import TimeboxSidebar from '@/components/layout/TimeboxSidebar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useProjects } from '@/composables/useProjects';
 import { useTaskFilters } from '@/composables/useTaskFilters';
@@ -24,7 +25,7 @@ const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const modalStore = useModalStore();
 
-const { isSidebarOpen, currentTheme } = storeToRefs(settingsStore);
+const { isSidebarOpen, isTimeboxSidebarOpen, currentTheme } = storeToRefs(settingsStore);
 const autoSyncInterval = computed(() => settingsStore.autoSyncInterval ?? 0);
 const { projects, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
 
@@ -83,6 +84,10 @@ const selectProject = (projectId: string) => {
 
 const toggleSidebar = () => {
   settingsStore.toggleSidebar();
+};
+
+const toggleTimeboxSidebar = () => {
+  settingsStore.toggleTimeboxSidebar();
 };
 
 const setTheme = (theme: string) => {
@@ -187,11 +192,13 @@ onBeforeUnmount(() => {
       ref="navBarRef"
       v-model="searchQuery"
       :is-sidebar-open="isSidebarOpen"
+      :is-timebox-sidebar-open="isTimeboxSidebarOpen"
       :projects="projects"
       :active-project-id="activeProjectId"
       :has-active-filters="hasActiveFilters"
       default-bucket-name="todo"
       @toggle-sidebar="toggleSidebar"
+      @toggle-timebox-sidebar="toggleTimeboxSidebar"
       @open-filter="openFilterModal"
       @create-task="openCreateModal"
       @export-tasks="exportTasks"
@@ -213,12 +220,17 @@ onBeforeUnmount(() => {
         />
       </transition>
 
-      <div class="flex-grow flex flex-col p-3 overflow-hidden">
+      <div class="flex-grow flex flex-col p-3 overflow-hidden min-w-0">
         <div class="flex-grow overflow-hidden relative">
           <!-- Main layout content rendering either global views or ProjectLayout -->
           <router-view />
         </div>
       </div>
+
+      <!-- Right Timebox Sidebar -->
+      <transition name="timebox-sidebar">
+        <TimeboxSidebar v-if="isTimeboxSidebarOpen && activeProjectId" @close="toggleTimeboxSidebar" />
+      </transition>
     </div>
 
     <!-- MODAL REGISTRY (Utility Modals) -->
@@ -236,6 +248,18 @@ onBeforeUnmount(() => {
 .sidebar-enter-from,
 .sidebar-leave-to {
   margin-left: -16rem;
+  opacity: 0;
+}
+
+.timebox-sidebar-enter-active,
+.timebox-sidebar-leave-active {
+  transition:
+    margin-right 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.15s ease;
+}
+.timebox-sidebar-enter-from,
+.timebox-sidebar-leave-to {
+  margin-right: -24rem;
   opacity: 0;
 }
 </style>

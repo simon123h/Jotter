@@ -25,6 +25,7 @@ const route = useRoute();
 defineProps<{
   modelValue: string; // bound to searchQuery
   isSidebarOpen: boolean;
+  isTimeboxSidebarOpen?: boolean;
   projects: Project[];
   activeProjectId: string;
   hasActiveFilters: boolean;
@@ -34,6 +35,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', val: string): void;
   (e: 'toggle-sidebar'): void;
+  (e: 'toggle-timebox-sidebar'): void;
   (e: 'open-filter'): void;
   (e: 'create-task', defaultBucket: BucketName): void;
   (e: 'export-tasks', format: 'xlsx' | 'csv'): void;
@@ -206,16 +208,16 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
           <span class="hidden sm:inline">{{ t('views.time') }}</span>
         </router-link>
         <router-link
-          :to="{ name: 'timeboxing', params: { projectId: activeProjectId }, query: $route.query }"
+          :to="{ name: 'time', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
-            isTabActive('timeboxing')
+            isTabActive('time')
               ? 'bg-theme-primary text-white shadow-none'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
           "
         >
-          <Box class="w-3.5 h-3.5" />
-          <span class="hidden sm:inline">{{ t('views.timeboxing') }}</span>
+          <Clock class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">{{ t('views.time') }}</span>
         </router-link>
         <router-link
           :to="{ name: 'triage', params: { projectId: activeProjectId }, query: $route.query }"
@@ -230,6 +232,23 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
           <span class="hidden sm:inline">{{ t('views.triage') }}</span>
         </router-link>
       </div>
+
+      <!-- Timebox Sidebar Toggle Button -->
+      <button
+        @click="emit('toggle-timebox-sidebar')"
+        class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border transition-all cursor-pointer"
+        :class="
+          isTimeboxSidebarOpen
+            ? 'bg-theme-primary/15 border-theme-primary/25 text-theme-accent font-bold shadow-2xs'
+            : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
+        "
+        :title="t('timebox.toggleSidebarTooltip')"
+      >
+        <Box class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
+        <span class="hidden xl:inline">
+          {{ t('timebox.sidebarTitle') }}
+        </span>
+      </button>
 
       <!-- Overflow Menu (Three dots) -->
       <div class="relative shrink-0 overflow-menu-container">

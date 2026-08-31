@@ -7,7 +7,6 @@ import MatrixView from '@/components/views/MatrixView.vue';
 import TimeView from '@/components/views/TimeView.vue';
 import TagView from '@/components/views/TagView.vue';
 import TriageView from '@/components/views/TriageView.vue';
-import TimeBoxingView from '@/components/views/TimeBoxingView.vue';
 import SettingsView from '@/components/views/SettingsView.vue';
 import HomeView from '@/components/views/HomeView.vue';
 import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
@@ -122,20 +121,6 @@ const routes = [
             name: 'triage',
             component: TriageView,
           },
-          {
-            path: 'timeboxing',
-            name: 'timeboxing',
-            component: TimeBoxingView,
-          },
-          {
-            path: 'timeboxing/tasks/:taskId',
-            name: 'timeboxing-task',
-            components: {
-              default: TimeBoxingView,
-              modal: TaskDetailModal,
-            },
-            meta: { backRoute: 'timeboxing' },
-          },
         ],
       },
     ],
@@ -155,7 +140,7 @@ router.afterEach((to) => {
   try {
     const uiStore = useUiStore();
     const currentMode = (to.meta.backRoute as string) || String(to.name || '');
-    if (to.params.projectId && ['board', 'list', 'matrix', 'time', 'tag', 'triage', 'timeboxing'].includes(currentMode)) {
+    if (to.params.projectId && ['board', 'list', 'matrix', 'time', 'tag', 'triage'].includes(currentMode)) {
       uiStore.setLastViewMode(currentMode);
     }
   } catch {

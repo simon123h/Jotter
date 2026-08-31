@@ -56,6 +56,11 @@ def test_timebox_crud_and_allocation(test_env):
     assert res.status_code == 200
     assert "task-3" in res.json()["taskIds"]
 
+    # Re-adding already allocated task must keep it in the box
+    res = client.post(f"/api/timeboxes/{tb_id}/tasks", json={"taskId": "task-3", "action": "add"})
+    assert res.status_code == 200
+    assert "task-3" in res.json()["taskIds"]
+
     res = client.post(f"/api/timeboxes/{tb_id}/tasks", json={"taskId": "task-1", "action": "remove"})
     assert res.status_code == 200
     assert "task-1" not in res.json()["taskIds"]

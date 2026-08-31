@@ -485,49 +485,13 @@ const getTagClasses = (tag: string) => {
 
     <div class="border-t border-theme-border/30"></div>
 
-    <!-- Time Boxing Section -->
+    <!-- Time Blocking Section -->
     <div class="flex flex-col gap-4">
       <h3 class="text-xs font-bold text-theme-text-main uppercase tracking-wider flex items-center gap-1.5">
         <Box class="w-4 h-4 text-theme-accent shrink-0" />
         {{ t('settingsView.timeboxingTitle') }}
       </h3>
       <div class="bg-theme-card/60 border border-theme-border/60 rounded-xl p-5 flex flex-col gap-4">
-        <!-- Default Week Mode -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="flex flex-col gap-1">
-            <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.timeboxWeekModeLabel') }}</span>
-            <span class="text-xs text-theme-text-muted">{{ t('settingsView.timeboxWeekModeDesc') }}</span>
-          </div>
-          <div class="flex items-center bg-theme-bg border border-theme-border/60 rounded-xl p-1 text-xs font-semibold shrink-0">
-            <button
-              type="button"
-              @click="settingsStore.updateSettings({ timeboxWeekMode: 'workweek' })"
-              class="px-3 py-1.5 rounded-lg transition-all cursor-pointer"
-              :class="
-                (settingsStore.settings.timeboxWeekMode || 'workweek') === 'workweek'
-                  ? 'bg-theme-primary text-white shadow-xs'
-                  : 'text-theme-text-muted hover:text-theme-text-main'
-              "
-            >
-              {{ t('timebox.workweek') }}
-            </button>
-            <button
-              type="button"
-              @click="settingsStore.updateSettings({ timeboxWeekMode: 'fullweek' })"
-              class="px-3 py-1.5 rounded-lg transition-all cursor-pointer"
-              :class="
-                settingsStore.settings.timeboxWeekMode === 'fullweek'
-                  ? 'bg-theme-primary text-white shadow-xs'
-                  : 'text-theme-text-muted hover:text-theme-text-main'
-              "
-            >
-              {{ t('timebox.fullweek') }}
-            </button>
-          </div>
-        </div>
-
-        <div class="border-t border-theme-border/20"></div>
-
         <!-- Start & End Hours -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="flex flex-col gap-1.5">
@@ -539,7 +503,7 @@ const getTagClasses = (tag: string) => {
               type="number"
               min="0"
               max="23"
-              :value="settingsStore.settings.timeboxStartHour ?? 8"
+              :value="settingsStore.settings.timeboxStartHour ?? 6"
               @change="(e) => settingsStore.updateSettings({ timeboxStartHour: Number((e.target as HTMLInputElement).value) })"
               class="w-full px-3.5 py-2 bg-theme-bg border border-theme-border/60 rounded-xl text-xs text-theme-text-main focus:outline-none focus:border-theme-primary"
             />

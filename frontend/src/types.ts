@@ -82,9 +82,9 @@ export interface AppSettings {
   language?: string;
   tagColors?: Record<string, string>;
   autoSyncInterval?: number;
-  timeboxWeekMode?: 'workweek' | 'fullweek';
   timeboxStartHour?: number;
   timeboxEndHour?: number;
+  isTimeboxSidebarOpen?: boolean;
 }
 
 export interface SystemInfo {

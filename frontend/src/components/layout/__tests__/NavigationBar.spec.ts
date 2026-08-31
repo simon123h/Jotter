@@ -108,16 +108,12 @@ describe('NavigationBar.vue', () => {
     expect(wrapper.emitted('export-tasks')![0]).toEqual(['csv']);
   });
 
-  it('closes overflow menu when clicking outside', async () => {
+  it('emits toggle-timebox-sidebar when clicking the timebox sidebar button', async () => {
     const wrapper = mount(NavigationBar, mountOptions);
-    const toggleBtn = wrapper.find('.overflow-menu-container button');
-    await toggleBtn.trigger('click');
-    expect(wrapper.find('.overflow-menu-container .absolute').exists()).toBe(true);
+    const timeboxBtn = wrapper.findAll('button').find((b) => b.text().includes('Time Blocking'));
+    expect(timeboxBtn).toBeDefined();
+    await timeboxBtn!.trigger('click');
 
-    const event = new MouseEvent('click', { bubbles: true });
-    document.dispatchEvent(event);
-
-    await wrapper.vm.$nextTick();
-    expect(wrapper.find('.overflow-menu-container .absolute').exists()).toBe(false);
+    expect(wrapper.emitted('toggle-timebox-sidebar')).toBeTruthy();
   });
 });

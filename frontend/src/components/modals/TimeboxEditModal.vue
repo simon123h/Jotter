@@ -27,19 +27,18 @@ const title = ref('');
 const date = ref('');
 const startTime = ref('09:00');
 const endTime = ref('10:00');
-const color = ref<string | null>('indigo');
+const color = ref<string | null>('blue');
 const loading = ref(false);
 const titleInput = ref<HTMLInputElement | null>(null);
 
 const COLOR_PRESETS = [
-  { id: 'indigo', label: 'Indigo', bg: 'bg-indigo-500', border: 'border-indigo-400' },
+  { id: 'red', label: 'Red', bg: 'bg-rose-500', border: 'border-rose-400' },
+  { id: 'orange', label: 'Orange', bg: 'bg-amber-600', border: 'border-amber-500' },
+  { id: 'yellow', label: 'Yellow', bg: 'bg-yellow-500', border: 'border-yellow-400' },
+  { id: 'green', label: 'Green', bg: 'bg-emerald-500', border: 'border-emerald-400' },
   { id: 'blue', label: 'Blue', bg: 'bg-blue-500', border: 'border-blue-400' },
-  { id: 'emerald', label: 'Emerald', bg: 'bg-emerald-500', border: 'border-emerald-400' },
-  { id: 'amber', label: 'Amber', bg: 'bg-amber-500', border: 'border-amber-400' },
-  { id: 'rose', label: 'Rose', bg: 'bg-rose-500', border: 'border-rose-400' },
   { id: 'purple', label: 'Purple', bg: 'bg-purple-500', border: 'border-purple-400' },
-  { id: 'teal', label: 'Teal', bg: 'bg-teal-500', border: 'border-teal-400' },
-  { id: 'slate', label: 'Slate', bg: 'bg-slate-500', border: 'border-slate-400' },
+  { id: 'pink', label: 'Pink', bg: 'bg-pink-500', border: 'border-pink-400' },
 ];
 
 const getTodayStr = () => {
@@ -51,7 +50,7 @@ const getTodayStr = () => {
 };
 
 const getRandomColor = () => {
-  const options = ['blue', 'emerald', 'amber', 'rose', 'teal', 'indigo', 'purple', 'slate'];
+  const options = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'];
   return options[Math.floor(Math.random() * options.length)];
 };
 

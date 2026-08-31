@@ -21,9 +21,9 @@ export const useSettingsStore = defineStore('settings', () => {
     language: '',
     tagColors: {},
     autoSyncInterval: 0,
-    timeboxWeekMode: 'workweek',
-    timeboxStartHour: 8,
+    timeboxStartHour: 6,
     timeboxEndHour: 18,
+    isTimeboxSidebarOpen: false,
   });
 
   let skipSave = false;
@@ -42,9 +42,9 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!state.tagColors) state.tagColors = {};
       if (state.autoSyncInterval === undefined) state.autoSyncInterval = 0;
       if (state.hidePostponedColumn === undefined) state.hidePostponedColumn = true;
-      if (!state.timeboxWeekMode) state.timeboxWeekMode = 'workweek';
-      if (state.timeboxStartHour === undefined) state.timeboxStartHour = 8;
+      if (state.timeboxStartHour === undefined) state.timeboxStartHour = 6;
       if (state.timeboxEndHour === undefined) state.timeboxEndHour = 18;
+      if (state.isTimeboxSidebarOpen === undefined) state.isTimeboxSidebarOpen = false;
 
       await nextTick();
       skipSave = false;
@@ -129,6 +129,10 @@ export const useSettingsStore = defineStore('settings', () => {
     state.isSidebarOpen = !state.isSidebarOpen;
   };
 
+  const toggleTimeboxSidebar = (forceState?: boolean) => {
+    state.isTimeboxSidebarOpen = forceState !== undefined ? forceState : !state.isTimeboxSidebarOpen;
+  };
+
   const setTheme = (theme: string) => {
     state.currentTheme = theme;
   };
@@ -192,6 +196,7 @@ export const useSettingsStore = defineStore('settings', () => {
     loadSettings,
     toggleHideDoneColumn,
     toggleSidebar,
+    toggleTimeboxSidebar,
     setTheme,
     setThresholdDays,
     pinProject,
