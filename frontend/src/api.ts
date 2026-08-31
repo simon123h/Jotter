@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timebox } from '@/types';
+import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock } from '@/types';
 import * as demoApi from '@/api.demo';
 
 const API_BASE = '/api';
@@ -482,142 +482,182 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Timebox API
+// Timeblock API
 // ---------------------------------------------------------------------------
 
+const DEMO_TIMEBLOCKS_KEY = 'jotter_demo_timeblocks';
 const DEMO_TIMEBOXES_KEY = 'jotter_demo_timeboxes';
 
-export async function getTimeboxes(params?: { startDate?: string; endDate?: string }): Promise<Timebox[]> {
+function matchesTimeblockDate(tb: Timeblock, targetDateStr: string): boolean {
+  if (!tb.recurrence || tb.recurrence === 'none') {
+    return tb.date === targetDateStr;
+  }
+  if (targetDateStr < tb.date) return false;
+  const anchor = new Date(tb.date + 'T00:00:00');
+  const target = new Date(targetDateStr + 'T00:00:00');
+  const diffDays = Math.round((target.getTime() - anchor.getTime()) / (1000 * 60 * 60 * 24));
+  if (tb.recurrence === 'daily') return true;
+  if (tb.recurrence === 'weekdays') {
+    const day = target.getDay();
+    return day >= 1 && day <= 5;
+  }
+  if (tb.recurrence === 'weekly') return diffDays % 7 === 0;
+  if (tb.recurrence === 'bi-weekly') return diffDays % 14 === 0;
+  return false;
+}
+
+export async function getTimeblocks(params?: { startDate?: string; endDate?: string }): Promise<Timeblock[]> {
   if (IS_DEMO_MODE) {
-    const stored = localStorage.getItem(DEMO_TIMEBOXES_KEY);
-    let items: Timebox[] = stored ? JSON.parse(stored) : [];
-    if (params?.startDate) {
-      items = items.filter((tb) => tb.date >= params.startDate!);
+    const stored = localStorage.getItem(DEMO_TIMEBLOCKS_KEY) || localStorage.getItem(DEMO_TIMEBOXES_KEY);
+    const items: Timeblock[] = stored ? JSON.parse(stored) : [];
+    if (!params?.startDate && !params?.endDate) {
+      return items;
     }
-    if (params?.endDate) {
-      items = items.filter((tb) => tb.date <= params.endDate!);
+    const results: Timeblock[] = [];
+    const startStr = params?.startDate || params?.endDate || '';
+    const endStr = params?.endDate || params?.startDate || '';
+    if (!startStr || !endStr) return items;
+    const curr = new Date(startStr + 'T00:00:00');
+    const end = new Date(endStr + 'T00:00:00');
+
+    while (curr <= end) {
+      const dStr = curr.toISOString().split('T')[0];
+      for (const tb of items) {
+        if (matchesTimeblockDate(tb, dStr)) {
+          results.push({ ...tb, date: dStr });
+        }
+      }
+      curr.setDate(curr.getDate() + 1);
     }
-    return items;
+    return results;
   }
 
-  const url = new URL(`${API_BASE}/timeboxes`, window.location.origin);
+  const url = new URL(`${API_BASE}/timeblocks`, window.location.origin);
   if (params?.startDate) url.searchParams.append('startDate', params.startDate);
   if (params?.endDate) url.searchParams.append('endDate', params.endDate);
 
   const response = await customFetch(url.toString());
   if (!response.ok) {
-    await handleResponseError(response, 'Failed to fetch timeboxes');
+    await handleResponseError(response, 'Failed to fetch time blocks');
   }
   return response.json();
 }
 
-export async function getTimebox(id: string): Promise<Timebox> {
+export async function getTimeblock(id: string): Promise<Timeblock> {
   if (IS_DEMO_MODE) {
-    const list = await getTimeboxes();
+    const list = await getTimeblocks();
     const item = list.find((tb) => tb.id === id);
-    if (!item) throw new Error('Timebox not found');
+    if (!item) throw new Error('Time block not found');
     return item;
   }
 
-  const response = await customFetch(`${API_BASE}/timeboxes/${encodeURIComponent(id)}`);
+  const response = await customFetch(`${API_BASE}/timeblocks/${encodeURIComponent(id)}`);
   if (!response.ok) {
-    await handleResponseError(response, 'Failed to fetch timebox');
+    await handleResponseError(response, 'Failed to fetch time block');
   }
   return response.json();
 }
 
-export async function createTimebox(timebox: Omit<Timebox, 'id'>): Promise<Timebox> {
+export async function createTimeblock(timeblock: Omit<Timeblock, 'id'>): Promise<Timeblock> {
   if (IS_DEMO_MODE) {
-    const list = await getTimeboxes();
-    const newTb: Timebox = {
+    const list = await getTimeblocks();
+    const newTb: Timeblock = {
       id: `tb_${Date.now()}`,
-      ...timebox,
-      taskIds: timebox.taskIds || [],
+      ...timeblock,
+      taskIds: timeblock.taskIds || [],
     };
     list.push(newTb);
-    localStorage.setItem(DEMO_TIMEBOXES_KEY, JSON.stringify(list));
+    localStorage.setItem(DEMO_TIMEBLOCKS_KEY, JSON.stringify(list));
     return newTb;
   }
 
-  const response = await customFetch(`${API_BASE}/timeboxes`, {
+  const response = await customFetch(`${API_BASE}/timeblocks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(timebox),
+    body: JSON.stringify(timeblock),
   });
   if (!response.ok) {
-    await handleResponseError(response, 'Failed to create timebox');
+    await handleResponseError(response, 'Failed to create time block');
   }
   return response.json();
 }
 
-export async function updateTimebox(id: string, updates: Partial<Timebox>): Promise<Timebox> {
+export async function updateTimeblock(id: string, updates: Partial<Timeblock>): Promise<Timeblock> {
   if (IS_DEMO_MODE) {
-    const list = await getTimeboxes();
+    const list = await getTimeblocks();
     const idx = list.findIndex((tb) => tb.id === id);
-    if (idx === -1) throw new Error('Timebox not found');
+    if (idx === -1) throw new Error('Time block not found');
     list[idx] = { ...list[idx], ...updates };
-    localStorage.setItem(DEMO_TIMEBOXES_KEY, JSON.stringify(list));
+    localStorage.setItem(DEMO_TIMEBLOCKS_KEY, JSON.stringify(list));
     return list[idx];
   }
 
-  const response = await customFetch(`${API_BASE}/timeboxes/${encodeURIComponent(id)}`, {
+  const response = await customFetch(`${API_BASE}/timeblocks/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   });
   if (!response.ok) {
-    await handleResponseError(response, 'Failed to update timebox');
+    await handleResponseError(response, 'Failed to update time block');
   }
   return response.json();
 }
 
-export async function deleteTimebox(id: string): Promise<void> {
+export async function deleteTimeblock(id: string): Promise<void> {
   if (IS_DEMO_MODE) {
-    const list = await getTimeboxes();
+    const list = await getTimeblocks();
     const filtered = list.filter((tb) => tb.id !== id);
-    localStorage.setItem(DEMO_TIMEBOXES_KEY, JSON.stringify(filtered));
+    localStorage.setItem(DEMO_TIMEBLOCKS_KEY, JSON.stringify(filtered));
     return;
   }
 
-  const response = await customFetch(`${API_BASE}/timeboxes/${encodeURIComponent(id)}`, {
+  const response = await customFetch(`${API_BASE}/timeblocks/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
   if (!response.ok) {
-    await handleResponseError(response, 'Failed to delete timebox');
+    await handleResponseError(response, 'Failed to delete time block');
   }
 }
 
-export async function allocateTaskToTimebox(timeboxId: string, taskId: string, action: 'add' | 'remove' = 'add'): Promise<Timebox> {
+export async function allocateTaskToTimeblock(timeblockId: string, taskId: string, action: 'add' | 'remove' = 'add'): Promise<Timeblock> {
   if (IS_DEMO_MODE) {
-    const list = await getTimeboxes();
+    const list = await getTimeblocks();
     if (action === 'add') {
       // Remove from any other box first
       list.forEach((tb) => {
         tb.taskIds = tb.taskIds.filter((t: string) => t !== taskId);
       });
-      const target = list.find((tb) => tb.id === timeboxId);
+      const target = list.find((tb) => tb.id === timeblockId);
       if (target && !target.taskIds.includes(taskId)) {
         target.taskIds.push(taskId);
       }
     } else {
-      const target = list.find((tb) => tb.id === timeboxId);
+      const target = list.find((tb) => tb.id === timeblockId);
       if (target) {
         target.taskIds = target.taskIds.filter((t: string) => t !== taskId);
       }
     }
-    localStorage.setItem(DEMO_TIMEBOXES_KEY, JSON.stringify(list));
-    const updated = list.find((tb) => tb.id === timeboxId);
-    if (!updated) throw new Error('Timebox not found');
+    localStorage.setItem(DEMO_TIMEBLOCKS_KEY, JSON.stringify(list));
+    const updated = list.find((tb) => tb.id === timeblockId);
+    if (!updated) throw new Error('Time block not found');
     return updated;
   }
 
-  const response = await customFetch(`${API_BASE}/timeboxes/${encodeURIComponent(timeboxId)}/tasks`, {
+  const response = await customFetch(`${API_BASE}/timeblocks/${encodeURIComponent(timeblockId)}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ taskId, action }),
   });
   if (!response.ok) {
-    await handleResponseError(response, 'Failed to allocate task to timebox');
+    await handleResponseError(response, 'Failed to allocate task to time block');
   }
   return response.json();
 }
+
+// Backwards compatibility aliases
+export const getTimeboxes = getTimeblocks;
+export const getTimebox = getTimeblock;
+export const createTimebox = createTimeblock;
+export const updateTimebox = updateTimeblock;
+export const deleteTimebox = deleteTimeblock;
+export const allocateTaskToTimebox = allocateTaskToTimeblock;

@@ -1,20 +1,22 @@
-"""Repository for storing and retrieving timeboxes from timeboxes.json."""
+"""Repository for storing and retrieving time blocks from timeblocks.json."""
 
 import json
 from pathlib import Path
 from typing import Any
 
 
-class TimeboxDiskRepo:
+class TimeblockDiskRepo:
     def __init__(self, data_dir: str | Path):
         self.data_dir = Path(data_dir)
-        self.file_path = self.data_dir / "timeboxes.json"
+        self.file_path = self.data_dir / "timeblocks.json"
+        self.legacy_file_path = self.data_dir / "timeboxes.json"
 
     def _load(self) -> list[dict[str, Any]]:
-        if not self.file_path.exists():
+        target_file = self.file_path if self.file_path.exists() else self.legacy_file_path
+        if not target_file.exists():
             return []
         try:
-            content = self.file_path.read_text(encoding="utf-8").strip()
+            content = target_file.read_text(encoding="utf-8").strip()
             if not content:
                 return []
             data = json.loads(content)
@@ -31,9 +33,9 @@ class TimeboxDiskRepo:
     def list_all(self) -> list[dict[str, Any]]:
         return self._load()
 
-    def get_by_id(self, timebox_id: str) -> dict[str, Any] | None:
+    def get_by_id(self, timeblock_id: str) -> dict[str, Any] | None:
         for item in self._load():
-            if item.get("id") == timebox_id:
+            if item.get("id") == timeblock_id:
                 return item
         return None
 
@@ -47,10 +49,14 @@ class TimeboxDiskRepo:
         self._save(items)
         return item
 
-    def delete(self, timebox_id: str) -> bool:
+    def delete(self, timeblock_id: str) -> bool:
         items = self._load()
-        new_items = [tb for tb in items if tb.get("id") != timebox_id]
+        new_items = [tb for tb in items if tb.get("id") != timeblock_id]
         if len(new_items) != len(items):
             self._save(new_items)
             return True
         return False
+
+
+# Backwards compatibility alias
+TimeboxDiskRepo = TimeblockDiskRepo

@@ -21,6 +21,9 @@ export const useSettingsStore = defineStore('settings', () => {
     language: '',
     tagColors: {},
     autoSyncInterval: 0,
+    timeblockStartHour: 6,
+    timeblockEndHour: 18,
+    isTimeblockSidebarOpen: false,
     timeboxStartHour: 6,
     timeboxEndHour: 18,
     isTimeboxSidebarOpen: false,
@@ -42,9 +45,18 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!state.tagColors) state.tagColors = {};
       if (state.autoSyncInterval === undefined) state.autoSyncInterval = 0;
       if (state.hidePostponedColumn === undefined) state.hidePostponedColumn = true;
-      if (state.timeboxStartHour === undefined) state.timeboxStartHour = 6;
-      if (state.timeboxEndHour === undefined) state.timeboxEndHour = 18;
-      if (state.isTimeboxSidebarOpen === undefined) state.isTimeboxSidebarOpen = false;
+
+      const startHour = state.timeblockStartHour ?? state.timeboxStartHour ?? 6;
+      state.timeblockStartHour = startHour;
+      state.timeboxStartHour = startHour;
+
+      const endHour = state.timeblockEndHour ?? state.timeboxEndHour ?? 18;
+      state.timeblockEndHour = endHour;
+      state.timeboxEndHour = endHour;
+
+      const sidebarOpen = state.isTimeblockSidebarOpen ?? state.isTimeboxSidebarOpen ?? false;
+      state.isTimeblockSidebarOpen = sidebarOpen;
+      state.isTimeboxSidebarOpen = sidebarOpen;
 
       await nextTick();
       skipSave = false;
@@ -129,9 +141,13 @@ export const useSettingsStore = defineStore('settings', () => {
     state.isSidebarOpen = !state.isSidebarOpen;
   };
 
-  const toggleTimeboxSidebar = (forceState?: boolean) => {
-    state.isTimeboxSidebarOpen = forceState !== undefined ? forceState : !state.isTimeboxSidebarOpen;
+  const toggleTimeblockSidebar = (forceState?: boolean) => {
+    const nextVal = forceState !== undefined ? forceState : !state.isTimeblockSidebarOpen;
+    state.isTimeblockSidebarOpen = nextVal;
+    state.isTimeboxSidebarOpen = nextVal;
   };
+
+  const toggleTimeboxSidebar = toggleTimeblockSidebar;
 
   const setTheme = (theme: string) => {
     state.currentTheme = theme;
@@ -196,6 +212,7 @@ export const useSettingsStore = defineStore('settings', () => {
     loadSettings,
     toggleHideDoneColumn,
     toggleSidebar,
+    toggleTimeblockSidebar,
     toggleTimeboxSidebar,
     setTheme,
     setThresholdDays,

@@ -7,7 +7,7 @@ import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
-import TimeboxSidebar from '@/components/layout/TimeboxSidebar.vue';
+import TimeblockSidebar from '@/components/layout/TimeblockSidebar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useProjects } from '@/composables/useProjects';
 import { useTaskFilters } from '@/composables/useTaskFilters';
@@ -25,7 +25,8 @@ const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const modalStore = useModalStore();
 
-const { isSidebarOpen, isTimeboxSidebarOpen, currentTheme } = storeToRefs(settingsStore);
+const { isSidebarOpen, isTimeblockSidebarOpen, isTimeboxSidebarOpen, currentTheme } = storeToRefs(settingsStore);
+const isTimeblockOpen = computed(() => isTimeblockSidebarOpen.value || isTimeboxSidebarOpen.value);
 const autoSyncInterval = computed(() => settingsStore.autoSyncInterval ?? 0);
 const { projects, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
 
@@ -76,7 +77,7 @@ watch(
 const selectProject = (projectId: string) => {
   projectStore.error = null;
   router.push({
-    name: 'project',
+    name: 'board',
     params: { projectId },
     query: route.query,
   });
@@ -86,8 +87,8 @@ const toggleSidebar = () => {
   settingsStore.toggleSidebar();
 };
 
-const toggleTimeboxSidebar = () => {
-  settingsStore.toggleTimeboxSidebar();
+const toggleTimeblockSidebar = () => {
+  settingsStore.toggleTimeblockSidebar();
 };
 
 const setTheme = (theme: string) => {
@@ -192,13 +193,15 @@ onBeforeUnmount(() => {
       ref="navBarRef"
       v-model="searchQuery"
       :is-sidebar-open="isSidebarOpen"
-      :is-timebox-sidebar-open="isTimeboxSidebarOpen"
+      :is-timeblock-sidebar-open="isTimeblockOpen"
+      :is-timebox-sidebar-open="isTimeblockOpen"
       :projects="projects"
       :active-project-id="activeProjectId"
       :has-active-filters="hasActiveFilters"
       default-bucket-name="todo"
       @toggle-sidebar="toggleSidebar"
-      @toggle-timebox-sidebar="toggleTimeboxSidebar"
+      @toggle-timeblock-sidebar="toggleTimeblockSidebar"
+      @toggle-timebox-sidebar="toggleTimeblockSidebar"
       @open-filter="openFilterModal"
       @create-task="openCreateModal"
       @export-tasks="exportTasks"
@@ -227,9 +230,9 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- Right Timebox Sidebar -->
-      <transition name="timebox-sidebar">
-        <TimeboxSidebar v-if="isTimeboxSidebarOpen && activeProjectId" @close="toggleTimeboxSidebar" />
+      <!-- Right Timeblock Sidebar -->
+      <transition name="timeblock-sidebar">
+        <TimeblockSidebar v-if="isTimeblockOpen" @close="toggleTimeblockSidebar" />
       </transition>
     </div>
 
@@ -251,12 +254,16 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 
+.timeblock-sidebar-enter-active,
+.timeblock-sidebar-leave-active,
 .timebox-sidebar-enter-active,
 .timebox-sidebar-leave-active {
   transition:
     margin-right 0.22s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.15s ease;
 }
+.timeblock-sidebar-enter-from,
+.timeblock-sidebar-leave-to,
 .timebox-sidebar-enter-from,
 .timebox-sidebar-leave-to {
   margin-right: -24rem;

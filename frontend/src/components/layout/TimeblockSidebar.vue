@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { ChevronLeft, ChevronRight, Calendar, X, CheckCircle2, Circle, Box, ListPlus, RotateCcw } from '@lucide/vue';
+import { ChevronLeft, ChevronRight, Calendar, X, CheckCircle2, Circle, Box, ListPlus, RotateCcw, Repeat } from '@lucide/vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useTimeboxStore } from '@/stores/timebox';
+import { useTimeblockStore } from '@/stores/timeblock';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
 import { useModalStore } from '@/stores/modal';
@@ -10,7 +10,7 @@ import { useSelectionStore } from '@/stores/selection';
 import { useToast } from '@/composables/useToast';
 import { useI18n } from '@/composables/useI18n';
 import { updateTask } from '@/api';
-import type { Task, Timebox } from '@/types';
+import type { Task, Timeblock } from '@/types';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -21,13 +21,13 @@ const route = useRoute();
 const toast = useToast();
 const { t } = useI18n();
 
-const timeboxStore = useTimeboxStore();
+const timeblockStore = useTimeblockStore();
 const projectStore = useProjectStore();
 const settingsStore = useSettingsStore();
 const modalStore = useModalStore();
 const selectionStore = useSelectionStore();
 
-const activeProjectId = computed(() => (route.params.projectId as string) || 'default');
+const activeProjectId = computed(() => (route.params.projectId as string) || projectStore.projects[0]?.id || 'default');
 
 // Format date helper
 const formatDateStr = (d: Date): string => {
@@ -38,19 +38,20 @@ const formatDateStr = (d: Date): string => {
 };
 
 // Active Date State
-const activeDate = ref(new Date());
+const activeDate = ref<Date>(new Date());
 const activeDateStr = computed(() => formatDateStr(activeDate.value));
 
 const isToday = computed(() => {
-  const todayStr = formatDateStr(new Date());
-  return activeDateStr.value === todayStr;
+  const today = new Date();
+  return formatDateStr(today) === activeDateStr.value;
 });
 
 // Title for active day
 const activeDayTitle = computed(() => {
   const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
   const formatted = activeDate.value.toLocaleDateString(undefined, options);
-  return isToday.value ? `${t('timebox.today')}, ${formatted}` : formatted;
+  const todayLabel = t('timeblock.today') || t('timebox.today') || 'Today';
+  return isToday.value ? `${todayLabel}, ${formatted}` : formatted;
 });
 
 // Date navigation
@@ -70,18 +71,18 @@ const resetToToday = () => {
   activeDate.value = new Date();
 };
 
-const handleDateInput = (event: Event) => {
-  const val = (event.target as HTMLInputElement).value;
+const handleDateInput = (e: Event) => {
+  const val = (e.target as HTMLInputElement).value;
   if (val) {
     const [y, m, d] = val.split('-').map(Number);
     activeDate.value = new Date(y, m - 1, d);
   }
 };
 
-// Fetch timeboxes for active date range
-const loadTimeboxes = async () => {
+// Fetch time blocks for active date range
+const loadTimeblocks = async () => {
   const dateStr = activeDateStr.value;
-  await timeboxStore.fetchTimeboxes(dateStr, dateStr);
+  await timeblockStore.fetchTimeblocks(dateStr, dateStr);
 };
 
 // Current time indicator
@@ -90,8 +91,8 @@ let timeInterval: any = null;
 const gridScrollContainer = ref<HTMLElement | null>(null);
 
 // Hour bounds (strictly respect user configured settings)
-const startHour = computed(() => settingsStore.settings?.timeboxStartHour ?? 6);
-const endHour = computed(() => settingsStore.settings?.timeboxEndHour ?? 18);
+const startHour = computed(() => settingsStore.settings?.timeblockStartHour ?? settingsStore.settings?.timeboxStartHour ?? 6);
+const endHour = computed(() => settingsStore.settings?.timeblockEndHour ?? settingsStore.settings?.timeboxEndHour ?? 18);
 
 const hoursList = computed(() => {
   const list: number[] = [];
@@ -116,13 +117,13 @@ const minutesToTime = (mins: number): string => {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 };
 
-// Moving & Resizing Timebox state
-const isMovingTimebox = ref(false);
-const movingTimeboxId = ref<string | null>(null);
+// Moving & Resizing Timeblock state
+const isMovingTimeblock = ref(false);
+const movingTimeblockId = ref<string | null>(null);
 const movingGhost = ref<{ id: string; startTime: string; endTime: string } | null>(null);
 
-const isResizingTimebox = ref(false);
-const resizingTimeboxId = ref<string | null>(null);
+const isResizingTimeblock = ref(false);
+const resizingTimeblockId = ref<string | null>(null);
 const resizingGhost = ref<{ id: string; startTime: string; endTime: string } | null>(null);
 
 // Matching identical Task Card color palette
@@ -137,7 +138,7 @@ const TASK_CARD_COLOR_MAP: Record<string, string> = {
 };
 
 // Calculate box positioning styling with identical Task Card color mix
-const getTimeboxStyle = (tb: Timebox) => {
+const getTimeblockStyle = (tb: Timeblock) => {
   const minMinutes = startHour.value * 60;
   const maxMinutes = (endHour.value + 1) * 60;
 
@@ -173,8 +174,8 @@ const isTaskDone = (task: Task): boolean => {
   return ['done', 'archive', 'archived', 'completed'].includes(task.bucket.toLowerCase());
 };
 
-// Toggle task completion from inside timebox
-const toggleTaskDone = async (task: Task, e: Event) => {
+// Toggle task completion from inside timeblock
+const toggleTaskDone = async (task: Task, timeblockId: string, e: Event) => {
   e.stopPropagation();
   const currentlyDone = isTaskDone(task);
   const targetBucket = currentlyDone ? 'todo' : 'done';
@@ -184,17 +185,22 @@ const toggleTaskDone = async (task: Task, e: Event) => {
       bucket: targetBucket,
     });
     task.bucket = targetBucket;
+
+    // If marked done, unallocate from the timeblock so the recurring or standard block stays clean
+    if (targetBucket === 'done') {
+      await timeblockStore.unallocateTask(timeblockId, task.id);
+    }
   } catch {
     // Fail-safe
   }
 };
 
-// Start moving a timebox
-const startTimeboxMove = (event: MouseEvent, tb: Timebox) => {
+// Start moving a timeblock
+const startTimeblockMove = (event: MouseEvent, tb: Timeblock) => {
   if (event.button !== 0) return;
 
   const target = event.target as HTMLElement;
-  if (target.closest('button, .task-item-card, .timebox-resize-handle, input, a')) return;
+  if (target.closest('button, .task-item-card, .timeblock-resize-handle, .timebox-resize-handle, input, a')) return;
 
   const startClientY = event.clientY;
   const origStartMin = timeToMinutes(tb.startTime);
@@ -208,8 +214,8 @@ const startTimeboxMove = (event: MouseEvent, tb: Timebox) => {
 
     if (!hasMoved && Math.abs(deltaY) > 4) {
       hasMoved = true;
-      isMovingTimebox.value = true;
-      movingTimeboxId.value = tb.id;
+      isMovingTimeblock.value = true;
+      movingTimeblockId.value = tb.id;
       document.body.style.userSelect = 'none';
       document.body.style.cursor = 'move';
     }
@@ -241,17 +247,17 @@ const startTimeboxMove = (event: MouseEvent, tb: Timebox) => {
     if (hasMoved && movingGhost.value) {
       const { startTime: newStart, endTime: newEnd } = movingGhost.value;
       if (newStart !== tb.startTime || newEnd !== tb.endTime) {
-        await timeboxStore.updateTimebox(tb.id, {
+        await timeblockStore.updateTimeblock(tb.id, {
           startTime: newStart,
           endTime: newEnd,
         });
       }
     } else if (!hasMoved) {
-      modalStore.openTimeboxEdit(tb);
+      modalStore.openTimeblockEdit(tb);
     }
 
-    isMovingTimebox.value = false;
-    movingTimeboxId.value = null;
+    isMovingTimeblock.value = false;
+    movingTimeblockId.value = null;
     movingGhost.value = null;
   };
 
@@ -259,8 +265,8 @@ const startTimeboxMove = (event: MouseEvent, tb: Timebox) => {
   window.addEventListener('mouseup', onMouseUp);
 };
 
-// Start resizing a timebox
-const startTimeboxResize = (event: MouseEvent, tb: Timebox) => {
+// Start resizing a timeblock
+const startTimeblockResize = (event: MouseEvent, tb: Timeblock) => {
   if (event.button !== 0) return;
   event.stopPropagation();
   event.preventDefault();
@@ -277,8 +283,8 @@ const startTimeboxResize = (event: MouseEvent, tb: Timebox) => {
 
     if (!hasResized && Math.abs(deltaY) > 3) {
       hasResized = true;
-      isResizingTimebox.value = true;
-      resizingTimeboxId.value = tb.id;
+      isResizingTimeblock.value = true;
+      resizingTimeblockId.value = tb.id;
       document.body.style.userSelect = 'none';
       document.body.style.cursor = 'ns-resize';
     }
@@ -309,12 +315,12 @@ const startTimeboxResize = (event: MouseEvent, tb: Timebox) => {
     if (hasResized && resizingGhost.value) {
       const { endTime: newEnd } = resizingGhost.value;
       if (newEnd !== tb.endTime) {
-        await timeboxStore.updateTimebox(tb.id, { endTime: newEnd });
+        await timeblockStore.updateTimeblock(tb.id, { endTime: newEnd });
       }
     }
 
-    isResizingTimebox.value = false;
-    resizingTimeboxId.value = null;
+    isResizingTimeblock.value = false;
+    resizingTimeblockId.value = null;
     resizingGhost.value = null;
   };
 
@@ -322,7 +328,7 @@ const startTimeboxResize = (event: MouseEvent, tb: Timebox) => {
   window.addEventListener('mouseup', onMouseUp);
 };
 
-const getEffectiveTimebox = (tb: Timebox): Timebox => {
+const getEffectiveTimeblock = (tb: Timeblock): Timeblock => {
   if (movingGhost.value && movingGhost.value.id === tb.id) {
     return {
       ...tb,
@@ -339,56 +345,38 @@ const getEffectiveTimebox = (tb: Timebox): Timebox => {
   return tb;
 };
 
-const dayTimeboxes = computed(() => {
-  return timeboxStore.timeboxes
-    .filter((tb) => tb.date === activeDateStr.value)
-    .map(getEffectiveTimebox)
+const dayTimeblocks = computed(() => {
+  return timeblockStore
+    .timeblocksByDate(activeDateStr.value)
+    .map(getEffectiveTimeblock)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 });
 
-// Click-to-allocate selected tasks into a timebox
-const addSelectedTasksToBox = async (timeboxId: string, e: Event) => {
+// Click-to-allocate selected tasks into a timeblock
+const addSelectedTasksToBox = async (timeblockId: string, e: Event) => {
   e.stopPropagation();
   if (selectionStore.hasSelection && selectionStore.selectedIds.size > 0) {
     const ids = Array.from(selectionStore.selectedIds);
-    const tb = timeboxStore.timeboxes.find((b) => b.id === timeboxId);
-    const todayStr = formatDateStr(new Date());
-    const targetDate = tb?.date || activeDateStr.value;
-
     for (const id of ids) {
-      await timeboxStore.allocateTask(timeboxId, id);
-
-      if (targetDate === todayStr) {
-        const task = projectStore.tasks.find((t) => t.id === id);
-        if (task && task.planned_date !== 'today') {
-          try {
-            await updateTask(task.project_id || activeProjectId.value, task.id, {
-              planned_date: 'today',
-            });
-            task.planned_date = 'today';
-          } catch {
-            // Fail-safe
-          }
-        }
-      }
+      await timeblockStore.allocateTask(timeblockId, id);
     }
-    toast.success(t('timebox.addSelectedTooltip'));
+    toast.success(t('timeblock.addSelectedTooltip') || t('timebox.addSelectedTooltip'));
     selectionStore.clearSelection();
   } else {
-    toast.info(t('timebox.noTasksSelectedHelper'));
+    toast.info(t('timeblock.noTasksSelectedHelper') || t('timebox.noTasksSelectedHelper'));
   }
 };
 
-const unallocateTask = async (timeboxId: string, taskId: string, e: Event) => {
+const unallocateTask = async (timeblockId: string, taskId: string, e: Event) => {
   e.stopPropagation();
-  await timeboxStore.unallocateTask(timeboxId, taskId);
+  await timeblockStore.unallocateTask(timeblockId, taskId);
 };
 
 // Modal creation helper on slot click
 const handleSlotClick = (hour: number) => {
   const startStr = `${String(hour).padStart(2, '0')}:00`;
   const endStr = `${String(Math.min(23, hour + 1)).padStart(2, '0')}:00`;
-  modalStore.openTimeboxEdit(null, activeDateStr.value, startStr, endStr);
+  modalStore.openTimeblockEdit(null, activeDateStr.value, startStr, endStr);
 };
 
 const openTaskDetail = (task: Task) => {
@@ -414,12 +402,12 @@ const scrollToCurrentTime = () => {
 };
 
 watch(activeDateStr, () => {
-  loadTimeboxes();
+  loadTimeblocks();
   setTimeout(scrollToCurrentTime, 100);
 });
 
 onMounted(() => {
-  loadTimeboxes();
+  loadTimeblocks();
   timeInterval = setInterval(() => {
     currentTime.value = new Date();
   }, 60000);
@@ -444,14 +432,14 @@ const nowIndicatorStyle = computed(() => {
 
 <template>
   <aside
-    class="timebox-sidebar timeboxing-view w-84 sm:w-92 border-l border-theme-border/70 bg-theme-card/80 flex flex-col shrink-0 h-full overflow-hidden shadow-lg animate-slideLeft z-30 select-none"
+    class="timeblock-sidebar timeblock-view timebox-sidebar timeboxing-view w-84 sm:w-92 border-l border-theme-border/70 bg-theme-card/80 flex flex-col shrink-0 h-full overflow-hidden shadow-lg animate-slideLeft z-30 select-none"
   >
     <!-- Sidebar Header -->
     <div class="px-3.5 py-3 border-b border-theme-border/60 bg-theme-card/90 shrink-0 space-y-2.5">
       <div class="flex items-center justify-between">
         <h2 class="text-xs font-bold uppercase tracking-wider text-theme-text-main flex items-center gap-1.5">
           <Box class="w-4 h-4 text-theme-primary" />
-          <span>{{ t('timebox.sidebarTitle') }}</span>
+          <span>{{ t('timeblock.sidebarTitle') || t('timebox.sidebarTitle') }}</span>
         </h2>
         <button
           type="button"
@@ -469,7 +457,7 @@ const nowIndicatorStyle = computed(() => {
           type="button"
           @click="prevDay"
           class="p-1 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card rounded transition-colors cursor-pointer"
-          :title="t('timebox.prevDay')"
+          :title="t('timeblock.prevDay') || t('timebox.prevDay')"
         >
           <ChevronLeft class="w-4 h-4" />
         </button>
@@ -483,7 +471,7 @@ const nowIndicatorStyle = computed(() => {
             type="button"
             @click="resetToToday"
             class="p-1 rounded text-theme-primary hover:bg-theme-primary/15 transition-colors cursor-pointer shrink-0"
-            :title="t('timebox.jumpToToday')"
+            :title="t('timeblock.jumpToToday') || t('timebox.jumpToToday')"
           >
             <RotateCcw class="w-3.5 h-3.5" />
           </button>
@@ -492,7 +480,7 @@ const nowIndicatorStyle = computed(() => {
         <div class="flex items-center gap-0.5">
           <label
             class="p-1 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card rounded cursor-pointer relative"
-            :title="t('timebox.pickDate')"
+            :title="t('timeblock.pickDate') || t('timebox.pickDate')"
           >
             <Calendar class="w-3.5 h-3.5" />
             <input
@@ -506,7 +494,7 @@ const nowIndicatorStyle = computed(() => {
             type="button"
             @click="nextDay"
             class="p-1 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card rounded transition-colors cursor-pointer"
-            :title="t('timebox.nextDay')"
+            :title="t('timeblock.nextDay') || t('timebox.nextDay')"
           >
             <ChevronRight class="w-4 h-4" />
           </button>
@@ -544,7 +532,7 @@ const nowIndicatorStyle = computed(() => {
         </div>
 
         <!-- Day Slots Column -->
-        <div class="timebox-day-col flex-1 relative flex flex-col min-w-0 bg-theme-base/40">
+        <div class="timeblock-day-col timebox-day-col flex-1 relative flex flex-col min-w-0 bg-theme-base/40">
           <!-- Background Hour Slot Rows (Clickable) -->
           <div
             v-for="hour in hoursList"
@@ -572,14 +560,14 @@ const nowIndicatorStyle = computed(() => {
 
           <!-- Render Timeblocks for Active Day -->
           <div
-            v-for="tb in dayTimeboxes"
+            v-for="tb in dayTimeblocks"
             :key="tb.id"
-            :style="getTimeboxStyle(tb)"
-            @mousedown="startTimeboxMove($event, tb)"
-            class="absolute left-1.5 right-1.5 rounded-lg border p-2 shadow-sm transition-all flex flex-col overflow-hidden cursor-pointer group select-none z-10"
+            :style="getTimeblockStyle(tb)"
+            @mousedown="startTimeblockMove($event, tb)"
+            class="timeblock-item absolute left-1.5 right-1.5 rounded-lg border p-2 shadow-sm transition-all flex flex-col overflow-hidden cursor-pointer group select-none z-10"
             :class="[
-              movingTimeboxId === tb.id ? 'ring-2 ring-white/80 shadow-2xl opacity-90 scale-[1.02] z-30' : '',
-              resizingTimeboxId === tb.id ? 'ring-2 ring-amber-400 shadow-xl opacity-95 z-30' : '',
+              movingTimeblockId === tb.id ? 'ring-2 ring-white/80 shadow-2xl opacity-90 scale-[1.02] z-30' : '',
+              resizingTimeblockId === tb.id ? 'ring-2 ring-amber-400 shadow-xl opacity-95 z-30' : '',
             ]"
           >
             <!-- Box Header: Time badge + Title + Add Button -->
@@ -592,8 +580,13 @@ const nowIndicatorStyle = computed(() => {
                 >
                   {{ tb.startTime }} - {{ tb.endTime }}
                 </span>
-                <span class="text-sm font-bold text-theme-text-main truncate" :title="tb.title">
+                <span class="text-sm font-bold text-theme-text-main truncate flex items-center gap-1.5" :title="tb.title">
                   {{ tb.title }}
+                  <Repeat
+                    v-if="tb.recurrence && tb.recurrence !== 'none'"
+                    class="w-3 h-3 text-theme-text-muted shrink-0"
+                    :title="`${t('timeblock.recurrenceLabel') || 'Repeats'}: ${tb.recurrence}`"
+                  />
                 </span>
               </div>
               <!-- Add Selected Tasks Symbol Button (visible only when tasks are selected) -->
@@ -602,8 +595,8 @@ const nowIndicatorStyle = computed(() => {
                 type="button"
                 @click.stop="addSelectedTasksToBox(tb.id, $event)"
                 class="p-1 rounded-md bg-theme-primary text-white hover:bg-theme-primary/90 transition-all flex items-center justify-center cursor-pointer shrink-0 shadow-2xs animate-in fade-in zoom-in-90 duration-150"
-                :title="t('timebox.addSelectedTooltip')"
-                :aria-label="t('timebox.addSelectedTasks')"
+                :title="t('timeblock.addSelectedTooltip') || t('timebox.addSelectedTooltip')"
+                :aria-label="t('timeblock.addSelectedTasks') || t('timebox.addSelectedTasks')"
               >
                 <ListPlus class="w-4 h-4" />
               </button>
@@ -621,7 +614,7 @@ const nowIndicatorStyle = computed(() => {
                   <div class="flex items-center gap-1.5 min-w-0">
                     <button
                       type="button"
-                      @click.stop="toggleTaskDone(getTask(taskId)!, $event)"
+                      @click.stop="toggleTaskDone(getTask(taskId)!, tb.id, $event)"
                       class="shrink-0 p-0.5 hover:text-theme-primary transition-colors cursor-pointer"
                       :title="isTaskDone(getTask(taskId)!) ? t('tasks.markNotDone') : t('tasks.markDone')"
                     >
@@ -636,7 +629,7 @@ const nowIndicatorStyle = computed(() => {
                     type="button"
                     @click.stop="unallocateTask(tb.id, taskId, $event)"
                     class="p-0.5 text-theme-text-muted hover:text-rose-500 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 cursor-pointer"
-                    :title="t('timebox.unallocate')"
+                    :title="t('timeblock.unallocate') || t('timebox.unallocate')"
                   >
                     <X class="w-3 h-3" />
                   </button>
@@ -646,9 +639,9 @@ const nowIndicatorStyle = computed(() => {
 
             <!-- Bottom Resize Handle -->
             <div
-              @mousedown.stop="startTimeboxResize($event, tb)"
-              class="timebox-resize-handle absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex items-center justify-center z-20 group/resize"
-              :title="t('timebox.resize')"
+              @mousedown.stop="startTimeblockResize($event, tb)"
+              class="timeblock-resize-handle timebox-resize-handle absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex items-center justify-center z-20 group/resize"
+              :title="t('timeblock.resize') || t('timebox.resize')"
             >
               <div
                 class="w-8 h-1 rounded-full bg-black/20 dark:bg-white/30 group-hover/resize:bg-black/50 dark:group-hover/resize:bg-white/80 transition-colors"

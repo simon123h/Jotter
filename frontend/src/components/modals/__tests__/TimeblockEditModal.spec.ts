@@ -1,10 +1,15 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import TimeboxEditModal from '@/components/modals/TimeboxEditModal.vue';
-import { useTimeboxStore } from '@/stores/timebox';
+import TimeblockEditModal from '@/components/modals/TimeblockEditModal.vue';
+import { useTimeblockStore } from '@/stores/timeblock';
 
 vi.mock('@/api', () => ({
+  getTimeblocks: vi.fn().mockResolvedValue([]),
+  createTimeblock: vi.fn(),
+  updateTimeblock: vi.fn(),
+  deleteTimeblock: vi.fn(),
+  allocateTaskToTimeblock: vi.fn(),
   getTimeboxes: vi.fn().mockResolvedValue([]),
   createTimebox: vi.fn(),
   updateTimebox: vi.fn(),
@@ -12,7 +17,7 @@ vi.mock('@/api', () => ({
   allocateTaskToTimebox: vi.fn(),
 }));
 
-describe('TimeboxEditModal.vue', () => {
+describe('TimeblockEditModal.vue', () => {
   let pinia: any;
   let wrapper: VueWrapper<any> | null = null;
 
@@ -30,7 +35,7 @@ describe('TimeboxEditModal.vue', () => {
   });
 
   it('renders modal with default creation values when isOpen is true', () => {
-    wrapper = mount(TimeboxEditModal, {
+    wrapper = mount(TimeblockEditModal, {
       props: {
         isOpen: true,
         initialDate: '2026-08-31',
@@ -47,11 +52,11 @@ describe('TimeboxEditModal.vue', () => {
     expect(titleInput.exists()).toBe(true);
   });
 
-  it('populates fields when an existing timebox is provided', () => {
-    wrapper = mount(TimeboxEditModal, {
+  it('populates fields when an existing timeblock is provided', () => {
+    wrapper = mount(TimeblockEditModal, {
       props: {
         isOpen: true,
-        timebox: {
+        timeblock: {
           id: 'tb_123',
           title: 'Deep Architecture Focus',
           date: '2026-08-31',
@@ -71,9 +76,9 @@ describe('TimeboxEditModal.vue', () => {
     expect((titleInput.element as HTMLInputElement).value).toBe('Deep Architecture Focus');
   });
 
-  it('submits timebox creation on form submit', async () => {
-    const timeboxStore = useTimeboxStore();
-    const createSpy = vi.spyOn(timeboxStore, 'createTimebox').mockResolvedValue({
+  it('submits timeblock creation on form submit', async () => {
+    const timeblockStore = useTimeblockStore();
+    const createSpy = vi.spyOn(timeblockStore, 'createTimeblock').mockResolvedValue({
       id: 'tb_new',
       title: 'New Sprint Box',
       date: '2026-08-31',
@@ -83,7 +88,7 @@ describe('TimeboxEditModal.vue', () => {
       taskIds: [],
     });
 
-    wrapper = mount(TimeboxEditModal, {
+    wrapper = mount(TimeblockEditModal, {
       props: {
         isOpen: true,
         initialDate: '2026-08-31',

@@ -82,6 +82,10 @@ export interface AppSettings {
   language?: string;
   tagColors?: Record<string, string>;
   autoSyncInterval?: number;
+  timeblockStartHour?: number;
+  timeblockEndHour?: number;
+  isTimeblockSidebarOpen?: boolean;
+  // Legacy aliases
   timeboxStartHour?: number;
   timeboxEndHour?: number;
   isTimeboxSidebarOpen?: boolean;
@@ -100,7 +104,9 @@ export interface GitCommit {
   message: string;
 }
 
-export interface Timebox {
+export type TimeblockRecurrence = 'none' | 'daily' | 'weekdays' | 'weekly' | 'bi-weekly';
+
+export interface Timeblock {
   id: string;
   title: string;
   date: string;
@@ -108,4 +114,7 @@ export interface Timebox {
   endTime: string;
   color?: string | null;
   taskIds: string[];
+  recurrence?: TimeblockRecurrence | null;
 }
+
+export type Timebox = Timeblock;

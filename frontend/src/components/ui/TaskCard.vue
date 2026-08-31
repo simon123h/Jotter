@@ -7,7 +7,7 @@ import { useI18n } from '@/composables/useI18n';
 import { useSelectionStore } from '@/stores/selection';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
-import { useTimeboxStore } from '@/stores/timebox';
+import { useTimeblockStore } from '@/stores/timeblock';
 import { updateTask } from '@/api';
 import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
 
@@ -15,11 +15,13 @@ const { t, locale } = useI18n();
 const selectionStore = useSelectionStore();
 const projectStore = useProjectStore();
 const settingsStore = useSettingsStore();
-const timeboxStore = useTimeboxStore();
+const timeblockStore = useTimeblockStore();
 
-const allocatedTimebox = computed(() => {
-  return timeboxStore.timeboxForTask(props.task.id);
+const allocatedTimeblock = computed(() => {
+  return timeblockStore.timeblockForTask(props.task.id);
 });
+
+const allocatedTimebox = allocatedTimeblock;
 
 const props = withDefaults(
   defineProps<{

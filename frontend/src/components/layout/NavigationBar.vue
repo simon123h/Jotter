@@ -25,6 +25,7 @@ const route = useRoute();
 defineProps<{
   modelValue: string; // bound to searchQuery
   isSidebarOpen: boolean;
+  isTimeblockSidebarOpen?: boolean;
   isTimeboxSidebarOpen?: boolean;
   projects: Project[];
   activeProjectId: string;
@@ -35,6 +36,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', val: string): void;
   (e: 'toggle-sidebar'): void;
+  (e: 'toggle-timeblock-sidebar'): void;
   (e: 'toggle-timebox-sidebar'): void;
   (e: 'open-filter'): void;
   (e: 'create-task', defaultBucket: BucketName): void;
@@ -233,20 +235,20 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         </router-link>
       </div>
 
-      <!-- Timebox Sidebar Toggle Button -->
+      <!-- Timeblock Sidebar Toggle Button -->
       <button
-        @click="emit('toggle-timebox-sidebar')"
+        @click="emit('toggle-timeblock-sidebar')"
         class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border transition-all cursor-pointer"
         :class="
-          isTimeboxSidebarOpen
+          isTimeblockSidebarOpen || isTimeboxSidebarOpen
             ? 'bg-theme-primary/15 border-theme-primary/25 text-theme-accent font-bold shadow-2xs'
             : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
         "
-        :title="t('timebox.toggleSidebarTooltip')"
+        :title="t('timeblock.toggleSidebarTooltip') || t('timebox.toggleSidebarTooltip')"
       >
         <Box class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
         <span class="hidden xl:inline">
-          {{ t('timebox.sidebarTitle') }}
+          {{ t('timeblock.sidebarTitle') || t('timebox.sidebarTitle') }}
         </span>
       </button>
 

@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
-import { X, Trash2, Calendar, Clock, Palette } from '@lucide/vue';
-import type { Timebox } from '@/types';
-import { useTimeboxStore } from '@/stores/timebox';
+import { ref, watch, computed, nextTick } from 'vue';
+import { X, Trash2, Calendar, Clock, Palette, Repeat } from '@lucide/vue';
+import type { Timeblock } from '@/types';
+import { useTimeblockStore } from '@/stores/timeblock';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 
 const props = defineProps<{
   isOpen: boolean;
-  timebox?: Timebox | null;
+  timeblock?: Timeblock | null;
+  timebox?: Timeblock | null;
   initialDate?: string;
   initialStartTime?: string;
   initialEndTime?: string;
@@ -20,14 +21,17 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const timeboxStore = useTimeboxStore();
+const timeblockStore = useTimeblockStore();
 const { showDialog } = useDialog();
+
+const activeTimeblock = computed(() => props.timeblock || props.timebox);
 
 const title = ref('');
 const date = ref('');
 const startTime = ref('09:00');
 const endTime = ref('10:00');
 const color = ref<string | null>('blue');
+const recurrence = ref<string>('none');
 const loading = ref(false);
 const titleInput = ref<HTMLInputElement | null>(null);
 
@@ -58,18 +62,21 @@ watch(
   () => props.isOpen,
   (open) => {
     if (open) {
-      if (props.timebox) {
-        title.value = props.timebox.title;
-        date.value = props.timebox.date;
-        startTime.value = props.timebox.startTime;
-        endTime.value = props.timebox.endTime;
-        color.value = props.timebox.color || 'indigo';
+      const tb = activeTimeblock.value;
+      if (tb) {
+        title.value = tb.title;
+        date.value = tb.date;
+        startTime.value = tb.startTime;
+        endTime.value = tb.endTime;
+        color.value = tb.color || 'indigo';
+        recurrence.value = tb.recurrence || 'none';
       } else {
         title.value = '';
         date.value = props.initialDate || getTodayStr();
         startTime.value = props.initialStartTime || '09:00';
         endTime.value = props.initialEndTime || '10:00';
         color.value = getRandomColor();
+        recurrence.value = 'none';
       }
       nextTick(() => {
         titleInput.value?.focus();
@@ -85,21 +92,25 @@ const handleSave = async () => {
 
   loading.value = true;
   try {
-    if (props.timebox) {
-      await timeboxStore.updateTimebox(props.timebox.id, {
+    const tb = activeTimeblock.value;
+    const recValue = recurrence.value === 'none' ? null : (recurrence.value as any);
+    if (tb) {
+      await timeblockStore.updateTimeblock(tb.id, {
         title: title.value.trim(),
         date: date.value,
         startTime: startTime.value,
         endTime: endTime.value,
         color: color.value,
+        recurrence: recValue,
       });
     } else {
-      await timeboxStore.createTimebox({
+      await timeblockStore.createTimeblock({
         title: title.value.trim(),
         date: date.value,
         startTime: startTime.value,
         endTime: endTime.value,
         color: color.value,
+        recurrence: recValue,
         taskIds: [],
       });
     }
@@ -111,10 +122,11 @@ const handleSave = async () => {
 };
 
 const handleDelete = async () => {
-  if (!props.timebox) return;
+  const tb = activeTimeblock.value;
+  if (!tb) return;
   const confirmed = await showDialog({
-    title: t('timebox.deleteTitle'),
-    message: t('timebox.deleteConfirm'),
+    title: t('timeblock.deleteTitle') || t('timebox.deleteTitle'),
+    message: t('timeblock.deleteConfirm') || t('timebox.deleteConfirm'),
     type: 'error',
     showCancel: true,
     confirmText: t('buttons.delete'),
@@ -124,7 +136,7 @@ const handleDelete = async () => {
 
   loading.value = true;
   try {
-    await timeboxStore.deleteTimebox(props.timebox.id);
+    await timeblockStore.deleteTimeblock(tb.id);
     emit('save');
     emit('close');
   } finally {
@@ -147,7 +159,7 @@ const handleDelete = async () => {
       <div class="flex items-center justify-between px-5 py-4 border-b border-theme-border/60 bg-theme-column/30">
         <h2 class="text-base font-bold text-theme-text-main flex items-center gap-2">
           <Calendar class="w-4 h-4 text-theme-primary" />
-          {{ timebox ? t('timebox.editTitle') : t('timebox.newTitle') }}
+          {{ activeTimeblock ? t('timeblock.editTitle') || t('timebox.editTitle') : t('timeblock.newTitle') || t('timebox.newTitle') }}
         </h2>
         <button
           type="button"
@@ -216,6 +228,24 @@ const handleDelete = async () => {
           </div>
         </div>
 
+        <!-- Recurrence Selection -->
+        <div>
+          <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <Repeat class="w-3.5 h-3.5" />
+            {{ t('timeblock.recurrenceLabel') || 'Repeat / Recurrence' }}
+          </label>
+          <select
+            v-model="recurrence"
+            class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all cursor-pointer"
+          >
+            <option value="none">{{ t('timeblock.recurrenceOptions.none') || 'Does not repeat' }}</option>
+            <option value="daily">{{ t('timeblock.recurrenceOptions.daily') || 'Daily (Every day)' }}</option>
+            <option value="weekdays">{{ t('timeblock.recurrenceOptions.weekdays') || 'Weekdays (Mon–Fri)' }}</option>
+            <option value="weekly">{{ t('timeblock.recurrenceOptions.weekly') || 'Weekly' }}</option>
+            <option value="bi-weekly">{{ t('timeblock.recurrenceOptions.biWeekly') || 'Bi-weekly (Every 2 weeks)' }}</option>
+          </select>
+        </div>
+
         <!-- Color Palette Picker -->
         <div>
           <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
@@ -244,7 +274,7 @@ const handleDelete = async () => {
         <div class="flex items-center justify-between pt-3 border-t border-theme-border/60">
           <div>
             <button
-              v-if="timebox"
+              v-if="activeTimeblock"
               type="button"
               @click="handleDelete"
               :disabled="loading"
@@ -267,7 +297,7 @@ const handleDelete = async () => {
               :disabled="loading || !title.trim() || startTime >= endTime"
               class="px-4 py-2 text-xs font-semibold bg-theme-primary text-white hover:bg-theme-primary/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-all cursor-pointer"
             >
-              {{ timebox ? t('buttons.save') : t('buttons.create') }}
+              {{ activeTimeblock ? t('buttons.save') : t('buttons.create') }}
             </button>
           </div>
         </div>

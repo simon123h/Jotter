@@ -3,7 +3,15 @@ import { defineStore } from 'pinia';
 import type { BucketName, Project } from '@/types';
 
 export type ModalType =
-  'task-create' | 'project-edit' | 'filter' | 'import-spreadsheet' | 'move-tasks-confirm' | 'time-machine' | 'timebox-edit' | null;
+  | 'task-create'
+  | 'project-edit'
+  | 'filter'
+  | 'import-spreadsheet'
+  | 'move-tasks-confirm'
+  | 'time-machine'
+  | 'timeblock-edit'
+  | 'timebox-edit'
+  | null;
 
 export const useModalStore = defineStore('modal', () => {
   const activeModal = ref<ModalType>(null);
@@ -44,8 +52,8 @@ export const useModalStore = defineStore('modal', () => {
     openModal('time-machine', { projectId });
   };
 
-  const openTimeboxEdit = (timebox?: any, initialDate?: string, initialStartTime?: string, initialEndTime?: string) => {
-    openModal('timebox-edit', { timebox, initialDate, initialStartTime, initialEndTime });
+  const openTimeblockEdit = (timeblock?: any, initialDate?: string, initialStartTime?: string, initialEndTime?: string) => {
+    openModal('timeblock-edit', { timeblock, initialDate, initialStartTime, initialEndTime, timebox: timeblock });
   };
 
   return {
@@ -59,6 +67,7 @@ export const useModalStore = defineStore('modal', () => {
     openImportSpreadsheet,
     openMoveTasksConfirm,
     openTimeMachine,
-    openTimeboxEdit,
+    openTimeblockEdit,
+    openTimeboxEdit: openTimeblockEdit,
   };
 });
