@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import PomodoroBar from '@/components/ui/PomodoroBar.vue';
 import { usePomodoroStore } from '@/stores/pomodoro';
+import { useSelectionStore } from '@/stores/selection';
 
 vi.mock('@/utils/sound', () => ({
   playPomodoroChime: vi.fn(),
@@ -99,5 +100,25 @@ describe('PomodoroBar.vue', () => {
     await detachBtn.trigger('click');
 
     expect(store.active_task_id).toBeNull();
+  });
+
+  it('shifts bar position upwards when bulk task selection is active', async () => {
+    const pomodoroStore = usePomodoroStore();
+    const selectionStore = useSelectionStore();
+    pomodoroStore.is_bar_open = true;
+
+    const wrapper = mount(PomodoroBar, {
+      global: {
+        plugins: [pinia],
+      },
+    });
+
+    expect(wrapper.find('.fixed').classes()).toContain('bottom-6');
+
+    // Activate selection
+    selectionStore.selectedIds.add('task-1');
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.fixed').classes()).toContain('bottom-22');
   });
 });

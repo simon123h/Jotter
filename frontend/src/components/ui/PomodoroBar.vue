@@ -3,9 +3,11 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { Play, Pause, RotateCcw, SkipForward, Settings as SettingsIcon, X, Volume2, VolumeX, Check } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { usePomodoroStore, type PomodoroPhase } from '@/stores/pomodoro';
+import { useSelectionStore } from '@/stores/selection';
 
 const { t } = useI18n();
 const pomodoroStore = usePomodoroStore();
+const selectionStore = useSelectionStore();
 
 const showSettings = ref(false);
 const editWorkDuration = ref(pomodoroStore.work_duration);
@@ -59,7 +61,11 @@ onUnmounted(() => {
 
 <template>
   <transition name="slide-up">
-    <div v-if="pomodoroStore.is_bar_open" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[115] max-w-[95vw] sm:max-w-xl">
+    <div
+      v-if="pomodoroStore.is_bar_open"
+      class="fixed left-1/2 -translate-x-1/2 z-[115] w-max max-w-[96vw] transition-[bottom] duration-200 ease-out"
+      :class="selectionStore.hasSelection ? 'bottom-22 sm:bottom-24' : 'bottom-6'"
+    >
       <!-- Settings Popover -->
       <transition name="fade">
         <div
@@ -145,7 +151,7 @@ onUnmounted(() => {
 
       <!-- Main Floating Dock -->
       <div
-        class="bg-theme-card/95 backdrop-blur-md border border-theme-border px-3.5 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-2 relative overflow-hidden"
+        class="bg-theme-card/95 backdrop-blur-md border border-theme-border px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-2xl flex flex-col gap-2 relative overflow-hidden min-w-[340px] sm:min-w-[480px] md:min-w-[530px]"
       >
         <!-- Progress Bar Underlay -->
         <div class="absolute bottom-0 left-0 right-0 h-1 bg-theme-column/30 overflow-hidden rounded-b-2xl pointer-events-none">
@@ -162,7 +168,7 @@ onUnmounted(() => {
           class="flex items-center justify-between gap-2 px-1 text-[11px] text-theme-text-muted border-b border-theme-border/40 pb-1"
         >
           <div class="flex items-center gap-1.5 truncate">
-            <span class="font-medium opacity-75">{{ t('pomodoro.focusingOn') }}:</span>
+            <span class="font-medium opacity-75 shrink-0">{{ t('pomodoro.focusingOn') }}:</span>
             <span class="font-bold text-theme-text-main truncate" :title="pomodoroStore.active_task_title">
               {{ pomodoroStore.active_task_title }}
             </span>
@@ -177,12 +183,12 @@ onUnmounted(() => {
         </div>
 
         <!-- Core Toolbar Row -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3.5 whitespace-nowrap">
           <!-- Phase Switcher Pills -->
-          <div class="flex items-center bg-theme-column/40 p-0.5 rounded-xl text-[11px] font-semibold shrink-0">
+          <div class="flex items-center bg-theme-column/40 p-0.5 rounded-xl text-[11px] sm:text-xs font-semibold shrink-0">
             <button
               @click="selectPhase('work')"
-              class="px-2 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1"
+              class="px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
               :class="
                 pomodoroStore.phase === 'work'
                   ? 'bg-rose-500 text-white shadow-2xs font-bold'
@@ -190,11 +196,11 @@ onUnmounted(() => {
               "
             >
               <span>🍅</span>
-              <span class="hidden sm:inline">{{ t('pomodoro.focus') }}</span>
+              <span>{{ t('pomodoro.focus') }}</span>
             </button>
             <button
               @click="selectPhase('short_break')"
-              class="px-2 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1"
+              class="px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
               :class="
                 pomodoroStore.phase === 'short_break'
                   ? 'bg-emerald-500 text-white shadow-2xs font-bold'
@@ -202,11 +208,11 @@ onUnmounted(() => {
               "
             >
               <span>☕</span>
-              <span class="hidden sm:inline">{{ t('pomodoro.shortBreak') }}</span>
+              <span>{{ t('pomodoro.shortBreak') }}</span>
             </button>
             <button
               @click="selectPhase('long_break')"
-              class="px-2 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1"
+              class="px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
               :class="
                 pomodoroStore.phase === 'long_break'
                   ? 'bg-teal-500 text-white shadow-2xs font-bold'
@@ -214,13 +220,13 @@ onUnmounted(() => {
               "
             >
               <span>🌴</span>
-              <span class="hidden sm:inline">{{ t('pomodoro.longBreak') }}</span>
+              <span>{{ t('pomodoro.longBreak') }}</span>
             </button>
           </div>
 
           <!-- Digital Countdown Display -->
-          <div class="flex items-baseline gap-1 font-mono tracking-tight shrink-0 select-none">
-            <span class="text-xl sm:text-2xl font-black text-theme-text-main tabular-nums">
+          <div class="flex items-center justify-center font-mono tracking-tight shrink-0 select-none px-1">
+            <span class="text-xl sm:text-2xl font-black text-theme-text-main tabular-nums leading-none">
               {{ pomodoroStore.formatted_time }}
             </span>
           </div>
@@ -228,7 +234,7 @@ onUnmounted(() => {
           <!-- Completed Cycles indicator -->
           <div
             v-if="pomodoroStore.completed_cycles > 0"
-            class="hidden md:flex items-center text-[11px] font-bold text-theme-text-muted px-2 py-0.5 bg-theme-column/30 rounded-md shrink-0"
+            class="hidden lg:flex items-center text-[11px] font-bold text-theme-text-muted px-2 py-0.5 bg-theme-column/30 rounded-md shrink-0"
             :title="t('pomodoro.cyclesCompleted', { count: pomodoroStore.completed_cycles })"
           >
             🍅 ×{{ pomodoroStore.completed_cycles }}
