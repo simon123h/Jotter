@@ -13,7 +13,7 @@ import { parseTitleState } from '@/utils/titleParser';
 import { extractAllChecklistItems } from '@/utils/markdown';
 
 // Modular sub-components and composables
-import { useTaskEditor } from '@/features/task-editor/composables/useTaskEditor';
+import { useTaskEditor, provideTaskEditor } from '@/features/task-editor/composables/useTaskEditor';
 import TaskChecklist from '@/features/task-editor/components/TaskChecklist.vue';
 import TaskAttachments from '@/features/task-editor/components/TaskAttachments.vue';
 import TaskEditFields from '@/features/task-editor/components/TaskEditFields.vue';
@@ -73,30 +73,24 @@ const { patchTask } = useTaskMutations(
 );
 
 // Modular local edit state orchestration
-const {
-  isEditing,
-  editTitle,
-  ignoredKeywords,
-  editBucket,
-  editTags,
-  editBody,
-  editDueDate,
-  editPlannedDate,
-  editPriority,
-  editColor,
-  editPostponedUntil,
-  initEditState,
-  cancelEdit,
-  handleSave: editorHandleSave,
-  addChecklistItem: editorAddChecklistItem,
-  hasChecklist,
-} = useTaskEditor({
+const taskEditor = useTaskEditor({
   task,
   buckets,
   locale,
   patchTask,
   titleInput: computed(() => editFieldsRef.value?.titleInputRef),
 });
+provideTaskEditor(taskEditor);
+
+const {
+  isEditing,
+  form: editForm,
+  initEditState,
+  cancelEdit,
+  handleSave: editorHandleSave,
+  addChecklistItem: editorAddChecklistItem,
+  hasChecklist,
+} = taskEditor;
 
 // Full-screen Image preview lightbox state
 const previewImageUrl = ref<string | null>(null);
@@ -235,7 +229,7 @@ const handleSplitAllSubtasks = async () => {
     // 2. Update current task body removing the checklist items
     const updated = await patchTask(task.value, { body: cleanedBody });
     task.value = updated;
-    editBody.value = cleanedBody;
+    editForm.body = cleanedBody;
 
     // 3. Refresh board to show all newly created cards
     refreshBoard();
@@ -414,7 +408,7 @@ const handleDblClick = (event: MouseEvent) => {
 onBeforeRouteLeave(async () => {
   if (isEditing.value) {
     const bucketNames = buckets.value.map((b) => b.name);
-    const parseResult = parseTitleState(editTitle.value, locale.value, bucketNames, ignoredKeywords.value);
+    const parseResult = parseTitleState(editForm.title, locale.value, bucketNames, editForm.ignoredKeywords);
     const finalTitle = parseResult.cleanTitle;
 
     if (finalTitle) {
@@ -583,23 +577,7 @@ onBeforeRouteLeave(async () => {
             </div>
 
             <!-- Edit Mode -->
-            <TaskEditFields
-              v-else
-              ref="editFieldsRef"
-              v-model:title="editTitle"
-              v-model:ignored-keywords="ignoredKeywords"
-              v-model:bucket="editBucket"
-              v-model:tags="editTags"
-              v-model:postponed-until="editPostponedUntil"
-              v-model:due-date="editDueDate"
-              v-model:planned-date="editPlannedDate"
-              v-model:priority="editPriority"
-              v-model:color="editColor"
-              v-model:body="editBody"
-              :buckets="buckets"
-              :has-checklist="hasChecklist"
-              @add-checklist="addChecklistItem"
-            />
+            <TaskEditFields v-else ref="editFieldsRef" :buckets="buckets" @add-checklist="addChecklistItem" />
           </div>
         </div>
 
