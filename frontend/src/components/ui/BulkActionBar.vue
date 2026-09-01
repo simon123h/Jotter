@@ -20,10 +20,12 @@ import {
   ListCollapse,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
+import { usePomodoroStore } from '@/stores/pomodoro';
 import type { Bucket, Project } from '@/types';
 import TagInput from '@/components/ui/TagInput.vue';
 
 const { t, tBucket } = useI18n();
+const pomodoroStore = usePomodoroStore();
 
 const props = defineProps<{
   selectedCount: number;
@@ -143,7 +145,11 @@ const handleCustomPostponedDate = () => {
 
 <template>
   <transition name="slide-up">
-    <div v-if="selectedCount > 0" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2">
+    <div
+      v-if="selectedCount > 0"
+      class="fixed left-1/2 -translate-x-1/2 z-[120] flex flex-col items-center gap-2"
+      :class="pomodoroStore.is_bar_open ? 'bottom-20 sm:bottom-22' : 'bottom-6'"
+    >
       <!-- Nested Menus -->
       <div
         v-if="activeMenu !== 'none'"

@@ -9,6 +9,7 @@ import { useTimeblockStore } from '@/stores/timeblock';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
 import TimeblockSidebar from '@/components/layout/TimeblockSidebar.vue';
+import PomodoroBar from '@/components/ui/PomodoroBar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useProjects } from '@/composables/useProjects';
 import { useTaskFilters } from '@/composables/useTaskFilters';
@@ -235,6 +236,9 @@ onBeforeUnmount(() => {
         <TimeblockSidebar v-if="isTimeblockOpen" @close="toggleTimeblockSidebar" />
       </transition>
     </div>
+
+    <!-- POMODORO FLOATING DOCK -->
+    <PomodoroBar />
 
     <!-- MODAL REGISTRY (Utility Modals) -->
     <ModalRegistry />

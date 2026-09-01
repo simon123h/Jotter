@@ -1,4 +1,11 @@
 export const de = {
+  common: {
+    save: 'Speichern',
+    cancel: 'Abbrechen',
+    close: 'Schließen',
+    delete: 'Löschen',
+    edit: 'Bearbeiten',
+  },
   brand: {
     title: 'Jotter',
     subtitle: 'Einzige Quelle der Wahrheit: Einfache Markdown-Dateien. SQLite Ephemeral Index.',
@@ -606,5 +613,26 @@ export const de = {
   overflowMenu: {
     title: 'Weitere Optionen',
     views: 'Ansichten',
+  },
+  pomodoro: {
+    title: 'Pomodoro-Timer',
+    toggleTooltip: 'Pomodoro-Timer umschalten',
+    focus: 'Fokus',
+    shortBreak: 'Kurze Pause',
+    longBreak: 'Lange Pause',
+    workDuration: 'Fokus (Min.)',
+    shortBreakDuration: 'Kurze Pause (Min.)',
+    longBreakDuration: 'Lange Pause (Min.)',
+    sound: 'Tonsignal',
+    play: 'Timer starten',
+    pause: 'Timer anhalten',
+    reset: 'Timer zurücksetzen',
+    skip: 'Zur nächsten Phase springen',
+    settings: 'Timer-Einstellungen',
+    close: 'Pomodoro-Leiste schließen',
+    focusingOn: 'Fokus auf',
+    detachTask: 'Aufgabenverknüpfung lösen',
+    attachTaskTooltip: 'Pomodoro für diese Aufgabe starten',
+    cyclesCompleted: 'Zyklen: {count}',
   },
 };
