@@ -1,8 +1,10 @@
-"""Unit and integration tests for Timeblock API and Service."""
+import datetime
 
 
 def test_timeblock_crud_and_allocation(test_env):
     client, temp_dir = test_env
+    today_str = datetime.date.today().isoformat()
+    tomorrow_str = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
 
     # 1. Initially empty timeblock list
     res = client.get("/api/timeblocks")
@@ -12,7 +14,7 @@ def test_timeblock_crud_and_allocation(test_env):
     # 2. Create timeblock
     create_payload = {
         "title": "Deep Work: Auth API",
-        "date": "2026-08-31",
+        "date": today_str,
         "startTime": "09:00",
         "endTime": "11:30",
         "color": "indigo",
@@ -24,7 +26,7 @@ def test_timeblock_crud_and_allocation(test_env):
     tb_id = created["id"]
     assert tb_id.startswith("tb_")
     assert created["title"] == "Deep Work: Auth API"
-    assert created["date"] == "2026-08-31"
+    assert created["date"] == today_str
     assert created["startTime"] == "09:00"
     assert created["endTime"] == "11:30"
     assert created["taskIds"] == ["task-1", "task-2"]
@@ -35,11 +37,11 @@ def test_timeblock_crud_and_allocation(test_env):
     assert res.json()["id"] == tb_id
 
     # 4. List with date filtering
-    res = client.get("/api/timeblocks?startDate=2026-08-31&endDate=2026-08-31")
+    res = client.get(f"/api/timeblocks?startDate={today_str}&endDate={today_str}")
     assert res.status_code == 200
     assert len(res.json()) == 1
 
-    res = client.get("/api/timeblocks?startDate=2026-09-01")
+    res = client.get(f"/api/timeblocks?startDate={tomorrow_str}")
     assert res.status_code == 200
     assert len(res.json()) == 0
 
@@ -131,3 +133,55 @@ def test_recurring_timeblocks(test_env):
     fri_titles = [tb["title"] for tb in res_fri.json()]
     assert "Daily Deep Work" in fri_titles
     assert "Weekday Standup" in fri_titles
+
+
+def test_purge_past_one_off_timeblocks(test_env):
+    import datetime
+    import json
+    from pathlib import Path
+
+    client, data_dir = test_env
+    today = datetime.date.today()
+    past_date = (today - datetime.timedelta(days=3)).isoformat()
+    future_date = (today + datetime.timedelta(days=3)).isoformat()
+
+    # Seed raw JSON with a past one-off block, past recurring block, and future block
+    seeded = [
+        {
+            "id": "tb_past_oneoff",
+            "title": "Old Past Block",
+            "date": past_date,
+            "start_time": "09:00",
+            "end_time": "10:00",
+            "recurrence": None,
+            "task_ids": ["task-past"],
+        },
+        {
+            "id": "tb_past_recurring",
+            "title": "Recurring Routine",
+            "date": past_date,
+            "start_time": "08:00",
+            "end_time": "09:00",
+            "recurrence": "daily",
+            "task_ids": [],
+        },
+        {
+            "id": "tb_future_oneoff",
+            "title": "Future Planning",
+            "date": future_date,
+            "start_time": "14:00",
+            "end_time": "15:00",
+            "recurrence": None,
+            "task_ids": [],
+        },
+    ]
+    tb_file = Path(data_dir) / "timeblocks.json"
+    tb_file.write_text(json.dumps(seeded, indent=2), encoding="utf-8")
+
+    # Fetching list_timeblocks automatically purges the past one-off block
+    res = client.get("/api/timeblocks")
+    assert res.status_code == 200
+    ids = [tb["id"] for tb in res.json()]
+    assert "tb_past_oneoff" not in ids
+    assert "tb_past_recurring" in ids
+    assert "tb_future_oneoff" in ids

@@ -83,6 +83,23 @@ class SqliteTaskRepository:
             raise EntityNotFoundError(f"Task '{task_id}' not found in project '{project_id}'")
         return self._row_to_task(row)
 
+    def get_by_ids(self, task_ids: list[str]) -> list[Task]:
+        if not task_ids:
+            return []
+        cursor = self.conn.cursor()
+        placeholders = ",".join(["?"] * len(task_ids))
+        cursor.execute(
+            f"""
+            SELECT id, project_id, title, bucket, position, tags, attachments, body,
+                   due_date, planned_date, priority, color, postponed_until, created_at, updated_at
+            FROM tasks
+            WHERE id IN ({placeholders})
+            """,
+            task_ids,
+        )
+        rows = cursor.fetchall()
+        return [self._row_to_task(row) for row in rows]
+
     def find_tasks(
         self,
         project_id: str | None = None,

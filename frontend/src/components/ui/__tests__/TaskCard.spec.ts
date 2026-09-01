@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import TaskCard from '@/components/ui/TaskCard.vue';
 import type { Task } from '@/types';
 import { updateTask } from '@/api';
+import { useTimeblockStore } from '@/stores/timeblock';
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({
@@ -209,5 +210,22 @@ describe('TaskCard.vue', () => {
     expect(updateTask).toHaveBeenCalledWith('default', '123', {
       body: `- [x] Level 0 Item 1\n  - [ ] Level 1 Item\n- [x] Level 0 Item 2`,
     });
+  });
+
+  it('renders allocated timeblock badge and title when task is assigned to a timeblock', () => {
+    const timeblockStore = useTimeblockStore();
+    timeblockStore.timeblocks = [
+      {
+        id: 'tb-1',
+        title: 'Morning Focus',
+        date: '2026-09-01',
+        startTime: '09:00',
+        endTime: '11:00',
+        taskIds: ['123'],
+      },
+    ];
+
+    const wrapper = mount(TaskCard, mountOptions);
+    expect(wrapper.text()).toContain('Morning Focus');
   });
 });

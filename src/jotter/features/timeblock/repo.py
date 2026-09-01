@@ -26,8 +26,9 @@ class TimeblockDiskRepo:
 
     def _save(self, items: list[dict[str, Any]]) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
+        cleaned_items = [{k: v for k, v in it.items() if k != "tasks"} for it in items]
         temp_file = self.file_path.with_suffix(".tmp")
-        temp_file.write_text(json.dumps(items, indent=2, ensure_ascii=False), encoding="utf-8")
+        temp_file.write_text(json.dumps(cleaned_items, indent=2, ensure_ascii=False), encoding="utf-8")
         temp_file.replace(self.file_path)
 
     def list_all(self) -> list[dict[str, Any]]:

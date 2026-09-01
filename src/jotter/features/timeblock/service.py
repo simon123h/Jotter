@@ -1,6 +1,7 @@
 import datetime
 from typing import Any
 
+from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 from jotter.features.timeblock.repo import TimeblockDiskRepo
 from jotter.features.timeblock.schemas import TimeblockCreate, TimeblockUpdate
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
@@ -35,18 +36,68 @@ def _matches_date(block: dict[str, Any], target_date: datetime.date) -> bool:
 
 
 class TimeblockApplicationService:
-    def __init__(self, repo: TimeblockDiskRepo):
+    def __init__(self, repo: TimeblockDiskRepo, task_repo: SqliteTaskRepository | None = None):
         self.repo = repo
+        self.task_repo = task_repo
+
+    def _populate_tasks(self, item: dict[str, Any]) -> dict[str, Any]:
+        if not self.task_repo:
+            item["tasks"] = item.get("tasks") or []
+            return item
+        task_ids = item.get("task_ids") or item.get("taskIds") or []
+        if not task_ids:
+            item["tasks"] = []
+            return item
+        tasks = self.task_repo.get_by_ids(task_ids)
+        task_map = {str(t.id): t for t in tasks}
+        item["tasks"] = [task_map[tid] for tid in task_ids if tid in task_map]
+        return item
+
+    def _populate_tasks_bulk(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if not self.task_repo or not items:
+            for it in items:
+                it["tasks"] = it.get("tasks") or []
+            return items
+        all_ids: set[str] = set()
+        for it in items:
+            tids = it.get("task_ids") or it.get("taskIds") or []
+            all_ids.update(tids)
+        if not all_ids:
+            for it in items:
+                it["tasks"] = []
+            return items
+        tasks = self.task_repo.get_by_ids(list(all_ids))
+        task_map = {str(t.id): t for t in tasks}
+        for it in items:
+            tids = it.get("task_ids") or it.get("taskIds") or []
+            it["tasks"] = [task_map[tid] for tid in tids if tid in task_map]
+        return items
+
+    def purge_past_timeblocks(self) -> None:
+        """Purges one-off time blocks whose date is before today. Recurring blocks are preserved."""
+        today_str = datetime.date.today().isoformat()
+        items = self.repo.list_all()
+        retained = [
+            tb
+            for tb in items
+            if (tb.get("recurrence") and tb["recurrence"] != "none") or (tb.get("date", "") >= today_str)
+        ]
+        if len(retained) != len(items):
+            self.repo._save(retained)
 
     def list_timeblocks(
         self,
         start_date: str | None = None,
         end_date: str | None = None,
     ) -> list[dict[str, Any]]:
+        self.purge_past_timeblocks()
         items = self.repo.list_all()
 
         if not start_date and not end_date:
-            return sorted(items, key=lambda x: (x.get("date", ""), x.get("start_time") or x.get("startTime", "")))
+            sorted_items = sorted(
+                items, key=lambda x: (x.get("date", ""), x.get("start_time") or x.get("startTime", ""))
+            )
+            return self._populate_tasks_bulk(sorted_items)
 
         try:
             start_dt = datetime.date.fromisoformat(start_date) if start_date else None
@@ -80,13 +131,16 @@ class TimeblockApplicationService:
                     matched_results.append(item_copy)
 
         # Sort by date and startTime
-        return sorted(matched_results, key=lambda x: (x.get("date", ""), x.get("start_time") or x.get("startTime", "")))
+        sorted_items = sorted(
+            matched_results, key=lambda x: (x.get("date", ""), x.get("start_time") or x.get("startTime", ""))
+        )
+        return self._populate_tasks_bulk(sorted_items)
 
     def get_timeblock(self, timeblock_id: str) -> dict[str, Any]:
         item = self.repo.get_by_id(timeblock_id)
         if not item:
             raise EntityNotFoundError(f"Timeblock '{timeblock_id}' not found")
-        return item
+        return self._populate_tasks(item)
 
     def create_timeblock(self, data: TimeblockCreate) -> dict[str, Any]:
         if data.start_time >= data.end_time:
@@ -103,7 +157,8 @@ class TimeblockApplicationService:
             "task_ids": data.task_ids or [],
             "recurrence": data.recurrence or None,
         }
-        return self.repo.save(item)
+        saved = self.repo.save(item)
+        return self._populate_tasks(saved)
 
     def update_timeblock(self, timeblock_id: str, data: TimeblockUpdate) -> dict[str, Any]:
         existing = self.get_timeblock(timeblock_id)
@@ -135,7 +190,8 @@ class TimeblockApplicationService:
             "task_ids": task_ids,
             "recurrence": recurrence or None,
         }
-        return self.repo.save(updated)
+        saved = self.repo.save(updated)
+        return self._populate_tasks(saved)
 
     def delete_timeblock(self, timeblock_id: str) -> None:
         deleted = self.repo.delete(timeblock_id)
@@ -143,7 +199,9 @@ class TimeblockApplicationService:
             raise EntityNotFoundError(f"Timeblock '{timeblock_id}' not found")
 
     def allocate_task(self, timeblock_id: str, task_id: str, action: str = "add") -> dict[str, Any]:
-        target_tb = self.get_timeblock(timeblock_id)
+        target_tb = self.repo.get_by_id(timeblock_id)
+        if not target_tb:
+            raise EntityNotFoundError(f"Timeblock '{timeblock_id}' not found")
         all_boxes = self.repo.list_all()
 
         # If adding, remove task from any other box first so task belongs to max 1 time block
@@ -155,14 +213,14 @@ class TimeblockApplicationService:
                         tb["task_ids"] = [t for t in ids if t != task_id]
                         self.repo.save(tb)
 
-            target_tb = self.get_timeblock(timeblock_id)
-            current_ids = target_tb.get("task_ids", [])
+            target_tb = self.repo.get_by_id(timeblock_id) or target_tb
+            current_ids = list(target_tb.get("task_ids", []))
             if task_id not in current_ids:
                 current_ids.append(task_id)
                 target_tb["task_ids"] = current_ids
                 self.repo.save(target_tb)
         elif action == "remove":
-            current_ids = target_tb.get("task_ids", [])
+            current_ids = list(target_tb.get("task_ids", []))
             if task_id in current_ids:
                 target_tb["task_ids"] = [t for t in current_ids if t != task_id]
                 self.repo.save(target_tb)

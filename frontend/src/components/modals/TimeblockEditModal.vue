@@ -147,7 +147,7 @@ const handleDelete = async () => {
 <template>
   <div
     v-if="isOpen"
-    class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
     @click.self="emit('close')"
     @keydown.esc="emit('close')"
   >

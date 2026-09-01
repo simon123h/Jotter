@@ -46,20 +46,23 @@ describe('TimeblockSidebar.vue', () => {
     expect(wrapper.text()).toContain('Time Blocking');
   });
 
-  it('navigates days with previous and next buttons', async () => {
+  it('navigates days with next and previous buttons and disables previous on today', async () => {
     const wrapper = mount(TimeblockSidebar, {
       global: {
         plugins: [pinia],
       },
     });
 
-    const prevBtn = wrapper.find('button[title="Previous day"]');
-    expect(prevBtn.exists()).toBe(true);
-    await prevBtn.trigger('click');
+    const prevBtn = wrapper.findAll('button')[1]; // prevDay button
+    expect(prevBtn.attributes('disabled')).toBeDefined();
 
     const nextBtn = wrapper.find('button[title="Next day"]');
     expect(nextBtn.exists()).toBe(true);
     await nextBtn.trigger('click');
+
+    // After moving to tomorrow, prevBtn should be enabled and navigate back
+    expect(prevBtn.attributes('disabled')).toBeUndefined();
+    await prevBtn.trigger('click');
   });
 
   it('opens timeblock edit modal on grid slot click', async () => {
@@ -163,6 +166,7 @@ describe('TimeblockSidebar.vue', () => {
         endTime: '11:00',
         color: 'indigo',
         taskIds: ['task-1'],
+        tasks: [projectStore.tasks[0]],
         recurrence: 'daily',
       },
     ];

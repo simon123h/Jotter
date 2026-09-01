@@ -41,9 +41,10 @@ const formatDateStr = (d: Date): string => {
 const activeDate = ref<Date>(new Date());
 const activeDateStr = computed(() => formatDateStr(activeDate.value));
 
+const todayStr = computed(() => formatDateStr(new Date()));
+
 const isToday = computed(() => {
-  const today = new Date();
-  return formatDateStr(today) === activeDateStr.value;
+  return todayStr.value === activeDateStr.value;
 });
 
 // Title for active day
@@ -54,11 +55,18 @@ const activeDayTitle = computed(() => {
   return isToday.value ? `${todayLabel}, ${formatted}` : formatted;
 });
 
-// Date navigation
+// Date navigation (strictly bounded to today and future)
 const prevDay = () => {
+  if (isToday.value) return;
   const d = new Date(activeDate.value);
   d.setDate(d.getDate() - 1);
-  activeDate.value = d;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (d < today) {
+    activeDate.value = new Date();
+  } else {
+    activeDate.value = d;
+  }
 };
 
 const nextDay = () => {
@@ -75,14 +83,16 @@ const handleDateInput = (e: Event) => {
   const val = (e.target as HTMLInputElement).value;
   if (val) {
     const [y, m, d] = val.split('-').map(Number);
-    activeDate.value = new Date(y, m - 1, d);
+    const chosen = new Date(y, m - 1, d);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    activeDate.value = chosen < today ? new Date() : chosen;
   }
 };
 
-// Fetch time blocks for active date range
+// Fetch time blocks
 const loadTimeblocks = async () => {
-  const dateStr = activeDateStr.value;
-  await timeblockStore.fetchTimeblocks(dateStr, dateStr);
+  await timeblockStore.fetchTimeblocks();
 };
 
 // Current time indicator
@@ -161,14 +171,16 @@ const getTimeblockStyle = (tb: Timeblock) => {
   };
 };
 
-// Map task ID to Task object
-const taskMap = computed(() => {
-  const map = new Map<string, Task>();
-  projectStore.tasks.forEach((t) => map.set(t.id, t));
-  return map;
-});
-
-const getTask = (id: string): Task | undefined => taskMap.value.get(id);
+// Resolve task objects for a time block (directly from backend-populated tasks, with fallback)
+const getTasksForBlock = (tb: Timeblock): Task[] => {
+  if (tb.tasks && tb.tasks.length > 0) {
+    return tb.tasks;
+  }
+  if (tb.taskIds && tb.taskIds.length > 0) {
+    return tb.taskIds.map((id) => projectStore.tasks.find((t) => t.id === id)).filter((t): t is Task => !!t);
+  }
+  return [];
+};
 
 const isTaskDone = (task: Task): boolean => {
   return ['done', 'archive', 'archived', 'completed'].includes(task.bucket.toLowerCase());
@@ -456,9 +468,15 @@ const nowIndicatorStyle = computed(() => {
       <div class="flex items-center justify-between gap-1.5 bg-theme-column/40 p-1 rounded-lg border border-theme-border/60">
         <button
           type="button"
+          :disabled="isToday"
           @click="prevDay"
-          class="p-1 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card rounded transition-colors cursor-pointer"
-          :title="t('timeblock.prevDay')"
+          class="p-1 rounded transition-colors"
+          :class="
+            isToday
+              ? 'opacity-30 cursor-not-allowed text-theme-text-muted'
+              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card cursor-pointer'
+          "
+          :title="isToday ? '' : t('timeblock.prevDay')"
         >
           <ChevronLeft class="w-4 h-4" />
         </button>
@@ -486,6 +504,7 @@ const nowIndicatorStyle = computed(() => {
             <Calendar class="w-3.5 h-3.5" />
             <input
               type="date"
+              :min="todayStr"
               :value="activeDateStr"
               @change="handleDateInput"
               class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
@@ -605,30 +624,29 @@ const nowIndicatorStyle = computed(() => {
 
             <!-- Allocated Tasks List Inside Box -->
             <div class="flex-1 overflow-y-auto space-y-1 min-h-0 pr-0.5 pb-2 custom-scrollbar">
-              <template v-for="taskId in tb.taskIds" :key="taskId">
+              <template v-for="task in getTasksForBlock(tb)" :key="task.id">
                 <div
-                  v-if="getTask(taskId)"
-                  @click.stop="openTaskDetail(getTask(taskId)!)"
+                  @click.stop="openTaskDetail(task)"
                   class="task-item-card task-card flex items-center justify-between gap-1.5 px-2 py-1 rounded bg-theme-card/95 border border-theme-border/70 text-[11px] font-medium text-theme-text-main hover:bg-theme-column/90 transition-all cursor-pointer group/item shadow-2xs"
-                  :class="isTaskDone(getTask(taskId)!) ? 'opacity-50' : ''"
+                  :class="isTaskDone(task) ? 'opacity-50' : ''"
                 >
                   <div class="flex items-center gap-1.5 min-w-0">
                     <button
                       type="button"
-                      @click.stop="toggleTaskDone(getTask(taskId)!, tb.id, $event)"
+                      @click.stop="toggleTaskDone(task, tb.id, $event)"
                       class="shrink-0 p-0.5 hover:text-theme-primary transition-colors cursor-pointer"
-                      :title="isTaskDone(getTask(taskId)!) ? t('tasks.markNotDone') : t('tasks.markDone')"
+                      :title="isTaskDone(task) ? t('tasks.markNotDone') : t('tasks.markDone')"
                     >
-                      <CheckCircle2 v-if="isTaskDone(getTask(taskId)!)" class="w-3.5 h-3.5 text-emerald-400" />
+                      <CheckCircle2 v-if="isTaskDone(task)" class="w-3.5 h-3.5 text-emerald-400" />
                       <Circle v-else class="w-3.5 h-3.5 text-theme-text-muted" />
                     </button>
-                    <span class="truncate" :class="isTaskDone(getTask(taskId)!) ? 'line-through text-theme-text-muted' : ''">
-                      {{ getTask(taskId)!.title }}
+                    <span class="truncate" :class="isTaskDone(task) ? 'line-through text-theme-text-muted' : ''">
+                      {{ task.title }}
                     </span>
                   </div>
                   <button
                     type="button"
-                    @click.stop="unallocateTask(tb.id, taskId, $event)"
+                    @click.stop="unallocateTask(tb.id, task.id, $event)"
                     class="p-0.5 text-theme-text-muted hover:text-rose-500 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 cursor-pointer"
                     :title="t('timeblock.unallocate')"
                   >

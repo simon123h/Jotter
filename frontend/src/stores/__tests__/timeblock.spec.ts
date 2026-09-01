@@ -15,6 +15,7 @@ describe('useTimeblockStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    vi.mocked(api.getTimeblocks).mockResolvedValue([]);
   });
 
   it('fetches timeblocks and maps by date', async () => {

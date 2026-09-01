@@ -110,5 +110,6 @@ export interface Timeblock {
   endTime: string;
   color?: string | null;
   taskIds: string[];
+  tasks?: Task[];
   recurrence?: TimeblockRecurrence | null;
 }

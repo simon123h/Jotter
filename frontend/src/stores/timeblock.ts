@@ -101,23 +101,24 @@ export const useTimeblockStore = defineStore('timeblock', () => {
   const allocateTask = async (timeblockId: string, taskId: string): Promise<void> => {
     try {
       // Optimistic update
-      timeblocks.value.forEach((tb) => {
-        if (tb.id !== timeblockId && tb.taskIds) {
-          tb.taskIds = tb.taskIds.filter((t) => t !== taskId);
+      timeblocks.value = timeblocks.value.map((tb) => {
+        if (tb.id === timeblockId) {
+          const currentIds = tb.taskIds ? [...tb.taskIds] : [];
+          if (!currentIds.includes(taskId)) {
+            currentIds.push(taskId);
+          }
+          return { ...tb, taskIds: currentIds };
+        } else if (tb.taskIds && tb.taskIds.includes(taskId)) {
+          return { ...tb, taskIds: tb.taskIds.filter((t) => t !== taskId) };
         }
+        return tb;
       });
-      const target = timeblocks.value.find((tb) => tb.id === timeblockId);
-      if (target) {
-        if (!target.taskIds) target.taskIds = [];
-        if (!target.taskIds.includes(taskId)) {
-          target.taskIds.push(taskId);
-        }
-      }
 
       const updated = await apiAllocateTask(timeblockId, taskId, 'add');
       const idx = timeblocks.value.findIndex((tb) => tb.id === timeblockId);
       if (idx !== -1) {
         timeblocks.value[idx] = updated;
+        timeblocks.value = [...timeblocks.value];
       }
     } catch (err: any) {
       // Refresh on error
@@ -130,15 +131,18 @@ export const useTimeblockStore = defineStore('timeblock', () => {
 
   const unallocateTask = async (timeblockId: string, taskId: string): Promise<void> => {
     try {
-      const target = timeblocks.value.find((tb) => tb.id === timeblockId);
-      if (target && target.taskIds) {
-        target.taskIds = target.taskIds.filter((t) => t !== taskId);
-      }
+      timeblocks.value = timeblocks.value.map((tb) => {
+        if (tb.id === timeblockId && tb.taskIds) {
+          return { ...tb, taskIds: tb.taskIds.filter((t) => t !== taskId) };
+        }
+        return tb;
+      });
 
       const updated = await apiAllocateTask(timeblockId, taskId, 'remove');
       const idx = timeblocks.value.findIndex((tb) => tb.id === timeblockId);
       if (idx !== -1) {
         timeblocks.value[idx] = updated;
+        timeblocks.value = [...timeblocks.value];
       }
     } catch (err: any) {
       await fetchTimeblocks();

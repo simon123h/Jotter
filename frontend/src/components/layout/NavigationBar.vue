@@ -224,18 +224,15 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
       <!-- Timeblock Sidebar Toggle Button -->
       <button
         @click="emit('toggle-timeblock-sidebar')"
-        class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border transition-all cursor-pointer"
+        class="timeblock-toggle-btn p-1.5 rounded transition-all cursor-pointer shrink-0 border"
         :class="
           isTimeblockSidebarOpen
-            ? 'bg-theme-primary/15 border-theme-primary/25 text-theme-accent font-bold shadow-2xs'
-            : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
+            ? 'bg-theme-primary/15 border-theme-primary/30 text-theme-primary'
+            : 'border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
         "
         :title="t('timeblock.toggleSidebarTooltip')"
       >
-        <Box class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
-        <span class="hidden xl:inline">
-          {{ t('timeblock.sidebarTitle') }}
-        </span>
+        <Box class="w-4 h-4 shrink-0" />
       </button>
 
       <!-- Overflow Menu (Three dots) -->

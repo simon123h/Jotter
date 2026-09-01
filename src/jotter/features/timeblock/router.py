@@ -1,7 +1,8 @@
-"""FastAPI routes for Timeblock management."""
+import sqlite3
 
 from fastapi import APIRouter, Depends, Query
 
+from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 from jotter.features.timeblock.repo import TimeblockDiskRepo
 from jotter.features.timeblock.schemas import (
     TaskAllocationRequest,
@@ -10,14 +11,18 @@ from jotter.features.timeblock.schemas import (
     TimeblockUpdate,
 )
 from jotter.features.timeblock.service import TimeblockApplicationService
-from jotter.shared.deps import get_data_dir
+from jotter.shared.deps import get_data_dir, get_db_conn
 
 router = APIRouter(prefix="/api/timeblocks", tags=["timeblocks"])
 
 
-def get_timeblock_service(data_dir: str = Depends(get_data_dir)) -> TimeblockApplicationService:
+def get_timeblock_service(
+    data_dir: str = Depends(get_data_dir),
+    db: sqlite3.Connection = Depends(get_db_conn),
+) -> TimeblockApplicationService:
     repo = TimeblockDiskRepo(data_dir)
-    return TimeblockApplicationService(repo)
+    task_repo = SqliteTaskRepository(db)
+    return TimeblockApplicationService(repo, task_repo)
 
 
 @router.get("", response_model=list[TimeblockResponse])

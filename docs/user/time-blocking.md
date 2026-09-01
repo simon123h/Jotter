@@ -29,13 +29,15 @@ flowchart LR
 
 ### 2. Creating and Editing Time Blocks
 * **Slot Click**: Click any empty hour slot on the daily grid to create a time block pre-filled with that time.
-* **Click to Edit**: Click on any time block box to open its details dialog for editing title, times, accent color, or deletion.
+* **Click to Edit**: Click on any time block box to open its details dialog for editing title, times, accent color, recurrence, or deletion.
+* **Recurrence Patterns**: Set blocks to repeat **Daily**, **Weekdays (Mon–Fri)**, **Weekly**, or **Bi-weekly**.
 * **Vibrant Accent Colors**: Choose from color presets (Red, Orange, Yellow, Green, Blue, Purple, Pink) matching the Task Card palette.
 
 ### 3. Task Allocation (Single & Multi-Select)
 * Select tasks on the board, then click the **Add Tasks** (`+` / ListPlus) button on the header of any time block.
-* Tasks scheduled in a time block for today automatically have their qualitative planned date updated to **Today**.
-* Tasks can be completed right inside the time block with interactive checkboxes (`☑ / ☐`) or unallocated via the <kbd>×</kbd> button.
+* Tasks allocated to a time block display a clean indicator badge on their task cards across all board and list views.
+* Marking a task as done inside a time block automatically completes the task and unallocates it from the block queue.
+* Tasks can also be unallocated manually anytime via the <kbd>×</kbd> button.
 
 ### 4. Drag-to-Move and Resize
 * **Move Times**: Drag a time block up or down to adjust its start time with 15-minute snapping.

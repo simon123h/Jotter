@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
+import { useTimeblockStore } from '@/stores/timeblock';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
 import TimeblockSidebar from '@/components/layout/TimeblockSidebar.vue';
@@ -24,6 +25,7 @@ const toast = useToast();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const modalStore = useModalStore();
+const timeblockStore = useTimeblockStore();
 
 const { isSidebarOpen, currentTheme } = storeToRefs(settingsStore);
 const isTimeblockOpen = computed<boolean>(() => Boolean(settingsStore.isTimeblockSidebarOpen));
@@ -172,7 +174,7 @@ const handleMoveTasksToProject = ({ taskIds, projectId: targetProjectId }: { tas
 };
 
 onMounted(async () => {
-  await projectStore.fetchProjects();
+  await Promise.all([projectStore.fetchProjects(), timeblockStore.fetchTimeblocks()]);
   setTheme(currentTheme.value);
 
   // Set up auto-sync periodic check

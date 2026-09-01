@@ -29,13 +29,15 @@ flowchart LR
 
 ### 2. Zeitblöcke erstellen & bearbeiten
 * **Klick in Kalenderslot**: Klicke auf ein freies Stundenfeld, um sofort einen Zeitblock für diese Zeit anzulegen.
-* **Klick zum Bearbeiten**: Klicke auf eine Box, um den Bearbeitungsdialog für Titel, Zeiten, Farbton oder Löschen zu öffnen.
+* **Klick zum Bearbeiten**: Klicke auf eine Box, um den Bearbeitungsdialog für Titel, Zeiten, Wiederholung, Farbton oder Löschen zu öffnen.
+* **Wiederholungen**: Lege wiederkehrende Fokusblöcke fest (**Täglich**, **Werktags (Mo–Fr)**, **Wöchentlich** oder **Zweiwöchentlich**).
 * **Farbakzente**: Wähle aus abgestimmten Farbtönen (Rot, Orange, Gelb, Grün, Blau, Violett, Pink), passend zu den Aufgabenkarten.
 
 ### 3. Aufgaben zuordnen (Einzeln & Mehrfach)
 * Wähle Aufgaben auf dem Board aus und klicke auf das **Aufgaben hinzufügen**-Symbol (`+` / ListPlus) in der Kopfzeile des Zeitblocks.
-* Aufgaben, die in einen Zeitblock für heute eingeplant werden, erhalten automatisch das Planungsdatum **Heute** (`today`).
-* Aufgaben können mit interaktiven Checkboxen (`☑ / ☐`) direkt im Zeitblock erledigt oder über das <kbd>×</kbd>-Symbol entfernt werden.
+* Aufgaben mit Zeitblock-Zuordnung zeigen ein dezentes Zeitblock-Badge auf ihrer Aufgabenkarte in allen Board- und Listenansichten an.
+* Wird eine Aufgabe direkt im Zeitblock als erledigt abgehakt (`☑`), wird sie als erledigt markiert und automatisch aus dem Block entfernt.
+* Aufgaben können jederzeit auch manuell über das <kbd>×</kbd>-Symbol aus dem Block entfernt werden.
 
 ### 4. Verschieben & Dauer anpassen
 * **Startzeit verschieben**: Ziehe einen Zeitblock nach oben oder unten, um ihn im 15-Minuten-Raster zu verschieben.
