@@ -219,9 +219,9 @@ describe('TaskCard.vue', () => {
         id: 'tb-1',
         title: 'Morning Focus',
         date: '2026-09-01',
-        startTime: '09:00',
-        endTime: '11:00',
-        taskIds: ['123'],
+        start_time: '09:00',
+        end_time: '11:00',
+        task_ids: ['123'],
       },
     ];
 

@@ -130,11 +130,11 @@ const minutesToTime = (mins: number): string => {
 // Moving & Resizing Timeblock state
 const isMovingTimeblock = ref(false);
 const movingTimeblockId = ref<string | null>(null);
-const movingGhost = ref<{ id: string; startTime: string; endTime: string } | null>(null);
+const movingGhost = ref<{ id: string; start_time: string; end_time: string } | null>(null);
 
 const isResizingTimeblock = ref(false);
 const resizingTimeblockId = ref<string | null>(null);
-const resizingGhost = ref<{ id: string; startTime: string; endTime: string } | null>(null);
+const resizingGhost = ref<{ id: string; start_time: string; end_time: string } | null>(null);
 
 // Matching identical Task Card color palette
 const TASK_CARD_COLOR_MAP: Record<string, string> = {
@@ -152,8 +152,8 @@ const getTimeblockStyle = (tb: Timeblock) => {
   const minMinutes = startHour.value * 60;
   const maxMinutes = (endHour.value + 1) * 60;
 
-  const startMin = Math.max(minMinutes, timeToMinutes(tb.startTime));
-  const endMin = Math.min(maxMinutes, timeToMinutes(tb.endTime));
+  const startMin = Math.max(minMinutes, timeToMinutes(tb.start_time));
+  const endMin = Math.min(maxMinutes, timeToMinutes(tb.end_time));
   const durationMin = Math.max(20, endMin - startMin);
 
   const topPx = ((startMin - minMinutes) / 60) * HOUR_HEIGHT;
@@ -176,8 +176,8 @@ const getTasksForBlock = (tb: Timeblock): Task[] => {
   if (tb.tasks && tb.tasks.length > 0) {
     return tb.tasks;
   }
-  if (tb.taskIds && tb.taskIds.length > 0) {
-    return tb.taskIds.map((id) => projectStore.tasks.find((t) => t.id === id)).filter((t): t is Task => !!t);
+  if (tb.task_ids && tb.task_ids.length > 0) {
+    return tb.task_ids.map((id) => projectStore.tasks.find((t) => t.id === id)).filter((t): t is Task => !!t);
   }
   return [];
 };
@@ -215,8 +215,8 @@ const startTimeblockMove = (event: MouseEvent, tb: Timeblock) => {
   if (target.closest('button, .task-item-card, .timeblock-resize-handle, input, a')) return;
 
   const startClientY = event.clientY;
-  const origStartMin = timeToMinutes(tb.startTime);
-  const origEndMin = timeToMinutes(tb.endTime);
+  const origStartMin = timeToMinutes(tb.start_time);
+  const origEndMin = timeToMinutes(tb.end_time);
   const durationMin = origEndMin - origStartMin;
 
   let hasMoved = false;
@@ -244,8 +244,8 @@ const startTimeblockMove = (event: MouseEvent, tb: Timeblock) => {
 
       movingGhost.value = {
         id: tb.id,
-        startTime: minutesToTime(clampedStartMin),
-        endTime: minutesToTime(clampedEndMin),
+        start_time: minutesToTime(clampedStartMin),
+        end_time: minutesToTime(clampedEndMin),
       };
     }
   };
@@ -257,11 +257,11 @@ const startTimeblockMove = (event: MouseEvent, tb: Timeblock) => {
     document.body.style.cursor = '';
 
     if (hasMoved && movingGhost.value) {
-      const { startTime: newStart, endTime: newEnd } = movingGhost.value;
-      if (newStart !== tb.startTime || newEnd !== tb.endTime) {
+      const { start_time: newStart, end_time: newEnd } = movingGhost.value;
+      if (newStart !== tb.start_time || newEnd !== tb.end_time) {
         await timeblockStore.updateTimeblock(tb.id, {
-          startTime: newStart,
-          endTime: newEnd,
+          start_time: newStart,
+          end_time: newEnd,
         });
       }
     } else if (!hasMoved) {
@@ -284,8 +284,8 @@ const startTimeblockResize = (event: MouseEvent, tb: Timeblock) => {
   event.preventDefault();
 
   const startClientY = event.clientY;
-  const origStartMin = timeToMinutes(tb.startTime);
-  const origEndMin = timeToMinutes(tb.endTime);
+  const origStartMin = timeToMinutes(tb.start_time);
+  const origEndMin = timeToMinutes(tb.end_time);
   const origDuration = origEndMin - origStartMin;
 
   let hasResized = false;
@@ -312,8 +312,8 @@ const startTimeblockResize = (event: MouseEvent, tb: Timeblock) => {
 
       resizingGhost.value = {
         id: tb.id,
-        startTime: tb.startTime,
-        endTime: minutesToTime(newEndMin),
+        start_time: tb.start_time,
+        end_time: minutesToTime(newEndMin),
       };
     }
   };
@@ -325,9 +325,9 @@ const startTimeblockResize = (event: MouseEvent, tb: Timeblock) => {
     document.body.style.cursor = '';
 
     if (hasResized && resizingGhost.value) {
-      const { endTime: newEnd } = resizingGhost.value;
-      if (newEnd !== tb.endTime) {
-        await timeblockStore.updateTimeblock(tb.id, { endTime: newEnd });
+      const { end_time: newEnd } = resizingGhost.value;
+      if (newEnd !== tb.end_time) {
+        await timeblockStore.updateTimeblock(tb.id, { end_time: newEnd });
       }
     }
 
@@ -344,14 +344,14 @@ const getEffectiveTimeblock = (tb: Timeblock): Timeblock => {
   if (movingGhost.value && movingGhost.value.id === tb.id) {
     return {
       ...tb,
-      startTime: movingGhost.value.startTime,
-      endTime: movingGhost.value.endTime,
+      start_time: movingGhost.value.start_time,
+      end_time: movingGhost.value.end_time,
     };
   }
   if (resizingGhost.value && resizingGhost.value.id === tb.id) {
     return {
       ...tb,
-      endTime: resizingGhost.value.endTime,
+      end_time: resizingGhost.value.end_time,
     };
   }
   return tb;
@@ -361,7 +361,7 @@ const dayTimeblocks = computed(() => {
   return timeblockStore
     .timeblocksByDate(activeDateStr.value)
     .map(getEffectiveTimeblock)
-    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
 });
 
 // Click-to-allocate selected tasks into a timeblock
@@ -598,7 +598,7 @@ const nowIndicatorStyle = computed(() => {
                 <span
                   class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-black/10 dark:bg-black/40 text-theme-text-main tracking-tight shrink-0 shadow-2xs"
                 >
-                  {{ tb.startTime }} - {{ tb.endTime }}
+                  {{ tb.start_time }} - {{ tb.end_time }}
                 </span>
                 <span class="text-sm font-bold text-theme-text-main truncate flex items-center gap-1.5" :title="tb.title">
                   {{ tb.title }}

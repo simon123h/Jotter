@@ -2,21 +2,21 @@
 
 from dataclasses import dataclass
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class TaskCreate(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(extra="ignore")
 
     title: str
     bucket: str = "todo"
     tags: list[str] = []
     body: str = ""
-    due_date: str | None = Field(default=None, alias="dueDate")
-    planned_date: str | None = Field(default=None, alias="plannedDate")
+    due_date: str | None = None
+    planned_date: str | None = None
     priority: str | None = None
     color: str | None = None
-    postponed_until: str | None = Field(default=None, alias="postponedUntil")
+    postponed_until: str | None = None
     position: float | None = None
 
     @field_validator("tags", mode="before")
@@ -28,24 +28,24 @@ class TaskCreate(BaseModel):
 
 
 class TaskUpdate(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(extra="ignore")
 
-    project_id: str | None = Field(default=None, alias="projectId")
+    project_id: str | None = None
     title: str | None = None
     bucket: str | None = None
     position: float | None = None
     tags: list[str] | None = None
     attachments: list[str] | None = None
     body: str | None = None
-    due_date: str | None = Field(default=None, alias="dueDate")
-    planned_date: str | None = Field(default=None, alias="plannedDate")
+    due_date: str | None = None
+    planned_date: str | None = None
     priority: str | None = None
     color: str | None = None
-    postponed_until: str | None = Field(default=None, alias="postponedUntil")
+    postponed_until: str | None = None
 
 
 class TaskMove(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(extra="ignore")
 
     bucket: str
     position: float

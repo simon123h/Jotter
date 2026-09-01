@@ -24,17 +24,17 @@ describe('useTimeblockStore', () => {
         id: 'tb_1',
         title: 'Deep Work',
         date: '2026-08-31',
-        startTime: '09:00',
-        endTime: '11:00',
-        taskIds: ['task-1'],
+        start_time: '09:00',
+        end_time: '11:00',
+        task_ids: ['task-1'],
       },
       {
         id: 'tb_2',
         title: 'Review',
         date: '2026-08-31',
-        startTime: '14:00',
-        endTime: '15:00',
-        taskIds: ['task-2'],
+        start_time: '14:00',
+        end_time: '15:00',
+        task_ids: ['task-2'],
       },
     ];
     vi.mocked(api.getTimeblocks).mockResolvedValue(mockList);
@@ -54,19 +54,19 @@ describe('useTimeblockStore', () => {
         id: 'tb_daily',
         title: 'Daily Deep Work',
         date: '2026-08-31',
-        startTime: '08:00',
-        endTime: '10:00',
+        start_time: '08:00',
+        end_time: '10:00',
         recurrence: 'daily' as const,
-        taskIds: [],
+        task_ids: [],
       },
       {
         id: 'tb_weekdays',
         title: 'Weekday Standup',
         date: '2026-08-31', // Monday
-        startTime: '09:00',
-        endTime: '09:30',
+        start_time: '09:00',
+        end_time: '09:30',
         recurrence: 'weekdays' as const,
-        taskIds: [],
+        task_ids: [],
       },
     ];
     vi.mocked(api.getTimeblocks).mockResolvedValue(mockList);
@@ -94,9 +94,9 @@ describe('useTimeblockStore', () => {
         id: 'tb_1',
         title: 'Deep Work',
         date: '2026-08-31',
-        startTime: '09:00',
-        endTime: '11:00',
-        taskIds: ['task-100', 'task-200'],
+        start_time: '09:00',
+        end_time: '11:00',
+        task_ids: ['task-100', 'task-200'],
       },
     ];
     vi.mocked(api.getTimeblocks).mockResolvedValue(mockList);
@@ -117,9 +117,9 @@ describe('useTimeblockStore', () => {
       id: 'tb_new',
       title: 'Planning',
       date: '2026-09-01',
-      startTime: '10:00',
-      endTime: '11:00',
-      taskIds: [],
+      start_time: '10:00',
+      end_time: '11:00',
+      task_ids: [],
     };
     vi.mocked(api.createTimeblock).mockResolvedValue(newBox);
     vi.mocked(api.updateTimeblock).mockResolvedValue({ ...newBox, title: 'Updated Planning' });
@@ -129,9 +129,9 @@ describe('useTimeblockStore', () => {
     const created = await store.createTimeblock({
       title: 'Planning',
       date: '2026-09-01',
-      startTime: '10:00',
-      endTime: '11:00',
-      taskIds: [],
+      start_time: '10:00',
+      end_time: '11:00',
+      task_ids: [],
     });
 
     expect(created.id).toBe('tb_new');
@@ -150,27 +150,27 @@ describe('useTimeblockStore', () => {
       id: 'tb_1',
       title: 'Focus',
       date: '2026-08-31',
-      startTime: '09:00',
-      endTime: '10:00',
-      taskIds: [],
+      start_time: '09:00',
+      end_time: '10:00',
+      task_ids: [],
     };
     const store = useTimeblockStore();
     store.timeblocks = [box];
 
     vi.mocked(api.allocateTaskToTimeblock).mockResolvedValue({
       ...box,
-      taskIds: ['task-1'],
+      task_ids: ['task-1'],
     });
 
     await store.allocateTask('tb_1', 'task-1');
-    expect(store.timeblocks[0].taskIds).toContain('task-1');
+    expect(store.timeblocks[0].task_ids).toContain('task-1');
 
     vi.mocked(api.allocateTaskToTimeblock).mockResolvedValue({
       ...box,
-      taskIds: [],
+      task_ids: [],
     });
 
     await store.unallocateTask('tb_1', 'task-1');
-    expect(store.timeblocks[0].taskIds).not.toContain('task-1');
+    expect(store.timeblocks[0].task_ids).not.toContain('task-1');
   });
 });

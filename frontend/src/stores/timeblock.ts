@@ -37,13 +37,13 @@ export const useTimeblockStore = defineStore('timeblock', () => {
 
   const timeblockForTask = computed(() => {
     return (taskId: string): Timeblock | undefined => {
-      return timeblocks.value.find((tb) => tb.taskIds && tb.taskIds.includes(taskId));
+      return timeblocks.value.find((tb) => tb.task_ids && tb.task_ids.includes(taskId));
     };
   });
 
   const timeblocksByDate = computed(() => {
     return (dateStr: string): Timeblock[] => {
-      return timeblocks.value.filter((tb) => matchesTimeblockDate(tb, dateStr)).sort((a, b) => a.startTime.localeCompare(b.startTime));
+      return timeblocks.value.filter((tb) => matchesTimeblockDate(tb, dateStr)).sort((a, b) => a.start_time.localeCompare(b.start_time));
     };
   });
 
@@ -103,13 +103,13 @@ export const useTimeblockStore = defineStore('timeblock', () => {
       // Optimistic update
       timeblocks.value = timeblocks.value.map((tb) => {
         if (tb.id === timeblockId) {
-          const currentIds = tb.taskIds ? [...tb.taskIds] : [];
+          const currentIds = tb.task_ids ? [...tb.task_ids] : [];
           if (!currentIds.includes(taskId)) {
             currentIds.push(taskId);
           }
-          return { ...tb, taskIds: currentIds };
-        } else if (tb.taskIds && tb.taskIds.includes(taskId)) {
-          return { ...tb, taskIds: tb.taskIds.filter((t) => t !== taskId) };
+          return { ...tb, task_ids: currentIds };
+        } else if (tb.task_ids && tb.task_ids.includes(taskId)) {
+          return { ...tb, task_ids: tb.task_ids.filter((t) => t !== taskId) };
         }
         return tb;
       });
@@ -132,8 +132,8 @@ export const useTimeblockStore = defineStore('timeblock', () => {
   const unallocateTask = async (timeblockId: string, taskId: string): Promise<void> => {
     try {
       timeblocks.value = timeblocks.value.map((tb) => {
-        if (tb.id === timeblockId && tb.taskIds) {
-          return { ...tb, taskIds: tb.taskIds.filter((t) => t !== taskId) };
+        if (tb.id === timeblockId && tb.task_ids) {
+          return { ...tb, task_ids: tb.task_ids.filter((t) => t !== taskId) };
         }
         return tb;
       });

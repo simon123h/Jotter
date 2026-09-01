@@ -1,27 +1,27 @@
 """Pydantic schemas and DTOs for Projects."""
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class ProjectCreate(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(extra="ignore")
 
     title: str
     id: str | None = None
-    done_clean_period: int | None = Field(default=None, alias="doneCleanPeriod")
-    git_remote: str | None = Field(default=None, alias="gitRemote")
+    done_clean_period: int | None = None
+    git_remote: str | None = None
 
 
 class ProjectUpdate(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(extra="ignore")
 
     title: str | None = None
-    done_clean_period: int | None = Field(default=None, alias="doneCleanPeriod")
-    git_remote: str | None = Field(default=None, alias="gitRemote")
+    done_clean_period: int | None = None
+    git_remote: str | None = None
 
 
 class ProjectResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
 
     id: str
     title: str

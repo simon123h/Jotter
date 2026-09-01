@@ -65,8 +65,8 @@ watch(
       if (tb) {
         title.value = tb.title;
         date.value = tb.date;
-        startTime.value = tb.startTime;
-        endTime.value = tb.endTime;
+        startTime.value = tb.start_time;
+        endTime.value = tb.end_time;
         color.value = tb.color || 'indigo';
         recurrence.value = tb.recurrence || 'none';
       } else {
@@ -97,8 +97,8 @@ const handleSave = async () => {
       await timeblockStore.updateTimeblock(tb.id, {
         title: title.value.trim(),
         date: date.value,
-        startTime: startTime.value,
-        endTime: endTime.value,
+        start_time: startTime.value,
+        end_time: endTime.value,
         color: color.value,
         recurrence: recValue,
       });
@@ -106,11 +106,11 @@ const handleSave = async () => {
       await timeblockStore.createTimeblock({
         title: title.value.trim(),
         date: date.value,
-        startTime: startTime.value,
-        endTime: endTime.value,
+        start_time: startTime.value,
+        end_time: endTime.value,
         color: color.value,
         recurrence: recValue,
-        taskIds: [],
+        task_ids: [],
       });
     }
     emit('save');

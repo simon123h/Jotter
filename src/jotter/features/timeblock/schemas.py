@@ -8,14 +8,14 @@ from jotter.features.tasks.schemas import TaskResponse
 
 
 class TimeblockBase(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(extra="ignore")
 
     title: str = Field(..., min_length=1, max_length=200)
     date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
-    start_time: str = Field(..., pattern=r"^\d{2}:\d{2}$", alias="startTime")
-    end_time: str = Field(..., pattern=r"^\d{2}:\d{2}$", alias="endTime")
+    start_time: str = Field(..., pattern=r"^\d{2}:\d{2}$")
+    end_time: str = Field(..., pattern=r"^\d{2}:\d{2}$")
     color: str | None = None
-    task_ids: list[str] = Field(default_factory=list, alias="taskIds")
+    task_ids: list[str] = Field(default_factory=list)
     recurrence: str | None = Field(default=None, pattern=r"^(none|daily|weekdays|weekly|bi-weekly)?$")
 
 
@@ -24,27 +24,27 @@ class TimeblockCreate(TimeblockBase):
 
 
 class TimeblockUpdate(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(extra="ignore")
 
     title: str | None = Field(default=None, min_length=1, max_length=200)
     date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
-    start_time: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$", alias="startTime")
-    end_time: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$", alias="endTime")
+    start_time: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    end_time: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
     color: str | None = None
-    task_ids: list[str] | None = Field(default=None, alias="taskIds")
+    task_ids: list[str] | None = None
     recurrence: str | None = Field(default=None, pattern=r"^(none|daily|weekdays|weekly|bi-weekly)?$")
 
 
 class TimeblockResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
 
     id: str
     title: str
     date: str
-    start_time: str = Field(..., alias="startTime", serialization_alias="startTime")
-    end_time: str = Field(..., alias="endTime", serialization_alias="endTime")
+    start_time: str
+    end_time: str
     color: str | None = None
-    task_ids: list[str] = Field(default_factory=list, alias="taskIds", serialization_alias="taskIds")
+    task_ids: list[str] = Field(default_factory=list)
     tasks: list[TaskResponse] = Field(default_factory=list)
     recurrence: str | None = None
 
@@ -82,17 +82,17 @@ class TimeblockResponse(BaseModel):
             id=data["id"],
             title=data["title"],
             date=data["date"],
-            startTime=data.get("start_time") or data.get("startTime", "09:00"),
-            endTime=data.get("end_time") or data.get("endTime", "10:00"),
+            start_time=data.get("start_time") or data.get("startTime", "09:00"),
+            end_time=data.get("end_time") or data.get("endTime", "10:00"),
             color=data.get("color"),
-            taskIds=data.get("task_ids") or data.get("taskIds") or [],
+            task_ids=data.get("task_ids") or data.get("taskIds") or [],
             tasks=parsed_tasks,
             recurrence=data.get("recurrence"),
         )
 
 
 class TaskAllocationRequest(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(extra="ignore")
 
-    task_id: str = Field(..., alias="taskId")
+    task_id: str
     action: str = Field(default="add", pattern=r"^(add|remove)$")

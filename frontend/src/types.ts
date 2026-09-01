@@ -106,10 +106,10 @@ export interface Timeblock {
   id: string;
   title: string;
   date: string;
-  startTime: string;
-  endTime: string;
+  start_time: string;
+  end_time: string;
   color?: string | null;
-  taskIds: string[];
+  task_ids: string[];
   tasks?: Task[];
   recurrence?: TimeblockRecurrence | null;
 }

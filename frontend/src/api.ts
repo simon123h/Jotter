@@ -532,8 +532,8 @@ export async function getTimeblocks(params?: { startDate?: string; endDate?: str
   }
 
   const url = new URL(`${API_BASE}/timeblocks`, window.location.origin);
-  if (params?.startDate) url.searchParams.append('startDate', params.startDate);
-  if (params?.endDate) url.searchParams.append('endDate', params.endDate);
+  if (params?.startDate) url.searchParams.append('start_date', params.startDate);
+  if (params?.endDate) url.searchParams.append('end_date', params.endDate);
 
   const response = await customFetch(url.toString());
   if (!response.ok) {
@@ -563,7 +563,7 @@ export async function createTimeblock(timeblock: Omit<Timeblock, 'id'>): Promise
     const newTb: Timeblock = {
       id: `tb_${Date.now()}`,
       ...timeblock,
-      taskIds: timeblock.taskIds || [],
+      task_ids: timeblock.task_ids || [],
     };
     list.push(newTb);
     localStorage.setItem(DEMO_TIMEBLOCKS_KEY, JSON.stringify(list));
@@ -624,16 +624,16 @@ export async function allocateTaskToTimeblock(timeblockId: string, taskId: strin
     if (action === 'add') {
       // Remove from any other box first
       list.forEach((tb) => {
-        tb.taskIds = tb.taskIds.filter((t: string) => t !== taskId);
+        tb.task_ids = tb.task_ids.filter((t: string) => t !== taskId);
       });
       const target = list.find((tb) => tb.id === timeblockId);
-      if (target && !target.taskIds.includes(taskId)) {
-        target.taskIds.push(taskId);
+      if (target && !target.task_ids.includes(taskId)) {
+        target.task_ids.push(taskId);
       }
     } else {
       const target = list.find((tb) => tb.id === timeblockId);
       if (target) {
-        target.taskIds = target.taskIds.filter((t: string) => t !== taskId);
+        target.task_ids = target.task_ids.filter((t: string) => t !== taskId);
       }
     }
     localStorage.setItem(DEMO_TIMEBLOCKS_KEY, JSON.stringify(list));
@@ -645,7 +645,7 @@ export async function allocateTaskToTimeblock(timeblockId: string, taskId: strin
   const response = await customFetch(`${API_BASE}/timeblocks/${encodeURIComponent(timeblockId)}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ taskId, action }),
+    body: JSON.stringify({ task_id: taskId, action }),
   });
   if (!response.ok) {
     await handleResponseError(response, 'Failed to allocate task to time block');

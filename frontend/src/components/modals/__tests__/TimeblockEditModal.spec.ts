@@ -55,10 +55,10 @@ describe('TimeblockEditModal.vue', () => {
           id: 'tb_123',
           title: 'Deep Architecture Focus',
           date: '2026-08-31',
-          startTime: '08:30',
-          endTime: '10:30',
+          start_time: '08:30',
+          end_time: '10:30',
           color: 'emerald',
-          taskIds: [],
+          task_ids: [],
         },
       },
       global: {
@@ -77,10 +77,10 @@ describe('TimeblockEditModal.vue', () => {
       id: 'tb_new',
       title: 'New Sprint Box',
       date: '2026-08-31',
-      startTime: '09:00',
-      endTime: '10:00',
+      start_time: '09:00',
+      end_time: '10:00',
       color: 'indigo',
-      taskIds: [],
+      task_ids: [],
     });
 
     wrapper = mount(TimeblockEditModal, {

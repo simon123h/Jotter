@@ -1,6 +1,6 @@
 import sqlite3
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 from jotter.features.timeblock.repo import TimeblockDiskRepo
@@ -27,8 +27,8 @@ def get_timeblock_service(
 
 @router.get("", response_model=list[TimeblockResponse])
 def list_timeblocks(
-    start_date: str | None = Query(default=None, alias="startDate"),
-    end_date: str | None = Query(default=None, alias="endDate"),
+    start_date: str | None = None,
+    end_date: str | None = None,
     svc: TimeblockApplicationService = Depends(get_timeblock_service),
 ):
     items = svc.list_timeblocks(start_date, end_date)
