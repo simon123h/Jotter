@@ -147,7 +147,7 @@ const handleCustomPostponedDate = () => {
   <transition name="slide-up">
     <div
       v-if="selectedCount > 0"
-      class="fixed left-1/2 -translate-x-1/2 z-[120] flex flex-col items-center gap-2 transition-[bottom] duration-200 ease-out"
+      class="fixed left-1/2 -translate-x-1/2 z-[120] flex flex-col items-center gap-2"
       :class="pomodoroStore.is_bar_open ? 'bottom-20 sm:bottom-22' : 'bottom-6'"
     >
       <!-- Nested Menus -->
@@ -526,20 +526,16 @@ const handleCustomPostponedDate = () => {
 <style scoped>
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition:
-    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.slide-up-enter-from,
-.slide-up-leave-to {
-  transform: translate(-50%, 32px) scale(0.96);
+.slide-up-enter-from {
+  transform: translate(0%, 50%) scale(0.9);
   opacity: 0;
 }
 
-.slide-up-enter-to,
-.slide-up-leave-from {
-  transform: translate(-50%, 0) scale(1);
-  opacity: 1;
+.slide-up-leave-to {
+  transform: translate(0%, 50%) scale(0.9);
+  opacity: 0;
 }
 </style>
