@@ -2,7 +2,8 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { BucketName, Project } from '@/types';
 
-export type ModalType = 'task-create' | 'project-edit' | 'filter' | 'import-spreadsheet' | 'move-tasks-confirm' | 'time-machine' | null;
+export type ModalType =
+  'task-create' | 'project-edit' | 'filter' | 'import-spreadsheet' | 'move-tasks-confirm' | 'time-machine' | 'timeblock-edit' | null;
 
 export const useModalStore = defineStore('modal', () => {
   const activeModal = ref<ModalType>(null);
@@ -43,6 +44,10 @@ export const useModalStore = defineStore('modal', () => {
     openModal('time-machine', { projectId });
   };
 
+  const openTimeblockEdit = (timeblock?: any, initialDate?: string, initialStartTime?: string, initialEndTime?: string) => {
+    openModal('timeblock-edit', { timeblock, initialDate, initialStartTime, initialEndTime });
+  };
+
   return {
     activeModal,
     modalProps,
@@ -54,5 +59,6 @@ export const useModalStore = defineStore('modal', () => {
     openImportSpreadsheet,
     openMoveTasksConfirm,
     openTimeMachine,
+    openTimeblockEdit,
   };
 });

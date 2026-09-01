@@ -7,7 +7,7 @@ const { isOpen, title, message, type, confirmText, cancelText, showCancel, handl
 
 <template>
   <transition name="modal">
-    <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+    <div v-if="isOpen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-y-auto">
       <!-- Backdrop -->
       <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-[2px] transition-opacity" @click="handleCancel"></div>
 

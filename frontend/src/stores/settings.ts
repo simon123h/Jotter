@@ -21,6 +21,9 @@ export const useSettingsStore = defineStore('settings', () => {
     language: '',
     tagColors: {},
     autoSyncInterval: 0,
+    timeblockStartHour: 6,
+    timeblockEndHour: 18,
+    isTimeblockSidebarOpen: false,
   });
 
   let skipSave = false;
@@ -39,6 +42,15 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!state.tagColors) state.tagColors = {};
       if (state.autoSyncInterval === undefined) state.autoSyncInterval = 0;
       if (state.hidePostponedColumn === undefined) state.hidePostponedColumn = true;
+
+      const startHour = state.timeblockStartHour ?? 6;
+      state.timeblockStartHour = startHour;
+
+      const endHour = state.timeblockEndHour ?? 18;
+      state.timeblockEndHour = endHour;
+
+      const sidebarOpen = state.isTimeblockSidebarOpen ?? false;
+      state.isTimeblockSidebarOpen = sidebarOpen;
 
       await nextTick();
       skipSave = false;
@@ -123,6 +135,10 @@ export const useSettingsStore = defineStore('settings', () => {
     state.isSidebarOpen = !state.isSidebarOpen;
   };
 
+  const toggleTimeblockSidebar = (forceState?: boolean) => {
+    state.isTimeblockSidebarOpen = forceState !== undefined ? forceState : !state.isTimeblockSidebarOpen;
+  };
+
   const setTheme = (theme: string) => {
     state.currentTheme = theme;
   };
@@ -175,11 +191,18 @@ export const useSettingsStore = defineStore('settings', () => {
     state.autoSyncInterval = minutes;
   };
 
+  const updateSettings = (updates: Partial<AppSettings>) => {
+    Object.assign(state, updates);
+  };
+
   return {
     ...toRefs(state),
+    settings: state,
+    updateSettings,
     loadSettings,
     toggleHideDoneColumn,
     toggleSidebar,
+    toggleTimeblockSidebar,
     setTheme,
     setThresholdDays,
     pinProject,

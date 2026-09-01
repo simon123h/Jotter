@@ -82,6 +82,9 @@ export interface AppSettings {
   language?: string;
   tagColors?: Record<string, string>;
   autoSyncInterval?: number;
+  timeblockStartHour?: number;
+  timeblockEndHour?: number;
+  isTimeblockSidebarOpen?: boolean;
 }
 
 export interface SystemInfo {
@@ -95,4 +98,18 @@ export interface GitCommit {
   author: string;
   date: string;
   message: string;
+}
+
+export type TimeblockRecurrence = 'none' | 'daily' | 'weekdays' | 'weekly' | 'bi-weekly';
+
+export interface Timeblock {
+  id: string;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  color?: string | null;
+  taskIds: string[];
+  tasks?: Task[];
+  recurrence?: TimeblockRecurrence | null;
 }

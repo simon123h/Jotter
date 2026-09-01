@@ -14,6 +14,7 @@ import {
   MoreVertical,
   FileSpreadsheet,
   FileText,
+  Box,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Project, BucketName } from '@/types';
@@ -24,6 +25,7 @@ const route = useRoute();
 defineProps<{
   modelValue: string; // bound to searchQuery
   isSidebarOpen: boolean;
+  isTimeblockSidebarOpen?: boolean;
   projects: Project[];
   activeProjectId: string;
   hasActiveFilters: boolean;
@@ -33,6 +35,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', val: string): void;
   (e: 'toggle-sidebar'): void;
+  (e: 'toggle-timeblock-sidebar'): void;
   (e: 'open-filter'): void;
   (e: 'create-task', defaultBucket: BucketName): void;
   (e: 'export-tasks', format: 'xlsx' | 'csv'): void;
@@ -217,6 +220,20 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
           <span class="hidden sm:inline">{{ t('views.triage') }}</span>
         </router-link>
       </div>
+
+      <!-- Timeblock Sidebar Toggle Button -->
+      <button
+        @click="emit('toggle-timeblock-sidebar')"
+        class="timeblock-toggle-btn p-1.5 rounded transition-all cursor-pointer shrink-0 border"
+        :class="
+          isTimeblockSidebarOpen
+            ? 'bg-theme-primary/15 border-theme-primary/30 text-theme-primary'
+            : 'border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
+        "
+        :title="t('timeblock.toggleSidebarTooltip')"
+      >
+        <Box class="w-4 h-4 shrink-0" />
+      </button>
 
       <!-- Overflow Menu (Three dots) -->
       <div class="relative shrink-0 overflow-menu-container">
