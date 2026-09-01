@@ -15,6 +15,7 @@ import {
   FileSpreadsheet,
   FileText,
   Box,
+  Timer,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { usePomodoroStore } from '@/stores/pomodoro';
@@ -243,12 +244,12 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         class="pomodoro-toggle-btn p-1.5 rounded transition-all cursor-pointer shrink-0 border relative"
         :class="
           pomodoroStore.is_bar_open || pomodoroStore.status === 'running'
-            ? 'bg-rose-500/15 border-rose-500/30 text-rose-500 font-bold'
+            ? 'bg-rose-500/15 border-rose-500/30 text-rose-500'
             : 'border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
         "
         :title="t('pomodoro.toggleTooltip')"
       >
-        <span class="text-xs leading-none">🍅</span>
+        <Timer class="w-4 h-4 shrink-0" />
         <!-- Running Pulse Dot -->
         <span
           v-if="pomodoroStore.status === 'running'"
