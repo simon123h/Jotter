@@ -26,7 +26,6 @@ defineProps<{
   modelValue: string; // bound to searchQuery
   isSidebarOpen: boolean;
   isTimeblockSidebarOpen?: boolean;
-  isTimeblockSidebarOpen?: boolean;
   projects: Project[];
   activeProjectId: string;
   hasActiveFilters: boolean;

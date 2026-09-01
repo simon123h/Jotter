@@ -25,8 +25,8 @@ const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const modalStore = useModalStore();
 
-const { isSidebarOpen, isTimeblockSidebarOpen, currentTheme } = storeToRefs(settingsStore);
-const isTimeblockOpen = computed(() => isTimeblockSidebarOpen.value);
+const { isSidebarOpen, currentTheme } = storeToRefs(settingsStore);
+const isTimeblockOpen = computed<boolean>(() => Boolean(settingsStore.isTimeblockSidebarOpen));
 const autoSyncInterval = computed(() => settingsStore.autoSyncInterval ?? 0);
 const { projects, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
 

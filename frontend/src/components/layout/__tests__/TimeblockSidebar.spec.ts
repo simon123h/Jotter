@@ -13,11 +13,6 @@ vi.mock('@/api', () => ({
   updateTimeblock: vi.fn(),
   deleteTimeblock: vi.fn(),
   allocateTaskToTimeblock: vi.fn().mockResolvedValue({ id: 'tb-1', taskIds: ['task-1'], startTime: '09:00', endTime: '11:00' }),
-  getTimeblocks: vi.fn().mockResolvedValue([]),
-  createTimeblock: vi.fn(),
-  updateTimeblock: vi.fn(),
-  deleteTimeblock: vi.fn(),
-  allocateTaskToTimeblock: vi.fn().mockResolvedValue({ id: 'tb-1', taskIds: ['task-1'], startTime: '09:00', endTime: '11:00' }),
   getSettings: vi.fn().mockResolvedValue({}),
   updateTask: vi.fn().mockResolvedValue({}),
 }));
@@ -96,6 +91,10 @@ describe('TimeblockSidebar.vue', () => {
         bucket: 'todo',
         position: 1,
         tags: [],
+        attachments: [],
+        body: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
     ];
 
@@ -146,6 +145,10 @@ describe('TimeblockSidebar.vue', () => {
         bucket: 'todo',
         position: 1,
         tags: [],
+        attachments: [],
+        body: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
     ];
 
