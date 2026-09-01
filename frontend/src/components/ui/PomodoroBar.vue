@@ -3,11 +3,9 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { Play, Pause, RotateCcw, SkipForward, Settings as SettingsIcon, X, Volume2, VolumeX, Check } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { usePomodoroStore, type PomodoroPhase } from '@/stores/pomodoro';
-import { useSelectionStore } from '@/stores/selection';
 
 const { t } = useI18n();
 const pomodoroStore = usePomodoroStore();
-const selectionStore = useSelectionStore();
 
 const showSettings = ref(false);
 const editWorkDuration = ref(pomodoroStore.work_duration);
@@ -61,11 +59,7 @@ onUnmounted(() => {
 
 <template>
   <transition name="slide-up">
-    <div
-      v-if="pomodoroStore.is_bar_open"
-      class="fixed left-1/2 -translate-x-1/2 z-[115] w-max max-w-[96vw] transition-[bottom] duration-200 ease-out"
-      :class="selectionStore.hasSelection ? 'bottom-22 sm:bottom-24' : 'bottom-6'"
-    >
+    <div v-if="pomodoroStore.is_bar_open" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] w-max max-w-[96vw]">
       <!-- Settings Popover -->
       <transition name="fade">
         <div
@@ -242,10 +236,10 @@ onUnmounted(() => {
 
           <!-- Action Controls -->
           <div class="flex items-center gap-1.5 ml-auto shrink-0">
-            <!-- Play / Pause Button -->
+            <!-- Play / Pause Button (Fixed Size & Perfectly Centered) -->
             <button
               @click="pomodoroStore.toggle"
-              class="p-2 rounded-full font-bold transition-all transform active:scale-95 cursor-pointer shadow-md flex items-center justify-center"
+              class="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full font-bold transition-all transform active:scale-95 cursor-pointer shadow-md flex items-center justify-center shrink-0"
               :class="
                 pomodoroStore.phase === 'work'
                   ? 'bg-rose-500 hover:bg-rose-600 text-white'
@@ -254,8 +248,8 @@ onUnmounted(() => {
               :title="pomodoroStore.status === 'running' ? t('pomodoro.pause') : t('pomodoro.play')"
               :aria-label="pomodoroStore.status === 'running' ? t('pomodoro.pause') : t('pomodoro.play')"
             >
-              <Pause v-if="pomodoroStore.status === 'running'" class="w-4 h-4 fill-current" />
-              <Play v-else class="w-4 h-4 fill-current ml-0.5" />
+              <Pause v-if="pomodoroStore.status === 'running'" class="w-4 h-4 fill-current shrink-0" />
+              <Play v-else class="w-4 h-4 fill-current shrink-0" />
             </button>
 
             <!-- Skip to Next Phase Button -->
@@ -310,12 +304,16 @@ onUnmounted(() => {
 <style scoped>
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.slide-up-enter-from,
+.slide-up-enter-from {
+  transform: translate(-50%, 50%) scale(0.9);
+  opacity: 0;
+}
+
 .slide-up-leave-to {
-  transform: translate(-50%, 40px) scale(0.95);
+  transform: translate(-50%, 50%) scale(0.9);
   opacity: 0;
 }
 </style>
