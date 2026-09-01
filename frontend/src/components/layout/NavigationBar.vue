@@ -250,11 +250,6 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         :title="t('pomodoro.toggleTooltip')"
       >
         <Timer class="w-4 h-4 shrink-0" />
-        <!-- Running Pulse Dot -->
-        <span
-          v-if="pomodoroStore.status === 'running'"
-          class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"
-        ></span>
       </button>
 
       <!-- Overflow Menu (Three dots) -->
