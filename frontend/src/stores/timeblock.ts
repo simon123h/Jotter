@@ -160,16 +160,5 @@ export const useTimeblockStore = defineStore('timeblock', () => {
     deleteTimeblock,
     allocateTask,
     unallocateTask,
-    // Compatibility aliases
-    timeboxes: timeblocks,
-    timeboxForTask: timeblockForTask,
-    timeboxesByDate: timeblocksByDate,
-    fetchTimeboxes: fetchTimeblocks,
-    createTimebox: createTimeblock,
-    updateTimebox: updateTimeblock,
-    deleteTimebox: deleteTimeblock,
   };
 });
-
-// Backwards compatibility alias
-export const useTimeboxStore = useTimeblockStore;

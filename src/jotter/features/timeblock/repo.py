@@ -56,7 +56,3 @@ class TimeblockDiskRepo:
             self._save(new_items)
             return True
         return False
-
-
-# Backwards compatibility alias
-TimeboxDiskRepo = TimeblockDiskRepo

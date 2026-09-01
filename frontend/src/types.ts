@@ -85,10 +85,6 @@ export interface AppSettings {
   timeblockStartHour?: number;
   timeblockEndHour?: number;
   isTimeblockSidebarOpen?: boolean;
-  // Legacy aliases
-  timeboxStartHour?: number;
-  timeboxEndHour?: number;
-  isTimeboxSidebarOpen?: boolean;
 }
 
 export interface SystemInfo {
@@ -116,5 +112,3 @@ export interface Timeblock {
   taskIds: string[];
   recurrence?: TimeblockRecurrence | null;
 }
-
-export type Timebox = Timeblock;

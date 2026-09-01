@@ -9,7 +9,6 @@ import { useDialog } from '@/composables/useDialog';
 const props = defineProps<{
   isOpen: boolean;
   timeblock?: Timeblock | null;
-  timebox?: Timeblock | null;
   initialDate?: string;
   initialStartTime?: string;
   initialEndTime?: string;
@@ -24,7 +23,7 @@ const { t } = useI18n();
 const timeblockStore = useTimeblockStore();
 const { showDialog } = useDialog();
 
-const activeTimeblock = computed(() => props.timeblock || props.timebox);
+const activeTimeblock = computed(() => props.timeblock);
 
 const title = ref('');
 const date = ref('');
@@ -125,8 +124,8 @@ const handleDelete = async () => {
   const tb = activeTimeblock.value;
   if (!tb) return;
   const confirmed = await showDialog({
-    title: t('timeblock.deleteTitle') || t('timebox.deleteTitle'),
-    message: t('timeblock.deleteConfirm') || t('timebox.deleteConfirm'),
+    title: t('timeblock.deleteTitle'),
+    message: t('timeblock.deleteConfirm'),
     type: 'error',
     showCancel: true,
     confirmText: t('buttons.delete'),
@@ -159,7 +158,7 @@ const handleDelete = async () => {
       <div class="flex items-center justify-between px-5 py-4 border-b border-theme-border/60 bg-theme-column/30">
         <h2 class="text-base font-bold text-theme-text-main flex items-center gap-2">
           <Calendar class="w-4 h-4 text-theme-primary" />
-          {{ activeTimeblock ? t('timeblock.editTitle') || t('timebox.editTitle') : t('timeblock.newTitle') || t('timebox.newTitle') }}
+          {{ activeTimeblock ? t('timeblock.editTitle') : t('timeblock.newTitle') }}
         </h2>
         <button
           type="button"
@@ -175,14 +174,14 @@ const handleDelete = async () => {
         <!-- Title Input -->
         <div>
           <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5">
-            {{ t('timebox.titleLabel') }}
+            {{ t('timeblock.titleLabel') }}
           </label>
           <input
             ref="titleInput"
             v-model="title"
             type="text"
             required
-            :placeholder="t('timebox.titlePlaceholder')"
+            :placeholder="t('timeblock.titlePlaceholder')"
             class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all"
           />
         </div>
@@ -190,7 +189,7 @@ const handleDelete = async () => {
         <!-- Date Input -->
         <div>
           <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5">
-            {{ t('timebox.dateLabel') }}
+            {{ t('timeblock.dateLabel') }}
           </label>
           <input
             v-model="date"
@@ -205,7 +204,7 @@ const handleDelete = async () => {
           <div>
             <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <Clock class="w-3.5 h-3.5" />
-              {{ t('timebox.startLabel') }}
+              {{ t('timeblock.startLabel') }}
             </label>
             <input
               v-model="startTime"
@@ -217,7 +216,7 @@ const handleDelete = async () => {
           <div>
             <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <Clock class="w-3.5 h-3.5" />
-              {{ t('timebox.endLabel') }}
+              {{ t('timeblock.endLabel') }}
             </label>
             <input
               v-model="endTime"
@@ -232,17 +231,17 @@ const handleDelete = async () => {
         <div>
           <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
             <Repeat class="w-3.5 h-3.5" />
-            {{ t('timeblock.recurrenceLabel') || 'Repeat / Recurrence' }}
+            {{ t('timeblock.recurrenceLabel') }}
           </label>
           <select
             v-model="recurrence"
             class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all cursor-pointer"
           >
-            <option value="none">{{ t('timeblock.recurrenceOptions.none') || 'Does not repeat' }}</option>
-            <option value="daily">{{ t('timeblock.recurrenceOptions.daily') || 'Daily (Every day)' }}</option>
-            <option value="weekdays">{{ t('timeblock.recurrenceOptions.weekdays') || 'Weekdays (Mon–Fri)' }}</option>
-            <option value="weekly">{{ t('timeblock.recurrenceOptions.weekly') || 'Weekly' }}</option>
-            <option value="bi-weekly">{{ t('timeblock.recurrenceOptions.biWeekly') || 'Bi-weekly (Every 2 weeks)' }}</option>
+            <option value="none">{{ t('timeblock.recurrenceOptions.none') }}</option>
+            <option value="daily">{{ t('timeblock.recurrenceOptions.daily') }}</option>
+            <option value="weekdays">{{ t('timeblock.recurrenceOptions.weekdays') }}</option>
+            <option value="weekly">{{ t('timeblock.recurrenceOptions.weekly') }}</option>
+            <option value="bi-weekly">{{ t('timeblock.recurrenceOptions.biWeekly') }}</option>
           </select>
         </div>
 
@@ -250,7 +249,7 @@ const handleDelete = async () => {
         <div>
           <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
             <Palette class="w-3.5 h-3.5" />
-            {{ t('timebox.colorLabel') }}
+            {{ t('timeblock.colorLabel') }}
           </label>
           <div class="flex items-center gap-2 flex-wrap pt-1">
             <button

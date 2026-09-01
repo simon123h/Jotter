@@ -110,10 +110,10 @@ describe('NavigationBar.vue', () => {
 
   it('emits toggle-timeblock-sidebar when clicking the timeblock sidebar button', async () => {
     const wrapper = mount(NavigationBar, mountOptions);
-    const timeboxBtn = wrapper.findAll('button').find((b) => b.text().includes('Time Blocking'));
-    expect(timeboxBtn).toBeDefined();
-    await timeboxBtn!.trigger('click');
+    const timeblockBtn = wrapper.findAll('button').find((b) => b.text().includes('Time Blocking'));
+    expect(timeblockBtn).toBeDefined();
+    await timeblockBtn!.trigger('click');
 
-    expect(wrapper.emitted('toggle-timeblock-sidebar') || wrapper.emitted('toggle-timebox-sidebar')).toBeTruthy();
+    expect(wrapper.emitted('toggle-timeblock-sidebar')).toBeTruthy();
   });
 });

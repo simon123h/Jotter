@@ -50,7 +50,7 @@ const isToday = computed(() => {
 const activeDayTitle = computed(() => {
   const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
   const formatted = activeDate.value.toLocaleDateString(undefined, options);
-  const todayLabel = t('timeblock.today') || t('timebox.today') || 'Today';
+  const todayLabel = t('timeblock.today') || 'Today';
   return isToday.value ? `${todayLabel}, ${formatted}` : formatted;
 });
 
@@ -91,8 +91,8 @@ let timeInterval: any = null;
 const gridScrollContainer = ref<HTMLElement | null>(null);
 
 // Hour bounds (strictly respect user configured settings)
-const startHour = computed(() => settingsStore.settings?.timeblockStartHour ?? settingsStore.settings?.timeboxStartHour ?? 6);
-const endHour = computed(() => settingsStore.settings?.timeblockEndHour ?? settingsStore.settings?.timeboxEndHour ?? 18);
+const startHour = computed(() => settingsStore.settings?.timeblockStartHour ?? settingsStore.settings?.timeblockStartHour ?? 6);
+const endHour = computed(() => settingsStore.settings?.timeblockEndHour ?? settingsStore.settings?.timeblockEndHour ?? 18);
 
 const hoursList = computed(() => {
   const list: number[] = [];
@@ -200,7 +200,7 @@ const startTimeblockMove = (event: MouseEvent, tb: Timeblock) => {
   if (event.button !== 0) return;
 
   const target = event.target as HTMLElement;
-  if (target.closest('button, .task-item-card, .timeblock-resize-handle, .timebox-resize-handle, input, a')) return;
+  if (target.closest('button, .task-item-card, .timeblock-resize-handle, input, a')) return;
 
   const startClientY = event.clientY;
   const origStartMin = timeToMinutes(tb.startTime);
@@ -355,15 +355,16 @@ const dayTimeblocks = computed(() => {
 // Click-to-allocate selected tasks into a timeblock
 const addSelectedTasksToBox = async (timeblockId: string, e: Event) => {
   e.stopPropagation();
-  if (selectionStore.hasSelection && selectionStore.selectedIds.size > 0) {
+  const selectedCount = selectionStore.selectedIds.size;
+  if (selectionStore.hasSelection && selectedCount > 0) {
     const ids = Array.from(selectionStore.selectedIds);
     for (const id of ids) {
       await timeblockStore.allocateTask(timeblockId, id);
     }
-    toast.success(t('timeblock.addSelectedTooltip') || t('timebox.addSelectedTooltip'));
+    toast.success(t('timeblock.addSelectedTooltip'));
     selectionStore.clearSelection();
   } else {
-    toast.info(t('timeblock.noTasksSelectedHelper') || t('timebox.noTasksSelectedHelper'));
+    toast.info(t('timeblock.noTasksSelectedHelper'));
   }
 };
 
@@ -432,14 +433,14 @@ const nowIndicatorStyle = computed(() => {
 
 <template>
   <aside
-    class="timeblock-sidebar timeblock-view timebox-sidebar timeboxing-view w-84 sm:w-92 border-l border-theme-border/70 bg-theme-card/80 flex flex-col shrink-0 h-full overflow-hidden shadow-lg animate-slideLeft z-30 select-none"
+    class="timeblock-sidebar timeblock-view w-84 sm:w-92 border-l border-theme-border/70 bg-theme-card/80 flex flex-col shrink-0 h-full overflow-hidden shadow-lg animate-slideLeft z-30 select-none"
   >
     <!-- Sidebar Header -->
     <div class="px-3.5 py-3 border-b border-theme-border/60 bg-theme-card/90 shrink-0 space-y-2.5">
       <div class="flex items-center justify-between">
         <h2 class="text-xs font-bold uppercase tracking-wider text-theme-text-main flex items-center gap-1.5">
           <Box class="w-4 h-4 text-theme-primary" />
-          <span>{{ t('timeblock.sidebarTitle') || t('timebox.sidebarTitle') }}</span>
+          <span>{{ t('timeblock.sidebarTitle') }}</span>
         </h2>
         <button
           type="button"
@@ -457,7 +458,7 @@ const nowIndicatorStyle = computed(() => {
           type="button"
           @click="prevDay"
           class="p-1 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card rounded transition-colors cursor-pointer"
-          :title="t('timeblock.prevDay') || t('timebox.prevDay')"
+          :title="t('timeblock.prevDay')"
         >
           <ChevronLeft class="w-4 h-4" />
         </button>
@@ -471,7 +472,7 @@ const nowIndicatorStyle = computed(() => {
             type="button"
             @click="resetToToday"
             class="p-1 rounded text-theme-primary hover:bg-theme-primary/15 transition-colors cursor-pointer shrink-0"
-            :title="t('timeblock.jumpToToday') || t('timebox.jumpToToday')"
+            :title="t('timeblock.jumpToToday')"
           >
             <RotateCcw class="w-3.5 h-3.5" />
           </button>
@@ -480,7 +481,7 @@ const nowIndicatorStyle = computed(() => {
         <div class="flex items-center gap-0.5">
           <label
             class="p-1 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card rounded cursor-pointer relative"
-            :title="t('timeblock.pickDate') || t('timebox.pickDate')"
+            :title="t('timeblock.pickDate')"
           >
             <Calendar class="w-3.5 h-3.5" />
             <input
@@ -494,7 +495,7 @@ const nowIndicatorStyle = computed(() => {
             type="button"
             @click="nextDay"
             class="p-1 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-card rounded transition-colors cursor-pointer"
-            :title="t('timeblock.nextDay') || t('timebox.nextDay')"
+            :title="t('timeblock.nextDay')"
           >
             <ChevronRight class="w-4 h-4" />
           </button>
@@ -520,7 +521,7 @@ const nowIndicatorStyle = computed(() => {
           <div
             v-if="isToday && nowIndicatorStyle"
             :style="nowIndicatorStyle"
-            class="absolute right-0 -translate-y-1/2 z-30 pointer-events-none pr-0.5"
+            class="absolute left-0 right-0 z-30 pointer-events-none flex items-center justify-end pr-1 -translate-y-1/2"
           >
             <span
               class="px-1 py-0.25 rounded bg-rose-500 text-white font-mono font-extrabold text-[8px] shadow-sm flex items-center gap-0.5"
@@ -532,7 +533,7 @@ const nowIndicatorStyle = computed(() => {
         </div>
 
         <!-- Day Slots Column -->
-        <div class="timeblock-day-col timebox-day-col flex-1 relative flex flex-col min-w-0 bg-theme-base/40">
+        <div class="timeblock-day-col flex-1 relative flex flex-col min-w-0 bg-theme-base/40">
           <!-- Background Hour Slot Rows (Clickable) -->
           <div
             v-for="hour in hoursList"
@@ -585,7 +586,7 @@ const nowIndicatorStyle = computed(() => {
                   <Repeat
                     v-if="tb.recurrence && tb.recurrence !== 'none'"
                     class="w-3 h-3 text-theme-text-muted shrink-0"
-                    :title="`${t('timeblock.recurrenceLabel') || 'Repeats'}: ${tb.recurrence}`"
+                    :title="`${t('timeblock.recurrenceLabel')}: ${tb.recurrence}`"
                   />
                 </span>
               </div>
@@ -595,8 +596,8 @@ const nowIndicatorStyle = computed(() => {
                 type="button"
                 @click.stop="addSelectedTasksToBox(tb.id, $event)"
                 class="p-1 rounded-md bg-theme-primary text-white hover:bg-theme-primary/90 transition-all flex items-center justify-center cursor-pointer shrink-0 shadow-2xs animate-in fade-in zoom-in-90 duration-150"
-                :title="t('timeblock.addSelectedTooltip') || t('timebox.addSelectedTooltip')"
-                :aria-label="t('timeblock.addSelectedTasks') || t('timebox.addSelectedTasks')"
+                :title="t('timeblock.addSelectedTooltip')"
+                :aria-label="t('timeblock.addSelectedTasks')"
               >
                 <ListPlus class="w-4 h-4" />
               </button>
@@ -629,7 +630,7 @@ const nowIndicatorStyle = computed(() => {
                     type="button"
                     @click.stop="unallocateTask(tb.id, taskId, $event)"
                     class="p-0.5 text-theme-text-muted hover:text-rose-500 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 cursor-pointer"
-                    :title="t('timeblock.unallocate') || t('timebox.unallocate')"
+                    :title="t('timeblock.unallocate')"
                   >
                     <X class="w-3 h-3" />
                   </button>
@@ -640,8 +641,8 @@ const nowIndicatorStyle = computed(() => {
             <!-- Bottom Resize Handle -->
             <div
               @mousedown.stop="startTimeblockResize($event, tb)"
-              class="timeblock-resize-handle timebox-resize-handle absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex items-center justify-center z-20 group/resize"
-              :title="t('timeblock.resize') || t('timebox.resize')"
+              class="timeblock-resize-handle absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex items-center justify-center z-20 group/resize"
+              :title="t('timeblock.resize')"
             >
               <div
                 class="w-8 h-1 rounded-full bg-black/20 dark:bg-white/30 group-hover/resize:bg-black/50 dark:group-hover/resize:bg-white/80 transition-colors"

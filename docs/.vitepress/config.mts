@@ -32,7 +32,7 @@ export default defineConfig({
 								{ text: 'Spreadsheet Import & Export', link: '/user/import-export' },
 								{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' },
 								{ text: 'Voice Dictation', link: '/user/voice-dictation' },
-								{ text: 'Time Boxing', link: '/user/time-boxing' },
+								{ text: 'Time Blocking', link: '/user/time-blocking' },
 								{ text: 'Postponing Tasks', link: '/user/postponing' },
 								{ text: 'Markdown File Spec', link: '/user/format-spec' },
 								{ text: 'Obsidian & PKM Sync', link: '/user/obsidian' },

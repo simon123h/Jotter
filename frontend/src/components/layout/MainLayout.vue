@@ -25,8 +25,8 @@ const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const modalStore = useModalStore();
 
-const { isSidebarOpen, isTimeblockSidebarOpen, isTimeboxSidebarOpen, currentTheme } = storeToRefs(settingsStore);
-const isTimeblockOpen = computed(() => isTimeblockSidebarOpen.value || isTimeboxSidebarOpen.value);
+const { isSidebarOpen, isTimeblockSidebarOpen, currentTheme } = storeToRefs(settingsStore);
+const isTimeblockOpen = computed(() => isTimeblockSidebarOpen.value);
 const autoSyncInterval = computed(() => settingsStore.autoSyncInterval ?? 0);
 const { projects, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
 
@@ -77,7 +77,7 @@ watch(
 const selectProject = (projectId: string) => {
   projectStore.error = null;
   router.push({
-    name: 'board',
+    name: 'project',
     params: { projectId },
     query: route.query,
   });
@@ -194,14 +194,12 @@ onBeforeUnmount(() => {
       v-model="searchQuery"
       :is-sidebar-open="isSidebarOpen"
       :is-timeblock-sidebar-open="isTimeblockOpen"
-      :is-timebox-sidebar-open="isTimeblockOpen"
       :projects="projects"
       :active-project-id="activeProjectId"
       :has-active-filters="hasActiveFilters"
       default-bucket-name="todo"
       @toggle-sidebar="toggleSidebar"
       @toggle-timeblock-sidebar="toggleTimeblockSidebar"
-      @toggle-timebox-sidebar="toggleTimeblockSidebar"
       @open-filter="openFilterModal"
       @create-task="openCreateModal"
       @export-tasks="exportTasks"
@@ -255,17 +253,13 @@ onBeforeUnmount(() => {
 }
 
 .timeblock-sidebar-enter-active,
-.timeblock-sidebar-leave-active,
-.timebox-sidebar-enter-active,
-.timebox-sidebar-leave-active {
+.timeblock-sidebar-leave-active {
   transition:
     margin-right 0.22s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.15s ease;
 }
 .timeblock-sidebar-enter-from,
-.timeblock-sidebar-leave-to,
-.timebox-sidebar-enter-from,
-.timebox-sidebar-leave-to {
+.timeblock-sidebar-leave-to {
   margin-right: -24rem;
   opacity: 0;
 }

@@ -13,7 +13,6 @@ from jotter.features.settings import router as settings_router
 from jotter.features.sync import SyncApplicationService
 from jotter.features.sync import router as system_router
 from jotter.features.tasks import router as tasks_router
-from jotter.features.timeblock.router import legacy_router as legacy_timebox_router
 from jotter.features.timeblock.router import router as timeblock_router
 from jotter.shared.db import create_sqlite_connection
 from jotter.shared.exceptions import DomainException, EntityNotFoundError, ValidationError
@@ -71,7 +70,6 @@ def create_app(config: UserConfig | None = None, version: str = app_version) -> 
     app.include_router(settings_router)
     app.include_router(system_router)
     app.include_router(timeblock_router)
-    app.include_router(legacy_timebox_router)
 
     # Locate static frontend distribution (PyInstaller MEIPASS, bundled package dist, or local dev frontend/dist)
     meipass = getattr(sys, "_MEIPASS", None)

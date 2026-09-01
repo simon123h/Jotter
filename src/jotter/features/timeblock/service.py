@@ -168,14 +168,3 @@ class TimeblockApplicationService:
                 self.repo.save(target_tb)
 
         return self.get_timeblock(timeblock_id)
-
-    # Aliases
-    list_timeboxes = list_timeblocks
-    get_timebox = get_timeblock
-    create_timebox = create_timeblock
-    update_timebox = update_timeblock
-    delete_timebox = delete_timeblock
-
-
-# Backwards compatibility alias
-TimeboxApplicationService = TimeblockApplicationService

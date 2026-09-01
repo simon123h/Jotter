@@ -64,10 +64,3 @@ class TaskAllocationRequest(BaseModel):
 
     task_id: str = Field(..., alias="taskId")
     action: str = Field(default="add", pattern=r"^(add|remove)$")
-
-
-# Backwards compatibility aliases
-TimeboxBase = TimeblockBase
-TimeboxCreate = TimeblockCreate
-TimeboxUpdate = TimeblockUpdate
-TimeboxResponse = TimeblockResponse

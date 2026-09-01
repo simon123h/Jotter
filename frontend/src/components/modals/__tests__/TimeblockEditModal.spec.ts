@@ -10,11 +10,11 @@ vi.mock('@/api', () => ({
   updateTimeblock: vi.fn(),
   deleteTimeblock: vi.fn(),
   allocateTaskToTimeblock: vi.fn(),
-  getTimeboxes: vi.fn().mockResolvedValue([]),
-  createTimebox: vi.fn(),
-  updateTimebox: vi.fn(),
-  deleteTimebox: vi.fn(),
-  allocateTaskToTimebox: vi.fn(),
+  getTimeblocks: vi.fn().mockResolvedValue([]),
+  createTimeblock: vi.fn(),
+  updateTimeblock: vi.fn(),
+  deleteTimeblock: vi.fn(),
+  allocateTaskToTimeblock: vi.fn(),
 }));
 
 describe('TimeblockEditModal.vue', () => {

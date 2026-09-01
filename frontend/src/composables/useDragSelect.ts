@@ -43,7 +43,7 @@ export function useDragSelect({ selectedIds }: DragSelectOptions) {
     const target = event.target as HTMLElement;
 
     // Do not start drag-select if clicking inside task cards, draggable items, timeblock view or standard interactive elements
-    if (target.closest('.task-card, [draggable="true"], .timeblock-view, .timeboxing-view')) return;
+    if (target.closest('.task-card, [draggable="true"], .timeblock-view')) return;
     if (target.closest('button, input, textarea, select, a, [role="button"]')) return;
     if (target.closest('.column-drag-handle')) return;
     if (target.closest('.modal, [role="dialog"], .dropdown-menu, .popover')) return;

@@ -21,8 +21,6 @@ const allocatedTimeblock = computed(() => {
   return timeblockStore.timeblockForTask(props.task.id);
 });
 
-const allocatedTimebox = allocatedTimeblock;
-
 const props = withDefaults(
   defineProps<{
     task: Task;
@@ -436,14 +434,14 @@ const handleTagClick = (tag: string) => {
         {{ task.priority }}
       </div>
 
-      <!-- Timebox Allocation Badge -->
+      <!-- Timeblock Allocation Badge -->
       <div
-        v-if="allocatedTimebox"
+        v-if="allocatedTimeblock"
         class="inline-flex items-center gap-1 px-1.5 py-0.25 rounded text-[10px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30"
-        :title="`${allocatedTimebox.date} ${allocatedTimebox.startTime}-${allocatedTimebox.endTime}: ${allocatedTimebox.title}`"
+        :title="`${allocatedTimeblock.date} ${allocatedTimeblock.startTime}-${allocatedTimeblock.endTime}: ${allocatedTimeblock.title}`"
       >
         <Box :class="compact ? 'w-2.5 h-2.5' : 'w-3 h-3'" class="text-indigo-400 shrink-0" />
-        <span class="truncate max-w-[100px]">{{ allocatedTimebox.title }}</span>
+        <span class="truncate max-w-[100px]">{{ allocatedTimeblock.title }}</span>
       </div>
 
       <!-- Checklist Stats (Only displayed in footer row if not already shown inside the checklist bounding box) -->

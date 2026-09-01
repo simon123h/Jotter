@@ -486,7 +486,6 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
 // ---------------------------------------------------------------------------
 
 const DEMO_TIMEBLOCKS_KEY = 'jotter_demo_timeblocks';
-const DEMO_TIMEBOXES_KEY = 'jotter_demo_timeboxes';
 
 function matchesTimeblockDate(tb: Timeblock, targetDateStr: string): boolean {
   if (!tb.recurrence || tb.recurrence === 'none') {
@@ -508,7 +507,7 @@ function matchesTimeblockDate(tb: Timeblock, targetDateStr: string): boolean {
 
 export async function getTimeblocks(params?: { startDate?: string; endDate?: string }): Promise<Timeblock[]> {
   if (IS_DEMO_MODE) {
-    const stored = localStorage.getItem(DEMO_TIMEBLOCKS_KEY) || localStorage.getItem(DEMO_TIMEBOXES_KEY);
+    const stored = localStorage.getItem(DEMO_TIMEBLOCKS_KEY);
     const items: Timeblock[] = stored ? JSON.parse(stored) : [];
     if (!params?.startDate && !params?.endDate) {
       return items;
@@ -653,11 +652,3 @@ export async function allocateTaskToTimeblock(timeblockId: string, taskId: strin
   }
   return response.json();
 }
-
-// Backwards compatibility aliases
-export const getTimeboxes = getTimeblocks;
-export const getTimebox = getTimeblock;
-export const createTimebox = createTimeblock;
-export const updateTimebox = updateTimeblock;
-export const deleteTimebox = deleteTimeblock;
-export const allocateTaskToTimebox = allocateTaskToTimeblock;

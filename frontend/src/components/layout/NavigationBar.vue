@@ -26,7 +26,7 @@ defineProps<{
   modelValue: string; // bound to searchQuery
   isSidebarOpen: boolean;
   isTimeblockSidebarOpen?: boolean;
-  isTimeboxSidebarOpen?: boolean;
+  isTimeblockSidebarOpen?: boolean;
   projects: Project[];
   activeProjectId: string;
   hasActiveFilters: boolean;
@@ -37,7 +37,6 @@ const emit = defineEmits<{
   (e: 'update:modelValue', val: string): void;
   (e: 'toggle-sidebar'): void;
   (e: 'toggle-timeblock-sidebar'): void;
-  (e: 'toggle-timebox-sidebar'): void;
   (e: 'open-filter'): void;
   (e: 'create-task', defaultBucket: BucketName): void;
   (e: 'export-tasks', format: 'xlsx' | 'csv'): void;
@@ -210,18 +209,6 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
           <span class="hidden sm:inline">{{ t('views.time') }}</span>
         </router-link>
         <router-link
-          :to="{ name: 'time', params: { projectId: activeProjectId }, query: $route.query }"
-          class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
-          :class="
-            isTabActive('time')
-              ? 'bg-theme-primary text-white shadow-none'
-              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
-          "
-        >
-          <Clock class="w-3.5 h-3.5" />
-          <span class="hidden sm:inline">{{ t('views.time') }}</span>
-        </router-link>
-        <router-link
           :to="{ name: 'triage', params: { projectId: activeProjectId }, query: $route.query }"
           class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
@@ -240,15 +227,15 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         @click="emit('toggle-timeblock-sidebar')"
         class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border transition-all cursor-pointer"
         :class="
-          isTimeblockSidebarOpen || isTimeboxSidebarOpen
+          isTimeblockSidebarOpen
             ? 'bg-theme-primary/15 border-theme-primary/25 text-theme-accent font-bold shadow-2xs'
             : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
         "
-        :title="t('timeblock.toggleSidebarTooltip') || t('timebox.toggleSidebarTooltip')"
+        :title="t('timeblock.toggleSidebarTooltip')"
       >
         <Box class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
         <span class="hidden xl:inline">
-          {{ t('timeblock.sidebarTitle') || t('timebox.sidebarTitle') }}
+          {{ t('timeblock.sidebarTitle') }}
         </span>
       </button>
 

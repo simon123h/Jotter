@@ -65,11 +65,7 @@ def test_timeblock_crud_and_allocation(test_env):
     assert res.status_code == 200
     assert "task-1" not in res.json()["taskIds"]
 
-    # 7. Test legacy /api/timeboxes compatibility
-    res_legacy = client.get(f"/api/timeboxes/{tb_id}")
-    assert res_legacy.status_code == 200
-
-    # 8. Delete timeblock
+    # 7. Delete timeblock
     res = client.delete(f"/api/timeblocks/{tb_id}")
     assert res.status_code == 204
 

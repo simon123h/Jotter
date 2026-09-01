@@ -9,11 +9,11 @@ vi.mock('@/api', () => ({
   updateTimeblock: vi.fn(),
   deleteTimeblock: vi.fn(),
   allocateTaskToTimeblock: vi.fn(),
-  getTimeboxes: vi.fn(),
-  createTimebox: vi.fn(),
-  updateTimebox: vi.fn(),
-  deleteTimebox: vi.fn(),
-  allocateTaskToTimebox: vi.fn(),
+  getTimeblocks: vi.fn(),
+  createTimeblock: vi.fn(),
+  updateTimeblock: vi.fn(),
+  deleteTimeblock: vi.fn(),
+  allocateTaskToTimeblock: vi.fn(),
 }));
 
 describe('useTimeblockStore', () => {

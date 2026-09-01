@@ -24,9 +24,6 @@ export const useSettingsStore = defineStore('settings', () => {
     timeblockStartHour: 6,
     timeblockEndHour: 18,
     isTimeblockSidebarOpen: false,
-    timeboxStartHour: 6,
-    timeboxEndHour: 18,
-    isTimeboxSidebarOpen: false,
   });
 
   let skipSave = false;
@@ -46,17 +43,14 @@ export const useSettingsStore = defineStore('settings', () => {
       if (state.autoSyncInterval === undefined) state.autoSyncInterval = 0;
       if (state.hidePostponedColumn === undefined) state.hidePostponedColumn = true;
 
-      const startHour = state.timeblockStartHour ?? state.timeboxStartHour ?? 6;
+      const startHour = state.timeblockStartHour ?? 6;
       state.timeblockStartHour = startHour;
-      state.timeboxStartHour = startHour;
 
-      const endHour = state.timeblockEndHour ?? state.timeboxEndHour ?? 18;
+      const endHour = state.timeblockEndHour ?? 18;
       state.timeblockEndHour = endHour;
-      state.timeboxEndHour = endHour;
 
-      const sidebarOpen = state.isTimeblockSidebarOpen ?? state.isTimeboxSidebarOpen ?? false;
+      const sidebarOpen = state.isTimeblockSidebarOpen ?? false;
       state.isTimeblockSidebarOpen = sidebarOpen;
-      state.isTimeboxSidebarOpen = sidebarOpen;
 
       await nextTick();
       skipSave = false;
@@ -142,12 +136,8 @@ export const useSettingsStore = defineStore('settings', () => {
   };
 
   const toggleTimeblockSidebar = (forceState?: boolean) => {
-    const nextVal = forceState !== undefined ? forceState : !state.isTimeblockSidebarOpen;
-    state.isTimeblockSidebarOpen = nextVal;
-    state.isTimeboxSidebarOpen = nextVal;
+    state.isTimeblockSidebarOpen = forceState !== undefined ? forceState : !state.isTimeblockSidebarOpen;
   };
-
-  const toggleTimeboxSidebar = toggleTimeblockSidebar;
 
   const setTheme = (theme: string) => {
     state.currentTheme = theme;
@@ -213,7 +203,6 @@ export const useSettingsStore = defineStore('settings', () => {
     toggleHideDoneColumn,
     toggleSidebar,
     toggleTimeblockSidebar,
-    toggleTimeboxSidebar,
     setTheme,
     setThresholdDays,
     pinProject,

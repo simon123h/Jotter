@@ -80,9 +80,9 @@ const handleTaskCreateSuccess = async () => {
 
       <!-- Timeblock Edit Modal -->
       <TimeblockEditModal
-        v-else-if="activeModal === 'timeblock-edit' || activeModal === 'timebox-edit'"
+        v-else-if="activeModal === 'timeblock-edit'"
         :is-open="true"
-        :timeblock="modalProps.timeblock || modalProps.timebox"
+        :timeblock="modalProps.timeblock"
         :initial-date="modalProps.initialDate"
         :initial-start-time="modalProps.initialStartTime"
         :initial-end-time="modalProps.initialEndTime"
