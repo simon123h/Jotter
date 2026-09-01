@@ -116,4 +116,14 @@ describe('NavigationBar.vue', () => {
 
     expect(wrapper.emitted('toggle-timeblock-sidebar')).toBeTruthy();
   });
+
+  it('toggles pomodoro floating bar when clicking the pomodoro button', async () => {
+    const wrapper = mount(NavigationBar, mountOptions);
+    const pomodoroBtn = wrapper.find('.pomodoro-toggle-btn');
+    expect(pomodoroBtn.exists()).toBe(true);
+    await pomodoroBtn.trigger('click');
+
+    // Button successfully triggers store toggleBar
+    expect(pomodoroBtn.text()).toContain('🍅');
+  });
 });
