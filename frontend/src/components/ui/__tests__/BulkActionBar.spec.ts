@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
+import { createMockBucket, createMockProject } from '@/__tests__/factories';
 
 beforeAll(() => {
   setActivePinia(createPinia());
@@ -12,13 +13,10 @@ describe('BulkActionBar.vue', () => {
   const defaultProps = {
     selectedCount: 3,
     buckets: [
-      { name: 'todo', title: 'To Do', subtitle: '', position: 1, is_default: true },
-      { name: 'in-progress', title: 'In Progress', subtitle: '', position: 2, is_default: false },
+      createMockBucket({ name: 'todo', title: 'To Do', is_default: true }),
+      createMockBucket({ name: 'in-progress', title: 'In Progress', position: 2 }),
     ],
-    projects: [
-      { id: 'proj-1', title: 'Project 1', created_at: '' },
-      { id: 'proj-2', title: 'Project 2', created_at: '' },
-    ],
+    projects: [createMockProject({ id: 'proj-1', title: 'Project 1' }), createMockProject({ id: 'proj-2', title: 'Project 2' })],
     activeProjectId: 'proj-1',
     commonTags: ['tag1', 'tag2'],
   };

@@ -8,20 +8,18 @@ import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useProjectStore } from '@/stores/project';
-import { X, Slash, ClipboardList, Split } from '@lucide/vue';
+import { X, ClipboardList, Split } from '@lucide/vue';
 import { parseTitleState } from '@/utils/titleParser';
 import { extractAllChecklistItems } from '@/utils/markdown';
-import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
-import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
-import TagInput from '@/components/ui/TagInput.vue';
-import { TASK_COLORS } from '@/utils/constants';
 
-// Refactored modular sub-components and composables
+// Modular sub-components and composables
 import { useTaskEditor } from '@/features/task-editor/composables/useTaskEditor';
 import TaskChecklist from '@/features/task-editor/components/TaskChecklist.vue';
 import TaskAttachments from '@/features/task-editor/components/TaskAttachments.vue';
+import TaskEditFields from '@/features/task-editor/components/TaskEditFields.vue';
+import TaskImageLightbox from '@/features/task-editor/components/TaskImageLightbox.vue';
 
-const { locale, t, tBucket } = useI18n();
+const { locale, t } = useI18n();
 const { showDialog } = useDialog();
 const route = useRoute();
 const router = useRouter();
@@ -53,9 +51,7 @@ const task = ref<Task | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-const colors = TASK_COLORS;
-const titleInput = ref<any>(null);
-const markdownEditor = ref<any>(null);
+const editFieldsRef = ref<any>(null);
 const attachmentsRef = ref<any>(null);
 
 const formatTimestamp = (isoString?: string | null): string => {
@@ -89,12 +85,6 @@ const {
   editPriority,
   editColor,
   editPostponedUntil,
-  showAutocomplete,
-  autocompleteIndex,
-  filteredBuckets,
-  checkAutocomplete,
-  selectAutocompleteItem,
-  handleTitleKeyDown,
   initEditState,
   cancelEdit,
   handleSave: editorHandleSave,
@@ -105,7 +95,7 @@ const {
   buckets,
   locale,
   patchTask,
-  titleInput,
+  titleInput: computed(() => editFieldsRef.value?.titleInputRef),
 });
 
 // Full-screen Image preview lightbox state
@@ -257,7 +247,7 @@ const handleSplitAllSubtasks = async () => {
 };
 
 const addChecklistItem = () => {
-  editorAddChecklistItem(markdownEditor);
+  editorAddChecklistItem(editFieldsRef.value?.markdownEditorRef);
 };
 
 // Full-modal Drag & Drop orchestration mapped straight into `<TaskAttachments>`
@@ -417,7 +407,7 @@ const handleDblClick = (event: MouseEvent) => {
 
   isEditing.value = true;
   nextTick(() => {
-    titleInput.value?.focus();
+    editFieldsRef.value?.focusTitle();
   });
 };
 
@@ -593,195 +583,23 @@ onBeforeRouteLeave(async () => {
             </div>
 
             <!-- Edit Mode -->
-            <div v-else class="space-y-3">
-              <!-- Title -->
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                  t('form.titleLabel')
-                }}</label>
-                <div class="relative">
-                  <KeywordHighlightInput
-                    ref="titleInput"
-                    v-model="editTitle"
-                    v-model:ignored-keywords="ignoredKeywords"
-                    :bucket-names="buckets.map((b) => b.name)"
-                    :locale="locale"
-                    :placeholder="t('form.titlePlaceholder')"
-                    :required="true"
-                    @input="checkAutocomplete"
-                    @click="checkAutocomplete"
-                    @keyup="checkAutocomplete"
-                    @keydown="handleTitleKeyDown"
-                    @blur="showAutocomplete = false"
-                  />
-                  <!-- Autocomplete Popup -->
-                  <div
-                    v-if="showAutocomplete"
-                    class="absolute left-0 right-0 top-full mt-1 z-50 bg-theme-base border border-theme-border rounded shadow-xl max-h-48 overflow-y-auto py-1 scroller-thin"
-                  >
-                    <div
-                      v-for="(b, index) in filteredBuckets"
-                      :key="b.name"
-                      @mousedown.prevent="selectAutocompleteItem(b.name)"
-                      @mouseenter="autocompleteIndex = index"
-                      class="px-3 py-1.5 text-sm flex items-center justify-between cursor-pointer transition-colors"
-                      :class="
-                        index === autocompleteIndex
-                          ? 'bg-theme-primary text-white font-semibold'
-                          : 'text-theme-text-main hover:bg-theme-card/60'
-                      "
-                    >
-                      <div class="flex items-center gap-2">
-                        <span
-                          class="w-1.5 h-1.5 rounded-full bg-theme-accent"
-                          :class="index === autocompleteIndex ? 'bg-white' : ''"
-                        ></span>
-                        <span>{{ tBucket(b.name, b.title) }}</span>
-                      </div>
-                      <span class="text-xs font-mono" :class="index === autocompleteIndex ? 'text-white/80' : 'text-theme-text-muted'"
-                        >/{{ b.name }}</span
-                      >
-                    </div>
-                    <div v-if="filteredBuckets.length === 0" class="px-3 py-2 text-xs text-theme-text-muted italic">
-                      {{ t('form.noBucketsFound') }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Bucket & Tags Row -->
-              <div class="grid grid-cols-2 gap-3.5">
-                <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                    t('form.columnLabel')
-                  }}</label>
-                  <select
-                    v-model="editBucket"
-                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                  >
-                    <option v-for="b in buckets" :key="b.name" :value="b.name">{{ tBucket(b.name, b.title) }}</option>
-                  </select>
-                </div>
-                <div class="relative">
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                    t('form.tagsLabel')
-                  }}</label>
-                  <TagInput v-model="editTags" :placeholder="t('form.tagsPlaceholderEdit')" />
-                </div>
-              </div>
-
-              <!-- Postponed Until Row (Only shown when bucket is set to postponed) -->
-              <div v-if="editBucket === 'postponed'">
-                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-                  {{ t('form.postponedUntilLabel') || 'Postponed Until' }}
-                </label>
-                <input
-                  v-model="editPostponedUntil"
-                  type="date"
-                  class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                  required
-                />
-              </div>
-
-              <!-- Due Date, Planned Date & Priority Row -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                    t('form.dueDateLabel')
-                  }}</label>
-                  <input
-                    v-model="editDueDate"
-                    type="date"
-                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                  />
-                </div>
-                <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                    t('form.plannedDateLabel') || 'Planned'
-                  }}</label>
-                  <select
-                    v-model="editPlannedDate"
-                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                  >
-                    <option value="">{{ t('plannedDateOptions.none') }}</option>
-                    <option value="today">{{ t('plannedDateOptions.today') }}</option>
-                    <option value="tomorrow">{{ t('plannedDateOptions.tomorrow') }}</option>
-                    <option value="thisWeek">{{ t('plannedDateOptions.thisWeek') }}</option>
-                    <option value="thisMonth">{{ t('plannedDateOptions.thisMonth') }}</option>
-                    <option value="thisYear">{{ t('plannedDateOptions.thisYear') }}</option>
-                    <option value="sometime">{{ t('plannedDateOptions.sometime') }}</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-                    t('form.priorityLabel')
-                  }}</label>
-                  <select
-                    v-model="editPriority"
-                    class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-                  >
-                    <option value="">{{ t('priorityOptions.none') }}</option>
-                    <option value="low">{{ t('priorityOptions.low') }}</option>
-                    <option value="medium">{{ t('priorityOptions.medium') }}</option>
-                    <option value="high">{{ t('priorityOptions.high') }}</option>
-                    <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Highlight Color Selector -->
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
-                  {{ t('columnEdit.colorLabel') }}
-                </label>
-                <div class="flex flex-wrap gap-2.5 items-center">
-                  <!-- None Option -->
-                  <button
-                    type="button"
-                    @click="editColor = null"
-                    class="w-7 h-7 rounded-full border border-theme-border flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 text-theme-text-muted hover:text-theme-text-main"
-                    :class="[
-                      editColor === null
-                        ? 'ring-2 ring-theme-accent ring-offset-2 ring-offset-theme-base bg-theme-card/80 border-theme-accent/60'
-                        : 'bg-theme-card/30 hover:bg-theme-card',
-                    ]"
-                    :title="t('columnEdit.colorNone')"
-                  >
-                    <Slash class="w-3 h-3 shrink-0 rotate-90" />
-                  </button>
-
-                  <!-- Colors -->
-                  <button
-                    v-for="c in colors"
-                    :key="c.id"
-                    type="button"
-                    @click="editColor = c.id"
-                    class="w-7 h-7 rounded-full cursor-pointer transition-all hover:scale-110 active:scale-95"
-                    :class="[c.bg, editColor === c.id ? `ring-2 ring-offset-2 ring-offset-theme-base ${c.ring}` : '']"
-                    :title="c.name"
-                  />
-                </div>
-              </div>
-
-              <!-- Body (Markdown Editor) -->
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">
-                    {{ t('form.markdownLabelEdit') }}
-                  </label>
-                  <button
-                    v-if="!hasChecklist"
-                    type="button"
-                    @click="addChecklistItem"
-                    class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
-                  >
-                    <ClipboardList class="w-3.5 h-3.5" />
-                    {{ t('form.quickAddChecklist') }}
-                  </button>
-                </div>
-                <MarkdownEditor ref="markdownEditor" v-model="editBody" :rows="12" :placeholder="t('form.markdownPlaceholderEdit')" />
-              </div>
-            </div>
+            <TaskEditFields
+              v-else
+              ref="editFieldsRef"
+              v-model:title="editTitle"
+              v-model:ignored-keywords="ignoredKeywords"
+              v-model:bucket="editBucket"
+              v-model:tags="editTags"
+              v-model:postponed-until="editPostponedUntil"
+              v-model:due-date="editDueDate"
+              v-model:planned-date="editPlannedDate"
+              v-model:priority="editPriority"
+              v-model:color="editColor"
+              v-model:body="editBody"
+              :buckets="buckets"
+              :has-checklist="hasChecklist"
+              @add-checklist="addChecklistItem"
+            />
           </div>
         </div>
 
@@ -853,66 +671,5 @@ onBeforeRouteLeave(async () => {
   </Transition>
 
   <!-- Image Preview Lightbox Overlay -->
-  <Transition name="fade">
-    <div
-      v-if="previewImageUrl"
-      class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md p-4 select-none animate-fade-in"
-      @click="previewImageUrl = null"
-    >
-      <!-- Header Bar inside Lightbox -->
-      <div
-        class="absolute top-0 left-0 right-0 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent z-10 pointer-events-auto"
-      >
-        <span class="text-white text-sm font-semibold truncate max-w-[70%] px-2">{{ previewImageName }}</span>
-        <div class="flex items-center gap-3">
-          <a
-            :href="previewImageUrl"
-            target="_blank"
-            download
-            class="text-white/80 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all cursor-pointer flex items-center justify-center"
-            :title="t('buttons.download')"
-            @click.stop
-          >
-            <!-- Custom simple SVG or Lucide to avoid downloads breaking -->
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </a>
-          <button
-            @click="previewImageUrl = null"
-            class="text-white/80 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all cursor-pointer flex items-center justify-center"
-            :title="t('buttons.close')"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Main Image Container -->
-      <div class="relative max-w-full max-h-[85vh] flex items-center justify-center animate-scale-in" @click.stop>
-        <img
-          :src="previewImageUrl"
-          :alt="previewImageName"
-          class="max-w-full max-h-[85vh] rounded-lg shadow-2xl object-contain border border-white/10"
-        />
-      </div>
-    </div>
-  </Transition>
+  <TaskImageLightbox :image-url="previewImageUrl" :image-name="previewImageName" @close="previewImageUrl = null" />
 </template>
-
-<style scoped>
-.animate-scale-in {
-  animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-</style>

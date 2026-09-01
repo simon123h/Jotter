@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, RouterLinkStub } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import TaskCard from '@/components/ui/TaskCard.vue';
-import type { Task } from '@/types';
 import { updateTask } from '@/api';
 import { useTimeblockStore } from '@/stores/timeblock';
+import { createMockTask } from '@/__tests__/factories';
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({
@@ -32,7 +32,7 @@ describe('TaskCard.vue', () => {
     vi.clearAllMocks();
   });
 
-  const mockTask: Task = {
+  const mockTask = createMockTask({
     id: '123',
     project_id: 'default',
     title: 'Test Task Title',
@@ -40,10 +40,7 @@ describe('TaskCard.vue', () => {
     bucket: 'todo',
     position: 1.0,
     tags: ['bug', 'frontend'],
-    attachments: [],
-    created_at: '2026-05-30T20:00:00Z',
-    updated_at: '2026-05-30T20:00:00Z',
-  };
+  });
 
   const mountOptions = {
     props: {
@@ -103,10 +100,10 @@ describe('TaskCard.vue', () => {
   });
 
   it('extracts and renders level-zero checklist items correctly, ignoring indented ones by default', () => {
-    const taskWithChecklist: Task = {
+    const taskWithChecklist = createMockTask({
       ...mockTask,
       body: `- [ ] Level 0 Item 1\n  - [ ] Level 1 Item\n- [x] Level 0 Item 2`,
-    };
+    });
 
     const wrapper = mount(TaskCard, {
       ...mountOptions,
@@ -123,10 +120,10 @@ describe('TaskCard.vue', () => {
   });
 
   it('renders nested checklist items up to maxNestingLevel with visual padding', () => {
-    const taskWithChecklist: Task = {
+    const taskWithChecklist = createMockTask({
       ...mockTask,
       body: `- [ ] Level 0 Item 1\n  - [ ] Level 1 Item\n    - [ ] Level 2 Item`,
-    };
+    });
 
     const wrapper = mount(TaskCard, {
       ...mountOptions,
@@ -146,10 +143,10 @@ describe('TaskCard.vue', () => {
   });
 
   it('normalizes nesting levels relative to the minimum indentation level found', () => {
-    const taskWithChecklist: Task = {
+    const taskWithChecklist = createMockTask({
       ...mockTask,
       body: `- Some bullet group header\n  - [ ] Level 1 Checklist Item 1\n  - [ ] Level 1 Checklist Item 2\n    - [ ] Level 2 Checklist Item 3`,
-    };
+    });
 
     const wrapper = mount(TaskCard, {
       ...mountOptions,
@@ -169,10 +166,10 @@ describe('TaskCard.vue', () => {
   });
 
   it('does not render checklist items if compact is true', () => {
-    const taskWithChecklist: Task = {
+    const taskWithChecklist = createMockTask({
       ...mockTask,
       body: `- [ ] Level 0 Item 1`,
-    };
+    });
 
     const wrapper = mount(TaskCard, {
       ...mountOptions,
@@ -187,10 +184,10 @@ describe('TaskCard.vue', () => {
   });
 
   it('toggles a checklist item when its checkbox is clicked', async () => {
-    const taskWithChecklist: Task = {
+    const taskWithChecklist = createMockTask({
       ...mockTask,
       body: `- [ ] Level 0 Item 1\n  - [ ] Level 1 Item\n- [x] Level 0 Item 2`,
-    };
+    });
 
     const wrapper = mount(TaskCard, {
       ...mountOptions,
