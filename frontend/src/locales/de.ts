@@ -1,4 +1,11 @@
 export const de = {
+  common: {
+    save: 'Speichern',
+    cancel: 'Abbrechen',
+    close: 'Schließen',
+    delete: 'Löschen',
+    edit: 'Bearbeiten',
+  },
   brand: {
     title: 'Jotter',
     subtitle: 'Einzige Quelle der Wahrheit: Einfache Markdown-Dateien. SQLite Ephemeral Index.',

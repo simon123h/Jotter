@@ -1,4 +1,11 @@
 export const en = {
+  common: {
+    save: 'Save',
+    cancel: 'Cancel',
+    close: 'Close',
+    delete: 'Delete',
+    edit: 'Edit',
+  },
   brand: {
     title: 'Jotter',
     subtitle: 'Single Source of Truth: Plain Markdown Files. SQLite Ephemeral Index.',

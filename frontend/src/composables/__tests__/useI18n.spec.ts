@@ -23,6 +23,7 @@ describe('useI18n composable', () => {
     const { locale, t } = useI18n();
     locale.value = 'en';
     expect(t('brand.title')).toBe('Jotter');
+    expect(t('common.save')).toBe('Save');
     expect(t('buttons.cancel')).toBe('Cancel');
     expect(t('projects.allProjects')).toBe('All Projects');
   });
@@ -31,6 +32,7 @@ describe('useI18n composable', () => {
     const { locale, t } = useI18n();
     locale.value = 'de';
     expect(t('brand.title')).toBe('Jotter');
+    expect(t('common.save')).toBe('Speichern');
     expect(t('buttons.cancel')).toBe('Abbrechen');
   });
 
