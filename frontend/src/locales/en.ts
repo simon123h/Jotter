@@ -625,9 +625,6 @@ export const en = {
     skip: 'Skip to next phase',
     settings: 'Timer settings',
     close: 'Close Pomodoro Bar',
-    focusingOn: 'Focusing on',
-    detachTask: 'Detach task',
-    attachTaskTooltip: 'Start Pomodoro for this task',
     cyclesCompleted: 'Cycles: {count}',
   },
 };

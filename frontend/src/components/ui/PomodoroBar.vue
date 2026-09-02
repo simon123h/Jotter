@@ -156,26 +156,6 @@ onUnmounted(() => {
           ></div>
         </div>
 
-        <!-- Optional Task Attachment Header -->
-        <div
-          v-if="pomodoroStore.active_task_title"
-          class="flex items-center justify-between gap-2 px-1 text-[11px] text-theme-text-muted border-b border-theme-border/40 pb-1"
-        >
-          <div class="flex items-center gap-1.5 truncate">
-            <span class="font-medium opacity-75 shrink-0">{{ t('pomodoro.focusingOn') }}:</span>
-            <span class="font-bold text-theme-text-main truncate" :title="pomodoroStore.active_task_title">
-              {{ pomodoroStore.active_task_title }}
-            </span>
-          </div>
-          <button
-            @click="pomodoroStore.detachTask"
-            class="p-0.5 text-theme-text-muted hover:text-theme-text-main rounded transition-colors cursor-pointer shrink-0"
-            :title="t('pomodoro.detachTask')"
-          >
-            <X class="w-3 h-3" />
-          </button>
-        </div>
-
         <!-- Core Toolbar Row -->
         <div class="flex items-center gap-2 sm:gap-3.5 whitespace-nowrap">
           <!-- Phase Switcher Pills -->

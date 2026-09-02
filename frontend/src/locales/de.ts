@@ -630,9 +630,6 @@ export const de = {
     skip: 'Zur nächsten Phase springen',
     settings: 'Timer-Einstellungen',
     close: 'Pomodoro-Leiste schließen',
-    focusingOn: 'Fokus auf',
-    detachTask: 'Aufgabenverknüpfung lösen',
-    attachTaskTooltip: 'Pomodoro für diese Aufgabe starten',
     cyclesCompleted: 'Zyklen: {count}',
   },
 };

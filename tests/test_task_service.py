@@ -126,7 +126,6 @@ def test_task_partial_update_preserves_attributes(temp_dir, test_env):
     assert updated.body == "- [x] Checklist item 1\n- [ ] Checklist item 2"
 
 
-
 def test_task_search_and_filtering(temp_dir, test_env):
     conn = get_db(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)

@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ClipboardList, Check, Calendar, Clock, Paperclip, Hourglass, Box, Timer } from '@lucide/vue';
+import { ClipboardList, Check, Calendar, Clock, Paperclip, Hourglass, Box } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { useSelectionStore } from '@/stores/selection';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
 import { useTimeblockStore } from '@/stores/timeblock';
-import { usePomodoroStore } from '@/stores/pomodoro';
 import { updateTask } from '@/api';
 import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
 
@@ -17,7 +16,6 @@ const selectionStore = useSelectionStore();
 const projectStore = useProjectStore();
 const settingsStore = useSettingsStore();
 const timeblockStore = useTimeblockStore();
-const pomodoroStore = usePomodoroStore();
 
 const allocatedTimeblock = computed(() => {
   return timeblockStore.timeblockForTask(props.task.id);
@@ -327,28 +325,8 @@ const handleTagClick = (tag: string) => {
         </h4>
       </div>
       <div class="flex items-center gap-1 shrink-0 -m-2">
-        <!-- Active Pomodoro Indicator (always visible if attached to this task) -->
-        <span
-          v-if="pomodoroStore.active_task_id === task.id"
-          class="text-xs px-1.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 font-bold flex items-center gap-1 select-none shadow-2xs"
-          :title="t('pomodoro.focusingOn')"
-        >
-          <span>🍅</span>
-          <span v-if="pomodoroStore.status === 'running'" class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
-        </span>
-
         <!-- Hover Actions -->
         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <!-- Start Pomodoro Button -->
-          <button
-            v-if="pomodoroStore.active_task_id !== task.id && task.bucket !== 'done'"
-            @click.stop.prevent="pomodoroStore.attachTask(task.id, task.title)"
-            class="p-1 text-theme-text-muted hover:text-rose-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
-            :title="t('pomodoro.attachTaskTooltip')"
-          >
-            <Timer :class="compact ? 'w-3.5 h-3.5' : 'w-4 h-4'" class="shrink-0" />
-          </button>
-
           <!-- Mark Done Button -->
           <button
             v-if="showDoneButton && task.bucket !== 'done'"

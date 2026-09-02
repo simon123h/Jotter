@@ -80,27 +80,6 @@ describe('PomodoroBar.vue', () => {
     expect(switchSpy).toHaveBeenCalledWith('short_break');
   });
 
-  it('shows attached task and detaches it on X click', async () => {
-    const store = usePomodoroStore();
-    store.is_bar_open = true;
-    store.active_task_id = 'task-1';
-    store.active_task_title = 'Refactor Auth Service';
-
-    const wrapper = mount(PomodoroBar, {
-      global: {
-        plugins: [pinia],
-      },
-    });
-
-    expect(wrapper.text()).toContain('Refactor Auth Service');
-
-    const detachBtn = wrapper.find('button[title="Detach task"]');
-    expect(detachBtn.exists()).toBe(true);
-    await detachBtn.trigger('click');
-
-    expect(store.active_task_id).toBeNull();
-  });
-
   it('maintains anchored bottom-6 position', () => {
     const store = usePomodoroStore();
     store.is_bar_open = true;

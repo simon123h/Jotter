@@ -54,10 +54,6 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   const completed_cycles = ref<number>(0);
   const is_bar_open = ref<boolean>(false);
 
-  // Attached Task (optional focus context)
-  const active_task_id = ref<string | null>(null);
-  const active_task_title = ref<string | null>(null);
-
   let timerInterval: ReturnType<typeof setInterval> | null = null;
   const originalDocumentTitle = typeof document !== 'undefined' ? document.title : 'Jotter';
 
@@ -216,17 +212,6 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     is_bar_open.value = !is_bar_open.value;
   };
 
-  const attachTask = (taskId: string, title: string) => {
-    active_task_id.value = taskId;
-    active_task_title.value = title;
-    openBar();
-  };
-
-  const detachTask = () => {
-    active_task_id.value = null;
-    active_task_title.value = null;
-  };
-
   return {
     // State
     phase,
@@ -239,8 +224,6 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     completed_cycles,
     is_bar_open,
     sound_enabled,
-    active_task_id,
-    active_task_title,
 
     // Getters
     current_duration_seconds,
@@ -258,7 +241,5 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     openBar,
     closeBar,
     toggleBar,
-    attachTask,
-    detachTask,
   };
 });

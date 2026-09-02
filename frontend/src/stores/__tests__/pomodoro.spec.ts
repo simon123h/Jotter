@@ -88,21 +88,6 @@ describe('usePomodoroStore', () => {
     expect(store.time_remaining).toBe(15 * 60);
   });
 
-  it('attaches and detaches task focus context', () => {
-    const store = usePomodoroStore();
-    expect(store.active_task_id).toBeNull();
-    expect(store.is_bar_open).toBe(false);
-
-    store.attachTask('task-123', 'Build Pomodoro Feature');
-    expect(store.active_task_id).toBe('task-123');
-    expect(store.active_task_title).toBe('Build Pomodoro Feature');
-    expect(store.is_bar_open).toBe(true);
-
-    store.detachTask();
-    expect(store.active_task_id).toBeNull();
-    expect(store.active_task_title).toBeNull();
-  });
-
   it('updates durations and saves them', () => {
     const store = usePomodoroStore();
     store.setDurations({
