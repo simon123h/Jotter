@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useClipboard, useEventListener } from '@vueuse/core';
 import { X, Clock, RotateCcw, User, Calendar, RefreshCw, Search, Copy, Check, Info } from '@lucide/vue';
 import { useProjectStore } from '@/stores/project';
 import { getGitHistory } from '@/api';
@@ -7,6 +8,7 @@ import type { GitCommit } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 
 const { t } = useI18n();
+const { copy } = useClipboard();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -76,7 +78,7 @@ const handleRestore = async (commit: GitCommit) => {
 // Copy commit hash
 const handleCopyHash = async (hash: string) => {
   try {
-    await navigator.clipboard.writeText(hash);
+    await copy(hash);
     copiedHash.value = hash;
     setTimeout(() => {
       if (copiedHash.value === hash) {
@@ -113,6 +115,8 @@ const handleKeyDown = (e: KeyboardEvent) => {
   }
 };
 
+useEventListener(window, 'keydown', handleKeyDown);
+
 // Watch for isOpen changes to auto-fetch history
 watch(
   () => props.isOpen,
@@ -124,14 +128,6 @@ watch(
   },
   { immediate: true }
 );
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown);
-});
 </script>
 
 <template>
