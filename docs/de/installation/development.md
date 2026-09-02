@@ -8,7 +8,7 @@ Diese Anleitung führt dich durch die Einrichtung einer lokalen Entwicklungsumge
 
 Stelle sicher, dass die folgenden Programme auf deinem System installiert sind:
 
-* **Python** (v3.10 oder höher) und **pip**
+* **Python** (v3.12 oder höher) und **pip**
 * **Node.js** (v20 oder höher empfohlen) und **npm**
 * Eine Terminal-Shell (Bash, Zsh, PowerShell)
 

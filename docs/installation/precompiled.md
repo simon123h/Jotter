@@ -4,7 +4,7 @@ Jotter is a lightweight, local-first web application powered by Python (FastAPI)
 
 ## Requirements
 
-- **Python 3.10+** and **pip**
+- **Python 3.12+** and **pip**
 - Any modern web browser (Chrome, Firefox, Safari, Edge)
 
 ---

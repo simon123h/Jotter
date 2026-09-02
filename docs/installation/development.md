@@ -6,7 +6,7 @@ This guide walks you through setting up a local development environment to run a
 
 Ensure you have the following installed on your machine:
 
-- **Python** (v3.10 or higher) and **pip**
+- **Python** (v3.12 or higher) and **pip**
 - **Node.js** (v20 or higher recommended) and **npm**
 - A terminal shell (Bash, Zsh, PowerShell)
 

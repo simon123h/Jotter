@@ -6,7 +6,7 @@ Jotter ist eine leichtgewichtige, lokale Webanwendung, die auf Python (FastAPI) 
 
 ## Voraussetzungen
 
-- **Python 3.10+** und **pip**
+- **Python 3.12+** und **pip**
 - Ein moderner Webbrowser (Chrome, Firefox, Safari, Edge)
 
 ---

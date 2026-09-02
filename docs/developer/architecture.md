@@ -24,7 +24,7 @@ Jotter is a local-first, non-commercial task management application designed to 
 
 ## 2. Architecture Constraints
 
-- **Platform Independent**: Python 3.10+ runtime support across Linux, macOS, and Windows.
+- **Platform Independent**: Python 3.12+ runtime support across Linux, macOS, and Windows.
 - **Offline-First**: Must run locally without requiring external cloud access.
 - **Script-Based Security Compliance**: Pure source script execution (no opaque compiled binary executables).
 

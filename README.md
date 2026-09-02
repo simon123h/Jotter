@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://github.com/simon123h/jotter/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build Status">
   <img src="https://codecov.io/gh/simon123h/jotter/branch/main/graph/badge.svg" alt="Coverage">
-  <img src="https://img.shields.io/badge/Python-v3.10+-3776AB?logo=python&logoColor=white" alt="Python Version">
+  <img src="https://img.shields.io/badge/Python-v3.12+-3776AB?logo=python&logoColor=white" alt="Python Version">
   <img src="https://img.shields.io/badge/Vue.js-v3.5+-4FC08D?logo=vue.js&logoColor=white" alt="Vue Version">
   <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2Fsimon123h%2Fjotter%2Flines" alt="Lines of Code">
   <img src="https://badgen.net/github/release/simon123h/jotter?color=orange" alt="Latest Release">
