@@ -177,3 +177,58 @@ def test_task_search_and_filtering(temp_dir, test_env):
     before_sep = task_svc.get_tasks("default", due_before="2026-08-20")
     assert len(before_sep) == 1
     assert before_sep[0].title == "Gamma release notes"
+
+
+def test_fts5_live_lifecycle_mutations(temp_dir, test_env):
+    """Verifies that tasks created, updated, or deleted during runtime immediately sync to FTS5."""
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+
+    # 1. Create a task at runtime
+    task = task_svc.create_task(
+        "default",
+        TaskCreate(
+            title="Implement quantum teleportation",
+            bucket="todo",
+            tags=["experimental"],
+            body="Researching entanglement synchronization protocols.",
+        ),
+    )
+
+    # Immediately searchable by title and body tokens
+    res_title = task_svc.get_tasks("default", search="teleport")
+    assert len(res_title) == 1
+    assert res_title[0].id == task.id
+
+    res_body = task_svc.get_tasks("default", search="entanglement")
+    assert len(res_body) == 1
+    assert res_body[0].id == task.id
+
+    # 2. Update task title and body at runtime
+    task_svc.update_task(
+        "default",
+        task.id,
+        TaskUpdate.model_validate(
+            {
+                "title": "Implement warp drive propulsion",
+                "body": "Quantum singularity with antimatter warp core.",
+            }
+        ),
+    )
+
+    # Old tokens should no longer match
+    assert len(task_svc.get_tasks("default", search="teleport")) == 0
+    assert len(task_svc.get_tasks("default", search="entanglement")) == 0
+
+    # New tokens must match
+    res_warp = task_svc.get_tasks("default", search="warp")
+    assert len(res_warp) == 1
+    assert res_warp[0].title == "Implement warp drive propulsion"
+
+    res_antimatter = task_svc.get_tasks("default", search="antimatter")
+    assert len(res_antimatter) == 1
+
+    # 3. Delete task at runtime
+    task_svc.delete_task("default", task.id)
+    assert len(task_svc.get_tasks("default", search="warp")) == 0
+    assert len(task_svc.get_tasks("default", search="antimatter")) == 0
