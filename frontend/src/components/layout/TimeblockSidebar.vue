@@ -171,39 +171,47 @@ const getTimeblockStyle = (tb: Timeblock) => {
   };
 };
 
-// Resolve task objects for a time block (directly from backend-populated tasks, with fallback)
+// Resolve task objects for a time block (done tasks are always removed from time blocks)
 const getTasksForBlock = (tb: Timeblock): Task[] => {
+  let list: Task[] = [];
   if (tb.tasks && tb.tasks.length > 0) {
-    return tb.tasks;
+    list = tb.tasks;
+  } else if (tb.task_ids && tb.task_ids.length > 0) {
+    list = tb.task_ids.map((id) => projectStore.tasks.find((t) => t.id === id)).filter((t): t is Task => !!t);
   }
-  if (tb.task_ids && tb.task_ids.length > 0) {
-    return tb.task_ids.map((id) => projectStore.tasks.find((t) => t.id === id)).filter((t): t is Task => !!t);
-  }
-  return [];
+  return list.filter((t) => !isTaskDone(t));
 };
 
 const isTaskDone = (task: Task): boolean => {
   return ['done', 'archive', 'archived', 'completed'].includes(task.bucket.toLowerCase());
 };
 
-// Toggle task completion from inside timeblock
+// Toggle task completion from inside timeblock with board synchronization
 const toggleTaskDone = async (task: Task, timeblockId: string, e: Event) => {
   e.stopPropagation();
   const currentlyDone = isTaskDone(task);
   const targetBucket = currentlyDone ? 'todo' : 'done';
 
   try {
-    await updateTask(task.project_id || activeProjectId.value, task.id, {
+    const updated = await updateTask(task.project_id || activeProjectId.value, task.id, {
       bucket: targetBucket,
+      position: targetBucket === 'done' ? 1000000.0 : 1000.0,
     });
     task.bucket = targetBucket;
 
-    // If marked done, unallocate from the timeblock so the recurring or standard block stays clean
+    // 1. If marked done, unallocate from the timeblock so recurring or standard blocks stay clean
     if (targetBucket === 'done') {
       await timeblockStore.unallocateTask(timeblockId, task.id);
     }
-  } catch {
-    // Fail-safe
+
+    // 2. Synchronize projectStore so board/list/matrix view immediately reflects the done status
+    const storeTask = projectStore.tasks.find((t) => t.id === task.id);
+    if (storeTask) {
+      Object.assign(storeTask, updated);
+    }
+    await projectStore.invalidate();
+  } catch (err: any) {
+    toast.error(err.message || 'Failed to update task');
   }
 };
 

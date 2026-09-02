@@ -35,6 +35,11 @@ def _matches_date(block: dict[str, Any], target_date: datetime.date) -> bool:
     return False
 
 
+def _is_task_done(task: Any) -> bool:
+    bucket = getattr(task, "bucket", "") if not isinstance(task, dict) else task.get("bucket", "")
+    return str(bucket).lower() in ("done", "archive", "archived", "completed")
+
+
 class TimeblockApplicationService:
     def __init__(self, repo: TimeblockDiskRepo, task_repo: SqliteTaskRepository | None = None):
         self.repo = repo
@@ -50,7 +55,11 @@ class TimeblockApplicationService:
             return item
         tasks = self.task_repo.get_by_ids(task_ids)
         task_map = {str(t.id): t for t in tasks}
-        item["tasks"] = [task_map[tid] for tid in task_ids if tid in task_map]
+        item["tasks"] = [task_map[tid] for tid in task_ids if tid in task_map and not _is_task_done(task_map[tid])]
+        pruned_ids = [tid for tid in task_ids if tid not in task_map or not _is_task_done(task_map[tid])]
+        if pruned_ids != task_ids:
+            item["task_ids"] = pruned_ids
+            self.repo.save(item)
         return item
 
     def _populate_tasks_bulk(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -70,7 +79,11 @@ class TimeblockApplicationService:
         task_map = {str(t.id): t for t in tasks}
         for it in items:
             tids = it.get("task_ids") or it.get("taskIds") or []
-            it["tasks"] = [task_map[tid] for tid in tids if tid in task_map]
+            it["tasks"] = [task_map[tid] for tid in tids if tid in task_map and not _is_task_done(task_map[tid])]
+            pruned_ids = [tid for tid in tids if tid not in task_map or not _is_task_done(task_map[tid])]
+            if pruned_ids != tids:
+                it["task_ids"] = pruned_ids
+                self.repo.save(it)
         return items
 
     def purge_past_timeblocks(self) -> None:

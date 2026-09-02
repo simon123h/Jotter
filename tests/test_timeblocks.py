@@ -185,3 +185,45 @@ def test_purge_past_one_off_timeblocks(test_env):
     assert "tb_past_oneoff" not in ids
     assert "tb_past_recurring" in ids
     assert "tb_future_oneoff" in ids
+
+
+def test_done_tasks_removed_from_timeblocks(test_env):
+    client, _ = test_env
+    today_str = datetime.date.today().isoformat()
+
+    # 1. Create a task in project 'default'
+    task_res = client.post(
+        "/api/projects/default/tasks",
+        json={"title": "Important Task to Finish", "bucket": "todo"},
+    )
+    assert task_res.status_code == 201
+    task_id = task_res.json()["id"]
+
+    # 2. Create timeblock with the task allocated
+    tb_res = client.post(
+        "/api/timeblocks",
+        json={
+            "title": "Morning Focus",
+            "date": today_str,
+            "start_time": "10:00",
+            "end_time": "11:00",
+            "task_ids": [task_id],
+        },
+    )
+    assert tb_res.status_code == 201
+    tb_id = tb_res.json()["id"]
+    assert len(tb_res.json()["tasks"]) == 1
+    assert tb_res.json()["tasks"][0]["id"] == task_id
+
+    # 3. Mark task as 'done'
+    update_res = client.put(
+        f"/api/projects/default/tasks/{task_id}",
+        json={"bucket": "done"},
+    )
+    assert update_res.status_code == 200
+
+    # 4. Fetching timeblock now automatically excludes and prunes the completed task
+    get_tb = client.get(f"/api/timeblocks/{tb_id}")
+    assert get_tb.status_code == 200
+    assert len(get_tb.json()["tasks"]) == 0
+    assert task_id not in get_tb.json()["task_ids"]

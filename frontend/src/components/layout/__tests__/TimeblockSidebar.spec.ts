@@ -172,6 +172,7 @@ describe('TimeblockSidebar.vue', () => {
     ];
 
     const unallocateSpy = vi.spyOn(timeblockStore, 'unallocateTask');
+    const invalidateSpy = vi.spyOn(projectStore, 'invalidate');
 
     const wrapper = mount(TimeblockSidebar, {
       global: {
@@ -185,5 +186,51 @@ describe('TimeblockSidebar.vue', () => {
     await flushPromises();
 
     expect(unallocateSpy).toHaveBeenCalledWith('tb-1', 'task-1');
+    expect(invalidateSpy).toHaveBeenCalled();
+  });
+
+  it('filters out completed or archived tasks from timeblocks in getTasksForBlock', () => {
+    const timeblockStore = useTimeblockStore();
+    const projectStore = useProjectStore();
+
+    projectStore.tasks = [
+      {
+        id: 'task-done',
+        project_id: 'default',
+        title: 'Already Finished Task',
+        bucket: 'done',
+        position: 1,
+        tags: [],
+        attachments: [],
+        body: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ];
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    timeblockStore.timeblocks = [
+      {
+        id: 'tb-recurrent',
+        title: 'Daily Standup',
+        date: todayStr,
+        start_time: '09:00',
+        end_time: '10:00',
+        color: 'indigo',
+        task_ids: ['task-done'],
+        tasks: [projectStore.tasks[0]],
+        recurrence: 'daily',
+      },
+    ];
+
+    const wrapper = mount(TimeblockSidebar, {
+      global: {
+        plugins: [pinia],
+      },
+    });
+
+    // Completed task should not appear in the timeblock list
+    expect(wrapper.text()).not.toContain('Already Finished Task');
   });
 });
