@@ -625,6 +625,7 @@ export const de = {
     longBreakDuration: 'Lange Pause (Min.)',
     sessionsBeforeLongBreak: 'Sitzungen pro Durchlauf',
     sound: 'Tonsignal',
+    autoProceed: 'Nächste Phase automatisch starten',
     play: 'Timer starten',
     pause: 'Timer anhalten',
     reset: 'Timer zurücksetzen',

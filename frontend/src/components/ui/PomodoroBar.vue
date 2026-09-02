@@ -13,6 +13,7 @@ const editShortBreak = ref(pomodoroStore.short_break_duration);
 const editLongBreak = ref(pomodoroStore.long_break_duration);
 const editLongBreakInterval = ref(pomodoroStore.long_break_interval);
 const editSound = ref(pomodoroStore.sound_enabled);
+const editAutoProceed = ref(pomodoroStore.auto_proceed);
 
 const totalCycles = computed(() => {
   return Math.max(1, Math.min(12, Math.floor(Number(pomodoroStore.long_break_interval)) || 4));
@@ -25,6 +26,7 @@ const toggleSettings = () => {
     editLongBreak.value = pomodoroStore.long_break_duration;
     editLongBreakInterval.value = pomodoroStore.long_break_interval;
     editSound.value = pomodoroStore.sound_enabled;
+    editAutoProceed.value = pomodoroStore.auto_proceed;
   }
   showSettings.value = !showSettings.value;
 };
@@ -36,6 +38,7 @@ const saveSettings = () => {
     long_break: Math.max(1, Math.floor(Number(editLongBreak.value)) || 15),
     long_break_interval: Math.max(1, Math.min(12, Math.floor(Number(editLongBreakInterval.value)) || 4)),
     sound_enabled: Boolean(editSound.value),
+    auto_proceed: Boolean(editAutoProceed.value),
   });
   showSettings.value = false;
 };
@@ -142,9 +145,9 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="flex items-center justify-between pt-1 border-t border-theme-border/40 gap-2">
-            <div class="flex items-center gap-3">
-              <label class="flex items-center gap-2 cursor-pointer text-theme-text-main">
+          <div class="flex items-center justify-between pt-1 border-t border-theme-border/40 gap-2 flex-wrap">
+            <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
+              <label class="flex items-center gap-1.5 cursor-pointer text-theme-text-main">
                 <input
                   type="checkbox"
                   v-model="editSound"
@@ -155,6 +158,15 @@ onUnmounted(() => {
                   <VolumeX v-else class="w-3.5 h-3.5 text-theme-text-muted" />
                   {{ t('pomodoro.sound') }}
                 </span>
+              </label>
+
+              <label class="flex items-center gap-1.5 cursor-pointer text-theme-text-main">
+                <input
+                  type="checkbox"
+                  v-model="editAutoProceed"
+                  class="rounded border-theme-border text-theme-primary focus:ring-theme-ring cursor-pointer"
+                />
+                <span>{{ t('pomodoro.autoProceed') }}</span>
               </label>
 
               <button

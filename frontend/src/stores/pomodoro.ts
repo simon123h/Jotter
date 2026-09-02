@@ -15,6 +15,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   const long_break_duration = ref<number>(15);
   const long_break_interval = ref<number>(4);
   const sound_enabled = ref<boolean>(true);
+  const auto_proceed = ref<boolean>(false);
 
   // Runtime State
   const phase = ref<PomodoroPhase>('work');
@@ -38,6 +39,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
       if (parsed.long_break_interval)
         long_break_interval.value = Math.max(1, Math.min(12, Math.floor(Number(parsed.long_break_interval)) || 4));
       if (typeof parsed.sound_enabled === 'boolean') sound_enabled.value = parsed.sound_enabled;
+      if (typeof parsed.auto_proceed === 'boolean') auto_proceed.value = parsed.auto_proceed;
     }
   } catch {
     // Ignore localStorage errors
@@ -123,6 +125,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
           long_break_duration: long_break_duration.value,
           long_break_interval: long_break_interval.value,
           sound_enabled: sound_enabled.value,
+          auto_proceed: auto_proceed.value,
         })
       );
     } catch {
@@ -164,7 +167,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
 
   // Automatically synchronize settings changes to localStorage
   watch(
-    [work_duration, short_break_duration, long_break_duration, long_break_interval, sound_enabled],
+    [work_duration, short_break_duration, long_break_duration, long_break_interval, sound_enabled, auto_proceed],
     () => {
       saveSettings();
     },
@@ -199,6 +202,10 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
         completed_cycles.value = 0;
       }
       switchPhase('work');
+    }
+
+    if (auto_proceed.value) {
+      start();
     }
     saveState();
   };
@@ -321,6 +328,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
       long_break_interval.value = Math.max(1, Math.min(12, Math.floor(Number(config.long_break_interval)) || 4));
     }
     if (typeof config.sound_enabled === 'boolean') sound_enabled.value = config.sound_enabled;
+    if (typeof config.auto_proceed === 'boolean') auto_proceed.value = config.auto_proceed;
 
     saveSettings();
 
@@ -380,6 +388,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     completed_cycles,
     is_bar_open,
     sound_enabled,
+    auto_proceed,
     target_end_timestamp,
 
     // Getters

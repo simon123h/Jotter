@@ -24,6 +24,7 @@ describe('usePomodoroStore', () => {
     expect(store.formatted_time).toBe('25:00');
     expect(store.progress_percent).toBe(0);
     expect(store.is_bar_open).toBe(false);
+    expect(store.auto_proceed).toBe(false);
   });
 
   it('starts, ticks, and pauses the timer', () => {
@@ -139,6 +140,7 @@ describe('usePomodoroStore', () => {
       long_break: 25,
       long_break_interval: 6,
       sound_enabled: false,
+      auto_proceed: true,
     });
 
     // Simulate PWA restart by resetting Pinia
@@ -149,5 +151,32 @@ describe('usePomodoroStore', () => {
     expect(store2.long_break_duration).toBe(25);
     expect(store2.long_break_interval).toBe(6);
     expect(store2.sound_enabled).toBe(false);
+    expect(store2.auto_proceed).toBe(true);
+  });
+
+  it('auto-proceeds to next phase if auto_proceed is true', () => {
+    const store = usePomodoroStore();
+    store.auto_proceed = true;
+    store.start();
+
+    // Fast-forward to end of work phase (25 mins)
+    vi.advanceTimersByTime(25 * 60 * 1000);
+
+    expect(store.phase).toBe('short_break');
+    expect(store.status).toBe('running');
+    expect(store.time_remaining).toBe(5 * 60);
+  });
+
+  it('does not auto-proceed to next phase if auto_proceed is false', () => {
+    const store = usePomodoroStore();
+    store.auto_proceed = false;
+    store.start();
+
+    // Fast-forward to end of work phase (25 mins)
+    vi.advanceTimersByTime(25 * 60 * 1000);
+
+    expect(store.phase).toBe('short_break');
+    expect(store.status).toBe('idle');
+    expect(store.time_remaining).toBe(5 * 60);
   });
 });

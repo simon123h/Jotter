@@ -620,6 +620,7 @@ export const en = {
     longBreakDuration: 'Long Break (min)',
     sessionsBeforeLongBreak: 'Sessions per Set',
     sound: 'Sound Notification',
+    autoProceed: 'Auto-start next phase',
     play: 'Start timer',
     pause: 'Pause timer',
     reset: 'Reset timer',
