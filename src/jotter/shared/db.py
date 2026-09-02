@@ -78,6 +78,32 @@ def init_schema(conn: sqlite3.Connection) -> None:
 
     CREATE INDEX IF NOT EXISTS idx_tasks_project_bucket ON tasks(project_id, bucket);
     CREATE INDEX IF NOT EXISTS idx_buckets_project ON buckets(project_id);
+
+    -- FTS5 Full-Text Search index for tasks
+    CREATE VIRTUAL TABLE IF NOT EXISTS tasks_fts USING fts5(
+        id UNINDEXED,
+        project_id UNINDEXED,
+        title,
+        body,
+        tags,
+        tokenize='porter unicode61'
+    );
+
+    -- Synchronize tasks with FTS5 table
+    CREATE TRIGGER IF NOT EXISTS tasks_ai AFTER INSERT ON tasks BEGIN
+        INSERT INTO tasks_fts(rowid, id, project_id, title, body, tags)
+        VALUES (new.rowid, new.id, new.project_id, new.title, new.body, new.tags);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS tasks_ad AFTER DELETE ON tasks BEGIN
+        DELETE FROM tasks_fts WHERE rowid = old.rowid;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS tasks_au AFTER UPDATE ON tasks BEGIN
+        DELETE FROM tasks_fts WHERE rowid = old.rowid;
+        INSERT INTO tasks_fts(rowid, id, project_id, title, body, tags)
+        VALUES (new.rowid, new.id, new.project_id, new.title, new.body, new.tags);
+    END;
     """
     conn.executescript(schema)
 
@@ -92,6 +118,21 @@ def init_schema(conn: sqlite3.Connection) -> None:
         conn.execute("SELECT postponed_until FROM tasks LIMIT 0")
     except sqlite3.OperationalError:
         conn.execute("ALTER TABLE tasks ADD COLUMN postponed_until TEXT DEFAULT NULL")
+
+    # Backfill FTS index if table was newly created
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM tasks_fts")
+        fts_count = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM tasks")
+        tasks_count = cur.fetchone()[0]
+        if fts_count == 0 and tasks_count > 0:
+            cur.execute(
+                "INSERT INTO tasks_fts(rowid, id, project_id, title, body, tags) "
+                "SELECT rowid, id, project_id, title, body, tags FROM tasks"
+            )
+    except Exception:
+        pass
 
 
 def get_db(db_path: Path | str | None = None) -> sqlite3.Connection:

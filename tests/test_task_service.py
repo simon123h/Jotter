@@ -163,6 +163,16 @@ def test_task_search_and_filtering(temp_dir, test_env):
     assert len(searched) == 1
     assert searched[0].title == "Beta API endpoint"
 
+    # FTS5 prefix search (e.g. 'endp' matches 'endpoint')
+    prefix_searched = task_svc.get_tasks("default", search="endp")
+    assert len(prefix_searched) == 1
+    assert prefix_searched[0].title == "Beta API endpoint"
+
+    # FTS5 multi-term and special char search
+    multi_searched = task_svc.get_tasks("default", search="alpha feature!@#")
+    assert len(multi_searched) == 1
+    assert multi_searched[0].title == "Alpha feature"
+
     # Filter by due_before
     before_sep = task_svc.get_tasks("default", due_before="2026-08-20")
     assert len(before_sep) == 1

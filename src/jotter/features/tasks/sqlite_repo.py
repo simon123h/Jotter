@@ -1,6 +1,7 @@
 """SQLite repository for indexing and querying tasks."""
 
 import json
+import re
 import sqlite3
 from datetime import datetime, timezone
 from typing import Any
@@ -8,6 +9,15 @@ from typing import Any
 from jotter.features.tasks.domain import Task
 from jotter.shared.exceptions import EntityNotFoundError
 from jotter.shared.value_objects import DueDate, Priority, Tag, TaskId
+
+
+def _format_fts5_query(search: str) -> str | None:
+    """Sanitizes and formats a free-text search string for SQLite FTS5 prefix matching."""
+    cleaned = re.sub(r"[^\w\s]", " ", search, flags=re.UNICODE)
+    tokens = [t.strip() for t in cleaned.split() if t.strip()]
+    if not tokens:
+        return None
+    return " ".join(f'"{t}"*' for t in tokens)
 
 
 class SqliteTaskRepository:
@@ -206,6 +216,13 @@ class SqliteTaskRepository:
         elif has_due_date is False:
             query += " AND (due_date IS NULL OR due_date = '')"
 
+        # FTS5 full-text search across title, body, and tags
+        if search:
+            fts_query = _format_fts5_query(search)
+            if fts_query:
+                query += " AND tasks.rowid IN (SELECT rowid FROM tasks_fts WHERE tasks_fts MATCH ?)"
+                args.append(fts_query)
+
         # Sorting
         if project_id:
             query += " ORDER BY position ASC"
@@ -217,45 +234,34 @@ class SqliteTaskRepository:
         tasks = [self._row_to_task(row) for row in rows]
 
         effective_tags = list(tags) if tags else ([tag] if tag else [])
-        if not effective_tags and not search:
+        if not effective_tags:
             return tasks
 
         return [
             t
             for t in tasks
-            if self._matches_tags_and_search(
+            if self._matches_tags(
                 task=t,
                 effective_tags=effective_tags,
                 tag_mode=tag_mode,
-                search=search,
             )
         ]
 
-    def _matches_tags_and_search(
+    def _matches_tags(
         self,
         task: Task,
         effective_tags: list[str],
         tag_mode: str,
-        search: str | None,
     ) -> bool:
-        """Predicate checking whether a task matches tag and text search filters."""
+        """Predicate checking whether a task matches tag filters."""
         task_tag_vals = [tag_obj.value for tag_obj in task.tags]
 
-        if effective_tags:
-            filter_tags_lower = [ft.lower() for ft in effective_tags if ft]
-            if tag_mode == "all":
-                if not all(ft in task_tag_vals for ft in filter_tags_lower):
-                    return False
-            else:  # any
-                if not any(ft in task_tag_vals for ft in filter_tags_lower):
-                    return False
-
-        if search:
-            s_lower = search.lower()
-            matches_title = s_lower in task.title.lower()
-            matches_body = s_lower in (task.body or "").lower()
-            matches_tags = any(s_lower in tv for tv in task_tag_vals)
-            if not (matches_title or matches_body or matches_tags):
+        filter_tags_lower = [ft.lower() for ft in effective_tags if ft]
+        if tag_mode == "all":
+            if not all(ft in task_tag_vals for ft in filter_tags_lower):
+                return False
+        else:  # any
+            if not any(ft in task_tag_vals for ft in filter_tags_lower):
                 return False
 
         return True
