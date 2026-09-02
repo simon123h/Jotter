@@ -171,15 +171,14 @@ const getTimeblockStyle = (tb: Timeblock) => {
   };
 };
 
-// Resolve task objects for a time block (done tasks are always removed from time blocks)
+// Resolve task objects for a time block (always reactively linked to projectStore.tasks)
 const getTasksForBlock = (tb: Timeblock): Task[] => {
-  let list: Task[] = [];
-  if (tb.tasks && tb.tasks.length > 0) {
-    list = tb.tasks;
-  } else if (tb.task_ids && tb.task_ids.length > 0) {
-    list = tb.task_ids.map((id) => projectStore.tasks.find((t) => t.id === id)).filter((t): t is Task => !!t);
-  }
-  return list.filter((t) => !isTaskDone(t));
+  const ids = tb.task_ids || (tb.tasks ? tb.tasks.map((t) => t.id) : []);
+  if (ids.length === 0) return [];
+
+  return ids
+    .map((id) => projectStore.tasks.find((t) => t.id === id) || tb.tasks?.find((t) => t.id === id))
+    .filter((t): t is Task => !!t && !isTaskDone(t));
 };
 
 const isTaskDone = (task: Task): boolean => {

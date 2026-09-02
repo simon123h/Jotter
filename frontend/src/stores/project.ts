@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import type { Project, Task, Bucket, TaskQuery } from '@/types';
 import { getProjects, getBuckets, getTasks, getAllTasks, syncSystem, updateTask, restoreCommit } from '@/api';
 import { useSettingsStore } from '@/stores/settings';
+import { useTimeblockStore } from '@/stores/timeblock';
 
 export const useProjectStore = defineStore('project', () => {
   const projects = ref<Project[]>([]);
@@ -138,9 +139,13 @@ export const useProjectStore = defineStore('project', () => {
   };
 
   const invalidate = async () => {
+    const promises: Promise<any>[] = [];
     if (currentQuery.value) {
-      await fetchTasks(currentQuery.value, true);
+      promises.push(fetchTasks(currentQuery.value, true));
     }
+    const timeblockStore = useTimeblockStore();
+    promises.push(timeblockStore.fetchTimeblocks().catch(() => {}));
+    await Promise.all(promises);
   };
 
   const triggerSync = async () => {
