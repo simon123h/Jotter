@@ -217,10 +217,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     auto_proceed?: boolean;
   }) => {
     if (config.work && config.work > 0) work_duration.value = Math.max(1, Math.floor(Number(config.work)) || 25);
-    if (config.short_break && config.short_break > 0)
-      short_break_duration.value = Math.max(1, Math.floor(Number(config.short_break)) || 5);
-    if (config.long_break && config.long_break > 0)
-      long_break_duration.value = Math.max(1, Math.floor(Number(config.long_break)) || 15);
+    if (config.short_break && config.short_break > 0) short_break_duration.value = Math.max(1, Math.floor(Number(config.short_break)) || 5);
+    if (config.long_break && config.long_break > 0) long_break_duration.value = Math.max(1, Math.floor(Number(config.long_break)) || 15);
     if (config.long_break_interval && config.long_break_interval > 0) {
       long_break_interval.value = Math.max(1, Math.min(12, Math.floor(Number(config.long_break_interval)) || 4));
     }
