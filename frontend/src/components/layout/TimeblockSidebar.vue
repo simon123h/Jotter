@@ -655,7 +655,7 @@ const nowIndicatorStyle = computed(() => {
                       type="button"
                       @click.stop="toggleTaskDone(task, tb.id, $event)"
                       class="shrink-0 p-0.5 hover:text-theme-primary transition-colors cursor-pointer"
-                      :title="isTaskDone(task) ? t('tasks.markNotDone') : t('tasks.markDone')"
+                      :title="isTaskDone(task) ? t('tasks.markNotDone') : t('taskCard.markDone')"
                     >
                       <CheckCircle2 v-if="isTaskDone(task)" class="w-3.5 h-3.5 text-emerald-400" />
                       <Circle v-else class="w-3.5 h-3.5 text-theme-text-muted" />
