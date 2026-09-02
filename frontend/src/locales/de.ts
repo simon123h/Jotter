@@ -277,7 +277,7 @@ export const de = {
   views: {
     board: 'Board',
     list: 'Liste',
-    matrix: 'Matrix-Ansicht',
+    matrix: 'Matrix',
     matrixDesc: 'Eisenhower-Matrix',
     time: 'Zeitplan',
     timeblocking: 'Time Blocking',
@@ -287,6 +287,7 @@ export const de = {
     settings: 'Einstellungen',
     documentation: 'Dokumentation',
     triage: 'Triage',
+    review: 'Review',
   },
   timeblock: {
     sidebarTitle: 'Time Blocking',
@@ -636,5 +637,18 @@ export const de = {
     longBreakNext: 'Sitzung {current} von {total} (führt zur langen Pause)',
     resetCycles: 'Durchlauf zurücksetzen',
     cyclesCompleted: 'Zyklen: {count}',
+  },
+  review: {
+    title: 'Rückblick & Standup',
+    subtitle: 'Übersicht aller erledigten Aufgaben für Standups und Reviews',
+    timeframeToday: 'Heute',
+    timeframeWeek: 'Diese Woche',
+    timeframeLast7Days: 'Letzte 7 Tage',
+    today: 'Heute',
+    yesterday: 'Gestern',
+    task: 'Aufgabe',
+    tasks: 'Aufgaben',
+    noCompletedTasksTitle: 'Keine erledigten Aufgaben in diesem Zeitraum',
+    noCompletedTasksDesc: 'Aufgaben, die in diesem Zeitraum abgeschlossen wurden, werden hier automatisch aufgeführt.',
   },
 };

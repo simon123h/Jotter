@@ -275,7 +275,7 @@ export const en = {
   views: {
     board: 'Board',
     list: 'List',
-    matrix: 'Matrix View',
+    matrix: 'Matrix',
     matrixDesc: 'Eisenhower Matrix',
     time: 'Schedule',
     timeblocking: 'Time Blocking',
