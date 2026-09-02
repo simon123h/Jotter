@@ -4,9 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jotter</title>
+    <style>
+      html,
+      body {
+        background-color: #f8fafc;
+        margin: 0;
+      }
+      @media (prefers-color-scheme: dark) {
+        html,
+        body {
+          background-color: #0f172a;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
