@@ -4,7 +4,8 @@ import { onClickOutside } from '@vueuse/core';
 import { useRoute } from 'vue-router';
 import {
   Menu,
-  SlidersHorizontal,
+  Filter,
+  Search,
   LayoutGrid,
   List,
   Grid,
@@ -97,8 +98,9 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
       </h1>
     </div>
 
-    <!-- Search (Flex-grow to fill remaining space) -->
-    <div v-if="activeProjectId" class="flex-grow mx-3 relative min-w-[100px] sm:min-w-[180px] lg:min-w-[280px]">
+    <!-- Search & Filter Bar -->
+    <div v-if="activeProjectId" class="flex-grow mx-3 relative flex items-center min-w-[120px] sm:min-w-[200px] max-w-lg">
+      <Search class="w-3.5 h-3.5 absolute left-2.5 text-theme-text-muted/60 pointer-events-none" />
       <input
         ref="searchInput"
         :value="modelValue"
@@ -106,35 +108,30 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         @keydown.esc="($event.target as HTMLInputElement).blur()"
         type="text"
         :placeholder="t('searchPlaceholder')"
-        class="w-full bg-theme-card border border-theme-border rounded px-2.5 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+        class="w-full bg-theme-card border border-theme-border rounded pl-8 pr-7 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
       />
+      <!-- Integrated Filter Button -->
+      <button
+        @click="emit('open-filter')"
+        class="absolute right-1 p-1 rounded transition-colors cursor-pointer"
+        :class="
+          hasActiveFilters
+            ? 'text-theme-primary bg-theme-primary/15'
+            : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/50'
+        "
+        :title="t('filterModal.buttonTooltip')"
+      >
+        <Filter class="w-3.5 h-3.5" />
+        <span
+          v-if="hasActiveFilters"
+          class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-theme-primary rounded-full ring-2 ring-theme-card"
+        />
+      </button>
     </div>
     <div v-else class="flex-grow"></div>
 
     <!-- Toolbar Actions -->
-    <div v-if="activeProjectId" class="flex items-center gap-2 shrink-0">
-      <!-- Advanced Filter Button -->
-      <button
-        @click="emit('open-filter')"
-        class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded border transition-all cursor-pointer"
-        :class="
-          hasActiveFilters
-            ? 'bg-theme-primary/10 border-theme-primary/15 text-theme-accent font-bold shadow-none'
-            : 'bg-transparent border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
-        "
-        :title="t('filterModal.buttonTooltip')"
-      >
-        <SlidersHorizontal class="w-3.5 h-3.5 text-theme-text-muted shrink-0" />
-        <span class="hidden lg:inline">
-          {{ t('filterModal.title') }}
-        </span>
-        <span
-          v-if="hasActiveFilters"
-          class="ml-0.5 px-1 bg-theme-primary text-white text-[9px] font-bold rounded-full min-w-[14px] text-center"
-        >
-          !
-        </span>
-      </button>
+    <div v-if="activeProjectId" class="flex items-center gap-1.5 shrink-0">
 
       <!-- View Mode Toggle -->
       <div class="hidden lg:flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
