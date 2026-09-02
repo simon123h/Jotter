@@ -186,11 +186,24 @@ const isTaskDone = (task: Task): boolean => {
   return ['done', 'archive', 'archived', 'completed'].includes(task.bucket.toLowerCase());
 };
 
+import { triggerDoneParticleBurst } from '@/utils/effects';
+
 // Toggle task completion from inside timeblock with board synchronization
 const toggleTaskDone = async (task: Task, timeblockId: string, e: Event) => {
   e.stopPropagation();
   const currentlyDone = isTaskDone(task);
   const targetBucket = currentlyDone ? 'todo' : 'done';
+
+  if (targetBucket === 'done') {
+    const mouseEvent = e as MouseEvent;
+    const target = (e.currentTarget as HTMLElement) || (e.target as HTMLElement);
+    if (target && target.getBoundingClientRect) {
+      const rect = target.getBoundingClientRect();
+      triggerDoneParticleBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    } else if (mouseEvent.clientX && mouseEvent.clientY) {
+      triggerDoneParticleBurst(mouseEvent.clientX, mouseEvent.clientY);
+    }
+  }
 
   try {
     const updated = await updateTask(task.project_id || activeProjectId.value, task.id, {

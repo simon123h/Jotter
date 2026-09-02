@@ -53,11 +53,28 @@ const projectTitle = computed(() => {
 const isSelected = computed(() => selectionStore.isSelected(props.task.id));
 const selectionCount = computed(() => selectionStore.selectionCount);
 
+import { triggerDoneParticleBurst } from '@/utils/effects';
+
 const emit = defineEmits<{
   (e: 'click', task: Task): void;
   (e: 'mark-done', task: Task): void;
   (e: 'toggle-select', task: Task): void;
 }>();
+
+const handleMarkDone = (e: MouseEvent) => {
+  e.stopPropagation();
+  e.preventDefault();
+
+  const target = (e.currentTarget as HTMLElement) || (e.target as HTMLElement);
+  if (target && target.getBoundingClientRect) {
+    const rect = target.getBoundingClientRect();
+    triggerDoneParticleBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  } else {
+    triggerDoneParticleBurst(e.clientX, e.clientY);
+  }
+
+  emit('mark-done', props.task);
+};
 
 const route = useRoute();
 const targetRoute = computed(() => {
@@ -335,7 +352,7 @@ const handleTagClick = (tag: string) => {
           <!-- Mark Done Button -->
           <button
             v-if="showDoneButton && task.bucket !== 'done'"
-            @click.stop.prevent="emit('mark-done', task)"
+            @click.stop.prevent="handleMarkDone($event)"
             class="p-1 text-theme-text-muted hover:text-emerald-400 hover:bg-theme-column rounded transition-colors cursor-pointer"
             :title="t('taskCard.markDone')"
           >
