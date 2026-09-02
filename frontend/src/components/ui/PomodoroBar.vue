@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { Play, Pause, RotateCcw, SkipForward, Settings as SettingsIcon, X, Volume2, VolumeX, Check } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { usePomodoroStore, type PomodoroPhase } from '@/stores/pomodoro';
@@ -63,13 +64,7 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 };
 
-onMounted(() => {
-  window.addEventListener('keydown', handleKeydown);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown);
-});
+useEventListener(window, 'keydown', handleKeydown);
 </script>
 
 <template>

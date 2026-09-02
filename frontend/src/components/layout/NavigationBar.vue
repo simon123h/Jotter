@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useRoute } from 'vue-router';
 import {
   Menu,
@@ -74,13 +75,7 @@ const closeOverflowMenu = (e: MouseEvent) => {
   }
 };
 
-onMounted(() => {
-  window.addEventListener('click', closeOverflowMenu);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('click', closeOverflowMenu);
-});
+useEventListener(window, 'click', closeOverflowMenu);
 
 const triggerExport = (format: 'xlsx' | 'csv') => {
   showOverflowMenu.value = false;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
@@ -110,13 +111,7 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
-onMounted(() => {
-  window.addEventListener('click', handleClickOutside);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('click', handleClickOutside);
-});
+useEventListener(window, 'click', handleClickOutside);
 
 watch(
   () => allTagsInUse.value,

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, onBeforeUnmount } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
@@ -38,13 +39,10 @@ const fetchViewTasks = async () => {
   });
 };
 
+useEventListener(window, 'click', closeMenu);
+
 onMounted(async () => {
   await fetchViewTasks();
-  window.addEventListener('click', closeMenu);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('click', closeMenu);
 });
 
 watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {

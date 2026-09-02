@@ -1,6 +1,6 @@
 import { computed, watch } from 'vue';
 import { defineStore } from 'pinia';
-import { useStorage } from '@vueuse/core';
+import { useStorage, useDocumentVisibility } from '@vueuse/core';
 import { playPomodoroChime } from '@/utils/sound';
 
 export type PomodoroPhase = 'work' | 'short_break' | 'long_break';
@@ -437,21 +437,20 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   };
 
   // Re-sync timer when tab/PWA becomes active again
-  if (typeof document !== 'undefined') {
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && status.value === 'running' && target_end_timestamp.value) {
-        const remaining = Math.round((target_end_timestamp.value - Date.now()) / 1000);
-        if (remaining <= 0) {
-          time_remaining.value = 0;
-          target_end_timestamp.value = null;
-          triggerPhaseEnd();
-        } else {
-          time_remaining.value = remaining;
-          updateDocumentTitle();
-        }
+  const visibility = useDocumentVisibility();
+  watch(visibility, (current) => {
+    if (current === 'visible' && status.value === 'running' && target_end_timestamp.value) {
+      const remaining = Math.round((target_end_timestamp.value - Date.now()) / 1000);
+      if (remaining <= 0) {
+        time_remaining.value = 0;
+        target_end_timestamp.value = null;
+        triggerPhaseEnd();
+      } else {
+        time_remaining.value = remaining;
+        updateDocumentTitle();
       }
-    });
-  }
+    }
+  });
 
   // Resume interval if initialized in running state from storage
   if (status.value === 'running') {

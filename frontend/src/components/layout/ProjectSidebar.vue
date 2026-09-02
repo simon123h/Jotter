@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import {
   Folder,
   Hash,
@@ -129,12 +130,13 @@ watch(sortBy, (newSortBy) => {
   }
 });
 
+useEventListener(window, 'focus', checkServerStatus);
+useEventListener(document, 'visibilitychange', handleFocusOrVisible);
+
 onMounted(() => {
   initSortable();
   checkServerStatus();
   pingInterval = setInterval(checkServerStatus, 30000);
-  window.addEventListener('focus', checkServerStatus);
-  document.addEventListener('visibilitychange', handleFocusOrVisible);
 });
 
 onUnmounted(() => {
@@ -143,8 +145,6 @@ onUnmounted(() => {
     sortableInstance = null;
   }
   if (pingInterval) clearInterval(pingInterval);
-  window.removeEventListener('focus', checkServerStatus);
-  document.removeEventListener('visibilitychange', handleFocusOrVisible);
 });
 
 // Computed sorted and pinned projects list
