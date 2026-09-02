@@ -285,6 +285,7 @@ export const en = {
     settings: 'Settings',
     documentation: 'Documentation',
     triage: 'Triage',
+    review: 'Review',
   },
   timeblock: {
     sidebarTitle: 'Time Blocking',
@@ -631,5 +632,18 @@ export const en = {
     longBreakNext: 'Session {current} of {total} (leads to Long Break)',
     resetCycles: 'Reset set progress',
     cyclesCompleted: 'Cycles: {count}',
+  },
+  review: {
+    title: 'Standup & Review',
+    subtitle: 'Overview of completed tasks for reviews and standups',
+    timeframeToday: 'Today',
+    timeframeWeek: 'This Week',
+    timeframeLast7Days: 'Last 7 Days',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    task: 'task',
+    tasks: 'tasks',
+    noCompletedTasksTitle: 'No completed tasks in this period',
+    noCompletedTasksDesc: 'Tasks completed during the selected timeframe will appear here automatically.',
   },
 };

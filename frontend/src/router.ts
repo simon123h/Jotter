@@ -11,6 +11,7 @@ const MatrixView = () => import('@/components/views/MatrixView.vue');
 const TimeView = () => import('@/components/views/TimeView.vue');
 const TagView = () => import('@/components/views/TagView.vue');
 const TriageView = () => import('@/components/views/TriageView.vue');
+const ReviewView = () => import('@/components/views/ReviewView.vue');
 const SettingsView = () => import('@/components/views/SettingsView.vue');
 const TaskDetailModal = () => import('@/components/modals/TaskDetailModal.vue');
 
@@ -123,6 +124,20 @@ const routes = [
             name: 'triage',
             component: TriageView,
           },
+          {
+            path: 'review',
+            name: 'review',
+            component: ReviewView,
+          },
+          {
+            path: 'review/tasks/:taskId',
+            name: 'review-task',
+            components: {
+              default: ReviewView,
+              modal: TaskDetailModal,
+            },
+            meta: { backRoute: 'review' },
+          },
         ],
       },
     ],
@@ -142,7 +157,7 @@ router.afterEach((to) => {
   try {
     const uiStore = useUiStore();
     const currentMode = (to.meta.backRoute as string) || String(to.name || '');
-    if (to.params.projectId && ['board', 'list', 'matrix', 'time', 'tag', 'triage'].includes(currentMode)) {
+    if (to.params.projectId && ['board', 'list', 'matrix', 'time', 'tag', 'triage', 'review'].includes(currentMode)) {
       uiStore.setLastViewMode(currentMode);
     }
   } catch {

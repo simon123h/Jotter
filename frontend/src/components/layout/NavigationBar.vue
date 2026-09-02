@@ -12,6 +12,7 @@ import {
   Plus,
   Tag,
   Sparkles,
+  CheckCircle2,
   MoreVertical,
   FileSpreadsheet,
   FileText,
@@ -209,6 +210,18 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
           <Sparkles class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.triage') }}</span>
         </router-link>
+        <router-link
+          :to="{ name: 'review', params: { projectId: activeProjectId }, query: $route.query }"
+          class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+          :class="
+            isTabActive('review')
+              ? 'bg-theme-primary text-white shadow-none'
+              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+          "
+        >
+          <CheckCircle2 class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">{{ t('views.review') || 'Review' }}</span>
+        </router-link>
       </div>
 
       <!-- Timeblock Sidebar Toggle Button -->
@@ -312,6 +325,15 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
             >
               <Sparkles class="w-3.5 h-3.5" />
               <span>{{ t('views.triage') }}</span>
+            </router-link>
+            <router-link
+              :to="{ name: 'review', params: { projectId: activeProjectId }, query: $route.query }"
+              class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
+              :class="{ 'text-theme-primary bg-theme-primary/5': isTabActive('review') }"
+              @click="showOverflowMenu = false"
+            >
+              <CheckCircle2 class="w-3.5 h-3.5" />
+              <span>{{ t('views.review') || 'Review' }}</span>
             </router-link>
             <div class="border-t border-theme-border/50 my-1"></div>
           </div>
