@@ -130,4 +130,24 @@ describe('usePomodoroStore', () => {
     expect(store2.status).toBe('running');
     expect(store2.time_remaining).toBe(24 * 60);
   });
+
+  it('persists all settings to localStorage across store restarts', () => {
+    const store1 = usePomodoroStore();
+    store1.setDurations({
+      work: 45,
+      short_break: 10,
+      long_break: 25,
+      long_break_interval: 6,
+      sound_enabled: false,
+    });
+
+    // Simulate PWA restart by resetting Pinia
+    setActivePinia(createPinia());
+    const store2 = usePomodoroStore();
+    expect(store2.work_duration).toBe(45);
+    expect(store2.short_break_duration).toBe(10);
+    expect(store2.long_break_duration).toBe(25);
+    expect(store2.long_break_interval).toBe(6);
+    expect(store2.sound_enabled).toBe(false);
+  });
 });

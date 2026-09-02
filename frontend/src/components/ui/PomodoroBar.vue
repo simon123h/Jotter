@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Play, Pause, RotateCcw, SkipForward, Settings as SettingsIcon, X, Volume2, VolumeX, Check } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { usePomodoroStore, type PomodoroPhase } from '@/stores/pomodoro';
@@ -11,13 +11,19 @@ const showSettings = ref(false);
 const editWorkDuration = ref(pomodoroStore.work_duration);
 const editShortBreak = ref(pomodoroStore.short_break_duration);
 const editLongBreak = ref(pomodoroStore.long_break_duration);
+const editLongBreakInterval = ref(pomodoroStore.long_break_interval);
 const editSound = ref(pomodoroStore.sound_enabled);
+
+const totalCycles = computed(() => {
+  return Math.max(1, Math.min(12, Math.floor(Number(pomodoroStore.long_break_interval)) || 4));
+});
 
 const toggleSettings = () => {
   if (!showSettings.value) {
     editWorkDuration.value = pomodoroStore.work_duration;
     editShortBreak.value = pomodoroStore.short_break_duration;
     editLongBreak.value = pomodoroStore.long_break_duration;
+    editLongBreakInterval.value = pomodoroStore.long_break_interval;
     editSound.value = pomodoroStore.sound_enabled;
   }
   showSettings.value = !showSettings.value;
@@ -25,11 +31,17 @@ const toggleSettings = () => {
 
 const saveSettings = () => {
   pomodoroStore.setDurations({
-    work: Number(editWorkDuration.value) || 25,
-    short_break: Number(editShortBreak.value) || 5,
-    long_break: Number(editLongBreak.value) || 15,
-    sound_enabled: editSound.value,
+    work: Math.max(1, Math.floor(Number(editWorkDuration.value)) || 25),
+    short_break: Math.max(1, Math.floor(Number(editShortBreak.value)) || 5),
+    long_break: Math.max(1, Math.floor(Number(editLongBreak.value)) || 15),
+    long_break_interval: Math.max(1, Math.min(12, Math.floor(Number(editLongBreakInterval.value)) || 4)),
+    sound_enabled: Boolean(editSound.value),
   });
+  showSettings.value = false;
+};
+
+const handleResetCycles = () => {
+  pomodoroStore.resetCycles();
   showSettings.value = false;
 };
 
@@ -64,7 +76,7 @@ onUnmounted(() => {
       <transition name="fade">
         <div
           v-if="showSettings"
-          class="mb-3 p-4 bg-theme-base border border-theme-border rounded-xl shadow-2xl space-y-3.5 backdrop-blur-md text-xs select-none animate-in fade-in zoom-in-95 duration-150"
+          class="mb-3 p-4 bg-theme-base border border-theme-border rounded-xl shadow-2xl space-y-3.5 backdrop-blur-md text-xs select-none animate-in fade-in zoom-in-95 duration-150 min-w-[320px] sm:min-w-[420px]"
         >
           <div class="flex items-center justify-between pb-2 border-b border-theme-border/60">
             <span class="font-bold text-theme-text-main text-sm flex items-center gap-1.5">
@@ -79,7 +91,7 @@ onUnmounted(() => {
             </button>
           </div>
 
-          <div class="grid grid-cols-3 gap-2.5">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div>
               <label class="block text-[11px] font-semibold text-theme-text-muted mb-1">
                 {{ t('pomodoro.workDuration') }}
@@ -116,21 +128,44 @@ onUnmounted(() => {
                 class="w-full bg-theme-card border border-theme-border rounded-md px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
               />
             </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-theme-text-muted mb-1">
+                {{ t('pomodoro.sessionsBeforeLongBreak') }}
+              </label>
+              <input
+                v-model.number="editLongBreakInterval"
+                type="number"
+                min="1"
+                max="12"
+                class="w-full bg-theme-card border border-theme-border rounded-md px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              />
+            </div>
           </div>
 
-          <div class="flex items-center justify-between pt-1">
-            <label class="flex items-center gap-2 cursor-pointer text-theme-text-main">
-              <input
-                type="checkbox"
-                v-model="editSound"
-                class="rounded border-theme-border text-theme-primary focus:ring-theme-ring cursor-pointer"
-              />
-              <span class="flex items-center gap-1">
-                <Volume2 v-if="editSound" class="w-3.5 h-3.5 text-theme-primary" />
-                <VolumeX v-else class="w-3.5 h-3.5 text-theme-text-muted" />
-                {{ t('pomodoro.sound') }}
-              </span>
-            </label>
+          <div class="flex items-center justify-between pt-1 border-t border-theme-border/40 gap-2">
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-2 cursor-pointer text-theme-text-main">
+                <input
+                  type="checkbox"
+                  v-model="editSound"
+                  class="rounded border-theme-border text-theme-primary focus:ring-theme-ring cursor-pointer"
+                />
+                <span class="flex items-center gap-1">
+                  <Volume2 v-if="editSound" class="w-3.5 h-3.5 text-theme-primary" />
+                  <VolumeX v-else class="w-3.5 h-3.5 text-theme-text-muted" />
+                  {{ t('pomodoro.sound') }}
+                </span>
+              </label>
+
+              <button
+                type="button"
+                @click="handleResetCycles"
+                class="text-[11px] text-theme-text-muted hover:text-rose-400 underline transition-colors cursor-pointer"
+                :title="t('pomodoro.resetCycles')"
+              >
+                {{ t('pomodoro.resetCycles') }}
+              </button>
+            </div>
 
             <button
               @click="saveSettings"
@@ -205,13 +240,30 @@ onUnmounted(() => {
             </span>
           </div>
 
-          <!-- Completed Cycles indicator -->
-          <div
-            v-if="pomodoroStore.completed_cycles > 0"
-            class="hidden lg:flex items-center text-[11px] font-bold text-theme-text-muted px-2 py-0.5 bg-theme-column/30 rounded-md shrink-0"
-            :title="t('pomodoro.cyclesCompleted', { count: pomodoroStore.completed_cycles })"
-          >
-            🍅 ×{{ pomodoroStore.completed_cycles }}
+          <!-- Interactive Cycle Pips & Indicator -->
+          <div class="flex items-center gap-1.5 px-2 py-1 bg-theme-column/35 rounded-xl border border-theme-border/40 shrink-0 select-none">
+            <div
+              v-for="i in totalCycles"
+              :key="i"
+              @click="pomodoroStore.setCycle(i - 1)"
+              class="relative group/pip cursor-pointer flex items-center justify-center transition-transform hover:scale-125"
+              :title="
+                i === totalCycles
+                  ? t('pomodoro.longBreakNext', { current: i, total: totalCycles })
+                  : t('pomodoro.sessionPip', { current: i, total: totalCycles })
+              "
+            >
+              <div
+                class="w-2.5 h-2.5 rounded-full transition-all duration-200"
+                :class="[
+                  i - 1 < pomodoroStore.current_cycle_index
+                    ? 'bg-emerald-500 shadow-2xs'
+                    : i - 1 === pomodoroStore.current_cycle_index && pomodoroStore.phase === 'work'
+                      ? 'bg-rose-500 shadow-2xs'
+                      : 'bg-theme-border/80 border border-theme-border/60',
+                ]"
+              ></div>
+            </div>
           </div>
 
           <!-- Action Controls -->

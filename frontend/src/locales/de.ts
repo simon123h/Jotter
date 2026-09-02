@@ -623,6 +623,7 @@ export const de = {
     workDuration: 'Fokus (Min.)',
     shortBreakDuration: 'Kurze Pause (Min.)',
     longBreakDuration: 'Lange Pause (Min.)',
+    sessionsBeforeLongBreak: 'Sitzungen pro Durchlauf',
     sound: 'Tonsignal',
     play: 'Timer starten',
     pause: 'Timer anhalten',
@@ -630,6 +631,9 @@ export const de = {
     skip: 'Zur nächsten Phase springen',
     settings: 'Timer-Einstellungen',
     close: 'Pomodoro-Leiste schließen',
+    sessionPip: 'Sitzung {current} von {total}',
+    longBreakNext: 'Sitzung {current} von {total} (führt zur langen Pause)',
+    resetCycles: 'Durchlauf zurücksetzen',
     cyclesCompleted: 'Zyklen: {count}',
   },
 };

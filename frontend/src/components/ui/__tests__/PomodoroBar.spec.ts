@@ -94,4 +94,43 @@ describe('PomodoroBar.vue', () => {
     const playBtn = wrapper.find('button[aria-label="Start timer"]');
     expect(playBtn.classes()).toContain('w-8');
   });
+
+  it('renders cycle pips and allows clicking to set current cycle', async () => {
+    const store = usePomodoroStore();
+    store.is_bar_open = true;
+    store.long_break_interval = 4;
+    const setCycleSpy = vi.spyOn(store, 'setCycle');
+
+    const wrapper = mount(PomodoroBar, {
+      global: {
+        plugins: [pinia],
+      },
+    });
+
+    const pips = wrapper.findAll('.group\\/pip');
+    expect(pips.length).toBe(4);
+
+    // Click 3rd pip (index 2)
+    await pips[2].trigger('click');
+    expect(setCycleSpy).toHaveBeenCalledWith(2);
+  });
+
+  it('dynamically adapts number of pips when long_break_interval changes', async () => {
+    const store = usePomodoroStore();
+    store.is_bar_open = true;
+    store.long_break_interval = 3;
+
+    const wrapper = mount(PomodoroBar, {
+      global: {
+        plugins: [pinia],
+      },
+    });
+
+    expect(wrapper.findAll('.group\\/pip').length).toBe(3);
+
+    store.setDurations({ long_break_interval: 6 });
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.findAll('.group\\/pip').length).toBe(6);
+  });
 });

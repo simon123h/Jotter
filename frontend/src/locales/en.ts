@@ -618,6 +618,7 @@ export const en = {
     workDuration: 'Focus (min)',
     shortBreakDuration: 'Short Break (min)',
     longBreakDuration: 'Long Break (min)',
+    sessionsBeforeLongBreak: 'Sessions per Set',
     sound: 'Sound Notification',
     play: 'Start timer',
     pause: 'Pause timer',
@@ -625,6 +626,9 @@ export const en = {
     skip: 'Skip to next phase',
     settings: 'Timer settings',
     close: 'Close Pomodoro Bar',
+    sessionPip: 'Session {current} of {total}',
+    longBreakNext: 'Session {current} of {total} (leads to Long Break)',
+    resetCycles: 'Reset set progress',
     cyclesCompleted: 'Cycles: {count}',
   },
 };

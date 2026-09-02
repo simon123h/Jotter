@@ -32,10 +32,11 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     const rawSettings = localStorage.getItem(SETTINGS_KEY);
     if (rawSettings) {
       const parsed = JSON.parse(rawSettings);
-      if (parsed.work_duration) work_duration.value = parsed.work_duration;
-      if (parsed.short_break_duration) short_break_duration.value = parsed.short_break_duration;
-      if (parsed.long_break_duration) long_break_duration.value = parsed.long_break_duration;
-      if (parsed.long_break_interval) long_break_interval.value = parsed.long_break_interval;
+      if (parsed.work_duration) work_duration.value = Math.max(1, Number(parsed.work_duration) || 25);
+      if (parsed.short_break_duration) short_break_duration.value = Math.max(1, Number(parsed.short_break_duration) || 5);
+      if (parsed.long_break_duration) long_break_duration.value = Math.max(1, Number(parsed.long_break_duration) || 15);
+      if (parsed.long_break_interval)
+        long_break_interval.value = Math.max(1, Math.min(12, Math.floor(Number(parsed.long_break_interval)) || 4));
       if (typeof parsed.sound_enabled === 'boolean') sound_enabled.value = parsed.sound_enabled;
     }
   } catch {
@@ -67,6 +68,18 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     if (total <= 0) return 0;
     const elapsed = total - time_remaining.value;
     return Math.min(100, Math.max(0, (elapsed / total) * 100));
+  });
+
+  // Cycle progress getters
+  const current_cycle_index = computed(() => {
+    return completed_cycles.value % long_break_interval.value;
+  });
+
+  const is_next_break_long = computed(() => {
+    if (phase.value === 'work') {
+      return (completed_cycles.value + 1) % long_break_interval.value === 0;
+    }
+    return phase.value === 'long_break';
   });
 
   // Load saved runtime state (with timestamp calculation)
@@ -149,6 +162,24 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     updateDocumentTitle();
   });
 
+  // Automatically synchronize settings changes to localStorage
+  watch(
+    [work_duration, short_break_duration, long_break_duration, long_break_interval, sound_enabled],
+    () => {
+      saveSettings();
+    },
+    { deep: true }
+  );
+
+  // Automatically synchronize core state changes to localStorage
+  watch(
+    [phase, status, completed_cycles, is_bar_open, target_end_timestamp],
+    () => {
+      saveState();
+    },
+    { deep: true }
+  );
+
   const triggerPhaseEnd = () => {
     pause();
     if (sound_enabled.value) {
@@ -163,6 +194,10 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
         switchPhase('short_break');
       }
     } else {
+      if (phase.value === 'long_break') {
+        // Reset cycle round on long break completion
+        completed_cycles.value = 0;
+      }
       switchPhase('work');
     }
     saveState();
@@ -254,14 +289,37 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
         switchPhase('short_break');
       }
     } else {
+      if (phase.value === 'long_break') {
+        completed_cycles.value = 0;
+      }
       switchPhase('work');
     }
+    saveState();
   };
 
-  const setDurations = (config: { work?: number; short_break?: number; long_break?: number; sound_enabled?: boolean }) => {
-    if (config.work && config.work > 0) work_duration.value = config.work;
-    if (config.short_break && config.short_break > 0) short_break_duration.value = config.short_break;
-    if (config.long_break && config.long_break > 0) long_break_duration.value = config.long_break;
+  const resetCycles = () => {
+    completed_cycles.value = 0;
+    saveState();
+  };
+
+  const setCycle = (index: number) => {
+    completed_cycles.value = Math.max(0, index);
+    saveState();
+  };
+
+  const setDurations = (config: {
+    work?: number;
+    short_break?: number;
+    long_break?: number;
+    long_break_interval?: number;
+    sound_enabled?: boolean;
+  }) => {
+    if (config.work && config.work > 0) work_duration.value = Math.max(1, Math.floor(Number(config.work)) || 25);
+    if (config.short_break && config.short_break > 0) short_break_duration.value = Math.max(1, Math.floor(Number(config.short_break)) || 5);
+    if (config.long_break && config.long_break > 0) long_break_duration.value = Math.max(1, Math.floor(Number(config.long_break)) || 15);
+    if (config.long_break_interval && config.long_break_interval > 0) {
+      long_break_interval.value = Math.max(1, Math.min(12, Math.floor(Number(config.long_break_interval)) || 4));
+    }
     if (typeof config.sound_enabled === 'boolean') sound_enabled.value = config.sound_enabled;
 
     saveSettings();
@@ -328,6 +386,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     current_duration_seconds,
     formatted_time,
     progress_percent,
+    current_cycle_index,
+    is_next_break_long,
 
     // Actions
     start,
@@ -337,6 +397,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     skip,
     switchPhase,
     setDurations,
+    resetCycles,
+    setCycle,
     openBar,
     closeBar,
     toggleBar,
