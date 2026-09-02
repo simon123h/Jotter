@@ -1,16 +1,18 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import MainLayout from '@/components/layout/MainLayout.vue';
 import ProjectLayout from '@/components/layout/ProjectLayout.vue';
-import BoardView from '@/components/views/BoardView.vue';
-import ListView from '@/components/views/ListView.vue';
-import MatrixView from '@/components/views/MatrixView.vue';
-import TimeView from '@/components/views/TimeView.vue';
-import TagView from '@/components/views/TagView.vue';
-import TriageView from '@/components/views/TriageView.vue';
-import SettingsView from '@/components/views/SettingsView.vue';
-import HomeView from '@/components/views/HomeView.vue';
-import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
 import { useUiStore } from '@/stores/ui';
+
+// Lazy-loaded views for code splitting
+const HomeView = () => import('@/components/views/HomeView.vue');
+const BoardView = () => import('@/components/views/BoardView.vue');
+const ListView = () => import('@/components/views/ListView.vue');
+const MatrixView = () => import('@/components/views/MatrixView.vue');
+const TimeView = () => import('@/components/views/TimeView.vue');
+const TagView = () => import('@/components/views/TagView.vue');
+const TriageView = () => import('@/components/views/TriageView.vue');
+const SettingsView = () => import('@/components/views/SettingsView.vue');
+const TaskDetailModal = () => import('@/components/modals/TaskDetailModal.vue');
 
 const routes = [
   {

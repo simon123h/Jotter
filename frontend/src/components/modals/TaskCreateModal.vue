@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onUnmounted, computed } from 'vue';
+import { ref, watch, nextTick, onUnmounted, computed, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { X, ClipboardList, Slash } from '@lucide/vue';
@@ -9,10 +9,11 @@ import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { parseTitleState } from '@/utils/titleParser';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
-import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import { TASK_COLORS } from '@/utils/constants';
+
+const MarkdownEditor = defineAsyncComponent(() => import('@/components/ui/MarkdownEditor.vue'));
 
 const { locale, t, tBucket } = useI18n();
 const route = useRoute();

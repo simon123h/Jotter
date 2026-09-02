@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, defineAsyncComponent } from 'vue';
 import { Slash, ClipboardList } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket } from '@/types';
 import { useTaskEditorContext } from '../composables/useTaskEditor';
-import MarkdownEditor from '@/components/ui/MarkdownEditor.vue';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import { TASK_COLORS } from '@/utils/constants';
+
+const MarkdownEditor = defineAsyncComponent(() => import('@/components/ui/MarkdownEditor.vue'));
 
 const { locale, t, tBucket } = useI18n();
 const colors = TASK_COLORS;

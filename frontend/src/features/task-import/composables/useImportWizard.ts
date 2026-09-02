@@ -2,7 +2,6 @@ import { ref, computed, type Ref } from 'vue';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { createTask, createBucket } from '@/api';
-import { read, utils } from 'xlsx';
 
 export type Step = 1 | 2 | 3 | 4 | 5;
 
@@ -150,11 +149,12 @@ export function useImportWizard(projectId: string | Ref<string>) {
     }
   };
 
-  const loadSheet = (sheetName: string) => {
+  const loadSheet = async (sheetName: string) => {
     if (!currentWorkbook.value) return;
 
     fileError.value = null;
     try {
+      const { utils } = await import('xlsx');
       const worksheet = currentWorkbook.value.Sheets[sheetName];
       if (!worksheet) {
         fileError.value = `Sheet "${sheetName}" not found.`;
@@ -195,6 +195,7 @@ export function useImportWizard(projectId: string | Ref<string>) {
 
     fileName.value = file.name;
     try {
+      const { read } = await import('xlsx');
       const data = await file.arrayBuffer();
       const workbook = read(data, { type: 'array' });
       if (workbook.SheetNames.length === 0) {
@@ -216,7 +217,7 @@ export function useImportWizard(projectId: string | Ref<string>) {
         }
       }
 
-      loadSheet(bestSheetName);
+      await loadSheet(bestSheetName);
 
       if (excelRows.value.length > 0) {
         currentStep.value = 2;

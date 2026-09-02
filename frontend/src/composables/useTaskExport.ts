@@ -1,5 +1,4 @@
 import { type Ref } from 'vue';
-import { utils, writeFile } from 'xlsx';
 import type { Task } from '@/types';
 import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
@@ -8,11 +7,13 @@ export function useTaskExport(filteredTasks: Ref<Task[]>, activeProjectId: Ref<s
   const projectStore = useProjectStore();
   const { t } = useI18n();
 
-  const exportTasks = (format: 'xlsx' | 'csv') => {
+  const exportTasks = async (format: 'xlsx' | 'csv') => {
     if (!filteredTasks.value || filteredTasks.value.length === 0) {
       alert(t('export.noTasks') || 'No tasks to export in the current view.');
       return;
     }
+
+    const { utils, writeFile } = await import('xlsx');
 
     const exportData = filteredTasks.value.map((task) => {
       const bucket = projectStore.buckets.find((b) => b.name === task.bucket);
