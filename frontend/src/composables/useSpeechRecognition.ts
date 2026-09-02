@@ -23,13 +23,9 @@ export function useSpeechRecognition() {
 
   const currentOptions = ref<SpeechRecognitionOptions>({});
   const lang = computed(() => currentOptions.value.lang || getLanguageCode());
-  const continuous = computed(() => currentOptions.value.continuous ?? false);
-  const interimResults = computed(() => currentOptions.value.interimResults ?? true);
 
   const vueUseSpeech = useVueUseSpeechRecognition({
     lang,
-    continuous,
-    interimResults,
   });
 
   const isSupported = vueUseSpeech.isSupported;

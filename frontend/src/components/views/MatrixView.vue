@@ -39,8 +39,6 @@ const fetchViewTasks = async () => {
   });
 };
 
-useEventListener(window, 'click', closeMenu);
-
 onMounted(async () => {
   await fetchViewTasks();
 });
@@ -103,6 +101,8 @@ const toggleMenu = (colId: string) => {
 const closeMenu = () => {
   activeMenuColId.value = null;
 };
+
+useEventListener(window, 'click', closeMenu);
 
 const matrixColumns = computed(() => [
   {
