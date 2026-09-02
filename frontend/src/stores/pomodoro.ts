@@ -6,6 +6,7 @@ export type PomodoroPhase = 'work' | 'short_break' | 'long_break';
 export type PomodoroStatus = 'idle' | 'running' | 'paused';
 
 const SETTINGS_KEY = 'jotter_pomodoro_settings';
+const STATE_KEY = 'jotter_pomodoro_state';
 
 export const usePomodoroStore = defineStore('pomodoro', () => {
   // Settings
@@ -15,11 +16,22 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   const long_break_interval = ref<number>(4);
   const sound_enabled = ref<boolean>(true);
 
+  // Runtime State
+  const phase = ref<PomodoroPhase>('work');
+  const status = ref<PomodoroStatus>('idle');
+  const time_remaining = ref<number>(work_duration.value * 60);
+  const completed_cycles = ref<number>(0);
+  const is_bar_open = ref<boolean>(false);
+  const target_end_timestamp = ref<number | null>(null);
+
+  let timerInterval: ReturnType<typeof setInterval> | null = null;
+  const originalDocumentTitle = typeof document !== 'undefined' ? document.title : 'Jotter';
+
   // Load saved settings
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
+    const rawSettings = localStorage.getItem(SETTINGS_KEY);
+    if (rawSettings) {
+      const parsed = JSON.parse(rawSettings);
       if (parsed.work_duration) work_duration.value = parsed.work_duration;
       if (parsed.short_break_duration) short_break_duration.value = parsed.short_break_duration;
       if (parsed.long_break_duration) long_break_duration.value = parsed.long_break_duration;
@@ -30,33 +42,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     // Ignore localStorage errors
   }
 
-  const saveSettings = () => {
-    try {
-      localStorage.setItem(
-        SETTINGS_KEY,
-        JSON.stringify({
-          work_duration: work_duration.value,
-          short_break_duration: short_break_duration.value,
-          long_break_duration: long_break_duration.value,
-          long_break_interval: long_break_interval.value,
-          sound_enabled: sound_enabled.value,
-        })
-      );
-    } catch {
-      // Ignore
-    }
-  };
-
-  // Runtime State
-  const phase = ref<PomodoroPhase>('work');
-  const status = ref<PomodoroStatus>('idle');
-  const time_remaining = ref<number>(work_duration.value * 60);
-  const completed_cycles = ref<number>(0);
-  const is_bar_open = ref<boolean>(false);
-
-  let timerInterval: ReturnType<typeof setInterval> | null = null;
-  const originalDocumentTitle = typeof document !== 'undefined' ? document.title : 'Jotter';
-
+  // Compute duration helpers
   const current_duration_seconds = computed(() => {
     switch (phase.value) {
       case 'short_break':
@@ -82,6 +68,72 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     const elapsed = total - time_remaining.value;
     return Math.min(100, Math.max(0, (elapsed / total) * 100));
   });
+
+  // Load saved runtime state (with timestamp calculation)
+  try {
+    const rawState = localStorage.getItem(STATE_KEY);
+    if (rawState) {
+      const parsed = JSON.parse(rawState);
+      if (parsed.phase) phase.value = parsed.phase;
+      if (typeof parsed.completed_cycles === 'number') completed_cycles.value = parsed.completed_cycles;
+      if (typeof parsed.is_bar_open === 'boolean') is_bar_open.value = parsed.is_bar_open;
+
+      if (parsed.status === 'running' && parsed.target_end_timestamp) {
+        const remaining = Math.round((parsed.target_end_timestamp - Date.now()) / 1000);
+        if (remaining > 0) {
+          time_remaining.value = remaining;
+          target_end_timestamp.value = parsed.target_end_timestamp;
+          status.value = 'running';
+        } else {
+          time_remaining.value = 0;
+          target_end_timestamp.value = null;
+          status.value = 'idle';
+        }
+      } else if (parsed.status === 'paused' && typeof parsed.time_remaining === 'number') {
+        time_remaining.value = parsed.time_remaining;
+        status.value = 'paused';
+      } else {
+        time_remaining.value = current_duration_seconds.value;
+      }
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+
+  const saveSettings = () => {
+    try {
+      localStorage.setItem(
+        SETTINGS_KEY,
+        JSON.stringify({
+          work_duration: work_duration.value,
+          short_break_duration: short_break_duration.value,
+          long_break_duration: long_break_duration.value,
+          long_break_interval: long_break_interval.value,
+          sound_enabled: sound_enabled.value,
+        })
+      );
+    } catch {
+      // Ignore
+    }
+  };
+
+  const saveState = () => {
+    try {
+      localStorage.setItem(
+        STATE_KEY,
+        JSON.stringify({
+          phase: phase.value,
+          status: status.value,
+          time_remaining: time_remaining.value,
+          completed_cycles: completed_cycles.value,
+          is_bar_open: is_bar_open.value,
+          target_end_timestamp: target_end_timestamp.value,
+        })
+      );
+    } catch {
+      // Ignore
+    }
+  };
 
   const updateDocumentTitle = () => {
     if (typeof document === 'undefined') return;
@@ -113,13 +165,20 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     } else {
       switchPhase('work');
     }
+    saveState();
   };
 
   const tick = () => {
-    if (time_remaining.value > 1) {
+    if (target_end_timestamp.value) {
+      const remaining = Math.round((target_end_timestamp.value - Date.now()) / 1000);
+      time_remaining.value = Math.max(0, remaining);
+    } else if (time_remaining.value > 0) {
       time_remaining.value -= 1;
-    } else {
+    }
+
+    if (time_remaining.value <= 0) {
       time_remaining.value = 0;
+      target_end_timestamp.value = null;
       triggerPhaseEnd();
     }
   };
@@ -130,6 +189,9 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
       time_remaining.value = current_duration_seconds.value;
     }
     status.value = 'running';
+    target_end_timestamp.value = Date.now() + time_remaining.value * 1000;
+    saveState();
+
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(tick, 1000);
     updateDocumentTitle();
@@ -137,11 +199,16 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
 
   const pause = () => {
     if (status.value !== 'running') return;
+    if (target_end_timestamp.value) {
+      time_remaining.value = Math.max(0, Math.round((target_end_timestamp.value - Date.now()) / 1000));
+    }
+    target_end_timestamp.value = null;
     status.value = 'paused';
     if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
     }
+    saveState();
     updateDocumentTitle();
   };
 
@@ -158,8 +225,10 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
       clearInterval(timerInterval);
       timerInterval = null;
     }
+    target_end_timestamp.value = null;
     status.value = 'idle';
     time_remaining.value = current_duration_seconds.value;
+    saveState();
     updateDocumentTitle();
   };
 
@@ -170,7 +239,9 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     }
     phase.value = newPhase;
     status.value = 'idle';
+    target_end_timestamp.value = null;
     time_remaining.value = current_duration_seconds.value;
+    saveState();
     updateDocumentTitle();
   };
 
@@ -197,20 +268,47 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
 
     if (status.value === 'idle') {
       time_remaining.value = current_duration_seconds.value;
+      saveState();
     }
   };
 
   const openBar = () => {
     is_bar_open.value = true;
+    saveState();
   };
 
   const closeBar = () => {
     is_bar_open.value = false;
+    saveState();
   };
 
   const toggleBar = () => {
     is_bar_open.value = !is_bar_open.value;
+    saveState();
   };
+
+  // Re-sync timer when tab/PWA becomes active again
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && status.value === 'running' && target_end_timestamp.value) {
+        const remaining = Math.round((target_end_timestamp.value - Date.now()) / 1000);
+        if (remaining <= 0) {
+          time_remaining.value = 0;
+          target_end_timestamp.value = null;
+          triggerPhaseEnd();
+        } else {
+          time_remaining.value = remaining;
+          updateDocumentTitle();
+        }
+      }
+    });
+  }
+
+  // Resume interval if initialized in running state from storage
+  if (status.value === 'running') {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(tick, 1000);
+  }
 
   return {
     // State
@@ -224,6 +322,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     completed_cycles,
     is_bar_open,
     sound_enabled,
+    target_end_timestamp,
 
     // Getters
     current_duration_seconds,

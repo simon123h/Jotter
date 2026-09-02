@@ -102,4 +102,32 @@ describe('usePomodoroStore', () => {
     expect(store.time_remaining).toBe(30 * 60);
     expect(store.formatted_time).toBe('30:00');
   });
+
+  it('persists is_bar_open state across store restarts', () => {
+    const store1 = usePomodoroStore();
+    expect(store1.is_bar_open).toBe(false);
+
+    store1.openBar();
+    expect(store1.is_bar_open).toBe(true);
+
+    // Simulate PWA restart by resetting Pinia
+    setActivePinia(createPinia());
+    const store2 = usePomodoroStore();
+    expect(store2.is_bar_open).toBe(true);
+  });
+
+  it('resumes running timer across PWA restart using target_end_timestamp', () => {
+    const store1 = usePomodoroStore();
+    store1.start();
+    expect(store1.status).toBe('running');
+
+    // Advance 60 seconds
+    vi.advanceTimersByTime(60 * 1000);
+
+    // Simulate PWA restart by resetting Pinia
+    setActivePinia(createPinia());
+    const store2 = usePomodoroStore();
+    expect(store2.status).toBe('running');
+    expect(store2.time_remaining).toBe(24 * 60);
+  });
 });
