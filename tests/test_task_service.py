@@ -89,6 +89,44 @@ def test_task_crud_and_positioning(temp_dir, test_env):
     assert len(task_svc.get_tasks("default")) == 1
 
 
+def test_task_partial_update_preserves_attributes(temp_dir, test_env):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+
+    # Create task with color, priority, due date, tags, body
+    t = task_svc.create_task(
+        "default",
+        TaskCreate(
+            title="Task with Color",
+            bucket="todo",
+            color="emerald",
+            priority="high",
+            due_date="2026-09-15",
+            planned_date="2026-09-10",
+            tags=["feature"],
+            body="- [ ] Checklist item 1\n- [ ] Checklist item 2",
+        ),
+    )
+    assert t.color == "emerald"
+    assert t.priority == "high"
+
+    # Simulate ticking a checklist item in markdown (only sending body update)
+    updated = task_svc.update_task(
+        "default",
+        t.id,
+        TaskUpdate.model_validate({"body": "- [x] Checklist item 1\n- [ ] Checklist item 2"}),
+    )
+
+    # All other attributes must remain intact!
+    assert updated.color == "emerald"
+    assert updated.priority == "high"
+    assert updated.due_date == "2026-09-15"
+    assert updated.planned_date == "2026-09-10"
+    assert updated.tags == ["feature"]
+    assert updated.body == "- [x] Checklist item 1\n- [ ] Checklist item 2"
+
+
+
 def test_task_search_and_filtering(temp_dir, test_env):
     conn = get_db(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)

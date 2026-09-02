@@ -149,18 +149,24 @@ class TaskApplicationService:
             new_b = Bucket.create(title=target_bucket.capitalize(), name=target_bucket)
             self.bucket_repo.save(project_id, new_b)
 
+        fields_set = req.model_fields_set
         task.update_details(
-            title=req.title,
-            body=req.body,
-            priority=req.priority,
-            due_date=req.due_date,
-            planned_date=req.planned_date,
-            color=req.color,
-            postponed_until=req.postponed_until,
-            tags=req.tags,
+            title=req.title if "title" in fields_set else None,
+            body=req.body if "body" in fields_set else None,
+            priority=req.priority if "priority" in fields_set else ...,
+            due_date=req.due_date if "due_date" in fields_set else ...,
+            planned_date=req.planned_date if "planned_date" in fields_set else ...,
+            color=req.color if "color" in fields_set else ...,
+            postponed_until=req.postponed_until if "postponed_until" in fields_set else ...,
+            tags=req.tags if "tags" in fields_set else None,
         )
-        if req.bucket and req.bucket != task.bucket:
+        if "attachments" in fields_set and req.attachments is not None:
+            task.attachments = req.attachments
+
+        if "bucket" in fields_set and req.bucket and req.bucket != task.bucket:
             task.move(req.bucket, req.position if req.position is not None else task.position)
+        elif "position" in fields_set and req.position is not None:
+            task.move(task.bucket, req.position)
 
         self.disk_repo.save(task)
         self.sqlite_repo.upsert_task(task)
