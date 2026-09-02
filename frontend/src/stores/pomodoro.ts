@@ -1,6 +1,6 @@
 import { computed, watch } from 'vue';
 import { defineStore } from 'pinia';
-import { useStorage, useDocumentVisibility } from '@vueuse/core';
+import { useStorage, useDocumentVisibility, useTitle, useIntervalFn } from '@vueuse/core';
 import { playPomodoroChime } from '@/utils/sound';
 
 export type PomodoroPhase = 'work' | 'short_break' | 'long_break';
@@ -27,8 +27,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     flush: 'sync',
   });
 
-  let timerInterval: ReturnType<typeof setInterval> | null = null;
-  const originalDocumentTitle = typeof document !== 'undefined' ? document.title : 'Jotter';
+  const docTitle = useTitle('Jotter');
 
   // Compute duration helpers
   const current_duration_seconds = computed(() => {
@@ -82,12 +81,11 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   }
 
   const updateDocumentTitle = () => {
-    if (typeof document === 'undefined') return;
     if (status.value === 'running') {
       const emoji = phase.value === 'work' ? '🍅' : '☕';
-      document.title = `(${formatted_time.value}) ${emoji} Jotter`;
+      docTitle.value = `(${formatted_time.value}) ${emoji} Jotter`;
     } else {
-      document.title = originalDocumentTitle;
+      docTitle.value = 'Jotter';
     }
   };
 
@@ -135,6 +133,10 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     }
   };
 
+  const { pause: pauseInterval, resume: resumeInterval } = useIntervalFn(tick, 1000, {
+    immediate: status.value === 'running',
+  });
+
   const start = () => {
     if (status.value === 'running') return;
     if (time_remaining.value <= 0) {
@@ -142,9 +144,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     }
     status.value = 'running';
     target_end_timestamp.value = Date.now() + time_remaining.value * 1000;
-
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(tick, 1000);
+    resumeInterval();
     updateDocumentTitle();
   };
 
@@ -155,10 +155,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     }
     target_end_timestamp.value = null;
     status.value = 'paused';
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
+    pauseInterval();
     updateDocumentTitle();
   };
 
@@ -171,10 +168,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   };
 
   const reset = () => {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
+    pauseInterval();
     status.value = 'idle';
     target_end_timestamp.value = null;
     time_remaining.value = current_duration_seconds.value;
@@ -182,10 +176,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   };
 
   const switchPhase = (newPhase: PomodoroPhase) => {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
+    pauseInterval();
     phase.value = newPhase;
     status.value = 'idle';
     target_end_timestamp.value = null;
@@ -226,8 +217,10 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     auto_proceed?: boolean;
   }) => {
     if (config.work && config.work > 0) work_duration.value = Math.max(1, Math.floor(Number(config.work)) || 25);
-    if (config.short_break && config.short_break > 0) short_break_duration.value = Math.max(1, Math.floor(Number(config.short_break)) || 5);
-    if (config.long_break && config.long_break > 0) long_break_duration.value = Math.max(1, Math.floor(Number(config.long_break)) || 15);
+    if (config.short_break && config.short_break > 0)
+      short_break_duration.value = Math.max(1, Math.floor(Number(config.short_break)) || 5);
+    if (config.long_break && config.long_break > 0)
+      long_break_duration.value = Math.max(1, Math.floor(Number(config.long_break)) || 15);
     if (config.long_break_interval && config.long_break_interval > 0) {
       long_break_interval.value = Math.max(1, Math.min(12, Math.floor(Number(config.long_break_interval)) || 4));
     }
@@ -266,12 +259,6 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
       }
     }
   });
-
-  // Resume interval if initialized in running state from storage
-  if (status.value === 'running') {
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(tick, 1000);
-  }
 
   return {
     // State
