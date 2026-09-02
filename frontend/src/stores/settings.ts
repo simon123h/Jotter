@@ -1,5 +1,6 @@
 import { reactive, toRefs, watch, nextTick } from 'vue';
 import { defineStore } from 'pinia';
+import { useDebounceFn } from '@vueuse/core';
 import { getSettings, saveSettings } from '@/api';
 import type { AppSettings } from '@/types';
 
@@ -101,27 +102,19 @@ export const useSettingsStore = defineStore('settings', () => {
   );
 
   // Debounced save
-  let saveTimeout: any = null;
-  const triggerSave = () => {
+  const debouncedSave = useDebounceFn(async () => {
     if (skipSave) return;
-
-    if (saveTimeout) {
-      clearTimeout(saveTimeout);
+    try {
+      await saveSettings({ ...state });
+    } catch (err) {
+      console.error('Failed to save settings:', err);
     }
-
-    saveTimeout = setTimeout(async () => {
-      try {
-        await saveSettings({ ...state });
-      } catch (err) {
-        console.error('Failed to save settings:', err);
-      }
-    }, 500);
-  };
+  }, 500);
 
   watch(
     state,
     () => {
-      triggerSave();
+      debouncedSave();
     },
     { deep: true }
   );
