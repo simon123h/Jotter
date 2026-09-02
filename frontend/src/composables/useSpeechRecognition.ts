@@ -1,41 +1,7 @@
-import { ref, onUnmounted, getCurrentInstance } from 'vue';
+import { computed, watch, ref } from 'vue';
+import { useSpeechRecognition as useVueUseSpeechRecognition } from '@vueuse/core';
 import { useI18n } from './useI18n';
 import { useToast } from './useToast';
-
-// Web Speech API interface declarations
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-  message?: string;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionInstance extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onstart: ((this: SpeechRecognitionInstance, ev: Event) => any) | null;
-  onend: ((this: SpeechRecognitionInstance, ev: Event) => any) | null;
-  onerror: ((this: SpeechRecognitionInstance, ev: SpeechRecognitionErrorEvent) => any) | null;
-  onresult: ((this: SpeechRecognitionInstance, ev: SpeechRecognitionEvent) => any) | null;
-}
-
-declare global {
-  interface Window {
-    SpeechRecognition?: {
-      new (): SpeechRecognitionInstance;
-    };
-    webkitSpeechRecognition?: {
-      new (): SpeechRecognitionInstance;
-    };
-  }
-}
 
 export interface SpeechRecognitionOptions {
   lang?: string;
@@ -49,103 +15,93 @@ export function useSpeechRecognition() {
   const { locale, t } = useI18n();
   const toast = useToast();
 
-  const isSupported = ref<boolean>(typeof window !== 'undefined' && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition));
-  const isListening = ref<boolean>(false);
-  const transcript = ref<string>('');
-  const error = ref<string | null>(null);
-
-  let recognition: SpeechRecognitionInstance | null = null;
-
   const getLanguageCode = (loc?: string): string => {
     const l = loc || locale.value;
     if (l === 'de') return 'de-DE';
     return 'en-US';
   };
 
+  const currentOptions = ref<SpeechRecognitionOptions>({});
+  const lang = computed(() => currentOptions.value.lang || getLanguageCode());
+  const continuous = computed(() => currentOptions.value.continuous ?? false);
+  const interimResults = computed(() => currentOptions.value.interimResults ?? true);
+
+  const vueUseSpeech = useVueUseSpeechRecognition({
+    lang,
+    continuous,
+    interimResults,
+  });
+
+  const isSupported = vueUseSpeech.isSupported;
+  const isListening = vueUseSpeech.isListening;
+  const transcript = vueUseSpeech.result;
+  const error = ref<string | null>(null);
+
+  watch(
+    vueUseSpeech.result,
+    (text) => {
+      if (currentOptions.value.onResult) {
+        currentOptions.value.onResult(text, true);
+      }
+    },
+    { flush: 'sync' }
+  );
+
+  watch(
+    vueUseSpeech.error,
+    (err) => {
+      if (!err) return;
+      const errEvent = err as any;
+      if (errEvent?.error === 'no-speech') return;
+      if (errEvent?.error === 'not-allowed') {
+        error.value = t('speech.permissionDenied');
+        toast.error(t('speech.permissionDenied'));
+      } else {
+        const errMsg = errEvent?.message || errEvent?.error || 'Speech error';
+        error.value = errMsg;
+        toast.error(t('speech.error', { message: errEvent?.error || 'error' }));
+      }
+    },
+    { flush: 'sync' }
+  );
+
+  watch(
+    vueUseSpeech.isListening,
+    (listening, prev) => {
+      if (prev && !listening && currentOptions.value.onEnd) {
+        currentOptions.value.onEnd();
+      }
+    },
+    { flush: 'sync' }
+  );
+
   const startListening = (options: SpeechRecognitionOptions = {}) => {
     if (!isSupported.value) {
       toast.warning(t('speech.notSupported'));
       return;
     }
-
-    if (isListening.value) {
-      stopListening();
+    currentOptions.value = options;
+    if (vueUseSpeech.recognition) {
+      vueUseSpeech.recognition.lang = options.lang || getLanguageCode(options.lang);
+      if (options.continuous !== undefined) vueUseSpeech.recognition.continuous = options.continuous;
+      if (options.interimResults !== undefined) vueUseSpeech.recognition.interimResults = options.interimResults;
+      vueUseSpeech.recognition.start();
+    } else {
+      vueUseSpeech.start();
     }
-
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRec) return;
-
-    try {
-      recognition = new SpeechRec();
-      recognition.continuous = options.continuous ?? false;
-      recognition.interimResults = options.interimResults ?? true;
-      recognition.lang = options.lang || getLanguageCode();
-
-      recognition.onstart = () => {
-        isListening.value = true;
-        error.value = null;
-        transcript.value = '';
-      };
-
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let currentTranscript = '';
-        let isFinalResult = false;
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i];
-          const text = result[0].transcript;
-          currentTranscript += text;
-          if (result.isFinal) {
-            isFinalResult = true;
-          }
-        }
-
-        transcript.value = currentTranscript;
-        if (options.onResult) {
-          options.onResult(currentTranscript, isFinalResult);
-        }
-      };
-
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        if (event.error === 'no-speech') {
-          // Silent timeout, not a critical error
-          return;
-        }
-        if (event.error === 'not-allowed') {
-          error.value = t('speech.permissionDenied');
-          toast.error(t('speech.permissionDenied'));
-        } else {
-          error.value = event.message || event.error;
-          toast.error(t('speech.error', { message: event.error }));
-        }
-      };
-
-      recognition.onend = () => {
-        isListening.value = false;
-        if (options.onEnd) {
-          options.onEnd();
-        }
-      };
-
-      recognition.start();
-    } catch (err: any) {
-      isListening.value = false;
-      const errMsg = err.message || 'Failed to start speech recognition';
-      error.value = errMsg;
-      toast.error(errMsg);
-    }
+    vueUseSpeech.isListening.value = true;
   };
 
   const stopListening = () => {
-    if (recognition) {
+    if (vueUseSpeech.recognition) {
       try {
-        recognition.stop();
+        vueUseSpeech.recognition.stop();
       } catch {
-        // Ignored if already stopped
+        // Ignored
       }
-      recognition = null;
     }
-    isListening.value = false;
+    vueUseSpeech.stop();
+    vueUseSpeech.isListening.value = false;
   };
 
   const toggleListening = (options: SpeechRecognitionOptions = {}) => {
@@ -155,12 +111,6 @@ export function useSpeechRecognition() {
       startListening(options);
     }
   };
-
-  if (getCurrentInstance()) {
-    onUnmounted(() => {
-      stopListening();
-    });
-  }
 
   return {
     isSupported,
