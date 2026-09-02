@@ -122,17 +122,13 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         :title="t('filterModal.buttonTooltip')"
       >
         <Filter class="w-3.5 h-3.5" />
-        <span
-          v-if="hasActiveFilters"
-          class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-theme-primary rounded-full ring-2 ring-theme-card"
-        />
+        <span v-if="hasActiveFilters" class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-theme-primary rounded-full ring-2 ring-theme-card" />
       </button>
     </div>
     <div v-else class="flex-grow"></div>
 
     <!-- Toolbar Actions -->
     <div v-if="activeProjectId" class="flex items-center gap-1.5 shrink-0">
-
       <!-- View Mode Toggle -->
       <div class="hidden lg:flex items-center bg-theme-column/25 rounded p-0.5 shrink-0 border border-transparent">
         <router-link
