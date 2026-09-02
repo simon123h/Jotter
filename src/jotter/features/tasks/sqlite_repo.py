@@ -1,10 +1,10 @@
 """SQLite repository for indexing and querying tasks."""
 
-from itertools import batched
 import json
 import re
 import sqlite3
 from datetime import datetime, timezone
+from itertools import batched
 from typing import Any
 
 from jotter.features.tasks.domain import Task

@@ -147,10 +147,14 @@ def get_db(db_path: Path | str | None = None) -> sqlite3.Connection:
 
 
 def close_db() -> None:
-    """Closes global fallback connection if open."""
+    """Runs PRAGMA optimize and closes global fallback connection if open."""
     global _global_connection
     with _db_lock:
         if _global_connection is not None:
+            try:
+                _global_connection.execute("PRAGMA optimize;")
+            except Exception:
+                pass
             try:
                 _global_connection.close()
             except Exception:
