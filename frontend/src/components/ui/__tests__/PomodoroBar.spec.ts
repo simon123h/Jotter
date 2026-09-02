@@ -83,6 +83,7 @@ describe('PomodoroBar.vue', () => {
   it('maintains anchored bottom-6 position', () => {
     const store = usePomodoroStore();
     store.is_bar_open = true;
+    store.status = 'idle';
 
     const wrapper = mount(PomodoroBar, {
       global: {

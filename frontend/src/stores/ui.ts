@@ -1,48 +1,13 @@
-import { ref, watch } from 'vue';
 import { defineStore } from 'pinia';
+import { useStorage } from '@vueuse/core';
 
 export const useUiStore = defineStore('ui', () => {
-  const lastViewMode = ref<string>(localStorage.getItem('jotter-last-view-mode') || 'board');
-
-  const collapsedColumns = ref<Record<string, string[]>>(JSON.parse(localStorage.getItem('jotter-collapsed-columns') || '{}'));
-
-  const collapseEmptyColumns = ref<boolean>(localStorage.getItem('jotter-collapse-empty-columns') === 'true');
-
-  watch(
-    lastViewMode,
-    (newMode) => {
-      localStorage.setItem('jotter-last-view-mode', newMode || 'board');
-    },
-    { flush: 'sync' }
-  );
-
-  watch(
-    collapsedColumns,
-    (newVal) => {
-      localStorage.setItem('jotter-collapsed-columns', JSON.stringify(newVal));
-    },
-    { deep: true, flush: 'sync' }
-  );
-
-  watch(
-    collapseEmptyColumns,
-    (newVal) => {
-      localStorage.setItem('jotter-collapse-empty-columns', String(newVal));
-    },
-    { flush: 'sync' }
-  );
-
-  const virtualColumnLayouts = ref<Record<string, 'list' | 'grid-2' | 'grid-3'>>(
-    JSON.parse(localStorage.getItem('jotter-virtual-column-layouts') || '{}')
-  );
-
-  watch(
-    virtualColumnLayouts,
-    (newVal) => {
-      localStorage.setItem('jotter-virtual-column-layouts', JSON.stringify(newVal));
-    },
-    { deep: true, flush: 'sync' }
-  );
+  const lastViewMode = useStorage<string>('jotter-last-view-mode', 'board', undefined, { flush: 'sync' });
+  const collapsedColumns = useStorage<Record<string, string[]>>('jotter-collapsed-columns', {}, undefined, { flush: 'sync' });
+  const collapseEmptyColumns = useStorage<boolean>('jotter-collapse-empty-columns', false, undefined, { flush: 'sync' });
+  const virtualColumnLayouts = useStorage<Record<string, 'list' | 'grid-2' | 'grid-3'>>('jotter-virtual-column-layouts', {}, undefined, {
+    flush: 'sync',
+  });
 
   const setLastViewMode = (mode: string) => {
     lastViewMode.value = mode;
