@@ -6,177 +6,25 @@ import { playPomodoroChime } from '@/utils/sound';
 export type PomodoroPhase = 'work' | 'short_break' | 'long_break';
 export type PomodoroStatus = 'idle' | 'running' | 'paused';
 
-const SETTINGS_KEY = 'jotter_pomodoro_settings';
-const STATE_KEY = 'jotter_pomodoro_state';
-
-interface PomodoroSettingsStorage {
-  work_duration: number;
-  short_break_duration: number;
-  long_break_duration: number;
-  long_break_interval: number;
-  sound_enabled: boolean;
-  auto_proceed: boolean;
-}
-
-interface PomodoroStateStorage {
-  phase: PomodoroPhase;
-  status: PomodoroStatus;
-  time_remaining: number;
-  completed_cycles: number;
-  is_bar_open: boolean;
-  target_end_timestamp: number | null;
-}
-
 export const usePomodoroStore = defineStore('pomodoro', () => {
-  // Persisted Settings via VueUse useStorage (flush sync for immediate persistence)
-  const settings = useStorage<PomodoroSettingsStorage>(
-    SETTINGS_KEY,
-    {
-      work_duration: 25,
-      short_break_duration: 5,
-      long_break_duration: 15,
-      long_break_interval: 4,
-      sound_enabled: true,
-      auto_proceed: false,
-    },
-    undefined,
-    { flush: 'sync', deep: true }
-  );
+  // Persisted Settings
+  const work_duration = useStorage<number>('jotter_pomodoro_work_duration', 25, undefined, { flush: 'sync' });
+  const short_break_duration = useStorage<number>('jotter_pomodoro_short_break_duration', 5, undefined, { flush: 'sync' });
+  const long_break_duration = useStorage<number>('jotter_pomodoro_long_break_duration', 15, undefined, { flush: 'sync' });
+  const long_break_interval = useStorage<number>('jotter_pomodoro_long_break_interval', 4, undefined, { flush: 'sync' });
+  const sound_enabled = useStorage<boolean>('jotter_pomodoro_sound_enabled', true, undefined, { flush: 'sync' });
+  const auto_proceed = useStorage<boolean>('jotter_pomodoro_auto_proceed', false, undefined, { flush: 'sync' });
 
-  // Persisted Runtime State via VueUse useStorage
-  const persistedState = useStorage<PomodoroStateStorage>(
-    STATE_KEY,
-    {
-      phase: 'work',
-      status: 'idle',
-      time_remaining: 25 * 60,
-      completed_cycles: 0,
-      is_bar_open: false,
-      target_end_timestamp: null,
-    },
-    undefined,
-    { flush: 'sync', deep: true }
-  );
-
-  // Direct reactive property proxies with immutability for useStorage sync
-  const work_duration = computed({
-    get: () => settings.value.work_duration ?? 25,
-    set: (v) => {
-      settings.value = {
-        ...settings.value,
-        work_duration: Math.max(1, Number(v) || 25),
-      };
-    },
+  // Persisted Runtime State
+  const phase = useStorage<PomodoroPhase>('jotter_pomodoro_phase', 'work', undefined, { flush: 'sync' });
+  const status = useStorage<PomodoroStatus>('jotter_pomodoro_status', 'idle', undefined, { flush: 'sync' });
+  const time_remaining = useStorage<number>('jotter_pomodoro_time_remaining', work_duration.value * 60, undefined, {
+    flush: 'sync',
   });
-
-  const short_break_duration = computed({
-    get: () => settings.value.short_break_duration ?? 5,
-    set: (v) => {
-      settings.value = {
-        ...settings.value,
-        short_break_duration: Math.max(1, Number(v) || 5),
-      };
-    },
-  });
-
-  const long_break_duration = computed({
-    get: () => settings.value.long_break_duration ?? 15,
-    set: (v) => {
-      settings.value = {
-        ...settings.value,
-        long_break_duration: Math.max(1, Number(v) || 15),
-      };
-    },
-  });
-
-  const long_break_interval = computed({
-    get: () => settings.value.long_break_interval ?? 4,
-    set: (v) => {
-      settings.value = {
-        ...settings.value,
-        long_break_interval: Math.max(1, Math.min(12, Math.floor(Number(v)) || 4)),
-      };
-    },
-  });
-
-  const sound_enabled = computed({
-    get: () => settings.value.sound_enabled ?? true,
-    set: (v) => {
-      settings.value = {
-        ...settings.value,
-        sound_enabled: Boolean(v),
-      };
-    },
-  });
-
-  const auto_proceed = computed({
-    get: () => settings.value.auto_proceed ?? false,
-    set: (v) => {
-      settings.value = {
-        ...settings.value,
-        auto_proceed: Boolean(v),
-      };
-    },
-  });
-
-  const phase = computed({
-    get: () => persistedState.value.phase ?? 'work',
-    set: (v) => {
-      persistedState.value = {
-        ...persistedState.value,
-        phase: v,
-      };
-    },
-  });
-
-  const status = computed({
-    get: () => persistedState.value.status ?? 'idle',
-    set: (v) => {
-      persistedState.value = {
-        ...persistedState.value,
-        status: v,
-      };
-    },
-  });
-
-  const time_remaining = computed({
-    get: () => persistedState.value.time_remaining ?? work_duration.value * 60,
-    set: (v) => {
-      persistedState.value = {
-        ...persistedState.value,
-        time_remaining: v,
-      };
-    },
-  });
-
-  const completed_cycles = computed({
-    get: () => persistedState.value.completed_cycles ?? 0,
-    set: (v) => {
-      persistedState.value = {
-        ...persistedState.value,
-        completed_cycles: v,
-      };
-    },
-  });
-
-  const is_bar_open = computed({
-    get: () => persistedState.value.is_bar_open ?? false,
-    set: (v) => {
-      persistedState.value = {
-        ...persistedState.value,
-        is_bar_open: v,
-      };
-    },
-  });
-
-  const target_end_timestamp = computed({
-    get: () => persistedState.value.target_end_timestamp ?? null,
-    set: (v) => {
-      persistedState.value = {
-        ...persistedState.value,
-        target_end_timestamp: v,
-      };
-    },
+  const completed_cycles = useStorage<number>('jotter_pomodoro_completed_cycles', 0, undefined, { flush: 'sync' });
+  const is_bar_open = useStorage<boolean>('jotter_pomodoro_is_bar_open', false, undefined, { flush: 'sync' });
+  const target_end_timestamp = useStorage<number | null>('jotter_pomodoro_target_end_timestamp', null, undefined, {
+    flush: 'sync',
   });
 
   let timerInterval: ReturnType<typeof setInterval> | null = null;
@@ -222,20 +70,14 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   });
 
   // Restore running timer state if persisted target timestamp exists
-  if (persistedState.value.status === 'running' && persistedState.value.target_end_timestamp) {
-    const remaining = Math.round((persistedState.value.target_end_timestamp - Date.now()) / 1000);
+  if (status.value === 'running' && target_end_timestamp.value) {
+    const remaining = Math.round((target_end_timestamp.value - Date.now()) / 1000);
     if (remaining > 0) {
-      persistedState.value = {
-        ...persistedState.value,
-        time_remaining: remaining,
-      };
+      time_remaining.value = remaining;
     } else {
-      persistedState.value = {
-        ...persistedState.value,
-        time_remaining: 0,
-        target_end_timestamp: null,
-        status: 'idle',
-      };
+      time_remaining.value = 0;
+      target_end_timestamp.value = null;
+      status.value = 'idle';
     }
   }
 
@@ -260,12 +102,10 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     }
 
     if (phase.value === 'work') {
-      const newCycles = completed_cycles.value + 1;
-      if (newCycles % long_break_interval.value === 0) {
-        completed_cycles.value = newCycles;
+      completed_cycles.value += 1;
+      if (completed_cycles.value % long_break_interval.value === 0) {
         switchPhase('long_break');
       } else {
-        completed_cycles.value = newCycles;
         switchPhase('short_break');
       }
     } else {
@@ -300,12 +140,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     if (time_remaining.value <= 0) {
       time_remaining.value = current_duration_seconds.value;
     }
-    const target = Date.now() + time_remaining.value * 1000;
-    persistedState.value = {
-      ...persistedState.value,
-      status: 'running',
-      target_end_timestamp: target,
-    };
+    status.value = 'running';
+    target_end_timestamp.value = Date.now() + time_remaining.value * 1000;
 
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(tick, 1000);
@@ -314,17 +150,11 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
 
   const pause = () => {
     if (status.value !== 'running') return;
-    const remaining = target_end_timestamp.value
-      ? Math.max(0, Math.round((target_end_timestamp.value - Date.now()) / 1000))
-      : time_remaining.value;
-
-    persistedState.value = {
-      ...persistedState.value,
-      status: 'paused',
-      target_end_timestamp: null,
-      time_remaining: remaining,
-    };
-
+    if (target_end_timestamp.value) {
+      time_remaining.value = Math.max(0, Math.round((target_end_timestamp.value - Date.now()) / 1000));
+    }
+    target_end_timestamp.value = null;
+    status.value = 'paused';
     if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
@@ -345,12 +175,9 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
       clearInterval(timerInterval);
       timerInterval = null;
     }
-    persistedState.value = {
-      ...persistedState.value,
-      status: 'idle',
-      target_end_timestamp: null,
-      time_remaining: current_duration_seconds.value,
-    };
+    status.value = 'idle';
+    target_end_timestamp.value = null;
+    time_remaining.value = current_duration_seconds.value;
     updateDocumentTitle();
   };
 
@@ -359,25 +186,17 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
       clearInterval(timerInterval);
       timerInterval = null;
     }
-    let durationSec = work_duration.value * 60;
-    if (newPhase === 'short_break') durationSec = short_break_duration.value * 60;
-    if (newPhase === 'long_break') durationSec = long_break_duration.value * 60;
-
-    persistedState.value = {
-      ...persistedState.value,
-      phase: newPhase,
-      status: 'idle',
-      target_end_timestamp: null,
-      time_remaining: durationSec,
-    };
+    phase.value = newPhase;
+    status.value = 'idle';
+    target_end_timestamp.value = null;
+    time_remaining.value = current_duration_seconds.value;
     updateDocumentTitle();
   };
 
   const skip = () => {
     if (phase.value === 'work') {
-      const nextCycles = completed_cycles.value + 1;
-      completed_cycles.value = nextCycles;
-      if (nextCycles % long_break_interval.value === 0) {
+      completed_cycles.value += 1;
+      if (completed_cycles.value % long_break_interval.value === 0) {
         switchPhase('long_break');
       } else {
         switchPhase('short_break');
@@ -406,18 +225,14 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     sound_enabled?: boolean;
     auto_proceed?: boolean;
   }) => {
-    const nextSettings = { ...settings.value };
-    if (config.work && config.work > 0) nextSettings.work_duration = Math.max(1, Math.floor(Number(config.work)) || 25);
-    if (config.short_break && config.short_break > 0)
-      nextSettings.short_break_duration = Math.max(1, Math.floor(Number(config.short_break)) || 5);
-    if (config.long_break && config.long_break > 0)
-      nextSettings.long_break_duration = Math.max(1, Math.floor(Number(config.long_break)) || 15);
+    if (config.work && config.work > 0) work_duration.value = Math.max(1, Math.floor(Number(config.work)) || 25);
+    if (config.short_break && config.short_break > 0) short_break_duration.value = Math.max(1, Math.floor(Number(config.short_break)) || 5);
+    if (config.long_break && config.long_break > 0) long_break_duration.value = Math.max(1, Math.floor(Number(config.long_break)) || 15);
     if (config.long_break_interval && config.long_break_interval > 0) {
-      nextSettings.long_break_interval = Math.max(1, Math.min(12, Math.floor(Number(config.long_break_interval)) || 4));
+      long_break_interval.value = Math.max(1, Math.min(12, Math.floor(Number(config.long_break_interval)) || 4));
     }
-    if (typeof config.sound_enabled === 'boolean') nextSettings.sound_enabled = config.sound_enabled;
-    if (typeof config.auto_proceed === 'boolean') nextSettings.auto_proceed = config.auto_proceed;
-    settings.value = nextSettings;
+    if (typeof config.sound_enabled === 'boolean') sound_enabled.value = config.sound_enabled;
+    if (typeof config.auto_proceed === 'boolean') auto_proceed.value = config.auto_proceed;
 
     if (status.value === 'idle') {
       time_remaining.value = current_duration_seconds.value;
