@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useEventListener } from '@vueuse/core';
+import { onClickOutside } from '@vueuse/core';
 import { useRoute } from 'vue-router';
 import {
   Menu,
@@ -63,19 +63,11 @@ const isTabActive = (tab: string) => {
 
 // Overflow Menu State & Click-away handling
 const showOverflowMenu = ref(false);
+const overflowMenuRef = ref<HTMLElement | null>(null);
 
-const closeOverflowMenu = (e: MouseEvent) => {
-  const el = e.target as HTMLElement;
-  if (el && typeof el.closest === 'function') {
-    if (!el.closest('.overflow-menu-container')) {
-      showOverflowMenu.value = false;
-    }
-  } else {
-    showOverflowMenu.value = false;
-  }
-};
-
-useEventListener(window, 'click', closeOverflowMenu);
+onClickOutside(overflowMenuRef, () => {
+  showOverflowMenu.value = false;
+});
 
 const triggerExport = (format: 'xlsx' | 'csv') => {
   showOverflowMenu.value = false;
@@ -248,7 +240,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
       </button>
 
       <!-- Overflow Menu (Three dots) -->
-      <div class="relative shrink-0 overflow-menu-container">
+      <div ref="overflowMenuRef" class="relative shrink-0 overflow-menu-container">
         <button
           @click="showOverflowMenu = !showOverflowMenu"
           class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 rounded transition-all cursor-pointer"

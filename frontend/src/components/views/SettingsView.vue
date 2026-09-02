@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
-import { useEventListener } from '@vueuse/core';
+import { onClickOutside } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
@@ -105,13 +105,9 @@ const selectTag = (tag: string) => {
   searchQuery.value = '';
 };
 
-const handleClickOutside = (event: MouseEvent) => {
-  if (isDropdownOpen.value && dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
-    isDropdownOpen.value = false;
-  }
-};
-
-useEventListener(window, 'click', handleClickOutside);
+onClickOutside(dropdownRef, () => {
+  isDropdownOpen.value = false;
+});
 
 watch(
   () => allTagsInUse.value,
