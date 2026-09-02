@@ -1,5 +1,6 @@
 """SQLite repository for indexing and querying tasks."""
 
+from itertools import batched
 import json
 import re
 import sqlite3
@@ -97,18 +98,21 @@ class SqliteTaskRepository:
         if not task_ids:
             return []
         cursor = self.conn.cursor()
-        placeholders = ",".join(["?"] * len(task_ids))
-        cursor.execute(
-            f"""
-            SELECT id, project_id, title, bucket, position, tags, attachments, body,
-                   due_date, planned_date, priority, color, postponed_until, created_at, updated_at
-            FROM tasks
-            WHERE id IN ({placeholders})
-            """,
-            task_ids,
-        )
-        rows = cursor.fetchall()
-        return [self._row_to_task(row) for row in rows]
+        tasks: list[Task] = []
+        for batch in batched(task_ids, 500):
+            placeholders = ",".join(["?"] * len(batch))
+            cursor.execute(
+                f"""
+                SELECT id, project_id, title, bucket, position, tags, attachments, body,
+                       due_date, planned_date, priority, color, postponed_until, created_at, updated_at
+                FROM tasks
+                WHERE id IN ({placeholders})
+                """,
+                list(batch),
+            )
+            rows = cursor.fetchall()
+            tasks.extend(self._row_to_task(row) for row in rows)
+        return tasks
 
     def find_tasks(
         self,
