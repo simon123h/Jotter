@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted } from 'vue';
+import { useEventListener, useActiveElement } from '@vueuse/core';
 
 export interface ShortcutHandler {
   key: string;
@@ -11,6 +11,8 @@ export interface ShortcutHandler {
 }
 
 export function useKeyboardShortcuts(shortcuts: ShortcutHandler[]) {
+  const activeElement = useActiveElement();
+
   const handleKeyDown = (event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
     const match = shortcuts.find((s) => {
@@ -29,7 +31,7 @@ export function useKeyboardShortcuts(shortcuts: ShortcutHandler[]) {
     if (match) {
       if (!match.allowInInputs) {
         // Ignore keyboard shortcuts when user is focused on input elements
-        const activeEl = document.activeElement;
+        const activeEl = activeElement.value || (typeof document !== 'undefined' ? document.activeElement : null);
         if (
           activeEl &&
           (activeEl.tagName === 'INPUT' ||
@@ -46,11 +48,5 @@ export function useKeyboardShortcuts(shortcuts: ShortcutHandler[]) {
     }
   };
 
-  onMounted(() => {
-    window.addEventListener('keydown', handleKeyDown);
-  });
-
-  onUnmounted(() => {
-    window.removeEventListener('keydown', handleKeyDown);
-  });
+  useEventListener(window, 'keydown', handleKeyDown);
 }
