@@ -332,4 +332,29 @@ describe('TaskDetailModal.vue', () => {
     expect(editFields.exists()).toBe(true);
   });
 
+  it('does not start editing when double clicking on the task title', async () => {
+    const wrapper = mount(TaskDetailModal, {
+      props: defaultProps,
+      global: {
+        stubs: {
+          MarkdownEditor: true,
+          Teleport: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await nextTick();
+
+    const titleEl = wrapper.find('h2.task-title');
+    expect(titleEl.exists()).toBe(true);
+
+    await titleEl.trigger('dblclick');
+    await nextTick();
+
+    // Should stay in view mode
+    const editFields = wrapper.findComponent({ name: 'TaskEditFields' });
+    expect(editFields.exists()).toBe(false);
+  });
 });

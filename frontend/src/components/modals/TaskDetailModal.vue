@@ -395,8 +395,15 @@ const handleDblClick = (event: MouseEvent) => {
   const target = event.target as HTMLElement | null;
   if (!target) return;
 
-  const ignoreTags = ['BUTTON', 'INPUT', 'SELECT', 'OPTION', 'TEXTAREA', 'A'];
-  if (ignoreTags.includes(target.tagName) || target.closest('button') || target.closest('a')) {
+  const ignoreTags = ['BUTTON', 'INPUT', 'SELECT', 'OPTION', 'TEXTAREA', 'A', 'H2'];
+  if (
+    ignoreTags.includes(target.tagName) ||
+    target.closest('button') ||
+    target.closest('a') ||
+    target.closest('h2') ||
+    target.closest('.task-title') ||
+    target.closest('[data-no-dblclick-edit]')
+  ) {
     return;
   }
 
@@ -474,7 +481,7 @@ onBeforeRouteLeave(async () => {
           <!-- View Mode -->
           <div v-if="!isEditing" class="space-y-4">
             <div>
-              <h2 class="text-xl font-bold text-theme-text-main mb-1.5 leading-snug">
+              <h2 class="text-xl font-bold text-theme-text-main mb-1.5 leading-snug task-title select-text">
                 {{ task.title }}
               </h2>
 
