@@ -35,7 +35,7 @@ const toggleTimeblockSidebar = () => {
 };
 
 const { hideDoneColumn, hideArchiveColumn, hidePostponedColumn } = storeToRefs(settingsStore);
-const { projects, buckets, tasks, loading, projectsLoaded } = storeToRefs(projectStore);
+const { projects, buckets, tasks, projectsLoaded } = storeToRefs(projectStore);
 
 const selectionStore = useSelectionStore();
 const { isSelected, toggleSelection, selectAll, clearSelection } = selectionStore;
@@ -107,22 +107,38 @@ watchEffect(() => {
 });
 
 const isNoProjects = computed(() => projectsLoaded.value && projects.value.length === 0);
+const isProjectLoading = ref(true);
 
 const fetchAllData = async () => {
-  if (isNoProjects.value || !projectId.value) return;
+  if (isNoProjects.value || !projectId.value) {
+    isProjectLoading.value = false;
+    return;
+  }
   if (
     projectsLoaded.value &&
     projectId.value !== 'all' &&
     projects.value.length > 0 &&
     !projects.value.some((p) => p.id === projectId.value)
   ) {
+    isProjectLoading.value = false;
     return;
   }
+  isProjectLoading.value = true;
   try {
-    await projectStore.fetchBuckets(projectId.value);
-    await projectStore.invalidate();
+    await Promise.all([
+      projectStore.fetchBuckets(projectId.value),
+      projectStore.fetchTasks(
+        {
+          projectId: projectId.value,
+          isGlobal: isGlobalView.value,
+        },
+        true
+      ),
+    ]);
   } catch (err: any) {
     toast.error(t('errors.fetchData', { message: err.message || err }));
+  } finally {
+    isProjectLoading.value = false;
   }
 };
 
@@ -417,34 +433,37 @@ const handleBulkConsolidate = async () => {
   <div class="h-full flex overflow-hidden w-full relative">
     <div class="flex-grow flex flex-col p-3 overflow-hidden min-w-0">
       <div @mousedown="handleDragSelectMouseDown" class="flex-grow overflow-hidden relative">
-        <div v-if="loading && !tasks.length" class="absolute inset-0 flex flex-col items-center justify-center gap-2">
-          <div class="w-10 h-10 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
-          <span class="text-theme-text-muted text-xs">{{ t('loadingBoard') }}</span>
-        </div>
-
-        <div
-          v-else-if="isNoProjects"
-          class="h-full flex flex-col items-center justify-center text-center bg-theme-column/10 border border-dashed border-theme-border rounded p-6"
-        >
-          <div class="p-3 bg-theme-card/50 rounded border border-theme-border mb-3 text-theme-accent">
-            <Folder class="w-6 h-6" />
+        <transition name="view-fade" mode="out-in">
+          <div v-if="isProjectLoading" key="loading" class="h-full flex flex-col items-center justify-center gap-2">
+            <div class="w-8 h-8 border-3 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-theme-text-muted text-xs font-semibold">{{ t('loadingBoard') || 'Loading...' }}</span>
           </div>
-          <h3 class="font-bold text-theme-text-main text-sm">{{ t('projects.noProjectsTitle') || 'No Projects Yet' }}</h3>
-          <p class="text-theme-text-muted text-xs max-w-sm mt-0.5">
-            {{ t('projects.noProjectsDesc') || 'Create your first project to start organizing your tasks.' }}
-          </p>
-        </div>
 
-        <div v-else class="h-full">
-          <router-view
-            :tasks="filteredTasks"
-            :buckets="displayedBuckets"
-            :is-selected="isSelected"
-            @toggle-select="toggleSelection($event.id)"
-            @add-task-click="openCreateModal"
-            @refresh="fetchAllData"
-          />
-        </div>
+          <div
+            v-else-if="isNoProjects"
+            key="no-projects"
+            class="h-full flex flex-col items-center justify-center text-center bg-theme-column/10 border border-dashed border-theme-border rounded p-6"
+          >
+            <div class="p-3 bg-theme-card/50 rounded border border-theme-border mb-3 text-theme-accent">
+              <Folder class="w-6 h-6" />
+            </div>
+            <h3 class="font-bold text-theme-text-main text-sm">{{ t('projects.noProjectsTitle') || 'No Projects Yet' }}</h3>
+            <p class="text-theme-text-muted text-xs max-w-sm mt-0.5">
+              {{ t('projects.noProjectsDesc') || 'Create your first project to start organizing your tasks.' }}
+            </p>
+          </div>
+
+          <div v-else :key="projectId" class="h-full">
+            <router-view
+              :tasks="filteredTasks"
+              :buckets="displayedBuckets"
+              :is-selected="isSelected"
+              @toggle-select="toggleSelection($event.id)"
+              @add-task-click="openCreateModal"
+              @refresh="fetchAllData"
+            />
+          </div>
+        </transition>
       </div>
 
       <!-- Bulk Action Bar -->
@@ -485,6 +504,14 @@ const handleBulkConsolidate = async () => {
 </template>
 
 <style scoped>
+.view-fade-enter-active,
+.view-fade-leave-active {
+  transition: opacity 0.12s ease;
+}
+.view-fade-enter-from,
+.view-fade-leave-to {
+  opacity: 0;
+}
 .timeblock-sidebar-enter-active,
 .timeblock-sidebar-leave-active {
   transition:
