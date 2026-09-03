@@ -15,13 +15,26 @@ class BucketRepository:
         self.conn = conn
 
     def get_project_dir(self, project_id: str) -> Path | None:
-        if not self.data_dir:
+        if (
+            not self.data_dir
+            or not project_id
+            or not isinstance(project_id, str)
+            or not project_id.strip()
+            or project_id in ("null", "undefined")
+        ):
             return None
         p = self.data_dir / project_id
         p.mkdir(parents=True, exist_ok=True)
         return p
 
     def get_all(self, project_id: str) -> list[Bucket]:
+        if (
+            not project_id
+            or not isinstance(project_id, str)
+            or not project_id.strip()
+            or project_id in ("null", "undefined")
+        ):
+            return []
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -36,6 +49,13 @@ class BucketRepository:
         return [self._row_to_bucket(row) for row in rows]
 
     def get(self, project_id: str, name: str) -> Bucket:
+        if (
+            not project_id
+            or not isinstance(project_id, str)
+            or not project_id.strip()
+            or project_id in ("null", "undefined")
+        ):
+            raise EntityNotFoundError(f"Column '{name}' not found in project '{project_id}'")
         cursor = self.conn.cursor()
         cursor.execute(
             """

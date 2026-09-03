@@ -79,6 +79,13 @@ class SqliteTaskRepository:
         cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
 
     def get_by_id(self, project_id: str, task_id: str) -> Task:
+        if (
+            not project_id
+            or not isinstance(project_id, str)
+            or not project_id.strip()
+            or project_id in ("null", "undefined")
+        ):
+            raise EntityNotFoundError(f"Task '{task_id}' not found in project '{project_id}'")
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -140,6 +147,9 @@ class SqliteTaskRepository:
         """
         args: list[Any] = []
         today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        if project_id in ("null", "undefined"):
+            return []
 
         if project_id:
             query += " AND project_id = ?"
