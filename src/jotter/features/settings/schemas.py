@@ -25,6 +25,7 @@ class AppSettings(BaseModel):
     language: str = "en"
     tagColors: dict[str, str] = {}
     autoSyncInterval: int = 0
+    doneCleanPeriod: int | None = None
 
 
 class SettingsUpdate(BaseModel):
@@ -49,3 +50,4 @@ class SettingsUpdate(BaseModel):
     language: str | None = None
     tagColors: dict[str, str] | None = None
     autoSyncInterval: int | None = None
+    doneCleanPeriod: int | None = None

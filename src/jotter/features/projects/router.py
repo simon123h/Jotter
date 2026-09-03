@@ -29,6 +29,11 @@ def create_new_project(req: ProjectCreate, svc: ProjectApplicationService = Depe
     return svc.create_project(req, DEFAULT_DOMAIN_BUCKETS)
 
 
+@router.get("/{project_id}", response_model=ProjectResponse)
+def get_single_project(project_id: str, svc: ProjectApplicationService = Depends(get_project_service)):
+    return svc.get_project(project_id)
+
+
 @router.patch("/{project_id}", response_model=ProjectResponse)
 @router.put("/{project_id}", response_model=ProjectResponse)
 def update_existing_project(

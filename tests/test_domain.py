@@ -110,9 +110,11 @@ def test_bucket_entity():
 
 
 def test_project_entity():
-    p = Project.create(name="Mobile App", description="iOS & Android codebase")
+    p = Project.create(name="Mobile App", description="iOS & Android codebase", done_clean_period=14)
     assert p.id == "mobile-app"
     assert p.name == "Mobile App"
+    assert p.done_clean_period == 14
 
-    p.update_details(name="Mobile App (Native)")
+    p.update_details(name="Mobile App (Native)", done_clean_period=30)
     assert p.name == "Mobile App (Native)"
+    assert p.done_clean_period == 30

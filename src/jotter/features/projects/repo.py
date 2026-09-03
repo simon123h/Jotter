@@ -22,7 +22,7 @@ class ProjectRepository:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            SELECT id, title, created_at, git_remote
+            SELECT id, title, created_at, done_clean_period, git_remote
             FROM projects
             WHERE id = ?
             """,
@@ -35,7 +35,7 @@ class ProjectRepository:
 
     def get_all(self) -> list[Project]:
         cursor = self.conn.cursor()
-        cursor.execute("SELECT id, title, created_at, git_remote FROM projects ORDER BY id ASC")
+        cursor.execute("SELECT id, title, created_at, done_clean_period, git_remote FROM projects ORDER BY id ASC")
         rows = cursor.fetchall()
         return [self._row_to_project(row) for row in rows]
 
@@ -47,16 +47,18 @@ class ProjectRepository:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            INSERT INTO projects (id, title, created_at, git_remote)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO projects (id, title, created_at, done_clean_period, git_remote)
+            VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 title = excluded.title,
+                done_clean_period = excluded.done_clean_period,
                 git_remote = excluded.git_remote
             """,
             (
                 project.id,
                 project.name,
                 project.created_at,
+                project.done_clean_period,
                 project.git_remote,
             ),
         )
@@ -90,5 +92,6 @@ class ProjectRepository:
             id=row["id"],
             name=row["title"],
             git_remote=row["git_remote"],
+            done_clean_period=row["done_clean_period"] if "done_clean_period" in row.keys() else None,
             created_at=row["created_at"],
         )

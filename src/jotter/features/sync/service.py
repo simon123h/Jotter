@@ -1,7 +1,7 @@
-"""Application service for disk <-> SQLite synchronization and Git reconciliation."""
-
+import json
 import logging
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Self
 
@@ -42,7 +42,7 @@ class SyncApplicationService:
         )
 
     def sync_db_only(self) -> int:
-        """Reconciles SQLite database index against disk files."""
+        """Reconciles SQLite database index against disk files and prunes expired done tasks."""
         # 1. Discover all projects on disk
         disk_projects = self.project_repo.discover_disk_projects()
         if not disk_projects and not self.project_repo.get_all():
@@ -53,12 +53,26 @@ class SyncApplicationService:
                 self.project_repo.save(Project.create(name=proj_id.capitalize(), project_id=proj_id))
             self.bucket_repo.get_all(proj_id)
 
-        # 2. Sync all task files for all projects
+        # 2. Check global doneCleanPeriod
+        settings_file = Path(self.data_dir) / "settings.json"
+        global_clean_period = None
+        if settings_file.is_file():
+            try:
+                with open(settings_file, encoding="utf-8") as f:
+                    s_data = json.load(f)
+                    global_clean_period = s_data.get("doneCleanPeriod")
+            except Exception:
+                pass
+
+        now = datetime.now(timezone.utc)
+
+        # 3. Sync all task files for all projects
         total_synced = 0
         projects = self.project_repo.get_all()
 
         for project in projects:
             p_id = project.id
+            clean_period = project.done_clean_period if project.done_clean_period is not None else global_clean_period
             task_files = self.disk_task_repo.get_all_task_files(p_id)
             disk_task_ids: set[str] = set()
 
@@ -67,6 +81,23 @@ class SyncApplicationService:
             for file_path in task_files:
                 try:
                     task = self.disk_task_repo.read_task_file(file_path, default_project_id=p_id)
+
+                    # Check if done task should be pruned based on retention period
+                    if clean_period and clean_period > 0 and task.bucket == "done":
+                        date_str = task.updated_at or task.created_at
+                        if date_str:
+                            try:
+                                dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+                                if dt.tzinfo is None:
+                                    dt = dt.replace(tzinfo=timezone.utc)
+                                diff_days = (now - dt).total_seconds() / 86400.0
+                                if diff_days >= clean_period:
+                                    self.disk_task_repo.delete(p_id, str(task.id))
+                                    self.sqlite_task_repo.delete_task(str(task.id))
+                                    continue
+                            except Exception:
+                                pass
+
                     disk_task_ids.add(str(task.id))
 
                     # Auto-register unknown buckets referenced in markdown files
@@ -81,7 +112,7 @@ class SyncApplicationService:
                 except Exception as e:
                     logger.warning("Failed to sync task file %s: %s", file_path, e)
 
-            # 3. Clean up deleted markdown tasks from SQLite
+            # 4. Clean up deleted markdown tasks from SQLite
             sqlite_tasks = self.sqlite_task_repo.find_tasks(project_id=p_id)
             for st in sqlite_tasks:
                 if str(st.id) not in disk_task_ids:

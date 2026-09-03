@@ -58,6 +58,7 @@ class ProjectApplicationService:
             name=title,
             project_id=slug,
             git_remote=req.git_remote,
+            done_clean_period=req.done_clean_period,
         )
 
         self.project_repo.save(project)
@@ -73,6 +74,7 @@ class ProjectApplicationService:
         project.update_details(
             name=title,
             git_remote=req.git_remote,
+            done_clean_period=req.done_clean_period,
         )
 
         self.project_repo.save(project)
@@ -88,5 +90,6 @@ class ProjectApplicationService:
             id=p.id,
             title=p.name,
             git_remote=p.git_remote,
+            done_clean_period=p.done_clean_period,
             created_at=p.created_at,
         )

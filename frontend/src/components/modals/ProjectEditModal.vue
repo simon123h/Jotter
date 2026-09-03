@@ -46,9 +46,17 @@ watch(
 const handleSave = async () => {
   if (!props.project || !title.value.trim()) return;
 
+  let cleanPeriod: number | null = null;
+  if (doneCleanPeriod.value !== null && doneCleanPeriod.value !== undefined && String(doneCleanPeriod.value).trim() !== '') {
+    const parsed = Number(doneCleanPeriod.value);
+    if (!isNaN(parsed) && parsed > 0) {
+      cleanPeriod = Math.floor(parsed);
+    }
+  }
+
   await updateProject(props.project.id, {
     title: title.value.trim(),
-    done_clean_period: doneCleanPeriod.value,
+    done_clean_period: cleanPeriod,
     git_remote: gitRemote.value.trim() || undefined,
   });
 
@@ -113,7 +121,7 @@ const closeAndSave = async () => {
             type="number"
             min="0"
             max="365"
-            placeholder="0 (Keine)"
+            :placeholder="t('projectEdit.doneCleanPeriodPlaceholder')"
             class="w-32 bg-theme-card border border-theme-border rounded px-3 py-2 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary"
           />
           <span class="text-xs text-theme-text-muted">{{ t('projectEdit.days') }}</span>

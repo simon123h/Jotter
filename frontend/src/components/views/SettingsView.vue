@@ -12,7 +12,7 @@ import type { SystemInfo } from '@/types';
 const { locale, t } = useI18n();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
-const { currentTheme, hideAddTaskButton, gitRemoteUrl, autoSyncInterval } = storeToRefs(settingsStore);
+const { currentTheme, hideAddTaskButton, gitRemoteUrl, autoSyncInterval, doneCleanPeriod } = storeToRefs(settingsStore);
 const tagColors = computed(() => settingsStore.tagColors || {});
 
 const systemInfo = ref<SystemInfo | null>(null);
@@ -248,6 +248,26 @@ const getTagClasses = (tag: string) => {
             <span class="text-xs text-theme-text-muted mt-0.5">{{ t('settingsView.hideAddTaskDesc') }}</span>
           </div>
         </label>
+
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-theme-card/60 border border-theme-border/60 rounded-xl"
+        >
+          <div class="flex flex-col max-w-xl">
+            <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.globalDoneCleanPeriod') }}</span>
+            <span class="text-xs text-theme-text-muted mt-0.5 leading-relaxed">{{ t('settingsView.globalDoneCleanPeriodDesc') }}</span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <input
+              type="number"
+              min="0"
+              max="365"
+              v-model.number="doneCleanPeriod"
+              :placeholder="t('settingsView.globalDoneCleanPeriodPlaceholder')"
+              class="w-32 bg-theme-bg border border-theme-border/60 rounded-xl px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary/30 text-center font-bold"
+            />
+            <span class="text-xs text-theme-text-muted font-bold">{{ t('projectEdit.days') }}</span>
+          </div>
+        </div>
       </div>
     </div>
 

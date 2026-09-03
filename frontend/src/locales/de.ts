@@ -266,6 +266,10 @@ export const de = {
     general: 'Allgemeine Einstellungen',
     hideAddTask: 'Kleinere Schaltfläche für "Aufgabe hinzufügen"',
     hideAddTaskDesc: 'Ersetzt die große Schaltfläche zum Erstellen einer neuen Aufgabe in jeder Spalte durch ein Kleines "+"-Symbol.',
+    globalDoneCleanPeriod: 'Globale Aufbewahrungsfrist für erledigte Aufgaben (Tage)',
+    globalDoneCleanPeriodDesc:
+      'Löscht Aufgaben in der Spalte "Erledigt" automatisch nach dieser Anzahl von Tagen projektübergreifend (sofern nicht in den Projekteinstellungen überschrieben). Leer lassen oder auf 0 setzen, um das automatische Löschen zu deaktivieren.',
+    globalDoneCleanPeriodPlaceholder: '0 (Deaktiviert)',
     subtitle: 'Passe deine persönlichen Einstellungen, das visuelle Farbschema und die Systemsprache an.',
     currentStyle: 'Aktueller Stil:',
     tagColorsTitle: 'Benutzerdefinierte Tag-Farben',

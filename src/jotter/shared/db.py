@@ -128,6 +128,11 @@ def init_schema(conn: sqlite3.Connection) -> None:
     except sqlite3.OperationalError:
         conn.execute("ALTER TABLE tasks ADD COLUMN postponed_until TEXT DEFAULT NULL")
 
+    try:
+        conn.execute("SELECT done_clean_period FROM projects LIMIT 0")
+    except sqlite3.OperationalError:
+        conn.execute("ALTER TABLE projects ADD COLUMN done_clean_period INTEGER DEFAULT NULL")
+
     # Backfill FTS index if table was newly created
     try:
         cur = conn.cursor()

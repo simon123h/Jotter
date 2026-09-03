@@ -12,17 +12,24 @@ def test_projects_crud(test_env):
     assert len(projects) == 1
     assert projects[0]["id"] == "default"
 
-    # 2. Create new project
-    res = client.post("/api/projects", json={"title": "Work Tasks"})
+    # 2. Create new project with done_clean_period
+    res = client.post("/api/projects", json={"title": "Work Tasks", "done_clean_period": 14})
     assert res.status_code == 201
     new_proj = res.json()
     assert new_proj["id"] == "work-tasks"
     assert new_proj["title"] == "Work Tasks"
+    assert new_proj["done_clean_period"] == 14
 
     # 3. Update project
-    res = client.put("/api/projects/work-tasks", json={"title": "Work & Office"})
+    res = client.put("/api/projects/work-tasks", json={"title": "Work & Office", "done_clean_period": 30})
     assert res.status_code == 200
     assert res.json()["title"] == "Work & Office"
+    assert res.json()["done_clean_period"] == 30
+
+    # 3b. Verify persisted in GET /api/projects
+    res = client.get("/api/projects/work-tasks")
+    assert res.status_code == 200
+    assert res.json()["done_clean_period"] == 30
 
     # 4. Delete project
     res = client.delete("/api/projects/work-tasks")

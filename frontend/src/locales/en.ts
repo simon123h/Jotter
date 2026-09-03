@@ -264,6 +264,10 @@ export const en = {
     general: 'General Preferences',
     hideAddTask: 'Smaller "Add task" button',
     hideAddTaskDesc: 'Replaces the large quick-add button at the top of each column with a small "+" symbol.',
+    globalDoneCleanPeriod: 'Global Done Task Retention (Days)',
+    globalDoneCleanPeriodDesc:
+      'Automatically cleans and purges tasks in the "Done" column after this number of days across all projects (unless overridden by project settings). Leave empty or 0 to disable.',
+    globalDoneCleanPeriodPlaceholder: '0 (Disabled)',
     subtitle: 'Configure your personal preferences, theme aesthetics, and system language.',
     currentStyle: 'Current Style:',
     tagColorsTitle: 'Custom Tag Colors',

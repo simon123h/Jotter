@@ -85,6 +85,7 @@ export interface AppSettings {
   timeblockStartHour?: number;
   timeblockEndHour?: number;
   isTimeblockSidebarOpen?: boolean;
+  doneCleanPeriod?: number | null;
 }
 
 export interface SystemInfo {
