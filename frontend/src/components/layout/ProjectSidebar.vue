@@ -397,7 +397,7 @@ const openTimeMachineModal = () => {
               ? 'text-emerald-500 hover:bg-emerald-500/5'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30'
           "
-          title="Time Machine / History"
+          :title="t('sidebar.timeMachineTooltip')"
         >
           <History class="w-3.5 h-3.5" />
         </button>
@@ -410,7 +410,7 @@ const openTimeMachineModal = () => {
         class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded border border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main transition-all cursor-pointer"
       >
         <FileSpreadsheet class="w-3.5 h-3.5" />
-        <span>Import Excel/CSV</span>
+        <span>{{ t('sidebar.importSpreadsheet') }}</span>
       </button>
 
       <!-- Documentation Link -->

@@ -122,9 +122,9 @@ const welcomeParts = computed(() => {
                     <Pin
                       v-if="pinnedProjectIds.includes(project.id)"
                       class="w-3 h-3 text-theme-accent fill-theme-accent shrink-0"
-                      title="Pinned"
+                      :title="t('home.pinnedBadge')"
                     />
-                    <GitBranch v-if="project.git_remote" class="w-3 h-3 text-theme-accent shrink-0" title="Git Connected" />
+                    <GitBranch v-if="project.git_remote" class="w-3 h-3 text-theme-accent shrink-0" :title="t('home.gitConnected')" />
                   </div>
                 </div>
                 <p v-if="project.git_remote" class="text-[10px] text-theme-text-muted truncate mt-1">

@@ -212,7 +212,7 @@ const getTagClasses = (tag: string) => {
           "
         >
           <Globe class="w-4 h-4" />
-          <span>English</span>
+          <span>{{ t('language.en') }}</span>
         </button>
         <button
           @click="locale = 'de'"
@@ -224,7 +224,7 @@ const getTagClasses = (tag: string) => {
           "
         >
           <Globe class="w-4 h-4" />
-          <span>Deutsch</span>
+          <span>{{ t('language.de') }}</span>
         </button>
       </div>
     </div>
@@ -366,7 +366,9 @@ const getTagClasses = (tag: string) => {
         <!-- Color Adjuster row/panel -->
         <div v-if="selectedTag" class="flex flex-col gap-3 flex-grow animate-in fade-in slide-in-from-right-1 duration-200">
           <div class="flex items-center gap-3">
-            <span class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider select-none">Current Style:</span>
+            <span class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider select-none">{{
+              t('settingsView.currentStyle')
+            }}</span>
             <!-- Live tag preview badge -->
             <span
               class="rounded border uppercase tracking-wider leading-none text-[10px] px-2.5 py-1.5 font-extrabold shadow-sm transition-all duration-300"

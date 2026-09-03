@@ -326,7 +326,7 @@ useBoardNavigation({
         <input
           v-model="newColumnSubtitle"
           type="text"
-          placeholder="Column description/subtitle (optional)"
+          :placeholder="t('columnEdit.subtitlePlaceholder')"
           class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary font-sans italic"
           @keyup.enter="onAddColumn"
           @keyup.esc="handleCancelAddColumn"

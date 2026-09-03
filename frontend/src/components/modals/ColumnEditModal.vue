@@ -133,7 +133,7 @@ const closeAndSave = () => {
           type="text"
           required
           class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-          placeholder="e.g. In Progress"
+          :placeholder="t('columnEdit.titlePlaceholder')"
         />
       </div>
 
@@ -146,7 +146,7 @@ const closeAndSave = () => {
           v-model="subtitle"
           type="text"
           class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring font-sans italic"
-          placeholder="Add description..."
+          :placeholder="t('columnEdit.subtitlePlaceholder')"
         />
       </div>
 

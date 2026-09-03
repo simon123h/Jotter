@@ -183,7 +183,7 @@ const handleCustomPostponedDate = () => {
                 @click="emit('edit-tag', tag, true)"
                 type="button"
                 class="flex items-center justify-center p-0.5 -mr-1 rounded-full hover:bg-theme-primary/20 hover:text-theme-accent transition-all cursor-pointer"
-                aria-label="Remove tag"
+                :aria-label="t('buttons.removeTag')"
               >
                 <X class="w-3.5 h-3.5" />
               </button>

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import { useToastStore, type ToastType } from '@/stores/toast';
+import { useI18n } from '@/composables/useI18n';
 import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from '@lucide/vue';
 
+const { t } = useI18n();
 const toastStore = useToastStore();
 const { toasts } = storeToRefs(toastStore);
 
@@ -64,7 +66,7 @@ const getToastClasses = (type: ToastType) => {
           type="button"
           @click="toastStore.removeToast(toast.id)"
           class="shrink-0 p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
-          aria-label="Dismiss notification"
+          :aria-label="t('toast.dismiss')"
         >
           <X class="w-3.5 h-3.5" />
         </button>

@@ -500,25 +500,27 @@ onBeforeRouteLeave(async () => {
               <!-- Due Date, Planned Date & Priority Info -->
               <div v-if="task.due_date || task.planned_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
                 <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Due:</span>
+                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.dueLabel') }}</span>
                   <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
                     {{ new Date(task.due_date).toLocaleDateString() }}
                   </span>
                 </div>
                 <div v-if="task.planned_date" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Planned:</span>
+                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.plannedLabel') }}</span>
                   <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
                     {{ t('plannedDateOptions.' + task.planned_date) }}
                   </span>
                 </div>
                 <div v-if="task.postponed_until" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Postponed Until:</span>
+                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{
+                    t('taskDetail.postponedUntilLabel')
+                  }}</span>
                   <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
                     {{ new Date(task.postponed_until).toLocaleDateString() }}
                   </span>
                 </div>
                 <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Priority:</span>
+                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.priorityLabel') }}</span>
                   <span
                     class="px-2 py-0.5 rounded border text-xs font-extrabold uppercase tracking-wider"
                     :class="getPriorityClasses(task.priority)"
@@ -539,7 +541,7 @@ onBeforeRouteLeave(async () => {
                     @click="handleSplitAllSubtasks"
                     class="p-1 text-theme-text-muted hover:text-theme-accent hover:bg-theme-border/20 rounded transition-colors cursor-pointer opacity-70 hover:opacity-100"
                     :title="t('form.splitSubtasksTooltip')"
-                    aria-label="Split subtasks"
+                    :aria-label="t('form.splitSubtasksTooltip')"
                   >
                     <Split class="w-3.5 h-3.5" />
                   </button>

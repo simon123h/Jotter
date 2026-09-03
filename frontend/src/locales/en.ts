@@ -99,6 +99,16 @@ export const en = {
     archive: 'Archive',
     unarchive: 'Unarchive',
     convertToTask: 'Convert to task card',
+    removeTag: 'Remove tag',
+  },
+  taskDetail: {
+    dueLabel: 'Due:',
+    plannedLabel: 'Planned:',
+    postponedUntilLabel: 'Postponed Until:',
+    priorityLabel: 'Priority:',
+  },
+  toast: {
+    dismiss: 'Dismiss notification',
   },
   errors: {
     titleRequired: 'Title is required',
@@ -208,7 +218,9 @@ export const en = {
   columnEdit: {
     title: 'Edit Column Details',
     titleLabel: 'Column Title *',
+    titlePlaceholder: 'e.g. In Progress',
     subtitleLabel: 'Description / Subtitle',
+    subtitlePlaceholder: 'Add description...',
     colorLabel: 'Highlight Color',
     colorNone: 'None',
     layoutLabel: 'Layout Style',
@@ -225,6 +237,11 @@ export const en = {
     titleLabel: 'Project Title *',
     prunePeriodLabel: 'Done Tasks Deletion Period (Days)',
     prunePeriodPlaceholder: 'e.g. 30 (empty for never delete)',
+    doneCleanPeriodLabel: 'Done Tasks Deletion Period (Days)',
+    doneCleanPeriodPlaceholder: '0 (None)',
+    doneCleanPeriodHelp:
+      'Automatically delete tasks in the "Done" column after this many days. Leave empty or set to 0 to disable auto-deletion.',
+    days: 'Days',
     prunePeriodHelp:
       'Automatically delete tasks in the "Done" column after this many days. Leave empty or set to 0 to disable auto-deletion.',
     gitRemoteLabel: 'Git Remote URL (Optional)',
@@ -233,6 +250,9 @@ export const en = {
       'Connecting a Git remote enables automatic synchronization of your markdown files. Ensure your SSH keys or credentials are configured locally.',
     saveButton: 'Save',
     deleteButton: 'Delete project',
+    deleteDialogTitle: 'Delete Project "{title}"',
+    deleteDialogMessage:
+      'Are you sure you want to delete this project? All associated columns and markdown task files will be permanently deleted.',
   },
   language: {
     label: 'Language',
@@ -245,6 +265,7 @@ export const en = {
     hideAddTask: 'Smaller "Add task" button',
     hideAddTaskDesc: 'Replaces the large quick-add button at the top of each column with a small "+" symbol.',
     subtitle: 'Configure your personal preferences, theme aesthetics, and system language.',
+    currentStyle: 'Current Style:',
     tagColorsTitle: 'Custom Tag Colors',
     tagColorsDesc: 'Manage and customize tag colors globally across your entire workspace.',
     noTagsFound: 'No tags found in any tasks. Create some tasks with tags first!',
@@ -359,6 +380,8 @@ export const en = {
   sidebar: {
     collapse: 'Collapse Sidebar',
     expand: 'Expand Sidebar',
+    importSpreadsheet: 'Import Excel/CSV',
+    timeMachineTooltip: 'Time Machine / History',
   },
   taskCard: {
     markDone: 'Mark as done',
@@ -491,11 +514,15 @@ export const en = {
     deleted: 'Deleted',
     restartSession: 'Restart Session',
     clickToEdit: 'Click to Edit',
+    clickOrEnterToEdit: 'Click or press [Enter] to edit',
     addTags: 'Add Tags',
+    removeTag: 'Remove tag',
+    tagsPlaceholder: 'Comma separated tags...',
     description: 'Description',
     descriptionPlaceholder: 'Notes, Markdown content...',
     pressToSave: 'Press Ctrl+Enter to save',
     editBody: 'Edit Body',
+    clickToEditMarkdown: 'Click to edit markdown',
     noDescription: 'No description provided. Click to write steps, checklists or notes...',
     moveColumn: 'Move Column',
     shortcuts: {

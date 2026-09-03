@@ -173,7 +173,7 @@ defineExpose({
           class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400"
         >
           <Calendar class="w-3 h-3 text-red-400" />
-          Due: {{ task.due_date }}
+          {{ t('taskDetail.dueLabel') }} {{ task.due_date }}
         </span>
       </div>
     </div>
@@ -200,7 +200,7 @@ defineExpose({
           v-else
           @click="startEditTitle"
           class="text-xl font-extrabold text-theme-text-main tracking-tight cursor-pointer hover:underline decoration-dashed decoration-theme-primary/60 underline-offset-4 flex items-center justify-between group transition-all"
-          title="Click or press [Enter] to edit"
+          :title="t('triage.clickOrEnterToEdit')"
         >
           <span>{{ task.title }}</span>
           <span
@@ -223,7 +223,7 @@ defineExpose({
           <button
             @click.stop="removeTag(tag)"
             class="p-0.5 hover:bg-theme-base rounded text-theme-text-muted hover:text-rose-400 cursor-pointer"
-            title="Remove tag"
+            :title="t('triage.removeTag')"
           >
             <X class="w-2.5 h-2.5" />
           </button>
@@ -237,7 +237,7 @@ defineExpose({
             @blur="saveTag"
             @enter="saveTag"
             @keydown.esc="showTagInput = false"
-            placeholder="Comma separated tags..."
+            :placeholder="t('triage.tagsPlaceholder')"
             input-class="bg-theme-base border border-theme-border rounded px-2 py-0.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary w-full"
           />
         </div>
@@ -290,7 +290,7 @@ defineExpose({
           v-else
           @click="startEditDescription"
           class="flex-grow rounded-xl bg-theme-column/25 border border-theme-border/30 p-4 overflow-y-auto cursor-pointer hover:border-theme-border/70 transition-colors scroller-thin min-h-0 group relative"
-          title="Click to edit markdown"
+          :title="t('triage.clickToEditMarkdown')"
         >
           <div
             v-if="task.body"
@@ -325,7 +325,7 @@ defineExpose({
         <button
           @click="emit('move-column')"
           class="flex items-center gap-1 px-2.5 py-1.5 bg-theme-column hover:bg-theme-column/80 border border-theme-border/60 text-theme-text-muted hover:text-theme-text-main rounded-lg text-xs font-bold cursor-pointer transition-colors"
-          title="Move to column"
+          :title="t('triage.moveToColumn')"
         >
           <FolderInput class="w-3.5 h-3.5 shrink-0" />
           <span class="hidden md:inline">{{ t('triage.moveColumn') }}</span>
@@ -338,7 +338,7 @@ defineExpose({
         <button
           @click="emit('delete-task')"
           class="p-2 bg-theme-column hover:bg-rose-500/15 border border-theme-border/60 hover:border-rose-500/35 text-theme-text-muted hover:text-rose-400 rounded-lg cursor-pointer transition-all"
-          title="Delete task"
+          :title="t('buttons.deleteTask')"
         >
           <Trash2 class="w-4 h-4 shrink-0" />
         </button>

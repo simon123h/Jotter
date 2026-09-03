@@ -100,6 +100,16 @@ export const de = {
     archive: 'Archivieren',
     unarchive: 'Wiederherstellen',
     convertToTask: 'In Aufgabenkarte umwandeln',
+    removeTag: 'Tag entfernen',
+  },
+  taskDetail: {
+    dueLabel: 'Fällig:',
+    plannedLabel: 'Geplant:',
+    postponedUntilLabel: 'Verschoben bis:',
+    priorityLabel: 'Priorität:',
+  },
+  toast: {
+    dismiss: 'Benachrichtigung schließen',
   },
   errors: {
     titleRequired: 'Titel ist erforderlich',
@@ -210,7 +220,9 @@ export const de = {
   columnEdit: {
     title: 'Spaltendetails bearbeiten',
     titleLabel: 'Spaltentitel *',
+    titlePlaceholder: 'z.B. In Bearbeitung',
     subtitleLabel: 'Beschreibung / Untertitel',
+    subtitlePlaceholder: 'Beschreibung hinzufügen...',
     colorLabel: 'Hervorhebungsfarbe',
     colorNone: 'Keine',
     layoutLabel: 'Layout-Stil',
@@ -227,6 +239,11 @@ export const de = {
     titleLabel: 'Projekttitel *',
     prunePeriodLabel: 'Aufbewahrungsfrist für erledigte Aufgaben (Tage)',
     prunePeriodPlaceholder: 'z. B. 30 (leer lassen für nie löschen)',
+    doneCleanPeriodLabel: 'Aufbewahrungsfrist für erledigte Aufgaben (Tage)',
+    doneCleanPeriodPlaceholder: '0 (Keine)',
+    doneCleanPeriodHelp:
+      'Aufgaben in der Spalte "Erledigt" werden nach dieser Anzahl von Tagen automatisch gelöscht. Leer lassen oder auf 0 setzen, um das automatische Löschen zu deaktivieren.',
+    days: 'Tage',
     prunePeriodHelp:
       'Aufgaben in der Spalte "Erledigt" werden nach dieser Anzahl von Tagen automatisch gelöscht. Leer lassen oder auf 0 setzen, um das automatische Löschen zu deaktivieren.',
     gitRemoteLabel: 'Git Remote URL (Optional)',
@@ -235,6 +252,9 @@ export const de = {
       'Das Verknüpfen eines Git-Remotes ermöglicht die automatische Synchronisierung Ihrer Markdown-Dateien. Stelle sicher, dass deine SSH-Keys oder Anmeldedaten lokal konfiguriert sind.',
     saveButton: 'Speichern',
     deleteButton: 'Projekt Löschen',
+    deleteDialogTitle: 'Projekt "{title}" löschen',
+    deleteDialogMessage:
+      'Möchten Sie dieses Projekt wirklich löschen? Alle zugehörigen Spalten und Markdown-Aufgabendateien werden dauerhaft gelöscht.',
   },
   language: {
     label: 'Sprache',
@@ -247,6 +267,7 @@ export const de = {
     hideAddTask: 'Kleinere Schaltfläche für "Aufgabe hinzufügen"',
     hideAddTaskDesc: 'Ersetzt die große Schaltfläche zum Erstellen einer neuen Aufgabe in jeder Spalte durch ein Kleines "+"-Symbol.',
     subtitle: 'Passe deine persönlichen Einstellungen, das visuelle Farbschema und die Systemsprache an.',
+    currentStyle: 'Aktueller Stil:',
     tagColorsTitle: 'Benutzerdefinierte Tag-Farben',
     tagColorsDesc: 'Verwalte und personalisiere Tag-Farben global für deinen gesamten Arbeitsbereich.',
     noTagsFound: 'Keine Tags in Aufgaben gefunden. Erstelle zuerst Aufgaben mit Tags!',
@@ -361,6 +382,8 @@ export const de = {
   sidebar: {
     collapse: 'Seitenleiste einklappen',
     expand: 'Seitenleiste ausklappen',
+    importSpreadsheet: 'Excel/CSV importieren',
+    timeMachineTooltip: 'Time Machine / Verlauf',
   },
   taskCard: {
     markDone: 'Als erledigt markieren',
@@ -493,11 +516,15 @@ export const de = {
     deleted: 'Gelöscht',
     restartSession: 'Sitzung neu starten',
     clickToEdit: 'Klicken zum Bearbeiten',
+    clickOrEnterToEdit: 'Klicken oder [Enter] drücken zum Bearbeiten',
     addTags: 'Tags hinzufügen',
+    removeTag: 'Tag entfernen',
+    tagsPlaceholder: 'Kommagetrennte Tags...',
     description: 'Beschreibung',
     descriptionPlaceholder: 'Notizen, Markdown-Inhalt...',
     pressToSave: 'Drücke Strg+Enter zum Speichern',
     editBody: 'Beschreibung bearbeiten',
+    clickToEditMarkdown: 'Klicken zum Bearbeiten von Markdown',
     noDescription: 'Keine Beschreibung angegeben. Klicken, um Notizen, To-Dos oder Checklisten zu erstellen...',
     moveColumn: 'Spalte verschieben',
     shortcuts: {
