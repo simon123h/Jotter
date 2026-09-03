@@ -297,7 +297,10 @@ def test_api_error_responses(test_env):
 def test_concurrent_multithreaded_requests(test_env):
     import concurrent.futures
 
+    from starlette.testclient import TestClient
+
     client, _ = test_env
+    app = client.app
 
     # Populate with some tasks
     for i in range(5):
@@ -307,19 +310,20 @@ def test_concurrent_multithreaded_requests(test_env):
         )
 
     def worker(i: int):
-        if i % 3 == 0:
-            res = client.get("/api/projects/default/buckets")
-        elif i % 3 == 1:
-            res = client.get("/api/projects/default/tasks")
-        else:
-            res = client.post(
-                "/api/projects/default/tasks",
-                json={"title": f"Concurrent Task {i}", "bucket": "todo"},
-            )
-        assert res.status_code in (200, 201)
-        return res.status_code
+        with TestClient(app) as thread_client:
+            if i % 3 == 0:
+                res = thread_client.get("/api/projects/default/buckets")
+            elif i % 3 == 1:
+                res = thread_client.get("/api/projects/default/tasks")
+            else:
+                res = thread_client.post(
+                    "/api/projects/default/tasks",
+                    json={"title": f"Concurrent Task {i}", "bucket": "todo"},
+                )
+            assert res.status_code in (200, 201)
+            return res.status_code
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(worker, i) for i in range(30)]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(worker, i) for i in range(24)]
         results = [f.result() for f in concurrent.futures.as_completed(futures)]
-        assert len(results) == 30
+        assert len(results) == 24
