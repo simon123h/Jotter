@@ -99,7 +99,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
     </div>
 
     <!-- Search & Filter Bar -->
-    <div v-if="activeProjectId" class="flex-grow mx-3 relative flex items-center min-w-[120px] sm:min-w-[200px] max-w-lg">
+    <div v-if="activeProjectId" class="flex-1 mx-3 relative flex items-center min-w-[120px]">
       <Search class="w-3.5 h-3.5 absolute left-2.5 text-theme-text-muted/60 pointer-events-none" />
       <input
         ref="searchInput"
