@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, watch, watchEffect } from 'vue';
+import { ref, onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
@@ -17,6 +17,7 @@ import { useSelectionStore } from '@/stores/selection';
 import { useToast } from '@/composables/useToast';
 import { consolidateTasksIntoChecklist } from '@/utils/markdown';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
+import TimeblockSidebar from '@/components/layout/TimeblockSidebar.vue';
 
 const { t } = useI18n();
 const { showDialog } = useDialog();
@@ -26,6 +27,12 @@ const route = useRoute();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const modalStore = useModalStore();
+
+const isMounted = ref(false);
+const isTimeblockOpen = computed<boolean>(() => Boolean(settingsStore.isTimeblockSidebarOpen));
+const toggleTimeblockSidebar = () => {
+  settingsStore.toggleTimeblockSidebar();
+};
 
 const { hideDoneColumn, hideArchiveColumn, hidePostponedColumn } = storeToRefs(settingsStore);
 const { projects, buckets, tasks, loading, projectsLoaded } = storeToRefs(projectStore);
@@ -120,6 +127,9 @@ const fetchAllData = async () => {
 };
 
 onMounted(async () => {
+  requestAnimationFrame(() => {
+    isMounted.value = true;
+  });
   await fetchAllData();
 });
 
@@ -404,65 +414,86 @@ const handleBulkConsolidate = async () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden">
-    <div @mousedown="handleDragSelectMouseDown" class="flex-grow overflow-hidden relative">
-      <div v-if="loading && !tasks.length" class="absolute inset-0 flex flex-col items-center justify-center gap-2">
-        <div class="w-10 h-10 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
-        <span class="text-theme-text-muted text-xs">{{ t('loadingBoard') }}</span>
-      </div>
-
-      <div
-        v-else-if="isNoProjects"
-        class="h-full flex flex-col items-center justify-center text-center bg-theme-column/10 border border-dashed border-theme-border rounded p-6"
-      >
-        <div class="p-3 bg-theme-card/50 rounded border border-theme-border mb-3 text-theme-accent">
-          <Folder class="w-6 h-6" />
+  <div class="h-full flex overflow-hidden w-full relative">
+    <div class="flex-grow flex flex-col p-3 overflow-hidden min-w-0">
+      <div @mousedown="handleDragSelectMouseDown" class="flex-grow overflow-hidden relative">
+        <div v-if="loading && !tasks.length" class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+          <div class="w-10 h-10 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-theme-text-muted text-xs">{{ t('loadingBoard') }}</span>
         </div>
-        <h3 class="font-bold text-theme-text-main text-sm">{{ t('projects.noProjectsTitle') || 'No Projects Yet' }}</h3>
-        <p class="text-theme-text-muted text-xs max-w-sm mt-0.5">
-          {{ t('projects.noProjectsDesc') || 'Create your first project to start organizing your tasks.' }}
-        </p>
+
+        <div
+          v-else-if="isNoProjects"
+          class="h-full flex flex-col items-center justify-center text-center bg-theme-column/10 border border-dashed border-theme-border rounded p-6"
+        >
+          <div class="p-3 bg-theme-card/50 rounded border border-theme-border mb-3 text-theme-accent">
+            <Folder class="w-6 h-6" />
+          </div>
+          <h3 class="font-bold text-theme-text-main text-sm">{{ t('projects.noProjectsTitle') || 'No Projects Yet' }}</h3>
+          <p class="text-theme-text-muted text-xs max-w-sm mt-0.5">
+            {{ t('projects.noProjectsDesc') || 'Create your first project to start organizing your tasks.' }}
+          </p>
+        </div>
+
+        <div v-else class="h-full">
+          <router-view
+            :tasks="filteredTasks"
+            :buckets="displayedBuckets"
+            :is-selected="isSelected"
+            @toggle-select="toggleSelection($event.id)"
+            @add-task-click="openCreateModal"
+            @refresh="fetchAllData"
+          />
+        </div>
       </div>
 
-      <div v-else class="h-full">
-        <router-view
-          :tasks="filteredTasks"
-          :buckets="displayedBuckets"
-          :is-selected="isSelected"
-          @toggle-select="toggleSelection($event.id)"
-          @add-task-click="openCreateModal"
-          @refresh="fetchAllData"
-        />
-      </div>
+      <!-- Bulk Action Bar -->
+      <BulkActionBar
+        :selected-count="selectionCount"
+        :buckets="buckets"
+        :projects="projects"
+        :active-project-id="projectId"
+        :common-tags="commonTags"
+        @clear="clearSelection"
+        @select-all="() => selectAll(filteredTasks)"
+        @delete="handleBulkDelete"
+        @archive="handleBulkArchive"
+        @mark-done="handleBulkMarkDone"
+        @consolidate="handleBulkConsolidate"
+        @move-bucket="handleBulkMoveBucket"
+        @edit-tag="handleBulkEditTag"
+        @set-priority="handleBulkSetPriority"
+        @set-planned="handleBulkSetPlanned"
+        @set-due-date="handleBulkSetDueDate"
+        @move-project="handleBulkMoveProject"
+        @set-color="handleBulkSetColor"
+        @set-postponed-date="handleBulkSetPostponedDate"
+      />
+
+      <!-- MODAL ROUTER VIEW (Task Detail nested in layout) -->
+      <router-view name="modal" @refresh="fetchAllData" />
+
+      <!-- Drag Selection Rectangle -->
+      <div v-if="isDragSelecting" :style="dragSelectStyle"></div>
     </div>
 
-    <!-- Bulk Action Bar -->
-    <BulkActionBar
-      :selected-count="selectionCount"
-      :buckets="buckets"
-      :projects="projects"
-      :active-project-id="projectId"
-      :common-tags="commonTags"
-      @clear="clearSelection"
-      @select-all="() => selectAll(filteredTasks)"
-      @delete="handleBulkDelete"
-      @archive="handleBulkArchive"
-      @mark-done="handleBulkMarkDone"
-      @consolidate="handleBulkConsolidate"
-      @move-bucket="handleBulkMoveBucket"
-      @edit-tag="handleBulkEditTag"
-      @set-priority="handleBulkSetPriority"
-      @set-planned="handleBulkSetPlanned"
-      @set-due-date="handleBulkSetDueDate"
-      @move-project="handleBulkMoveProject"
-      @set-color="handleBulkSetColor"
-      @set-postponed-date="handleBulkSetPostponedDate"
-    />
-
-    <!-- MODAL ROUTER VIEW (Task Detail nested in layout) -->
-    <router-view name="modal" @refresh="fetchAllData" />
-
-    <!-- Drag Selection Rectangle -->
-    <div v-if="isDragSelecting" :style="dragSelectStyle"></div>
+    <!-- Right Timeblock Sidebar Scoped to Project -->
+    <transition :name="isMounted ? 'timeblock-sidebar' : ''">
+      <TimeblockSidebar v-if="isTimeblockOpen" @close="toggleTimeblockSidebar" />
+    </transition>
   </div>
 </template>
+
+<style scoped>
+.timeblock-sidebar-enter-active,
+.timeblock-sidebar-leave-active {
+  transition:
+    margin-right 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.15s ease;
+}
+.timeblock-sidebar-enter-from,
+.timeblock-sidebar-leave-to {
+  margin-right: -24rem;
+  opacity: 0;
+}
+</style>

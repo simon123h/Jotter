@@ -6,12 +6,22 @@ import type { AppSettings } from '@/types';
 
 export type SortBy = 'alpha' | 'manual';
 
+const TIMEBLOCK_SIDEBAR_STORAGE_KEY = 'jotter-timeblock-sidebar-open';
+const SIDEBAR_STORAGE_KEY = 'jotter-sidebar-open';
+
+const getStoredBool = (key: string, defaultVal: boolean): boolean => {
+  if (typeof localStorage === 'undefined') return defaultVal;
+  const val = localStorage.getItem(key);
+  if (val === null) return defaultVal;
+  return val === 'true';
+};
+
 export const useSettingsStore = defineStore('settings', () => {
   const state = reactive<AppSettings>({
     hideDoneColumn: true,
     hideArchiveColumn: true,
     hidePostponedColumn: true,
-    isSidebarOpen: true,
+    isSidebarOpen: getStoredBool(SIDEBAR_STORAGE_KEY, true),
     currentTheme: 'nordic-light',
     thresholdDays: 7,
     pinnedProjectIds: [],
@@ -24,7 +34,7 @@ export const useSettingsStore = defineStore('settings', () => {
     autoSyncInterval: 0,
     timeblockStartHour: 6,
     timeblockEndHour: 18,
-    isTimeblockSidebarOpen: false,
+    isTimeblockSidebarOpen: getStoredBool(TIMEBLOCK_SIDEBAR_STORAGE_KEY, false),
   });
 
   let skipSave = false;
@@ -52,6 +62,10 @@ export const useSettingsStore = defineStore('settings', () => {
 
       const sidebarOpen = state.isTimeblockSidebarOpen ?? false;
       state.isTimeblockSidebarOpen = sidebarOpen;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(sidebarOpen));
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
+      }
 
       await nextTick();
       skipSave = false;
@@ -114,6 +128,10 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(
     state,
     () => {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(state.isTimeblockSidebarOpen));
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
+      }
       debouncedSave();
     },
     { deep: true }
@@ -126,10 +144,16 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const toggleSidebar = () => {
     state.isSidebarOpen = !state.isSidebarOpen;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
+    }
   };
 
   const toggleTimeblockSidebar = (forceState?: boolean) => {
     state.isTimeblockSidebarOpen = forceState !== undefined ? forceState : !state.isTimeblockSidebarOpen;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(state.isTimeblockSidebarOpen));
+    }
   };
 
   const setTheme = (theme: string) => {

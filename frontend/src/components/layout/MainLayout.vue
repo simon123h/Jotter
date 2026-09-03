@@ -8,7 +8,6 @@ import { useModalStore } from '@/stores/modal';
 import { useTimeblockStore } from '@/stores/timeblock';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
-import TimeblockSidebar from '@/components/layout/TimeblockSidebar.vue';
 import PomodoroBar from '@/components/ui/PomodoroBar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useProjects } from '@/composables/useProjects';
@@ -28,8 +27,7 @@ const projectStore = useProjectStore();
 const modalStore = useModalStore();
 const timeblockStore = useTimeblockStore();
 
-const { isSidebarOpen, currentTheme } = storeToRefs(settingsStore);
-const isTimeblockOpen = computed<boolean>(() => Boolean(settingsStore.isTimeblockSidebarOpen));
+const { isSidebarOpen, currentTheme, isTimeblockSidebarOpen } = storeToRefs(settingsStore);
 const autoSyncInterval = computed(() => settingsStore.autoSyncInterval ?? 0);
 const { projects, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
 
@@ -58,13 +56,20 @@ useKeyboardShortcuts([
   },
 ]);
 
+const selectProject = (projectId: string) => {
+  projectStore.error = null;
+  router.push({
+    name: 'project',
+    params: { projectId },
+    query: route.query,
+  });
+};
+
 // Watch projects list and redirect if route project does not exist
 watch(
   [projects, activeProjectId],
   ([newProjects, newRouteId]) => {
     if (newProjects.length > 0) {
-      // If route has a projectId, and it is not in the projects list,
-      // redirect the user to the first available project's board view.
       if (newRouteId && newRouteId !== 'settings' && newRouteId !== 'all') {
         const routeProjectExists = newProjects.some((p) => p.id === newRouteId);
         if (!routeProjectExists) {
@@ -76,15 +81,6 @@ watch(
   },
   { immediate: true }
 );
-
-const selectProject = (projectId: string) => {
-  projectStore.error = null;
-  router.push({
-    name: 'project',
-    params: { projectId },
-    query: route.query,
-  });
-};
 
 const toggleSidebar = () => {
   settingsStore.toggleSidebar();
@@ -135,6 +131,8 @@ const handleCreateProject = async (title: string) => {
   }
 };
 
+let autoSyncCheckInterval: any = null;
+
 const triggerSync = async (isManual = false) => {
   try {
     await projectStore.triggerSync();
@@ -145,8 +143,6 @@ const triggerSync = async (isManual = false) => {
     }
   }
 };
-
-let autoSyncCheckInterval: any = null;
 
 const checkAutoSync = () => {
   const interval = autoSyncInterval?.value;
@@ -174,7 +170,12 @@ const handleMoveTasksToProject = ({ taskIds, projectId: targetProjectId }: { tas
   modalStore.openMoveTasksConfirm(taskIds, targetProjectId);
 };
 
+const isMounted = ref(false);
+
 onMounted(async () => {
+  requestAnimationFrame(() => {
+    isMounted.value = true;
+  });
   await Promise.all([projectStore.fetchProjects(), timeblockStore.fetchTimeblocks()]);
   setTheme(currentTheme.value);
 
@@ -196,7 +197,7 @@ onBeforeUnmount(() => {
       ref="navBarRef"
       v-model="searchQuery"
       :is-sidebar-open="isSidebarOpen"
-      :is-timeblock-sidebar-open="isTimeblockOpen"
+      :is-timeblock-sidebar-open="Boolean(isTimeblockSidebarOpen)"
       :projects="projects"
       :active-project-id="activeProjectId"
       :has-active-filters="hasActiveFilters"
@@ -209,7 +210,7 @@ onBeforeUnmount(() => {
     />
 
     <div class="flex-grow flex overflow-hidden w-full relative">
-      <transition name="sidebar">
+      <transition :name="isMounted ? 'sidebar' : ''">
         <ProjectSidebar
           v-show="isSidebarOpen"
           :projects="projects"
@@ -224,17 +225,12 @@ onBeforeUnmount(() => {
         />
       </transition>
 
-      <div class="flex-grow flex flex-col p-3 overflow-hidden min-w-0">
+      <div class="flex-grow flex flex-col overflow-hidden min-w-0">
         <div class="flex-grow overflow-hidden relative">
           <!-- Main layout content rendering either global views or ProjectLayout -->
           <router-view />
         </div>
       </div>
-
-      <!-- Right Timeblock Sidebar -->
-      <transition name="timeblock-sidebar">
-        <TimeblockSidebar v-if="isTimeblockOpen" @close="toggleTimeblockSidebar" />
-      </transition>
     </div>
 
     <!-- POMODORO FLOATING DOCK -->
@@ -255,18 +251,6 @@ onBeforeUnmount(() => {
 .sidebar-enter-from,
 .sidebar-leave-to {
   margin-left: -16rem;
-  opacity: 0;
-}
-
-.timeblock-sidebar-enter-active,
-.timeblock-sidebar-leave-active {
-  transition:
-    margin-right 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.15s ease;
-}
-.timeblock-sidebar-enter-from,
-.timeblock-sidebar-leave-to {
-  margin-right: -24rem;
   opacity: 0;
 }
 </style>
