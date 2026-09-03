@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { Trash2 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
+import { useSettingsStore } from '@/stores/settings';
 import { useDialog } from '@/composables/useDialog';
 import { updateProject, deleteProject } from '@/api';
 import BaseModal from '@/components/ui/BaseModal.vue';
@@ -10,6 +11,7 @@ import type { Project } from '@/types';
 
 const { t } = useI18n();
 const projectStore = useProjectStore();
+const settingsStore = useSettingsStore();
 const { showDialog } = useDialog();
 
 const props = defineProps<{
@@ -25,6 +27,13 @@ const title = ref('');
 const doneCleanPeriod = ref<number | null>(null);
 const gitRemote = ref('');
 const titleInput = ref<HTMLInputElement | null>(null);
+
+const doneCleanPeriodPlaceholder = computed(() => {
+  if (settingsStore.doneCleanPeriod && settingsStore.doneCleanPeriod > 0) {
+    return t('projectEdit.globalInherited', { days: settingsStore.doneCleanPeriod });
+  }
+  return t('projectEdit.doneCleanPeriodPlaceholder');
+});
 
 // Watch for modal open and project changes to initialize values
 watch(
@@ -49,7 +58,7 @@ const handleSave = async () => {
   let cleanPeriod: number | null = null;
   if (doneCleanPeriod.value !== null && doneCleanPeriod.value !== undefined && String(doneCleanPeriod.value).trim() !== '') {
     const parsed = Number(doneCleanPeriod.value);
-    if (!isNaN(parsed) && parsed > 0) {
+    if (!isNaN(parsed) && parsed >= 0) {
       cleanPeriod = Math.floor(parsed);
     }
   }
@@ -121,7 +130,7 @@ const closeAndSave = async () => {
             type="number"
             min="0"
             max="365"
-            :placeholder="t('projectEdit.doneCleanPeriodPlaceholder')"
+            :placeholder="doneCleanPeriodPlaceholder"
             class="w-32 bg-theme-card border border-theme-border rounded px-3 py-2 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary"
           />
           <span class="text-xs text-theme-text-muted">{{ t('projectEdit.days') }}</span>

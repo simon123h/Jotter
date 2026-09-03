@@ -239,8 +239,9 @@ export const en = {
     prunePeriodPlaceholder: 'e.g. 30 (empty for never delete)',
     doneCleanPeriodLabel: 'Done Tasks Deletion Period (Days)',
     doneCleanPeriodPlaceholder: '0 (None)',
+    globalInherited: '{days} (Global)',
     doneCleanPeriodHelp:
-      'Automatically delete tasks in the "Done" column after this many days. Leave empty or set to 0 to disable auto-deletion.',
+      'Automatically delete tasks in the "Done" column after this many days for this project. Overrides the global setting. Leave empty to use the global setting (or 0 to disable auto-deletion).',
     days: 'Days',
     prunePeriodHelp:
       'Automatically delete tasks in the "Done" column after this many days. Leave empty or set to 0 to disable auto-deletion.',

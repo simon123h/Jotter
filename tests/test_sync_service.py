@@ -91,17 +91,20 @@ def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
 
-    # 1. Project with specific done_clean_period = 7
+    # 1. Project with specific done_clean_period = 7 (overrides global)
     proj_svc.create_project(ProjectCreate(title="Proj A", id="proj-a", done_clean_period=7))
 
     # 2. Project with no clean period (will inherit global)
     proj_svc.create_project(ProjectCreate(title="Proj B", id="proj-b", done_clean_period=None))
 
+    # 3. Project with explicit done_clean_period = 0 (disables deletion, overriding global)
+    proj_svc.create_project(ProjectCreate(title="Proj C", id="proj-c", done_clean_period=0))
+
     # Set global doneCleanPeriod = 14
     settings_file = Path(temp_dir) / "settings.json"
     settings_file.write_text(json.dumps({"doneCleanPeriod": 14}), encoding="utf-8")
 
-    # Create old done task in Proj A (10 days old -> pruned because clean_period is 7)
+    # Create old done task in Proj A (10 days old -> pruned because project clean_period is 7)
     old_date = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
     t_a_old = task_svc.create_task("proj-a", TaskCreate(title="Old Done A", bucket="done"))
     task_file_a_old = Path(temp_dir) / "proj-a" / f"{t_a_old.id}.md"
@@ -128,10 +131,18 @@ def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
         encoding="utf-8",
     )
 
+    # Create old done task in Proj C (30 days old -> KEPT because Proj C explicitly disabled deletion with 0)
+    t_c_old = task_svc.create_task("proj-c", TaskCreate(title="Old Done C", bucket="done"))
+    task_file_c_old = Path(temp_dir) / "proj-c" / f"{t_c_old.id}.md"
+    task_file_c_old.write_text(
+        f"---\nid: {t_c_old.id}\nproject_id: proj-c\ntitle: Old Done C\nbucket: done\nupdated_at: '{very_old_date}'\n---\n",
+        encoding="utf-8",
+    )
+
     # Run sync
     sync_svc.sync_db_only()
 
-    # Verify Proj A: old is pruned from disk & DB, recent is kept
+    # Verify Proj A: old is pruned from disk & DB (project 7-day override), recent is kept
     assert not task_file_a_old.is_file()
     assert task_file_a_recent.is_file()
     tasks_a = task_svc.get_tasks("proj-a")
@@ -142,3 +153,9 @@ def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
     assert not task_file_b_old.is_file()
     tasks_b = task_svc.get_tasks("proj-b")
     assert len(tasks_b) == 0
+
+    # Verify Proj C: old is preserved because project-specific 0 overrides global 14
+    assert task_file_c_old.is_file()
+    tasks_c = task_svc.get_tasks("proj-c")
+    assert len(tasks_c) == 1
+    assert tasks_c[0].id == t_c_old.id

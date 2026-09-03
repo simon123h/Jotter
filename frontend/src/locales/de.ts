@@ -241,8 +241,9 @@ export const de = {
     prunePeriodPlaceholder: 'z. B. 30 (leer lassen für nie löschen)',
     doneCleanPeriodLabel: 'Aufbewahrungsfrist für erledigte Aufgaben (Tage)',
     doneCleanPeriodPlaceholder: '0 (Keine)',
+    globalInherited: '{days} (Global)',
     doneCleanPeriodHelp:
-      'Aufgaben in der Spalte "Erledigt" werden nach dieser Anzahl von Tagen automatisch gelöscht. Leer lassen oder auf 0 setzen, um das automatische Löschen zu deaktivieren.',
+      'Aufgaben in der Spalte "Erledigt" werden nach dieser Anzahl von Tagen automatisch für dieses Projekt gelöscht. Überschreibt die globale Einstellung. Leer lassen, um die globale Einstellung zu verwenden (oder auf 0 setzen, um das automatische Löschen zu deaktivieren).',
     days: 'Tage',
     prunePeriodHelp:
       'Aufgaben in der Spalte "Erledigt" werden nach dieser Anzahl von Tagen automatisch gelöscht. Leer lassen oder auf 0 setzen, um das automatische Löschen zu deaktivieren.',
