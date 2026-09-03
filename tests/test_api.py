@@ -102,10 +102,24 @@ def test_buckets_and_tasks_workflow(test_env):
     assert res.status_code == 200
     assert len(res.json()) == 1
 
+    # 7b. Move task to another project via PATCH /api/projects/{proj}/tasks/{task_id}
+    client.post("/api/projects", json={"title": "Target Project", "id": "target-proj"})
+    res = client.patch(
+        f"/api/projects/default/tasks/{task_id}",
+        json={"project_id": "target-proj", "bucket": "backlog", "position": 1000.0},
+    )
+    assert res.status_code == 200
+    assert res.json()["project_id"] == "target-proj"
+    assert res.json()["bucket"] == "backlog"
+
+    # Verify task moved from default to target-proj
+    assert not (Path(temp_dir) / "default" / f"{task_id}.md").exists()
+    assert (Path(temp_dir) / "target-proj" / f"{task_id}.md").is_file()
+
     # 8. Delete task
-    res = client.delete(f"/api/projects/default/tasks/{task_id}")
+    res = client.delete(f"/api/projects/target-proj/tasks/{task_id}")
     assert res.status_code == 204
-    assert not md_file.is_file()
+    assert not (Path(temp_dir) / "target-proj" / f"{task_id}.md").is_file()
 
 
 def test_task_filters_and_queries(test_env):

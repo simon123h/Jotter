@@ -1,5 +1,6 @@
 """Application service orchestrating Task use cases."""
 
+import shutil
 import sqlite3
 from pathlib import Path
 from typing import Self
@@ -142,14 +143,18 @@ class TaskApplicationService:
 
     def update_task(self, project_id: str, task_id: str, req: TaskUpdate) -> TaskResponse:
         task = self.disk_repo.get_task(project_id, task_id)
+        fields_set = req.model_fields_set
 
+        target_project_id = (
+            req.project_id if ("project_id" in fields_set and req.project_id and req.project_id.strip()) else project_id
+        )
         target_bucket = req.bucket or task.bucket
-        known = {b.name for b in self.bucket_repo.get_all(project_id)}
+
+        known = {b.name for b in self.bucket_repo.get_all(target_project_id)}
         if target_bucket not in known:
             new_b = Bucket.create(title=target_bucket.capitalize(), name=target_bucket)
-            self.bucket_repo.save(project_id, new_b)
+            self.bucket_repo.save(target_project_id, new_b)
 
-        fields_set = req.model_fields_set
         task.update_details(
             title=req.title if "title" in fields_set else None,
             body=req.body if "body" in fields_set else None,
@@ -167,6 +172,25 @@ class TaskApplicationService:
             task.move(req.bucket, req.position if req.position is not None else task.position)
         elif "position" in fields_set and req.position is not None:
             task.move(task.bucket, req.position)
+
+        if target_project_id != project_id:
+            if not self.project_repo.exists(target_project_id):
+                raise EntityNotFoundError(f"Project '{target_project_id}' not found")
+
+            # Delete old markdown file from source project
+            self.disk_repo.delete(project_id, task_id)
+
+            # Move any attachments directory to target project
+            old_attach_dir = self.disk_repo.get_project_dir(project_id) / "attachments" / task_id
+            if old_attach_dir.is_dir():
+                new_attach_dir = self.disk_repo.get_project_dir(target_project_id) / "attachments" / task_id
+                new_attach_dir.parent.mkdir(parents=True, exist_ok=True)
+                if new_attach_dir.exists():
+                    shutil.rmtree(new_attach_dir)
+                shutil.move(str(old_attach_dir), str(new_attach_dir))
+
+            # Update domain entity project_id
+            task.project_id = target_project_id
 
         self.disk_repo.save(task)
         self.sqlite_repo.upsert_task(task)

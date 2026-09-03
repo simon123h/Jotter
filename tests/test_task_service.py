@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from jotter.features.projects.domain import Project
+from jotter.features.projects.repo import ProjectRepository
 from jotter.features.tasks.disk_repo import DiskTaskRepository
 from jotter.features.tasks.schemas import (
     TaskCreate,
@@ -232,3 +234,61 @@ def test_fts5_live_lifecycle_mutations(temp_dir, test_env):
     task_svc.delete_task("default", task.id)
     assert len(task_svc.get_tasks("default", search="warp")) == 0
     assert len(task_svc.get_tasks("default", search="antimatter")) == 0
+
+
+def test_task_move_between_projects(temp_dir, test_env):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    proj_repo = ProjectRepository(temp_dir, conn)
+    proj_repo.save(Project.create("Init Project", project_id="init"))
+    proj_repo.save(Project.create("GGG Project", project_id="ggg"))
+
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+
+    # 1. Create a task in project "init"
+    t1 = task_svc.create_task(
+        "init",
+        TaskCreate(
+            title="Move Me",
+            bucket="todo",
+            tags=["migration"],
+            body="Task to be moved across projects",
+        ),
+    )
+    # Add attachment
+    task_svc.add_attachment("init", t1.id, "notes.txt", b"attachment content")
+
+    assert (Path(temp_dir) / "init" / f"{t1.id}.md").is_file()
+    assert (Path(temp_dir) / "init" / "attachments" / t1.id / "notes.txt").is_file()
+
+    # 2. Move task to project "ggg"
+    updated = task_svc.update_task(
+        "init",
+        t1.id,
+        TaskUpdate.model_validate(
+            {
+                "project_id": "ggg",
+                "bucket": "backlog",
+                "position": 1000.0,
+            }
+        ),
+    )
+
+    assert updated.project_id == "ggg"
+    assert updated.bucket == "backlog"
+    assert updated.attachments == ["notes.txt"]
+
+    # 3. Old files removed, new files present
+    assert not (Path(temp_dir) / "init" / f"{t1.id}.md").exists()
+    assert not (Path(temp_dir) / "init" / "attachments" / t1.id).exists()
+    assert (Path(temp_dir) / "ggg" / f"{t1.id}.md").is_file()
+    assert (Path(temp_dir) / "ggg" / "attachments" / t1.id / "notes.txt").is_file()
+
+    # 4. Querying verification
+    init_tasks = task_svc.get_tasks("init")
+    assert len(init_tasks) == 0
+
+    ggg_tasks = task_svc.get_tasks("ggg")
+    assert len(ggg_tasks) == 1
+    assert ggg_tasks[0].id == t1.id
+    assert ggg_tasks[0].project_id == "ggg"
+    assert ggg_tasks[0].bucket == "backlog"
