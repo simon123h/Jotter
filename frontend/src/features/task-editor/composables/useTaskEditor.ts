@@ -225,12 +225,28 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
     }
   };
 
-  const addChecklistItem = (markdownEditorRef: Ref<any>) => {
+  const addChecklistItem = (getMarkdownEditorRef: Ref<any> | (() => any)) => {
     if (!isEditing.value) {
+      initEditState(task.value);
       isEditing.value = true;
     }
     nextTick(() => {
-      markdownEditorRef.value?.appendTextAndFocus('- [ ] ');
+      const editorComponent = typeof getMarkdownEditorRef === 'function' ? getMarkdownEditorRef() : getMarkdownEditorRef?.value;
+      if (editorComponent?.appendTextAndFocus) {
+        editorComponent.appendTextAndFocus('- [ ] ');
+      } else {
+        if (!form.body) {
+          form.body = '- [ ] ';
+        } else if (form.body.endsWith('\n')) {
+          form.body += '- [ ] ';
+        } else {
+          form.body += '\n- [ ] ';
+        }
+        nextTick(() => {
+          const ed = typeof getMarkdownEditorRef === 'function' ? getMarkdownEditorRef() : getMarkdownEditorRef?.value;
+          ed?.focus?.();
+        });
+      }
     });
   };
 

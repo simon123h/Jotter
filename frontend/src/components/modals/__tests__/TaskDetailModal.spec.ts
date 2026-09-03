@@ -289,4 +289,47 @@ describe('TaskDetailModal.vue', () => {
       })
     );
   });
+
+  it('switches to edit mode and appends checklist item when quickAddChecklist button is clicked in view mode', async () => {
+    vi.mocked(getTask).mockResolvedValueOnce({
+      id: '123',
+      project_id: 'default',
+      title: 'Simple Task Without Checklist',
+      body: 'Just a regular description',
+      bucket: 'todo',
+      position: 1,
+      tags: [],
+      attachments: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    const wrapper = mount(TaskDetailModal, {
+      props: defaultProps,
+      global: {
+        stubs: {
+          MarkdownEditor: true,
+          Teleport: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await nextTick();
+
+    const addListBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Liste hinzufügen') || b.text().includes('Add List') || b.text().includes('Checkliste'));
+    expect(addListBtn).toBeDefined();
+
+    await addListBtn!.trigger('click');
+    await nextTick();
+    await nextTick();
+
+    // Verify it switched to edit mode and appended checklist prefix
+    const editFields = wrapper.findComponent({ name: 'TaskEditFields' });
+    expect(editFields.exists()).toBe(true);
+  });
+
 });

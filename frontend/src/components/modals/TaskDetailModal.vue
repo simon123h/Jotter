@@ -242,7 +242,7 @@ const handleSplitAllSubtasks = async () => {
 };
 
 const addChecklistItem = () => {
-  editorAddChecklistItem(editFieldsRef.value?.markdownEditorRef);
+  editorAddChecklistItem(() => editFieldsRef.value?.markdownEditorRef);
 };
 
 // Full-modal Drag & Drop orchestration mapped straight into `<TaskAttachments>`
