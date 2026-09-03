@@ -32,7 +32,7 @@ export const useProjectStore = defineStore('project', () => {
   };
 
   const fetchBuckets = async (projectId: string) => {
-    if (!projectId || projectId === '') {
+    if (!projectId || projectId === '' || projectId === 'null' || projectId === 'undefined') {
       buckets.value = [];
       return;
     }
@@ -92,10 +92,15 @@ export const useProjectStore = defineStore('project', () => {
   };
 
   const fetchTasks = async (query: TaskQuery, forceRefresh = false) => {
+    if (!query.projectId || query.projectId === 'null' || query.projectId === 'undefined') {
+      tasks.value = [];
+      loading.value = false;
+      return;
+    }
+
     // If projects are already loaded and the queried project doesn't exist, don't spam 404 errors
     if (
       projectsLoaded.value &&
-      query.projectId &&
       query.projectId !== 'all' &&
       projects.value.length > 0 &&
       !projects.value.some((p) => p.id === query.projectId)

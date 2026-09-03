@@ -168,6 +168,9 @@ export async function getAllTasks(filters?: TaskFilterParams): Promise<Task[]> {
 }
 
 export async function getTasks(projectId: string, filters?: TaskFilterParams): Promise<Task[]> {
+  if (!projectId || projectId === 'null' || projectId === 'undefined') {
+    return [];
+  }
   if (IS_DEMO_MODE) {
     return demoApi.getTasks(projectId, filters);
   }
@@ -182,6 +185,9 @@ export async function getTasks(projectId: string, filters?: TaskFilterParams): P
 }
 
 export async function getTask(projectId: string, id: string): Promise<Task> {
+  if (!projectId || projectId === 'null' || projectId === 'undefined') {
+    throw new Error('Valid Project ID is required to fetch a task');
+  }
   if (IS_DEMO_MODE) {
     return demoApi.getTask(projectId, id);
   }
@@ -205,6 +211,9 @@ export async function createTask(
     color?: string | null;
   }
 ): Promise<Task> {
+  if (!projectId || projectId === 'null' || projectId === 'undefined') {
+    throw new Error('Valid Project ID is required to create a task');
+  }
   if (IS_DEMO_MODE) {
     return demoApi.createTask(projectId, task);
   }
@@ -220,6 +229,9 @@ export async function createTask(
 }
 
 export async function updateTask(projectId: string, id: string, task: Partial<Task>): Promise<Task> {
+  if (!projectId || projectId === 'null' || projectId === 'undefined') {
+    throw new Error('Valid Project ID is required to update a task');
+  }
   if (IS_DEMO_MODE) {
     return demoApi.updateTask(projectId, id, task);
   }
@@ -300,6 +312,9 @@ export function getAttachmentUrl(projectId: string, taskId: string, filename: st
 // ==========================================
 
 export async function getBuckets(projectId: string): Promise<Bucket[]> {
+  if (!projectId || projectId === 'null' || projectId === 'undefined') {
+    return [];
+  }
   if (IS_DEMO_MODE) {
     return demoApi.getBuckets(projectId);
   }
@@ -318,6 +333,9 @@ export async function createBucket(
   layout?: 'list' | 'grid-2' | 'grid-3',
   max_tasks?: number | null
 ): Promise<Bucket> {
+  if (!projectId || projectId === 'null' || projectId === 'undefined') {
+    throw new Error('Valid Project ID is required to create a column');
+  }
   if (IS_DEMO_MODE) {
     return demoApi.createBucket(projectId, title, subtitle, color, layout, max_tasks);
   }
@@ -333,6 +351,9 @@ export async function createBucket(
 }
 
 export async function updateBucket(projectId: string, name: string, bucketUpdates: Partial<Bucket>): Promise<Bucket> {
+  if (!projectId || projectId === 'null' || projectId === 'undefined') {
+    throw new Error('Valid Project ID is required to update a column');
+  }
   if (IS_DEMO_MODE) {
     return demoApi.updateBucket(projectId, name, bucketUpdates);
   }
@@ -348,6 +369,9 @@ export async function updateBucket(projectId: string, name: string, bucketUpdate
 }
 
 export async function deleteBucket(projectId: string, name: string): Promise<void> {
+  if (!projectId || projectId === 'null' || projectId === 'undefined') {
+    throw new Error('Valid Project ID is required to delete a column');
+  }
   if (IS_DEMO_MODE) {
     return demoApi.deleteBucket(projectId, name);
   }
