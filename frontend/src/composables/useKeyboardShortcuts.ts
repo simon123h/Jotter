@@ -30,10 +30,12 @@ export function useKeyboardShortcuts(shortcuts: ShortcutHandler[]) {
 
     if (match) {
       if (!match.allowInInputs) {
-        // Ignore keyboard shortcuts when user is focused on input elements
-        const activeEl = activeElement.value || (typeof document !== 'undefined' ? document.activeElement : null);
+        // Ignore keyboard shortcuts when user is actively focused on connected input elements
+        const activeEl = (typeof document !== 'undefined' ? document.activeElement : null) || activeElement.value;
         if (
           activeEl &&
+          activeEl !== (typeof document !== 'undefined' ? document.body : null) &&
+          ('isConnected' in activeEl ? activeEl.isConnected : true) &&
           (activeEl.tagName === 'INPUT' ||
             activeEl.tagName === 'TEXTAREA' ||
             activeEl.tagName === 'SELECT' ||
