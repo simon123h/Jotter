@@ -4,12 +4,13 @@ import sqlite3
 import threading
 from pathlib import Path
 
-_db_lock = threading.Lock()
-_global_connection: sqlite3.Connection | None = None
+_local = threading.local()
+_schema_lock = threading.Lock()
+_initialized_schemas: set[str] = set()
 
 
-def create_sqlite_connection(db_path: Path | str) -> sqlite3.Connection:
-    """Creates a configured SQLite connection and initializes the database schema."""
+def create_sqlite_connection(db_path: Path | str, init: bool = True) -> sqlite3.Connection:
+    """Creates a configured SQLite connection and initializes the database schema if needed."""
     path = Path(db_path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -23,10 +24,18 @@ def create_sqlite_connection(db_path: Path | str) -> sqlite3.Connection:
 
     # Performance and integrity pragmas
     conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout=15000;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
 
-    # Initialize schema
-    init_schema(conn)
+    # Initialize schema safely once per database path
+    if init:
+        canon_path = str(path.resolve())
+        with _schema_lock:
+            if canon_path not in _initialized_schemas:
+                init_schema(conn)
+                _initialized_schemas.add(canon_path)
+
     return conn
 
 
@@ -136,27 +145,33 @@ def init_schema(conn: sqlite3.Connection) -> None:
 
 
 def get_db(db_path: Path | str | None = None) -> sqlite3.Connection:
-    """Convenience helper / fallback for scripts and tests."""
-    global _global_connection
-    with _db_lock:
-        if _global_connection is None:
-            if db_path is None:
-                raise ValueError("Database path must be provided on first connection initialization.")
-            _global_connection = create_sqlite_connection(db_path)
-        return _global_connection
+    """Returns a thread-local SQLite connection for the given database path."""
+    if not hasattr(_local, "connections"):
+        _local.connections = {}
+
+    if db_path is None:
+        if not _local.connections:
+            raise ValueError("Database path must be provided on first connection initialization.")
+        return next(iter(_local.connections.values()))
+
+    path_key = str(Path(db_path).resolve())
+    conn = _local.connections.get(path_key)
+    if conn is None:
+        conn = create_sqlite_connection(db_path)
+        _local.connections[path_key] = conn
+    return conn
 
 
 def close_db() -> None:
-    """Runs PRAGMA optimize and closes global fallback connection if open."""
-    global _global_connection
-    with _db_lock:
-        if _global_connection is not None:
+    """Closes all thread-local SQLite connections for the current thread."""
+    if hasattr(_local, "connections"):
+        for conn in list(_local.connections.values()):
             try:
-                _global_connection.execute("PRAGMA optimize;")
+                conn.execute("PRAGMA optimize;")
             except Exception:
                 pass
             try:
-                _global_connection.close()
+                conn.close()
             except Exception:
                 pass
-            _global_connection = None
+        _local.connections.clear()

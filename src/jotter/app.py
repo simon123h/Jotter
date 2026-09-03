@@ -35,6 +35,7 @@ def create_app(config: UserConfig | None = None, version: str = app_version) -> 
 
     # Setup database connection on app state
     db_path = str(Path(cfg.data_dir) / "tasks.db")
+    app.state.db_path = db_path
     conn = create_sqlite_connection(db_path)
     app.state.db = conn
 

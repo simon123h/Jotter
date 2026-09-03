@@ -14,8 +14,8 @@ def get_data_dir(request: Request) -> str:
 
 
 def get_db_conn(request: Request) -> sqlite3.Connection:
-    """Extracts SQLite connection from app state or global fallback."""
-    if hasattr(request.app.state, "db") and request.app.state.db is not None:
-        return request.app.state.db
-    db_path = Path(get_data_dir(request)) / "tasks.db"
-    return get_global_db(str(db_path))
+    """Extracts thread-local SQLite connection for the request's data directory."""
+    db_path = getattr(request.app.state, "db_path", None)
+    if not db_path:
+        db_path = str(Path(get_data_dir(request)) / "tasks.db")
+    return get_global_db(db_path)

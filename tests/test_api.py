@@ -292,3 +292,34 @@ def test_api_error_responses(test_env):
     # 7. Project restore missing hash 400
     res = client.post("/api/system/restore", json={"commitHash": ""})
     assert res.status_code == 400
+
+
+def test_concurrent_multithreaded_requests(test_env):
+    import concurrent.futures
+
+    client, _ = test_env
+
+    # Populate with some tasks
+    for i in range(5):
+        client.post(
+            "/api/projects/default/tasks",
+            json={"title": f"Task {i}", "bucket": "todo"},
+        )
+
+    def worker(i: int):
+        if i % 3 == 0:
+            res = client.get("/api/projects/default/buckets")
+        elif i % 3 == 1:
+            res = client.get("/api/projects/default/tasks")
+        else:
+            res = client.post(
+                "/api/projects/default/tasks",
+                json={"title": f"Concurrent Task {i}", "bucket": "todo"},
+            )
+        assert res.status_code in (200, 201)
+        return res.status_code
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(worker, i) for i in range(30)]
+        results = [f.result() for f in concurrent.futures.as_completed(futures)]
+        assert len(results) == 30
