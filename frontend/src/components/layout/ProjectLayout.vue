@@ -109,7 +109,7 @@ watchEffect(() => {
 const isNoProjects = computed(() => projectsLoaded.value && projects.value.length === 0);
 const isProjectLoading = ref(true);
 
-const fetchAllData = async () => {
+const fetchAllData = async (isProjectSwitch = false) => {
   if (isNoProjects.value || !projectId.value) {
     isProjectLoading.value = false;
     return;
@@ -123,7 +123,9 @@ const fetchAllData = async () => {
     isProjectLoading.value = false;
     return;
   }
-  isProjectLoading.value = true;
+  if (isProjectSwitch) {
+    isProjectLoading.value = true;
+  }
   try {
     await Promise.all([
       projectStore.fetchBuckets(projectId.value),
@@ -146,16 +148,17 @@ onMounted(async () => {
   requestAnimationFrame(() => {
     isMounted.value = true;
   });
-  await fetchAllData();
+  await fetchAllData(true);
 });
 
 // Sync data loading with route parameters
 watch(
   () => [projectId.value, isGlobalView.value],
-  async () => {
+  async (newVal, oldVal) => {
     clearFilters();
     clearSelection();
-    await fetchAllData();
+    const isProjectSwitch = !oldVal || newVal[0] !== oldVal[0] || newVal[1] !== oldVal[1];
+    await fetchAllData(isProjectSwitch);
   }
 );
 
