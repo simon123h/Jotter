@@ -18,6 +18,7 @@ import TaskChecklist from '@/features/task-editor/components/TaskChecklist.vue';
 import TaskAttachments from '@/features/task-editor/components/TaskAttachments.vue';
 import TaskEditFields from '@/features/task-editor/components/TaskEditFields.vue';
 import TaskImageLightbox from '@/features/task-editor/components/TaskImageLightbox.vue';
+import BaseModal from '@/components/ui/BaseModal.vue';
 
 const { locale, t } = useI18n();
 const { showDialog } = useDialog();
@@ -426,227 +427,221 @@ onBeforeRouteLeave(async () => {
 </script>
 
 <template>
-  <Transition name="modal" appear>
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <!-- Backdrop -->
-      <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
-
-      <!-- Modal Content -->
+  <BaseModal :is-open="true" max-width="max-w-3xl" content-class="max-h-[85vh] relative" :show-close-button="false" @close="closeModal">
+    <!-- Full Drag & Drop Overlay -->
+    <Transition name="fade">
       <div
-        class="relative bg-theme-base border border-theme-border w-full max-w-3xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
-        @dblclick="handleDblClick"
-        @dragover.prevent="handleDragOver"
-        @dragleave.prevent="handleDragLeave"
-        @drop.prevent="handleDrop"
+        v-if="isDragging"
+        class="absolute inset-0 z-40 bg-theme-base/95 backdrop-blur-md border-2 border-dashed border-theme-accent m-2 rounded flex flex-col items-center justify-center gap-2 pointer-events-none transition-all duration-200"
       >
-        <!-- Full Drag & Drop Overlay -->
-        <Transition name="fade">
-          <div
-            v-if="isDragging"
-            class="absolute inset-0 z-40 bg-theme-base/95 backdrop-blur-md border-2 border-dashed border-theme-accent m-2 rounded flex flex-col items-center justify-center gap-2 pointer-events-none transition-all duration-200"
-          >
-            <div class="p-3.5 bg-theme-accent/10 text-theme-accent rounded-full animate-bounce">
-              <span class="text-2xl">📎</span>
-            </div>
-            <p class="text-theme-text-main font-bold text-sm">{{ t('form.dragDropTitle') }}</p>
-            <p class="text-theme-text-muted text-xs">{{ t('form.dragDropSubtitle') }}</p>
-          </div>
-        </Transition>
+        <div class="p-3.5 bg-theme-accent/10 text-theme-accent rounded-full animate-bounce">
+          <span class="text-2xl">📎</span>
+        </div>
+        <p class="text-theme-text-main font-bold text-sm">{{ t('form.dragDropTitle') }}</p>
+        <p class="text-theme-text-muted text-xs">{{ t('form.dragDropSubtitle') }}</p>
+      </div>
+    </Transition>
 
-        <button
-          @click="closeModal"
-          class="text-slate-400 transition-colors p-1 rounded cursor-pointer hover:text-white"
-          style="position: absolute; top: 10px; right: 10px"
-        >
-          <X class="w-4 h-4 shrink-0" />
-        </button>
+    <button
+      @click="closeModal"
+      class="text-slate-400 transition-colors p-1 rounded cursor-pointer hover:text-white z-20"
+      style="position: absolute; top: 10px; right: 10px"
+    >
+      <X class="w-4 h-4 shrink-0" />
+    </button>
 
-        <!-- Error alert -->
-        <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
-          {{ error }}
+    <div
+      class="flex flex-col flex-grow overflow-hidden"
+      @dblclick="handleDblClick"
+      @dragover.prevent="handleDragOver"
+      @dragleave.prevent="handleDragLeave"
+      @drop.prevent="handleDrop"
+    >
+      <!-- Error alert -->
+      <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
+        {{ error }}
+      </div>
+
+      <!-- Main Body -->
+      <div class="p-4 overflow-y-auto flex-grow scroller-thin">
+        <!-- Loading State -->
+        <div v-if="loading && !task" class="flex flex-col items-center justify-center py-12 gap-3">
+          <div class="w-8 h-8 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-slate-400 text-xs">{{ t('loadingTask') }}</span>
         </div>
 
-        <!-- Main Body -->
-        <div class="p-4 overflow-y-auto flex-grow scroller-thin">
-          <!-- Loading State -->
-          <div v-if="loading && !task" class="flex flex-col items-center justify-center py-12 gap-3">
-            <div class="w-8 h-8 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
-            <span class="text-slate-400 text-xs">{{ t('loadingTask') }}</span>
-          </div>
+        <div v-else-if="task">
+          <!-- View Mode -->
+          <div v-if="!isEditing" class="space-y-4">
+            <div>
+              <h2 class="text-xl font-bold text-theme-text-main mb-1.5 leading-snug">
+                {{ task.title }}
+              </h2>
 
-          <div v-else-if="task">
-            <!-- View Mode -->
-            <div v-if="!isEditing" class="space-y-4">
-              <div>
-                <h2 class="text-xl font-bold text-theme-text-main mb-1.5 leading-snug">
-                  {{ task.title }}
-                </h2>
+              <!-- Tags -->
+              <div v-if="task.tags?.length" class="flex flex-wrap gap-1 mt-2">
+                <span
+                  v-for="tag in task.tags"
+                  :key="tag"
+                  class="text-xs font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded cursor-pointer transition-transform hover:scale-105"
+                  @click="handleTagClick(tag)"
+                >
+                  {{ tag }}
+                </span>
+              </div>
 
-                <!-- Tags -->
-                <div v-if="task.tags?.length" class="flex flex-wrap gap-1 mt-2">
-                  <span
-                    v-for="tag in task.tags"
-                    :key="tag"
-                    class="text-xs font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded cursor-pointer transition-transform hover:scale-105"
-                    @click="handleTagClick(tag)"
-                  >
-                    {{ tag }}
+              <!-- Due Date, Planned Date & Priority Info -->
+              <div v-if="task.due_date || task.planned_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
+                <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
+                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Due:</span>
+                  <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
+                    {{ new Date(task.due_date).toLocaleDateString() }}
                   </span>
                 </div>
-
-                <!-- Due Date, Planned Date & Priority Info -->
-                <div v-if="task.due_date || task.planned_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
-                  <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Due:</span>
-                    <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-                      {{ new Date(task.due_date).toLocaleDateString() }}
-                    </span>
-                  </div>
-                  <div v-if="task.planned_date" class="flex items-center gap-1.5 text-xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Planned:</span>
-                    <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-                      {{ t('plannedDateOptions.' + task.planned_date) }}
-                    </span>
-                  </div>
-                  <div v-if="task.postponed_until" class="flex items-center gap-1.5 text-xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Postponed Until:</span>
-                    <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-                      {{ new Date(task.postponed_until).toLocaleDateString() }}
-                    </span>
-                  </div>
-                  <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Priority:</span>
-                    <span
-                      class="px-2 py-0.5 rounded border text-xs font-extrabold uppercase tracking-wider"
-                      :class="getPriorityClasses(task.priority)"
-                    >
-                      {{ t('priorityOptions.' + task.priority) }}
-                    </span>
-                  </div>
+                <div v-if="task.planned_date" class="flex items-center gap-1.5 text-xs">
+                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Planned:</span>
+                  <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
+                    {{ t('plannedDateOptions.' + task.planned_date) }}
+                  </span>
+                </div>
+                <div v-if="task.postponed_until" class="flex items-center gap-1.5 text-xs">
+                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Postponed Until:</span>
+                  <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
+                    {{ new Date(task.postponed_until).toLocaleDateString() }}
+                  </span>
+                </div>
+                <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
+                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">Priority:</span>
+                  <span
+                    class="px-2 py-0.5 rounded border text-xs font-extrabold uppercase tracking-wider"
+                    :class="getPriorityClasses(task.priority)"
+                  >
+                    {{ t('priorityOptions.' + task.priority) }}
+                  </span>
                 </div>
               </div>
-
-              <div class="border-t border-theme-border pt-4">
-                <div class="flex items-center justify-between mb-2">
-                  <h4 class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('notesLabel') }}</h4>
-                  <div class="flex items-center gap-2">
-                    <button
-                      v-if="hasChecklist"
-                      type="button"
-                      @click="handleSplitAllSubtasks"
-                      class="p-1 text-theme-text-muted hover:text-theme-accent hover:bg-theme-border/20 rounded transition-colors cursor-pointer opacity-70 hover:opacity-100"
-                      :title="t('form.splitSubtasksTooltip')"
-                      aria-label="Split subtasks"
-                    >
-                      <Split class="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      v-if="!hasChecklist"
-                      type="button"
-                      @click="addChecklistItem"
-                      class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
-                    >
-                      <ClipboardList class="w-3.5 h-3.5" />
-                      {{ t('form.quickAddChecklist') }}
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Rendered Markdown with interactive checkboxes -->
-                <TaskChecklist :body="task.body" @update:body="toggleCheckboxInBody" @error="error = $event" />
-              </div>
-
-              <div
-                v-if="task.created_at || task.updated_at"
-                class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono"
-              >
-                <span v-if="task.created_at">{{ t('timestampCreated', { date: formatTimestamp(task.created_at) }) }}</span>
-                <span v-if="task.updated_at">{{ t('timestampUpdated', { date: formatTimestamp(task.updated_at) }) }}</span>
-              </div>
-
-              <!-- Attachments subcomponent -->
-              <TaskAttachments
-                ref="attachmentsRef"
-                :project-id="actualProjectId"
-                :task-id="task.id"
-                :attachments="task.attachments ?? []"
-                @update-task="handleUpdateTaskFromAttachments"
-                @error="handleAttachmentsError"
-                @preview-image="handlePreviewImage"
-              />
             </div>
 
-            <!-- Edit Mode -->
-            <TaskEditFields v-else ref="editFieldsRef" :buckets="buckets" @add-checklist="addChecklistItem" />
-          </div>
-        </div>
+            <div class="border-t border-theme-border pt-4">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('notesLabel') }}</h4>
+                <div class="flex items-center gap-2">
+                  <button
+                    v-if="hasChecklist"
+                    type="button"
+                    @click="handleSplitAllSubtasks"
+                    class="p-1 text-theme-text-muted hover:text-theme-accent hover:bg-theme-border/20 rounded transition-colors cursor-pointer opacity-70 hover:opacity-100"
+                    :title="t('form.splitSubtasksTooltip')"
+                    aria-label="Split subtasks"
+                  >
+                    <Split class="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    v-if="!hasChecklist"
+                    type="button"
+                    @click="addChecklistItem"
+                    class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
+                  >
+                    <ClipboardList class="w-3.5 h-3.5" />
+                    {{ t('form.quickAddChecklist') }}
+                  </button>
+                </div>
+              </div>
 
-        <!-- Footer Buttons -->
-        <div class="px-4 py-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
-          <div>
-            <button
-              v-if="task && !isEditing"
-              @click="handleDelete"
-              class="text-sm font-semibold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors cursor-pointer"
+              <!-- Rendered Markdown with interactive checkboxes -->
+              <TaskChecklist :body="task.body" @update:body="toggleCheckboxInBody" @error="error = $event" />
+            </div>
+
+            <div
+              v-if="task.created_at || task.updated_at"
+              class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono"
             >
-              {{ t('buttons.delete') }}
-            </button>
-          </div>
-          <div class="flex gap-2">
-            <!-- View mode buttons -->
-            <template v-if="!isEditing">
-              <button
-                v-if="task && task.bucket !== 'archive'"
-                @click="handleArchive"
-                class="text-sm font-semibold px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded transition-all cursor-pointer"
-              >
-                {{ t('buttons.archive') }}
-              </button>
-              <button
-                v-if="task && task.bucket === 'archive'"
-                @click="handleUnarchive"
-                class="text-sm font-semibold px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded transition-all cursor-pointer"
-              >
-                {{ t('buttons.unarchive') }}
-              </button>
-              <button
-                v-if="task && task.bucket !== 'done' && task.bucket !== 'archive'"
-                @click="handleMarkDone"
-                class="text-sm font-semibold px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all cursor-pointer"
-              >
-                {{ t('buttons.markDone') }}
-              </button>
-              <button
-                @click="isEditing = true"
-                class="text-sm font-semibold px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/25 rounded transition-all cursor-pointer"
-              >
-                {{ t('buttons.edit') }}
-              </button>
-            </template>
+              <span v-if="task.created_at">{{ t('timestampCreated', { date: formatTimestamp(task.created_at) }) }}</span>
+              <span v-if="task.updated_at">{{ t('timestampUpdated', { date: formatTimestamp(task.updated_at) }) }}</span>
+            </div>
 
-            <!-- Edit mode buttons -->
-            <template v-else>
-              <button
-                @click="cancelEdit"
-                class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
-                :disabled="loading"
-              >
-                {{ t('buttons.cancel') }}
-              </button>
-              <button
-                @click="handleSave"
-                class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-                :disabled="loading"
-              >
-                <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                {{ t('buttons.save') }}
-              </button>
-            </template>
+            <!-- Attachments subcomponent -->
+            <TaskAttachments
+              ref="attachmentsRef"
+              :project-id="actualProjectId"
+              :task-id="task.id"
+              :attachments="task.attachments ?? []"
+              @update-task="handleUpdateTaskFromAttachments"
+              @error="handleAttachmentsError"
+              @preview-image="handlePreviewImage"
+            />
           </div>
+
+          <!-- Edit Mode -->
+          <TaskEditFields v-else ref="editFieldsRef" :buckets="buckets" @add-checklist="addChecklistItem" />
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="px-4 py-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
+        <div>
+          <button
+            v-if="task && !isEditing"
+            @click="handleDelete"
+            class="text-sm font-semibold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors cursor-pointer"
+          >
+            {{ t('buttons.delete') }}
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <!-- View mode buttons -->
+          <template v-if="!isEditing">
+            <button
+              v-if="task && task.bucket !== 'archive'"
+              @click="handleArchive"
+              class="text-sm font-semibold px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded transition-all cursor-pointer"
+            >
+              {{ t('buttons.archive') }}
+            </button>
+            <button
+              v-if="task && task.bucket === 'archive'"
+              @click="handleUnarchive"
+              class="text-sm font-semibold px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded transition-all cursor-pointer"
+            >
+              {{ t('buttons.unarchive') }}
+            </button>
+            <button
+              v-if="task && task.bucket !== 'done' && task.bucket !== 'archive'"
+              @click="handleMarkDone"
+              class="text-sm font-semibold px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all cursor-pointer"
+            >
+              {{ t('buttons.markDone') }}
+            </button>
+            <button
+              @click="isEditing = true"
+              class="text-sm font-semibold px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/25 rounded transition-all cursor-pointer"
+            >
+              {{ t('buttons.edit') }}
+            </button>
+          </template>
+
+          <!-- Edit mode buttons -->
+          <template v-else>
+            <button
+              @click="cancelEdit"
+              class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+              :disabled="loading"
+            >
+              {{ t('buttons.cancel') }}
+            </button>
+            <button
+              @click="handleSave"
+              class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+              :disabled="loading"
+            >
+              <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              {{ t('buttons.save') }}
+            </button>
+          </template>
         </div>
       </div>
     </div>
-  </Transition>
+  </BaseModal>
 
   <!-- Image Preview Lightbox Overlay -->
   <TaskImageLightbox :image-url="previewImageUrl" :image-name="previewImageName" @close="previewImageUrl = null" />

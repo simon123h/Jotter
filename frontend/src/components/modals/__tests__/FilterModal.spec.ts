@@ -54,14 +54,14 @@ describe('FilterModal.vue', () => {
     expect(wrapper.emitted('close')).toBeTruthy();
   });
 
-  it('emits apply and close events when dialog triggers native close / cancel (auto-save)', async () => {
+  it('emits apply and close events when Escape key is pressed (auto-save)', async () => {
     const wrapper = mount(FilterModal, {
       props: defaultProps,
     });
 
-    const dialog = wrapper.find('dialog');
-    expect(dialog.exists()).toBe(true);
-    await dialog.trigger('close');
+    const event = new KeyboardEvent('keydown', { key: 'Escape' });
+    window.dispatchEvent(event);
+    await nextTick();
     expect(wrapper.emitted('apply')).toBeTruthy();
     expect(wrapper.emitted('close')).toBeTruthy();
   });

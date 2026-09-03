@@ -22,8 +22,16 @@ describe('ColumnEditModal.vue', () => {
     document.body.innerHTML = '';
   });
 
-  it('renders correctly when isOpen is true', () => {
+  const mountModal = (options: any = {}) => {
     wrapper = mount(ColumnEditModal, {
+      ...options,
+      attachTo: document.body,
+    });
+    return wrapper;
+  };
+
+  it('renders correctly when isOpen is true', () => {
+    wrapper = mountModal({
       props: defaultProps,
     });
 
@@ -33,7 +41,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('does not render when isOpen is false', () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: {
         ...defaultProps,
         isOpen: false,
@@ -45,7 +53,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('emits save and close events when close button is clicked (auto-save)', async () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: defaultProps,
     });
 
@@ -58,7 +66,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('emits save and close events when pressing Escape key (auto-save)', () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: defaultProps,
     });
 
@@ -70,7 +78,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('emits save and close events when clicking backdrop (auto-save)', async () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: defaultProps,
     });
 
@@ -83,7 +91,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('emits close but does NOT emit save when Cancel button is clicked (discard)', async () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: defaultProps,
     });
 
@@ -98,7 +106,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('emits save event with updated title and subtitle when saved', async () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: defaultProps,
     });
 
@@ -131,7 +139,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('disables save button if title is empty', async () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: defaultProps,
     });
 
@@ -148,7 +156,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('handles null or undefined initialSubtitle without throwing errors', () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: {
         ...defaultProps,
         initialSubtitle: null,
@@ -162,7 +170,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('emits save event with selected color when a color swatch is clicked', async () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: {
         ...defaultProps,
         initialColor: null,
@@ -186,7 +194,7 @@ describe('ColumnEditModal.vue', () => {
       bucketName: 'todo',
       title: 'To Do',
       subtitle: 'Tasks that need to be done',
-      color: 'red',
+      color: 'rose',
       layout: 'list',
       max_tasks: null,
       is_default: false,
@@ -194,7 +202,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('emits save event with selected layout when a layout segmented button is clicked', async () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: {
         ...defaultProps,
         initialLayout: 'list',
@@ -227,7 +235,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('emits save event with grid-3 layout when the third layout button is clicked', async () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: {
         ...defaultProps,
         initialLayout: 'list',
@@ -258,7 +266,7 @@ describe('ColumnEditModal.vue', () => {
   });
 
   it('emits save event with parsed max_tasks when max tasks limit is entered', async () => {
-    wrapper = mount(ColumnEditModal, {
+    wrapper = mountModal({
       props: {
         ...defaultProps,
         initialMaxTasks: 3,

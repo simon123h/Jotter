@@ -87,6 +87,7 @@ describe('TaskDetailModal.vue', () => {
       global: {
         stubs: {
           MarkdownEditor: true,
+          Teleport: true,
         },
       },
     });
@@ -106,6 +107,7 @@ describe('TaskDetailModal.vue', () => {
       global: {
         stubs: {
           MarkdownEditor: true,
+          Teleport: true,
         },
       },
     });
@@ -152,6 +154,7 @@ describe('TaskDetailModal.vue', () => {
       global: {
         stubs: {
           MarkdownEditor: true,
+          Teleport: true,
         },
       },
     });
@@ -189,6 +192,7 @@ describe('TaskDetailModal.vue', () => {
       global: {
         stubs: {
           MarkdownEditor: true,
+          Teleport: true,
         },
       },
     });
@@ -213,6 +217,7 @@ describe('TaskDetailModal.vue', () => {
       global: {
         stubs: {
           MarkdownEditor: true,
+          Teleport: true,
         },
       },
     });
@@ -249,6 +254,7 @@ describe('TaskDetailModal.vue', () => {
       global: {
         stubs: {
           MarkdownEditor: true,
+          Teleport: true,
         },
       },
     });

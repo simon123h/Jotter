@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, watch, computed, nextTick } from 'vue';
-import { X, Trash2, Calendar, Clock, Palette, Repeat } from '@lucide/vue';
+import { Trash2, Calendar, Clock, Palette, Repeat } from '@lucide/vue';
 import type { Timeblock } from '@/types';
 import { useTimeblockStore } from '@/stores/timeblock';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
+import BaseModal from '@/components/ui/BaseModal.vue';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -145,162 +146,150 @@ const handleDelete = async () => {
 </script>
 
 <template>
-  <div
-    v-if="isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
-    @click.self="emit('close')"
-    @keydown.esc="emit('close')"
+  <BaseModal
+    :is-open="isOpen"
+    max-width="max-w-md"
+    :title="activeTimeblock ? t('timeblock.editTitle') : t('timeblock.newTitle')"
+    @close="emit('close')"
   >
-    <div
-      class="bg-theme-card border border-theme-border rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col transition-all"
-    >
-      <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-4 border-b border-theme-border/60 bg-theme-column/30">
-        <h2 class="text-base font-bold text-theme-text-main flex items-center gap-2">
-          <Calendar class="w-4 h-4 text-theme-primary" />
-          {{ activeTimeblock ? t('timeblock.editTitle') : t('timeblock.newTitle') }}
-        </h2>
-        <button
-          type="button"
-          @click="emit('close')"
-          class="p-1 rounded-lg text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column transition-colors cursor-pointer"
-        >
-          <X class="w-4 h-4" />
-        </button>
+    <template #title>
+      <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider flex items-center gap-2 truncate">
+        <Calendar class="w-4 h-4 text-theme-primary shrink-0" />
+        {{ activeTimeblock ? t('timeblock.editTitle') : t('timeblock.newTitle') }}
+      </h3>
+    </template>
+
+    <!-- Form Body -->
+    <form @submit.prevent="handleSave" class="p-5 space-y-4">
+      <!-- Title Input -->
+      <div>
+        <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5">
+          {{ t('timeblock.titleLabel') }}
+        </label>
+        <input
+          ref="titleInput"
+          v-model="title"
+          type="text"
+          required
+          :placeholder="t('timeblock.titlePlaceholder')"
+          class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all"
+        />
       </div>
 
-      <!-- Form Body -->
-      <form @submit.prevent="handleSave" class="p-5 space-y-4">
-        <!-- Title Input -->
-        <div>
-          <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5">
-            {{ t('timeblock.titleLabel') }}
-          </label>
-          <input
-            ref="titleInput"
-            v-model="title"
-            type="text"
-            required
-            :placeholder="t('timeblock.titlePlaceholder')"
-            class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all"
-          />
-        </div>
+      <!-- Date Input -->
+      <div>
+        <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5">
+          {{ t('timeblock.dateLabel') }}
+        </label>
+        <input
+          v-model="date"
+          type="date"
+          required
+          class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all"
+        />
+      </div>
 
-        <!-- Date Input -->
-        <div>
-          <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5">
-            {{ t('timeblock.dateLabel') }}
-          </label>
-          <input
-            v-model="date"
-            type="date"
-            required
-            class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all"
-          />
-        </div>
-
-        <!-- Time Range Grid -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Clock class="w-3.5 h-3.5" />
-              {{ t('timeblock.startLabel') }}
-            </label>
-            <input
-              v-model="startTime"
-              type="time"
-              required
-              class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Clock class="w-3.5 h-3.5" />
-              {{ t('timeblock.endLabel') }}
-            </label>
-            <input
-              v-model="endTime"
-              type="time"
-              required
-              class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all"
-            />
-          </div>
-        </div>
-
-        <!-- Recurrence Selection -->
+      <!-- Time Range Grid -->
+      <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Repeat class="w-3.5 h-3.5" />
-            {{ t('timeblock.recurrenceLabel') }}
+            <Clock class="w-3.5 h-3.5" />
+            {{ t('timeblock.startLabel') }}
           </label>
-          <select
-            v-model="recurrence"
-            class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all cursor-pointer"
+          <input
+            v-model="startTime"
+            type="time"
+            required
+            class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all"
+          />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <Clock class="w-3.5 h-3.5" />
+            {{ t('timeblock.endLabel') }}
+          </label>
+          <input
+            v-model="endTime"
+            type="time"
+            required
+            class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all"
+          />
+        </div>
+      </div>
+
+      <!-- Recurrence Selection -->
+      <div>
+        <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+          <Repeat class="w-3.5 h-3.5" />
+          {{ t('timeblock.recurrenceLabel') }}
+        </label>
+        <select
+          v-model="recurrence"
+          class="w-full px-3.5 py-2 rounded-lg bg-theme-base/80 border border-theme-border text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring transition-all cursor-pointer"
+        >
+          <option value="none">{{ t('timeblock.recurrenceOptions.none') }}</option>
+          <option value="daily">{{ t('timeblock.recurrenceOptions.daily') }}</option>
+          <option value="weekdays">{{ t('timeblock.recurrenceOptions.weekdays') }}</option>
+          <option value="weekly">{{ t('timeblock.recurrenceOptions.weekly') }}</option>
+          <option value="bi-weekly">{{ t('timeblock.recurrenceOptions.biWeekly') }}</option>
+        </select>
+      </div>
+
+      <!-- Color Palette Picker -->
+      <div>
+        <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+          <Palette class="w-3.5 h-3.5" />
+          {{ t('timeblock.colorLabel') }}
+        </label>
+        <div class="flex items-center gap-2 flex-wrap pt-1">
+          <button
+            v-for="preset in COLOR_PRESETS"
+            :key="preset.id"
+            type="button"
+            @click="color = preset.id"
+            class="w-6 h-6 rounded-full transition-all cursor-pointer flex items-center justify-center"
+            :class="[
+              preset.bg,
+              color === preset.id
+                ? 'ring-2 ring-offset-2 ring-offset-theme-card ring-white scale-110'
+                : 'opacity-70 hover:opacity-100 hover:scale-105',
+            ]"
+            :title="preset.label"
+          ></button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-between pt-3 border-t border-theme-border/60">
+        <div>
+          <button
+            v-if="activeTimeblock"
+            type="button"
+            @click="handleDelete"
+            :disabled="loading"
+            class="px-3 py-1.5 text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
           >
-            <option value="none">{{ t('timeblock.recurrenceOptions.none') }}</option>
-            <option value="daily">{{ t('timeblock.recurrenceOptions.daily') }}</option>
-            <option value="weekdays">{{ t('timeblock.recurrenceOptions.weekdays') }}</option>
-            <option value="weekly">{{ t('timeblock.recurrenceOptions.weekly') }}</option>
-            <option value="bi-weekly">{{ t('timeblock.recurrenceOptions.biWeekly') }}</option>
-          </select>
+            <Trash2 class="w-3.5 h-3.5" />
+            {{ t('buttons.delete') }}
+          </button>
         </div>
-
-        <!-- Color Palette Picker -->
-        <div>
-          <label class="block text-xs font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Palette class="w-3.5 h-3.5" />
-            {{ t('timeblock.colorLabel') }}
-          </label>
-          <div class="flex items-center gap-2 flex-wrap pt-1">
-            <button
-              v-for="preset in COLOR_PRESETS"
-              :key="preset.id"
-              type="button"
-              @click="color = preset.id"
-              class="w-6 h-6 rounded-full transition-all cursor-pointer flex items-center justify-center"
-              :class="[
-                preset.bg,
-                color === preset.id
-                  ? 'ring-2 ring-offset-2 ring-offset-theme-card ring-white scale-110'
-                  : 'opacity-70 hover:opacity-100 hover:scale-105',
-              ]"
-              :title="preset.label"
-            ></button>
-          </div>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            @click="emit('close')"
+            class="px-4 py-2 text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded-lg transition-colors cursor-pointer"
+          >
+            {{ t('buttons.cancel') }}
+          </button>
+          <button
+            type="submit"
+            :disabled="loading || !title.trim() || startTime >= endTime"
+            class="px-4 py-2 text-xs font-semibold bg-theme-primary text-white hover:bg-theme-primary/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-all cursor-pointer"
+          >
+            {{ activeTimeblock ? t('buttons.save') : t('buttons.create') }}
+          </button>
         </div>
-
-        <!-- Actions -->
-        <div class="flex items-center justify-between pt-3 border-t border-theme-border/60">
-          <div>
-            <button
-              v-if="activeTimeblock"
-              type="button"
-              @click="handleDelete"
-              :disabled="loading"
-              class="px-3 py-1.5 text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <Trash2 class="w-3.5 h-3.5" />
-              {{ t('buttons.delete') }}
-            </button>
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              @click="emit('close')"
-              class="px-4 py-2 text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded-lg transition-colors cursor-pointer"
-            >
-              {{ t('buttons.cancel') }}
-            </button>
-            <button
-              type="submit"
-              :disabled="loading || !title.trim() || startTime >= endTime"
-              class="px-4 py-2 text-xs font-semibold bg-theme-primary text-white hover:bg-theme-primary/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-all cursor-pointer"
-            >
-              {{ activeTimeblock ? t('buttons.save') : t('buttons.create') }}
-            </button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
+      </div>
+    </form>
+  </BaseModal>
 </template>

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { X, SlidersHorizontal, Calendar, Tag, Trash2 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
+import BaseModal from '@/components/ui/BaseModal.vue';
 import type { TaskFilterParams } from '@/types';
 
 const { t } = useI18n();
@@ -21,8 +22,6 @@ const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'apply', filters: TaskFilterParams): void;
 }>();
-
-const dialogRef = ref<HTMLDialogElement | null>(null);
 
 const allTags = computed(() => {
   const tagsSet = new Set<string>();
@@ -92,23 +91,13 @@ watch(
       hideDoneColumnLocal.value = settingsStore.hideDoneColumn;
       hideArchiveColumnLocal.value = settingsStore.hideArchiveColumn;
       hidePostponedColumnLocal.value = settingsStore.hidePostponedColumn;
-
-      await nextTick();
-      if (dialogRef.value && !dialogRef.value.open) {
-        dialogRef.value.showModal();
-      }
-    } else {
-      await nextTick();
-      if (dialogRef.value && dialogRef.value.open) {
-        dialogRef.value.close();
-      }
     }
   },
   { immediate: true }
 );
 
 const handleClose = () => {
-  emit('close');
+  handleApply();
 };
 
 const handleClear = () => {
@@ -148,54 +137,25 @@ const handleApply = () => {
   emit('apply', filters);
   emit('close');
 };
-
-// Setup native dialog cancel (Esc key) handler
-const handleNativeClose = () => {
-  handleApply();
-};
-
-// Light dismiss click fallback
-const handleDialogClick = (event: MouseEvent) => {
-  const dialog = dialogRef.value;
-  if (!dialog) return;
-
-  // Only handle light dismiss fallback if closedBy is not supported natively
-  if (!('closedBy' in HTMLDialogElement.prototype)) {
-    if (event.target !== dialog) return;
-    const rect = dialog.getBoundingClientRect();
-    const isDialogContent =
-      rect.top <= event.clientY &&
-      event.clientY <= rect.top + rect.height &&
-      rect.left <= event.clientX &&
-      event.clientX <= rect.left + rect.width;
-    if (!isDialogContent) {
-      handleApply();
-    }
-  }
-};
 </script>
 
 <template>
-  <dialog
-    ref="dialogRef"
-    closedby="any"
-    @close="handleNativeClose"
-    @click="handleDialogClick"
-    class="bg-theme-base border border-theme-border rounded-lg shadow-2xl p-0 max-w-3xl w-full max-h-[90vh] focus:outline-none overflow-hidden"
-  >
-    <!-- Header -->
-    <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50">
-      <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider flex items-center gap-1.5">
-        <SlidersHorizontal class="w-4 h-4 shrink-0 text-theme-accent" />
-        {{ t('filterModal.title') }}
-      </h3>
-      <button
-        @click="handleApply"
-        class="text-theme-text-muted hover:text-theme-text-main transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
-      >
-        <X class="w-4 h-4 shrink-0" />
-      </button>
-    </div>
+  <BaseModal :is-open="isOpen" max-width="max-w-3xl" content-class="max-h-[90vh] focus:outline-none" @close="handleClose">
+    <template #header>
+      <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50 shrink-0">
+        <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider flex items-center gap-1.5">
+          <SlidersHorizontal class="w-4 h-4 shrink-0 text-theme-accent" />
+          {{ t('filterModal.title') }}
+        </h3>
+        <button
+          type="button"
+          @click="handleClose"
+          class="text-theme-text-muted hover:text-theme-text-main transition-colors p-1 hover:bg-theme-card rounded cursor-pointer"
+        >
+          <X class="w-4 h-4 shrink-0" />
+        </button>
+      </div>
+    </template>
 
     <!-- Body -->
     <div class="flex-grow p-6 overflow-y-auto max-h-[70vh] scroller-thin">
@@ -372,51 +332,34 @@ const handleDialogClick = (event: MouseEvent) => {
     </div>
 
     <!-- Footer Buttons -->
-    <div class="p-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30">
-      <button
-        type="button"
-        @click="handleClear"
-        class="flex items-center gap-1.5 px-3 py-1.5 border border-theme-border hover:bg-theme-column/30 text-theme-text-muted hover:text-theme-text-main rounded text-xs font-semibold transition-all cursor-pointer"
-      >
-        <Trash2 class="w-3.5 h-3.5" />
-        {{ t('filterModal.clearAll') }}
-      </button>
+    <template #footer>
+      <div class="p-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
+        <button
+          type="button"
+          @click="handleClear"
+          class="flex items-center gap-1.5 px-3 py-1.5 border border-theme-border hover:bg-theme-column/30 text-theme-text-muted hover:text-theme-text-main rounded text-xs font-semibold transition-all cursor-pointer"
+        >
+          <Trash2 class="w-3.5 h-3.5" />
+          {{ t('filterModal.clearAll') }}
+        </button>
 
-      <div class="flex items-center gap-2">
-        <button
-          type="button"
-          @click="handleClose"
-          class="px-3.5 py-1.5 border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer"
-        >
-          {{ t('buttons.cancel') }}
-        </button>
-        <button
-          type="button"
-          @click="handleApply"
-          class="px-4 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer"
-        >
-          {{ t('filterModal.apply') }}
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            @click="emit('close')"
+            class="px-3.5 py-1.5 border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer"
+          >
+            {{ t('buttons.cancel') }}
+          </button>
+          <button
+            type="button"
+            @click="handleApply"
+            class="px-4 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer"
+          >
+            {{ t('filterModal.apply') }}
+          </button>
+        </div>
       </div>
-    </div>
-  </dialog>
+    </template>
+  </BaseModal>
 </template>
-
-<style scoped>
-dialog {
-  display: none;
-}
-dialog[open] {
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  margin: 0;
-}
-dialog::backdrop {
-  background-color: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(2px);
-}
-</style>
