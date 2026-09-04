@@ -55,18 +55,6 @@ const emit = defineEmits<{
 }>();
 
 const cardsContainer = ref<HTMLElement | null>(null);
-const leftContainer = ref<HTMLElement | null>(null);
-const rightContainer = ref<HTMLElement | null>(null);
-const col1Container = ref<HTMLElement | null>(null);
-const col2Container = ref<HTMLElement | null>(null);
-const col3Container = ref<HTMLElement | null>(null);
-
-const leftTasks = computed(() => props.tasks.filter((_, idx) => idx % 2 === 0));
-const rightTasks = computed(() => props.tasks.filter((_, idx) => idx % 2 === 1));
-
-const col1Tasks = computed(() => props.tasks.filter((_, idx) => idx % 3 === 0));
-const col2Tasks = computed(() => props.tasks.filter((_, idx) => idx % 3 === 1));
-const col3Tasks = computed(() => props.tasks.filter((_, idx) => idx % 3 === 2));
 
 const colorMap: Record<string, string> = {
   red: '#ef4444',
@@ -176,7 +164,7 @@ const setupSortables = () => {
       // chosenClass: 'scale-[1.02]',
       // delay: 60,
       dragClass: 'rotate-1',
-      draggable: '.task-card',
+      draggable: '.task-card-wrapper',
       filter: '.add-task-btn',
       preventOnFilter: true,
       onStart: (evt: any) => {
@@ -207,10 +195,10 @@ const setupSortables = () => {
         let prevEl = item.previousElementSibling;
         let nextEl = item.nextElementSibling;
 
-        while (prevEl && !prevEl.classList.contains('task-card')) {
+        while (prevEl && !prevEl.classList.contains('task-card-wrapper')) {
           prevEl = prevEl.previousElementSibling;
         }
-        while (nextEl && !nextEl.classList.contains('task-card')) {
+        while (nextEl && !nextEl.classList.contains('task-card-wrapper')) {
           nextEl = nextEl.nextElementSibling;
         }
 
@@ -236,22 +224,8 @@ const setupSortables = () => {
       },
     });
 
-    if (props.layout === 'grid-3') {
-      [col1Container, col2Container, col3Container].forEach((cRef) => {
-        if (cRef.value instanceof HTMLElement) {
-          sortableInstances.value.push(Sortable.create(cRef.value, createSortableOptions()));
-        }
-      });
-    } else if (props.layout === 'grid-2') {
-      [leftContainer, rightContainer].forEach((cRef) => {
-        if (cRef.value instanceof HTMLElement) {
-          sortableInstances.value.push(Sortable.create(cRef.value, createSortableOptions()));
-        }
-      });
-    } else {
-      if (cardsContainer.value instanceof HTMLElement) {
-        sortableInstances.value.push(Sortable.create(cardsContainer.value, createSortableOptions()));
-      }
+    if (cardsContainer.value instanceof HTMLElement) {
+      sortableInstances.value.push(Sortable.create(cardsContainer.value, createSortableOptions()));
     }
   });
 };
@@ -323,79 +297,36 @@ watch(
         <!-- Optional Add Task Button -->
         <slot name="add-button"></slot>
 
-        <!-- Grid 3x -->
-        <div v-if="layout === 'grid-3'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow pb-6">
+        <!-- Masonry / Multi-Column Single Container -->
+        <div
+          ref="cardsContainer"
+          :data-column-id="id"
+          class="cards-container flex-grow pb-6"
+          :class="[
+            layout === 'grid-3'
+              ? 'columns-3 gap-2.5 [column-fill:_balance]'
+              : layout === 'grid-2'
+                ? 'columns-2 gap-2.5 [column-fill:_balance]'
+                : 'flex flex-col gap-2.5',
+          ]"
+        >
           <div
-            v-for="(colTasks, i) in [col1Tasks, col2Tasks, col3Tasks]"
-            :key="i"
-            :ref="
-              (el) => {
-                if (i === 0) col1Container = el as any;
-                else if (i === 1) col2Container = el as any;
-                else col3Container = el as any;
-              }
-            "
-            :data-column-id="id"
-            class="subcolumn flex flex-col gap-2.5 w-1/3 flex-grow"
-          >
-            <TaskCard
-              v-for="task in colTasks"
-              :key="task.id"
-              class="task-card"
-              :task="task"
-              :compact="compactCards"
-              :show-project="showProject"
-              :max-nesting-level="maxNestingLevel"
-              :data-task-id="task.id"
-              @mark-done="emit('mark-done', task)"
-              @toggle-select="emit('toggle-select', $event)"
-            />
-          </div>
-        </div>
-
-        <!-- Grid 2x -->
-        <div v-else-if="layout === 'grid-2'" class="subcolumn-wrap flex gap-2.5 items-stretch flex-grow pb-6">
-          <div
-            v-for="(colTasks, i) in [leftTasks, rightTasks]"
-            :key="i"
-            :ref="
-              (el) => {
-                if (i === 0) leftContainer = el as any;
-                else rightContainer = el as any;
-              }
-            "
-            :data-column-id="id"
-            class="subcolumn flex flex-col gap-2.5 w-1/2 flex-grow"
-          >
-            <TaskCard
-              v-for="task in colTasks"
-              :key="task.id"
-              class="task-card"
-              :task="task"
-              :compact="compactCards"
-              :show-project="showProject"
-              :max-nesting-level="maxNestingLevel"
-              :data-task-id="task.id"
-              @mark-done="emit('mark-done', task)"
-              @toggle-select="emit('toggle-select', $event)"
-            />
-          </div>
-        </div>
-
-        <!-- Single Column -->
-        <div v-else ref="cardsContainer" :data-column-id="id" class="cards-container-list flex flex-col gap-2.5 flex-grow pb-6">
-          <TaskCard
             v-for="task in tasks"
             :key="task.id"
-            class="task-card"
-            :task="task"
-            :compact="compactCards"
-            :show-project="showProject"
-            :max-nesting-level="maxNestingLevel"
             :data-task-id="task.id"
-            @mark-done="emit('mark-done', task)"
-            @toggle-select="emit('toggle-select', $event)"
-          />
+            class="task-card-wrapper inline-block w-full mb-2.5 break-inside-avoid"
+          >
+            <TaskCard
+              class="task-card w-full"
+              :task="task"
+              :compact="compactCards"
+              :show-project="showProject"
+              :max-nesting-level="maxNestingLevel"
+              :data-task-id="task.id"
+              @mark-done="emit('mark-done', task)"
+              @toggle-select="emit('toggle-select', $event)"
+            />
+          </div>
         </div>
       </div>
 
@@ -445,7 +376,7 @@ watch(
       <div
         ref="cardsContainer"
         :data-column-id="id"
-        class="absolute inset-y-12 inset-x-0 z-20 opacity-0 cards-container-list cursor-pointer"
+        class="absolute inset-y-12 inset-x-0 z-20 opacity-0 cards-container cursor-pointer"
         @click="emit('toggle-collapse')"
       ></div>
     </template>
@@ -453,9 +384,7 @@ watch(
 </template>
 
 <style scoped>
-.subcolumn-wrap,
-.subcolumn,
-.cards-container-list {
+.cards-container {
   flex-grow: 1;
   min-height: 100px;
 }
