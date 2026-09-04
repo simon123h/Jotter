@@ -307,7 +307,7 @@ watch(
               ? 'columns-3 gap-2.5 [column-fill:_balance]'
               : layout === 'grid-2'
                 ? 'columns-2 gap-2.5 [column-fill:_balance]'
-                : 'flex flex-col gap-2.5',
+                : 'flex flex-col',
           ]"
         >
           <div
