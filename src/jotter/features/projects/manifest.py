@@ -1,6 +1,5 @@
-"""Manifest module for reading and writing project index.md files."""
-
 import json
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -200,6 +199,9 @@ def write_project_manifest(
 
     final_content = f"---\n{yaml_content}---\n{body_to_write}"
 
-    tmp_file = index_file.with_suffix(".tmp")
-    tmp_file.write_text(final_content, encoding="utf-8")
-    tmp_file.replace(index_file)
+    # Write to a uniquely named temporary file in the same directory before atomic replacement
+    with tempfile.NamedTemporaryFile("w", dir=project_dir, delete=False, encoding="utf-8", prefix=".index_", suffix=".tmp") as f:
+        f.write(final_content)
+        tmp_path = Path(f.name)
+
+    tmp_path.replace(index_file)

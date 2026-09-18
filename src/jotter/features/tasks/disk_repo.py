@@ -35,8 +35,13 @@ class DiskTaskRepository:
         """Atomically writes the task Markdown file with YAML frontmatter."""
         path = self.get_task_file_path(task.project_id, str(task.id))
         content = self.serialize_task(task)
-        tmp_path = path.with_suffix(".tmp")
-        tmp_path.write_text(content, encoding="utf-8")
+        parent_dir = path.parent
+        parent_dir.mkdir(parents=True, exist_ok=True)
+
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", dir=parent_dir, delete=False, encoding="utf-8", prefix=f".{task.id}_", suffix=".tmp") as f:
+            f.write(content)
+            tmp_path = Path(f.name)
         tmp_path.replace(path)
 
     def delete(self, project_id: str, task_id: str) -> None:
