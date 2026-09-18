@@ -25,7 +25,10 @@ Within seconds, you will see a `tasks` directory appear inside your Obsidian vau
 Obsidian natively parses and indexes YAML frontmatter at the top of notes. This allows you to view and filter Jotter tasks directly inside your Obsidian environment using Obsidian core features or popular plugins.
 
 ### Obsidian Properties View
-Obsidian's built-in **Properties** editor automatically detects the YAML frontmatter written by Jotter. You can view fields like `due_date`, `priority`, and `tags` as visual interactive widgets directly at the top of the note in Obsidian.
+Obsidian's built-in **Properties** editor automatically detects the YAML frontmatter written by Jotter. You can view fields like `status`, `type`, `due_date`, `priority`, and `tags` as visual interactive widgets directly at the top of the note in Obsidian.
+
+### Folder Notes & `index.md` Project Manifests
+Each project directory in Jotter includes an `index.md` manifest note. If you use popular Obsidian plugins like **Folder Notes** or **AidenLx's Folder Note**, clicking on your project directory in the Obsidian file explorer will seamlessly open the project's `index.md` note. You can write rich markdown notes, meeting logs, and roadmap overviews directly in `index.md` without interfering with Jotter's board metadata.
 
 ### Querying Tasks with Dataview
 If you use the popular **Dataview** plugin in Obsidian, you can easily query and display your Jotter tasks across your second brain.
@@ -33,9 +36,9 @@ If you use the popular **Dataview** plugin in Obsidian, you can easily query and
 For example, to list all **high priority** Jotter tasks that are due before a certain date inside an Obsidian dashboard note, you can write:
 
 ```sql
-TABLE due_date, priority, bucket
+TABLE due_date, priority, status
 FROM "projects/jotter-board/tasks"
-WHERE priority = "high" AND due_date <= date(today)
+WHERE type = "task" AND priority = "high" AND due_date <= date(today)
 SORT due_date ASC
 ```
 
@@ -44,7 +47,7 @@ To list all tasks currently in your **In Progress** column:
 ```sql
 LIST
 FROM "projects/jotter-board/tasks"
-WHERE bucket = "in-progress"
+WHERE type = "task" AND (status = "in-progress" OR bucket = "in-progress")
 ```
 
 ---

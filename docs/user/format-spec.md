@@ -9,17 +9,18 @@ This page documents the precise schema and syntax Jotter uses to serialize and p
 ## File Structure
 
 Each task file contains two main sections:
-1. **Frontmatter**: A YAML block enclosed by triple-dash `---` separators at the top of the file, containing task metadata.
-2. **Body**: The standard Markdown content representing task details, notes, check-lists, and description.
+1. **Frontmatter**: A YAML block enclosed by triple-dash `---` separators at the top of the file, containing task metadata compliant with the Open Knowledge Format (OKF).
+2. **Body**: The standard Markdown content representing task details, notes, checklists, and descriptions.
 
 Here is an example of a complete, valid task file:
 
 ```markdown
 ---
+type: task
 id: 01HJKM7ST89AB234CDEFGHJKMN
 project_id: default
 title: Implement sidebar documentation links
-bucket: in-progress
+status: in-progress
 position: 1024.5
 tags:
   - frontend
@@ -48,16 +49,17 @@ The hyperlink should point to `https://simon123h.github.io/Jotter/` and use the 
 
 ---
 
-## Frontmatter Schema
+## Task Frontmatter Schema
 
-The YAML frontmatter block supports the following key-value pairs. All key names are case-sensitive and should be lowercase.
+The YAML frontmatter block supports the following key-value pairs. All key names are case-sensitive and should be lowercase. Any custom or unknown frontmatter keys added by other PKM tools or AI agents are safely preserved.
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `id` | String | Yes | A unique, URL-safe identifier (typically an ULID or UUID) that uniquely identifies this task across the entire application. |
+| `type` | String | No | OKF entity type identifier. Serialized as `task`. |
+| `id` | String | Yes | A unique, URL-safe identifier (ULID or UUID) that uniquely identifies this task across the entire application. |
 | `project_id` | String | Yes | The ID of the project this task belongs to. If not specified, this defaults to `default`. |
 | `title` | String | Yes | The title of the task. Keep this on a single line. |
-| `bucket` | String | Yes | The slug/name of the column this task belongs to (e.g. `backlog`, `todo`, `in-progress`, `done`). |
+| `status` | String | Yes | The slug/name of the column this task belongs to (e.g. `backlog`, `todo`, `in-progress`, `done`). Note: Legacy files using `bucket:` are fully supported for backwards compatibility. |
 | `position` | Float | Yes | A floating-point number used by the drag-and-drop system to maintain sorting order within a column. |
 | `tags` | Array of Strings | No | A list of labels categorizing this task. Tags are normalized to lowercase by Jotter's parser. |
 | `attachments` | Array of Strings | No | Relative file paths of uploaded files associated with this task, located in the project's attachments folder. |
@@ -68,6 +70,62 @@ The YAML frontmatter block supports the following key-value pairs. All key names
 | `postponed_until` | String | No | The date until which the task is postponed, formatted in ISO standard date format `YYYY-MM-DD` (or `null` if none). |
 | `created_at` | String | Yes | ISO 8601 UTC timestamp of task creation (e.g., `2026-06-07T12:00:00Z`). |
 | `updated_at` | String | Yes | ISO 8601 UTC timestamp of the last modification. |
+
+---
+
+## Project Manifest Specification (`index.md`)
+
+Each project directory in Jotter is defined by an `index.md` file located directly in the project folder (e.g. `<data_dir>/<project_id>/index.md`). This file serves as both the canonical project manifest (defining columns/buckets and project metadata) and a rich markdown note compatible with Obsidian Folder Notes, Logseq namespaces, and PKM tools.
+
+### Example `index.md`
+
+```markdown
+---
+type: project
+id: default
+title: Main Project Board
+description: Primary task tracking board for development.
+git_remote: "https://github.com/user/my-tasks.git"
+done_clean_period: "after_1_week"
+buckets:
+  - name: backlog
+    title: Backlog
+    position: 0.0
+    is_done: false
+    collapsed: false
+  - name: todo
+    title: To Do
+    position: 1000.0
+    is_done: false
+    collapsed: false
+  - name: in-progress
+    title: In Progress
+    position: 2000.0
+    is_done: false
+    collapsed: false
+  - name: done
+    title: Done
+    position: 3000.0
+    is_done: true
+    collapsed: false
+---
+
+# Main Project Overview
+
+Welcome to the project board documentation note. You can freely edit this markdown body in Obsidian or any text editor to record project goals, architecture decisions, and links to relevant notes.
+```
+
+### Manifest Frontmatter Schema
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `type` | String | No | OKF entity type identifier. Serialized as `project`. |
+| `id` | String | Yes | Unique project ID matching the directory name. |
+| `title` | String | Yes | Display title of the project board. |
+| `description` | String | No | Human-readable description of the project. |
+| `git_remote` | String | No | Git remote URL for selective per-project synchronization. |
+| `done_clean_period` | String | No | Auto-prune policy for completed tasks (e.g. `disabled`, `after_1_day`, `after_1_week`, `after_1_month`). |
+| `buckets` | Array of Objects | Yes | List of board columns (buckets), ordered by `position`. Each object contains `name` (slug), `title`, `position`, `is_done`, `collapsed`, and optional `limit`. |
 
 ---
 

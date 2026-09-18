@@ -25,7 +25,10 @@ Innerhalb weniger Sekunden siehst du das Verzeichnis `tasks` in deinem Obsidian-
 Obsidian liest und indiziert YAML-Frontmatter standardmäßig am Anfang von Notizen. Dadurch kannst du Jotter-Aufgaben über Obsidian-Kernfunktionen oder beliebte Community-Plugins filtern.
 
 ### Obsidian-Eigenschaften (Properties View)
-Die integrierte Eigenschaften-Ansicht von Obsidian erkennt die von Jotter geschriebenen YAML-Metadaten automatisch. Du kannst Felder wie `due_date`, `priority` und `tags` direkt oben in der Notiz als interaktive Widgets bearbeiten.
+Die integrierte Eigenschaften-Ansicht von Obsidian erkennt die von Jotter geschriebenen YAML-Metadaten automatisch. Du kannst Felder wie `status`, `type`, `due_date`, `priority` und `tags` direkt oben in der Notiz als interaktive Widgets bearbeiten.
+
+### Folder Notes & `index.md` Projekt-Manifeste
+Jedes Projektverzeichnis in Jotter enthält eine `index.md`-Manifestdatei. Wenn du Community-Plugins wie **Folder Notes** oder **AidenLx's Folder Note** nutzt, öffnet ein Klick auf den Projektordner im Dateibaum von Obsidian direkt die Notiz `index.md`. Du kannst darin Projektziele, Besprechungsnotizen und Roadmaps festhalten, während Jotter das YAML-Frontmatter für die Spalten- und Boardkonfiguration nutzt.
 
 ### Aufgaben abfragen mit Dataview
 Mit dem beliebten Community-Plugin **Dataview** kannst du deine Jotter-Aufgaben spielend leicht in Dashboards in deinem gesamten Obsidian-Vault abfragen.
@@ -33,9 +36,9 @@ Mit dem beliebten Community-Plugin **Dataview** kannst du deine Jotter-Aufgaben 
 Um beispielsweise alle **wichtigen** (high priority) Aufgaben aufzulisten, die heute oder früher fällig sind, kannst du in eine Obsidian-Notiz schreiben:
 
 ```sql
-TABLE due_date, priority, bucket
+TABLE due_date, priority, status
 FROM "projekte/jotter-board/tasks"
-WHERE priority = "high" AND due_date <= date(today)
+WHERE type = "task" AND priority = "high" AND due_date <= date(today)
 SORT due_date ASC
 ```
 
@@ -44,7 +47,7 @@ Oder um alle Aufgaben aufzulisten, die sich in Bearbeitung befinden:
 ```sql
 LIST
 FROM "projekte/jotter-board/tasks"
-WHERE bucket = "in-progress"
+WHERE type = "task" AND (status = "in-progress" OR bucket = "in-progress")
 ```
 
 ---

@@ -89,22 +89,22 @@ flowchart LR
 * **Pinia Store**: Verwaltet clientseitige Einstellungen (wie lokale Präferenzen und Ansichten), die mit dem `localStorage` des Browsers synchronisiert werden.
 * **API Client**: Kommuniziert mit den Routen des Backends.
 
-### 5.2 Backend (Go Chi / Wails)
+### 5.2 Backend (FastAPI Python-Anwendung)
 
-Jotter verwendet eine klare, mehrschichtige Architektur, die in modulare Feature-Pakete unterteilt ist (`internal/features/...`): `project`, `bucket`, `task`, `settings` und `system`. Jedes Paket folgt einer strikten Trennung in drei Schichten (äquivalent zu Controllers, Services und Repositories in Spring Boot):
+Jotter verwendet eine klare, mehrschichtige Architektur, die in modulare Feature-Pakete unterteilt ist (`src/jotter/features/...`): `projects`, `buckets`, `tasks`, `settings` und `sync`. Jedes Paket folgt einer strikten Trennung der Schichten:
 
-1. **Handlers (Controller-Schicht)**:
-   - Registriert feature-spezifische REST-Endpunkte (`RegisterRoutes`).
+1. **Routes (Controller-Schicht)**:
+   - Registriert feature-spezifische REST-Endpunkte (`projects/router.py`, `buckets/router.py`, `tasks/router.py`, `settings/router.py`, `system/router.py`).
    - Fungiert als Einstiegspunkt für HTTP-Anfragen.
-   - Analysiert Anfrageparameter und dekodiert Payloads in Go-Structs (DTOs - Data Transfer Objects).
+   - Analysiert Anfrageparameter und validiert Payloads in Pydantic-Modelle (DTOs - Data Transfer Objects).
    - Übersetzt domänenspezifische Rückgaben oder Fehler in HTTP-Statuscodes und JSON-Antworten.
 2. **Services (Business-Logik / Domänenschicht)**:
    - Enthält die reine Geschäftslogik, Eingabevalidierungen und Regelprüfungen.
    - Koordiniert Repository-übergreifende Operationen (z. B. das synchrone Halten von Festplattendateien und dem SQLite-Index).
    - Steuert erweiterte Dateisystemoperationen wie Multipart-Dateianhänge, Aufgabenlisten-Filterungen und automatische Aufbewahrungsfristen.
 3. **Repositories (Datenzugriffsschicht / Persistenz)**:
-   - **Database Repository (SQLite Repositories)**: Kommuniziert über strukturierte SQL-Abfragen direkt mit dem lokalen SQLite-Index (`modernc.org/sqlite`).
-   - **File Repository (Disk Repositories)**: Interagiert direkt mit dem Dateisystem des Host-Rechners, um Markdown-Dateien, Konfigurationsdateien (`projects.json`) und Dateianhänge zu schreiben und zu lesen.
+   - **Database Repository (SQLite Repositories)**: Kommuniziert über strukturierte SQL-Abfragen direkt mit dem lokalen SQLite-Index (`tasks.db`) mit aktiviertem WAL-Modus.
+   - **File Repository (Disk Repositories)**: Interagiert direkt mit dem Dateisystem des Host-Rechners, um Markdown-Dateien nach dem Open Knowledge Format (OKF) und Obsidian Folder Notes (`<project_id>/index.md` Projekt-Manifeste und `<project_id>/tasks/<id>.md` Aufgabendateien), Konfigurationsdateien (`jotter.yaml`, `settings.json`) und Dateianhänge zu schreiben und zu lesen.
 
 ---
 
@@ -116,56 +116,51 @@ Beim Starten durchläuft Jotter eine Synchronisationsphase, um den Datenbank-Ind
 
 ```mermaid
 sequenceDiagram
-    participant Main as main_server.go / main_desktop.go
-    participant Bootstrap as internal/app/bootstrap.go
-    participant DB as internal/db/db.go
-    participant SysSvc as system.Service (internal/features/system)
-    participant FileRepo as system.FileRepository (internal/features/system)
-    participant DBRepo as system.DBRepository (internal/features/system)
+    participant Main as src/jotter/main.py
+    participant App as src/jotter/app.py
+    participant DB as src/jotter/db/connection.py
+    participant Sync as src/jotter/features/sync/service.py
     participant Disk as Lokale Festplatte (.md)
 
-    Main->>Bootstrap: Bootstrap(dataDir, dbPath)
-    Bootstrap->>DB: InitDB()
-    DB-->>Bootstrap: DB initialisiert (SQLite Schema bereit)
-    Bootstrap->>SysSvc: SyncDBWithFiles()
-    SysSvc->>SysSvc: Service + Repositories instanziieren
-    SysSvc->>FileRepo: LoadProjectsFile() & ReadDir()
-    FileRepo->>Disk: Lese projects.json und Projekt-Ordner
-    Disk-->>FileRepo: Verzeichnisse & Dateien zurückgeben
-    FileRepo-->>SysSvc: Projektkonfigurationen & Aufgabenliste
-    SysSvc->>SysSvc: YAML-Frontmatter der .md-Dateien parsen
-    SysSvc->>DBRepo: Lösche & Bulk-Insert von Spalten/Aufgaben/Projekten
-    DBRepo-->>SysSvc: Synchronisation abgeschlossen
-    SysSvc-->>Bootstrap: Anzahl synchronisierter Dateien zurückgeben
-    Bootstrap-->>Main: Server ist betriebsbereit
+    Main->>App: create_app(config)
+    App->>DB: get_db(db_path)
+    DB-->>App: SQLite-Verbindung bereit (WAL aktiviert)
+    App->>Sync: sync_all()
+    Sync->>Disk: Lese index.md der Projekte und *.md der Aufgaben
+    Disk-->>Sync: Frontmatter und Inhalt
+    Sync->>DB: Atomares Batch-Upsert (Projekte, Spalten, Aufgaben)
+    DB-->>Sync: Synchronisation abgeschlossen
+    Sync-->>App: Anzahl synchronisierter Dateien zurückgeben
+    App-->>Main: FastAPI-Server ist betriebsbereit
 ```
 
 ---
 
 ## 7. Verteilungssicht
 
-Jotter wird in zwei unterschiedliche Binärdateien verpackt:
+Jotter wird als leichtgewichtige Webanwendung bereitgestellt:
 
-1. **`jotter-desktop` (GUI)**: Eine vollständige Desktop-Anwendung, verpackt mit **Wails**. Sie öffnet ein natives Webview-Fenster und führt das eingebettete Frontend aus.
-2. **`jotter-server` (Server)**: Ein leichtgewichtiges CLI-Binary, das einen standardmäßigen HTTP-Server startet und das Frontend für jeden modernen Webbrowser im lokalen Netzwerk bereitstellt.
+1. **Backend**: Python 3 (FastAPI + Uvicorn) zur Bereitstellung der REST-Endpunkte und statischen Dateien.
+2. **Frontend**: Gebaute Single Page Application (Vue 3 + Vite + Tailwind CSS), direkt ausgeliefert über `frontend/dist/`.
 
-### Gemeinsame Merkmale:
-
-* **Asset-Einbettung**: Das fertig gebaute Frontend-SPA-Paket (`dist/`) wird mittels `go:embed` direkt in das Go-Binary einkompiliert und nativ ausgeliefert.
-* **Innere Logik**: Beide Distributionen teilen sich exakt denselben Go-Code aus den `internal/` Paketen, was ein absolut identisches Verhalten garantiert.
+Ausführen von Jotter:
+```bash
+pip install -e .
+jotter
+```
 
 ---
 
 ## 8. Git-Synchronisations-Logik
 
-Jotter behandelt jedes Projektverzeichnis als potenzielles eigenständiges Git-Repository. Die Logik ist in `internal/features/common/git.go` implementiert und wird sequentiell für alle konfigurierten Projekte während einer Synchronisation ausgeführt.
+Jotter behandelt jedes Projektverzeichnis als potenzielles eigenständiges Git-Repository. Die Logik ist in `src/jotter/features/git/service.py` implementiert und wird sequentiell für alle konfigurierten Projekte während einer Synchronisation ausgeführt.
 
 ### Der Ablauf pro Projekt:
 
 1. **Erkennung**: Das Backend fragt die Datenbank nach allen Projekten mit eingerichteter `git_remote` URL ab.
 2. **Auto-Setup**: Für jedes Projekt wird geprüft, ob ein `.git` Ordner existiert. Falls nicht, werden automatisch `git init` and `git remote add origin` ausgeführt.
 3. **Commit**: Führt `git add .` und `git commit` im jeweiligen Projekt-Unterverzeichnis aus.
-4. **Fetch & Merge**: Holt Änderungen vom `origin` ab und versucht einen sicheren Merge (`git pull --rebase`).
+4. **Fetch & Merge**: Holt Änderungen vom `origin` ab und versucht einen sicheren Merge.
 5. **Konflikt-Isolation**: Konflikte werden pro Projekt isoliert behandelt. Hat Projekt A einen Konflikt, wird dessen Merge abgebrochen, während Projekt B dennoch fehlerfrei synchronisiert wird.
 6. **Push**: Erfolgreiche Zusammenführungen werden an das jeweilige Remote-Repository hochgeladen.
 
@@ -175,37 +170,64 @@ Diese Architektur ermöglicht ein **selektives Teilen**, bei dem unterschiedlich
 
 ## 9. Datenmodell
 
-### 9.1 Markdown YAML Frontmatter
+### 9.1 Aufgaben-Frontmatter (Open Knowledge Format)
 
-Jede Aufgabendatei wird nach dem Muster `[id]-[title-slug].md` benannt. Die Metadaten werden im YAML-Frontmatter serialisiert:
+Jede Aufgabendatei wird nach ihrer ID benannt (`<id>.md`). Die Metadaten werden im YAML-Frontmatter serialisiert:
 
 ```yaml
 ---
-id: 1042
+type: task
+id: 01HJKM7ST89AB234CDEFGHJKMN
 project_id: default
 title: Authentifizierung reparieren
-bucket: todo
+status: todo
 position: 2000.0
 tags:
   - backend
   - auth
-due_date: 2026-06-30
+due_date: "2026-06-30"
 priority: high
-created_at: 2026-06-04T12:00:00Z
+created_at: "2026-06-04T12:00:00Z"
+updated_at: "2026-06-04T12:00:00Z"
 ---
 Hier folgen die Inhaltsbeschreibungen der Aufgabe in Standard-Markdown.
 ```
 
+### 9.2 Projekt-Manifest (`index.md`)
+
+Jeder Projektordner enthält eine `index.md`-Notiz, die Board-Spalten und Projekt-Metadaten definiert:
+
+```yaml
+---
+type: project
+id: default
+title: Hauptprojekt-Board
+git_remote: "https://github.com/user/my-tasks.git"
+done_clean_period: "after_1_week"
+buckets:
+  - name: todo
+    title: Zu erledigen
+    position: 1000.0
+    is_done: false
+    collapsed: false
+  - name: in-progress
+    title: In Bearbeitung
+    position: 2000.0
+    is_done: false
+    collapsed: false
+  - name: done
+    title: Erledigt
+    position: 3000.0
+    is_done: true
+    collapsed: false
+---
+Notizen, Projektübersicht und Dokumentation.
+```
+
 ---
 
-## 10. API & Swagger-Dokumentation
+## 10. API & OpenAPI-Dokumentation
 
-Jotter verfügt über eine vollautomatische OpenAPI 2.0 (Swagger) Spezifikationsgenerierung.
+Jotter verfügt über eine vollautomatische OpenAPI 3.0 Spezifikationsgenerierung via FastAPI.
 
-* **OpenAPI-Annotationen**: Jeder Handler/Controller im Go-Backend ist vollständig mit Attributen wie `@Summary`, `@Description`, `@Tags`, `@Accept`, `@Produce`, `@Param`, `@Success`, `@Failure` und `@Router` versehen.
-* **Swagger-UI-Endpunkt**: Bei Ausführung von `jotter-server` ist das Swagger-UI standardmäßig unter `http://localhost:58271/swagger/index.html` erreichbar.
-* **Spezifikation aktualisieren**: Nach Änderungen an den Go-Handlern kann die Dokumentation über folgendes npm-Skript regeneriert werden:
-  ```bash
-  npm run swagger:generate
-  ```
-  Dies ruft den `swag` CLI-Generator auf, analysiert die Kommentare im Go-Quellcode und aktualisiert die JSON- und YAML-Dateien im Verzeichnis `internal/docs/`.
+* **Interaktive API-Dokumentation**: Bei laufendem Jotter-Server ist die interaktive Dokumentation unter `http://localhost:58271/docs` (Swagger UI) sowie `http://localhost:58271/redoc` (ReDoc) erreichbar.

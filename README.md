@@ -12,7 +12,7 @@
 
 🚀 **Try the Online Demo**: [simon123h.github.io/Jotter/demo/](https://simon123h.github.io/Jotter/demo/)
 
-Jotter is a **local-first, privacy-focused task management web application** designed to help you organize tasks without losing data ownership. Modeled as a Markdown Kanban board, Jotter helps combat "task flooding" through filtering, intuitive UI, all while keeping your data stored locally in simple, plain-text files on your own machine. The integrated git support allows for syncing the tasks across devices.
+Jotter is a **local-first, privacy-focused task management web application** designed to help you organize tasks without losing data ownership. Modeled as a Markdown Kanban board, Jotter helps combat "task flooding" through filtering and an intuitive UI, all while storing your data locally in **Open Knowledge Format (OKF)** compliant plain-text Markdown files. The integrated git support allows for syncing tasks seamlessly across devices.
 
 **Documentation**: [simon123h.github.io/Jotter](https://simon123h.github.io/Jotter/)
 
@@ -22,7 +22,7 @@ Jotter is a **local-first, privacy-focused task management web application** des
 
 ## 🌟 Key Features
 
-- **Data Ownership & Portability**: Tasks are stored as human-readable `.md` markdown files. Your data remains yours, fully accessible even if you stop using Jotter.
+- **Data Ownership & Portability**: Tasks are stored as human-readable `.md` markdown files. Your data remains yours, fully accessible even if you stop using Jotter. The files are formatted according to the **Open Knowledge Format (OKF)**.
 - **Combat Task Flooding**: Built for dealing with hundreds of open tasks.
 - **Flexible Views**: Organise tasks your way with Kanban columns, list view, a priority-based **Eisenhower Matrix**, and a chronological **Time View** grouping by due dates.
 - **Smart Task Creation**: Create rich tasks quickly with keywords for tags, due dates or priorities in the task title.
@@ -32,6 +32,7 @@ Jotter is a **local-first, privacy-focused task management web application** des
 - **Multi-Language Support**: Fully localized in English and German.
 - **Model Context Protocol (MCP) Support**: Connect AI assistants directly to your local Kanban board via `jotter mcp`.
 - **Excel & CSV Import & Export**: Seamlessly import tasks, checklists, priorities, and custom columns from any standard Excel or CSV spreadsheet with support for sheet auto-detection, interactive previews, and custom mappings. Export all tasks from your current filtered view as `.xlsx` or `.csv` client-side.
+- **Obsidian & PKM Native**: Project directories include an `index.md` manifest compatible with Obsidian Folder Notes and PKM namespaces, allowing task boards to live directly within your personal knowledge vault.
 
 ---
 

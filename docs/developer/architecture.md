@@ -89,20 +89,20 @@ flowchart LR
 
 ### 5.2 Backend (FastAPI Python Application)
 
-Jotter is built using a clean, layered architectural design divided into modular packages (`backend/...`): `models`, `routes`, `services`, `utils`, and `db`.
+Jotter is built using a clean, layered architectural design divided into modular feature packages (`src/jotter/features/...`): `projects`, `buckets`, `tasks`, `settings`, and `sync`.
 
 1. **Routes (Controller Layer)**:
-   - Registers feature-specific REST endpoints (`projects.py`, `buckets.py`, `tasks.py`, `settings.py`, `system.py`).
+   - Registers feature-specific REST endpoints (`projects/router.py`, `buckets/router.py`, `tasks/router.py`, `settings/router.py`, `system/router.py`).
    - Parses request parameters, query filters, and validates request payloads into Pydantic DTO models.
    - Translates domain-level responses and exceptions into standard HTTP status codes and JSON responses.
 
 2. **Services (Business Logic Layer)**:
-   - Contains pure business logic, input validation, and coordinate operations between disk files and the SQLite index.
+   - Contains pure business logic, input validation, and coordinates operations between disk files and the SQLite index.
    - Handles advanced file-system operations such as multi-part attachment uploads, task list filtering, and project-scoped auto-pruning.
 
-3. **Data Access (SQLite Index & Filesystem)**:
+3. **Data Access (SQLite Index & Filesystem Repositories)**:
    - **Database Index**: Interacts directly with the local ephemeral SQLite index database (`tasks.db`) using structured SQL queries with WAL mode enabled.
-   - **Filesystem**: Reads and writes Markdown YAML frontmatter files, JSON configuration registries (`projects.json`, `buckets.json`, `settings.json`), and binary/text attachment files.
+   - **Filesystem**: Reads and writes Markdown files compliant with the Open Knowledge Format (OKF) and Obsidian Folder Notes (`<project_id>/index.md` project manifests and `<project_id>/tasks/<id>.md` task files), configuration files (`jotter.yaml`, `settings.json`), and binary/text attachment files.
 
 ---
 
@@ -114,19 +114,19 @@ When Jotter starts, it goes through a synchronization phase to align the databas
 
 ```mermaid
 sequenceDiagram
-    participant Main as backend/main.py
-    participant App as backend/app.py
-    participant DB as backend/db.py
-    participant Sync as backend/services/sync_service.py
+    participant Main as src/jotter/main.py
+    participant App as src/jotter/app.py
+    participant DB as src/jotter/db/connection.py
+    participant Sync as src/jotter/features/sync/service.py
     participant Disk as Local Disk (.md)
 
     Main->>App: create_app(config)
     App->>DB: get_db(db_path)
     DB-->>App: SQLite connection ready (WAL enabled)
-    App->>Sync: sync_db_only(data_dir)
-    Sync->>Disk: Read projects.json, buckets.json & *.md files
+    App->>Sync: sync_all()
+    Sync->>Disk: Read project index.md & task *.md files
     Disk-->>Sync: Frontmatter & body contents
-    Sync->>DB: Atomic batch INSERT (projects, buckets, tasks)
+    Sync->>DB: Atomic batch upsert (projects, buckets, tasks)
     DB-->>Sync: Sync complete
     Sync-->>App: Return synchronized tasks count
     App-->>Main: FastAPI server ready to accept requests
@@ -143,15 +143,15 @@ Jotter is deployed as a lightweight client-server web application:
 
 Running Jotter:
 ```bash
-pip install -r requirements.txt
-python3 run.py
+pip install -e .
+jotter
 ```
 
 ---
 
 ## 8. Git Synchronization Logic
 
-Jotter treats each project directory as a potential independent Git repository. The logic is implemented in `internal/features/common/git.go` (and orchestrated via `system.Service`'s file repository wrapper) and is triggered sequentially for all configured projects during a system sync.
+Jotter treats each project directory as a potential independent Git repository. The logic is implemented in `src/jotter/features/git/service.py` and is triggered sequentially for all configured projects during a system sync.
 
 ### The Per-Project Sync Flow:
 
@@ -168,36 +168,64 @@ This architecture enables **selective sharing**, where different boards can be s
 
 ## 9. Data Model
 
-### 8.1 Markdown YAML Frontmatter
+### 9.1 Task File Frontmatter (Open Knowledge Format)
 
-Each task file is named following the pattern `[id]-[title-slug].md`. The metadata is serialized as YAML Frontmatter:
+Each task file is named after its ID (`<id>.md`). The metadata is serialized as YAML Frontmatter:
 
 ```yaml
 ---
-id: 1042
+type: task
+id: 01HJKM7ST89AB234CDEFGHJKMN
 project_id: default
 title: Fix Authentication
-bucket: todo
+status: todo
 position: 2000.0
 tags:
   - backend
   - auth
-due_date: 2026-06-30
+due_date: "2026-06-30"
 priority: high
-created_at: 2026-06-04T12:00:00Z
+created_at: "2026-06-04T12:00:00Z"
+updated_at: "2026-06-04T12:00:00Z"
+---
 The notes regarding this task go here, using standard markdown formatting.
+```
+
+### 9.2 Project Manifest (`index.md`)
+
+Each project folder contains an `index.md` note defining board columns and project metadata:
+
+```yaml
+---
+type: project
+id: default
+title: Main Project Board
+git_remote: "https://github.com/user/my-tasks.git"
+done_clean_period: "after_1_week"
+buckets:
+  - name: todo
+    title: To Do
+    position: 1000.0
+    is_done: false
+    collapsed: false
+  - name: in-progress
+    title: In Progress
+    position: 2000.0
+    is_done: false
+    collapsed: false
+  - name: done
+    title: Done
+    position: 3000.0
+    is_done: true
+    collapsed: false
+---
+Project overview notes and documentation.
 ```
 
 ---
 
-## 10. API & Swagger Documentation
+## 10. API & OpenAPI Documentation
 
-Jotter includes fully-automated OpenAPI 2.0 (Swagger) specification generation and an integrated Swagger UI served directly from the headless server.
+Jotter provides automated OpenAPI 3.0 documentation served directly by FastAPI.
 
-- **OpenAPI Annotations**: Every handler/controller is fully annotated using `@Summary`, `@Description`, `@Tags`, `@Accept`, `@Produce`, `@Param`, `@Success`, `@Failure`, and `@Router`.
-- **Swagger UI Endpoint**: When running `jotter-server` (or in headless mode), the Swagger UI is accessible at `http://<server-host>:<port>/swagger/index.html` (e.g., `http://localhost:58271/swagger/index.html`).
-- **Regenerating Docs**: To regenerate the Swagger documentation after editing endpoint handlers, run:
-  ```bash
-  npm run swagger:generate
-  ```
-  This uses the `swag` CLI tool to parse comments in `internal/features/` and output updated spec files to `internal/docs/`.
+- **Interactive API Docs**: When running the Jotter server, interactive documentation is available at `http://localhost:58271/docs` (Swagger UI) and `http://localhost:58271/redoc` (ReDoc).
