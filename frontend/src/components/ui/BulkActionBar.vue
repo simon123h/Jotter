@@ -23,6 +23,7 @@ import { useI18n } from '@/composables/useI18n';
 import { usePomodoroStore } from '@/stores/pomodoro';
 import type { Bucket, Project } from '@/types';
 import TagInput from '@/components/ui/TagInput.vue';
+import { sanitizeTags } from '@/utils/tagUtils';
 
 const { t, tBucket } = useI18n();
 const pomodoroStore = usePomodoroStore();
@@ -80,10 +81,7 @@ watch(
 const newTagName = ref('');
 const handleAddTag = () => {
   if (newTagName.value.trim()) {
-    const tagsToAdd = newTagName.value
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const tagsToAdd = sanitizeTags(newTagName.value);
 
     for (const tag of tagsToAdd) {
       emit('edit-tag', tag, false);

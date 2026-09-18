@@ -2,6 +2,7 @@ import { ref, reactive, watch, computed, nextTick, provide, inject, type Ref, ty
 import type { Task, Bucket } from '@/types';
 import { parseTitleState, getKeywordMatches } from '@/utils/titleParser';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
+import { sanitizeTags } from '@/utils/tagUtils';
 
 export interface TaskEditorForm {
   title: string;
@@ -197,10 +198,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
     }
 
     try {
-      const tagArray = form.tags
-        .split(',')
-        .map((t) => t.trim().toLowerCase())
-        .filter((t) => t.length > 0);
+      const tagArray = sanitizeTags(form.tags);
 
       const updated = await patchTask(task.value, {
         title: finalTitle,

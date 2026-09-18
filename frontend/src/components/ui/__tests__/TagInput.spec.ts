@@ -159,4 +159,14 @@ describe('TagInput.vue', () => {
     }) as any;
     expect(typeof wrapper.vm.focus).toBe('function');
   });
+
+  it('strips hash symbols on typing', async () => {
+    const wrapper = mount(TagInput, {
+      props: { modelValue: '' },
+    });
+
+    const input = wrapper.find('input');
+    await input.setValue('#frontend, #backend');
+    expect(wrapper.emitted('update:modelValue')?.[0][0]).toBe('frontend, backend');
+  });
 });

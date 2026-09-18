@@ -2,6 +2,7 @@ import { ref, computed, type Ref } from 'vue';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { createTask, createBucket } from '@/api';
+import { sanitizeTags } from '@/utils/tagUtils';
 
 export type Step = 1 | 2 | 3 | 4 | 5;
 
@@ -299,8 +300,7 @@ export function useImportWizard(projectId: string | Ref<string>) {
 
   const parseExcelTags = (val: any): string[] => {
     if (!val) return [];
-    const parts = String(val).split(/[;,|\n]+/);
-    return parts.map((p) => p.trim()).filter(Boolean);
+    return sanitizeTags(String(val));
   };
 
   const parseExcelChecklist = (val: any): string => {
@@ -427,10 +427,7 @@ export function useImportWizard(projectId: string | Ref<string>) {
       }
     };
 
-    const parsedTagsAppend = appendTags.value
-      .split(',')
-      .map((t) => t.trim().toLowerCase())
-      .filter(Boolean);
+    const parsedTagsAppend = sanitizeTags(appendTags.value);
 
     for (const idx of toImportIndices) {
       const row = excelRows.value[idx];

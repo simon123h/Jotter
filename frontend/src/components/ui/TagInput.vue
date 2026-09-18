@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
 import { useProjectStore } from '@/stores/project';
+import { sanitizeTag, sanitizeTags, sanitizeTagInputString } from '@/utils/tagUtils';
 
 const props = withDefaults(
   defineProps<{
@@ -35,8 +36,9 @@ const existingTags = computed(() => {
   projectStore.tasks.forEach((t) => {
     if (t.tags) {
       t.tags.forEach((tag) => {
-        if (tag.trim()) {
-          tagsSet.add(tag.trim().toLowerCase());
+        const clean = sanitizeTag(tag);
+        if (clean) {
+          tagsSet.add(clean);
         }
       });
     }
@@ -47,23 +49,20 @@ const existingTags = computed(() => {
 // The current query is the text after the last comma
 const activeTagQuery = computed(() => {
   const parts = props.modelValue.split(',');
-  return parts[parts.length - 1].trim().toLowerCase();
+  return sanitizeTag(parts[parts.length - 1]);
 });
 
 // Set of tags already added
 const currentTagsSet = computed(() => {
-  return new Set(
-    props.modelValue
-      .split(',')
-      .map((t) => t.trim().toLowerCase())
-      .filter(Boolean)
-  );
+  return new Set(sanitizeTags(props.modelValue));
 });
 
 // Suggestions list
 const tagSuggestions = computed(() => {
   const query = activeTagQuery.value;
-  const baseList = props.suggestionsOverride || existingTags.value;
+  const baseList = props.suggestionsOverride
+    ? props.suggestionsOverride.map(sanitizeTag).filter(Boolean)
+    : existingTags.value;
   return baseList.filter((tag) => {
     const normalizedTag = tag.toLowerCase();
     if (currentTagsSet.value.has(normalizedTag)) return false;
@@ -147,7 +146,7 @@ defineExpose({
       ref="inputRef"
       type="text"
       :value="modelValue"
-      @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      @input="emit('update:modelValue', sanitizeTagInputString(($event.target as HTMLInputElement).value))"
       @focus="isDropdownOpen = true"
       @blur="
         isDropdownOpen = false;

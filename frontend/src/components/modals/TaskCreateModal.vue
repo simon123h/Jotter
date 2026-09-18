@@ -13,6 +13,7 @@ import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import { TASK_COLORS } from '@/utils/constants';
+import { sanitizeTags } from '@/utils/tagUtils';
 
 const MarkdownEditor = defineAsyncComponent(() => import('@/components/ui/MarkdownEditor.vue'));
 
@@ -190,10 +191,7 @@ const handleSubmit = async () => {
   loading.value = true;
   error.value = null;
   try {
-    const tagArray = tags.value
-      .split(',')
-      .map((t) => t.trim().toLowerCase())
-      .filter((t) => t.length > 0);
+    const tagArray = sanitizeTags(tags.value);
 
     await createTask(activeProjectId.value, {
       title: finalTitle,

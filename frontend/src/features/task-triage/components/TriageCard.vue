@@ -6,6 +6,7 @@ import type { Task, Bucket } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import TagInput from '@/components/ui/TagInput.vue';
 import { TRIAGE_COLORS, PRIORITY_OPTIONS } from '@/utils/constants';
+import { sanitizeTags } from '@/utils/tagUtils';
 
 const props = defineProps<{
   task: Task;
@@ -101,11 +102,8 @@ const startAddTag = () => {
 const saveTag = () => {
   const input = newTagText.value.trim();
   if (input && props.task) {
-    const existing = props.task.tags || [];
-    const newTags = input
-      .split(',')
-      .map((t) => t.trim())
-      .filter((t) => t && !existing.includes(t));
+    const existing = sanitizeTags(props.task.tags || []);
+    const newTags = sanitizeTags(input).filter((t) => !existing.includes(t));
     if (newTags.length > 0) {
       emit('update-task', { tags: [...existing, ...newTags] });
     }
