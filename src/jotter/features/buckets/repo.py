@@ -1,6 +1,5 @@
 """Repository for managing bucket columns on disk (index.md / buckets.json) and SQLite."""
 
-import json
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -149,7 +148,9 @@ class BucketRepository:
             project = Project(
                 id=row["id"],
                 name=row["title"],
-                description=row["description"] if "description" in row.keys() and row["description"] is not None else "",
+                description=row["description"]
+                if "description" in row.keys() and row["description"] is not None
+                else "",
                 git_remote=row["git_remote"],
                 done_clean_period=row["done_clean_period"],
                 created_at=row["created_at"],
@@ -213,7 +214,9 @@ class BucketRepository:
             project = Project(
                 id=row["id"],
                 name=row["title"],
-                description=row["description"] if "description" in row.keys() and row["description"] is not None else "",
+                description=row["description"]
+                if "description" in row.keys() and row["description"] is not None
+                else "",
                 git_remote=row["git_remote"],
                 done_clean_period=row["done_clean_period"],
                 created_at=row["created_at"],

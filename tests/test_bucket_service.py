@@ -95,4 +95,8 @@ def test_index_md_project_manifest_roundtrip(temp_dir, test_env):
     content_updated = index_file.read_text(encoding="utf-8")
     assert "name: reviews" in content_updated
     assert "title: Reviews" in content_updated
-    assert "color: '#00ff00'" in content_updated or "color: '#00FF00'" in content_updated or 'color: "#00ff00"' in content_updated
+    assert (
+        "color: '#00ff00'" in content_updated
+        or "color: '#00FF00'" in content_updated
+        or 'color: "#00ff00"' in content_updated
+    )

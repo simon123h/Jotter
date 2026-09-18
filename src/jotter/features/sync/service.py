@@ -7,7 +7,6 @@ from typing import Self
 
 from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository
-from jotter.features.projects.domain import Project
 from jotter.features.projects.repo import ProjectRepository
 from jotter.features.sync.git_adapter import git_sync
 from jotter.features.tasks.disk_repo import DiskTaskRepository

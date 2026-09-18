@@ -39,7 +39,10 @@ class DiskTaskRepository:
         parent_dir.mkdir(parents=True, exist_ok=True)
 
         import tempfile
-        with tempfile.NamedTemporaryFile("w", dir=parent_dir, delete=False, encoding="utf-8", prefix=f".{task.id}_", suffix=".tmp") as f:
+
+        with tempfile.NamedTemporaryFile(
+            "w", dir=parent_dir, delete=False, encoding="utf-8", prefix=f".{task.id}_", suffix=".tmp"
+        ) as f:
             f.write(content)
             tmp_path = Path(f.name)
         tmp_path.replace(path)
@@ -52,9 +55,7 @@ class DiskTaskRepository:
     def get_all_task_files(self, project_id: str) -> list[Path]:
         p = self.get_project_dir(project_id)
         return [
-            f
-            for f in p.glob("*.md")
-            if f.is_file() and f.name.lower() not in ("index.md", "readme.md", ".project.md")
+            f for f in p.glob("*.md") if f.is_file() and f.name.lower() not in ("index.md", "readme.md", ".project.md")
         ]
 
     def serialize_task(self, task: Task) -> str:

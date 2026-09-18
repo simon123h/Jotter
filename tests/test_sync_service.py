@@ -257,4 +257,3 @@ def test_sync_migrates_projects_json_to_index_md(temp_dir, test_env):
     assert alpha_buckets[0].name == "ideas"
     assert alpha_buckets[0].title == "Ideas Column"
     assert alpha_buckets[1].name == "done"
-

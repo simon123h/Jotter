@@ -60,9 +60,7 @@ const currentTagsSet = computed(() => {
 // Suggestions list
 const tagSuggestions = computed(() => {
   const query = activeTagQuery.value;
-  const baseList = props.suggestionsOverride
-    ? props.suggestionsOverride.map(sanitizeTag).filter(Boolean)
-    : existingTags.value;
+  const baseList = props.suggestionsOverride ? props.suggestionsOverride.map(sanitizeTag).filter(Boolean) : existingTags.value;
   return baseList.filter((tag) => {
     const normalizedTag = tag.toLowerCase();
     if (currentTagsSet.value.has(normalizedTag)) return false;
