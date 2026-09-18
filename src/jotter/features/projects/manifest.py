@@ -45,7 +45,6 @@ def read_project_manifest(
                 pass
 
     fm_data: dict[str, Any] = {}
-    body = ""
 
     if index_file.is_file():
         content = index_file.read_text(encoding="utf-8")
@@ -58,31 +57,36 @@ def read_project_manifest(
                         fm_data = loaded
                 except Exception:
                     pass
-                body = parts[2].lstrip("\r\n")
-            else:
-                body = content
-        else:
-            body = content
 
     # Resolve project fields (manifest index.md -> legacy projects.json -> defaults)
-    proj_id = str(fm_data.get("id") or (legacy_data.get("id") if legacy_data else None) or fallback_id).strip() or fallback_id
+    proj_id = (
+        str(fm_data.get("id") or (legacy_data.get("id") if legacy_data else None) or fallback_id).strip() or fallback_id
+    )
     title = str(
         fm_data.get("title")
         or fm_data.get("name")
         or (legacy_data.get("title") or legacy_data.get("name") if legacy_data else None)
         or proj_id.capitalize()
     ).strip()
-    description = str(fm_data.get("description") or (legacy_data.get("description") if legacy_data else "") or "").strip()
-    git_remote = fm_data.get("git_remote") or fm_data.get("gitRemote") or (legacy_data.get("git_remote") or legacy_data.get("gitRemote") if legacy_data else None)
+    description = str(
+        fm_data.get("description") or (legacy_data.get("description") if legacy_data else "") or ""
+    ).strip()
+    git_remote = (
+        fm_data.get("git_remote")
+        or fm_data.get("gitRemote")
+        or (legacy_data.get("git_remote") or legacy_data.get("gitRemote") if legacy_data else None)
+    )
     git_remote_str = str(git_remote).strip() if git_remote else None
 
     raw_clean_period = (
-        fm_data.get("done_clean_period")
-        if "done_clean_period" in fm_data
-        else fm_data.get("doneCleanPeriod")
+        fm_data.get("done_clean_period") if "done_clean_period" in fm_data else fm_data.get("doneCleanPeriod")
     )
     if raw_clean_period is None and legacy_data:
-        raw_clean_period = legacy_data.get("done_clean_period") if "done_clean_period" in legacy_data else legacy_data.get("doneCleanPeriod")
+        raw_clean_period = (
+            legacy_data.get("done_clean_period")
+            if "done_clean_period" in legacy_data
+            else legacy_data.get("doneCleanPeriod")
+        )
     clean_period_int = int(raw_clean_period) if raw_clean_period is not None else None
 
     created_at = (
@@ -265,7 +269,9 @@ def write_project_manifest(
     final_content = f"---\n{yaml_content}---\n{body_to_write}"
 
     # Write to a uniquely named temporary file in the same directory before atomic replacement
-    with tempfile.NamedTemporaryFile("w", dir=project_dir, delete=False, encoding="utf-8", prefix=".index_", suffix=".tmp") as f:
+    with tempfile.NamedTemporaryFile(
+        "w", dir=project_dir, delete=False, encoding="utf-8", prefix=".index_", suffix=".tmp"
+    ) as f:
         f.write(final_content)
         tmp_path = Path(f.name)
 

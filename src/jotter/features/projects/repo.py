@@ -35,7 +35,9 @@ class ProjectRepository:
 
     def get_all(self) -> list[Project]:
         cursor = self.conn.cursor()
-        cursor.execute("SELECT id, title, description, created_at, done_clean_period, git_remote FROM projects ORDER BY id ASC")
+        cursor.execute(
+            "SELECT id, title, description, created_at, done_clean_period, git_remote FROM projects ORDER BY id ASC"
+        )
         rows = cursor.fetchall()
         return [self._row_to_project(row) for row in rows]
 
@@ -136,6 +138,7 @@ class ProjectRepository:
         if legacy_file.is_file():
             try:
                 import json
+
                 content = json.loads(legacy_file.read_text(encoding="utf-8"))
                 if isinstance(content, list):
                     for p in content:
