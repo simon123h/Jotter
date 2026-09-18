@@ -23,6 +23,7 @@ class Task:
     priority: Priority = Priority.NONE
     color: str | None = None
     postponed_until: DueDate = field(default_factory=lambda: DueDate(None))
+    extra_frontmatter: dict[str, object] = field(default_factory=dict)
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -50,6 +51,7 @@ class Task:
         color: str | None = None,
         postponed_until: str | None = None,
         task_id: str | None = None,
+        extra_frontmatter: dict[str, object] | None = None,
     ) -> Self:
         clean_title = title.strip()
         if not clean_title:
@@ -75,6 +77,7 @@ class Task:
             priority=Priority.from_str(priority),
             color=color.strip() if color else None,
             postponed_until=DueDate.from_str(postponed_until),
+            extra_frontmatter=dict(extra_frontmatter) if extra_frontmatter else {},
             created_at=now_str,
             updated_at=now_str,
         )

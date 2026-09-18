@@ -49,12 +49,13 @@ class DiskTaskRepository:
         return [f for f in p.glob("*.md") if f.is_file()]
 
     def serialize_task(self, task: Task) -> str:
-        """Dumps frontmatter and body into clean markdown format."""
+        """Dumps frontmatter and body into clean markdown format adhering to OKF standard."""
         fm_dict: dict[str, object] = {
+            "type": "task",
             "id": str(task.id),
             "project_id": task.project_id,
             "title": task.title,
-            "bucket": task.bucket,
+            "status": task.bucket,
             "position": float(task.position),
             "created_at": task.created_at,
             "updated_at": task.updated_at,
@@ -73,6 +74,12 @@ class DiskTaskRepository:
             fm_dict["color"] = task.color
         if task.postponed_until.value:
             fm_dict["postponed_until"] = task.postponed_until.value
+
+        # Preserve unknown / extra frontmatter keys
+        if task.extra_frontmatter:
+            for k, v in task.extra_frontmatter.items():
+                if k not in fm_dict and k not in ("bucket",):
+                    fm_dict[k] = v
 
         yaml_content = yaml.dump(
             fm_dict,
@@ -114,7 +121,8 @@ class DiskTaskRepository:
         tid = str(fm_data.get("id") or fallback_id)
         proj_id = str(default_project_id or fm_data.get("project_id") or fm_data.get("projectId") or "default")
         title = str(fm_data.get("title") or "Untitled Task")
-        bucket = str(fm_data.get("bucket") or "todo")
+        # Prefer 'status' with backwards-compatible fallback to 'bucket'
+        bucket = str(fm_data.get("status") or fm_data.get("bucket") or "todo")
         pos = float(fm_data.get("position") or 1000.0)
 
         # Parse tags
@@ -182,6 +190,33 @@ class DiskTaskRepository:
                 except Exception:
                     clean_postponed = None
 
+        # Collect unknown / extra frontmatter keys
+        known_keys = {
+            "type",
+            "id",
+            "project_id",
+            "projectId",
+            "title",
+            "status",
+            "bucket",
+            "position",
+            "tags",
+            "attachments",
+            "due_date",
+            "dueDate",
+            "planned_date",
+            "plannedDate",
+            "priority",
+            "color",
+            "postponed_until",
+            "postponedUntil",
+            "created_at",
+            "createdAt",
+            "updated_at",
+            "updatedAt",
+        }
+        extra_fm = {k: v for k, v in fm_data.items() if k not in known_keys}
+
         task = Task.create(
             project_id=proj_id,
             title=title,
@@ -196,6 +231,7 @@ class DiskTaskRepository:
             color=str(color) if color else None,
             postponed_until=clean_postponed,
             task_id=tid,
+            extra_frontmatter=extra_fm,
         )
 
         created_val = fm_data.get("created_at") or fm_data.get("createdAt")

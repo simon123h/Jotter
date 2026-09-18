@@ -41,16 +41,45 @@ Here are details.
 
     # Round trip serialize
     dumped = disk_repo.serialize_task(task)
+    assert "type: task" in dumped
+    assert "status: todo" in dumped
+    assert "bucket:" not in dumped
     assert "Sample Task" in dumped
     assert "# Task Description" in dumped
 
     # Minimal task without tags or attachments
     minimal_task = disk_repo.parse_task_content("title: Minimal Task", "01ARZ3NDEKTSV4RRFFQ69G5FAV", "default")
     minimal_dump = disk_repo.serialize_task(minimal_task)
+    assert "type: task" in minimal_dump
+    assert "status: todo" in minimal_dump
+    assert "bucket:" not in minimal_dump
     assert "tags:" not in minimal_dump
     assert "attachments:" not in minimal_dump
     assert "priority:" not in minimal_dump
     assert "due_date:" not in minimal_dump
+
+    # Parsing with status and custom OKF frontmatter keys
+    okf_markdown = """---
+type: task
+id: "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+title: "OKF Task"
+status: "in-progress"
+author: "AI Agent"
+confidence: 0.95
+---
+
+Body text.
+"""
+    okf_task = disk_repo.parse_task_content(okf_markdown, "01ARZ3NDEKTSV4RRFFQ69G5FAV", "default")
+    assert okf_task.bucket == "in-progress"
+    assert okf_task.extra_frontmatter.get("author") == "AI Agent"
+    assert okf_task.extra_frontmatter.get("confidence") == 0.95
+
+    okf_dump = disk_repo.serialize_task(okf_task)
+    assert "type: task" in okf_dump
+    assert "status: in-progress" in okf_dump
+    assert "author: AI Agent" in okf_dump
+    assert "confidence: 0.95" in okf_dump
 
 
 def test_task_crud_and_positioning(temp_dir, test_env):
