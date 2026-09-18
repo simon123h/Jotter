@@ -97,6 +97,10 @@ jobs:
           fetch-depth: 0
           ref: ${{ needs.tag-release.outputs.tag }}
 
+      - name: Fetch All Tags
+        run: |
+          git fetch --tags --force
+
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
@@ -114,7 +118,11 @@ jobs:
           npm run install:all
 
       - name: Build Bundled Python Package (Wheel & Sdist)
+        env:
+          TAG: ${{ needs.tag-release.outputs.tag }}
         run: |
+          export SETUPTOOLS_SCM_PRETEND_VERSION="${TAG#v}"
+          echo "Building package for release version: $SETUPTOOLS_SCM_PRETEND_VERSION"
           npm run build:package
 
       - name: Create GitHub Release
@@ -225,6 +233,10 @@ jobs:
           fetch-depth: 0
           ref: ${{ needs.tag-release.outputs.tag }}
 
+      - name: Fetch All Tags
+        run: |
+          git fetch --tags --force
+
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
@@ -238,7 +250,10 @@ jobs:
 
       - name: Install Dependencies & PyInstaller
         shell: bash
+        env:
+          TAG: ${{ needs.tag-release.outputs.tag }}
         run: |
+          export SETUPTOOLS_SCM_PRETEND_VERSION="${TAG#v}"
           pip install pyinstaller .
           npm run install:all
 
@@ -249,7 +264,10 @@ jobs:
 
       - name: Build Standalone Binary with PyInstaller
         shell: bash
+        env:
+          TAG: ${{ needs.tag-release.outputs.tag }}
         run: |
+          export SETUPTOOLS_SCM_PRETEND_VERSION="${TAG#v}"
           pyinstaller jotter.spec --clean --distpath dist-bin
 
       - name: Archive and Upload Binary to GitHub Release
