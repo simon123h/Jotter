@@ -159,3 +159,102 @@ def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
     tasks_c = task_svc.get_tasks("proj-c")
     assert len(tasks_c) == 1
     assert tasks_c[0].id == t_c_old.id
+
+
+def test_sync_migrates_projects_json_to_index_md(temp_dir, test_env):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
+    bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
+
+    # 1. Simulate legacy projects.json in root data directory
+    projects_json_path = Path(temp_dir) / "projects.json"
+    projects_json_path.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "alpha",
+                    "title": "Alpha Project",
+                    "description": "Alpha team notes and tasks",
+                    "git_remote": "git@github.com:org/alpha.git",
+                    "done_clean_period": 30,
+                    "created_at": "2026-01-01T10:00:00Z",
+                },
+                {
+                    "id": "beta",
+                    "name": "Beta Board",
+                    "description": "Beta project board",
+                    "gitRemote": "https://github.com/org/beta.git",
+                    "doneCleanPeriod": 7,
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    # 2. Simulate legacy buckets.json in alpha project folder
+    alpha_dir = Path(temp_dir) / "alpha"
+    alpha_dir.mkdir(parents=True, exist_ok=True)
+    alpha_buckets_file = alpha_dir / "buckets.json"
+    alpha_buckets_file.write_text(
+        json.dumps(
+            [
+                {"name": "ideas", "title": "Ideas Column", "color": "#123456", "position": 100.0},
+                {"name": "done", "title": "Finished", "color": "#00ff00", "position": 200.0},
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    # 3. Trigger sync
+    sync_svc.sync_db_only()
+
+    # 4. Verify index.md was generated for both projects
+    alpha_index = alpha_dir / "index.md"
+    assert alpha_index.is_file()
+    alpha_content = alpha_index.read_text(encoding="utf-8")
+
+    # Frontmatter should contain project metadata and buckets
+    assert "type: project" in alpha_content
+    assert "id: alpha" in alpha_content
+    assert "title: Alpha Project" in alpha_content
+    assert "description: Alpha team notes and tasks" in alpha_content
+    assert "done_clean_period: 30" in alpha_content
+    assert "name: ideas" in alpha_content
+    assert "title: Ideas Column" in alpha_content
+
+    # git_remote must NOT be written to index.md
+    assert "git_remote" not in alpha_content
+    assert "git@github.com:org/alpha.git" not in alpha_content
+
+    # Beta project
+    beta_dir = Path(temp_dir) / "beta"
+    beta_index = beta_dir / "index.md"
+    assert beta_index.is_file()
+    beta_content = beta_index.read_text(encoding="utf-8")
+    assert "id: beta" in beta_content
+    assert "title: Beta Board" in beta_content
+    assert "done_clean_period: 7" in beta_content
+    assert "git_remote" not in beta_content
+    assert "https://github.com/org/beta.git" not in beta_content
+
+    # 5. Verify SQLite contains the git_remote and project metadata locally
+    proj_alpha = proj_svc.get_project("alpha")
+    assert proj_alpha.id == "alpha"
+    assert proj_alpha.title == "Alpha Project"
+    assert proj_alpha.git_remote == "git@github.com:org/alpha.git"
+    assert proj_alpha.done_clean_period == 30
+
+    proj_beta = proj_svc.get_project("beta")
+    assert proj_beta.id == "beta"
+    assert proj_beta.title == "Beta Board"
+    assert proj_beta.git_remote == "https://github.com/org/beta.git"
+    assert proj_beta.done_clean_period == 7
+
+    # 6. Verify buckets were registered in SQLite
+    alpha_buckets = bucket_svc.get_all_buckets("alpha")
+    assert len(alpha_buckets) == 2
+    assert alpha_buckets[0].name == "ideas"
+    assert alpha_buckets[0].title == "Ideas Column"
+    assert alpha_buckets[1].name == "done"
+

@@ -45,6 +45,7 @@ def init_schema(conn: sqlite3.Connection) -> None:
     CREATE TABLE IF NOT EXISTS projects (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
+        description TEXT DEFAULT '',
         created_at TEXT NOT NULL,
         done_clean_period INTEGER DEFAULT NULL,
         git_remote TEXT DEFAULT NULL
@@ -132,6 +133,11 @@ def init_schema(conn: sqlite3.Connection) -> None:
         conn.execute("SELECT done_clean_period FROM projects LIMIT 0")
     except sqlite3.OperationalError:
         conn.execute("ALTER TABLE projects ADD COLUMN done_clean_period INTEGER DEFAULT NULL")
+
+    try:
+        conn.execute("SELECT description FROM projects LIMIT 0")
+    except sqlite3.OperationalError:
+        conn.execute("ALTER TABLE projects ADD COLUMN description TEXT DEFAULT ''")
 
     # Backfill FTS index if table was newly created
     try:

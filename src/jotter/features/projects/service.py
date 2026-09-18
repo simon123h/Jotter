@@ -57,6 +57,7 @@ class ProjectApplicationService:
         project = Project.create(
             name=title,
             project_id=slug,
+            description=req.description,
             git_remote=req.git_remote,
             done_clean_period=req.done_clean_period,
         )
@@ -73,6 +74,7 @@ class ProjectApplicationService:
         title = req.title.strip() if req.title is not None else None
         project.update_details(
             name=title,
+            description=req.description,
             git_remote=req.git_remote,
             done_clean_period=req.done_clean_period,
         )
@@ -89,6 +91,7 @@ class ProjectApplicationService:
         return ProjectResponse(
             id=p.id,
             title=p.name,
+            description=p.description,
             git_remote=p.git_remote,
             done_clean_period=p.done_clean_period,
             created_at=p.created_at,

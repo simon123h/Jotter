@@ -141,7 +141,7 @@ class BucketRepository:
         # Retrieve project entity from DB or create a fallback
         cursor = self.conn.cursor()
         cursor.execute(
-            "SELECT id, title, created_at, done_clean_period, git_remote FROM projects WHERE id = ?",
+            "SELECT id, title, description, created_at, done_clean_period, git_remote FROM projects WHERE id = ?",
             (project_id,),
         )
         row = cursor.fetchone()
@@ -149,6 +149,7 @@ class BucketRepository:
             project = Project(
                 id=row["id"],
                 name=row["title"],
+                description=row["description"] if "description" in row.keys() and row["description"] is not None else "",
                 git_remote=row["git_remote"],
                 done_clean_period=row["done_clean_period"],
                 created_at=row["created_at"],
@@ -204,7 +205,7 @@ class BucketRepository:
 
         cursor = self.conn.cursor()
         cursor.execute(
-            "SELECT id, title, created_at, done_clean_period, git_remote FROM projects WHERE id = ?",
+            "SELECT id, title, description, created_at, done_clean_period, git_remote FROM projects WHERE id = ?",
             (project_id,),
         )
         row = cursor.fetchone()
@@ -212,6 +213,7 @@ class BucketRepository:
             project = Project(
                 id=row["id"],
                 name=row["title"],
+                description=row["description"] if "description" in row.keys() and row["description"] is not None else "",
                 git_remote=row["git_remote"],
                 done_clean_period=row["done_clean_period"],
                 created_at=row["created_at"],

@@ -45,22 +45,50 @@ class SyncApplicationService:
         """Reconciles SQLite database index against disk files and prunes expired done tasks."""
         from jotter.features.projects.manifest import read_project_manifest
 
-        # 1. Discover all projects on disk
+        # 0. Load legacy projects.json if present
+        legacy_projects_file = Path(self.data_dir) / "projects.json"
+        legacy_projects_map: dict[str, dict] = {}
+        if legacy_projects_file.is_file():
+            try:
+                content = json.loads(legacy_projects_file.read_text(encoding="utf-8"))
+                if isinstance(content, list):
+                    for p in content:
+                        if isinstance(p, dict) and p.get("id"):
+                            legacy_projects_map[str(p["id"]).strip()] = p
+                elif isinstance(content, dict):
+                    for k, v in content.items():
+                        if isinstance(v, dict):
+                            p_id = str(v.get("id") or k).strip()
+                            legacy_projects_map[p_id] = v
+            except Exception as e:
+                logger.warning("Failed to parse legacy projects.json: %s", e)
+
+        # 1. Discover all projects on disk (and from legacy projects.json)
         disk_projects = self.project_repo.discover_disk_projects()
         if not disk_projects and not self.project_repo.get_all():
             disk_projects = ["default"]
 
         for proj_id in disk_projects:
             proj_dir = Path(self.data_dir) / proj_id
-            if proj_dir.is_dir():
-                project, buckets = read_project_manifest(proj_dir, fallback_id=proj_id)
-                self.project_repo.save(project)
-                for b in buckets:
-                    self.bucket_repo.save(proj_id, b)
-            else:
-                if not self.project_repo.exists(proj_id):
-                    self.project_repo.save(Project.create(name=proj_id.capitalize(), project_id=proj_id))
-                self.bucket_repo.get_all(proj_id)
+            proj_dir.mkdir(parents=True, exist_ok=True)
+            legacy_data = legacy_projects_map.get(proj_id)
+
+            existing_proj = None
+            if self.project_repo.exists(proj_id):
+                try:
+                    existing_proj = self.project_repo.get(proj_id)
+                except Exception:
+                    pass
+
+            project, buckets = read_project_manifest(proj_dir, fallback_id=proj_id, legacy_data=legacy_data)
+
+            # Preserve existing SQLite git_remote if index.md or legacy data did not specify one
+            if not project.git_remote and existing_proj and existing_proj.git_remote:
+                project.git_remote = existing_proj.git_remote
+
+            self.project_repo.save(project)
+            for b in buckets:
+                self.bucket_repo.save(proj_id, b)
 
         # 2. Check global doneCleanPeriod
         settings_file = Path(self.data_dir) / "settings.json"

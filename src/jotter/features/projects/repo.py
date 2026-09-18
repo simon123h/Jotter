@@ -22,7 +22,7 @@ class ProjectRepository:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            SELECT id, title, created_at, done_clean_period, git_remote
+            SELECT id, title, description, created_at, done_clean_period, git_remote
             FROM projects
             WHERE id = ?
             """,
@@ -35,7 +35,7 @@ class ProjectRepository:
 
     def get_all(self) -> list[Project]:
         cursor = self.conn.cursor()
-        cursor.execute("SELECT id, title, created_at, done_clean_period, git_remote FROM projects ORDER BY id ASC")
+        cursor.execute("SELECT id, title, description, created_at, done_clean_period, git_remote FROM projects ORDER BY id ASC")
         rows = cursor.fetchall()
         return [self._row_to_project(row) for row in rows]
 
@@ -91,16 +91,18 @@ class ProjectRepository:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            INSERT INTO projects (id, title, created_at, done_clean_period, git_remote)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO projects (id, title, description, created_at, done_clean_period, git_remote)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 title = excluded.title,
+                description = excluded.description,
                 done_clean_period = excluded.done_clean_period,
                 git_remote = excluded.git_remote
             """,
             (
                 project.id,
                 project.name,
+                project.description,
                 project.created_at,
                 project.done_clean_period,
                 project.git_remote,
@@ -122,19 +124,38 @@ class ProjectRepository:
         return int(row["cnt"]) if row else 0
 
     def discover_disk_projects(self) -> list[str]:
-        """Discovers valid project folders on disk."""
+        """Discovers valid project folders on disk, including legacy projects.json definitions."""
         if not self.data_dir or not self.data_dir.is_dir():
             return []
-        projects: list[str] = []
+        projects: set[str] = set()
         for entry in self.data_dir.iterdir():
             if entry.is_dir() and not entry.name.startswith(".") and entry.name != "tasks.db":
-                projects.append(entry.name)
-        return projects
+                projects.add(entry.name)
+
+        legacy_file = self.data_dir / "projects.json"
+        if legacy_file.is_file():
+            try:
+                import json
+                content = json.loads(legacy_file.read_text(encoding="utf-8"))
+                if isinstance(content, list):
+                    for p in content:
+                        if isinstance(p, dict) and p.get("id"):
+                            projects.add(str(p["id"]).strip())
+                elif isinstance(content, dict):
+                    for k, v in content.items():
+                        p_id = (v.get("id") if isinstance(v, dict) else None) or k
+                        if p_id:
+                            projects.add(str(p_id).strip())
+            except Exception:
+                pass
+
+        return sorted(list(projects))
 
     def _row_to_project(self, row: sqlite3.Row) -> Project:
         return Project(
             id=row["id"],
             name=row["title"],
+            description=row["description"] if "description" in row.keys() and row["description"] is not None else "",
             git_remote=row["git_remote"],
             done_clean_period=row["done_clean_period"] if "done_clean_period" in row.keys() else None,
             created_at=row["created_at"],

@@ -85,29 +85,24 @@ type: project
 id: default
 title: Hauptprojekt-Board
 description: Primäres Aufgaben-Board für die Entwicklung.
-git_remote: "https://github.com/user/my-tasks.git"
-done_clean_period: "after_1_week"
+done_clean_period: 7
 buckets:
   - name: backlog
     title: Backlog
     position: 0.0
-    is_done: false
-    collapsed: false
+    is_default: false
   - name: todo
     title: Zu erledigen
     position: 1000.0
-    is_done: false
-    collapsed: false
+    is_default: false
   - name: in-progress
     title: In Bearbeitung
     position: 2000.0
-    is_done: false
-    collapsed: false
+    is_default: false
   - name: done
     title: Erledigt
     position: 3000.0
-    is_done: true
-    collapsed: false
+    is_default: false
 ---
 
 # Hauptprojekt-Übersicht
@@ -123,9 +118,13 @@ Willkommen in der Dokumentations-Notiz des Projekt-Boards. Du kannst diesen Mark
 | `id` | String | Ja | Eindeutige Projekt-ID, die mit dem Verzeichnisnamen übereinstimmt. |
 | `title` | String | Ja | Angezeigter Titel des Projekt-Boards. |
 | `description` | String | Nein | Menschenlesbare Beschreibung des Projekts. |
-| `git_remote` | String | Nein | Git-Remote-URL für selektive Synchronisation pro Projekt. |
-| `done_clean_period` | String | Nein | Richtlinie zum automatischen Archivieren/Aufräumen erledigter Aufgaben (z. B. `disabled`, `after_1_day`, `after_1_week`, `after_1_month`). |
-| `buckets` | Array von Objekten | Ja | Liste der Spalten (Buckets), sortiert nach `position`. Jedes Objekt enthält `name` (Slug), `title`, `position`, `is_done`, `collapsed` und optional `limit`. |
+| `done_clean_period` | Integer | Nein | Richtlinie zum automatischen Aufräumen erledigter Aufgaben in Tagen (z. B. `0` für deaktiviert, `1`, `7`, `30` oder `null` für globalen Standard). |
+| `buckets` | Array von Objekten | Ja | Liste der Spalten (Buckets), sortiert nach `position`. Jedes Objekt enthält `name` (Slug), `title`, `position`, `color`, `layout`, `max_tasks` und `is_default`. |
+
+> [!NOTE]
+> **Lokale vs. geteilte Konfiguration**: Git-Remote-URLs (`git_remote`) pro Projekt werden in der lokalen Repository-Konfiguration (`.git/config` / lokaler SQLite-Index) gespeichert und nicht in `index.md` geschrieben. Dies schützt Zugangsdaten und verhindert Remote-Konflikte bei geteilten Repositories.
+>
+> **Automatische Migration**: Workspaces mit älteren `projects.json`- oder `buckets.json`-Dateien werden beim Starten oder Synchronisieren automatisch in `index.md`-Dateien migriert.
 
 ---
 

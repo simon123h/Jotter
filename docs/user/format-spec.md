@@ -85,29 +85,24 @@ type: project
 id: default
 title: Main Project Board
 description: Primary task tracking board for development.
-git_remote: "https://github.com/user/my-tasks.git"
-done_clean_period: "after_1_week"
+done_clean_period: 7
 buckets:
   - name: backlog
     title: Backlog
     position: 0.0
-    is_done: false
-    collapsed: false
+    is_default: false
   - name: todo
     title: To Do
     position: 1000.0
-    is_done: false
-    collapsed: false
+    is_default: false
   - name: in-progress
     title: In Progress
     position: 2000.0
-    is_done: false
-    collapsed: false
+    is_default: false
   - name: done
     title: Done
     position: 3000.0
-    is_done: true
-    collapsed: false
+    is_default: false
 ---
 
 # Main Project Overview
@@ -123,9 +118,13 @@ Welcome to the project board documentation note. You can freely edit this markdo
 | `id` | String | Yes | Unique project ID matching the directory name. |
 | `title` | String | Yes | Display title of the project board. |
 | `description` | String | No | Human-readable description of the project. |
-| `git_remote` | String | No | Git remote URL for selective per-project synchronization. |
-| `done_clean_period` | String | No | Auto-prune policy for completed tasks (e.g. `disabled`, `after_1_day`, `after_1_week`, `after_1_month`). |
-| `buckets` | Array of Objects | Yes | List of board columns (buckets), ordered by `position`. Each object contains `name` (slug), `title`, `position`, `is_done`, `collapsed`, and optional `limit`. |
+| `done_clean_period` | Integer | No | Auto-prune policy for completed tasks in days (e.g. `0` for disabled, `1`, `7`, `30`, or `null` to use global default). |
+| `buckets` | Array of Objects | Yes | List of board columns (buckets), ordered by `position`. Each object contains `name` (slug), `title`, `position`, `color`, `layout`, `max_tasks`, and `is_default`. |
+
+> [!NOTE]
+> **Local vs. Shared Configuration**: Per-project Git remote URLs (`git_remote`) are stored in your local repository configuration (`.git/config` / local SQLite index) and omitted from `index.md`. This ensures credential safety and prevents remote URL conflicts when `index.md` is committed and shared among team members.
+>
+> **Automatic Migration**: Workspaces containing legacy `projects.json` or `buckets.json` files are automatically migrated to `index.md` files upon launch or synchronization.
 
 ---
 

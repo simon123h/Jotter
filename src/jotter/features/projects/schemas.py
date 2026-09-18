@@ -8,6 +8,7 @@ class ProjectCreate(BaseModel):
 
     title: str
     id: str | None = None
+    description: str = ""
     done_clean_period: int | None = None
     git_remote: str | None = None
 
@@ -16,6 +17,7 @@ class ProjectUpdate(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     title: str | None = None
+    description: str | None = None
     done_clean_period: int | None = None
     git_remote: str | None = None
 
@@ -25,6 +27,7 @@ class ProjectResponse(BaseModel):
 
     id: str
     title: str
+    description: str = ""
     created_at: str
     done_clean_period: int | None = None
     git_remote: str | None = None
