@@ -1,4 +1,4 @@
-"""Repository for managing bucket columns on disk (buckets.json) and SQLite."""
+"""Repository for managing bucket columns on disk (index.md / buckets.json) and SQLite."""
 
 import json
 import sqlite3
@@ -117,6 +117,10 @@ class BucketRepository:
     def count_tasks_in_bucket(self, project_id: str, bucket_name: str) -> int:
         cursor = self.conn.cursor()
         cursor.execute(
+            "SELECT COUNT(*) as cnt FROM tasks WHERE project_id = ?",
+            (project_id,),
+        )
+        cursor.execute(
             "SELECT COUNT(*) as cnt FROM tasks WHERE project_id = ? AND bucket = ?",
             (project_id, bucket_name),
         )
@@ -124,13 +128,45 @@ class BucketRepository:
         return int(row["cnt"]) if row else 0
 
     def sync_buckets_file(self, project_id: str) -> None:
-        """Persists current SQLite buckets configuration to disk `buckets.json`."""
+        """Persists current SQLite buckets and project configuration to `index.md`."""
         proj_dir = self.get_project_dir(project_id)
         if not proj_dir:
             return
 
+        from jotter.features.projects.domain import Project
+        from jotter.features.projects.manifest import write_project_manifest
+
         buckets = self.get_all(project_id)
-        data = [
+
+        # Retrieve project entity from DB or create a fallback
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT id, title, created_at, done_clean_period, git_remote FROM projects WHERE id = ?",
+            (project_id,),
+        )
+        row = cursor.fetchone()
+        if row:
+            project = Project(
+                id=row["id"],
+                name=row["title"],
+                git_remote=row["git_remote"],
+                done_clean_period=row["done_clean_period"],
+                created_at=row["created_at"],
+            )
+        else:
+            project = Project.create(name=project_id.capitalize(), project_id=project_id)
+
+        write_project_manifest(proj_dir, project, buckets)
+
+    def load_buckets_file(self, project_id: str) -> list[dict[str, Any]]:
+        proj_dir = self.get_project_dir(project_id)
+        if not proj_dir:
+            return DEFAULT_DOMAIN_BUCKETS
+
+        from jotter.features.projects.manifest import read_project_manifest
+
+        _, buckets = read_project_manifest(proj_dir, fallback_id=project_id)
+        return [
             {
                 "name": b.name,
                 "title": b.title,
@@ -143,33 +179,47 @@ class BucketRepository:
             }
             for b in buckets
         ]
-        self.write_buckets_file(project_id, data)
-
-    def load_buckets_file(self, project_id: str) -> list[dict[str, Any]]:
-        proj_dir = self.get_project_dir(project_id)
-        if not proj_dir:
-            return DEFAULT_DOMAIN_BUCKETS
-
-        file_path = proj_dir / "buckets.json"
-        if not file_path.is_file():
-            self.write_buckets_file(project_id, DEFAULT_DOMAIN_BUCKETS)
-            return DEFAULT_DOMAIN_BUCKETS
-
-        try:
-            with open(file_path, encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return DEFAULT_DOMAIN_BUCKETS
 
     def write_buckets_file(self, project_id: str, buckets: list[dict[str, Any]]) -> None:
         proj_dir = self.get_project_dir(project_id)
         if not proj_dir:
             return
-        file_path = proj_dir / "buckets.json"
-        tmp_path = file_path.with_suffix(".tmp")
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(buckets, f, indent=2)
-        tmp_path.replace(file_path)
+
+        from jotter.features.projects.domain import Project
+        from jotter.features.projects.manifest import write_project_manifest
+
+        domain_buckets = [
+            Bucket(
+                name=b["name"],
+                title=b["title"],
+                subtitle=b.get("subtitle", ""),
+                position=float(b.get("position", 1000.0)),
+                color=b.get("color"),
+                layout=b.get("layout", "list"),
+                max_tasks=b.get("max_tasks"),
+                is_default=bool(b.get("is_default", False)),
+            )
+            for b in buckets
+        ]
+
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT id, title, created_at, done_clean_period, git_remote FROM projects WHERE id = ?",
+            (project_id,),
+        )
+        row = cursor.fetchone()
+        if row:
+            project = Project(
+                id=row["id"],
+                name=row["title"],
+                git_remote=row["git_remote"],
+                done_clean_period=row["done_clean_period"],
+                created_at=row["created_at"],
+            )
+        else:
+            project = Project.create(name=project_id.capitalize(), project_id=project_id)
+
+        write_project_manifest(proj_dir, project, domain_buckets)
 
     def _row_to_bucket(self, row: sqlite3.Row) -> Bucket:
         pos = row["position"]

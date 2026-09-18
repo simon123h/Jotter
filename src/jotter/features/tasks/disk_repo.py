@@ -46,7 +46,11 @@ class DiskTaskRepository:
 
     def get_all_task_files(self, project_id: str) -> list[Path]:
         p = self.get_project_dir(project_id)
-        return [f for f in p.glob("*.md") if f.is_file()]
+        return [
+            f
+            for f in p.glob("*.md")
+            if f.is_file() and f.name.lower() not in ("index.md", "readme.md", ".project.md")
+        ]
 
     def serialize_task(self, task: Task) -> str:
         """Dumps frontmatter and body into clean markdown format adhering to OKF standard."""

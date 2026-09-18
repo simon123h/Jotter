@@ -43,6 +43,50 @@ class ProjectRepository:
         if self.data_dir:
             proj_dir = self.data_dir / project.id
             proj_dir.mkdir(parents=True, exist_ok=True)
+            # Sync index.md manifest
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                SELECT name, title, subtitle, position, color, layout, max_tasks, is_default
+                FROM buckets
+                WHERE project_id = ?
+                ORDER BY position ASC
+                """,
+                (project.id,),
+            )
+            rows = cursor.fetchall()
+            from jotter.features.buckets.domain import DEFAULT_DOMAIN_BUCKETS, Bucket
+            from jotter.features.projects.manifest import write_project_manifest
+
+            if rows:
+                buckets = [
+                    Bucket(
+                        name=r["name"],
+                        title=r["title"],
+                        subtitle=r["subtitle"] or "",
+                        position=float(r["position"]) if r["position"] is not None else 1000.0,
+                        color=r["color"],
+                        layout=r["layout"] or "list",
+                        max_tasks=r["max_tasks"],
+                        is_default=bool(r["is_default"]),
+                    )
+                    for r in rows
+                ]
+            else:
+                buckets = [
+                    Bucket(
+                        name=b["name"],
+                        title=b["title"],
+                        subtitle=b.get("subtitle", ""),
+                        position=float(b.get("position", 1000.0)),
+                        color=b.get("color"),
+                        layout=b.get("layout", "list"),
+                        max_tasks=b.get("max_tasks"),
+                        is_default=bool(b.get("is_default", False)),
+                    )
+                    for b in DEFAULT_DOMAIN_BUCKETS
+                ]
+            write_project_manifest(proj_dir, project, buckets)
 
         cursor = self.conn.cursor()
         cursor.execute(

@@ -73,3 +73,26 @@ def test_bucket_row_to_bucket_with_none_position(temp_dir, test_env):
     bucket = bucket_svc.get_bucket("default", "unpositioned")
     assert bucket.name == "unpositioned"
     assert bucket.position == 1000.0
+
+
+def test_index_md_project_manifest_roundtrip(temp_dir, test_env):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
+
+    # Initializing default project should generate index.md in default/
+    index_file = Path(temp_dir) / "default" / "index.md"
+    assert index_file.is_file()
+
+    content = index_file.read_text(encoding="utf-8")
+    assert "type: project" in content
+    assert "id: default" in content
+    assert "buckets:" in content
+    assert "name: backlog" in content
+    assert "name: todo" in content
+
+    # Add a custom bucket and verify index.md updates
+    bucket_svc.create_bucket("default", BucketCreate(title="Reviews", color="#00ff00"))
+    content_updated = index_file.read_text(encoding="utf-8")
+    assert "name: reviews" in content_updated
+    assert "title: Reviews" in content_updated
+    assert "color: '#00ff00'" in content_updated or "color: '#00FF00'" in content_updated or 'color: "#00ff00"' in content_updated

@@ -43,15 +43,24 @@ class SyncApplicationService:
 
     def sync_db_only(self) -> int:
         """Reconciles SQLite database index against disk files and prunes expired done tasks."""
+        from jotter.features.projects.manifest import read_project_manifest
+
         # 1. Discover all projects on disk
         disk_projects = self.project_repo.discover_disk_projects()
         if not disk_projects and not self.project_repo.get_all():
             disk_projects = ["default"]
 
         for proj_id in disk_projects:
-            if not self.project_repo.exists(proj_id):
-                self.project_repo.save(Project.create(name=proj_id.capitalize(), project_id=proj_id))
-            self.bucket_repo.get_all(proj_id)
+            proj_dir = Path(self.data_dir) / proj_id
+            if proj_dir.is_dir():
+                project, buckets = read_project_manifest(proj_dir, fallback_id=proj_id)
+                self.project_repo.save(project)
+                for b in buckets:
+                    self.bucket_repo.save(proj_id, b)
+            else:
+                if not self.project_repo.exists(proj_id):
+                    self.project_repo.save(Project.create(name=proj_id.capitalize(), project_id=proj_id))
+                self.bucket_repo.get_all(proj_id)
 
         # 2. Check global doneCleanPeriod
         settings_file = Path(self.data_dir) / "settings.json"
