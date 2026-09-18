@@ -5,8 +5,18 @@ on:
     branches: [ main ]
     tags:
       - '*'
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -17,8 +27,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -59,8 +67,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -117,8 +123,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -168,15 +172,13 @@ jobs:
         with:
           name: playwright-report
           path: frontend/playwright-report/
-          retention-days: 15
+          retention-days: 2
 
   build-checks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v7
