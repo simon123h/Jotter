@@ -300,6 +300,7 @@ export const en = {
     dataDirError: 'Failed to update data directory: {message}',
     dataDirPlaceholder: '/path/to/your/tasks',
     dataDirMobileHint: 'On mobile, this directory is located inside your device Documents folder.',
+    browseFolder: 'Browse Folder',
     timeblockingTitle: 'Time Blocking',
     timeblockStartHourLabel: 'Daily Schedule Start Hour',
     timeblockEndHourLabel: 'Daily Schedule End Hour',

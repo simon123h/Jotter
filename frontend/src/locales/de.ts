@@ -302,6 +302,7 @@ export const de = {
     dataDirError: 'Fehler beim Aktualisieren des Datenverzeichnisses: {message}',
     dataDirPlaceholder: '/pfad/zu/deinen/aufgaben',
     dataDirMobileHint: 'Im Mobilmodus wird das Verzeichnis im Dokumente-Ordner verwaltet.',
+    browseFolder: 'Ordner auswählen',
     timeblockingTitle: 'Time Blocking',
     timeblockStartHourLabel: 'Tagesplan-Startuhrzeit',
     timeblockEndHourLabel: 'Tagesplan-Enduhrzeit',
