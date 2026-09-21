@@ -330,10 +330,19 @@ jobs:
         shell: bash
         env:
           TAG: ${{ needs.tag-release.outputs.tag }}
+          CUSTOM_KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'jotterapp' }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'jotter' }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'jotterapp' }}
         run: |
-          # Create a self-signed release keystore for installable standalone APKs
-          keytool -genkey -v -keystore release.keystore -alias jotter -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass jotterapp -keypass jotterapp -dname "CN=Jotter, OU=Mobile, O=Jotter, L=Local, S=Local, C=DE"
+          if [ -n "$CUSTOM_KEYSTORE_BASE64" ]; then
+            echo "Using persistent release keystore from repository secret ANDROID_RELEASE_KEYSTORE_BASE64..."
+            echo "$CUSTOM_KEYSTORE_BASE64" | base64 -d > release.keystore
+          else
+            echo "::warning::ANDROID_RELEASE_KEYSTORE_BASE64 secret is not set. Generating temporary keystore for this build..."
+            keytool -genkeypair -v -keystore release.keystore -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" -dname "CN=Jotter, OU=Mobile, O=Jotter, L=Local, ST=Local, C=DE"
+          fi
           
           APK_RAW=$(find frontend/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           SIGNED_APK="jotter-${TAG}-android.apk"
@@ -341,8 +350,8 @@ jobs:
           # Align & Sign APK using Android Build-Tools apksigner
           BUILD_TOOLS_BIN=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
           "$BUILD_TOOLS_BIN/zipalign" -v -p 4 "$APK_RAW" "${APK_RAW}.aligned"
-          "$BUILD_TOOLS_BIN/apksigner" sign --ks release.keystore --ks-key-alias jotter \
-            --ks-pass pass:jotterapp --key-pass pass:jotterapp \
+          "$BUILD_TOOLS_BIN/apksigner" sign --ks release.keystore --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass pass:"$KEYSTORE_PASSWORD" --key-pass pass:"$KEY_PASSWORD" \
             --out "$SIGNED_APK" "${APK_RAW}.aligned"
           
           "$BUILD_TOOLS_BIN/apksigner" verify "$SIGNED_APK"
