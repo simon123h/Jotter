@@ -103,7 +103,7 @@ const viewOptions = computed(() => [
   <div>
     <!-- BOTTOM NAVIGATION BAR -->
     <nav
-      class="md:hidden shrink-0 flex items-center justify-around bg-theme-sidebar/95 backdrop-blur border-t border-theme-border/80 px-2 pt-1.5 pb-safe z-30 select-none shadow-lg"
+      class="md:hidden shrink-0 flex items-center justify-around bg-theme-sidebar/95 backdrop-blur border-t border-theme-border/80 px-2 pt-2 pb-safe z-30 select-none shadow-lg"
     >
       <!-- 1. Board Button -->
       <button

@@ -3,6 +3,18 @@ import { defineStore } from 'pinia';
 import { useDebounceFn } from '@vueuse/core';
 import { getSettings, saveSettings } from '@/api';
 import type { AppSettings } from '@/types';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { isNativeMobile } from '@/storage';
+
+const THEME_STATUS_BAR_MAP: Record<string, { bg: string; style: Style }> = {
+  'nordic-light': { bg: '#f8fafc', style: Style.Light },
+  'desert-light': { bg: '#fdfbf7', style: Style.Light },
+  'midnight': { bg: '#0f172a', style: Style.Dark },
+  'forest': { bg: '#022c22', style: Style.Dark },
+  'frost': { bg: '#0b132b', style: Style.Dark },
+  'cyberpunk': { bg: '#080808', style: Style.Dark },
+  'sakura': { bg: '#1f1118', style: Style.Dark },
+};
 
 export type SortBy = 'alpha' | 'manual';
 
@@ -105,6 +117,18 @@ export const useSettingsStore = defineStore('settings', () => {
       }
     } catch {
       // Ignore errors in non-browser environments
+    }
+
+    // Sync mobile Android status bar color and icon style
+    if (isNativeMobile) {
+      try {
+        const config = THEME_STATUS_BAR_MAP[theme] || THEME_STATUS_BAR_MAP['nordic-light'];
+        StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+        StatusBar.setStyle({ style: config.style }).catch(() => {});
+        StatusBar.setBackgroundColor({ color: config.bg }).catch(() => {});
+      } catch {
+        // Ignore errors in non-native environments
+      }
     }
   };
 
