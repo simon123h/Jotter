@@ -13,9 +13,12 @@ updates:
       - "dependencies"
       - "python"
     groups:
-      pip-dependencies:
+      pip-minor-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Maintain npm dependencies at the root level
   - package-ecosystem: "npm"
@@ -30,9 +33,12 @@ updates:
       - "dependencies"
       - "npm"
     groups:
-      npm-root-dependencies:
+      npm-root-minor-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Maintain npm dependencies in the frontend directory
   - package-ecosystem: "npm"
@@ -48,9 +54,12 @@ updates:
       - "npm"
       - "frontend"
     groups:
-      npm-frontend-dependencies:
+      npm-frontend-minor-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Maintain GitHub Actions dependencies
   - package-ecosystem: "github-actions"
@@ -65,6 +74,9 @@ updates:
       - "dependencies"
       - "github-actions"
     groups:
-      actions-dependencies:
+      actions-minor-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
