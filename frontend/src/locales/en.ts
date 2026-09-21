@@ -294,7 +294,7 @@ export const en = {
     systemInfo: 'System Information',
     versionLabel: 'Jotter Version',
     dataDirLabel: 'Data Directory',
-    dataDirDesc: 'Storage directory for all markdown files and the SQLite index database. Can be customized for desktop and mobile.',
+    dataDirDesc: 'Storage directory for all markdown files and the SQLite index database.',
     dataDirChange: 'Change Directory',
     dataDirSuccess: 'Data directory successfully updated',
     dataDirError: 'Failed to update data directory: {message}',

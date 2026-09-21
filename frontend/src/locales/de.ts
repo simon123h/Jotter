@@ -296,7 +296,7 @@ export const de = {
     systemInfo: 'Systeminformationen',
     versionLabel: 'Jotter-Version',
     dataDirLabel: 'Datenverzeichnis',
-    dataDirDesc: 'Speicherort aller Markdown-Dateien und der SQLite-Datenbank. Kann hier für Desktop und Mobilmodus angepasst werden.',
+    dataDirDesc: 'Speicherort aller Markdown-Dateien und der SQLite-Datenbank.',
     dataDirChange: 'Verzeichnis ändern',
     dataDirSuccess: 'Datenverzeichnis erfolgreich aktualisiert',
     dataDirError: 'Fehler beim Aktualisieren des Datenverzeichnisses: {message}',
