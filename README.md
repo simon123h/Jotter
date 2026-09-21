@@ -22,6 +22,7 @@ Jotter is a **local-first, privacy-focused task management web application** des
 
 ## 🌟 Key Features
 
+- **Mobile Android App**: Carry your tasks in your pocket with the native Android APK. Operates 100% offline using local Markdown files with IndexedDB caching and full touch/haptic feedback. Syncs seamlessly with your desktop via Syncthing, Git, or cloud drives.
 - **Data Ownership & Portability**: Tasks are stored as human-readable `.md` markdown files. Your data remains yours, fully accessible even if you stop using Jotter. The files are formatted according to the **Open Knowledge Format (OKF)**.
 - **Combat Task Flooding**: Built for dealing with hundreds of open tasks.
 - **Flexible Views**: Organise tasks your way with Kanban columns, list view, a priority-based **Eisenhower Matrix**, and a chronological **Time View** grouping by due dates.
@@ -38,7 +39,7 @@ Jotter is a **local-first, privacy-focused task management web application** des
 
 ## 📦 Quick Start
 
-### Option 1: Run directly with `pipx` (Recommended for Python users)
+### Option 1: Run directly with `pipx` (Recommended for Desktop/Python users)
 
 No cloning or Node.js required—just Python:
 
@@ -52,11 +53,15 @@ pipx install jotter-app
 jotter
 ```
 
-### Option 2: Standalone Executable (Zero Python Required)
+### Option 2: Standalone Desktop Executable (Zero Python Required)
 
 Download the pre-compiled `jotter-server` executable from [GitHub Releases](https://github.com/simon123h/jotter/releases) for Windows, Linux, or macOS. No runtime or build tools needed.
 
-### Option 3: Run from Source
+### Option 3: Android Mobile App (.apk)
+
+Download the signed `jotter-*-android.apk` from [GitHub Releases](https://github.com/simon123h/jotter/releases) and install it on your Android phone. No server or internet connection required. Point it to your synced Markdown folder (via Syncthing, Git, etc.) for cross-device synchronization.
+
+### Option 4: Run from Source
 
 1. Clone the repository:
    ```bash

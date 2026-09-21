@@ -37,7 +37,17 @@ Your default web browser will automatically open to `http://localhost:58271`. Pa
 
 ---
 
-## Offline Installation (`.whl`)
+## Option 3: Android Mobile App (.apk)
+
+Jotter is available as a standalone, offline Android application:
+
+1. Download `jotter-*-android.apk` from the latest [GitHub Releases](https://github.com/simon123h/jotter/releases).
+2. Open the file on your Android device to install it.
+3. The app creates a local vault at `Documents/Jotter` containing standard `.md` files. You can synchronize this directory across your devices using **Syncthing**, **Git**, or your preferred cloud folder sync tool.
+
+---
+
+## Offline Python Installation (`.whl`)
 
 If you are on an air-gapped machine without internet access, you can download the release wheel (`jotter_app-*.whl`) from the [GitHub Releases](https://github.com/simon123h/jotter/releases) page and install it directly:
 

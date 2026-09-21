@@ -65,29 +65,36 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph Frontend [Frontend SPA - Vue 3]
+    subgraph Frontend [Frontend - Vue 3 Composition API]
         UI[Kanban UI Komponenten] <--> Store[Pinia Store]
-        Store <--> Client[API Client]
+        Store <--> Proxy[Storage Facade / api.ts]
+        Proxy <--> Adapter{Laufzeit-Plattform?}
+        Adapter -->|Desktop / Web| HttpAdapter[HttpStorageAdapter]
+        Adapter -->|Native Android| CapAdapter[CapacitorFsStorageAdapter]
     end
 
-    subgraph Backend [Backend Server - Go Chi / Wails]
+    subgraph NativeMobile [Android In-Process Engine]
+        CapAdapter <--> DexieDB[(Dexie.js IndexedDB Cache)]
+        CapAdapter <--> CapFS[(Capacitor Filesystem / Documents)]
+    end
+
+    subgraph DesktopBackend [Desktop Backend Server - FastAPI / Python]
         direction TB
-        Router[API Router / chi.Router] <--> Handlers[Layered Handlers / Controller]
-        Handlers <--> Services[Domain Services / Business Layer]
-        Services <--> DBRepo[Database Repositories]
-        Services <--> FileRepo[File Repositories]
-        DBRepo <--> Database[(SQLite DB Index)]
+        Router[API Router] <--> Services[Domain Services]
+        Services <--> Database[(SQLite DB Index)]
+        Services <--> Disk[(Lokale Festplatte .md)]
     end
 
-    Client <-->|REST API / CORS| Router
-    FileRepo <-->|Lesen / Schreiben| Disk[(Lokale Festplatte .md)]
+    HttpAdapter <-->|REST API / CORS| Router
 ```
 
-### 5.1 Frontend (Vue 3 Single Page Application)
+### 5.1 Frontend (Vue 3 Single Page Application & Mobile App)
 
-* **Kanban UI-Komponenten**: Vue-Komponenten (`BoardView.vue`, `TaskCard.vue`), gestaltet mit Tailwind CSS.
-* **Pinia Store**: Verwaltet clientseitige Einstellungen (wie lokale Präferenzen und Ansichten), die mit dem `localStorage` des Browsers synchronisiert werden.
-* **API Client**: Kommuniziert mit den Routen des Backends.
+* **Kanban UI-Komponenten**: Vue 3 Composition API Komponenten (`<script setup lang="ts">`), gestaltet mit Tailwind CSS, mobiler Navigationsleiste und haptischem Feedback.
+* **Pinia Store**: Verwaltet clientseitige Einstellungen, aktives Projekt, Filter und Pomodoro-Zustände.
+* **Storage-Schicht Abstraktion (`StorageAdapter`)**:
+  * `HttpStorageAdapter`: Kommuniziert über REST-API mit dem Python-Backend auf Desktop/Web.
+  * `CapacitorFsStorageAdapter`: Vollwertige In-Process TypeScript-Engine für Android. Liest und schreibt echte `.md`-Markdown-Dateien im Android-Dateisystem und verwaltet einen lokalen IndexedDB-Index per Dexie.js.
 
 ### 5.2 Backend (FastAPI Python-Anwendung)
 

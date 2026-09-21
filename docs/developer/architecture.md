@@ -65,27 +65,36 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph Frontend [Frontend SPA - Vue 3]
+    subgraph Frontend [Frontend - Vue 3 Composition API]
         UI[Kanban UI Components] <--> Store[Pinia Store]
-        Store <--> Client[API Client]
+        Store <--> Proxy[Storage Facade / api.ts]
+        Proxy <--> Adapter{Runtime Platform?}
+        Adapter -->|Desktop / Web| HttpAdapter[HttpStorageAdapter]
+        Adapter -->|Native Android| CapAdapter[CapacitorFsStorageAdapter]
     end
 
-    subgraph Backend [Backend Server - FastAPI / Python]
+    subgraph NativeMobile [Android In-Process Engine]
+        CapAdapter <--> DexieDB[(Dexie.js IndexedDB Cache)]
+        CapAdapter <--> CapFS[(Capacitor Filesystem / Documents)]
+    end
+
+    subgraph DesktopBackend [Desktop Backend Server - FastAPI / Python]
         direction TB
-        Router[API Routers / APIRouter] <--> Controllers[Route Endpoints]
-        Controllers <--> Services[Domain Services / Business Layer]
+        Router[API Routers] <--> Services[Domain Services]
         Services <--> Database[(SQLite DB Index)]
         Services <--> Disk[(Local Disk .md)]
     end
 
-    Client <-->|REST API / CORS| Router
+    HttpAdapter <-->|REST API / CORS| Router
 ```
 
-### 5.1 Frontend (Vue 3 Single Page Application)
+### 5.1 Frontend (Vue 3 Single Page Application & Mobile App)
 
-- **Kanban UI Components**: Vue 3 Composition API components styled with Tailwind CSS.
-- **Pinia Store**: Manages client-side settings, current project, active filters, and selection states.
-- **API Client**: Interacts with the FastAPI backend routes.
+- **Kanban UI Components**: Vue 3 Composition API components (`<script setup lang="ts">`) styled with Tailwind CSS, responsive mobile navigation bar, and haptic feedback.
+- **Pinia Stores**: Manages client-side settings, current project, active filters, selection states, and pomodoro timer.
+- **Storage Layer Abstraction (`StorageAdapter`)**:
+  - `HttpStorageAdapter`: Handles communication with the FastAPI desktop backend.
+  - `CapacitorFsStorageAdapter`: In-process TypeScript storage engine for Android that reads/writes raw `.md` markdown files directly on Android documents storage while maintaining an IndexedDB cache via Dexie.js for millisecond search/filter queries.
 
 ### 5.2 Backend (FastAPI Python Application)
 
