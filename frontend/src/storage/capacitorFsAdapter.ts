@@ -9,6 +9,7 @@ import { StoragePermission } from './storagePermission';
 
 export const PREF_VAULT_PATH = 'jotter_vault_path';
 export const PREF_VAULT_DIR = 'jotter_vault_dir'; // Directory enum name if relative
+export const PREF_SEEDED_DEFAULT = 'jotter_seeded_default_project';
 
 const DEFAULT_SETTINGS: AppSettings = {
   hideDoneColumn: true,
@@ -95,13 +96,15 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   async getProjects(): Promise<Project[]> {
     await this.ensureInitialized();
     let projects = await db.projects.toArray();
-    if (projects.length === 0) {
-      // Seed default project
+    const { value: hasSeeded } = await Preferences.get({ key: PREF_SEEDED_DEFAULT });
+    if (projects.length === 0 && !hasSeeded) {
+      // Seed default project only once upon very first app launch
       const defProj: Project = {
         id: 'default',
         title: 'Default',
         created_at: new Date().toISOString(),
       };
+      await Preferences.set({ key: PREF_SEEDED_DEFAULT, value: 'true' });
       await this.createProject(defProj.title);
       projects = [defProj];
     }
