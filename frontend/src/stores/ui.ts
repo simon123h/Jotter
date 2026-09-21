@@ -1,7 +1,9 @@
+import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStorage } from '@vueuse/core';
 
 export const useUiStore = defineStore('ui', () => {
+  const isMobileViewsSheetOpen = ref(false);
   const lastViewMode = useStorage<string>('jotter-last-view-mode', 'board', undefined, { flush: 'sync' });
   const collapsedColumns = useStorage<Record<string, string[]>>('jotter-collapsed-columns', {}, undefined, { flush: 'sync' });
   const collapseEmptyColumns = useStorage<boolean>('jotter-collapse-empty-columns', false, undefined, { flush: 'sync' });
@@ -51,6 +53,7 @@ export const useUiStore = defineStore('ui', () => {
   };
 
   return {
+    isMobileViewsSheetOpen,
     lastViewMode,
     collapsedColumns,
     collapseEmptyColumns,

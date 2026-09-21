@@ -3,15 +3,17 @@ import { App } from '@capacitor/app';
 import { useRouter, useRoute } from 'vue-router';
 import { useModalStore } from '@/stores/modal';
 import { useSettingsStore } from '@/stores/settings';
+import { useUiStore } from '@/stores/ui';
 import { isNativeMobile } from '@/storage';
 
 /**
  * Handles the Android hardware/gesture back button.
- * Prioritizes closing open modals/dialogs, then open mobile sidebar, then detail routes, then normal history.
+ * Prioritizes closing open modals/dialogs, then open sheets/sidebars, then detail routes, then normal history.
  */
 export function useAndroidBackButton() {
   const modalStore = useModalStore();
   const settingsStore = useSettingsStore();
+  const uiStore = useUiStore();
   const router = useRouter();
   const route = useRoute();
 
@@ -28,13 +30,19 @@ export function useAndroidBackButton() {
           return;
         }
 
-        // 2. If mobile sidebar is open, close it
+        // 2. If mobile views bottom sheet is open, close it
+        if (uiStore.isMobileViewsSheetOpen) {
+          uiStore.isMobileViewsSheetOpen = false;
+          return;
+        }
+
+        // 3. If mobile sidebar is open, close it
         if (settingsStore.isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768) {
           settingsStore.isSidebarOpen = false;
           return;
         }
 
-        // 3. If TaskDetailModal route is active (route has taskId param), navigate back to parent project
+        // 4. If TaskDetailModal route is active (route has taskId param), navigate back to parent project
         if (route.params.taskId) {
           const projectId = (route.params.projectId as string) || 'default';
           router.push({ name: 'project', params: { projectId } });

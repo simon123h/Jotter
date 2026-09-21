@@ -78,8 +78,8 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
 </script>
 
 <template>
-  <header class="flex items-center justify-between gap-3 border-b border-theme-border px-4 py-3 shrink-0 bg-theme-card z-[110]">
-    <div class="flex items-center gap-2.5 overflow-hidden mr-2 min-w-0">
+  <header class="flex items-center justify-between gap-2 md:gap-3 border-b border-theme-border px-3 md:px-4 py-2.5 md:py-3 shrink-0 bg-theme-card z-[110]">
+    <div class="flex items-center gap-2.5 overflow-hidden mr-1 md:mr-2 min-w-0 shrink-0">
       <!-- Hamburger Menu Button -->
       <button
         @click="emit('toggle-sidebar')"
@@ -88,7 +88,10 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
       >
         <Menu class="w-4 h-4 shrink-0" />
       </button>
-      <h1 class="text-base font-bold tracking-tight text-theme-text-main truncate flex items-baseline gap-1.5">
+      <h1
+        class="text-base font-bold tracking-tight text-theme-text-main truncate items-baseline gap-1.5"
+        :class="activeProjectId ? 'hidden md:flex' : 'flex'"
+      >
         <router-link :to="{ name: 'home' }" class="hover:text-theme-primary transition-colors cursor-pointer">
           {{ t('brand.title') }}
         </router-link>
@@ -99,7 +102,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
     </div>
 
     <!-- Search & Filter Bar -->
-    <div v-if="activeProjectId" class="flex-1 mx-3 relative flex items-center min-w-[120px]">
+    <div v-if="activeProjectId" class="flex-1 mx-1.5 md:mx-3 relative flex items-center min-w-[100px]">
       <Search class="w-3.5 h-3.5 absolute left-2.5 text-theme-text-muted/60 pointer-events-none" />
       <input
         ref="searchInput"
@@ -220,7 +223,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
       <!-- Timeblock Sidebar Toggle Button -->
       <button
         @click="emit('toggle-timeblock-sidebar')"
-        class="timeblock-toggle-btn p-1.5 rounded transition-all cursor-pointer shrink-0 border"
+        class="timeblock-toggle-btn hidden md:flex items-center p-1.5 rounded transition-all cursor-pointer shrink-0 border"
         :class="
           isTimeblockSidebarOpen
             ? 'bg-theme-primary/15 border-theme-primary/30 text-theme-primary'
@@ -234,7 +237,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
       <!-- Pomodoro Timer Toggle Button -->
       <button
         @click="pomodoroStore.toggleBar"
-        class="pomodoro-toggle-btn p-1.5 rounded transition-all cursor-pointer shrink-0 border relative"
+        class="pomodoro-toggle-btn hidden md:flex items-center p-1.5 rounded transition-all cursor-pointer shrink-0 border relative"
         :class="
           pomodoroStore.is_bar_open || pomodoroStore.status === 'running'
             ? 'bg-rose-500/15 border-rose-500/30 text-rose-500'
@@ -311,15 +314,6 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
               <span>{{ t('views.time') }}</span>
             </router-link>
             <router-link
-              :to="{ name: 'triage', params: { projectId: activeProjectId }, query: $route.query }"
-              class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
-              :class="{ 'text-theme-primary bg-theme-primary/5': isTabActive('triage') }"
-              @click="showOverflowMenu = false"
-            >
-              <Sparkles class="w-3.5 h-3.5" />
-              <span>{{ t('views.triage') }}</span>
-            </router-link>
-            <router-link
               :to="{ name: 'review', params: { projectId: activeProjectId }, query: $route.query }"
               class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
               :class="{ 'text-theme-primary bg-theme-primary/5': isTabActive('review') }"
@@ -354,7 +348,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
       <!-- New Task Button -->
       <button
         @click="emit('create-task', defaultBucketName)"
-        class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded transition-all cursor-pointer shrink-0"
+        class="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded transition-all cursor-pointer shrink-0"
         :title="t('shortcuts.createTask')"
       >
         <Plus class="w-3.5 h-3.5 shrink-0" />
