@@ -41,6 +41,9 @@ class PersistentStorageService implements Storage {
   }
 
   public getItem(key: string): string | null {
+    if (isNativeMobile) {
+      return this.cache.get(key) ?? null;
+    }
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
         const val = window.localStorage.getItem(key);

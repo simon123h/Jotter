@@ -5,13 +5,19 @@ import App from '@/App.vue';
 import router from '@/router';
 import { initPersistentStorage } from '@/storage/preferencesStorage';
 
-// Hydrate preferences from native SharedPreferences on mobile
-initPersistentStorage().catch(() => {});
+// Hydrate preferences from native SharedPreferences on mobile before mounting stores & app
+async function bootstrap() {
+  await initPersistentStorage();
 
-const app = createApp(App);
-app.use(createPinia());
-app.use(router);
-app.mount('#app');
+  const app = createApp(App);
+  app.use(createPinia());
+  app.use(router);
+  app.mount('#app');
+}
+
+bootstrap().catch((err) => {
+  console.error('Failed to initialize app:', err);
+});
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
