@@ -375,3 +375,17 @@ body.dragging-active .task-card.is-selected:not(.sortable-chosen) {
 .task-card.is-selected:hover .task-drag-badge {
   display: inline-block !important;
 }
+
+/* Safe area insets utilities */
+.pt-safe {
+  padding-top: max(var(--sat), env(safe-area-inset-top, 0px));
+}
+.pb-safe {
+  padding-bottom: max(var(--sab), env(safe-area-inset-bottom, 0px));
+}
+.pl-safe {
+  padding-left: max(var(--sal), env(safe-area-inset-left, 0px));
+}
+.pr-safe {
+  padding-right: max(var(--sar), env(safe-area-inset-right, 0px));
+}
