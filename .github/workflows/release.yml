@@ -326,18 +326,37 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: Rename and Upload APK to GitHub Release
+      - name: Sign Android APK
+        shell: bash
+        env:
+          TAG: ${{ needs.tag-release.outputs.tag }}
+        run: |
+          # Create a self-signed release keystore for installable standalone APKs
+          keytool -genkey -v -keystore release.keystore -alias jotter -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass jotterapp -keypass jotterapp -dname "CN=Jotter, OU=Mobile, O=Jotter, L=Local, S=Local, C=DE"
+          
+          APK_RAW=$(find frontend/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          SIGNED_APK="jotter-${TAG}-android.apk"
+          
+          # Align & Sign APK using Android Build-Tools apksigner
+          BUILD_TOOLS_BIN=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          "$BUILD_TOOLS_BIN/zipalign" -v -p 4 "$APK_RAW" "${APK_RAW}.aligned"
+          "$BUILD_TOOLS_BIN/apksigner" sign --ks release.keystore --ks-key-alias jotter \
+            --ks-pass pass:jotterapp --key-pass pass:jotterapp \
+            --out "$SIGNED_APK" "${APK_RAW}.aligned"
+          
+          "$BUILD_TOOLS_BIN/apksigner" verify "$SIGNED_APK"
+          echo "SIGNED_APK=$SIGNED_APK" >> "$GITHUB_ENV"
+
+      - name: Upload Signed APK to GitHub Release
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.tag-release.outputs.tag }}
         run: |
-          APK_PATH=$(find frontend/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
-          if [ -f "$APK_PATH" ]; then
-            OUTPUT_APK="jotter-${TAG}-android-unsigned.apk"
-            cp "$APK_PATH" "$OUTPUT_APK"
-            gh release upload "$TAG" "$OUTPUT_APK" --clobber
+          if [ -f "$SIGNED_APK" ]; then
+            gh release upload "$TAG" "$SIGNED_APK" --clobber
           else
-            echo "Warning: No APK found to upload."
+            echo "Warning: No signed APK found to upload."
           fi
 
