@@ -11,6 +11,7 @@
     "docs:preview": "vitepress preview docs",
     "dev": "concurrently --kill-others-on-fail --names \"Backend,Frontend\" --prefix-colors \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "cd frontend && npm run build",
+    "build:apk": "cd frontend && npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
     "build:package": "npm run build:frontend && rm -rf src/jotter/dist build && cp -r frontend/dist src/jotter/dist && pyproject-build",
     "build": "npm run build:package",
     "test:backend": "python3 -m pytest tests/",
