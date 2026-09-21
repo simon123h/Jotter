@@ -5,6 +5,7 @@ import type { StorageAdapter } from './types';
 import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock } from '@/types';
 import { db } from './dexieDb';
 import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectManifest, DEFAULT_MOBILE_BUCKETS } from './markdownParser';
+import { StoragePermission } from './storagePermission';
 
 export const PREF_VAULT_PATH = 'jotter_vault_path';
 export const PREF_VAULT_DIR = 'jotter_vault_dir'; // Directory enum name if relative
@@ -47,6 +48,22 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
 
   private async ensureInitialized(): Promise<void> {
     if (this.isInitialized) return;
+
+    try {
+      await Filesystem.requestPermissions();
+    } catch {
+      // Ignore if not supported on platform
+    }
+
+    try {
+      const status = await StoragePermission.checkPermission();
+      if (!status.granted) {
+        await StoragePermission.requestPermission();
+      }
+    } catch {
+      // StoragePermission plugin is Android native only
+    }
+
     const { value: savedPath } = await Preferences.get({ key: PREF_VAULT_PATH });
     if (savedPath) {
       this.vaultPath = savedPath;
