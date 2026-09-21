@@ -78,7 +78,9 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
 </script>
 
 <template>
-  <header class="flex items-center justify-between gap-2 md:gap-3 border-b border-theme-border px-3 md:px-4 py-2.5 md:py-3 shrink-0 bg-theme-card z-[110]">
+  <header
+    class="flex items-center justify-between gap-2 md:gap-3 border-b border-theme-border px-3 md:px-4 py-2.5 md:py-3 shrink-0 bg-theme-card z-30"
+  >
     <div class="flex items-center gap-2.5 overflow-hidden mr-1 md:mr-2 min-w-0 shrink-0">
       <!-- Hamburger Menu Button -->
       <button
