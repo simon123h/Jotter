@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { X, SlidersHorizontal, Calendar, Tag, Trash2 } from '@lucide/vue';
+import { X, SlidersHorizontal, Calendar, Tag, Trash2, Check } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
@@ -337,26 +337,31 @@ const handleApply = () => {
         <button
           type="button"
           @click="handleClear"
-          class="flex items-center gap-1.5 px-3 py-1.5 border border-theme-border hover:bg-theme-column/30 text-theme-text-muted hover:text-theme-text-main rounded text-xs font-semibold transition-all cursor-pointer whitespace-nowrap"
+          class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 border border-theme-border hover:bg-theme-column/30 text-theme-text-muted hover:text-theme-text-main rounded text-xs font-semibold transition-all cursor-pointer whitespace-nowrap"
+          :title="t('filterModal.clearAll')"
         >
           <Trash2 class="w-3.5 h-3.5" />
-          {{ t('filterModal.clearAll') }}
+          <span class="hidden sm:inline">{{ t('filterModal.clearAll') }}</span>
         </button>
 
         <div class="flex flex-wrap items-center gap-2 ml-auto">
           <button
             type="button"
             @click="emit('close')"
-            class="px-3.5 py-1.5 border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer whitespace-nowrap"
+            class="px-2.5 sm:px-3.5 py-1.5 border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            :title="t('buttons.cancel')"
           >
-            {{ t('buttons.cancel') }}
+            <X class="w-3.5 h-3.5" />
+            <span class="hidden sm:inline">{{ t('buttons.cancel') }}</span>
           </button>
           <button
             type="button"
             @click="handleApply"
-            class="px-4 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap"
+            class="px-3 sm:px-4 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            :title="t('filterModal.apply')"
           >
-            {{ t('filterModal.apply') }}
+            <Check class="w-3.5 h-3.5" />
+            <span class="hidden sm:inline">{{ t('filterModal.apply') }}</span>
           </button>
         </div>
       </div>

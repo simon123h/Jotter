@@ -8,7 +8,7 @@ import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useProjectStore } from '@/stores/project';
-import { X, ClipboardList, Split } from '@lucide/vue';
+import { X, ClipboardList, Split, Trash2, Archive, ArchiveRestore, Check, Pencil, Save } from '@lucide/vue';
 import { parseTitleState } from '@/utils/titleParser';
 import { extractAllChecklistItems } from '@/utils/markdown';
 
@@ -592,9 +592,11 @@ onBeforeRouteLeave(async () => {
           <button
             v-if="task && !isEditing"
             @click="handleDelete"
-            class="text-sm font-semibold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors cursor-pointer whitespace-nowrap"
+            class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            :title="t('buttons.delete')"
           >
-            {{ t('buttons.delete') }}
+            <Trash2 class="w-4 h-4" />
+            <span class="hidden sm:inline">{{ t('buttons.delete') }}</span>
           </button>
         </div>
         <div class="flex flex-wrap items-center gap-2 ml-auto">
@@ -603,29 +605,37 @@ onBeforeRouteLeave(async () => {
             <button
               v-if="task && task.bucket !== 'archive'"
               @click="handleArchive"
-              class="text-sm font-semibold px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded transition-all cursor-pointer whitespace-nowrap"
+              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              :title="t('buttons.archive')"
             >
-              {{ t('buttons.archive') }}
+              <Archive class="w-4 h-4" />
+              <span class="hidden sm:inline">{{ t('buttons.archive') }}</span>
             </button>
             <button
               v-if="task && task.bucket === 'archive'"
               @click="handleUnarchive"
-              class="text-sm font-semibold px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded transition-all cursor-pointer whitespace-nowrap"
+              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              :title="t('buttons.unarchive')"
             >
-              {{ t('buttons.unarchive') }}
+              <ArchiveRestore class="w-4 h-4" />
+              <span class="hidden sm:inline">{{ t('buttons.unarchive') }}</span>
             </button>
             <button
               v-if="task && task.bucket !== 'done' && task.bucket !== 'archive'"
               @click="handleMarkDone"
-              class="text-sm font-semibold px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all cursor-pointer whitespace-nowrap"
+              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              :title="t('buttons.markDone')"
             >
-              {{ t('buttons.markDone') }}
+              <Check class="w-4 h-4" />
+              <span class="hidden sm:inline">{{ t('buttons.markDone') }}</span>
             </button>
             <button
               @click="isEditing = true"
-              class="text-sm font-semibold px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/25 rounded transition-all cursor-pointer whitespace-nowrap"
+              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/25 rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              :title="t('buttons.edit')"
             >
-              {{ t('buttons.edit') }}
+              <Pencil class="w-4 h-4" />
+              <span class="hidden sm:inline">{{ t('buttons.edit') }}</span>
             </button>
           </template>
 
@@ -633,18 +643,22 @@ onBeforeRouteLeave(async () => {
           <template v-else>
             <button
               @click="cancelEdit"
-              class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer whitespace-nowrap"
+              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
               :disabled="loading"
+              :title="t('buttons.cancel')"
             >
-              {{ t('buttons.cancel') }}
+              <X class="w-4 h-4" />
+              <span class="hidden sm:inline">{{ t('buttons.cancel') }}</span>
             </button>
             <button
               @click="handleSave"
-              class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
               :disabled="loading"
+              :title="t('buttons.save')"
             >
-              <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              {{ t('buttons.save') }}
+              <span v-if="loading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <Save v-else class="w-4 h-4" />
+              <span class="hidden sm:inline">{{ t('buttons.save') }}</span>
             </button>
           </template>
         </div>

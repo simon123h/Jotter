@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { Trash2 } from '@lucide/vue';
+import { Trash2, Save, X } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
@@ -161,25 +161,30 @@ const closeAndSave = async () => {
         <button
           type="button"
           @click="handleDelete"
-          class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-all cursor-pointer whitespace-nowrap"
+          class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-all cursor-pointer whitespace-nowrap"
+          :title="t('projectEdit.deleteButton')"
         >
           <Trash2 class="w-3.5 h-3.5" />
-          {{ t('projectEdit.deleteButton') }}
+          <span class="hidden sm:inline">{{ t('projectEdit.deleteButton') }}</span>
         </button>
 
         <div class="flex flex-wrap items-center gap-2 ml-auto">
           <button
             type="button"
             @click="emit('close')"
-            class="px-4 py-2 border border-theme-border rounded text-sm font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer whitespace-nowrap"
+            class="px-3 sm:px-4 py-2 border border-theme-border rounded text-sm font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            :title="t('buttons.cancel')"
           >
-            {{ t('buttons.cancel') }}
+            <X class="w-4 h-4" />
+            <span class="hidden sm:inline">{{ t('buttons.cancel') }}</span>
           </button>
           <button
             type="submit"
-            class="px-4 py-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-sm font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap"
+            class="px-3 sm:px-4 py-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-sm font-semibold transition-all shadow-sm hover:shadow-md flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            :title="t('projectEdit.saveButton')"
           >
-            {{ t('projectEdit.saveButton') }}
+            <Save class="w-4 h-4" />
+            <span class="hidden sm:inline">{{ t('projectEdit.saveButton') }}</span>
           </button>
         </div>
       </div>

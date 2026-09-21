@@ -2,7 +2,7 @@
 import { ref, watch, nextTick, onUnmounted, computed, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { ClipboardList, Slash } from '@lucide/vue';
+import { ClipboardList, Slash, Plus, X } from '@lucide/vue';
 import type { BucketName } from '@/types';
 import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
@@ -391,19 +391,23 @@ const handleSubmit = async () => {
         <button
           type="button"
           @click="emit('close')"
-          class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer whitespace-nowrap"
+          class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
           :disabled="loading"
+          :title="t('buttons.cancel')"
         >
-          {{ t('buttons.cancel') }}
+          <X class="w-4 h-4" />
+          <span class="hidden sm:inline">{{ t('buttons.cancel') }}</span>
         </button>
         <button
           type="submit"
           @click="handleSubmit"
-          class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+          class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
           :disabled="loading"
+          :title="t('buttons.create')"
         >
           <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          {{ t('buttons.create') }}
+          <Plus v-else class="w-4 h-4" />
+          <span class="hidden sm:inline">{{ t('buttons.create') }}</span>
         </button>
       </div>
     </template>
