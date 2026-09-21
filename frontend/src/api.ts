@@ -165,6 +165,11 @@ export async function getSystemInfo(): Promise<SystemInfo> {
   return activeStorage.getSystemInfo();
 }
 
+export async function updateDataDir(dataDir: string): Promise<{ status: string; data_dir: string; synced?: number }> {
+  if (IS_DEMO_MODE) return { status: 'ok', data_dir: dataDir };
+  return activeStorage.updateDataDir(dataDir);
+}
+
 export async function getGitHistory(projectId?: string): Promise<GitCommit[]> {
   if (IS_DEMO_MODE) return [];
   return activeStorage.getGitHistory(projectId);

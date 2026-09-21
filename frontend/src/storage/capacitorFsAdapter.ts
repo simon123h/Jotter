@@ -634,10 +634,10 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   }
 
   async getSystemInfo(): Promise<SystemInfo> {
-    let versionStr = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '3.9.2';
+    let versionStr = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '3.9.5';
     try {
       const info = await App.getInfo();
-      if (info && info.version) {
+      if (info && info.version && info.version !== '1.0') {
         versionStr = info.version;
       }
     } catch {
@@ -646,6 +646,18 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
     return {
       version: `${versionStr} (Mobile)`,
       data_dir: `${this.vaultPath} (Android Documents)`,
+    };
+  }
+
+  async updateDataDir(dataDir: string): Promise<{ status: string; data_dir: string; synced?: number }> {
+    const cleanPath = dataDir.trim();
+    if (!cleanPath) throw new Error('Data directory cannot be empty');
+    await this.setVaultPath(cleanPath, Directory.Documents);
+    const syncRes = await this.syncSystem();
+    return {
+      status: 'ok',
+      data_dir: `${this.vaultPath} (Android Documents)`,
+      synced: syncRes.synchronized_tasks,
     };
   }
 

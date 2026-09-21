@@ -62,6 +62,7 @@ export interface StorageAdapter {
   // System & Sync
   syncSystem(): Promise<{ status: string; synchronized_tasks: number }>;
   getSystemInfo(): Promise<SystemInfo>;
+  updateDataDir(dataDir: string): Promise<{ status: string; data_dir: string; synced?: number }>;
   getGitHistory(projectId?: string): Promise<GitCommit[]>;
   restoreCommit(commitHash: string, projectId?: string): Promise<{ synchronized_tasks: number }>;
 }

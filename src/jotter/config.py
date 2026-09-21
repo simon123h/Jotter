@@ -148,3 +148,39 @@ def load_config() -> UserConfig:
     # Ensure data directory exists
     Path(config.data_dir).mkdir(parents=True, exist_ok=True)
     return config
+
+
+def save_user_config(config: UserConfig, target_path: Path | None = None) -> Path:
+    """Saves UserConfig to a YAML configuration file."""
+    if target_path is None:
+        # If an existing config exists, use it; otherwise use the primary default config path
+        for p in get_default_config_paths():
+            if p.is_file():
+                target_path = p
+                break
+        if target_path is None:
+            default_paths = get_default_config_paths()
+            target_path = default_paths[0] if default_paths else (Path.home() / ".jotter" / "jotter.yaml")
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Read existing content if available to preserve extra fields
+    existing_data: dict = {}
+    if target_path.is_file():
+        try:
+            with open(target_path, encoding="utf-8") as f:
+                loaded = yaml.safe_load(f)
+                if isinstance(loaded, dict):
+                    existing_data = loaded
+        except Exception:
+            existing_data = {}
+
+    existing_data["data_dir"] = config.data_dir
+    existing_data["host"] = config.host
+    existing_data["port"] = config.port
+    existing_data["log_level"] = config.log_level
+
+    with open(target_path, "w", encoding="utf-8") as f:
+        yaml.safe_dump(existing_data, f, default_flow_style=False)
+
+    return target_path

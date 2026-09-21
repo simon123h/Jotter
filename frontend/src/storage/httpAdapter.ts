@@ -302,6 +302,16 @@ export class HttpStorageAdapter implements StorageAdapter {
     return res.json();
   }
 
+  async updateDataDir(dataDir: string): Promise<{ status: string; data_dir: string; synced?: number }> {
+    const res = await this.customFetch(`${API_BASE}/system/data-dir`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data_dir: dataDir }),
+    });
+    if (!res.ok) await this.handleResponseError(res, 'Failed to update data directory');
+    return res.json();
+  }
+
   async getGitHistory(projectId?: string): Promise<GitCommit[]> {
     const url = new URL(`${API_BASE}/system/history`, window.location.origin);
     if (projectId && projectId !== 'all') url.searchParams.append('projectId', projectId);
