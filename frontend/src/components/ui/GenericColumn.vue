@@ -260,7 +260,7 @@ watch(
 <template>
   <div
     :style="columnStyle"
-    class="generic-column flex flex-col rounded group/col relative overflow-hidden transition-all duration-300"
+    class="generic-column flex flex-col rounded group/col relative overflow-hidden transition-all duration-300 snap-center md:snap-align-none"
     :class="[
       isCollapsed
         ? 'w-12 min-w-[48px] max-w-[48px] h-fit max-h-full shrink-0 bg-theme-column/50 backdrop-blur-[2px] border border-theme-border hover:bg-theme-column/75 hover:border-theme-accent/40 shadow-sm hover:shadow-md'
@@ -272,7 +272,7 @@ watch(
                 ? 'min-w-[840px] w-[864px] md:w-[960px]'
                 : layout === 'grid-2'
                   ? 'min-w-[560px] w-[576px] md:w-[640px]'
-                  : 'min-w-[280px] w-72 md:w-80')),
+                  : 'w-[calc(100vw-3rem)] max-w-[340px] md:w-80 md:min-w-[320px]')),
     ]"
   >
     <template v-if="!isCollapsed">

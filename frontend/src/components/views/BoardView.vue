@@ -200,7 +200,9 @@ useBoardNavigation({
 </script>
 
 <template>
-  <div class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
+  <div
+    class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin snap-x snap-mandatory md:snap-none scroll-px-4"
+  >
     <div ref="columnsContainer" class="flex gap-3.5 items-stretch h-full">
       <GenericColumn
         v-for="b in buckets"
@@ -299,7 +301,7 @@ useBoardNavigation({
       </GenericColumn>
     </div>
 
-    <div class="flex flex-col gap-3 shrink-0 w-72">
+    <div class="flex flex-col gap-3 shrink-0 w-[calc(100vw-3rem)] max-w-[340px] md:w-72 snap-center md:snap-align-none">
       <!-- Add Column Card -->
       <button
         v-if="!isAddingColumn && activeProjectId !== 'all'"
