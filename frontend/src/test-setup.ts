@@ -1,3 +1,5 @@
+import 'fake-indexeddb/auto';
+
 if (typeof window !== 'undefined') {
   Range.prototype.getClientRects = function () {
     return {

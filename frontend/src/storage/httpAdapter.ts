@@ -1,6 +1,6 @@
 import type { StorageAdapter } from './types';
 import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock } from '@/types';
-import { isServerOnline } from '@/api';
+import { isServerOnline } from './connectionState';
 
 const API_BASE = '/api';
 

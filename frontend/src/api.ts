@@ -1,12 +1,9 @@
-import { ref } from 'vue';
 import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock } from '@/types';
 import * as demoApi from '@/api.demo';
 import { activeStorage, isNativeMobile } from '@/storage';
+import { isServerOnline } from '@/storage/connectionState';
 
-export { isNativeMobile };
-
-// Shared reactive connection state
-export const isServerOnline = ref(true);
+export { isNativeMobile, isServerOnline };
 
 // Auto-detect Demo Mode
 export const IS_DEMO_MODE =
