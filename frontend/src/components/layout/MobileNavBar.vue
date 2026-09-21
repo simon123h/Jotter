@@ -1,20 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import {
-  LayoutGrid,
-  Layers,
-  Plus,
-  Timer,
-  Box,
-  List,
-  Grid2X2,
-  Tag,
-  Clock,
-  CheckCircle2,
-  X,
-  ChevronRight,
-} from '@lucide/vue';
+import { LayoutGrid, Layers, Plus, Timer, Box, List, Grid2X2, Tag, Clock, CheckCircle2, X, ChevronRight } from '@lucide/vue';
 import { useModalStore } from '@/stores/modal';
 import { useSettingsStore } from '@/stores/settings';
 import { usePomodoroStore } from '@/stores/pomodoro';
@@ -45,9 +32,7 @@ const isBoardActive = computed(() => isTabActive('board'));
 const isViewsActive = computed(() => {
   return (
     uiStore.isMobileViewsSheetOpen ||
-    ['list', 'matrix', 'tag', 'time', 'triage', 'review'].includes(
-      (route.meta.backRoute as string) || String(route.name || '')
-    )
+    ['list', 'matrix', 'tag', 'time', 'triage', 'review'].includes((route.meta.backRoute as string) || String(route.name || ''))
   );
 });
 const isPomodoroActive = computed(() => pomodoroStore.is_bar_open || pomodoroStore.status === 'running');
@@ -157,11 +142,7 @@ const viewOptions = computed(() => [
       <button
         @click="handleTogglePomodoro"
         class="flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors flex-1"
-        :class="
-          isPomodoroActive
-            ? 'text-rose-500 font-bold'
-            : 'text-theme-text-muted hover:text-theme-text-main'
-        "
+        :class="isPomodoroActive ? 'text-rose-500 font-bold' : 'text-theme-text-muted hover:text-theme-text-main'"
         :title="t('pomodoro.toggleTooltip') || 'Pomodoro'"
       >
         <Timer class="w-5 h-5 mb-0.5" />
@@ -253,7 +234,9 @@ const viewOptions = computed(() => [
 
 .sheet-slide-enter-active,
 .sheet-slide-leave-active {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.2s ease;
 }
 .sheet-slide-enter-from,
 .sheet-slide-leave-to {
