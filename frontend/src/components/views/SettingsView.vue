@@ -6,16 +6,52 @@ import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
 import { Settings, Check, Globe, GitBranch, Info, Folder, Tag, RotateCcw, ChevronDown, Search, Box } from '@lucide/vue';
-import { getSystemInfo } from '@/api';
+import { getSystemInfo, updateDataDir, isNativeMobile } from '@/api';
+import { useToast } from '@/composables/useToast';
 import type { SystemInfo } from '@/types';
 
 const { locale, t } = useI18n();
+const { success: toastSuccess, error: toastError } = useToast();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const { currentTheme, hideAddTaskButton, gitRemoteUrl, autoSyncInterval, doneCleanPeriod } = storeToRefs(settingsStore);
 const tagColors = computed(() => settingsStore.tagColors || {});
 
 const systemInfo = ref<SystemInfo | null>(null);
+const isEditingDataDir = ref(false);
+const isUpdatingDataDir = ref(false);
+const newDataDir = ref('');
+
+const startEditDataDir = () => {
+  if (systemInfo.value) {
+    // Strip trailing platform notes like (Android Documents) for mobile clean editing
+    const rawDir = systemInfo.value.data_dir.replace(/\s*\([^)]*\)\s*$/, '');
+    newDataDir.value = rawDir;
+  }
+  isEditingDataDir.value = true;
+};
+
+const saveDataDir = async () => {
+  const dir = newDataDir.value.trim();
+  if (!dir) return;
+
+  try {
+    isUpdatingDataDir.value = true;
+    const res = await updateDataDir(dir);
+    if (systemInfo.value) {
+      systemInfo.value.data_dir = res.data_dir;
+    }
+    isEditingDataDir.value = false;
+    toastSuccess(t('settingsView.dataDirSuccess'));
+    // Reload projects and tasks from the new directory
+    await projectStore.fetchProjects();
+    await projectStore.fetchTasks({ projectId: 'all' });
+  } catch (err: any) {
+    toastError(t('settingsView.dataDirError', { message: err.message || err }));
+  } finally {
+    isUpdatingDataDir.value = false;
+  }
+};
 
 onMounted(async () => {
   try {
@@ -567,15 +603,67 @@ const getTagClasses = (tag: string) => {
               <span class="text-xs font-mono font-bold text-theme-text-main mt-0.5 truncate">{{ systemInfo.version }}</span>
             </div>
           </div>
-          <!-- Data Directory Info -->
-          <div class="flex items-center gap-3.5 p-3.5 bg-theme-bg/40 border border-theme-border/30 rounded-xl">
-            <Folder class="w-5 h-5 text-theme-primary shrink-0" />
-            <div class="flex flex-col min-w-0">
-              <span class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider">{{ t('settingsView.dataDirLabel') }}</span>
-              <span class="text-xs font-mono font-bold text-theme-text-main mt-0.5 truncate" :title="systemInfo.data_dir">{{
-                systemInfo.data_dir
-              }}</span>
+          <!-- Data Directory Info & Edit -->
+          <div class="flex flex-col gap-3 p-3.5 bg-theme-bg/40 border border-theme-border/30 rounded-xl">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <Folder class="w-5 h-5 text-theme-primary shrink-0" />
+                <span class="text-[10px] font-bold text-theme-text-muted uppercase tracking-wider">{{
+                  t('settingsView.dataDirLabel')
+                }}</span>
+              </div>
+              <button
+                v-if="!isEditingDataDir"
+                @click="startEditDataDir"
+                class="px-2.5 py-1 text-xs font-semibold bg-theme-primary/10 hover:bg-theme-primary/20 text-theme-accent rounded border border-theme-accent/20 transition-all cursor-pointer whitespace-nowrap"
+              >
+                {{ t('buttons.edit') }}
+              </button>
             </div>
+
+            <template v-if="!isEditingDataDir">
+              <span class="text-xs font-mono font-bold text-theme-text-main truncate" :title="systemInfo.data_dir">
+                {{ systemInfo.data_dir }}
+              </span>
+              <p class="text-[11px] text-theme-text-muted leading-relaxed">
+                {{ isNativeMobile ? t('settingsView.dataDirMobileHint') : t('settingsView.dataDirDesc') }}
+              </p>
+            </template>
+
+            <template v-else>
+              <div class="flex flex-col gap-2">
+                <input
+                  v-model="newDataDir"
+                  type="text"
+                  :placeholder="t('settingsView.dataDirPlaceholder')"
+                  class="w-full px-3 py-2 bg-theme-bg border border-theme-border/60 rounded-lg text-xs text-theme-text-main font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary/30"
+                  :disabled="isUpdatingDataDir"
+                  @keydown.enter="saveDataDir"
+                />
+                <div class="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    @click="isEditingDataDir = false"
+                    :disabled="isUpdatingDataDir"
+                    class="px-3 py-1.5 border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer"
+                  >
+                    {{ t('buttons.cancel') }}
+                  </button>
+                  <button
+                    type="button"
+                    @click="saveDataDir"
+                    :disabled="isUpdatingDataDir || !newDataDir.trim()"
+                    class="px-3.5 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span
+                      v-if="isUpdatingDataDir"
+                      class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"
+                    ></span>
+                    <span>{{ t('buttons.save') }}</span>
+                  </button>
+                </div>
+              </div>
+            </template>
           </div>
         </div>
       </div>
