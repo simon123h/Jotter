@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ClipboardList, Check, Calendar, Clock, Paperclip, Hourglass, Box } from '@lucide/vue';
 import type { Task } from '@/types';
@@ -52,12 +52,78 @@ const isSelected = computed(() => selectionStore.isSelected(props.task.id));
 const selectionCount = computed(() => selectionStore.selectionCount);
 
 import { triggerDoneParticleBurst } from '@/utils/effects';
+import { triggerMediumHaptic } from '@/utils/haptics';
 
 const emit = defineEmits<{
   (e: 'click', task: Task): void;
   (e: 'mark-done', task: Task): void;
   (e: 'toggle-select', task: Task): void;
 }>();
+
+let longPressTimer: any = null;
+let touchStartX = 0;
+let touchStartY = 0;
+const isLongPressTriggered = ref(false);
+
+const handleTouchStart = (e: TouchEvent) => {
+  if (e.touches.length !== 1) return;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  isLongPressTriggered.value = false;
+
+  longPressTimer = setTimeout(() => {
+    isLongPressTriggered.value = true;
+    triggerMediumHaptic();
+    emit('toggle-select', props.task);
+  }, 450);
+};
+
+const handleTouchMove = (e: TouchEvent) => {
+  if (!longPressTimer) return;
+  const dx = Math.abs(e.touches[0].clientX - touchStartX);
+  const dy = Math.abs(e.touches[0].clientY - touchStartY);
+  if (dx > 10 || dy > 10) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+};
+
+const handleTouchEnd = (e: TouchEvent) => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+  if (isLongPressTriggered.value) {
+    e.preventDefault();
+    e.stopPropagation();
+    setTimeout(() => {
+      isLongPressTriggered.value = false;
+    }, 150);
+  }
+};
+
+const handleTouchCancel = () => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+  isLongPressTriggered.value = false;
+};
+
+const handleCardClick = (e: MouseEvent) => {
+  if (isLongPressTriggered.value) {
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+  if (selectionCount.value > 0) {
+    e.preventDefault();
+    e.stopPropagation();
+    emit('toggle-select', props.task);
+    return;
+  }
+  emit('click', props.task);
+};
 
 const handleMarkDone = (e: MouseEvent) => {
   e.stopPropagation();
@@ -280,8 +346,13 @@ const handleTagClick = (tag: string) => {
 
 <template>
   <router-link
-    :to="targetRoute"
+    :to="selectionCount > 0 ? '' : targetRoute"
     :data-task-id="task.id"
+    @touchstart.passive="handleTouchStart"
+    @touchmove.passive="handleTouchMove"
+    @touchend="handleTouchEnd"
+    @touchcancel="handleTouchCancel"
+    @click="handleCardClick"
     class="task-card bg-theme-card border border-theme-border rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col select-none relative no-underline text-inherit"
     :class="[
       { 'colored-card': task.color },
@@ -290,14 +361,16 @@ const handleTagClick = (tag: string) => {
     ]"
     :style="cardStyle"
   >
-    <!-- Multi-select Checkbox (Hover or Selected) -->
+    <!-- Multi-select Checkbox (Hover, Selected, or Selection Mode Active) -->
     <div
       @click.stop.prevent="emit('toggle-select', task)"
       class="absolute -left-2 -top-2 w-5 h-5 rounded-full border-2 bg-theme-card transition-all z-30 flex items-center justify-center cursor-pointer"
       :class="[
         isSelected
           ? 'border-theme-accent bg-theme-accent scale-110 opacity-100 shadow-lg'
-          : 'border-theme-border opacity-0 group-hover:opacity-100 hover:border-theme-accent hover:scale-105',
+          : selectionCount > 0
+            ? 'border-theme-border opacity-70 hover:opacity-100 hover:border-theme-accent hover:scale-105'
+            : 'border-theme-border opacity-0 group-hover:opacity-100 hover:border-theme-accent hover:scale-105',
       ]"
     >
       <Check v-if="isSelected" class="w-3 h-3 stroke-[3px]" />

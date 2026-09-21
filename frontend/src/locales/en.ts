@@ -458,6 +458,7 @@ export const en = {
     postpone: 'Postpone...',
     consolidate: 'Consolidate into single task',
     confirmConsolidate: 'Are you sure you want to combine {count} tasks into a single task with a checklist?',
+    moreActions: 'More Actions',
   },
   clickToIgnoreKeyword: 'Click to ignore as keyword',
   layoutOptions: {

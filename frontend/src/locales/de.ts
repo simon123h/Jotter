@@ -460,6 +460,7 @@ export const de = {
     postpone: 'Aufschieben...',
     consolidate: 'In einzelne Aufgabe zusammenführen',
     confirmConsolidate: 'Möchtest du wirklich {count} Aufgaben in eine einzelne Aufgabe mit Checkliste zusammenführen?',
+    moreActions: 'Weitere Aktionen',
   },
   clickToIgnoreKeyword: 'Klicken, um als Schlüsselwort zu ignorieren',
   layoutOptions: {
