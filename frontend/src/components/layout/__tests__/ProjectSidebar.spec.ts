@@ -119,4 +119,12 @@ describe('ProjectSidebar.vue', () => {
     await importBtn!.trigger('click');
     expect(wrapper.emitted('import-spreadsheet')).toBeTruthy();
   });
+
+  it('emits close when mobile close button is clicked', async () => {
+    const wrapper = mount(ProjectSidebar, getMountOptions());
+    const closeBtn = wrapper.findAll('button').find((b) => b.attributes('title') === 'Close' || b.classes().includes('md:hidden'));
+    expect(closeBtn).toBeDefined();
+    await closeBtn!.trigger('click');
+    expect(wrapper.emitted('close')).toBeTruthy();
+  });
 });

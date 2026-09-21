@@ -86,6 +86,16 @@ watch(
   { immediate: true }
 );
 
+// Close sidebar on mobile navigation
+watch(
+  () => route.fullPath,
+  () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768 && isSidebarOpen.value) {
+      settingsStore.isSidebarOpen = false;
+    }
+  }
+);
+
 const toggleSidebar = () => {
   settingsStore.toggleSidebar();
 };
@@ -214,6 +224,15 @@ onBeforeUnmount(() => {
     />
 
     <div class="flex-grow flex overflow-hidden w-full relative">
+      <!-- Mobile Sidebar Backdrop Overlay -->
+      <transition name="fade">
+        <div
+          v-if="isSidebarOpen"
+          class="md:hidden fixed inset-0 bg-black/50 backdrop-blur-xs z-30"
+          @click="settingsStore.isSidebarOpen = false"
+        />
+      </transition>
+
       <transition :name="isMounted ? 'sidebar' : ''">
         <ProjectSidebar
           v-show="isSidebarOpen"
@@ -226,6 +245,7 @@ onBeforeUnmount(() => {
           @sync="() => triggerSync(true)"
           @import-spreadsheet="modalStore.openImportSpreadsheet"
           @move-tasks-to-project="handleMoveTasksToProject"
+          @close="settingsStore.isSidebarOpen = false"
         />
       </transition>
 
@@ -258,6 +278,15 @@ onBeforeUnmount(() => {
 .sidebar-enter-from,
 .sidebar-leave-to {
   margin-left: -16rem;
+  opacity: 0;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 </style>

@@ -15,6 +15,7 @@ import {
   FileSpreadsheet,
   History,
   Layers,
+  X,
 } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import Sortable from 'sortablejs';
@@ -40,6 +41,7 @@ const emit = defineEmits<{
   (e: 'sync'): void;
   (e: 'import-spreadsheet', projectId: string): void;
   (e: 'move-tasks-to-project', payload: { taskIds: string[]; projectId: string }): void;
+  (e: 'close'): void;
 }>();
 
 const selectionStore = useSelectionStore();
@@ -208,7 +210,9 @@ const openTimeMachineModal = () => {
 </script>
 
 <template>
-  <aside class="w-64 border-r border-theme-border flex flex-col shrink-0 bg-theme-card">
+  <aside
+    class="w-64 border-r border-theme-border flex flex-col shrink-0 bg-theme-card fixed inset-y-0 left-0 z-40 shadow-2xl md:static md:z-auto md:shadow-none"
+  >
     <!-- Server Status Indicator (Only visible when offline) -->
     <div
       v-if="!isServerOnline"
@@ -227,14 +231,25 @@ const openTimeMachineModal = () => {
         <Folder class="w-4 h-4 text-theme-accent shrink-0" /> {{ t('projects.sidebarTitle') }}
       </h2>
 
-      <!-- Sort Order Toggle Badge Button -->
-      <button
-        @click="toggleSortOrder"
-        class="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-theme-border/50 bg-theme-column/30 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main transition-colors cursor-pointer"
-        :title="sortBy === 'alpha' ? t('projects.sortTooltipAlpha') : t('projects.sortTooltipManual')"
-      >
-        {{ sortBy === 'alpha' ? 'A-Z' : t('projects.sortManualAbbr') }}
-      </button>
+      <div class="flex items-center gap-1.5">
+        <!-- Sort Order Toggle Badge Button -->
+        <button
+          @click="toggleSortOrder"
+          class="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-theme-border/50 bg-theme-column/30 hover:bg-theme-column text-theme-text-muted hover:text-theme-text-main transition-colors cursor-pointer"
+          :title="sortBy === 'alpha' ? t('projects.sortTooltipAlpha') : t('projects.sortTooltipManual')"
+        >
+          {{ sortBy === 'alpha' ? 'A-Z' : t('projects.sortManualAbbr') }}
+        </button>
+
+        <!-- Close Button (Mobile Only) -->
+        <button
+          @click="emit('close')"
+          class="md:hidden p-1 rounded text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40"
+          :title="t('close') || 'Close'"
+        >
+          <X class="w-4 h-4" />
+        </button>
+      </div>
     </div>
 
     <!-- Projects List -->
