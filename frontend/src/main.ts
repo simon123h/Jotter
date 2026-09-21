@@ -4,19 +4,10 @@ import '@/style.css';
 import App from '@/App.vue';
 import router from '@/router';
 
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { isNativeMobile } from '@/storage';
-
 const app = createApp(App);
 app.use(createPinia());
 app.use(router);
 app.mount('#app');
-
-if (isNativeMobile) {
-  StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
-  StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
-  StatusBar.setBackgroundColor({ color: '#0f172a' }).catch(() => {});
-}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

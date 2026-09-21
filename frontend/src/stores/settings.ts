@@ -80,6 +80,8 @@ export const useSettingsStore = defineStore('settings', () => {
         localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
       }
 
+      applyThemeToDocument(state.currentTheme);
+
       await nextTick();
       skipSave = false;
     } catch (err) {
