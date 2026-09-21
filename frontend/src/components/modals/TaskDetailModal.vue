@@ -434,7 +434,7 @@ onBeforeRouteLeave(async () => {
 </script>
 
 <template>
-  <BaseModal :is-open="true" max-width="max-w-3xl" content-class="max-h-[85vh] relative" :show-close-button="false" @close="closeModal">
+  <BaseModal :is-open="true" max-width="max-w-3xl" content-class="md:max-h-[85vh] relative" :show-close-button="false" @close="closeModal">
     <!-- Full Drag & Drop Overlay -->
     <Transition name="fade">
       <div
@@ -587,43 +587,43 @@ onBeforeRouteLeave(async () => {
       </div>
 
       <!-- Footer Buttons -->
-      <div class="px-4 py-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
+      <div class="px-4 py-3 border-t border-theme-border flex flex-wrap justify-between items-center gap-2 bg-theme-card/30 shrink-0">
         <div>
           <button
             v-if="task && !isEditing"
             @click="handleDelete"
-            class="text-sm font-semibold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors cursor-pointer"
+            class="text-sm font-semibold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors cursor-pointer whitespace-nowrap"
           >
             {{ t('buttons.delete') }}
           </button>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
           <!-- View mode buttons -->
           <template v-if="!isEditing">
             <button
               v-if="task && task.bucket !== 'archive'"
               @click="handleArchive"
-              class="text-sm font-semibold px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded transition-all cursor-pointer"
+              class="text-sm font-semibold px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded transition-all cursor-pointer whitespace-nowrap"
             >
               {{ t('buttons.archive') }}
             </button>
             <button
               v-if="task && task.bucket === 'archive'"
               @click="handleUnarchive"
-              class="text-sm font-semibold px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded transition-all cursor-pointer"
+              class="text-sm font-semibold px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded transition-all cursor-pointer whitespace-nowrap"
             >
               {{ t('buttons.unarchive') }}
             </button>
             <button
               v-if="task && task.bucket !== 'done' && task.bucket !== 'archive'"
               @click="handleMarkDone"
-              class="text-sm font-semibold px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all cursor-pointer"
+              class="text-sm font-semibold px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all cursor-pointer whitespace-nowrap"
             >
               {{ t('buttons.markDone') }}
             </button>
             <button
               @click="isEditing = true"
-              class="text-sm font-semibold px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/25 rounded transition-all cursor-pointer"
+              class="text-sm font-semibold px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/25 rounded transition-all cursor-pointer whitespace-nowrap"
             >
               {{ t('buttons.edit') }}
             </button>
@@ -633,14 +633,14 @@ onBeforeRouteLeave(async () => {
           <template v-else>
             <button
               @click="cancelEdit"
-              class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+              class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer whitespace-nowrap"
               :disabled="loading"
             >
               {{ t('buttons.cancel') }}
             </button>
             <button
               @click="handleSave"
-              class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+              class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
               :disabled="loading"
             >
               <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>

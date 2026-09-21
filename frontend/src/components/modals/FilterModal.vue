@@ -140,7 +140,7 @@ const handleApply = () => {
 </script>
 
 <template>
-  <BaseModal :is-open="isOpen" max-width="max-w-3xl" content-class="max-h-[90vh] focus:outline-none" @close="handleClose">
+  <BaseModal :is-open="isOpen" max-width="max-w-3xl" content-class="md:max-h-[90vh] focus:outline-none" @close="handleClose">
     <template #header>
       <div class="px-4 py-3 border-b border-theme-border flex justify-between items-center bg-theme-card/50 shrink-0">
         <h3 class="text-sm font-bold text-theme-text-main uppercase tracking-wider flex items-center gap-1.5">
@@ -333,28 +333,28 @@ const handleApply = () => {
 
     <!-- Footer Buttons -->
     <template #footer>
-      <div class="p-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
+      <div class="p-3 border-t border-theme-border flex flex-wrap justify-between items-center gap-2 bg-theme-card/30 shrink-0">
         <button
           type="button"
           @click="handleClear"
-          class="flex items-center gap-1.5 px-3 py-1.5 border border-theme-border hover:bg-theme-column/30 text-theme-text-muted hover:text-theme-text-main rounded text-xs font-semibold transition-all cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-1.5 border border-theme-border hover:bg-theme-column/30 text-theme-text-muted hover:text-theme-text-main rounded text-xs font-semibold transition-all cursor-pointer whitespace-nowrap"
         >
           <Trash2 class="w-3.5 h-3.5" />
           {{ t('filterModal.clearAll') }}
         </button>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
           <button
             type="button"
             @click="emit('close')"
-            class="px-3.5 py-1.5 border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer"
+            class="px-3.5 py-1.5 border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer whitespace-nowrap"
           >
             {{ t('buttons.cancel') }}
           </button>
           <button
             type="button"
             @click="handleApply"
-            class="px-4 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer"
+            class="px-4 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap"
           >
             {{ t('filterModal.apply') }}
           </button>

@@ -215,7 +215,7 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <BaseModal :is-open="isOpen" max-width="max-w-2xl" content-class="max-h-[85vh]" :title="t('createModalTitle')" @close="emit('close')">
+  <BaseModal :is-open="isOpen" max-width="max-w-2xl" content-class="md:max-h-[85vh]" :title="t('createModalTitle')" @close="emit('close')">
     <!-- Error Alert -->
     <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded shrink-0">
       {{ error }}
@@ -387,11 +387,11 @@ const handleSubmit = async () => {
 
     <!-- Footer Buttons -->
     <template #footer>
-      <div class="px-4 py-3 border-t border-theme-border flex justify-end gap-2 bg-theme-card/30 shrink-0">
+      <div class="px-4 py-3 border-t border-theme-border flex flex-wrap justify-end gap-2 bg-theme-card/30 shrink-0">
         <button
           type="button"
           @click="emit('close')"
-          class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+          class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer whitespace-nowrap"
           :disabled="loading"
         >
           {{ t('buttons.cancel') }}
@@ -399,7 +399,7 @@ const handleSubmit = async () => {
         <button
           type="submit"
           @click="handleSubmit"
-          class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+          class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
           :disabled="loading"
         >
           <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>

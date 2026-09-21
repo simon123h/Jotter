@@ -157,27 +157,27 @@ const closeAndSave = async () => {
       </div>
 
       <!-- Actions -->
-      <div class="flex items-center justify-between pt-4 border-t border-theme-border">
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-theme-border">
         <button
           type="button"
           @click="handleDelete"
-          class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-all cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-all cursor-pointer whitespace-nowrap"
         >
           <Trash2 class="w-3.5 h-3.5" />
           {{ t('projectEdit.deleteButton') }}
         </button>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
           <button
             type="button"
             @click="emit('close')"
-            class="px-4 py-2 border border-theme-border rounded text-sm font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer"
+            class="px-4 py-2 border border-theme-border rounded text-sm font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer whitespace-nowrap"
           >
             {{ t('buttons.cancel') }}
           </button>
           <button
             type="submit"
-            class="px-4 py-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-sm font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer"
+            class="px-4 py-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-sm font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap"
           >
             {{ t('projectEdit.saveButton') }}
           </button>

@@ -260,33 +260,34 @@ const handleDelete = async () => {
       </div>
 
       <!-- Actions -->
-      <div class="flex items-center justify-between pt-3 border-t border-theme-border/60">
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-theme-border/60">
         <div>
           <button
             v-if="activeTimeblock"
             type="button"
             @click="handleDelete"
             :disabled="loading"
-            class="px-3 py-1.5 text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+            class="px-3 py-1.5 text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
           >
             <Trash2 class="w-3.5 h-3.5" />
             {{ t('buttons.delete') }}
           </button>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
           <button
             type="button"
             @click="emit('close')"
-            class="px-4 py-2 text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded-lg transition-colors cursor-pointer"
+            class="px-4 py-2 text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded-lg transition-colors cursor-pointer whitespace-nowrap"
           >
             {{ t('buttons.cancel') }}
           </button>
           <button
             type="submit"
-            :disabled="loading || !title.trim() || startTime >= endTime"
-            class="px-4 py-2 text-xs font-semibold bg-theme-primary text-white hover:bg-theme-primary/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-all cursor-pointer"
+            :disabled="loading || !title.trim()"
+            class="px-4 py-2 text-xs font-semibold text-white bg-theme-primary hover:bg-theme-primary-hover rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
           >
-            {{ activeTimeblock ? t('buttons.save') : t('buttons.create') }}
+            <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            {{ activeTimeblock ? t('buttons.save') : t('timeblockModal.createButton') }}
           </button>
         </div>
       </div>

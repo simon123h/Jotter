@@ -264,14 +264,14 @@ const closeAndSave = () => {
 
     <!-- Footer Buttons -->
     <template #footer>
-      <div class="px-4 py-3 border-t border-theme-border flex justify-between items-center bg-theme-card/30 shrink-0">
+      <div class="px-4 py-3 border-t border-theme-border flex flex-wrap justify-between items-center gap-2 bg-theme-card/30 shrink-0">
         <!-- Left Side: Delete Button -->
         <div>
           <button
             type="button"
             @click="handleDelete"
             :disabled="(tasksCount ?? 0) > 0"
-            class="text-xs font-semibold px-2.5 py-1.5 rounded border flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95"
+            class="text-xs font-semibold px-2.5 py-1.5 rounded border flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             :class="
               (tasksCount ?? 0) > 0
                 ? 'text-theme-text-muted/30 border-theme-border/30 cursor-not-allowed opacity-40'
@@ -285,21 +285,20 @@ const closeAndSave = () => {
         </div>
 
         <!-- Right Side: Cancel & Save Buttons -->
-        <div class="flex gap-2">
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
           <button
             type="button"
             @click="emit('close')"
-            class="text-sm font-semibold px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all cursor-pointer"
+            class="px-3.5 py-1.5 border border-theme-border rounded text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer whitespace-nowrap"
           >
             {{ t('buttons.cancel') }}
           </button>
           <button
-            type="submit"
-            @click="handleSave"
-            class="text-sm font-semibold px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all cursor-pointer"
-            :disabled="!title.trim()"
+            type="button"
+            @click="closeAndSave"
+            class="px-4 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded text-xs font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap"
           >
-            {{ t('columnEdit.saveButton') }}
+            {{ t('buttons.save') }}
           </button>
         </div>
       </div>
