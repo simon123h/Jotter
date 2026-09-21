@@ -1,5 +1,6 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
+import { App } from '@capacitor/app';
 import type { StorageAdapter } from './types';
 import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock } from '@/types';
 import { db } from './dexieDb';
@@ -633,8 +634,17 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   }
 
   async getSystemInfo(): Promise<SystemInfo> {
+    let versionStr = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '3.9.2';
+    try {
+      const info = await App.getInfo();
+      if (info && info.version) {
+        versionStr = info.version;
+      }
+    } catch {
+      // Use fallback
+    }
     return {
-      version: '3.8.3 (Mobile)',
+      version: `${versionStr} (Mobile)`,
       data_dir: `${this.vaultPath} (Android Documents)`,
     };
   }
