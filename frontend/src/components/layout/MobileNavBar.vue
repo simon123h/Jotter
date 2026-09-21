@@ -98,7 +98,7 @@ const handleQuickAdd = () => {
       :class="isSettingsActive ? 'text-theme-accent font-bold' : 'text-theme-text-muted hover:text-theme-text-main'"
     >
       <Settings class="w-5 h-5 mb-0.5" />
-      <span class="text-[10px] tracking-tight">{{ t('settings.title') || 'Settings' }}</span>
+      <span class="text-[10px] tracking-tight">{{ t('views.settings') }}</span>
     </button>
   </nav>
 </template>

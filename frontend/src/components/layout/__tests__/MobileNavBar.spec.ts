@@ -59,5 +59,13 @@ describe('MobileNavBar.vue', () => {
     const fabBtn = buttons[2];
     await fabBtn.trigger('click');
     expect(openCreateSpy).toHaveBeenCalledWith('todo');
+
+    // Click settings button
+    const settingsBtn = buttons[5];
+    expect(settingsBtn.text()).toContain('Settings');
+    await settingsBtn.trigger('click');
+    expect(mockPush).toHaveBeenCalledWith({
+      name: 'settings',
+    });
   });
 });
