@@ -82,11 +82,13 @@ const tasksByBucket = computed(() => {
   return groups;
 });
 
+const bucketsRef = computed(() => props.buckets);
 const { fetchBuckets, handleCreateColumn, handleRenameColumn, handleDeleteColumn, handleColumnReordered } = useBuckets(
   activeProjectId,
   hideDoneColumn,
   hideArchiveColumn,
-  hidePostponedColumn
+  hidePostponedColumn,
+  bucketsRef
 );
 
 const { tasks: storeTasks } = storeToRefs(projectStore);
@@ -164,6 +166,10 @@ onMounted(() => {
       draggable: '.group\\/col',
       handle: '.column-drag-handle',
       filter: 'button, input, select, textarea',
+      preventOnFilter: false,
+      delay: 150,
+      delayOnTouchOnly: true,
+      touchStartThreshold: 5,
       onEnd: (evt) => {
         const { oldIndex, newIndex } = evt;
         if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;

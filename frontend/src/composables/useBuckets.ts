@@ -6,9 +6,11 @@ export function useBuckets(
   activeProjectId: Ref<string>,
   hideDoneColumn: Ref<boolean>,
   hideArchiveColumn: Ref<boolean>,
-  hidePostponedColumn?: Ref<boolean>
+  hidePostponedColumn?: Ref<boolean>,
+  externalBuckets?: Ref<Bucket[]>
 ) {
-  const buckets = ref<Bucket[]>([]);
+  const internalBuckets = ref<Bucket[]>([]);
+  const buckets = externalBuckets || internalBuckets;
   const error = ref<string | null>(null);
 
   const fetchBuckets = async () => {
