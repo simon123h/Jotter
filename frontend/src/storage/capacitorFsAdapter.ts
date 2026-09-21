@@ -93,7 +93,11 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   async createProject(title: string, git_remote?: string | null): Promise<Project> {
     await this.ensureInitialized();
     const cleanTitle = title.trim();
-    const id = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
+    const id =
+      cleanTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'project';
 
     const project: Project = {
       id,
@@ -175,8 +179,8 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
 
   async getAllTasks(filters?: TaskFilterParams): Promise<Task[]> {
     await this.ensureInitialized();
-    let query = db.tasks.toCollection();
-    let tasks = await query.toArray();
+    const query = db.tasks.toCollection();
+    const tasks = await query.toArray();
 
     return this.applyFilters(tasks, filters);
   }
@@ -249,7 +253,9 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
           path: `${this.vaultPath}/${existing.project_id}/${id}.md`,
           directory: this.vaultDirectory,
         });
-      } catch {}
+      } catch (_e) {
+        // File may not exist yet
+      }
     }
 
     const content = dumpTaskMarkdown(updated);
@@ -363,9 +369,20 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
     return buckets.sort((a, b) => a.position - b.position);
   }
 
-  async createBucket(projectId: string, title: string, subtitle = '', color?: string | null, layout: 'list' | 'grid-2' | 'grid-3' = 'list', max_tasks?: number | null): Promise<Bucket> {
+  async createBucket(
+    projectId: string,
+    title: string,
+    subtitle = '',
+    color?: string | null,
+    layout: 'list' | 'grid-2' | 'grid-3' = 'list',
+    max_tasks?: number | null
+  ): Promise<Bucket> {
     await this.ensureInitialized();
-    const name = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'col';
+    const name =
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'col';
     const existing = await this.getBuckets(projectId);
     const maxPos = existing.reduce((max, b) => Math.max(max, b.position), 0);
 
@@ -415,7 +432,9 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
         data: content,
         encoding: Encoding.UTF8,
       });
-    } catch {}
+    } catch (_e) {
+      // Manifest write error handling
+    }
   }
 
   // ==========================================
@@ -578,7 +597,9 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
                     await db.tasks.put(task);
                     syncedCount++;
                   }
-                } catch {}
+                } catch (_e) {
+                  // Skip unreadable files
+                }
               }
             }
 
@@ -589,7 +610,9 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
                 await db.tasks.delete(ct.id);
               }
             }
-          } catch {}
+          } catch (_e) {
+            // Skip directory if unreadable
+          }
         }
       }
 

@@ -14,16 +14,19 @@ export interface StorageAdapter {
   getAllTasks(filters?: TaskFilterParams): Promise<Task[]>;
   getTasks(projectId: string, filters?: TaskFilterParams): Promise<Task[]>;
   getTask(projectId: string, id: string): Promise<Task>;
-  createTask(projectId: string, task: {
-    title: string;
-    bucket: string;
-    tags?: string[];
-    body?: string;
-    due_date?: string;
-    planned_date?: string;
-    priority?: string;
-    color?: string | null;
-  }): Promise<Task>;
+  createTask(
+    projectId: string,
+    task: {
+      title: string;
+      bucket: string;
+      tags?: string[];
+      body?: string;
+      due_date?: string;
+      planned_date?: string;
+      priority?: string;
+      color?: string | null;
+    }
+  ): Promise<Task>;
   updateTask(projectId: string, id: string, updates: Partial<Task>): Promise<Task>;
   moveTask(projectId: string, id: string, bucket: string, position: number): Promise<Task>;
   deleteTask(projectId: string, id: string): Promise<void>;

@@ -13,7 +13,7 @@ export const DEFAULT_MOBILE_BUCKETS: Bucket[] = [
  */
 export function parseTaskMarkdown(content: string, defaultProjectId = 'default', filename = ''): Task {
   let fmData: Record<string, any> = {};
-  let body = '';
+  let body: string;
 
   if (content.startsWith('---')) {
     const parts = content.split('---');
@@ -26,7 +26,10 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
       } catch {
         // Fallback for invalid yaml
       }
-      body = parts.slice(2).join('---').replace(/^\r?\n/, '');
+      body = parts
+        .slice(2)
+        .join('---')
+        .replace(/^\r?\n/, '');
     } else {
       body = content;
     }
@@ -38,7 +41,9 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
   const id = String(fmData.id || filename.replace(/\.md$/i, '') || `task_${Date.now()}`).trim();
   const projectId = String(fmData.project_id || fmData.projectId || defaultProjectId).trim() || defaultProjectId;
   const title = String(fmData.title || (body.split('\n')[0] || '').replace(/^#*\s*/, '') || 'Untitled').trim();
-  const bucket = String(fmData.bucket || fmData.status || 'todo').trim().toLowerCase();
+  const bucket = String(fmData.bucket || fmData.status || 'todo')
+    .trim()
+    .toLowerCase();
   const position = typeof fmData.position === 'number' ? fmData.position : parseFloat(String(fmData.position || '1000.0')) || 1000.0;
 
   // Tags
@@ -46,7 +51,10 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
   if (Array.isArray(fmData.tags)) {
     tags = fmData.tags.map((t: any) => String(t).trim().replace(/^#/, '').toLowerCase()).filter(Boolean);
   } else if (typeof fmData.tags === 'string' && fmData.tags.trim()) {
-    tags = fmData.tags.split(',').map((t: string) => t.trim().replace(/^#/, '').toLowerCase()).filter(Boolean);
+    tags = fmData.tags
+      .split(',')
+      .map((t: string) => t.trim().replace(/^#/, '').toLowerCase())
+      .filter(Boolean);
   }
 
   // Attachments
@@ -145,9 +153,8 @@ export function parseProjectManifest(content: string, fallbackId: string): { pro
 
   const projId = String(fmData.id || fallbackId).trim() || fallbackId;
   const title = String(fmData.title || fmData.name || projId.charAt(0).toUpperCase() + projId.slice(1)).trim();
-  const doneCleanPeriod = fmData.done_clean_period !== undefined && fmData.done_clean_period !== null
-    ? Number(fmData.done_clean_period)
-    : undefined;
+  const doneCleanPeriod =
+    fmData.done_clean_period !== undefined && fmData.done_clean_period !== null ? Number(fmData.done_clean_period) : undefined;
 
   const project: Project = {
     id: projId,

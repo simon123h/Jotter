@@ -22,7 +22,8 @@ export class HttpStorageAdapter implements StorageAdapter {
     try {
       let target = input;
       if (typeof target === 'string' && target.startsWith('/')) {
-        const base = typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : 'http://localhost';
+        const base =
+          typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : 'http://localhost';
         target = new URL(target, base).toString();
       }
       const response = await fetch(target, init);
@@ -192,7 +193,14 @@ export class HttpStorageAdapter implements StorageAdapter {
     return res.json();
   }
 
-  async createBucket(projectId: string, title: string, subtitle?: string, color?: string | null, layout?: 'list' | 'grid-2' | 'grid-3', max_tasks?: number | null): Promise<Bucket> {
+  async createBucket(
+    projectId: string,
+    title: string,
+    subtitle?: string,
+    color?: string | null,
+    layout?: 'list' | 'grid-2' | 'grid-3',
+    max_tasks?: number | null
+  ): Promise<Bucket> {
     const res = await this.customFetch(`${API_BASE}/projects/${projectId}/buckets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

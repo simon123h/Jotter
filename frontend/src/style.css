@@ -39,7 +39,9 @@
     user-select: none;
     overscroll-behavior: none;
   }
-  input, textarea, [contenteditable="true"] {
+  input,
+  textarea,
+  [contenteditable='true'] {
     user-select: text;
   }
 }
