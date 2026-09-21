@@ -8,6 +8,7 @@ import { useModalStore } from '@/stores/modal';
 import { useTimeblockStore } from '@/stores/timeblock';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
+import MobileNavBar from '@/components/layout/MobileNavBar.vue';
 import PomodoroBar from '@/components/ui/PomodoroBar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useProjects } from '@/composables/useProjects';
@@ -232,6 +233,9 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
+
+    <!-- MOBILE BOTTOM NAVIGATION BAR -->
+    <MobileNavBar />
 
     <!-- POMODORO FLOATING DOCK -->
     <PomodoroBar />

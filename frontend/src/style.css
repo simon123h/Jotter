@@ -24,6 +24,26 @@
   --color-theme-grad-to: var(--theme-grad-to);
 }
 
+/* Safe area insets for mobile devices / notches */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+/* Prevent text selection and bouncing on mobile touch targets */
+@media (max-width: 768px) {
+  body {
+    -webkit-touch-callout: none;
+    user-select: none;
+    overscroll-behavior: none;
+  }
+  input, textarea, [contenteditable="true"] {
+    user-select: text;
+  }
+}
+
 /* Default Theme: Nordic Light (Light) */
 :root {
   --theme-bg-base: #f8fafc; /* slate-50 */
