@@ -69,12 +69,15 @@ useEventListener(window, 'keydown', handleKeydown);
 
 <template>
   <transition name="slide-up">
-    <div v-if="pomodoroStore.is_bar_open" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] w-max max-w-[96vw]">
+    <div
+      v-if="pomodoroStore.is_bar_open"
+      class="fixed bottom-[calc(4.25rem+max(var(--sab),env(safe-area-inset-bottom,0px)))] md:bottom-6 left-1/2 -translate-x-1/2 z-[110] w-[calc(100vw-1.5rem)] sm:w-max max-w-lg select-none"
+    >
       <!-- Settings Popover -->
       <transition name="fade">
         <div
           v-if="showSettings"
-          class="mb-3 p-4 bg-theme-base border border-theme-border rounded-xl shadow-2xl space-y-3.5 backdrop-blur-md text-xs select-none animate-in fade-in zoom-in-95 duration-150 min-w-[320px] sm:min-w-[420px]"
+          class="mb-2.5 p-3.5 sm:p-4 bg-theme-base border border-theme-border rounded-xl shadow-2xl space-y-3 backdrop-blur-md text-xs select-none animate-in fade-in zoom-in-95 duration-150 w-full sm:min-w-[420px]"
         >
           <div class="flex items-center justify-between pb-2 border-b border-theme-border/60">
             <span class="font-bold text-theme-text-main text-sm flex items-center gap-1.5">
@@ -89,9 +92,9 @@ useEventListener(window, 'keydown', handleKeydown);
             </button>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
-              <label class="block text-[11px] font-semibold text-theme-text-muted mb-1">
+              <label class="block text-[10px] sm:text-[11px] font-semibold text-theme-text-muted mb-1 truncate">
                 {{ t('pomodoro.workDuration') }}
               </label>
               <input
@@ -99,11 +102,11 @@ useEventListener(window, 'keydown', handleKeydown);
                 type="number"
                 min="1"
                 max="120"
-                class="w-full bg-theme-card border border-theme-border rounded-md px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                class="w-full bg-theme-card border border-theme-border rounded-md px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
               />
             </div>
             <div>
-              <label class="block text-[11px] font-semibold text-theme-text-muted mb-1">
+              <label class="block text-[10px] sm:text-[11px] font-semibold text-theme-text-muted mb-1 truncate">
                 {{ t('pomodoro.shortBreakDuration') }}
               </label>
               <input
@@ -111,11 +114,11 @@ useEventListener(window, 'keydown', handleKeydown);
                 type="number"
                 min="1"
                 max="60"
-                class="w-full bg-theme-card border border-theme-border rounded-md px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                class="w-full bg-theme-card border border-theme-border rounded-md px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
               />
             </div>
             <div>
-              <label class="block text-[11px] font-semibold text-theme-text-muted mb-1">
+              <label class="block text-[10px] sm:text-[11px] font-semibold text-theme-text-muted mb-1 truncate">
                 {{ t('pomodoro.longBreakDuration') }}
               </label>
               <input
@@ -123,11 +126,11 @@ useEventListener(window, 'keydown', handleKeydown);
                 type="number"
                 min="1"
                 max="90"
-                class="w-full bg-theme-card border border-theme-border rounded-md px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                class="w-full bg-theme-card border border-theme-border rounded-md px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
               />
             </div>
             <div>
-              <label class="block text-[11px] font-semibold text-theme-text-muted mb-1">
+              <label class="block text-[10px] sm:text-[11px] font-semibold text-theme-text-muted mb-1 truncate">
                 {{ t('pomodoro.sessionsBeforeLongBreak') }}
               </label>
               <input
@@ -135,14 +138,14 @@ useEventListener(window, 'keydown', handleKeydown);
                 type="number"
                 min="1"
                 max="12"
-                class="w-full bg-theme-card border border-theme-border rounded-md px-2.5 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+                class="w-full bg-theme-card border border-theme-border rounded-md px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
               />
             </div>
           </div>
 
           <div class="flex items-center justify-between pt-1 border-t border-theme-border/40 gap-2 flex-wrap">
-            <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
-              <label class="flex items-center gap-1.5 cursor-pointer text-theme-text-main">
+            <div class="flex items-center gap-2.5 sm:gap-4 flex-wrap">
+              <label class="flex items-center gap-1.5 cursor-pointer text-theme-text-main text-[11px]">
                 <input
                   type="checkbox"
                   v-model="editSound"
@@ -155,7 +158,7 @@ useEventListener(window, 'keydown', handleKeydown);
                 </span>
               </label>
 
-              <label class="flex items-center gap-1.5 cursor-pointer text-theme-text-main">
+              <label class="flex items-center gap-1.5 cursor-pointer text-theme-text-main text-[11px]">
                 <input
                   type="checkbox"
                   v-model="editAutoProceed"
@@ -167,7 +170,7 @@ useEventListener(window, 'keydown', handleKeydown);
               <button
                 type="button"
                 @click="handleResetCycles"
-                class="text-[11px] text-theme-text-muted hover:text-rose-400 underline transition-colors cursor-pointer"
+                class="text-[10px] sm:text-[11px] text-theme-text-muted hover:text-rose-400 underline transition-colors cursor-pointer"
                 :title="t('pomodoro.resetCycles')"
               >
                 {{ t('pomodoro.resetCycles') }}
@@ -176,7 +179,7 @@ useEventListener(window, 'keydown', handleKeydown);
 
             <button
               @click="saveSettings"
-              class="flex items-center gap-1 px-3 py-1.5 bg-theme-primary text-white font-semibold rounded-md hover:bg-theme-primary/90 transition-all cursor-pointer shadow-2xs"
+              class="flex items-center gap-1 px-3 py-1 bg-theme-primary text-white font-semibold rounded-md hover:bg-theme-primary/90 transition-all cursor-pointer shadow-2xs text-xs"
             >
               <Check class="w-3.5 h-3.5" />
               {{ t('common.save') || 'Save' }}
@@ -187,7 +190,7 @@ useEventListener(window, 'keydown', handleKeydown);
 
       <!-- Main Floating Dock -->
       <div
-        class="bg-theme-card/95 backdrop-blur-md border border-theme-border px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-2xl flex flex-col gap-2 relative overflow-hidden min-w-[340px] sm:min-w-[480px] md:min-w-[530px]"
+        class="bg-theme-card/95 backdrop-blur-md border border-theme-border px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-2xl shadow-2xl flex flex-col gap-1.5 sm:gap-2 relative overflow-hidden w-full"
       >
         <!-- Progress Bar Underlay -->
         <div class="absolute bottom-0 left-0 right-0 h-1 bg-theme-column/30 overflow-hidden rounded-b-2xl pointer-events-none">
@@ -199,56 +202,61 @@ useEventListener(window, 'keydown', handleKeydown);
         </div>
 
         <!-- Core Toolbar Row -->
-        <div class="flex items-center gap-2 sm:gap-3.5 whitespace-nowrap">
+        <div class="flex items-center justify-between gap-1.5 sm:gap-3.5">
           <!-- Phase Switcher Pills -->
           <div class="flex items-center bg-theme-column/40 p-0.5 rounded-xl text-[11px] sm:text-xs font-semibold shrink-0">
             <button
               @click="selectPhase('work')"
-              class="px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
+              class="px-1.5 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1"
               :class="
                 pomodoroStore.phase === 'work'
                   ? 'bg-rose-500 text-white shadow-2xs font-bold'
                   : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/60'
               "
+              :title="t('pomodoro.focus')"
             >
-              <span>🍅</span>
-              <span>{{ t('pomodoro.focus') }}</span>
+              <span class="text-xs sm:text-sm">🍅</span>
+              <span class="hidden sm:inline">{{ t('pomodoro.focus') }}</span>
             </button>
             <button
               @click="selectPhase('short_break')"
-              class="px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
+              class="px-1.5 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1"
               :class="
                 pomodoroStore.phase === 'short_break'
                   ? 'bg-emerald-500 text-white shadow-2xs font-bold'
                   : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/60'
               "
+              :title="t('pomodoro.shortBreak')"
             >
-              <span>☕</span>
-              <span>{{ t('pomodoro.shortBreak') }}</span>
+              <span class="text-xs sm:text-sm">☕</span>
+              <span class="hidden sm:inline">{{ t('pomodoro.shortBreak') }}</span>
             </button>
             <button
               @click="selectPhase('long_break')"
-              class="px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
+              class="px-1.5 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1"
               :class="
                 pomodoroStore.phase === 'long_break'
                   ? 'bg-teal-500 text-white shadow-2xs font-bold'
                   : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/60'
               "
+              :title="t('pomodoro.longBreak')"
             >
-              <span>🌴</span>
-              <span>{{ t('pomodoro.longBreak') }}</span>
+              <span class="text-xs sm:text-sm">🌴</span>
+              <span class="hidden sm:inline">{{ t('pomodoro.longBreak') }}</span>
             </button>
           </div>
 
           <!-- Digital Countdown Display -->
-          <div class="flex items-center justify-center font-mono tracking-tight shrink-0 select-none px-1">
-            <span class="text-xl sm:text-2xl font-black text-theme-text-main tabular-nums leading-none">
+          <div class="flex items-center justify-center font-mono tracking-tight shrink-0 select-none px-0.5 sm:px-1">
+            <span class="text-base sm:text-2xl font-black text-theme-text-main tabular-nums leading-none">
               {{ pomodoroStore.formatted_time }}
             </span>
           </div>
 
           <!-- Interactive Cycle Pips & Indicator -->
-          <div class="flex items-center gap-1.5 px-2 py-1 bg-theme-column/35 rounded-xl border border-theme-border/40 shrink-0 select-none">
+          <div
+            class="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-1 bg-theme-column/35 rounded-xl border border-theme-border/40 shrink-0 select-none"
+          >
             <div
               v-for="i in totalCycles"
               :key="i"
@@ -261,7 +269,7 @@ useEventListener(window, 'keydown', handleKeydown);
               "
             >
               <div
-                class="w-2.5 h-2.5 rounded-full transition-all duration-200"
+                class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-all duration-200"
                 :class="[
                   i - 1 < pomodoroStore.current_cycle_index
                     ? 'bg-emerald-500 shadow-2xs'
@@ -274,11 +282,11 @@ useEventListener(window, 'keydown', handleKeydown);
           </div>
 
           <!-- Action Controls -->
-          <div class="flex items-center gap-1.5 ml-auto shrink-0">
-            <!-- Play / Pause Button (Fixed Size & Perfectly Centered) -->
+          <div class="flex items-center gap-0.5 sm:gap-1.5 ml-auto shrink-0">
+            <!-- Play / Pause Button -->
             <button
               @click="pomodoroStore.toggle"
-              class="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full font-bold transition-all transform active:scale-95 cursor-pointer shadow-md flex items-center justify-center shrink-0"
+              class="w-7 h-7 sm:w-8.5 sm:h-8.5 rounded-full font-bold transition-all transform active:scale-95 cursor-pointer shadow-md flex items-center justify-center shrink-0"
               :class="
                 pomodoroStore.phase === 'work'
                   ? 'bg-rose-500 hover:bg-rose-600 text-white'
@@ -287,51 +295,51 @@ useEventListener(window, 'keydown', handleKeydown);
               :title="pomodoroStore.status === 'running' ? t('pomodoro.pause') : t('pomodoro.play')"
               :aria-label="pomodoroStore.status === 'running' ? t('pomodoro.pause') : t('pomodoro.play')"
             >
-              <Pause v-if="pomodoroStore.status === 'running'" class="w-4 h-4 fill-current shrink-0" />
-              <Play v-else class="w-4 h-4 fill-current shrink-0" />
+              <Pause v-if="pomodoroStore.status === 'running'" class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" />
+              <Play v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" />
             </button>
 
             <!-- Skip to Next Phase Button -->
             <button
               @click="pomodoroStore.skip"
-              class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
+              class="p-1.5 sm:p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
               :title="t('pomodoro.skip')"
               :aria-label="t('pomodoro.skip')"
             >
-              <SkipForward class="w-4 h-4" />
+              <SkipForward class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             <!-- Reset Timer Button -->
             <button
               @click="pomodoroStore.reset"
-              class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
+              class="p-1.5 sm:p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
               :title="t('pomodoro.reset')"
               :aria-label="t('pomodoro.reset')"
             >
-              <RotateCcw class="w-4 h-4" />
+              <RotateCcw class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             <!-- Settings Toggle Button -->
             <button
               @click="toggleSettings"
-              class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
+              class="p-1.5 sm:p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
               :class="showSettings ? 'text-theme-primary bg-theme-primary/15' : ''"
               :title="t('pomodoro.settings')"
               :aria-label="t('pomodoro.settings')"
             >
-              <SettingsIcon class="w-4 h-4" />
+              <SettingsIcon class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
-            <div class="w-px h-5 bg-theme-border/50 mx-0.5"></div>
+            <div class="w-px h-4 sm:h-5 bg-theme-border/50 mx-0.5"></div>
 
             <!-- Close Dock Button -->
             <button
               @click="pomodoroStore.closeBar"
-              class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
+              class="p-1 sm:p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
               :title="t('pomodoro.close')"
               :aria-label="t('pomodoro.close')"
             >
-              <X class="w-4 h-4" />
+              <X class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>

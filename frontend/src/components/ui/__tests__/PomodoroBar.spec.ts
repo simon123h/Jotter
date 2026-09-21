@@ -80,7 +80,7 @@ describe('PomodoroBar.vue', () => {
     expect(switchSpy).toHaveBeenCalledWith('short_break');
   });
 
-  it('maintains anchored bottom-6 position', () => {
+  it('maintains anchored bottom position with mobile bottom navbar clearance', () => {
     const store = usePomodoroStore();
     store.is_bar_open = true;
     store.status = 'idle';
@@ -91,9 +91,9 @@ describe('PomodoroBar.vue', () => {
       },
     });
 
-    expect(wrapper.find('.fixed').classes()).toContain('bottom-6');
+    expect(wrapper.find('.fixed').classes()).toContain('md:bottom-6');
     const playBtn = wrapper.find('button[aria-label="Start timer"]');
-    expect(playBtn.classes()).toContain('w-8');
+    expect(playBtn.classes()).toContain('w-7');
   });
 
   it('renders cycle pips and allows clicking to set current cycle', async () => {
