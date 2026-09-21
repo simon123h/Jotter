@@ -69,65 +69,70 @@ const welcomeParts = computed(() => {
 </script>
 
 <template>
-  <div class="h-4/5 w-full flex items-center justify-center p-6 overflow-y-auto scroller-thin bg-theme-base/20 select-none">
-    <div class="max-w-4xl w-full flex flex-col items-center text-center space-y-8 py-8 animate-fade-in">
+  <div
+    class="h-full w-full flex items-start md:items-center justify-center p-3.5 sm:p-6 overflow-y-auto scroller-thin bg-theme-base/20 select-none"
+  >
+    <div class="max-w-4xl w-full flex flex-col items-center text-center space-y-4 sm:space-y-8 py-4 sm:py-8 animate-fade-in">
       <!-- Welcome Hero Header -->
-      <div class="space-y-3.5 relative">
+      <div class="space-y-2 sm:space-y-3.5 relative">
         <div
           class="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-theme-primary/10 rounded-full blur-2xl pointer-events-none"
         ></div>
-        <div class="inline-flex p-3.5 text-theme-accent">
-          <Kanban class="w-10 h-10" />
+        <div class="inline-flex p-2 sm:p-3.5 text-theme-accent">
+          <Kanban class="w-8 h-8 sm:w-10 sm:h-10" />
         </div>
-        <h1 class="text-4xl font-extrabold tracking-tight text-theme-text-main">
+        <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-theme-text-main">
           <span>{{ welcomeParts.prefix }}</span>
           <span class="text-theme-accent">{{ welcomeParts.brand }}</span>
           <span>{{ welcomeParts.suffix }}</span>
         </h1>
-        <p class="text-sm font-medium text-theme-text-muted max-w-md mx-auto italic">
+        <p class="text-xs sm:text-sm font-medium text-theme-text-muted max-w-md mx-auto italic">
           {{ t('home.subtitle') }}
         </p>
       </div>
 
       <!-- Action Area -->
       <div
-        class="w-full bg-theme-card/30 backdrop-blur-md border border-theme-border/65 rounded-2xl p-6 md:p-8 shadow-xl space-y-6 min-h-[220px] flex flex-col justify-center"
+        class="w-full bg-theme-card/30 backdrop-blur-md border border-theme-border/65 rounded-xl sm:rounded-2xl p-3.5 sm:p-6 md:p-8 shadow-xl space-y-4 sm:space-y-6 min-h-[160px] sm:min-h-[220px] flex flex-col justify-center"
       >
         <transition name="view-fade" mode="out-in">
           <!-- Loading indicator while initial projects request is in-flight -->
-          <div v-if="!projectsLoaded" key="loading" class="flex flex-col items-center justify-center py-10 gap-2">
-            <div class="w-8 h-8 border-3 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
+          <div v-if="!projectsLoaded" key="loading" class="flex flex-col items-center justify-center py-6 sm:py-10 gap-2">
+            <div class="w-7 h-7 sm:w-8 sm:h-8 border-3 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
             <span class="text-theme-text-muted text-xs font-semibold">{{ t('loading') || 'Loading...' }}</span>
           </div>
 
           <!-- If projects exist, show grid -->
-          <div v-else-if="projects.length > 0" key="projects-grid" class="space-y-6 text-left w-full">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-theme-text-muted flex items-center gap-2">
-              <Folder class="w-4 h-4 text-theme-accent" />
+          <div v-else-if="projects.length > 0" key="projects-grid" class="space-y-3 sm:space-y-6 text-left w-full">
+            <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-theme-text-muted flex items-center gap-1.5 sm:gap-2">
+              <Folder class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-theme-accent" />
               {{ t('home.selectProject') }}
             </h2>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
               <div
                 v-for="project in sortedProjects"
                 :key="project.id"
                 @click="selectProject(project.id)"
-                class="group relative bg-theme-card hover:bg-theme-column/20 border border-theme-border/60 hover:border-theme-primary/40 rounded-xl p-4.5 cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md flex flex-col justify-between h-36 overflow-hidden"
+                class="group relative bg-theme-card hover:bg-theme-column/20 border border-theme-border/60 hover:border-theme-primary/40 rounded-lg sm:rounded-xl p-2.5 sm:p-4.5 cursor-pointer shadow-sm transition-all duration-300 hover:shadow-md flex flex-col justify-between h-14 sm:h-36 overflow-hidden active:scale-[0.99]"
               >
                 <!-- Highlight background on hover -->
                 <div
                   class="absolute inset-0 bg-gradient-to-br from-theme-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
                 ></div>
 
-                <div>
-                  <div class="flex items-start justify-between">
-                    <h3
-                      class="font-bold text-sm text-theme-text-main group-hover:text-theme-accent transition-colors truncate pr-1"
-                      :title="project.title"
-                    >
-                      {{ project.title }}
-                    </h3>
-                    <div class="flex items-center gap-1.5 shrink-0">
+                <div class="flex items-center justify-between sm:block min-w-0">
+                  <div class="flex items-center sm:items-start justify-between min-w-0 flex-1 mr-2 sm:mr-0">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <Folder class="w-4 h-4 text-theme-accent sm:hidden shrink-0" />
+                      <h3
+                        class="font-bold text-sm text-theme-text-main group-hover:text-theme-accent transition-colors truncate"
+                        :title="project.title"
+                      >
+                        {{ project.title }}
+                      </h3>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0 ml-1.5 sm:ml-0">
                       <Pin
                         v-if="pinnedProjectIds.includes(project.id)"
                         class="w-3 h-3 text-theme-accent fill-theme-accent shrink-0"
@@ -136,16 +141,21 @@ const welcomeParts = computed(() => {
                       <GitBranch v-if="project.git_remote" class="w-3 h-3 text-theme-accent shrink-0" :title="t('home.gitConnected')" />
                     </div>
                   </div>
-                  <p v-if="project.git_remote" class="text-[10px] text-theme-text-muted truncate mt-1">
+                  <p v-if="project.git_remote" class="hidden sm:block text-[10px] text-theme-text-muted truncate mt-1">
                     {{ project.git_remote }}
                   </p>
                 </div>
 
                 <div
-                  class="flex items-center justify-between text-xs font-bold text-theme-text-muted group-hover:text-theme-accent transition-colors mt-4"
+                  class="hidden sm:flex items-center justify-between text-xs font-bold text-theme-text-muted group-hover:text-theme-accent transition-colors mt-4"
                 >
                   <span>{{ t('home.openProject') }}</span>
                   <ArrowRight class="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </div>
+
+                <!-- Mobile-only quick arrow indicator -->
+                <div class="sm:hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-theme-text-muted group-hover:text-theme-accent">
+                  <ArrowRight class="w-4 h-4" />
                 </div>
               </div>
             </div>
