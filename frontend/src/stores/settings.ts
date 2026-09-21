@@ -9,11 +9,11 @@ import { isNativeMobile } from '@/storage';
 const THEME_STATUS_BAR_MAP: Record<string, { bg: string; style: Style }> = {
   'nordic-light': { bg: '#f8fafc', style: Style.Light },
   'desert-light': { bg: '#fdfbf7', style: Style.Light },
-  'midnight': { bg: '#0f172a', style: Style.Dark },
-  'forest': { bg: '#022c22', style: Style.Dark },
-  'frost': { bg: '#0b132b', style: Style.Dark },
-  'cyberpunk': { bg: '#080808', style: Style.Dark },
-  'sakura': { bg: '#1f1118', style: Style.Dark },
+  midnight: { bg: '#0f172a', style: Style.Dark },
+  forest: { bg: '#022c22', style: Style.Dark },
+  frost: { bg: '#0b132b', style: Style.Dark },
+  cyberpunk: { bg: '#080808', style: Style.Dark },
+  sakura: { bg: '#1f1118', style: Style.Dark },
 };
 
 export type SortBy = 'alpha' | 'manual';
