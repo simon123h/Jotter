@@ -377,15 +377,15 @@ body.dragging-active .task-card.is-selected:not(.sortable-chosen) {
 }
 
 /* Safe area insets utilities */
-.pt-safe {
+@utility pt-safe {
   padding-top: max(var(--sat), env(safe-area-inset-top, 0px));
 }
-.pb-safe {
+@utility pb-safe {
   padding-bottom: max(var(--sab), env(safe-area-inset-bottom, 0px));
 }
-.pl-safe {
+@utility pl-safe {
   padding-left: max(var(--sal), env(safe-area-inset-left, 0px));
 }
-.pr-safe {
+@utility pr-safe {
   padding-right: max(var(--sar), env(safe-area-inset-right, 0px));
 }

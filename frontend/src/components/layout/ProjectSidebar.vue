@@ -211,7 +211,7 @@ const openTimeMachineModal = () => {
 
 <template>
   <aside
-    class="w-64 border-r border-theme-border flex flex-col shrink-0 bg-theme-card fixed inset-y-0 left-0 z-40 shadow-2xl md:static md:z-auto md:shadow-none"
+    class="w-64 border-r border-theme-border flex flex-col shrink-0 bg-theme-card fixed inset-y-0 left-0 z-40 shadow-2xl pt-safe pb-safe md:static md:z-auto md:shadow-none md:pt-0 md:pb-0"
   >
     <!-- Server Status Indicator (Only visible when offline) -->
     <div

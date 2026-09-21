@@ -73,7 +73,7 @@ const isTestEnv = typeof import.meta !== 'undefined' && import.meta.env && impor
 
         <!-- Modal Dialog Container -->
         <div
-          class="relative bg-theme-base border-0 md:border md:border-theme-border w-full h-full md:h-auto max-h-none md:max-h-[92vh] rounded-none md:rounded shadow-2xl overflow-hidden flex flex-col z-10"
+          class="relative bg-theme-base border-0 md:border md:border-theme-border w-full h-full md:h-auto max-h-none md:max-h-[92vh] rounded-none md:rounded shadow-2xl overflow-hidden flex flex-col z-10 pt-safe pb-safe md:pt-0 md:pb-0"
           :class="[maxWidth, contentClass]"
           role="dialog"
           aria-modal="true"
