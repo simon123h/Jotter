@@ -124,7 +124,7 @@ export const useSettingsStore = defineStore('settings', () => {
     if (isNativeMobile) {
       try {
         const config = THEME_STATUS_BAR_MAP[theme] || THEME_STATUS_BAR_MAP['nordic-light'];
-        StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+        StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
         StatusBar.setStyle({ style: config.style }).catch(() => {});
         StatusBar.setBackgroundColor({ color: config.bg }).catch(() => {});
         StoragePermission.setStatusBarColor({

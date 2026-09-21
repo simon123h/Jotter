@@ -24,7 +24,7 @@ const emit = defineEmits<{
       >
         <!-- Header Bar inside Lightbox -->
         <div
-          class="absolute top-0 left-0 right-0 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent z-10 pointer-events-auto"
+          class="absolute top-0 left-0 right-0 p-4 pt-[calc(1rem+max(var(--sat),env(safe-area-inset-top,0px)))] flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent z-10 pointer-events-auto"
         >
           <span class="text-white text-sm font-semibold truncate max-w-[70%] px-2">{{ imageName }}</span>
           <div class="flex items-center gap-3">
