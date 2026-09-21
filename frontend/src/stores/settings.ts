@@ -5,15 +5,16 @@ import { getSettings, saveSettings } from '@/api';
 import type { AppSettings } from '@/types';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { isNativeMobile } from '@/storage';
+import { StoragePermission } from '@/storage/storagePermission';
 
 const THEME_STATUS_BAR_MAP: Record<string, { bg: string; style: Style }> = {
-  'nordic-light': { bg: '#f8fafc', style: Style.Light },
+  'nordic-light': { bg: '#ffffff', style: Style.Light },
   'desert-light': { bg: '#fdfbf7', style: Style.Light },
-  midnight: { bg: '#0f172a', style: Style.Dark },
-  forest: { bg: '#022c22', style: Style.Dark },
-  frost: { bg: '#0b132b', style: Style.Dark },
-  cyberpunk: { bg: '#080808', style: Style.Dark },
-  sakura: { bg: '#1f1118', style: Style.Dark },
+  midnight: { bg: '#1e293b', style: Style.Dark },
+  forest: { bg: '#064e3b', style: Style.Dark },
+  frost: { bg: '#1c2541', style: Style.Dark },
+  cyberpunk: { bg: '#18181b', style: Style.Dark },
+  sakura: { bg: '#4c0519', style: Style.Dark },
 };
 
 export type SortBy = 'alpha' | 'manual';
@@ -128,6 +129,10 @@ export const useSettingsStore = defineStore('settings', () => {
         StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
         StatusBar.setStyle({ style: config.style }).catch(() => {});
         StatusBar.setBackgroundColor({ color: config.bg }).catch(() => {});
+        StoragePermission.setStatusBarColor({
+          color: config.bg,
+          darkIcons: config.style === Style.Light,
+        }).catch(() => {});
       } catch {
         // Ignore errors in non-native environments
       }
