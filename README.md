@@ -22,7 +22,6 @@ Jotter is a **local-first, privacy-focused task management web application** des
 
 ## 🌟 Key Features
 
-- **Mobile Android App**: Carry your tasks in your pocket with the native Android APK. Operates 100% offline using local Markdown files with IndexedDB caching and full touch/haptic feedback. Syncs seamlessly with your desktop via Syncthing, Git, or cloud drives.
 - **Data Ownership & Portability**: Tasks are stored as human-readable `.md` markdown files. Your data remains yours, fully accessible even if you stop using Jotter. The files are formatted according to the **Open Knowledge Format (OKF)**.
 - **Combat Task Flooding**: Built for dealing with hundreds of open tasks.
 - **Flexible Views**: Organise tasks your way with Kanban columns, list view, a priority-based **Eisenhower Matrix**, and a chronological **Time View** grouping by due dates.
@@ -34,6 +33,7 @@ Jotter is a **local-first, privacy-focused task management web application** des
 - **Model Context Protocol (MCP) Support**: Connect AI assistants directly to your local Kanban board via `jotter mcp`.
 - **Excel & CSV Import & Export**: Seamlessly import tasks, checklists, priorities, and custom columns from any standard Excel or CSV spreadsheet with support for sheet auto-detection, interactive previews, and custom mappings. Export all tasks from your current filtered view as `.xlsx` or `.csv` client-side.
 - **Obsidian & PKM Native**: Project directories include an `index.md` manifest compatible with Obsidian Folder Notes and PKM namespaces, allowing task boards to live directly within your personal knowledge vault.
+- **Android App**: Carry your tasks in your pocket with the native Android APK. Operates 100% offline using local Markdown files. Syncs seamlessly with your desktop via Syncthing, Git, or cloud drives.
 
 ---
 
