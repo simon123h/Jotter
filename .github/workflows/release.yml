@@ -337,7 +337,7 @@ jobs:
         run: |
           if [ -n "$CUSTOM_KEYSTORE_BASE64" ]; then
             echo "Using persistent release keystore from repository secret ANDROID_RELEASE_KEYSTORE_BASE64..."
-            echo "$CUSTOM_KEYSTORE_BASE64" | base64 -d > release.keystore
+            python3 -c "import os, base64; open('release.keystore', 'wb').write(base64.b64decode(os.environ['CUSTOM_KEYSTORE_BASE64'].strip()))"
           else
             echo "::warning::ANDROID_RELEASE_KEYSTORE_BASE64 secret is not set. Generating temporary keystore for this build..."
             keytool -genkeypair -v -keystore release.keystore -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
