@@ -11,6 +11,13 @@ const config: CapacitorConfig = {
     backgroundColor: '#0f172a',
     allowMixedContent: false,
   },
+  plugins: {
+    StatusBar: {
+      overlaysWebView: false,
+      style: 'DARK',
+      backgroundColor: '#0f172a',
+    },
+  },
 };
 
 export default config;
