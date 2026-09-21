@@ -73,7 +73,7 @@ watch(
   <BaseModal
     :is-open="isOpen"
     max-width="max-w-2xl"
-    content-class="max-h-[85vh]"
+    content-class="md:max-h-[85vh]"
     :close-on-backdrop="!isImporting"
     :close-on-esc="!isImporting"
     :show-close-button="false"

@@ -123,7 +123,7 @@ watch(
 </script>
 
 <template>
-  <BaseModal :is-open="isOpen" max-width="max-w-3xl" content-class="h-[650px]" @close="emit('close')">
+  <BaseModal :is-open="isOpen" max-width="max-w-3xl" content-class="md:h-[650px]" @close="emit('close')">
     <template #header>
       <div class="px-6 py-4 border-b border-theme-border flex justify-between items-center bg-theme-card/50 shrink-0">
         <div class="flex flex-col gap-0.5">
