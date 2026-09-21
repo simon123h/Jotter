@@ -10,6 +10,7 @@ import { StoragePermission } from './storagePermission';
 export const PREF_VAULT_PATH = 'jotter_vault_path';
 export const PREF_VAULT_DIR = 'jotter_vault_dir'; // Directory enum name if relative
 export const PREF_SEEDED_DEFAULT = 'jotter_seeded_default_project';
+export const PREF_SETTINGS = 'jotter_app_settings';
 
 const DEFAULT_SETTINGS: AppSettings = {
   hideDoneColumn: true,
@@ -464,14 +465,36 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
 
   async getSettings(): Promise<AppSettings> {
     const settingRow = await db.settings.get('app_settings');
-    if (settingRow) {
+    if (settingRow && settingRow.value) {
       return { ...DEFAULT_SETTINGS, ...settingRow.value };
     }
+
+    // Fallback to native Preferences if Dexie was cleared
+    try {
+      const { value: prefValue } = await Preferences.get({ key: PREF_SETTINGS });
+      if (prefValue) {
+        const parsed = JSON.parse(prefValue);
+        // Restore to Dexie
+        await db.settings.put({ key: 'app_settings', value: parsed });
+        return { ...DEFAULT_SETTINGS, ...parsed };
+      }
+    } catch {
+      // Ignore parse error
+    }
+
     return { ...DEFAULT_SETTINGS };
   }
 
   async saveSettings(settings: AppSettings): Promise<void> {
     await db.settings.put({ key: 'app_settings', value: settings });
+    try {
+      await Preferences.set({
+        key: PREF_SETTINGS,
+        value: JSON.stringify(settings),
+      });
+    } catch {
+      // Ignore
+    }
   }
 
   // ==========================================

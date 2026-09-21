@@ -2,28 +2,29 @@ import { computed, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { useStorage, useDocumentVisibility, useTitle, useIntervalFn } from '@vueuse/core';
 import { playPomodoroChime } from '@/utils/sound';
+import { persistentStorage } from '@/storage/preferencesStorage';
 
 export type PomodoroPhase = 'work' | 'short_break' | 'long_break';
 export type PomodoroStatus = 'idle' | 'running' | 'paused';
 
 export const usePomodoroStore = defineStore('pomodoro', () => {
   // Persisted Settings
-  const work_duration = useStorage<number>('jotter_pomodoro_work_duration', 25, undefined, { flush: 'sync' });
-  const short_break_duration = useStorage<number>('jotter_pomodoro_short_break_duration', 5, undefined, { flush: 'sync' });
-  const long_break_duration = useStorage<number>('jotter_pomodoro_long_break_duration', 15, undefined, { flush: 'sync' });
-  const long_break_interval = useStorage<number>('jotter_pomodoro_long_break_interval', 4, undefined, { flush: 'sync' });
-  const sound_enabled = useStorage<boolean>('jotter_pomodoro_sound_enabled', true, undefined, { flush: 'sync' });
-  const auto_proceed = useStorage<boolean>('jotter_pomodoro_auto_proceed', false, undefined, { flush: 'sync' });
+  const work_duration = useStorage<number>('jotter_pomodoro_work_duration', 25, persistentStorage, { flush: 'sync' });
+  const short_break_duration = useStorage<number>('jotter_pomodoro_short_break_duration', 5, persistentStorage, { flush: 'sync' });
+  const long_break_duration = useStorage<number>('jotter_pomodoro_long_break_duration', 15, persistentStorage, { flush: 'sync' });
+  const long_break_interval = useStorage<number>('jotter_pomodoro_long_break_interval', 4, persistentStorage, { flush: 'sync' });
+  const sound_enabled = useStorage<boolean>('jotter_pomodoro_sound_enabled', true, persistentStorage, { flush: 'sync' });
+  const auto_proceed = useStorage<boolean>('jotter_pomodoro_auto_proceed', false, persistentStorage, { flush: 'sync' });
 
   // Persisted Runtime State
-  const phase = useStorage<PomodoroPhase>('jotter_pomodoro_phase', 'work', undefined, { flush: 'sync' });
-  const status = useStorage<PomodoroStatus>('jotter_pomodoro_status', 'idle', undefined, { flush: 'sync' });
-  const time_remaining = useStorage<number>('jotter_pomodoro_time_remaining', work_duration.value * 60, undefined, {
+  const phase = useStorage<PomodoroPhase>('jotter_pomodoro_phase', 'work', persistentStorage, { flush: 'sync' });
+  const status = useStorage<PomodoroStatus>('jotter_pomodoro_status', 'idle', persistentStorage, { flush: 'sync' });
+  const time_remaining = useStorage<number>('jotter_pomodoro_time_remaining', work_duration.value * 60, persistentStorage, {
     flush: 'sync',
   });
-  const completed_cycles = useStorage<number>('jotter_pomodoro_completed_cycles', 0, undefined, { flush: 'sync' });
-  const is_bar_open = useStorage<boolean>('jotter_pomodoro_is_bar_open', false, undefined, { flush: 'sync' });
-  const target_end_timestamp = useStorage<number | null>('jotter_pomodoro_target_end_timestamp', null, undefined, {
+  const completed_cycles = useStorage<number>('jotter_pomodoro_completed_cycles', 0, persistentStorage, { flush: 'sync' });
+  const is_bar_open = useStorage<boolean>('jotter_pomodoro_is_bar_open', false, persistentStorage, { flush: 'sync' });
+  const target_end_timestamp = useStorage<number | null>('jotter_pomodoro_target_end_timestamp', null, persistentStorage, {
     flush: 'sync',
   });
 

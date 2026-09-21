@@ -1,15 +1,21 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStorage } from '@vueuse/core';
+import { persistentStorage } from '@/storage/preferencesStorage';
 
 export const useUiStore = defineStore('ui', () => {
   const isMobileViewsSheetOpen = ref(false);
-  const lastViewMode = useStorage<string>('jotter-last-view-mode', 'board', undefined, { flush: 'sync' });
-  const collapsedColumns = useStorage<Record<string, string[]>>('jotter-collapsed-columns', {}, undefined, { flush: 'sync' });
-  const collapseEmptyColumns = useStorage<boolean>('jotter-collapse-empty-columns', false, undefined, { flush: 'sync' });
-  const virtualColumnLayouts = useStorage<Record<string, 'list' | 'grid-2' | 'grid-3'>>('jotter-virtual-column-layouts', {}, undefined, {
-    flush: 'sync',
-  });
+  const lastViewMode = useStorage<string>('jotter-last-view-mode', 'board', persistentStorage, { flush: 'sync' });
+  const collapsedColumns = useStorage<Record<string, string[]>>('jotter-collapsed-columns', {}, persistentStorage, { flush: 'sync' });
+  const collapseEmptyColumns = useStorage<boolean>('jotter-collapse-empty-columns', false, persistentStorage, { flush: 'sync' });
+  const virtualColumnLayouts = useStorage<Record<string, 'list' | 'grid-2' | 'grid-3'>>(
+    'jotter-virtual-column-layouts',
+    {},
+    persistentStorage,
+    {
+      flush: 'sync',
+    }
+  );
 
   const setLastViewMode = (mode: string) => {
     lastViewMode.value = mode;

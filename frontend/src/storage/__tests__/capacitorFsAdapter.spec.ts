@@ -277,11 +277,20 @@ describe('CapacitorFsStorageAdapter', () => {
         ...defaultSettings,
         currentTheme: 'theme-midnight',
         thresholdDays: 14,
+        pinnedProjectIds: ['work-proj'],
       });
 
       const updated = await adapter.getSettings();
       expect(updated.currentTheme).toBe('theme-midnight');
       expect(updated.thresholdDays).toBe(14);
+      expect(updated.pinnedProjectIds).toEqual(['work-proj']);
+
+      // Clear Dexie to simulate Android WebView clearing cache/IndexedDB
+      await db.settings.clear();
+      const restored = await adapter.getSettings();
+      expect(restored.currentTheme).toBe('theme-midnight');
+      expect(restored.thresholdDays).toBe(14);
+      expect(restored.pinnedProjectIds).toEqual(['work-proj']);
     });
 
     it('provides mock system info and git history for mobile', async () => {

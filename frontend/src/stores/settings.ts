@@ -6,6 +6,7 @@ import type { AppSettings } from '@/types';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { isNativeMobile } from '@/storage';
 import { StoragePermission } from '@/storage/storagePermission';
+import { persistentStorage } from '@/storage/preferencesStorage';
 
 const THEME_STATUS_BAR_MAP: Record<string, { bg: string; style: Style }> = {
   'nordic-light': { bg: '#ffffff', style: Style.Light },
@@ -23,8 +24,7 @@ const TIMEBLOCK_SIDEBAR_STORAGE_KEY = 'jotter-timeblock-sidebar-open';
 const SIDEBAR_STORAGE_KEY = 'jotter-sidebar-open';
 
 const getStoredBool = (key: string, defaultVal: boolean): boolean => {
-  if (typeof localStorage === 'undefined') return defaultVal;
-  const val = localStorage.getItem(key);
+  const val = persistentStorage.getItem(key);
   if (val === null) return defaultVal;
   return val === 'true';
 };
@@ -76,10 +76,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
       const sidebarOpen = state.isTimeblockSidebarOpen ?? false;
       state.isTimeblockSidebarOpen = sidebarOpen;
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(sidebarOpen));
-        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
-      }
+      persistentStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(sidebarOpen));
+      persistentStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
 
       applyThemeToDocument(state.currentTheme);
 
@@ -160,10 +158,8 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(
     state,
     () => {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(state.isTimeblockSidebarOpen));
-        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
-      }
+      persistentStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(state.isTimeblockSidebarOpen));
+      persistentStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
       debouncedSave();
     },
     { deep: true }
@@ -176,16 +172,12 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const toggleSidebar = () => {
     state.isSidebarOpen = !state.isSidebarOpen;
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
-    }
+    persistentStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
   };
 
   const toggleTimeblockSidebar = (forceState?: boolean) => {
     state.isTimeblockSidebarOpen = forceState !== undefined ? forceState : !state.isTimeblockSidebarOpen;
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(state.isTimeblockSidebarOpen));
-    }
+    persistentStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(state.isTimeblockSidebarOpen));
   };
 
   const setTheme = (theme: string) => {

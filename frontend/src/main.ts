@@ -3,6 +3,10 @@ import { createPinia } from 'pinia';
 import '@/style.css';
 import App from '@/App.vue';
 import router from '@/router';
+import { initPersistentStorage } from '@/storage/preferencesStorage';
+
+// Hydrate preferences from native SharedPreferences on mobile
+initPersistentStorage().catch(() => {});
 
 const app = createApp(App);
 app.use(createPinia());

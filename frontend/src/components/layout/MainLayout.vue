@@ -18,6 +18,7 @@ import { useToast } from '@/composables/useToast';
 import { useI18n } from '@/composables/useI18n';
 import { useTaskExport } from '@/composables/useTaskExport';
 import { useAndroidBackButton } from '@/composables/useAndroidBackButton';
+import { persistentStorage } from '@/storage/preferencesStorage';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -150,7 +151,7 @@ let autoSyncCheckInterval: any = null;
 const triggerSync = async (isManual = false) => {
   try {
     await projectStore.triggerSync();
-    localStorage.setItem('jotter-last-sync-time', String(Date.now()));
+    persistentStorage.setItem('jotter-last-sync-time', String(Date.now()));
   } catch (err: any) {
     if (isManual) {
       toast.error(t('toasts.syncError', { message: err.message || err }), t('toasts.syncErrorTitle'));
@@ -162,7 +163,7 @@ const checkAutoSync = () => {
   const interval = autoSyncInterval?.value;
   if (!interval || interval <= 0) return;
 
-  const lastSyncTimeStr = localStorage.getItem('jotter-last-sync-time');
+  const lastSyncTimeStr = persistentStorage.getItem('jotter-last-sync-time');
   const lastSyncTime = lastSyncTimeStr ? Number(lastSyncTimeStr) : 0;
   const now = Date.now();
 
