@@ -24,6 +24,10 @@ const newDataDir = ref('');
 const folderInputRef = ref<HTMLInputElement | null>(null);
 
 const browseDirectory = async () => {
+  if (isNativeMobile) {
+    startEditDataDir();
+    return;
+  }
   if (typeof (window as any).showDirectoryPicker === 'function') {
     try {
       const dirHandle = await (window as any).showDirectoryPicker();
@@ -647,7 +651,7 @@ const getTagClasses = (tag: string) => {
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
                 <button
-                  v-if="!isEditingDataDir"
+                  v-if="!isEditingDataDir && !isNativeMobile"
                   type="button"
                   @click="browseDirectory"
                   class="px-2.5 py-1 text-xs font-semibold bg-theme-bg/60 hover:bg-theme-column/60 text-theme-text-main rounded border border-theme-border/60 transition-all cursor-pointer flex items-center gap-1"
@@ -682,12 +686,13 @@ const getTagClasses = (tag: string) => {
                   <input
                     v-model="newDataDir"
                     type="text"
-                    :placeholder="t('settingsView.dataDirPlaceholder')"
+                    :placeholder="isNativeMobile ? t('settingsView.dataDirMobilePlaceholder') : t('settingsView.dataDirPlaceholder')"
                     class="flex-grow px-3 py-2 bg-theme-bg border border-theme-border/60 rounded-lg text-xs text-theme-text-main font-mono focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary/30"
                     :disabled="isUpdatingDataDir"
                     @keydown.enter="saveDataDir"
                   />
                   <button
+                    v-if="!isNativeMobile"
                     type="button"
                     @click="browseDirectory"
                     :disabled="isUpdatingDataDir"

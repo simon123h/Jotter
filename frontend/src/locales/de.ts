@@ -301,6 +301,7 @@ export const de = {
     dataDirSuccess: 'Datenverzeichnis erfolgreich aktualisiert',
     dataDirError: 'Fehler beim Aktualisieren des Datenverzeichnisses: {message}',
     dataDirPlaceholder: '/pfad/zu/deinen/aufgaben',
+    dataDirMobilePlaceholder: 'Ordnername (z. B. Jotter oder Notizen/Jotter)',
     dataDirMobileHint: 'Im Mobilmodus wird das Verzeichnis im Dokumente-Ordner verwaltet.',
     browseFolder: 'Ordner auswählen',
     timeblockingTitle: 'Time Blocking',
