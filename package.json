@@ -29,11 +29,24 @@
     "format:frontend:check": "cd frontend && npm run format:check",
     "format": "npm run format:backend && npm run format:frontend",
     "format:check": "npm run format:backend:check && npm run format:frontend:check",
-    "install:all": "npm install && cd frontend && npm install && cd .. && pip install -e .[dev]"
+    "install:all": "npm install && cd frontend && npm install && cd .. && pip install -e .[dev]",
+    "prepare": "husky"
   },
   "devDependencies": {
     "concurrently": "^10.0.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "vitepress": "^1.6.4"
+  },
+  "lint-staged": {
+    "*.py": [
+      "ruff check --fix",
+      "ruff format"
+    ],
+    "frontend/src/**/*.{js,ts,vue,css}": [
+      "npm --prefix frontend run format",
+      "npm --prefix frontend run lint:fix"
+    ]
   },
   "overrides": {
     "vite": "^6.4.2",
