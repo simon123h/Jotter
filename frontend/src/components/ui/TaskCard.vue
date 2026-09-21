@@ -398,8 +398,8 @@ const handleTagClick = (tag: string) => {
         </h4>
       </div>
       <div class="flex items-center gap-1 shrink-0 -m-2">
-        <!-- Hover Actions -->
-        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <!-- Action Buttons (Always visible on mobile/touch, hover on desktop) -->
+        <div class="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
           <!-- Mark Done Button -->
           <button
             v-if="showDoneButton && task.bucket !== 'done'"

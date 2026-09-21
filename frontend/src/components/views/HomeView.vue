@@ -17,6 +17,14 @@ const settingsStore = useSettingsStore();
 const { projects, projectsLoaded } = storeToRefs(projectStore);
 const { pinnedProjectIds } = storeToRefs(settingsStore);
 
+const togglePin = (projectId: string) => {
+  if (pinnedProjectIds.value.includes(projectId)) {
+    settingsStore.unpinProject(projectId);
+  } else {
+    settingsStore.pinProject(projectId);
+  }
+};
+
 const selectProject = (projectId: string) => {
   router.push({
     name: 'project',
@@ -133,11 +141,21 @@ const welcomeParts = computed(() => {
                       </h3>
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0 ml-1.5 sm:ml-0">
-                      <Pin
-                        v-if="pinnedProjectIds.includes(project.id)"
-                        class="w-3 h-3 text-theme-accent fill-theme-accent shrink-0"
-                        :title="t('home.pinnedBadge')"
-                      />
+                      <button
+                        @click.stop.prevent="togglePin(project.id)"
+                        class="p-1 -m-1 rounded transition-colors cursor-pointer"
+                        :class="
+                          pinnedProjectIds.includes(project.id)
+                            ? 'text-theme-accent opacity-100'
+                            : 'text-theme-text-muted hover:text-theme-text-main opacity-70 md:opacity-0 md:group-hover:opacity-100'
+                        "
+                        :title="pinnedProjectIds.includes(project.id) ? t('projects.unpinProject') : t('projects.pinProject')"
+                      >
+                        <Pin
+                          class="w-3.5 h-3.5 shrink-0"
+                          :class="{ 'fill-theme-accent text-theme-accent': pinnedProjectIds.includes(project.id) }"
+                        />
+                      </button>
                       <GitBranch v-if="project.git_remote" class="w-3 h-3 text-theme-accent shrink-0" :title="t('home.gitConnected')" />
                     </div>
                   </div>

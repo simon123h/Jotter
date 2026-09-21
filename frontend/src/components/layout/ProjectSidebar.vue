@@ -325,7 +325,7 @@ const openTimeMachineModal = () => {
               :class="
                 pinnedProjectIds.includes(project.id)
                   ? 'text-theme-accent opacity-100'
-                  : 'text-theme-text-muted hover:text-theme-text-main opacity-0 group-hover:opacity-100'
+                  : 'text-theme-text-muted hover:text-theme-text-main opacity-70 md:opacity-0 md:group-hover:opacity-100'
               "
               :title="pinnedProjectIds.includes(project.id) ? t('projects.unpinProject') : t('projects.pinProject')"
             >
