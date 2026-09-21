@@ -312,7 +312,7 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
     }
     if (filters.tags) {
       const tList = filters.tags.split(',').map((t) => t.trim().toLowerCase());
-      if (filters.tag_mode === 'all' || filters.tag_mode === 'and') {
+      if (filters.tag_mode === 'all') {
         result = result.filter((t) => tList.every((tag) => t.tags.includes(tag)));
       } else {
         result = result.filter((t) => tList.some((tag) => t.tags.includes(tag)));
@@ -636,7 +636,6 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
     return {
       version: '3.8.3 (Mobile)',
       data_dir: `${this.vaultPath} (Android Documents)`,
-      is_git_enabled: false,
     };
   }
 
@@ -644,7 +643,7 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
     return [];
   }
 
-  async restoreCommit(): Promise<{ synchronized_tasks: number }> {
+  async restoreCommit(_commitHash?: string, _projectId?: string): Promise<{ synchronized_tasks: number }> {
     return { synchronized_tasks: 0 };
   }
 }

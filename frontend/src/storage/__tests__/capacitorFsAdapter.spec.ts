@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CapacitorFsStorageAdapter, PREF_VAULT_PATH, PREF_VAULT_DIR } from '../capacitorFsAdapter';
 import { db } from '../dexieDb';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 
 // Mock Capacitor plugins
@@ -186,12 +186,12 @@ describe('CapacitorFsStorageAdapter', () => {
       expect(tagFiltered).toHaveLength(1);
       expect(tagFiltered[0].title).toBe('Alpha task');
 
-      // Filter by multiple tags with AND mode
-      const multiTagAnd = await adapter.getTasks(proj.id, { tags: 'work,urgent', tag_mode: 'and' });
+      // Filter by multiple tags with all mode
+      const multiTagAnd = await adapter.getTasks(proj.id, { tags: 'work,urgent', tag_mode: 'all' });
       expect(multiTagAnd).toHaveLength(1);
 
-      // Filter by multiple tags with OR mode
-      const multiTagOr = await adapter.getTasks(proj.id, { tags: 'home,urgent', tag_mode: 'or' });
+      // Filter by multiple tags with any mode
+      const multiTagOr = await adapter.getTasks(proj.id, { tags: 'home,urgent', tag_mode: 'any' });
       expect(multiTagOr).toHaveLength(2);
 
       // Filter by search keyword
@@ -239,6 +239,7 @@ describe('CapacitorFsStorageAdapter', () => {
         date: '2026-09-22',
         start_time: '09:00',
         end_time: '11:00',
+        task_ids: [],
       });
 
       expect(tb.id).toBeDefined();
@@ -285,7 +286,7 @@ describe('CapacitorFsStorageAdapter', () => {
 
     it('provides mock system info and git history for mobile', async () => {
       const info = await adapter.getSystemInfo();
-      expect(info.is_git_enabled).toBe(false);
+      expect(info.version).toBeDefined();
 
       const history = await adapter.getGitHistory();
       expect(history).toEqual([]);

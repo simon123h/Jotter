@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { HttpStorageAdapter } from '../httpAdapter';
-import { isServerOnline } from '@/api';
+import { isServerOnline } from '../connectionState';
 
 describe('HttpStorageAdapter', () => {
   let adapter: HttpStorageAdapter;
