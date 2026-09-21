@@ -12,7 +12,7 @@ export const de = {
   },
   home: {
     welcome: 'Willkommen bei Jotter',
-    subtitle: 'Lokales Kanban-Board mit Markdown-Unterstützung.',
+    subtitle: 'Lokales Markdown-basiertes Kanban-Board.',
     selectProject: 'Wähle ein Projekt aus, um zu beginnen:',
     noProjects: 'Noch keine Projekte erstellt.',
     createProject: 'Erstelle dein erstes Projekt, um deine Arbeit zu organisieren:',
@@ -232,6 +232,8 @@ export const de = {
     maxTasksLabel: 'Max. Anzahl an Aufgaben',
     maxTasksPlaceholder: 'z.B. 5 (leer für kein Limit)',
     defaultLabel: 'Standardspalte für neue Aufgaben',
+    isDefaultLabel: 'Standardspalte',
+    isDefaultHelp: 'Neue Aufgaben ohne zugewiesene Spalte landen hier.',
     saveButton: 'Änderungen speichern',
   },
   projectEdit: {
@@ -487,6 +489,7 @@ export const de = {
     globalContext: 'Globale Workspace-Snapshots',
     refreshTooltip: 'Snapshot-Liste aktualisieren',
     searchPlaceholder: 'Snapshots nach Nachricht, Hash oder Autor durchsuchen...',
+    commitsCount: '{count} Snapshot(s)',
     backupNotice:
       'Das Wiederherstellen eines früheren Snapshots ist {safeBold}. Jotter speichert deinen aktuellen Zustand automatisch in einem Backup-Snapshot, bevor eine Wiederherstellung durchgeführt wird.',
     backupNoticeSafeBold: 'völlig sicher und umkehrbar',

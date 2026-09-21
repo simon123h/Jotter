@@ -230,6 +230,8 @@ export const en = {
     maxTasksLabel: 'Max Tasks Limit',
     maxTasksPlaceholder: 'e.g. 5 (empty for no limit)',
     defaultLabel: 'Default column for new tasks',
+    isDefaultLabel: 'Default Column',
+    isDefaultHelp: 'Tasks created without a column will go here.',
     saveButton: 'Save Changes',
   },
   projectEdit: {
@@ -485,6 +487,7 @@ export const en = {
     globalContext: 'Global Workspace Snapshots',
     refreshTooltip: 'Refresh snapshot list',
     searchPlaceholder: 'Search snapshots by message, hash, author...',
+    commitsCount: '{count} snapshot(s)',
     backupNotice:
       'Restoring to an earlier snapshot is {safeBold}. Jotter automatically saves your current state in a backup snapshot before performing any restore operation.',
     backupNoticeSafeBold: 'completely safe and reversible',
