@@ -123,7 +123,9 @@ const onMarkDone = async (task: Task) => {
 </script>
 
 <template>
-  <div class="flex gap-3.5 items-stretch overflow-x-auto pb-2 h-full select-none w-full scroller-thin">
+  <div
+    class="flex gap-0 md:gap-3.5 items-stretch overflow-x-auto pb-0 md:pb-2 h-full select-none w-full scroller-thin snap-x snap-mandatory md:snap-none scroll-px-0 md:scroll-px-4"
+  >
     <div v-if="tagColumns.length === 0" class="flex-grow flex items-center justify-center text-theme-text-muted italic">
       {{ t('tagView.noTags') || 'No tags found in this project' }}
     </div>

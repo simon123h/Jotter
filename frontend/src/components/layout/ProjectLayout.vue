@@ -434,7 +434,7 @@ const handleBulkConsolidate = async () => {
 
 <template>
   <div class="h-full flex overflow-hidden w-full relative">
-    <div class="flex-grow flex flex-col p-3 overflow-hidden min-w-0">
+    <div class="flex-grow flex flex-col p-0 md:p-3 overflow-hidden min-w-0">
       <div @mousedown="handleDragSelectMouseDown" class="flex-grow overflow-hidden relative">
         <transition name="view-fade" mode="out-in">
           <div v-if="isProjectLoading" key="loading" class="h-full flex flex-col items-center justify-center gap-2">

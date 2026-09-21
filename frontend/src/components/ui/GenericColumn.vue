@@ -260,11 +260,11 @@ watch(
 <template>
   <div
     :style="columnStyle"
-    class="generic-column flex flex-col rounded group/col relative overflow-hidden transition-all duration-300 snap-center md:snap-align-none"
+    class="generic-column flex flex-col group/col relative overflow-hidden transition-all duration-300 snap-center md:snap-align-none rounded-none md:rounded border-y-0 md:border border-theme-border"
     :class="[
       isCollapsed
-        ? 'w-12 min-w-[48px] max-w-[48px] h-fit max-h-full shrink-0 bg-theme-column/50 backdrop-blur-[2px] border border-theme-border hover:bg-theme-column/75 hover:border-theme-accent/40 shadow-sm hover:shadow-md'
-        : 'bg-theme-column border border-theme-border shadow-sm ' +
+        ? 'w-12 min-w-[48px] max-w-[48px] h-fit max-h-full shrink-0 bg-theme-column/50 backdrop-blur-[2px] border-x border-theme-border hover:bg-theme-column/75 hover:border-theme-accent/40 shadow-none md:shadow-sm hover:shadow-md'
+        : 'bg-theme-column shadow-none md:shadow-sm ' +
           (isFluid
             ? 'w-full h-full min-w-0'
             : 'h-fit max-h-full shrink-0 ' +
@@ -272,7 +272,7 @@ watch(
                 ? 'min-w-[840px] w-[864px] md:w-[960px]'
                 : layout === 'grid-2'
                   ? 'min-w-[560px] w-[576px] md:w-[640px]'
-                  : 'w-[calc(100vw-3rem)] max-w-[340px] md:w-80 md:min-w-[320px]')),
+                  : 'w-[100vw] min-w-[100vw] max-w-[100vw] md:w-80 md:min-w-[320px] md:max-w-none')),
     ]"
   >
     <template v-if="!isCollapsed">
