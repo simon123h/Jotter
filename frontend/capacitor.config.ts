@@ -1,0 +1,16 @@
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'io.github.simon123h.jotter',
+  appName: 'Jotter',
+  webDir: 'dist',
+  server: {
+    androidScheme: 'https',
+  },
+  android: {
+    backgroundColor: '#0f172a',
+    allowMixedContent: false,
+  },
+};
+
+export default config;

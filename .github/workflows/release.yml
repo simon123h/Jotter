@@ -284,3 +284,60 @@ jobs:
             tar -czvf "${{ matrix.artifact_name }}.tar.gz" "${{ matrix.binary_name }}"
             gh release upload "$TAG" "${{ matrix.artifact_name }}.tar.gz" --clobber
           fi
+
+  build-android-apk:
+    needs: [tag-release, build-and-publish-pypi]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.tag-release.outputs.tag }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build Web Assets & Sync Capacitor
+        run: |
+          cd frontend
+          npm run build
+          npx cap sync android
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Android Release APK
+        run: |
+          cd frontend/android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Rename and Upload APK to GitHub Release
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.tag-release.outputs.tag }}
+        run: |
+          APK_PATH=$(find frontend/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -f "$APK_PATH" ]; then
+            OUTPUT_APK="jotter-${TAG}-android-unsigned.apk"
+            cp "$APK_PATH" "$OUTPUT_APK"
+            gh release upload "$TAG" "$OUTPUT_APK" --clobber
+          else
+            echo "Warning: No APK found to upload."
+          fi
+
