@@ -257,3 +257,34 @@ def test_sync_migrates_projects_json_to_index_md(temp_dir, test_env):
     assert alpha_buckets[0].name == "ideas"
     assert alpha_buckets[0].title == "Ideas Column"
     assert alpha_buckets[1].name == "done"
+
+
+def test_sync_removes_deleted_project_and_does_not_resurrect_default(temp_dir, test_env):
+    import shutil
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
+
+    # 1. Create a custom project
+    proj_svc.create_project(ProjectCreate(title="Personal Tasks", id="personal"))
+
+    # Verify both default and personal exist initially
+    projects = proj_svc.get_all_projects()
+    proj_ids = [p.id for p in projects]
+    assert "default" in proj_ids
+    assert "personal" in proj_ids
+
+    # 2. Delete default project directory from disk
+    default_dir = Path(temp_dir) / "default"
+    if default_dir.is_dir():
+        shutil.rmtree(default_dir, ignore_errors=True)
+
+    # 3. Trigger sync
+    sync_svc.sync_db_only()
+
+    # 4. Verify default project is pruned and NOT resurrected since personal still exists
+    projects_after = proj_svc.get_all_projects()
+    proj_ids_after = [p.id for p in projects_after]
+    assert "personal" in proj_ids_after
+    assert "default" not in proj_ids_after

@@ -64,9 +64,13 @@ class SyncApplicationService:
 
         # 1. Discover all projects on disk (and from legacy projects.json)
         disk_projects = self.project_repo.discover_disk_projects()
-        if not disk_projects and not self.project_repo.get_all():
+        existing_db_projects = self.project_repo.get_all()
+
+        if not disk_projects and not existing_db_projects:
             disk_projects = ["default"]
 
+        # Reconcile disk projects into SQLite
+        synced_project_ids = set()
         for proj_id in disk_projects:
             proj_dir = Path(self.data_dir) / proj_id
             proj_dir.mkdir(parents=True, exist_ok=True)
@@ -88,6 +92,12 @@ class SyncApplicationService:
             self.project_repo.save(project)
             for b in buckets:
                 self.bucket_repo.save(proj_id, b)
+            synced_project_ids.add(proj_id)
+
+        # Remove projects from SQLite if their folders are no longer present on disk
+        for ep in existing_db_projects:
+            if ep.id not in synced_project_ids:
+                self.project_repo.delete(ep.id)
 
         # 2. Check global doneCleanPeriod
         settings_file = Path(self.data_dir) / "settings.json"
