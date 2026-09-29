@@ -1,5 +1,4 @@
 import json
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -268,11 +267,6 @@ def write_project_manifest(
 
     final_content = f"---\n{yaml_content}---\n{body_to_write}"
 
-    # Write to a uniquely named temporary file in the same directory before atomic replacement
-    with tempfile.NamedTemporaryFile(
-        "w", dir=project_dir, delete=False, encoding="utf-8", prefix=".index_", suffix=".tmp"
-    ) as f:
-        f.write(final_content)
-        tmp_path = Path(f.name)
+    from jotter.shared.fs import atomic_write
 
-    tmp_path.replace(index_file)
+    atomic_write(index_file, final_content, encoding="utf-8", prefix=".index_", suffix=".tmp")

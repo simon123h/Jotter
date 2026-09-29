@@ -25,11 +25,11 @@ class TimeblockDiskRepo:
             return []
 
     def _save(self, items: list[dict[str, Any]]) -> None:
-        self.data_dir.mkdir(parents=True, exist_ok=True)
+        from jotter.shared.fs import atomic_write
+
         cleaned_items = [{k: v for k, v in it.items() if k != "tasks"} for it in items]
-        temp_file = self.file_path.with_suffix(".tmp")
-        temp_file.write_text(json.dumps(cleaned_items, indent=2, ensure_ascii=False), encoding="utf-8")
-        temp_file.replace(self.file_path)
+        data_str = json.dumps(cleaned_items, indent=2, ensure_ascii=False)
+        atomic_write(self.file_path, data_str, encoding="utf-8", prefix=".timeblocks_", suffix=".tmp")
 
     def list_all(self) -> list[dict[str, Any]]:
         return self._load()

@@ -1,7 +1,6 @@
 """Application service for Settings persistence."""
 
 import json
-import tempfile
 from pathlib import Path
 
 from jotter.features.settings.schemas import AppSettings, SettingsUpdate
@@ -31,12 +30,10 @@ class SettingsApplicationService:
         parent = settings_file.parent
         parent.mkdir(parents=True, exist_ok=True)
 
-        data = settings.model_dump_json(by_alias=True, indent=2)
-        with tempfile.NamedTemporaryFile("w", dir=parent, delete=False, encoding="utf-8") as tf:
-            tf.write(data)
-            temp_name = tf.name
+        from jotter.shared.fs import atomic_write
 
-        Path(temp_name).replace(settings_file)
+        data = settings.model_dump_json(by_alias=True, indent=2)
+        atomic_write(settings_file, data, encoding="utf-8", prefix=".settings_", suffix=".tmp")
 
     def update_settings(self, updates: SettingsUpdate) -> AppSettings:
         current = self.load_settings()

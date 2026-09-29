@@ -38,14 +38,9 @@ class DiskTaskRepository:
         parent_dir = path.parent
         parent_dir.mkdir(parents=True, exist_ok=True)
 
-        import tempfile
+        from jotter.shared.fs import atomic_write
 
-        with tempfile.NamedTemporaryFile(
-            "w", dir=parent_dir, delete=False, encoding="utf-8", prefix=f".{task.id}_", suffix=".tmp"
-        ) as f:
-            f.write(content)
-            tmp_path = Path(f.name)
-        tmp_path.replace(path)
+        atomic_write(path, content, encoding="utf-8", prefix=f".{task.id}_", suffix=".tmp")
 
     def delete(self, project_id: str, task_id: str) -> None:
         path = self.get_task_file_path(project_id, task_id)
