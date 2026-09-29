@@ -19,6 +19,7 @@ import { useI18n } from '@/composables/useI18n';
 import { useTaskExport } from '@/composables/useTaskExport';
 import { useAndroidBackButton } from '@/composables/useAndroidBackButton';
 import { persistentStorage } from '@/storage/preferencesStorage';
+import { crossTabBus } from '@/utils/broadcast';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -147,6 +148,7 @@ const handleCreateProject = async (title: string) => {
 };
 
 let autoSyncCheckInterval: any = null;
+let unsubscribeCrossTab: (() => void) | null = null;
 
 const triggerSync = async (isManual = false) => {
   try {
@@ -197,11 +199,50 @@ onMounted(async () => {
   // Set up auto-sync periodic check
   checkAutoSync(); // run once on startup
   autoSyncCheckInterval = setInterval(checkAutoSync, 15000); // check every 15 seconds
+
+  // Listen for mutations from other open tabs
+  unsubscribeCrossTab = crossTabBus.subscribe(async (event) => {
+    if (event.type === 'tasks-changed') {
+      await projectStore.invalidate();
+    } else if (event.type === 'buckets-changed') {
+      const activePid = (route.params.projectId as string) || '';
+      if (activePid) {
+        await projectStore.fetchBuckets(activePid);
+      }
+      await projectStore.invalidate();
+    } else if (event.type === 'projects-changed') {
+      await projectStore.fetchProjects();
+      await projectStore.invalidate();
+    } else if (event.type === 'timeblocks-changed') {
+      await timeblockStore.fetchTimeblocks().catch(() => {});
+    }
+  });
+
+  // Revalidate immediately upon returning/focusing tab if it was frozen or inactive
+  const handleWindowFocus = () => {
+    if (document.visibilityState === 'visible') {
+      projectStore.invalidate().catch(() => {});
+      timeblockStore.fetchTimeblocks().catch(() => {});
+    }
+  };
+  window.addEventListener('visibilitychange', handleWindowFocus);
+  window.addEventListener('focus', handleWindowFocus);
+
+  const prevCleanup = unsubscribeCrossTab;
+  unsubscribeCrossTab = () => {
+    if (prevCleanup) prevCleanup();
+    window.removeEventListener('visibilitychange', handleWindowFocus);
+    window.removeEventListener('focus', handleWindowFocus);
+  };
 });
 
 onBeforeUnmount(() => {
   if (autoSyncCheckInterval) {
     clearInterval(autoSyncCheckInterval);
+  }
+  if (unsubscribeCrossTab) {
+    unsubscribeCrossTab();
+    unsubscribeCrossTab = null;
   }
 });
 </script>

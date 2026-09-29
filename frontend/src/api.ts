@@ -2,6 +2,7 @@ import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, 
 import * as demoApi from '@/api.demo';
 import { activeStorage, isNativeMobile } from '@/storage';
 import { isServerOnline } from '@/storage/connectionState';
+import { crossTabBus } from '@/utils/broadcast';
 
 export { isNativeMobile, isServerOnline };
 
@@ -30,18 +31,25 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function createProject(title: string, git_remote?: string | null): Promise<Project> {
-  if (IS_DEMO_MODE) return demoApi.createProject(title);
-  return activeStorage.createProject(title, git_remote);
+  let res: Project;
+  if (IS_DEMO_MODE) res = await demoApi.createProject(title);
+  else res = await activeStorage.createProject(title, git_remote);
+  crossTabBus.broadcast({ type: 'projects-changed' });
+  return res;
 }
 
 export async function updateProject(id: string, updates: Partial<Project>): Promise<Project> {
-  if (IS_DEMO_MODE) return demoApi.updateProject(id, updates);
-  return activeStorage.updateProject(id, updates);
+  let res: Project;
+  if (IS_DEMO_MODE) res = await demoApi.updateProject(id, updates);
+  else res = await activeStorage.updateProject(id, updates);
+  crossTabBus.broadcast({ type: 'projects-changed' });
+  return res;
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  if (IS_DEMO_MODE) return demoApi.deleteProject(id);
-  return activeStorage.deleteProject(id);
+  if (IS_DEMO_MODE) await demoApi.deleteProject(id);
+  else await activeStorage.deleteProject(id);
+  crossTabBus.broadcast({ type: 'projects-changed' });
 }
 
 // ==========================================
@@ -77,29 +85,41 @@ export async function createTask(
     color?: string | null;
   }
 ): Promise<Task> {
-  if (IS_DEMO_MODE) return demoApi.createTask(projectId, task);
-  return activeStorage.createTask(projectId, task);
+  let res: Task;
+  if (IS_DEMO_MODE) res = await demoApi.createTask(projectId, task);
+  else res = await activeStorage.createTask(projectId, task);
+  crossTabBus.broadcast({ type: 'tasks-changed', projectId });
+  return res;
 }
 
 export async function updateTask(projectId: string, id: string, task: Partial<Task>): Promise<Task> {
-  if (IS_DEMO_MODE) return demoApi.updateTask(projectId, id, task);
-  return activeStorage.updateTask(projectId, id, task);
+  let res: Task;
+  if (IS_DEMO_MODE) res = await demoApi.updateTask(projectId, id, task);
+  else res = await activeStorage.updateTask(projectId, id, task);
+  crossTabBus.broadcast({ type: 'tasks-changed', projectId });
+  return res;
 }
 
 export async function moveTask(projectId: string, id: string, bucket: string, position: number): Promise<Task> {
-  if (IS_DEMO_MODE) return demoApi.moveTask(projectId, id, bucket, position);
-  return activeStorage.moveTask(projectId, id, bucket, position);
+  let res: Task;
+  if (IS_DEMO_MODE) res = await demoApi.moveTask(projectId, id, bucket, position);
+  else res = await activeStorage.moveTask(projectId, id, bucket, position);
+  crossTabBus.broadcast({ type: 'tasks-changed', projectId });
+  return res;
 }
 
 export async function deleteTask(projectId: string, id: string): Promise<void> {
-  if (IS_DEMO_MODE) return demoApi.deleteTask(projectId, id);
-  return activeStorage.deleteTask(projectId, id);
+  if (IS_DEMO_MODE) await demoApi.deleteTask(projectId, id);
+  else await activeStorage.deleteTask(projectId, id);
+  crossTabBus.broadcast({ type: 'tasks-changed', projectId });
 }
 
 export async function uploadAttachment(projectId: string, taskId: string, file: File): Promise<Task> {
   if (IS_DEMO_MODE) throw new Error('Attachments not supported in demo mode');
   if (activeStorage.uploadAttachment) {
-    return activeStorage.uploadAttachment(projectId, taskId, file);
+    const res = await activeStorage.uploadAttachment(projectId, taskId, file);
+    crossTabBus.broadcast({ type: 'tasks-changed', projectId });
+    return res;
   }
   throw new Error('Upload attachment not implemented on current adapter');
 }
@@ -107,7 +127,9 @@ export async function uploadAttachment(projectId: string, taskId: string, file: 
 export async function deleteAttachment(projectId: string, taskId: string, filename: string): Promise<Task> {
   if (IS_DEMO_MODE) throw new Error('Attachments not supported in demo mode');
   if (activeStorage.deleteAttachment) {
-    return activeStorage.deleteAttachment(projectId, taskId, filename);
+    const res = await activeStorage.deleteAttachment(projectId, taskId, filename);
+    crossTabBus.broadcast({ type: 'tasks-changed', projectId });
+    return res;
   }
   throw new Error('Delete attachment not implemented on current adapter');
 }
@@ -137,18 +159,25 @@ export async function createBucket(
   layout?: 'list' | 'grid-2' | 'grid-3',
   max_tasks?: number | null
 ): Promise<Bucket> {
-  if (IS_DEMO_MODE) return demoApi.createBucket(projectId, title, subtitle, color, layout, max_tasks);
-  return activeStorage.createBucket(projectId, title, subtitle, color, layout, max_tasks);
+  let res: Bucket;
+  if (IS_DEMO_MODE) res = await demoApi.createBucket(projectId, title, subtitle, color, layout, max_tasks);
+  else res = await activeStorage.createBucket(projectId, title, subtitle, color, layout, max_tasks);
+  crossTabBus.broadcast({ type: 'buckets-changed', projectId });
+  return res;
 }
 
 export async function updateBucket(projectId: string, name: string, bucketUpdates: Partial<Bucket>): Promise<Bucket> {
-  if (IS_DEMO_MODE) return demoApi.updateBucket(projectId, name, bucketUpdates);
-  return activeStorage.updateBucket(projectId, name, bucketUpdates);
+  let res: Bucket;
+  if (IS_DEMO_MODE) res = await demoApi.updateBucket(projectId, name, bucketUpdates);
+  else res = await activeStorage.updateBucket(projectId, name, bucketUpdates);
+  crossTabBus.broadcast({ type: 'buckets-changed', projectId });
+  return res;
 }
 
 export async function deleteBucket(projectId: string, name: string): Promise<void> {
-  if (IS_DEMO_MODE) return demoApi.deleteBucket(projectId, name);
-  return activeStorage.deleteBucket(projectId, name);
+  if (IS_DEMO_MODE) await demoApi.deleteBucket(projectId, name);
+  else await activeStorage.deleteBucket(projectId, name);
+  crossTabBus.broadcast({ type: 'buckets-changed', projectId });
 }
 
 // ==========================================
@@ -235,17 +264,24 @@ export async function getTimeblock(id: string): Promise<Timeblock> {
 }
 
 export async function createTimeblock(timeblock: Omit<Timeblock, 'id'>): Promise<Timeblock> {
-  return activeStorage.createTimeblock(timeblock);
+  const res = await activeStorage.createTimeblock(timeblock);
+  crossTabBus.broadcast({ type: 'timeblocks-changed' });
+  return res;
 }
 
 export async function updateTimeblock(id: string, updates: Partial<Timeblock>): Promise<Timeblock> {
-  return activeStorage.updateTimeblock(id, updates);
+  const res = await activeStorage.updateTimeblock(id, updates);
+  crossTabBus.broadcast({ type: 'timeblocks-changed' });
+  return res;
 }
 
 export async function deleteTimeblock(id: string): Promise<void> {
-  return activeStorage.deleteTimeblock(id);
+  await activeStorage.deleteTimeblock(id);
+  crossTabBus.broadcast({ type: 'timeblocks-changed' });
 }
 
 export async function allocateTaskToTimeblock(timeblockId: string, taskId: string, action: 'add' | 'remove' = 'add'): Promise<Timeblock> {
-  return activeStorage.allocateTaskToTimeblock(timeblockId, taskId, action);
+  const res = await activeStorage.allocateTaskToTimeblock(timeblockId, taskId, action);
+  crossTabBus.broadcast({ type: 'timeblocks-changed' });
+  return res;
 }
