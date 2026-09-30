@@ -85,3 +85,45 @@ def test_git_sync_no_remote(temp_dir):
     history = get_git_history(temp_dir)
     assert len(history) == 1
     assert "jotter: auto-sync" in history[0]["message"]
+
+
+def test_git_history_and_restore_fallback_to_parent_repo(temp_dir):
+    setup_git_data_dir(temp_dir)
+
+    # Subdirectory project without its own .git
+    proj_dir = Path(temp_dir) / "project-a"
+    proj_dir.mkdir(parents=True, exist_ok=True)
+    task_file = proj_dir / "task1.md"
+    task_file.write_text("project A initial", encoding="utf-8")
+
+    other_dir = Path(temp_dir) / "project-b"
+    other_dir.mkdir(parents=True, exist_ok=True)
+    other_file = other_dir / "task2.md"
+    other_file.write_text("project B initial", encoding="utf-8")
+
+    run_git(["add", "."], cwd=temp_dir)
+    run_git(["commit", "-m", "commit for project A"], cwd=temp_dir)
+
+    other_file.write_text("project B updated", encoding="utf-8")
+    run_git(["add", "."], cwd=temp_dir)
+    run_git(["commit", "-m", "commit exclusively for project B"], cwd=temp_dir)
+
+    # 1. Project A should find history from parent git repo scoped to project-a
+    history_a = get_git_history(proj_dir)
+    assert len(history_a) >= 1
+    # Should contain "commit for project A"
+    assert any("commit for project A" in c["message"] for c in history_a)
+    # Should NOT contain commits that only touched project B
+    assert not any("exclusively for project B" in c["message"] for c in history_a)
+
+    commit_a_hash = history_a[0]["hash"]
+
+    # 2. Modify project A and test restore via parent repo
+    task_file.write_text("project A modified v2", encoding="utf-8")
+    run_git(["add", "."], cwd=temp_dir)
+    run_git(["commit", "-m", "commit project A v2"], cwd=temp_dir)
+
+    restore_commit(temp_dir, "project-a", commit_a_hash)
+    assert task_file.read_text(encoding="utf-8") == "project A initial"
+    # Project B's file should remain untouched
+    assert other_file.read_text(encoding="utf-8") == "project B updated"

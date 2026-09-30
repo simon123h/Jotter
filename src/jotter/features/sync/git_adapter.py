@@ -130,13 +130,25 @@ def git_sync(project_dir: str | Path, remote_url: str | None) -> dict[str, Any] 
 
 
 def get_git_history(project_dir: str | Path, limit: int = 50) -> list[dict[str, str]]:
-    """Returns the git commit history."""
+    """Returns the git commit history. Falls back to parent git repository if project_dir is not a git repo."""
     p = Path(project_dir)
+    target_repo = p
+    scoped_path: str | None = None
+
     if not is_git_repo(p):
-        return []
+        parent = p.parent
+        if is_git_repo(parent):
+            target_repo = parent
+            scoped_path = p.name
+        else:
+            return []
 
     log_format = "%H%x1f%s%x1f%aI%x1f%an"
-    res = run_git(["log", f"-n{limit}", f"--pretty=format:{log_format}"], cwd=p, check=False)
+    cmd = ["log", f"-n{limit}", f"--pretty=format:{log_format}"]
+    if scoped_path:
+        cmd.extend(["--", scoped_path])
+
+    res = run_git(cmd, cwd=target_repo, check=False)
     if res.returncode != 0 or not res.stdout.strip():
         return []
 
@@ -161,20 +173,31 @@ def get_git_history(project_dir: str | Path, limit: int = 50) -> list[dict[str, 
 
 
 def git_restore(project_dir: str | Path, commit_hash: str) -> None:
-    """Restores the repository working tree to a specific commit hash."""
+    """Restores the repository working tree to a specific commit hash.
+
+    If project_dir is not its own git repo but its parent is, restores only that project's directory in the parent repo.
+    """
     if not commit_hash or not re.match(r"^[0-9a-fA-F]{4,40}$", commit_hash):
         raise ValueError(f"Invalid commit hash: '{commit_hash}'")
 
     p = Path(project_dir)
+    target_repo = p
+    scoped_path = "."
+
     if not is_git_repo(p):
-        raise FileNotFoundError(f"Project '{project_dir}' is not a git repository")
+        parent = p.parent
+        if is_git_repo(parent):
+            target_repo = parent
+            scoped_path = p.name
+        else:
+            raise FileNotFoundError(f"Project '{project_dir}' is not a git repository and has no parent git repository")
 
     # Commit any uncommitted changes first to avoid losing work
-    git_commit(p, f"jotter: save state before restore to {commit_hash}")
+    git_commit(target_repo, f"jotter: save state before restore to {commit_hash}")
 
     # Checkout files from commit
-    run_git(["checkout", commit_hash, "--", "."], cwd=p, check=True)
-    git_commit(p, f"jotter: Restored to {commit_hash}")
+    run_git(["checkout", commit_hash, "--", scoped_path], cwd=target_repo, check=True)
+    git_commit(target_repo, f"jotter: Restored to {commit_hash}")
 
 
 def restore_commit(data_dir: str, project_id: str | None, commit_hash: str) -> None:
