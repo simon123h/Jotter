@@ -19,6 +19,7 @@ import {
   FileText,
   Box,
   Timer,
+  Network,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { usePomodoroStore } from '@/stores/pomodoro';
@@ -219,6 +220,19 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         >
           <CheckCircle2 class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('views.review') || 'Review' }}</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'canvas', params: { projectId: activeProjectId }, query: $route.query }"
+          class="hidden lg:flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
+          :class="
+            isTabActive('canvas')
+              ? 'bg-theme-primary text-white shadow-none'
+              : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40'
+          "
+          :title="t('views.canvas') || 'Canvas (2D Board)'"
+        >
+          <Network class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">{{ t('views.canvas') || 'Canvas' }}</span>
         </router-link>
       </div>
 

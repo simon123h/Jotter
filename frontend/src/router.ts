@@ -12,6 +12,7 @@ const TimeView = () => import('@/components/views/TimeView.vue');
 const TagView = () => import('@/components/views/TagView.vue');
 const TriageView = () => import('@/components/views/TriageView.vue');
 const ReviewView = () => import('@/components/views/ReviewView.vue');
+const CanvasView = () => import('@/components/views/CanvasView.vue');
 const SettingsView = () => import('@/components/views/SettingsView.vue');
 const TaskDetailModal = () => import('@/components/modals/TaskDetailModal.vue');
 
@@ -138,6 +139,20 @@ const routes = [
             },
             meta: { backRoute: 'review' },
           },
+          {
+            path: 'canvas/:canvasId?',
+            name: 'canvas',
+            component: CanvasView,
+          },
+          {
+            path: 'canvas/:canvasId?/tasks/:taskId',
+            name: 'canvas-task',
+            components: {
+              default: CanvasView,
+              modal: TaskDetailModal,
+            },
+            meta: { backRoute: 'canvas' },
+          },
         ],
       },
     ],
@@ -157,7 +172,7 @@ router.afterEach((to) => {
   try {
     const uiStore = useUiStore();
     const currentMode = (to.meta.backRoute as string) || String(to.name || '');
-    if (to.params.projectId && ['board', 'list', 'matrix', 'time', 'tag', 'triage', 'review'].includes(currentMode)) {
+    if (to.params.projectId && ['board', 'list', 'matrix', 'time', 'tag', 'triage', 'review', 'canvas'].includes(currentMode)) {
       uiStore.setLastViewMode(currentMode);
     }
   } catch {

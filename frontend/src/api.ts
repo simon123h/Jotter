@@ -1,4 +1,15 @@
-import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock } from '@/types';
+import type {
+  Task,
+  Bucket,
+  Project,
+  TaskFilterParams,
+  AppSettings,
+  SystemInfo,
+  GitCommit,
+  Timeblock,
+  CanvasDocument,
+  CanvasMeta,
+} from '@/types';
 import * as demoApi from '@/api.demo';
 import { activeStorage, isNativeMobile } from '@/storage';
 import { isServerOnline } from '@/storage/connectionState';
@@ -284,4 +295,32 @@ export async function allocateTaskToTimeblock(timeblockId: string, taskId: strin
   const res = await activeStorage.allocateTaskToTimeblock(timeblockId, taskId, action);
   crossTabBus.broadcast({ type: 'timeblocks-changed' });
   return res;
+}
+
+// ==========================================
+// CANVAS API
+// ==========================================
+
+export async function getCanvases(projectId: string): Promise<CanvasMeta[]> {
+  if (IS_DEMO_MODE) return demoApi.getCanvases(projectId);
+  return activeStorage.getCanvases(projectId);
+}
+
+export async function getCanvas(projectId: string, canvasId: string): Promise<CanvasDocument> {
+  if (IS_DEMO_MODE) return demoApi.getCanvas(projectId, canvasId);
+  return activeStorage.getCanvas(projectId, canvasId);
+}
+
+export async function saveCanvas(projectId: string, canvasId: string, doc: CanvasDocument): Promise<CanvasDocument> {
+  let res: CanvasDocument;
+  if (IS_DEMO_MODE) res = await demoApi.saveCanvas(projectId, canvasId, doc);
+  else res = await activeStorage.saveCanvas(projectId, canvasId, doc);
+  crossTabBus.broadcast({ type: 'canvas-changed', projectId, canvasId });
+  return res;
+}
+
+export async function deleteCanvas(projectId: string, canvasId: string): Promise<void> {
+  if (IS_DEMO_MODE) await demoApi.deleteCanvas(projectId, canvasId);
+  else await activeStorage.deleteCanvas(projectId, canvasId);
+  crossTabBus.broadcast({ type: 'canvas-changed', projectId, canvasId });
 }

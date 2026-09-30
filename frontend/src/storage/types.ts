@@ -59,6 +59,12 @@ export interface StorageAdapter {
   deleteTimeblock(id: string): Promise<void>;
   allocateTaskToTimeblock(timeblockId: string, taskId: string, action?: 'add' | 'remove'): Promise<Timeblock>;
 
+  // Canvas
+  getCanvases(projectId: string): Promise<import('@/types').CanvasMeta[]>;
+  getCanvas(projectId: string, canvasId: string): Promise<import('@/types').CanvasDocument>;
+  saveCanvas(projectId: string, canvasId: string, doc: import('@/types').CanvasDocument): Promise<import('@/types').CanvasDocument>;
+  deleteCanvas(projectId: string, canvasId: string): Promise<void>;
+
   // System & Sync
   syncSystem(): Promise<{ status: string; synchronized_tasks: number }>;
   getSystemInfo(): Promise<SystemInfo>;

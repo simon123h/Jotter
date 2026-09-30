@@ -1,4 +1,4 @@
-import type { Task, Bucket, Project, TaskFilterParams, SystemInfo } from '@/types';
+import type { Task, Bucket, Project, TaskFilterParams, SystemInfo, CanvasDocument, CanvasMeta } from '@/types';
 
 // ==========================================
 // LOCAL STORAGE MOCK CLIENT (DEMO MODE)
@@ -596,4 +596,61 @@ export async function getSystemInfo(): Promise<SystemInfo> {
     version: '2.9.1 (demo)',
     data_dir: '/demo-local-storage',
   };
+}
+
+// ==========================================
+// DEMO CANVAS API
+// ==========================================
+
+const DEMO_CANVAS_PREFIX = 'jotter_demo_canvas_';
+
+export async function getCanvases(projectId: string): Promise<CanvasMeta[]> {
+  const key = `${DEMO_CANVAS_PREFIX}${projectId}_list`;
+  const data = localStorage.getItem(key);
+  if (!data) {
+    const defaultList: CanvasMeta[] = [{ id: 'main', title: 'main' }];
+    localStorage.setItem(key, JSON.stringify(defaultList));
+    return defaultList;
+  }
+  try {
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+export async function getCanvas(projectId: string, canvasId: string): Promise<CanvasDocument> {
+  const key = `${DEMO_CANVAS_PREFIX}${projectId}_doc_${canvasId}`;
+  const data = localStorage.getItem(key);
+  if (!data) {
+    return { nodes: [], edges: [] };
+  }
+  try {
+    return JSON.parse(data);
+  } catch {
+    return { nodes: [], edges: [] };
+  }
+}
+
+export async function saveCanvas(projectId: string, canvasId: string, doc: CanvasDocument): Promise<CanvasDocument> {
+  const key = `${DEMO_CANVAS_PREFIX}${projectId}_doc_${canvasId}`;
+  localStorage.setItem(key, JSON.stringify(doc));
+
+  const listKey = `${DEMO_CANVAS_PREFIX}${projectId}_list`;
+  const list = await getCanvases(projectId);
+  if (!list.some((c) => c.id === canvasId)) {
+    list.push({ id: canvasId, title: canvasId });
+    localStorage.setItem(listKey, JSON.stringify(list));
+  }
+  return doc;
+}
+
+export async function deleteCanvas(projectId: string, canvasId: string): Promise<void> {
+  const key = `${DEMO_CANVAS_PREFIX}${projectId}_doc_${canvasId}`;
+  localStorage.removeItem(key);
+
+  const listKey = `${DEMO_CANVAS_PREFIX}${projectId}_list`;
+  const list = await getCanvases(projectId);
+  const updated = list.filter((c) => c.id !== canvasId);
+  localStorage.setItem(listKey, JSON.stringify(updated));
 }
