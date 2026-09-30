@@ -73,6 +73,15 @@ def test_git_restore_commit(temp_dir):
 
 def test_git_sync_no_remote(temp_dir):
     setup_git_data_dir(temp_dir)
-    # git_sync should succeed without error when remote is None
+    # Write a file in the repo
+    file_path = Path(temp_dir) / "test.txt"
+    file_path.write_text("hello", encoding="utf-8")
+
+    # git_sync should commit changes locally and return None when remote is None
     res = git_sync(temp_dir, None)
     assert res is None
+
+    # Check commit history contains auto-sync
+    history = get_git_history(temp_dir)
+    assert len(history) == 1
+    assert "jotter: auto-sync" in history[0]["message"]

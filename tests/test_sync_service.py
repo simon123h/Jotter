@@ -288,3 +288,67 @@ def test_sync_removes_deleted_project_and_does_not_resurrect_default(temp_dir, t
     proj_ids_after = [p.id for p in projects_after]
     assert "personal" in proj_ids_after
     assert "default" not in proj_ids_after
+
+
+def test_full_sync_commits_local_projects_without_remote(temp_dir, test_env):
+    from jotter.features.sync.git_adapter import get_git_history, run_git
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+
+    proj_dir = Path(temp_dir) / "default"
+    proj_dir.mkdir(parents=True, exist_ok=True)
+    run_git(["init", "-b", "main"], cwd=proj_dir)
+    run_git(["config", "user.name", "Test"], cwd=proj_dir)
+    run_git(["config", "user.email", "test@example.com"], cwd=proj_dir)
+
+    task = task_svc.create_task("default", TaskCreate(title="Test Git Sync Task", bucket="todo"))
+    assert task.title == "Test Git Sync Task"
+
+    # Call full_sync
+    sync_svc.full_sync()
+
+    history = get_git_history(proj_dir)
+    assert len(history) >= 1
+    assert "jotter: auto-sync" in history[0]["message"]
+
+
+def test_full_sync_with_global_workspace_git(temp_dir, test_env):
+    from jotter.features.sync.git_adapter import get_git_history, run_git
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+
+    # Initialize workspace as git repo
+    root_dir = Path(temp_dir)
+    run_git(["init", "-b", "main"], cwd=root_dir)
+    run_git(["config", "user.name", "Test"], cwd=root_dir)
+    run_git(["config", "user.email", "test@example.com"], cwd=root_dir)
+
+    # Setup a local remote bare repository
+    bare_remote = root_dir.parent / "bare_workspace.git"
+    bare_remote.mkdir(parents=True, exist_ok=True)
+    run_git(["init", "--bare", "-b", "main"], cwd=bare_remote)
+
+    # Configure settings.json with gitRemoteUrl
+    settings_file = root_dir / "settings.json"
+    settings_file.write_text(json.dumps({"gitRemoteUrl": str(bare_remote)}), encoding="utf-8")
+
+    # Create a task
+    task = task_svc.create_task("default", TaskCreate(title="Global Sync Task", bucket="todo"))
+    assert task.title == "Global Sync Task"
+
+    # Call full_sync
+    sync_svc.full_sync()
+
+    # Verify global commit created and pushed
+    history = get_git_history(root_dir)
+    assert len(history) >= 1
+    assert "jotter: auto-sync" in history[0]["message"]
+
+    # Verify .gitignore was created
+    gitignore_file = root_dir / ".gitignore"
+    assert gitignore_file.is_file()
+    assert "tasks.db" in gitignore_file.read_text(encoding="utf-8")

@@ -91,10 +91,15 @@ def git_commit(project_dir: str | Path, message: str) -> bool:
 
 def git_sync(project_dir: str | Path, remote_url: str | None) -> dict[str, Any] | None:
     """Commits local changes and synchronizes with git remote if configured."""
+    p = Path(project_dir)
+
+    # If no remote URL is provided, commit changes locally if it is already a git repository
     if not remote_url:
+        if is_git_repo(p):
+            now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            git_commit(p, f"jotter: auto-sync {now_str}")
         return None
 
-    p = Path(project_dir)
     if not is_git_repo(p):
         init_git_repo(p)
 
