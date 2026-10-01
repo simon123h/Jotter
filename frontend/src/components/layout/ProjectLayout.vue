@@ -55,8 +55,8 @@ const projectId = computed(() => (route.params.projectId as string) || '');
 // Compute isGlobal from route meta
 const isGlobalView = computed(() => !!route.meta.isGlobal);
 
-// Filter state & logic
-const { filteredTasks, clearFilters } = useTaskFilters(tasks);
+// Filter state & logic (read-only query sync; MainLayout manages router query state)
+const { filteredTasks, clearFilters } = useTaskFilters(tasks, { syncRoute: false });
 
 const displayedBuckets = computed(() => {
   const list = [...buckets.value];

@@ -4,7 +4,8 @@ import type { Task, TaskFilterParams } from '@/types';
 import { parseDSL, stringifyDSL } from '@/utils/dsl';
 import { useProjectStore } from '@/stores/project';
 
-export function useTaskFilters(tasks: Ref<Task[]>) {
+export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolean } = {}) {
+  const syncRoute = options.syncRoute ?? true;
   const route = useRoute();
   const router = useRouter();
 
@@ -148,7 +149,7 @@ export function useTaskFilters(tasks: Ref<Task[]>) {
       if (newFilters.project) query.project = newFilters.project;
       else delete query.project;
 
-      if (route && JSON.stringify(route.query) !== JSON.stringify(query)) {
+      if (syncRoute && route && JSON.stringify(route.query) !== JSON.stringify(query)) {
         router.replace({ query });
       }
 
