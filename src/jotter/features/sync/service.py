@@ -97,7 +97,10 @@ class SyncApplicationService:
         # Remove projects from SQLite if their folders are no longer present on disk
         for ep in existing_db_projects:
             if ep.id not in synced_project_ids:
-                self.project_repo.delete(ep.id)
+                # Guard against race conditions: verify folder actually does not exist on disk
+                proj_folder = Path(self.data_dir) / ep.id
+                if not proj_folder.is_dir():
+                    self.project_repo.delete(ep.id)
 
         # 2. Check global doneCleanPeriod
         settings_file = Path(self.data_dir) / "settings.json"
@@ -125,6 +128,9 @@ class SyncApplicationService:
             known_buckets = {b.name: b for b in self.bucket_repo.get_all(p_id)}
 
             for file_path in task_files:
+                # Always track the disk task ID from the filename so transient read errors
+                # (e.g. temporary Windows file locks) do not cause SQLite to purge the task
+                disk_task_ids.add(file_path.stem)
                 try:
                     task = self.disk_task_repo.read_task_file(file_path, default_project_id=p_id)
 

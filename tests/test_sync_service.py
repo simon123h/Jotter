@@ -88,6 +88,59 @@ def test_sync_does_not_delete_task_created_concurrently_during_sync(temp_dir, te
     assert any(t.id == initial_task.id for t in tasks_after)
 
 
+def test_sync_does_not_delete_project_created_concurrently(temp_dir, test_env, monkeypatch):
+    """Simulates a project created concurrently after discover_disk_projects snapshot."""
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+
+    orig_discover = sync_svc.project_repo.discover_disk_projects
+
+    def mock_discover():
+        disk_projects = orig_discover()
+        # Concurrently create a project on disk and in DB
+        proj_svc.create_project(ProjectCreate(title="Concurrent Project", id="concurrent-proj"))
+        return disk_projects
+
+    monkeypatch.setattr(sync_svc.project_repo, "discover_disk_projects", mock_discover)
+
+    # Run sync
+    sync_svc.sync_db_only()
+
+    # The concurrently created project must NOT be deleted
+    projects = proj_svc.get_all_projects()
+    assert any(p.id == "concurrent-proj" for p in projects)
+
+
+def test_sync_retains_tasks_on_transient_read_error(temp_dir, test_env, monkeypatch):
+    """Verifies that if a task file fails to be read during a single sync pass (e.g. transient file lock),
+
+    it is NOT purged from the SQLite index.
+    """
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+
+    task = task_svc.create_task("default", TaskCreate(title="Important Locked Task", bucket="todo"))
+
+    # Mock read_task_file to simulate a transient OS permission / sharing error on Windows
+    orig_read = sync_svc.disk_task_repo.read_task_file
+
+    def mock_read(file_path, default_project_id=None):
+        if str(task.id) in str(file_path):
+            raise OSError("WinError 32: The process cannot access the file because it is being used by another process")
+        return orig_read(file_path, default_project_id)
+
+    monkeypatch.setattr(sync_svc.disk_task_repo, "read_task_file", mock_read)
+
+    # Run sync pass
+    sync_svc.sync_db_only()
+
+    # Task should still be preserved in SQLite index
+    tasks = task_svc.get_tasks("default")
+    assert any(t.id == task.id for t in tasks)
+
+
 def test_sync_handles_legacy_dates_and_folder_project_override(temp_dir, test_env):
     conn = get_db(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
