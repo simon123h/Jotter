@@ -162,7 +162,10 @@ class SyncApplicationService:
             sqlite_tasks = self.sqlite_task_repo.find_tasks(project_id=p_id)
             for st in sqlite_tasks:
                 if str(st.id) not in disk_task_ids:
-                    self.sqlite_task_repo.delete_task(str(st.id))
+                    # Guard against race conditions: verify the file actually doesn't exist on disk
+                    # (a task could have been created concurrently while the disk snapshot was being processed)
+                    if not self.disk_task_repo.exists(p_id, str(st.id)):
+                        self.sqlite_task_repo.delete_task(str(st.id))
 
         return total_synced
 

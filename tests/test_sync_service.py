@@ -50,6 +50,44 @@ def test_sync_removes_deleted_markdown_files_from_index(temp_dir, test_env):
     assert not any(t.id == task.id for t in tasks_after)
 
 
+def test_sync_does_not_delete_task_created_concurrently_during_sync(temp_dir, test_env, monkeypatch):
+    """Simulates a race condition where a task is created after get_all_task_files snapshot
+
+    was taken, but before the SQLite cleanup step executes.
+    """
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+
+    # Pre-populate with an existing task
+    initial_task = task_svc.create_task("default", TaskCreate(title="Initial Task", bucket="todo"))
+
+    orig_get_all_files = sync_svc.disk_task_repo.get_all_task_files
+
+    # When get_all_task_files is called, intercept it and simulate a concurrent task creation
+    # that happens AFTER get_all_task_files returns its snapshot.
+    created_concurrent_task = []
+
+    def mock_get_all_files(project_id: str):
+        files = orig_get_all_files(project_id)
+        # Concurrent task creation: writes disk file and inserts into SQLite
+        new_task = task_svc.create_task("default", TaskCreate(title="Concurrent Task", bucket="todo"))
+        created_concurrent_task.append(new_task)
+        # Return snapshot from BEFORE new_task existed
+        return files
+
+    monkeypatch.setattr(sync_svc.disk_task_repo, "get_all_task_files", mock_get_all_files)
+
+    # Run sync
+    sync_svc.sync_db_only()
+
+    # The concurrently created task must NOT have been deleted from SQLite!
+    tasks_after = task_svc.get_tasks("default")
+    concurrent_id = created_concurrent_task[0].id
+    assert any(t.id == concurrent_id for t in tasks_after), "Concurrently created task was mistakenly deleted by sync!"
+    assert any(t.id == initial_task.id for t in tasks_after)
+
+
 def test_sync_handles_legacy_dates_and_folder_project_override(temp_dir, test_env):
     conn = get_db(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
