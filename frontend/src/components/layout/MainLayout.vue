@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useDebounceFn } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
@@ -218,12 +219,16 @@ onMounted(async () => {
     }
   });
 
-  // Revalidate immediately upon returning/focusing tab if it was frozen or inactive
-  const handleWindowFocus = () => {
+  // Revalidate upon returning/focusing tab if it was frozen or inactive, debounced against event bursts
+  const debouncedRevalidate = useDebounceFn(() => {
     if (document.visibilityState === 'visible') {
       projectStore.invalidate().catch(() => {});
       timeblockStore.fetchTimeblocks().catch(() => {});
     }
+  }, 150);
+
+  const handleWindowFocus = () => {
+    debouncedRevalidate();
   };
   window.addEventListener('visibilitychange', handleWindowFocus);
   window.addEventListener('focus', handleWindowFocus);

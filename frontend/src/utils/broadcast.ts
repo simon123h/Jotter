@@ -9,23 +9,30 @@ export type BroadcastEvent =
   | { type: 'projects-changed' }
   | { type: 'timeblocks-changed' };
 
+interface InternalBroadcastEnvelope {
+  senderId: string;
+  payload: BroadcastEvent;
+}
+
 class CrossTabBus {
   private channel: BroadcastChannel | null = null;
   private listeners: Set<(event: BroadcastEvent) => void> = new Set();
+  private tabId: string = Math.random().toString(36).substring(2) + Date.now().toString(36);
 
   constructor() {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {
         this.channel = new BroadcastChannel('jotter-cross-tab-sync');
-        this.channel.onmessage = (msg: MessageEvent<BroadcastEvent>) => {
+        this.channel.onmessage = (msg: MessageEvent<InternalBroadcastEnvelope | BroadcastEvent>) => {
           if (msg && msg.data) {
-            this.listeners.forEach((listener) => {
-              try {
-                listener(msg.data);
-              } catch (err) {
-                console.error('Error in cross-tab sync listener:', err);
-              }
-            });
+            // Filter out self-echo if senderId matches this tab
+            if ('senderId' in msg.data) {
+              if (msg.data.senderId === this.tabId) return;
+              const payload = msg.data.payload;
+              this.notifyListeners(payload);
+            } else {
+              this.notifyListeners(msg.data as BroadcastEvent);
+            }
           }
         };
       } catch (err) {
@@ -34,10 +41,24 @@ class CrossTabBus {
     }
   }
 
+  private notifyListeners(event: BroadcastEvent): void {
+    this.listeners.forEach((listener) => {
+      try {
+        listener(event);
+      } catch (err) {
+        console.error('Error in cross-tab sync listener:', err);
+      }
+    });
+  }
+
   public broadcast(event: BroadcastEvent): void {
     if (!this.channel) return;
     try {
-      this.channel.postMessage(event);
+      const envelope: InternalBroadcastEnvelope = {
+        senderId: this.tabId,
+        payload: event,
+      };
+      this.channel.postMessage(envelope);
     } catch (err) {
       console.warn('Failed to broadcast cross-tab event:', err);
     }
