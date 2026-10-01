@@ -18,6 +18,7 @@ export const useProjectStore = defineStore('project', () => {
 
   const currentQuery = ref<TaskQuery | null>(null);
   const cachedQueryKey = ref<string | null>(null);
+  let currentFetchId = 0;
 
   const fetchProjects = async () => {
     try {
@@ -119,27 +120,39 @@ export const useProjectStore = defineStore('project', () => {
     cachedQueryKey.value = queryKey;
 
     const resolvedExclude = resolveExcludeBuckets(query);
+    const fetchId = ++currentFetchId;
 
     loading.value = true;
     try {
+      let result: Task[] = [];
       if (query.projectId === 'all' || query.isGlobal) {
-        tasks.value = await getAllTasks({
+        result = await getAllTasks({
           exclude_buckets: resolvedExclude || undefined,
         });
       } else {
         const projectId = query.projectId || '';
         if (!projectId || projectId === '') {
-          tasks.value = [];
+          if (fetchId === currentFetchId) {
+            tasks.value = [];
+            loading.value = false;
+          }
           return;
         }
-        tasks.value = await getTasks(projectId, {
+        result = await getTasks(projectId, {
           exclude_buckets: resolvedExclude || undefined,
         });
       }
+      if (fetchId === currentFetchId) {
+        tasks.value = result;
+      }
     } catch (err: any) {
-      error.value = err.message || 'Failed to fetch tasks';
+      if (fetchId === currentFetchId) {
+        error.value = err.message || 'Failed to fetch tasks';
+      }
     } finally {
-      loading.value = false;
+      if (fetchId === currentFetchId) {
+        loading.value = false;
+      }
     }
   };
 
