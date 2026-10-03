@@ -28,6 +28,10 @@ import { useProjectStore } from '@/stores/project';
 import { useSelectionStore } from '@/stores/selection';
 import type { CanvasEdge, Task } from '@/types';
 
+const props = defineProps<{
+  tasks?: Task[];
+}>();
+
 const route = useRoute();
 const canvasStore = useCanvasStore();
 const projectStore = useProjectStore();
@@ -278,7 +282,7 @@ const onDrop = (event: DragEvent) => {
 
       <!-- Collapsible Unplaced Tasks Sidebar Drawer -->
       <transition name="slide-drawer">
-        <CanvasSidebar v-if="canvasStore.isDrawerOpen" />
+        <CanvasSidebar v-if="canvasStore.isDrawerOpen" :filtered-tasks="props.tasks" />
       </transition>
     </div>
   </div>

@@ -1,42 +1,36 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { X, Search, CheckCircle2 } from '@lucide/vue';
+import { X, CheckCircle2 } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useCanvasStore } from '@/stores/canvas';
 import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
 import TaskCard from '@/components/ui/TaskCard.vue';
 
+const props = defineProps<{
+  filteredTasks?: Task[];
+}>();
+
 const { t } = useI18n();
 const canvasStore = useCanvasStore();
 const projectStore = useProjectStore();
 
-const searchQuery = ref('');
 const activeBucket = ref<string>('all');
 
-const projectTasks = computed(() => {
-  return projectStore.tasks;
+const sourceTasks = computed(() => {
+  return props.filteredTasks || projectStore.tasks;
 });
 
-// Tasks that are not yet placed on this canvas
+// Tasks that are not yet placed on this canvas, taking navbar filters into account
 const unplacedTasks = computed(() => {
-  return projectTasks.value.filter((task) => !canvasStore.isTaskPlaced(task.id));
+  return sourceTasks.value.filter((task) => !canvasStore.isTaskPlaced(task.id));
 });
 
-// Filtered tasks by search & bucket
+// Filtered tasks by active bucket
 const filteredUnplacedTasks = computed(() => {
   let list = unplacedTasks.value;
   if (activeBucket.value !== 'all') {
     list = list.filter((t) => t.bucket === activeBucket.value);
-  }
-  if (searchQuery.value.trim()) {
-    const q = searchQuery.value.toLowerCase().trim();
-    list = list.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        (t.body && t.body.toLowerCase().includes(q)) ||
-        (t.tags && t.tags.some((tag) => tag.toLowerCase().includes(q)))
-    );
   }
   return list;
 });
@@ -73,20 +67,9 @@ const onDragStart = (event: DragEvent, task: Task) => {
     </div>
 
     <!-- Filter Bar -->
-    <div class="p-3 border-b border-theme-border space-y-2">
-      <!-- Search Input -->
-      <div class="relative">
-        <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-text-muted" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          :placeholder="t('searchPlaceholder') || 'Search tasks...'"
-          class="w-full pl-8 pr-3 py-1.5 text-xs bg-theme-column/40 border border-theme-border rounded text-theme-text-main placeholder-theme-text-muted/60 focus:outline-none focus:ring-1 focus:ring-theme-primary"
-        />
-      </div>
-
+    <div class="px-3 py-2 border-b border-theme-border">
       <!-- Bucket filter chips -->
-      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar">
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-[11px] no-scrollbar">
         <button
           @click="activeBucket = 'all'"
           class="px-2 py-0.5 rounded cursor-pointer transition-colors shrink-0"
