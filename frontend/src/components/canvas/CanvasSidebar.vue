@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { X, Search, CheckCircle2, Plus } from '@lucide/vue';
+import { X, Search, CheckCircle2 } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useCanvasStore } from '@/stores/canvas';
 import { useProjectStore } from '@/stores/project';
@@ -46,12 +46,6 @@ const onDragStart = (event: DragEvent, task: Task) => {
     event.dataTransfer.setData('application/jotter-task', JSON.stringify(task));
     event.dataTransfer.effectAllowed = 'move';
   }
-};
-
-const quickAddTask = (task: Task) => {
-  // Place task near center/offset
-  const offset = canvasStore.nodes.length * 20;
-  canvasStore.addFileNode(task, 100 + offset, 100 + offset);
 };
 </script>
 
@@ -139,15 +133,6 @@ const quickAddTask = (task: Task) => {
         @dragstart="onDragStart($event, task)"
         class="relative group rounded-md border border-theme-border bg-theme-card hover:border-theme-primary/60 transition-all cursor-grab active:cursor-grabbing p-1"
       >
-        <div class="absolute right-2 top-2 hidden group-hover:flex items-center gap-1 z-10">
-          <button
-            @click.stop="quickAddTask(task)"
-            class="p-1 rounded bg-theme-column border border-theme-border text-theme-text-muted hover:text-theme-primary transition-colors cursor-pointer text-xs"
-            title="Place on board"
-          >
-            <Plus class="w-3.5 h-3.5" />
-          </button>
-        </div>
         <TaskCard :task="task" :show-tags="true" :show-done-button="false" :show-footer="false" :allow-expand="false" :compact="true" />
       </div>
     </div>
