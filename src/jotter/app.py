@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from jotter.config import UserConfig, load_config
 from jotter.features.buckets import router as buckets_router
+from jotter.features.canvas.router import router as canvas_router
 from jotter.features.projects import router as projects_router
 from jotter.features.settings import router as settings_router
 from jotter.features.sync import SyncApplicationService
@@ -71,6 +72,7 @@ def create_app(config: UserConfig | None = None, version: str = app_version) -> 
     app.include_router(settings_router)
     app.include_router(system_router)
     app.include_router(timeblock_router)
+    app.include_router(canvas_router)
 
     # Locate static frontend distribution (PyInstaller MEIPASS, bundled package dist, or local dev frontend/dist)
     meipass = getattr(sys, "_MEIPASS", None)

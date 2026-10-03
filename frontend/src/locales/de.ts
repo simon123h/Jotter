@@ -324,6 +324,12 @@ export const de = {
     documentation: 'Dokumentation',
     triage: 'Triage',
     review: 'Review',
+    canvas: 'Canvas',
+  },
+  canvas: {
+    unplacedTasks: 'Nicht platzierte Aufgaben',
+    allTasksPlaced: 'Alle Aufgaben wurden bereits auf diesem Canvas platziert!',
+    saveError: 'Fehler beim Speichern des Canvas-Dokuments',
   },
   timeblock: {
     sidebarTitle: 'Time Blocking',

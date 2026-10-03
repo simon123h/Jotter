@@ -114,3 +114,54 @@ export interface Timeblock {
   tasks?: Task[];
   recurrence?: TimeblockRecurrence | null;
 }
+
+// ==========================================
+// JSON CANVAS TYPES (Obsidian Canvas Spec)
+// ==========================================
+
+export type CanvasNodeType = 'text' | 'file' | 'link' | 'group';
+export type CanvasSide = 'top' | 'right' | 'bottom' | 'left';
+export type CanvasEnd = 'none' | 'arrow';
+
+export interface CanvasNode {
+  id: string;
+  type: CanvasNodeType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color?: string | null;
+  text?: string | null;
+  file?: string | null;
+  url?: string | null;
+  label?: string | null;
+  background?: string | null;
+  backgroundStyle?: string | null;
+  [key: string]: any;
+}
+
+export interface CanvasEdge {
+  id: string;
+  fromNode: string;
+  fromSide?: CanvasSide;
+  fromEnd?: CanvasEnd;
+  toNode: string;
+  toSide?: CanvasSide;
+  toEnd?: CanvasEnd;
+  color?: string | null;
+  label?: string | null;
+  [key: string]: any;
+}
+
+export interface CanvasDocument {
+  nodes: CanvasNode[];
+  edges: CanvasEdge[];
+}
+
+export interface CanvasMeta {
+  id: string;
+  title: string;
+  filename?: string;
+  created_at?: string;
+  updated_at?: string;
+}

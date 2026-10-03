@@ -322,6 +322,12 @@ export const en = {
     documentation: 'Documentation',
     triage: 'Triage',
     review: 'Review',
+    canvas: 'Canvas',
+  },
+  canvas: {
+    unplacedTasks: 'Unplaced Tasks',
+    allTasksPlaced: 'All tasks have been placed on this canvas!',
+    saveError: 'Failed to save canvas document',
   },
   timeblock: {
     sidebarTitle: 'Time Blocking',

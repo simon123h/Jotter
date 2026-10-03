@@ -7,7 +7,8 @@ export type BroadcastEvent =
   | { type: 'tasks-changed'; projectId?: string }
   | { type: 'buckets-changed'; projectId?: string }
   | { type: 'projects-changed' }
-  | { type: 'timeblocks-changed' };
+  | { type: 'timeblocks-changed' }
+  | { type: 'canvas-changed'; projectId?: string; canvasId?: string };
 
 interface InternalBroadcastEnvelope {
   senderId: string;

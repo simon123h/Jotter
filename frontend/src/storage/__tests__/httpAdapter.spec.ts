@@ -100,5 +100,28 @@ describe('HttpStorageAdapter', () => {
       const syncRes = await adapter.syncSystem();
       expect(syncRes.synchronized_tasks).toBe(5);
     });
+
+    it('manages canvas files (listing, getting, saving, and deleting)', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => [{ id: 'sprint-1', title: 'Sprint 1', filename: 'sprint-1.canvas' }],
+      });
+      const canvases = await adapter.getCanvases('proj-1');
+      expect(canvases).toHaveLength(1);
+      expect(canvases[0].id).toBe('sprint-1');
+
+      const mockDoc = { nodes: [], edges: [] };
+      fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => mockDoc });
+      const canvas = await adapter.getCanvas('proj-1', 'sprint-1');
+      expect(canvas).toEqual(mockDoc);
+
+      fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => mockDoc });
+      const saved = await adapter.saveCanvas('proj-1', 'sprint-1', mockDoc);
+      expect(saved).toEqual(mockDoc);
+
+      fetchMock.mockResolvedValueOnce({ ok: true, status: 204, json: async () => ({}) });
+      await expect(adapter.deleteCanvas('proj-1', 'sprint-1')).resolves.toBeUndefined();
+    });
   });
 });

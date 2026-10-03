@@ -2,7 +2,18 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import type { StorageAdapter } from './types';
-import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock } from '@/types';
+import type {
+  Task,
+  Bucket,
+  Project,
+  TaskFilterParams,
+  AppSettings,
+  SystemInfo,
+  GitCommit,
+  Timeblock,
+  CanvasDocument,
+  CanvasMeta,
+} from '@/types';
 import { db } from './dexieDb';
 import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectManifest, DEFAULT_MOBILE_BUCKETS } from './markdownParser';
 import { StoragePermission } from './storagePermission';
@@ -564,6 +575,26 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
       }
     }
     throw new Error('Timeblock not found');
+  }
+
+  // ==========================================
+  // CANVAS API (Not supported on mobile / fallback)
+  // ==========================================
+
+  async getCanvases(_projectId: string): Promise<CanvasMeta[]> {
+    return [];
+  }
+
+  async getCanvas(_projectId: string, _canvasId: string): Promise<CanvasDocument> {
+    return { nodes: [], edges: [] };
+  }
+
+  async saveCanvas(_projectId: string, _canvasId: string, doc: CanvasDocument): Promise<CanvasDocument> {
+    return doc;
+  }
+
+  async deleteCanvas(_projectId: string, _canvasId: string): Promise<void> {
+    // No-op on mobile
   }
 
   // ==========================================

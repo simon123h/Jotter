@@ -1,5 +1,16 @@
 import type { StorageAdapter } from './types';
-import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock } from '@/types';
+import type {
+  Task,
+  Bucket,
+  Project,
+  TaskFilterParams,
+  AppSettings,
+  SystemInfo,
+  GitCommit,
+  Timeblock,
+  CanvasDocument,
+  CanvasMeta,
+} from '@/types';
 import { isServerOnline } from './connectionState';
 
 const API_BASE = '/api';
@@ -288,6 +299,39 @@ export class HttpStorageAdapter implements StorageAdapter {
     });
     if (!res.ok) await this.handleResponseError(res, 'Failed to allocate task');
     return res.json();
+  }
+
+  // ==========================================
+  // CANVAS API
+  // ==========================================
+
+  async getCanvases(projectId: string): Promise<CanvasMeta[]> {
+    const res = await this.customFetch(`${API_BASE}/projects/${projectId}/canvas`);
+    if (!res.ok) await this.handleResponseError(res, 'Failed to fetch canvases');
+    return res.json();
+  }
+
+  async getCanvas(projectId: string, canvasId: string): Promise<CanvasDocument> {
+    const res = await this.customFetch(`${API_BASE}/projects/${projectId}/canvas/${canvasId}`);
+    if (!res.ok) await this.handleResponseError(res, `Failed to fetch canvas ${canvasId}`);
+    return res.json();
+  }
+
+  async saveCanvas(projectId: string, canvasId: string, doc: CanvasDocument): Promise<CanvasDocument> {
+    const res = await this.customFetch(`${API_BASE}/projects/${projectId}/canvas/${canvasId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(doc),
+    });
+    if (!res.ok) await this.handleResponseError(res, `Failed to save canvas ${canvasId}`);
+    return res.json();
+  }
+
+  async deleteCanvas(projectId: string, canvasId: string): Promise<void> {
+    const res = await this.customFetch(`${API_BASE}/projects/${projectId}/canvas/${canvasId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) await this.handleResponseError(res, `Failed to delete canvas ${canvasId}`);
   }
 
   async syncSystem(): Promise<{ status: string; synchronized_tasks: number }> {
