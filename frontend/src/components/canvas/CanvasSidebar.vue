@@ -131,7 +131,7 @@ const onDragStart = (event: DragEvent, task: Task) => {
         :key="task.id"
         draggable="true"
         @dragstart="onDragStart($event, task)"
-        class="relative group rounded-md border border-theme-border bg-theme-card hover:border-theme-primary/60 transition-all cursor-grab active:cursor-grabbing p-1"
+        class="cursor-grab active:cursor-grabbing"
       >
         <TaskCard :task="task" :show-tags="true" :show-done-button="false" :show-footer="false" :allow-expand="false" :compact="true" />
       </div>

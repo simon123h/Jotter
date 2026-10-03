@@ -62,12 +62,8 @@ const removeNode = () => {
 
 <template>
   <div
-    class="canvas-task-node relative group rounded-lg shadow-sm transition-shadow border-2"
-    :class="[
-      selected || isTaskSelected ? 'border-theme-primary ring-2 ring-theme-primary/20' : 'border-theme-border/60 hover:border-theme-border',
-      data.color ? 'custom-colored' : 'bg-theme-card',
-    ]"
-    :style="data.color ? { borderColor: data.color } : {}"
+    class="canvas-task-node relative group rounded-lg transition-shadow w-[280px]"
+    :class="[selected || isTaskSelected ? 'ring-2 ring-theme-primary ring-offset-2 ring-offset-theme-base shadow-md' : '']"
   >
     <!-- Vue Flow Connection Handles -->
     <Handle id="top" type="source" :position="Position.Top" class="vue-flow-handle" />
@@ -96,23 +92,25 @@ const removeNode = () => {
     </div>
 
     <!-- Inner Task Card Rendering -->
-    <div class="p-1 w-[280px]">
-      <template v-if="task">
-        <TaskCard
-          :task="task"
-          :show-tags="true"
-          :show-done-button="true"
-          :show-footer="true"
-          :allow-expand="false"
-          :compact="false"
-          @click="openTaskModal"
-          @toggle-select="handleToggleSelect"
-        />
-      </template>
-      <div v-else class="p-4 text-xs text-theme-text-muted italic flex items-center justify-between">
-        <span>File: {{ data.file || 'Unknown' }}</span>
-        <button @click.stop="removeNode" class="text-rose-500 hover:underline">Remove</button>
-      </div>
+    <template v-if="task">
+      <TaskCard
+        :task="task"
+        :show-tags="true"
+        :show-done-button="true"
+        :show-footer="true"
+        :allow-expand="false"
+        :compact="false"
+        :style="data.color ? { borderColor: data.color } : {}"
+        @click="openTaskModal"
+        @toggle-select="handleToggleSelect"
+      />
+    </template>
+    <div
+      v-else
+      class="p-4 rounded-lg border border-theme-border bg-theme-card text-xs text-theme-text-muted italic flex items-center justify-between"
+    >
+      <span>File: {{ data.file || 'Unknown' }}</span>
+      <button @click.stop="removeNode" class="text-rose-500 hover:underline">Remove</button>
     </div>
   </div>
 </template>
