@@ -66,7 +66,7 @@ const flowNodes = computed(() => {
     },
     style: {
       width: node.width ? `${node.width}px` : undefined,
-      height: node.height ? `${node.height}px` : undefined,
+      height: node.type !== 'file' && node.height ? `${node.height}px` : undefined,
       zIndex: node.type === 'group' ? -1 : 1,
     },
   }));
