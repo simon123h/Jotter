@@ -53,17 +53,10 @@ const removeNode = () => {
     @dblclick="startEditing"
   >
     <!-- Vue Flow Connection Handles -->
-    <Handle id="top" type="source" :position="Position.Top" class="vue-flow-handle" />
-    <Handle id="top" type="target" :position="Position.Top" class="vue-flow-handle" />
-
-    <Handle id="right" type="source" :position="Position.Right" class="vue-flow-handle" />
-    <Handle id="right" type="target" :position="Position.Right" class="vue-flow-handle" />
-
-    <Handle id="bottom" type="source" :position="Position.Bottom" class="vue-flow-handle" />
-    <Handle id="bottom" type="target" :position="Position.Bottom" class="vue-flow-handle" />
-
-    <Handle id="left" type="source" :position="Position.Left" class="vue-flow-handle" />
-    <Handle id="left" type="target" :position="Position.Left" class="vue-flow-handle" />
+    <Handle id="top" type="source" :position="Position.Top" class="vue-flow-handle" @mousedown.stop @pointerdown.stop />
+    <Handle id="right" type="source" :position="Position.Right" class="vue-flow-handle" @mousedown.stop @pointerdown.stop />
+    <Handle id="bottom" type="source" :position="Position.Bottom" class="vue-flow-handle" @mousedown.stop @pointerdown.stop />
+    <Handle id="left" type="source" :position="Position.Left" class="vue-flow-handle" @mousedown.stop @pointerdown.stop />
 
     <!-- Node Toolbar Controls -->
     <div

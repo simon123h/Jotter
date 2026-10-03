@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import {
   VueFlow,
@@ -40,7 +40,17 @@ const selectionStore = useSelectionStore();
 const projectId = computed(() => (route.params.projectId as string) || '');
 const canvasId = computed(() => (route.params.canvasId as string) || 'main');
 
-const { project, onConnect, getSelectedNodes, removeSelectedNodes } = useVueFlow();
+const { project, onConnect, onConnectStart, onConnectEnd, getSelectedNodes, removeSelectedNodes } = useVueFlow();
+
+const isConnecting = ref(false);
+
+onConnectStart(() => {
+  isConnecting.value = true;
+});
+
+onConnectEnd(() => {
+  isConnecting.value = false;
+});
 
 // Convert CanvasNode to Vue Flow Node format
 const flowNodes = computed(() => {
@@ -252,7 +262,7 @@ const onDrop = (event: DragEvent) => {
           :max-zoom="2.5"
           :fit-view-on-init="false"
           :pan-on-drag="canvasStore.interactionMode === 'pan' ? true : [1, 2]"
-          :selection-key-code="canvasStore.interactionMode === 'select' ? true : false"
+          :selection-key-code="canvasStore.interactionMode === 'select' && !isConnecting ? true : false"
           :pan-activation-key-code="'Space'"
           :selection-mode="SelectionMode.Partial"
           @node-drag-stop="onNodeDragStop"

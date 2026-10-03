@@ -66,17 +66,10 @@ const removeNode = () => {
     :class="[selected || isTaskSelected ? 'ring-2 ring-theme-primary ring-offset-2 ring-offset-theme-base shadow-md' : '']"
   >
     <!-- Vue Flow Connection Handles -->
-    <Handle id="top" type="source" :position="Position.Top" class="vue-flow-handle" />
-    <Handle id="top" type="target" :position="Position.Top" class="vue-flow-handle" />
-
-    <Handle id="right" type="source" :position="Position.Right" class="vue-flow-handle" />
-    <Handle id="right" type="target" :position="Position.Right" class="vue-flow-handle" />
-
-    <Handle id="bottom" type="source" :position="Position.Bottom" class="vue-flow-handle" />
-    <Handle id="bottom" type="target" :position="Position.Bottom" class="vue-flow-handle" />
-
-    <Handle id="left" type="source" :position="Position.Left" class="vue-flow-handle" />
-    <Handle id="left" type="target" :position="Position.Left" class="vue-flow-handle" />
+    <Handle id="top" type="source" :position="Position.Top" class="vue-flow-handle" @mousedown.stop @pointerdown.stop />
+    <Handle id="right" type="source" :position="Position.Right" class="vue-flow-handle" @mousedown.stop @pointerdown.stop />
+    <Handle id="bottom" type="source" :position="Position.Bottom" class="vue-flow-handle" @mousedown.stop @pointerdown.stop />
+    <Handle id="left" type="source" :position="Position.Left" class="vue-flow-handle" @mousedown.stop @pointerdown.stop />
 
     <!-- Node Toolbar Controls (Visible on hover or selected) -->
     <div
