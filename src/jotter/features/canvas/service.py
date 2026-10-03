@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from jotter.features.canvas.schemas import CanvasDocument, CanvasMeta
-from jotter.shared.exceptions import EntityNotFoundError
+from jotter.shared.exceptions import EntityNotFoundError, ValidationError
 from jotter.shared.fs import atomic_write
 from jotter.shared.slug import slugify
 
@@ -61,15 +61,15 @@ class CanvasApplicationService:
                 return CanvasDocument(nodes=[], edges=[])
             raise EntityNotFoundError(f"Canvas '{canvas_id}' not found in project '{project_id}'")
 
+        content = file_path.read_text(encoding="utf-8").strip()
+        if not content:
+            return CanvasDocument(nodes=[], edges=[])
         try:
-            content = file_path.read_text(encoding="utf-8").strip()
-            if not content:
-                return CanvasDocument(nodes=[], edges=[])
             data = json.loads(content)
             return CanvasDocument(**data)
         except Exception as e:
             logger.warning("Failed to parse canvas file %s: %s", file_path, e)
-            return CanvasDocument(nodes=[], edges=[])
+            raise ValidationError(f"Invalid canvas file '{filename}': {e}") from e
 
     def save_canvas(self, project_id: str, canvas_id: str, doc: CanvasDocument) -> CanvasDocument:
         proj_dir = self._get_project_dir(project_id)

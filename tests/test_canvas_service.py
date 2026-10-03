@@ -82,3 +82,32 @@ def test_canvas_crud_workflow(temp_dir, test_env):
     # 6. Delete canvas
     canvas_svc.delete_canvas("roadmap", "sprint-overview")
     assert len(canvas_svc.list_canvases("roadmap")) == 0
+
+
+def test_canvas_error_and_fallback_handling(temp_dir, test_env):
+    import pytest
+
+    from jotter.shared.exceptions import EntityNotFoundError, ValidationError
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
+    canvas_svc = CanvasApplicationService(temp_dir)
+
+    proj_svc.create_project(ProjectCreate(title="Roadmap", id="roadmap"))
+
+    # Default/main canvas when not created returns empty doc
+    default_doc = canvas_svc.get_canvas("roadmap", "main")
+    assert len(default_doc.nodes) == 0
+    assert len(default_doc.edges) == 0
+
+    # Non-existent non-default canvas raises EntityNotFoundError
+    with pytest.raises(EntityNotFoundError):
+        canvas_svc.get_canvas("roadmap", "nonexistent")
+
+    # Malformed canvas file on disk raises ValidationError rather than silently erasing
+    proj_dir = Path(temp_dir) / "roadmap"
+    corrupt_file = proj_dir / "corrupted.canvas"
+    corrupt_file.write_text("{ this is invalid json [", encoding="utf-8")
+
+    with pytest.raises(ValidationError):
+        canvas_svc.get_canvas("roadmap", "corrupted")
