@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Handle, Position } from '@vue-flow/core';
-import { Trash2, ExternalLink } from '@lucide/vue';
+import { Trash2 } from '@lucide/vue';
 import { useRouter, useRoute } from 'vue-router';
 import type { Task } from '@/types';
 import TaskCard from '@/components/ui/TaskCard.vue';
@@ -76,13 +76,6 @@ const removeNode = () => {
     <div
       class="absolute -top-3.5 right-2 hidden group-hover:flex items-center gap-1 bg-theme-column/90 border border-theme-border shadow-sm rounded-md px-1.5 py-0.5 z-10 text-xs backdrop-blur"
     >
-      <button
-        @click.stop="openTaskModal"
-        title="Open details"
-        class="text-theme-text-muted hover:text-theme-primary transition-colors cursor-pointer p-0.5"
-      >
-        <ExternalLink class="w-3.5 h-3.5" />
-      </button>
       <button
         @click.stop="removeNode"
         title="Remove from canvas"
