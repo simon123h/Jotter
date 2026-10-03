@@ -60,7 +60,7 @@ const onResize = (event: any) => {
 
 <template>
   <div
-    class="canvas-text-node relative group rounded-lg shadow-sm transition-shadow border-2 bg-theme-card p-3 w-full h-full min-w-[200px] min-h-[120px] flex flex-col"
+    class="canvas-text-node relative group rounded-lg shadow-sm transition-shadow border-2 bg-theme-card p-3 w-full h-full min-w-[60px] min-h-[40px] flex flex-col"
     :class="[
       selected ? 'border-theme-primary ring-2 ring-theme-primary/20' : 'border-theme-border/60 hover:border-theme-border',
       data.color ? 'custom-colored' : '',
@@ -69,8 +69,8 @@ const onResize = (event: any) => {
     @dblclick="startEditing"
   >
     <NodeResizer
-      :min-width="200"
-      :min-height="120"
+      :min-width="60"
+      :min-height="40"
       :is-visible="selected"
       line-class-name="border-theme-primary"
       handle-class-name="bg-theme-primary border-2 border-white rounded-sm w-2.5 h-2.5"
@@ -131,7 +131,7 @@ const onResize = (event: any) => {
         v-model="textValue"
         @blur="saveEditing"
         @keydown.esc="saveEditing"
-        class="w-full h-full min-h-[100px] p-1.5 text-xs bg-theme-column/40 border border-theme-border rounded focus:outline-none focus:ring-1 focus:ring-theme-primary resize-none"
+        class="w-full h-full min-h-[30px] p-1.5 text-xs bg-theme-column/40 border border-theme-border rounded focus:outline-none focus:ring-1 focus:ring-theme-primary resize-none"
         placeholder="Type markdown note..."
       ></textarea>
       <div v-else class="prose prose-xs max-w-none text-xs text-theme-text-main break-words" v-html="renderedMarkdown"></div>
@@ -141,8 +141,8 @@ const onResize = (event: any) => {
 
 <style scoped>
 .canvas-text-node {
-  min-width: 200px;
-  min-height: 120px;
+  min-width: 60px;
+  min-height: 40px;
 }
 .vue-flow-handle {
   width: 12px;
