@@ -181,6 +181,7 @@ describe('Canvas Store', () => {
     expect(store.edges[0].fromSide).toBe('left');
     expect(store.edges[0].toNode).toBe(nodeA.id);
     expect(store.edges[0].toSide).toBe('right');
+    expect(store.edges[0].toEnd).toBe('arrow');
 
     // Removing connected node should also clean up edge
     store.removeNode(nodeA.id);

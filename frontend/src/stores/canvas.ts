@@ -252,16 +252,15 @@ export const useCanvasStore = defineStore('canvas', () => {
     if (edge) {
       const prevFromNode = edge.fromNode;
       const prevFromSide = edge.fromSide;
-      const prevFromEnd = edge.fromEnd;
 
       edge.fromNode = edge.toNode;
       edge.fromSide = edge.toSide;
-      edge.fromEnd = edge.toEnd;
 
       edge.toNode = prevFromNode;
       edge.toSide = prevFromSide;
-      edge.toEnd = prevFromEnd;
 
+      // Trigger array re-assignment for Vue Flow reactivity
+      currentDocument.value.edges = [...currentDocument.value.edges];
       triggerAutoSave();
     }
   };
