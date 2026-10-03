@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, onBeforeRouteLeave } from 'vue-router';
-import { VueFlow, useVueFlow, type Connection, type EdgeChange, type NodeDragEvent, type NodeChange, MarkerType } from '@vue-flow/core';
+import {
+  VueFlow,
+  useVueFlow,
+  type Connection,
+  type EdgeChange,
+  type NodeDragEvent,
+  type NodeChange,
+  MarkerType,
+  SelectionMode,
+} from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import '@vue-flow/core/dist/style.css';
@@ -71,7 +80,25 @@ const loadCurrentCanvas = async () => {
   }
 };
 
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.defaultPrevented) return;
+  const target = e.target as HTMLElement | null;
+  const isInput =
+    target &&
+    (target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable ||
+      Boolean((target as any).closest?.('input, textarea, [contenteditable="true"]')));
+  if (isInput) return;
+
+  if (e.key === 'v' || e.key === 'V') {
+    e.preventDefault();
+    canvasStore.toggleInteractionMode();
+  }
+};
+
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeyDown);
   await loadCurrentCanvas();
 });
 
@@ -87,6 +114,7 @@ onBeforeRouteLeave(async () => {
 });
 
 onBeforeUnmount(async () => {
+  window.removeEventListener('keydown', handleKeyDown);
   await canvasStore.flushAutoSave();
 });
 
@@ -177,10 +205,15 @@ const onDrop = (event: DragEvent) => {
           :min-zoom="0.2"
           :max-zoom="2.5"
           :fit-view-on-init="false"
+          :pan-on-drag="canvasStore.interactionMode === 'pan' ? true : [1, 2]"
+          :selection-key-code="canvasStore.interactionMode === 'select' ? true : false"
+          :pan-activation-key-code="'Space'"
+          :selection-mode="SelectionMode.Partial"
           @node-drag-stop="onNodeDragStop"
           @edges-change="onEdgesChange"
           @nodes-change="onNodesChange"
           class="jotter-flow-board"
+          :class="`mode-${canvasStore.interactionMode}`"
         >
           <template #node-file="nodeProps">
             <TaskNode :id="nodeProps.id" :data="nodeProps.data" :selected="nodeProps.selected" />
@@ -245,5 +278,15 @@ const onDrop = (event: DragEvent) => {
 .slide-drawer-leave-to {
   transform: translateX(100%);
   opacity: 0;
+}
+
+.jotter-flow-board.mode-pan .vue-flow__pane {
+  cursor: grab;
+}
+.jotter-flow-board.mode-pan .vue-flow__pane:active {
+  cursor: grabbing;
+}
+.jotter-flow-board.mode-select .vue-flow__pane {
+  cursor: crosshair;
 }
 </style>

@@ -15,6 +15,11 @@ export const useCanvasStore = defineStore('canvas', () => {
   const isLoading = ref<boolean>(false);
   const isSaving = ref<boolean>(false);
   const saveTimeout = ref<any>(null);
+  const interactionMode = ref<'pan' | 'select'>('pan');
+
+  const toggleInteractionMode = () => {
+    interactionMode.value = interactionMode.value === 'pan' ? 'select' : 'pan';
+  };
 
   const toast = useToast();
   const { t } = useI18n();
@@ -286,5 +291,7 @@ export const useCanvasStore = defineStore('canvas', () => {
     addEdge,
     removeEdge,
     toggleDrawer,
+    interactionMode,
+    toggleInteractionMode,
   };
 });

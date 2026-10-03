@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Plus, Trash2, FolderOpen, Type, Square, PanelRightOpen, PanelRightClose, Loader2, Check } from '@lucide/vue';
+import { Plus, Trash2, FolderOpen, Type, Square, PanelRightOpen, PanelRightClose, Loader2, Check, Hand, MousePointer } from '@lucide/vue';
 import { useCanvasStore } from '@/stores/canvas';
 
 const props = defineProps<{
@@ -114,6 +114,39 @@ const addGroup = () => {
 
     <!-- Right: Insert tools & Drawer toggle -->
     <div class="flex items-center gap-2">
+      <!-- Interaction Mode Toggle (Pan vs Select) -->
+      <div class="flex items-center rounded bg-theme-column/60 border border-theme-border p-0.5">
+        <button
+          @click="canvasStore.interactionMode = 'pan'"
+          class="flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+          :class="
+            canvasStore.interactionMode === 'pan'
+              ? 'bg-theme-primary text-white shadow-xs'
+              : 'text-theme-text-muted hover:text-theme-text-main'
+          "
+          title="Pan / Move mode (V or hold Space to pan)"
+        >
+          <Hand class="w-3.5 h-3.5" />
+          <span class="hidden md:inline">Pan</span>
+        </button>
+        <button
+          @click="canvasStore.interactionMode = 'select'"
+          class="flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+          :class="
+            canvasStore.interactionMode === 'select'
+              ? 'bg-theme-primary text-white shadow-xs'
+              : 'text-theme-text-muted hover:text-theme-text-main'
+          "
+          title="Select / Marquee mode (V)"
+        >
+          <MousePointer class="w-3.5 h-3.5" />
+          <span class="hidden md:inline">Select</span>
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div class="h-4 w-[1px] bg-theme-border mx-0.5"></div>
+
       <!-- Insert Text Node -->
       <button
         @click="addText"
