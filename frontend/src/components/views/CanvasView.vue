@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, watch, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { VueFlow, useVueFlow, type Connection, type EdgeChange, type NodeDragEvent, type NodeChange, MarkerType } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
@@ -75,8 +75,19 @@ onMounted(async () => {
   await loadCurrentCanvas();
 });
 
-watch([projectId, canvasId], async () => {
+watch([projectId, canvasId], async (_newVal, oldVal) => {
+  if (oldVal && (oldVal[0] || oldVal[1])) {
+    await canvasStore.flushAutoSave();
+  }
   await loadCurrentCanvas();
+});
+
+onBeforeRouteLeave(async () => {
+  await canvasStore.flushAutoSave();
+});
+
+onBeforeUnmount(async () => {
+  await canvasStore.flushAutoSave();
 });
 
 // Handle node drag stop -> update positions in store
@@ -87,7 +98,10 @@ const onNodeDragStop = (event: NodeDragEvent) => {
 // Handle edge connection
 onConnect((params: Connection) => {
   if (!params.source || !params.target) return;
-  const edgeId = Math.random().toString(16).substring(2, 18);
+  const edgeId =
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID().replace(/-/g, '').substring(0, 16)
+      : Math.random().toString(16).substring(2, 18);
   const newEdge: CanvasEdge = {
     id: edgeId,
     fromNode: params.source,

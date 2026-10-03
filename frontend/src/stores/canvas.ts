@@ -73,6 +73,13 @@ export const useCanvasStore = defineStore('canvas', () => {
     }
   };
 
+  const generateCanvasId = (): string => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+    }
+    return Math.random().toString(16).substring(2, 18);
+  };
+
   // Trigger debounced auto-save (e.g. 500ms after node drag or edit)
   const triggerAutoSave = () => {
     if (saveTimeout.value) {
@@ -81,6 +88,23 @@ export const useCanvasStore = defineStore('canvas', () => {
     saveTimeout.value = setTimeout(async () => {
       await persistCanvas();
     }, 500);
+  };
+
+  // Cancel any pending debounced auto-save without saving
+  const cancelAutoSave = () => {
+    if (saveTimeout.value) {
+      clearTimeout(saveTimeout.value);
+      saveTimeout.value = null;
+    }
+  };
+
+  // Flush pending auto-save immediately
+  const flushAutoSave = async () => {
+    if (saveTimeout.value) {
+      clearTimeout(saveTimeout.value);
+      saveTimeout.value = null;
+      await persistCanvas();
+    }
   };
 
   // Save current canvas immediately
@@ -123,8 +147,7 @@ export const useCanvasStore = defineStore('canvas', () => {
 
   // Node operations
   const addFileNode = (task: Task, x: number, y: number, width = 280, height = 140) => {
-    // Generate an 8-16 char hex ID
-    const nodeId = Math.random().toString(16).substring(2, 18);
+    const nodeId = generateCanvasId();
     const newNode: CanvasNode = {
       id: nodeId,
       type: 'file',
@@ -141,7 +164,7 @@ export const useCanvasStore = defineStore('canvas', () => {
   };
 
   const addTextNode = (text = '', x: number, y: number, width = 260, height = 160) => {
-    const nodeId = Math.random().toString(16).substring(2, 18);
+    const nodeId = generateCanvasId();
     const newNode: CanvasNode = {
       id: nodeId,
       type: 'text',
@@ -157,7 +180,7 @@ export const useCanvasStore = defineStore('canvas', () => {
   };
 
   const addGroupNode = (label = 'New Group', x: number, y: number, width = 400, height = 300) => {
-    const nodeId = Math.random().toString(16).substring(2, 18);
+    const nodeId = generateCanvasId();
     const newNode: CanvasNode = {
       id: nodeId,
       type: 'group',
@@ -250,6 +273,8 @@ export const useCanvasStore = defineStore('canvas', () => {
     loadCanvas,
     persistCanvas,
     triggerAutoSave,
+    cancelAutoSave,
+    flushAutoSave,
     createNewCanvas,
     removeCanvas,
     addFileNode,
