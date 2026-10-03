@@ -238,3 +238,15 @@ Notizen, Projektübersicht und Dokumentation.
 Jotter verfügt über eine vollautomatische OpenAPI 3.0 Spezifikationsgenerierung via FastAPI.
 
 * **Interaktive API-Dokumentation**: Bei laufendem Jotter-Server ist die interaktive Dokumentation unter `http://localhost:58271/docs` (Swagger UI) sowie `http://localhost:58271/redoc` (ReDoc) erreichbar.
+
+---
+
+## 11. Architekturentscheidungen (ADRs)
+
+Wichtige architektonische Entscheidungen sind als Architecture Decision Records (ADRs) dokumentiert:
+
+- [ADR 0001: Unveränderliche Bucket-Slugs in Markdown-Frontmatter](file:///home/simon/Code/jotter/docs/developer/adr/0001-immutable-bucket-slugs.md)
+- [ADR 0002: Aufgeschobene Implementierung wiederkehrender Aufgaben](file:///home/simon/Code/jotter/docs/developer/adr/0002-decline-recurring-tasks.md)
+- [ADR 0003: Unterstützung beliebiger Datei-Slugs und Verzicht auf strikte ULID-Erzwingung](file:///home/simon/Code/jotter/docs/developer/adr/0003-arbitrary-task-slugs.md)
+- [ADR 0004: Lautlose Dateisystem-Indexierung via Watchdog und Entkopplung von Git-Sync](file:///home/simon/Code/jotter/docs/developer/adr/0004-silent-watchdog-sync.md)
+

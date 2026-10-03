@@ -238,3 +238,15 @@ Project overview notes and documentation.
 Jotter provides automated OpenAPI 3.0 documentation served directly by FastAPI.
 
 - **Interactive API Docs**: When running the Jotter server, interactive documentation is available at `http://localhost:58271/docs` (Swagger UI) and `http://localhost:58271/redoc` (ReDoc).
+
+---
+
+## 11. Architecture Decisions (ADRs)
+
+Key architectural decisions are documented as Architecture Decision Records (ADRs):
+
+- [ADR 0001: Immutable Bucket Slugs in Markdown Task Frontmatter](file:///home/simon/Code/jotter/docs/developer/adr/0001-immutable-bucket-slugs.md)
+- [ADR 0002: Postponed Implementation of Recurrent Tasks](file:///home/simon/Code/jotter/docs/developer/adr/0002-decline-recurring-tasks.md)
+- [ADR 0003: Support Arbitrary File Slugs and Non-Enforcement of ULID Format](file:///home/simon/Code/jotter/docs/developer/adr/0003-arbitrary-task-slugs.md)
+- [ADR 0004: Silent Filesystem Indexing via Watchdog and Decoupling Git Sync](file:///home/simon/Code/jotter/docs/developer/adr/0004-silent-watchdog-sync.md)
+
