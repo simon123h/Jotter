@@ -20,6 +20,7 @@ import '@vue-flow/controls/dist/style.css';
 import TaskNode from '@/components/canvas/TaskNode.vue';
 import TextNode from '@/components/canvas/TextNode.vue';
 import GroupNode from '@/components/canvas/GroupNode.vue';
+import CanvasEdgeComponent from '@/components/canvas/CanvasEdge.vue';
 import CanvasToolbar from '@/components/canvas/CanvasToolbar.vue';
 import CanvasSidebar from '@/components/canvas/CanvasSidebar.vue';
 
@@ -40,7 +41,8 @@ const selectionStore = useSelectionStore();
 const projectId = computed(() => (route.params.projectId as string) || '');
 const canvasId = computed(() => (route.params.canvasId as string) || 'main');
 
-const { project, onConnect, onConnectStart, onConnectEnd, getSelectedNodes, removeSelectedNodes } = useVueFlow();
+const { project, onConnect, onConnectStart, onConnectEnd, getSelectedNodes, removeSelectedNodes, getSelectedEdges, removeSelectedEdges } =
+  useVueFlow();
 
 const isConnecting = ref(false);
 
@@ -110,6 +112,18 @@ const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === 'v' || e.key === 'V') {
     e.preventDefault();
     canvasStore.toggleInteractionMode();
+    return;
+  }
+
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    const selectedEdges = getSelectedEdges.value;
+    if (selectedEdges.length > 0) {
+      e.preventDefault();
+      for (const edge of selectedEdges) {
+        canvasStore.removeEdge(edge.id);
+      }
+      removeSelectedEdges(selectedEdges);
+    }
   }
 };
 
@@ -283,6 +297,10 @@ const onDrop = (event: DragEvent) => {
 
           <template #node-group="nodeProps">
             <GroupNode :id="nodeProps.id" :data="nodeProps.data" :selected="nodeProps.selected" />
+          </template>
+
+          <template #edge-default="edgeProps">
+            <CanvasEdgeComponent v-bind="edgeProps" />
           </template>
 
           <Background pattern-color="var(--color-theme-border, #cbd5e1)" :gap="20" />

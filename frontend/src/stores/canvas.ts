@@ -238,6 +238,33 @@ export const useCanvasStore = defineStore('canvas', () => {
     }
   };
 
+  const updateEdge = (id: string, updates: Partial<CanvasEdge>) => {
+    const edge = currentDocument.value.edges.find((e) => e.id === id);
+    if (edge) {
+      Object.assign(edge, updates);
+      triggerAutoSave();
+    }
+  };
+
+  const reverseEdge = (id: string) => {
+    const edge = currentDocument.value.edges.find((e) => e.id === id);
+    if (edge) {
+      const prevFromNode = edge.fromNode;
+      const prevFromSide = edge.fromSide;
+      const prevFromEnd = edge.fromEnd;
+
+      edge.fromNode = edge.toNode;
+      edge.fromSide = edge.toSide;
+      edge.fromEnd = edge.toEnd;
+
+      edge.toNode = prevFromNode;
+      edge.toSide = prevFromSide;
+      edge.toEnd = prevFromEnd;
+
+      triggerAutoSave();
+    }
+  };
+
   const removeEdge = (id: string) => {
     currentDocument.value.edges = currentDocument.value.edges.filter((e) => e.id !== id);
     triggerAutoSave();
@@ -289,6 +316,8 @@ export const useCanvasStore = defineStore('canvas', () => {
     updateNodeData,
     removeNode,
     addEdge,
+    updateEdge,
+    reverseEdge,
     removeEdge,
     toggleDrawer,
     interactionMode,
