@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import {
   X,
   Trash2,
@@ -137,10 +137,18 @@ const setPostponedPreset = (preset: 'tomorrow' | 'nextWeek' | 'clear') => {
   // activeMenu.value = 'none';
 };
 
-const handleCustomPostponedDate = () => {
-  emit('set-postponed-date', customPostponedDate.value);
-  // activeMenu.value = 'none';
+const tagInputRef = ref<any>(null);
+
+const openTagMenu = () => {
+  activeMenu.value = 'tag';
+  nextTick(() => {
+    tagInputRef.value?.focus();
+  });
 };
+
+defineExpose({
+  openTagMenu,
+});
 </script>
 
 <template>
@@ -199,6 +207,7 @@ const handleCustomPostponedDate = () => {
 
           <div class="flex items-center gap-2 w-full">
             <TagInput
+              ref="tagInputRef"
               v-model="newTagName"
               @enter="handleAddTag"
               :placeholder="t('bulkActions.tagNamePlaceholder')"

@@ -85,8 +85,13 @@ def git_commit(project_dir: str | Path, message: str) -> bool:
     if not status.stdout.strip():
         return False  # nothing to commit
 
-    run_git(["commit", "-m", message], cwd=p, check=True)
-    return True
+    # Verify there are actually staged changes to commit (e.g. unmodified submodules or untracked changes in submodules show in porcelain but not in staged index)
+    staged_diff = run_git(["diff", "--cached", "--quiet"], cwd=p, check=False)
+    if staged_diff.returncode == 0:
+        return False  # index is clean, nothing staged to commit
+
+    res = run_git(["commit", "-m", message], cwd=p, check=False)
+    return res.returncode == 0
 
 
 def git_sync(project_dir: str | Path, remote_url: str | None) -> dict[str, Any] | None:

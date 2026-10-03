@@ -171,6 +171,8 @@ const openCreateModal = (bucket: BucketName) => {
   modalStore.openTaskCreate(bucket);
 };
 
+const bulkActionBarRef = ref<any>(null);
+
 useKeyboardShortcuts([
   {
     key: 'q',
@@ -185,7 +187,19 @@ useKeyboardShortcuts([
     shiftKey: true,
     callback: () => {
       const defCol = buckets.value.find((b) => b.is_default);
-      openCreateModal(defCol?.name || 'todo');
+      modalStore.openTaskCreate(defCol?.name || 'todo', {
+        priority: 'urgent',
+        color: 'red',
+        planned: 'today',
+      });
+    },
+  },
+  {
+    key: 't',
+    callback: () => {
+      if (!modalStore.activeModal && !route.params.taskId && hasSelection.value) {
+        bulkActionBarRef.value?.openTagMenu();
+      }
     },
   },
   {
@@ -471,6 +485,7 @@ const handleBulkConsolidate = async () => {
 
       <!-- Bulk Action Bar -->
       <BulkActionBar
+        ref="bulkActionBarRef"
         :selected-count="selectionCount"
         :buckets="buckets"
         :projects="projects"
