@@ -96,4 +96,22 @@ buckets:
     expect(serialized).toContain('name: ideas');
     expect(serialized).toContain('# Custom notes');
   });
+
+  it('handles arbitrary file names as task slugs when frontmatter id is omitted', () => {
+    const rawMarkdown = `---
+title: Fix Authentication Header Bug
+status: todo
+---
+
+Fix bearer token parsing in middleware.
+`;
+
+    const task = parseTaskMarkdown(rawMarkdown, 'default', 'fix-auth-header.md');
+    expect(task.id).toBe('fix-auth-header');
+    expect(task.title).toBe('Fix Authentication Header Bug');
+    expect(task.bucket).toBe('todo');
+
+    const serialized = dumpTaskMarkdown(task);
+    expect(serialized).toContain('id: fix-auth-header');
+  });
 });

@@ -50,6 +50,13 @@ class TaskApplicationService:
             # Fallback to disk if present
             if self.disk_repo.exists(project_id, task_id):
                 task = self.disk_repo.get_task(project_id, task_id)
+                # Ensure bucket exists in case file specified an unindexed bucket
+                known_buckets = {b.name for b in self.bucket_repo.get_all(project_id)}
+                if task.bucket not in known_buckets:
+                    from jotter.features.buckets.domain import Bucket
+
+                    new_b = Bucket.create(title=task.bucket.capitalize(), name=task.bucket)
+                    self.bucket_repo.save(project_id, new_b)
                 self.sqlite_repo.upsert_task(task)
             else:
                 raise EntityNotFoundError(f"Task '{task_id}' not found in project '{project_id}'")

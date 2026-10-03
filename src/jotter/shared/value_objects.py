@@ -35,8 +35,13 @@ class TaskId:
     value: str
 
     def __post_init__(self):
-        if not self.value or not self.value.strip():
+        if not self.value or not str(self.value).strip():
             raise ValidationError("TaskId cannot be empty")
+        val = str(self.value).strip()
+        if "/" in val or "\\" in val or "\x00" in val or val in (".", ".."):
+            raise ValidationError(
+                f"Invalid TaskId slug '{self.value}': contains path traversal or illegal path characters"
+            )
 
     @classmethod
     def generate(cls) -> Self:

@@ -321,3 +321,48 @@ def test_task_move_between_projects(temp_dir, test_env):
     assert ggg_tasks[0].id == t1.id
     assert ggg_tasks[0].project_id == "ggg"
     assert ggg_tasks[0].bucket == "backlog"
+
+
+def test_arbitrary_task_slugs(temp_dir, test_env):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    project_repo = ProjectRepository(temp_dir, conn)
+    project_repo.save(Project.create(name="Arbitrary Test", project_id="arb"))
+
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    disk_repo = DiskTaskRepository(temp_dir)
+
+    # 1. Create a markdown file directly on disk with an arbitrary slug/filename
+    custom_file = Path(temp_dir) / "arb" / "fix-auth-header.md"
+    custom_file.write_text(
+        """---
+title: "Fix Authentication Header Bug"
+status: "todo"
+position: 1000.0
+---
+
+Fix bearer token parsing in middleware.
+""",
+        encoding="utf-8",
+    )
+
+    # 2. Disk repo detects and reads it using file stem as fallback ID
+    task = disk_repo.read_task_file(custom_file, default_project_id="arb")
+    assert str(task.id) == "fix-auth-header"
+    assert task.title == "Fix Authentication Header Bug"
+
+    # 3. Task service can get the task by its slug
+    fetched = task_svc.get_task("arb", "fix-auth-header")
+    assert fetched.id == "fix-auth-header"
+    assert fetched.title == "Fix Authentication Header Bug"
+
+    # 4. Update the task
+    updated = task_svc.update_task(
+        "arb", "fix-auth-header", TaskUpdate.model_validate({"title": "Fix Auth Header Updated"})
+    )
+    assert updated.title == "Fix Auth Header Updated"
+    assert custom_file.is_file()
+    assert "Fix Auth Header Updated" in custom_file.read_text(encoding="utf-8")
+
+    # 5. Delete the task
+    task_svc.delete_task("arb", "fix-auth-header")
+    assert not custom_file.exists()

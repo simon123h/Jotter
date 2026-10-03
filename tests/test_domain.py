@@ -26,11 +26,31 @@ def test_task_id_value_object():
     tid = TaskId.generate()
     assert len(tid.value) == 26
 
+    # Standard ULID
     parsed = TaskId("01ARZ3NDEKTSV4RRFFQ69G5FAV")
     assert parsed.value == "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 
+    # Arbitrary slugs (filenames, obsidian notes, etc.)
+    slug_task = TaskId("fix-auth-header")
+    assert slug_task.value == "fix-auth-header"
+
+    slug_task2 = TaskId("task_2024_01_review.draft")
+    assert slug_task2.value == "task_2024_01_review.draft"
+
     with pytest.raises(ValidationError):
         TaskId("")
+
+    with pytest.raises(ValidationError):
+        TaskId("   ")
+
+    with pytest.raises(ValidationError):
+        TaskId("../sneaky")
+
+    with pytest.raises(ValidationError):
+        TaskId("folder/task")
+
+    with pytest.raises(ValidationError):
+        TaskId("folder\\task")
 
 
 def test_due_date_value_object():

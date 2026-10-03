@@ -38,9 +38,12 @@ class DiskTaskRepository:
         parent_dir = path.parent
         parent_dir.mkdir(parents=True, exist_ok=True)
 
+        import re
+
         from jotter.shared.fs import atomic_write
 
-        atomic_write(path, content, encoding="utf-8", prefix=f".{task.id}_", suffix=".tmp")
+        safe_slug = re.sub(r"[^\w\-.]", "_", str(task.id))
+        atomic_write(path, content, encoding="utf-8", prefix=f".{safe_slug}_", suffix=".tmp")
 
     def delete(self, project_id: str, task_id: str) -> None:
         path = self.get_task_file_path(project_id, task_id)
@@ -50,7 +53,9 @@ class DiskTaskRepository:
     def get_all_task_files(self, project_id: str) -> list[Path]:
         p = self.get_project_dir(project_id)
         return [
-            f for f in p.glob("*.md") if f.is_file() and f.name.lower() not in ("index.md", "readme.md", ".project.md")
+            f
+            for f in p.glob("*.md")
+            if f.is_file() and not f.name.startswith(".") and f.name.lower() not in ("index.md", "readme.md")
         ]
 
     def serialize_task(self, task: Task) -> str:
