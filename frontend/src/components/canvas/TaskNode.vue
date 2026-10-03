@@ -113,13 +113,27 @@ const removeNode = () => {
   min-width: 280px;
 }
 .vue-flow-handle {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   background-color: var(--color-theme-primary, #6366f1);
   border: 2px solid white;
   border-radius: 50%;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+  z-index: 10;
+}
+/* Generous hitbox for easy hover and arrow creation */
+.vue-flow-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
 }
 .canvas-task-node:hover .vue-flow-handle,
 .canvas-task-node.selected .vue-flow-handle {

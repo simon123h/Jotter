@@ -3,9 +3,10 @@ import { ref, computed, nextTick } from 'vue';
 import { Handle, Position } from '@vue-flow/core';
 import { NodeResizer } from '@vue-flow/node-resizer';
 import '@vue-flow/node-resizer/dist/style.css';
-import { Trash2, Edit3, Check } from '@lucide/vue';
+import { Trash2, Edit3, Check, Palette } from '@lucide/vue';
 import { marked } from 'marked';
 import { useCanvasStore } from '@/stores/canvas';
+import { CANVAS_COLORS } from '@/constants/canvasColors';
 
 const props = defineProps<{
   id: string;
@@ -21,6 +22,13 @@ const canvasStore = useCanvasStore();
 const isEditing = ref(false);
 const textValue = ref(props.data.text || '');
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
+
+const cycleColor = () => {
+  const currentColor = props.data.color || null;
+  const currentIndex = CANVAS_COLORS.findIndex((c) => c.value === currentColor);
+  const nextIndex = (currentIndex + 1) % CANVAS_COLORS.length;
+  canvasStore.updateNodeData(props.id, { color: CANVAS_COLORS[nextIndex].value });
+};
 
 const renderedMarkdown = computed(() => {
   if (!props.data.text) return '<p class="italic opacity-60">Empty note. Double-click or click edit to write...</p>';
@@ -92,6 +100,18 @@ const onResize = (event: any) => {
       >
         <Check class="w-3.5 h-3.5" />
       </button>
+
+      <!-- Color cycle button -->
+      <button
+        type="button"
+        @click.stop="cycleColor"
+        title="Change Note Color"
+        class="text-theme-text-muted hover:text-theme-primary transition-colors cursor-pointer p-0.5 flex items-center gap-1"
+      >
+        <Palette class="w-3.5 h-3.5" />
+        <span v-if="data.color" class="w-2 h-2 rounded-full inline-block" :style="{ backgroundColor: data.color }" />
+      </button>
+
       <button
         @click.stop="removeNode"
         title="Remove"
@@ -123,13 +143,27 @@ const onResize = (event: any) => {
   min-height: 120px;
 }
 .vue-flow-handle {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   background-color: var(--color-theme-primary, #6366f1);
   border: 2px solid white;
   border-radius: 50%;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+  z-index: 10;
+}
+/* Generous hitbox for easy hover and arrow creation */
+.vue-flow-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
 }
 .canvas-text-node:hover .vue-flow-handle,
 .canvas-text-node.selected .vue-flow-handle {

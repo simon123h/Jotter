@@ -80,8 +80,20 @@ const flowEdges = computed(() => {
     target: edge.toNode,
     sourceHandle: edge.fromSide || 'right',
     targetHandle: edge.toSide || 'left',
-    markerEnd: edge.toEnd !== 'none' ? MarkerType.ArrowClosed : undefined,
-    markerStart: edge.fromEnd === 'arrow' ? MarkerType.ArrowClosed : undefined,
+    markerEnd:
+      edge.toEnd !== 'none'
+        ? {
+            type: MarkerType.ArrowClosed,
+            color: edge.color || 'var(--color-theme-text-muted, #94a3b8)',
+          }
+        : undefined,
+    markerStart:
+      edge.fromEnd === 'arrow'
+        ? {
+            type: MarkerType.ArrowClosed,
+            color: edge.color || 'var(--color-theme-text-muted, #94a3b8)',
+          }
+        : undefined,
     label: edge.label || undefined,
     style: {
       stroke: edge.color || 'var(--color-theme-text-muted, #94a3b8)',
@@ -117,12 +129,25 @@ const handleKeyDown = (e: KeyboardEvent) => {
 
   if (e.key === 'Delete' || e.key === 'Backspace') {
     const selectedEdges = getSelectedEdges.value;
-    if (selectedEdges.length > 0) {
+    const selectedNodes = getSelectedNodes.value;
+
+    if (selectedEdges.length > 0 || selectedNodes.length > 0) {
       e.preventDefault();
-      for (const edge of selectedEdges) {
-        canvasStore.removeEdge(edge.id);
+
+      if (selectedEdges.length > 0) {
+        for (const edge of selectedEdges) {
+          canvasStore.removeEdge(edge.id);
+        }
+        removeSelectedEdges(selectedEdges);
       }
-      removeSelectedEdges(selectedEdges);
+
+      if (selectedNodes.length > 0) {
+        for (const node of selectedNodes) {
+          canvasStore.removeNode(node.id);
+        }
+        removeSelectedNodes(selectedNodes);
+        selectionStore.clearSelection();
+      }
     }
   }
 };
@@ -364,5 +389,52 @@ const onDrop = (event: DragEvent) => {
 }
 .jotter-flow-board.mode-select .vue-flow__pane {
   cursor: crosshair;
+}
+
+/* Broaden resize hover target / border area for node resizer */
+.vue-flow__resize-control.line {
+  /* Increase invisible border hitbox so the resize cursor activates easily */
+  position: absolute;
+  z-index: 20;
+}
+.vue-flow__resize-control.line.top,
+.vue-flow__resize-control.line.bottom {
+  height: 10px !important;
+}
+.vue-flow__resize-control.line.top {
+  top: 0 !important;
+  transform: translate(0, -50%) !important;
+}
+.vue-flow__resize-control.line.bottom {
+  top: 100% !important;
+  transform: translate(0, -50%) !important;
+}
+.vue-flow__resize-control.line.left,
+.vue-flow__resize-control.line.right {
+  width: 10px !important;
+}
+.vue-flow__resize-control.line.left {
+  left: 0 !important;
+  transform: translate(-50%, 0) !important;
+}
+.vue-flow__resize-control.line.right {
+  left: 100% !important;
+  transform: translate(-50%, 0) !important;
+}
+
+/* Enlarge corner handle hitbox */
+.vue-flow__resize-control.handle {
+  width: 10px !important;
+  height: 10px !important;
+  z-index: 21;
+}
+.vue-flow__resize-control.handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
 }
 </style>

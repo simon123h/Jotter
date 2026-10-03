@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, Position, type EdgeProps } from '@vue-flow/core';
 import { ArrowRight, ArrowLeftRight, Minus, Repeat, Palette, Trash2 } from '@lucide/vue';
 import { useCanvasStore } from '@/stores/canvas';
+import { CANVAS_COLORS } from '@/constants/canvasColors';
 
 const props = defineProps<EdgeProps>();
 
@@ -59,16 +60,7 @@ const deleteEdge = () => {
   canvasStore.removeEdge(props.id);
 };
 
-const colorPalette = [
-  { name: 'Default', value: null, bg: 'bg-slate-400' },
-  { name: 'Red', value: '#ef4444', bg: 'bg-rose-500' },
-  { name: 'Orange', value: '#f97316', bg: 'bg-amber-600' },
-  { name: 'Yellow', value: '#eab308', bg: 'bg-yellow-500' },
-  { name: 'Green', value: '#22c55e', bg: 'bg-emerald-500' },
-  { name: 'Blue', value: '#3b82f6', bg: 'bg-blue-500' },
-  { name: 'Purple', value: '#a855f7', bg: 'bg-purple-500' },
-  { name: 'Pink', value: '#ec4899', bg: 'bg-pink-500' },
-];
+const colorPalette = CANVAS_COLORS;
 
 const cycleColor = () => {
   const currentColor = currentEdge.value?.color || null;
