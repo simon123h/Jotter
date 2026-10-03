@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import {
   VueFlow,
@@ -41,9 +41,19 @@ const selectionStore = useSelectionStore();
 const projectId = computed(() => (route.params.projectId as string) || '');
 const canvasId = computed(() => (route.params.canvasId as string) || 'main');
 
-const { project, onConnect, onConnectStart, onConnectEnd, getSelectedNodes, removeSelectedNodes, getSelectedEdges, removeSelectedEdges } =
-  useVueFlow();
+const {
+  project,
+  fitView,
+  onConnect,
+  onConnectStart,
+  onConnectEnd,
+  getSelectedNodes,
+  removeSelectedNodes,
+  getSelectedEdges,
+  removeSelectedEdges,
+} = useVueFlow();
 
+const boardContainerRef = ref<HTMLElement | null>(null);
 const isConnecting = ref(false);
 
 onConnectStart(() => {
@@ -107,7 +117,43 @@ const loadCurrentCanvas = async () => {
   if (projectId.value) {
     await canvasStore.fetchCanvases(projectId.value);
     await canvasStore.loadCanvas(projectId.value, canvasId.value);
+    if (canvasStore.nodes.length > 0) {
+      await nextTick();
+      fitView({ padding: 0.2 });
+    }
   }
+};
+
+// Calculate canvas center coordinates from current viewport
+const getViewportCenter = () => {
+  if (boardContainerRef.value) {
+    const bounds = boardContainerRef.value.getBoundingClientRect();
+    return project({
+      x: bounds.width / 2,
+      y: bounds.height / 2,
+    });
+  }
+  return { x: 200, y: 200 };
+};
+
+const handleAddText = () => {
+  const center = getViewportCenter();
+  const width = 260;
+  const height = 160;
+  canvasStore.addTextNode(
+    'Double-click to edit note...',
+    Math.round(center.x - width / 2),
+    Math.round(center.y - height / 2),
+    width,
+    height
+  );
+};
+
+const handleAddGroup = () => {
+  const center = getViewportCenter();
+  const width = 400;
+  const height = 300;
+  canvasStore.addGroupNode('Group Section', Math.round(center.x - width / 2), Math.round(center.y - height / 2), width, height);
 };
 
 const handleKeyDown = (e: KeyboardEvent) => {
@@ -287,19 +333,19 @@ const onDrop = (event: DragEvent) => {
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-theme-column/10 relative">
     <!-- Top Canvas Toolbar -->
-    <CanvasToolbar :project-id="projectId" />
+    <CanvasToolbar :project-id="projectId" @add-text="handleAddText" @add-group="handleAddGroup" />
 
     <!-- Main Canvas Workspace + Unplaced Tasks Drawer -->
     <div class="flex-grow flex overflow-hidden relative">
       <!-- Vue Flow Board -->
-      <div class="flex-grow h-full relative" @dragover="onDragOver" @drop="onDrop">
+      <div ref="boardContainerRef" class="flex-grow h-full relative" @dragover="onDragOver" @drop="onDrop">
         <VueFlow
           :nodes="flowNodes"
           :edges="flowEdges"
           :default-viewport="{ zoom: 1 }"
           :min-zoom="0.2"
           :max-zoom="2.5"
-          :fit-view-on-init="false"
+          :fit-view-on-init="true"
           :pan-on-drag="canvasStore.interactionMode === 'pan' ? true : [1, 2]"
           :selection-key-code="canvasStore.interactionMode === 'select' && !isConnecting ? true : false"
           :pan-activation-key-code="'Space'"

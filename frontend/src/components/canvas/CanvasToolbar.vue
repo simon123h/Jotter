@@ -41,13 +41,17 @@ const handleDeleteCurrentCanvas = async () => {
   selectCanvas(canvasStore.canvases[0]?.id || 'main');
 };
 
+const emit = defineEmits<{
+  (e: 'add-text'): void;
+  (e: 'add-group'): void;
+}>();
+
 const addText = () => {
-  // Center roughly at 200, 200
-  canvasStore.addTextNode('Double-click to edit note...', 200, 200);
+  emit('add-text');
 };
 
 const addGroup = () => {
-  canvasStore.addGroupNode('Group Section', 150, 150);
+  emit('add-group');
 };
 </script>
 
