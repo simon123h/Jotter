@@ -48,6 +48,7 @@ def get_system_info(request: Request, data_dir: str = Depends(get_data_dir)):
     config = request.app.state.config
     version = getattr(request.app.state, "version", "3.0.0b1")
     git_inst = is_git_installed()
+    watcher = getattr(request.app.state, "watcher", None)
     return {
         "version": version,
         "data_dir": data_dir,
@@ -55,6 +56,8 @@ def get_system_info(request: Request, data_dir: str = Depends(get_data_dir)):
         "port": config.port,
         "git_installed": git_inst,
         "gitInstalled": git_inst,
+        "change_count": getattr(watcher, "change_count", 0),
+        "last_sync_timestamp": getattr(watcher, "last_sync_timestamp", 0),
     }
 
 

@@ -5,8 +5,23 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
-import { Settings, Check, Globe, GitBranch, Info, Folder, FolderOpen, Tag, RotateCcw, ChevronDown, Search, Box } from '@lucide/vue';
-import { getSystemInfo, updateDataDir, isNativeMobile } from '@/api';
+import {
+  Settings,
+  Check,
+  Globe,
+  GitBranch,
+  Info,
+  Folder,
+  FolderOpen,
+  Tag,
+  RotateCcw,
+  ChevronDown,
+  Search,
+  Box,
+  RefreshCw,
+} from '@lucide/vue';
+import { getSystemInfo, updateDataDir, isNativeMobile, syncSystem } from '@/api';
+
 import { useToast } from '@/composables/useToast';
 import type { SystemInfo } from '@/types';
 
@@ -87,6 +102,21 @@ const saveDataDir = async () => {
     toastError(t('settingsView.dataDirError', { message: err.message || err }));
   } finally {
     isUpdatingDataDir.value = false;
+  }
+};
+
+const isRebuildingIndex = ref(false);
+const handleRebuildIndex = async () => {
+  if (isRebuildingIndex.value) return;
+  try {
+    isRebuildingIndex.value = true;
+    const res = await syncSystem();
+    const count = (res as any)?.synchronized_tasks ?? (res as any)?.synced ?? 0;
+    toastSuccess(t('sync.rebuildIndexSuccess', { count }));
+  } catch (err: any) {
+    toastError(t('sync.error', { message: err.message || err }));
+  } finally {
+    isRebuildingIndex.value = false;
   }
 };
 
@@ -730,6 +760,25 @@ const getTagClasses = (tag: string) => {
               </div>
             </template>
           </div>
+        </div>
+
+        <!-- Rebuild SQLite Search Index Maintenance -->
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-theme-bg/40 border border-theme-border/30 rounded-xl"
+        >
+          <div class="flex flex-col min-w-0 pr-2">
+            <span class="text-xs font-bold text-theme-text-main">{{ t('sync.rebuildIndex') }}</span>
+            <span class="text-[11px] text-theme-text-muted mt-0.5 leading-relaxed">{{ t('sync.rebuildIndexDesc') }}</span>
+          </div>
+          <button
+            type="button"
+            @click="handleRebuildIndex"
+            :disabled="isRebuildingIndex"
+            class="px-3.5 py-2 bg-theme-bg/60 hover:bg-theme-column/60 text-theme-text-main rounded-lg border border-theme-border/60 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+          >
+            <RefreshCw class="w-3.5 h-3.5 text-theme-accent" :class="{ 'animate-spin': isRebuildingIndex }" />
+            <span>{{ isRebuildingIndex ? t('sync.syncing') : t('sync.rebuildIndex') }}</span>
+          </button>
         </div>
       </div>
     </div>

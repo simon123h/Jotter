@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { useDebounceFn } from '@vueuse/core';
+import { useDebounceFn, useEventListener } from '@vueuse/core';
+
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
@@ -183,6 +184,15 @@ watch(
     }
   }
 );
+
+useEventListener(window, 'focus', () => {
+  projectStore.invalidate();
+});
+useEventListener(document, 'visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    projectStore.invalidate();
+  }
+});
 
 const handleMoveTasksToProject = ({ taskIds, projectId: targetProjectId }: { taskIds: string[]; projectId: string }) => {
   modalStore.openMoveTasksConfirm(taskIds, targetProjectId);

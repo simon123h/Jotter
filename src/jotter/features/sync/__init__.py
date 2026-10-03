@@ -11,9 +11,11 @@ from jotter.features.sync.git_adapter import (
 )
 from jotter.features.sync.router import router
 from jotter.features.sync.service import SyncApplicationService
+from jotter.features.sync.watcher import FileWatcherService
 
 __all__ = [
     "SyncApplicationService",
+    "FileWatcherService",
     "is_git_installed",
     "is_git_repo",
     "init_git_repo",

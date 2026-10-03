@@ -1,4 +1,5 @@
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -11,7 +12,7 @@ from jotter.features.buckets import router as buckets_router
 from jotter.features.canvas.router import router as canvas_router
 from jotter.features.projects import router as projects_router
 from jotter.features.settings import router as settings_router
-from jotter.features.sync import SyncApplicationService
+from jotter.features.sync import FileWatcherService, SyncApplicationService
 from jotter.features.sync import router as system_router
 from jotter.features.tasks import router as tasks_router
 from jotter.features.timeblock.router import router as timeblock_router
@@ -24,12 +25,27 @@ except ImportError:
     app_version = "3.0.0b1"
 
 
-def create_app(config: UserConfig | None = None, version: str = app_version) -> FastAPI:
+def create_app(config: UserConfig | None = None, version: str = app_version, enable_watcher: bool = True) -> FastAPI:
     cfg = config or load_config()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        watcher = None
+        if enable_watcher:
+            watcher = FileWatcherService(app.state.config.data_dir)
+            watcher.start()
+            app.state.watcher = watcher
+        try:
+            yield
+        finally:
+            if watcher:
+                watcher.stop()
+
     app = FastAPI(
         title="Jotter API",
         version=version,
         description="Local-first Markdown Kanban Board backend API (Python)",
+        lifespan=lifespan,
     )
     app.state.config = cfg
     app.state.version = version

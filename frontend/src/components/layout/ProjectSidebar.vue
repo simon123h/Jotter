@@ -21,6 +21,7 @@ import { storeToRefs } from 'pinia';
 import Sortable from 'sortablejs';
 import { useSettingsStore } from '@/stores/settings';
 import { useModalStore } from '@/stores/modal';
+import { useProjectStore } from '@/stores/project';
 import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
@@ -89,12 +90,18 @@ const toggleSortOrder = () => {
   settingsStore.setSortBy(sortBy.value === 'alpha' ? 'manual' : 'alpha');
 };
 
-// Server Status Checking
+// Server Status Checking & Automatic Revalidation
 let pingInterval: any = null;
+const projectStore = useProjectStore();
+
+const revalidateAndCheckStatus = () => {
+  checkServerStatus();
+  projectStore.invalidate();
+};
 
 const handleFocusOrVisible = () => {
   if (document.visibilityState === 'visible') {
-    checkServerStatus();
+    revalidateAndCheckStatus();
   }
 };
 
@@ -132,12 +139,13 @@ watch(sortBy, (newSortBy) => {
   }
 });
 
-useEventListener(window, 'focus', checkServerStatus);
+useEventListener(window, 'focus', revalidateAndCheckStatus);
 useEventListener(document, 'visibilitychange', handleFocusOrVisible);
 
 onMounted(() => {
   initSortable();
-  checkServerStatus();
+  revalidateAndCheckStatus();
+
   pingInterval = setInterval(checkServerStatus, 30000);
 });
 

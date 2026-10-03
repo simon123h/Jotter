@@ -22,7 +22,7 @@ def test_env(temp_dir: str) -> Generator[tuple[TestClient, str], None, None]:
     get_db(str(db_file))
 
     config = UserConfig(data_dir=temp_dir, port=8000)
-    app = create_app(config)
+    app = create_app(config, enable_watcher=False)
 
     with TestClient(app) as client:
         yield client, temp_dir

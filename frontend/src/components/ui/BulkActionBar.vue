@@ -119,6 +119,10 @@ const handleCustomDueDate = () => {
 
 const customPostponedDate = ref('');
 
+const handleCustomPostponedDate = () => {
+  emit('set-postponed-date', customPostponedDate.value);
+};
+
 const setPostponedPreset = (preset: 'tomorrow' | 'nextWeek' | 'clear') => {
   if (preset === 'clear') {
     emit('set-postponed-date', '');
