@@ -34,3 +34,12 @@ def test_mcp_direct_service_execution(temp_dir):
     buckets = list_buckets_fn("default")
     assert isinstance(buckets, list)
     assert len(buckets) >= 1
+
+    create_task_fn = tool_manager.get_tool("create_task").fn
+    created = create_task_fn(title="Test Task", project_id="default")
+    assert created["id"] is not None
+    assert created["bucket"] == "todo"
+
+    move_task_fn = tool_manager.get_tool("move_task").fn
+    moved = move_task_fn(task_id=created["id"], bucket="done", project_id="default")
+    assert moved["bucket"] == "done"

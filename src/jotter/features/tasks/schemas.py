@@ -48,7 +48,7 @@ class TaskMove(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     bucket: str
-    position: float
+    position: float | None = None
 
 
 class TaskResponse(BaseModel):
