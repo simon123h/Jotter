@@ -80,11 +80,17 @@ Füge Jotter zu deiner `claude_desktop_config.json` hinzu:
 
 ### Verfügbare MCP-Tools
 * `list_projects`: Alle Projekte auflisten.
+* `get_project`: Projektdetails und Einstellungen anhand der ID abrufen.
+* `create_project`: Neues Projektboard mit Standardspalten erstellen.
 * `list_buckets`: Kanban-Spalten für ein Projekt auflisten.
+* `create_bucket`: Neue Kanban-Spalte/Bucket zu einem Projekt hinzufügen.
 * `list_tasks`: Aufgaben nach Spalte, Tag, Priorität, Datum oder Suchbegriff filtern.
 * `get_task`: Vollständige Aufgabendetails und Markdown-Beschreibung abrufen.
 * `create_task`: Neue Aufgabe auf dem Board erstellen.
+* `batch_create_tasks`: Mehrere Aufgaben in einer einzigen Batch-Operation erstellen.
 * `update_task`: Metadaten oder Beschreibung einer Aufgabe bearbeiten.
-* `move_task`: Aufgabe zwischen Spalten verschieben.
+* `move_task`: Aufgabe zwischen Spalten oder über Projekte hinweg verschieben.
 * `delete_task`: Aufgabe löschen.
-* `sync_database`: Dateisystem-Markdown-Dateien mit dem Suchindex abgleichen.
+* `sync_database`: Dateisystem-Markdown-Dateien mit dem SQLite-Suchindex abgleichen.
+* `git_sync`: Git-Synchronisierung (Add, Commit, Pull, Push) für konfigurierte Git-Remotes ausführen.
+

@@ -16,7 +16,9 @@ except (ImportError, ModuleNotFoundError):
         MCPServer = None  # type: ignore
 
 from jotter.config import UserConfig, load_config
+from jotter.features.buckets.schemas import BucketCreate
 from jotter.features.buckets.service import BucketApplicationService
+from jotter.features.projects.schemas import ProjectCreate
 from jotter.features.projects.service import ProjectApplicationService
 from jotter.features.sync.service import SyncApplicationService
 from jotter.features.tasks.schemas import TaskCreate, TaskMove, TaskUpdate
@@ -53,10 +55,55 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         return [p.model_dump() for p in projects]
 
     @server.tool()
+    def get_project(project_id: str) -> dict[str, Any]:
+        """Retrieve metadata of a specific project by its ID."""
+        project = project_svc.get_project(project_id)
+        return project.model_dump()
+
+    @server.tool()
+    def create_project(
+        title: str,
+        id: str | None = None,
+        description: str = "",
+        git_remote: str | None = None,
+        done_clean_period: int | None = None,
+    ) -> dict[str, Any]:
+        """Create a new project board in Jotter with default columns."""
+        req = ProjectCreate(
+            title=title,
+            id=id,
+            description=description,
+            git_remote=git_remote,
+            done_clean_period=done_clean_period,
+        )
+        project = project_svc.create_project(req)
+        return project.model_dump()
+
+    @server.tool()
     def list_buckets(project_id: str = "default") -> list[dict[str, Any]]:
         """List all Kanban columns/buckets for a given project (e.g. backlog, todo, in-progress, done, archive)."""
         buckets = bucket_svc.get_all_buckets(project_id)
         return [b.model_dump() for b in buckets]
+
+    @server.tool()
+    def create_bucket(
+        title: str,
+        project_id: str = "default",
+        name: str | None = None,
+        subtitle: str = "",
+        color: str | None = None,
+        position: float | None = None,
+    ) -> dict[str, Any]:
+        """Add a new Kanban column/bucket to a project."""
+        req = BucketCreate(
+            title=title,
+            name=name,
+            subtitle=subtitle,
+            color=color,
+            position=position,
+        )
+        bucket = bucket_svc.create_bucket(project_id, req)
+        return bucket.model_dump()
 
     @server.tool()
     def list_tasks(
@@ -112,6 +159,28 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         return created.model_dump()
 
     @server.tool()
+    def batch_create_tasks(
+        tasks: list[dict[str, Any]],
+        project_id: str = "default",
+    ) -> list[dict[str, Any]]:
+        """Create multiple tasks on the Jotter board in a single batch operation."""
+        created_tasks = []
+        for t in tasks:
+            req = TaskCreate(
+                title=t.get("title", ""),
+                bucket=t.get("bucket", "todo"),
+                tags=t.get("tags") or [],
+                body=t.get("body", ""),
+                priority=t.get("priority"),
+                due_date=t.get("due_date"),
+                planned_date=t.get("planned_date"),
+                position=t.get("position"),
+            )
+            created = task_svc.create_task(project_id, req)
+            created_tasks.append(created.model_dump())
+        return created_tasks
+
+    @server.tool()
     def update_task(
         task_id: str,
         project_id: str = "default",
@@ -139,11 +208,17 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         task_id: str,
         bucket: str,
         project_id: str = "default",
+        target_project_id: str | None = None,
         position: float | None = None,
     ) -> dict[str, Any]:
-        """Move a task to a different Kanban column (e.g. 'todo', 'in-progress', 'done', 'archive')."""
-        req = TaskMove(bucket=bucket, position=position)
-        moved = task_svc.move_task(project_id, task_id, req)
+        """Move a task to a different Kanban column (e.g. 'todo', 'in-progress', 'done') or across projects."""
+        dest_project = target_project_id or project_id
+        if dest_project != project_id:
+            req = TaskUpdate(project_id=dest_project, bucket=bucket, position=position)
+            moved = task_svc.update_task(project_id, task_id, req)
+        else:
+            req = TaskMove(bucket=bucket, position=position)
+            moved = task_svc.move_task(project_id, task_id, req)
         return moved.model_dump()
 
     @server.tool()
@@ -156,6 +231,12 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
     def sync_database() -> dict[str, Any]:
         """Reconcile and sync disk Markdown files into the SQLite database index."""
         synced_count = sync_svc.sync_db_only()
+        return {"status": "success", "synced_tasks": synced_count}
+
+    @server.tool()
+    def git_sync() -> dict[str, Any]:
+        """Run Git synchronization (add, commit, pull, push) for configured Git remotes and reconcile SQLite index."""
+        synced_count = sync_svc.full_sync()
         return {"status": "success", "synced_tasks": synced_count}
 
     return server

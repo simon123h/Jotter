@@ -80,11 +80,17 @@ Add Jotter to your `claude_desktop_config.json`:
 
 ### Available MCP Tools
 * `list_projects`: List all projects.
+* `get_project`: Retrieve project details and settings by ID.
+* `create_project`: Create a new project board with default columns.
 * `list_buckets`: List Kanban columns for a project.
+* `create_bucket`: Add a new Kanban column/bucket to a project.
 * `list_tasks`: Query tasks with filters (`project_id`, `bucket`, `tag`, `search`, `priority`, `due_before`, `due_after`).
 * `get_task`: Retrieve task details and markdown content.
 * `create_task`: Create a new task on the board.
+* `batch_create_tasks`: Create multiple tasks on the board in a single batch operation.
 * `update_task`: Update task properties or notes.
-* `move_task`: Move a task between columns.
+* `move_task`: Move a task between columns or across projects.
 * `delete_task`: Delete a task.
-* `sync_database`: Reconcile Markdown files on disk with the search index.
+* `sync_database`: Reconcile Markdown files on disk with the SQLite search index.
+* `git_sync`: Run Git synchronization (add, commit, pull, push) for configured Git remotes.
+
