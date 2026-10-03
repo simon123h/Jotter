@@ -7,6 +7,7 @@ import type { Task } from '@/types';
 import TaskCard from '@/components/ui/TaskCard.vue';
 import { useCanvasStore } from '@/stores/canvas';
 import { useProjectStore } from '@/stores/project';
+import { useSelectionStore } from '@/stores/selection';
 
 const props = defineProps<{
   id: string;
@@ -22,6 +23,15 @@ const router = useRouter();
 const route = useRoute();
 const canvasStore = useCanvasStore();
 const projectStore = useProjectStore();
+const selectionStore = useSelectionStore();
+
+const isTaskSelected = computed(() => {
+  return task.value ? selectionStore.isSelected(task.value.id) : false;
+});
+
+const handleToggleSelect = (selectedTask: Task) => {
+  selectionStore.toggleSelection(selectedTask.id);
+};
 
 const task = computed<Task | undefined>(() => {
   if (props.data.task) return props.data.task;
@@ -54,7 +64,7 @@ const removeNode = () => {
   <div
     class="canvas-task-node relative group rounded-lg shadow-sm transition-shadow border-2"
     :class="[
-      selected ? 'border-theme-primary ring-2 ring-theme-primary/20' : 'border-theme-border/60 hover:border-theme-border',
+      selected || isTaskSelected ? 'border-theme-primary ring-2 ring-theme-primary/20' : 'border-theme-border/60 hover:border-theme-border',
       data.color ? 'custom-colored' : 'bg-theme-card',
     ]"
     :style="data.color ? { borderColor: data.color } : {}"
@@ -96,6 +106,7 @@ const removeNode = () => {
           :allow-expand="false"
           :compact="false"
           @click="openTaskModal"
+          @toggle-select="handleToggleSelect"
         />
       </template>
       <div v-else class="p-4 text-xs text-theme-text-muted italic flex items-center justify-between">

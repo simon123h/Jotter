@@ -25,16 +25,18 @@ import CanvasSidebar from '@/components/canvas/CanvasSidebar.vue';
 
 import { useCanvasStore } from '@/stores/canvas';
 import { useProjectStore } from '@/stores/project';
+import { useSelectionStore } from '@/stores/selection';
 import type { CanvasEdge, Task } from '@/types';
 
 const route = useRoute();
 const canvasStore = useCanvasStore();
 const projectStore = useProjectStore();
+const selectionStore = useSelectionStore();
 
 const projectId = computed(() => (route.params.projectId as string) || '');
 const canvasId = computed(() => (route.params.canvasId as string) || 'main');
 
-const { project, onConnect } = useVueFlow();
+const { project, onConnect, getSelectedNodes, removeSelectedNodes } = useVueFlow();
 
 // Convert CanvasNode to Vue Flow Node format
 const flowNodes = computed(() => {
@@ -115,12 +117,28 @@ onBeforeRouteLeave(async () => {
 
 onBeforeUnmount(async () => {
   window.removeEventListener('keydown', handleKeyDown);
+  selectionStore.clearSelection();
   await canvasStore.flushAutoSave();
 });
 
 // Handle node drag stop -> update positions in store
 const onNodeDragStop = (event: NodeDragEvent) => {
   canvasStore.updateNodePositionAndSize(event.node.id, event.node.position.x, event.node.position.y);
+};
+
+// Sync Vue Flow selection (from marquee or node click) to selectionStore
+const syncVueFlowSelectionToStore = () => {
+  const selectedTaskIds = new Set<string>();
+  for (const node of getSelectedNodes.value) {
+    if (node.type === 'file') {
+      const taskId = (node.data as any)?.task?.id || (node.data as any)?.file?.replace(/\.md$/, '');
+      if (taskId) {
+        selectedTaskIds.add(taskId);
+      }
+    }
+  }
+
+  selectionStore.selectedIds = selectedTaskIds;
 };
 
 // Handle edge connection
@@ -151,14 +169,38 @@ const onEdgesChange = (changes: EdgeChange[]) => {
   }
 };
 
-// Handle node deletion
+// Handle node deletion & selection changes
 const onNodesChange = (changes: NodeChange[]) => {
+  let hasSelectionChange = false;
   for (const c of changes) {
     if (c.type === 'remove') {
       canvasStore.removeNode(c.id);
+    } else if (c.type === 'select') {
+      hasSelectionChange = true;
     }
   }
+  if (hasSelectionChange) {
+    syncVueFlowSelectionToStore();
+  }
 };
+
+const onSelectionEnd = () => {
+  syncVueFlowSelectionToStore();
+};
+
+const onPaneClick = () => {
+  selectionStore.clearSelection();
+};
+
+// If selection is cleared externally (e.g. BulkActionBar clear or after bulk action), deselect nodes in VueFlow
+watch(
+  () => selectionStore.selectedIds.size,
+  (newSize) => {
+    if (newSize === 0 && getSelectedNodes.value.length > 0) {
+      removeSelectedNodes(getSelectedNodes.value);
+    }
+  }
+);
 
 // Drag and drop from unplaced tasks sidebar
 const onDragOver = (event: DragEvent) => {
@@ -212,6 +254,8 @@ const onDrop = (event: DragEvent) => {
           @node-drag-stop="onNodeDragStop"
           @edges-change="onEdgesChange"
           @nodes-change="onNodesChange"
+          @selection-end="onSelectionEnd"
+          @pane-click="onPaneClick"
           class="jotter-flow-board"
           :class="`mode-${canvasStore.interactionMode}`"
         >
