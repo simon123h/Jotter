@@ -94,3 +94,11 @@ Add Jotter to your `claude_desktop_config.json`:
 * `sync_database`: Reconcile Markdown files on disk with the SQLite search index.
 * `git_sync`: Run Git synchronization (add, commit, pull, push) for configured Git remotes.
 
+### Available MCP Resources
+MCP clients can read or attach live board contexts using standard URI schemes without tool calls:
+* `jotter://projects`: Overview of all projects, descriptions, and column structures in Markdown format.
+* `jotter://projects/{project_id}/board`: Live Kanban board markdown view showing all columns and active tasks with priority and due dates.
+* `jotter://tasks/{task_id}`: Raw Markdown file content and YAML frontmatter for a specific task.
+* `jotter://projects/{project_id}/tasks/{task_id}`: Raw Markdown file content for a specific task in a specific project.
+
+

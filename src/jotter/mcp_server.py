@@ -239,6 +239,124 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         synced_count = sync_svc.full_sync()
         return {"status": "success", "synced_tasks": synced_count}
 
+    # ==========================================
+    # MCP Resources (Passive Context Attachment)
+    # ==========================================
+
+    @server.resource(
+        "jotter://projects",
+        name="projects_overview",
+        title="Jotter Projects Overview",
+        description="Markdown overview of all projects, boards, and column metadata in Jotter.",
+        mime_type="text/markdown",
+    )
+    def resource_projects() -> str:
+        """Overview of all projects and their buckets/columns."""
+        projects = project_svc.get_all_projects()
+        lines = ["# Jotter Projects\n"]
+        for p in projects:
+            lines.append(f"## {p.title} (`{p.id}`)")
+            if p.description:
+                lines.append(f"_{p.description}_\n")
+            buckets = bucket_svc.get_all_buckets(p.id)
+            bucket_list = ", ".join(f"`{b.name}` ({b.title})" for b in buckets)
+            lines.append(f"- **Columns**: {bucket_list}")
+            if p.git_remote:
+                lines.append(f"- **Git Remote**: `{p.git_remote}`")
+            lines.append("")
+        return "\n".join(lines)
+
+    @server.resource(
+        "jotter://projects/{project_id}/board",
+        name="project_board",
+        title="Jotter Project Board",
+        description="Markdown representation of a Kanban board, structured by columns/buckets with active tasks.",
+        mime_type="text/markdown",
+    )
+    def resource_project_board(project_id: str) -> str:
+        """Active board view showing all columns and tasks for a specific project."""
+        project = project_svc.get_project(project_id)
+        buckets = bucket_svc.get_all_buckets(project_id)
+        all_tasks = task_svc.get_tasks(project_id=project_id)
+
+        # Group tasks by bucket name
+        tasks_by_bucket: dict[str, list[Any]] = {b.name: [] for b in buckets}
+        for task in all_tasks:
+            tasks_by_bucket.setdefault(task.bucket, []).append(task)
+
+        lines = [f"# Kanban Board: {project.title} (`{project.id}`)\n"]
+        if project.description:
+            lines.append(f"_{project.description}_\n")
+
+        for b in buckets:
+            bucket_tasks = tasks_by_bucket.get(b.name, [])
+            lines.append(f"## {b.title} (`{b.name}`) — {len(bucket_tasks)} tasks")
+            if not bucket_tasks:
+                lines.append("_(empty)_\n")
+                continue
+
+            for t in sorted(bucket_tasks, key=lambda x: x.position):
+                priority_mark = f" [Priority: {t.priority}]" if t.priority and t.priority != "none" else ""
+                due_mark = f" (Due: {t.due_date})" if t.due_date else ""
+                tag_mark = f" [{' '.join('#' + tag for tag in t.tags)}]" if t.tags else ""
+                lines.append(f"- **{t.title}** (`{t.id}`){priority_mark}{due_mark}{tag_mark}")
+                if t.body and t.body.strip():
+                    body_first_line = t.body.strip().splitlines()[0]
+                    lines.append(f"  > {body_first_line}")
+            lines.append("")
+
+        return "\n".join(lines)
+
+    @server.resource(
+        "jotter://tasks/{task_id}",
+        name="task_detail",
+        title="Jotter Task Detail",
+        description="Complete raw Markdown file and metadata for a specific task.",
+        mime_type="text/markdown",
+    )
+    def resource_task_detail(task_id: str) -> str:
+        """Reads a task's full Markdown content including YAML frontmatter and body."""
+        # Find task across projects or in default project
+        projects = project_svc.get_all_projects()
+        target_task = None
+        target_project_id = "default"
+
+        for p in projects:
+            try:
+                target_task = task_svc.get_task(p.id, task_id)
+                target_project_id = p.id
+                break
+            except Exception:
+                continue
+
+        if not target_task:
+            raise ValueError(f"Task '{task_id}' not found in any project.")
+
+        # Read the raw Markdown file from disk repo if present
+        task_path = task_svc.disk_repo.get_task_file_path(target_project_id, task_id)
+        if task_path.is_file():
+            return task_path.read_text(encoding="utf-8")
+
+        # Fallback to serialized entity
+        task_entity = task_svc.sqlite_repo.get_by_id(target_project_id, task_id)
+        return task_svc.disk_repo.serialize_task(task_entity)
+
+    @server.resource(
+        "jotter://projects/{project_id}/tasks/{task_id}",
+        name="project_task_detail",
+        title="Jotter Project Task Detail",
+        description="Complete raw Markdown content of a task within a specified project.",
+        mime_type="text/markdown",
+    )
+    def resource_project_task_detail(project_id: str, task_id: str) -> str:
+        """Reads a specific task's Markdown content for a given project."""
+        task_path = task_svc.disk_repo.get_task_file_path(project_id, task_id)
+        if task_path.is_file():
+            return task_path.read_text(encoding="utf-8")
+
+        task_entity = task_svc.sqlite_repo.get_by_id(project_id, task_id)
+        return task_svc.disk_repo.serialize_task(task_entity)
+
     return server
 
 

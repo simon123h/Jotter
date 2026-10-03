@@ -100,3 +100,49 @@ def test_mcp_direct_service_execution(temp_dir):
     git_sync_fn = tool_manager.get_tool("git_sync").fn
     git_res = git_sync_fn()
     assert git_res["status"] == "success"
+
+
+def test_mcp_resources(temp_dir):
+    import asyncio
+
+    config = UserConfig(data_dir=temp_dir, port=8000)
+    server = create_mcp_server(config)
+
+    tool_manager = getattr(server, "_tool_manager", server)
+    create_task_fn = tool_manager.get_tool("create_task").fn
+    created = create_task_fn(
+        title="Resource Task",
+        body="This is task body for testing resource attachment.",
+        project_id="default",
+        tags=["mcp", "test"],
+        priority="high",
+    )
+    task_id = created["id"]
+
+    async def _test():
+        # 1. Read jotter://projects
+        projects_res = await server.read_resource("jotter://projects")
+        assert len(projects_res) == 1
+        assert "Jotter Projects" in projects_res[0].content
+        assert "default" in projects_res[0].content
+
+        # 2. Read jotter://projects/{project_id}/board
+        board_res = await server.read_resource("jotter://projects/default/board")
+        assert len(board_res) == 1
+        assert "Kanban Board: Default" in board_res[0].content
+        assert "Resource Task" in board_res[0].content
+        assert "Priority: high" in board_res[0].content
+
+        # 3. Read jotter://tasks/{task_id}
+        task_res = await server.read_resource(f"jotter://tasks/{task_id}")
+        assert len(task_res) == 1
+        assert task_id in task_res[0].content
+        assert "This is task body for testing resource attachment." in task_res[0].content
+        assert "type: task" in task_res[0].content
+
+        # 4. Read jotter://projects/{project_id}/tasks/{task_id}
+        proj_task_res = await server.read_resource(f"jotter://projects/default/tasks/{task_id}")
+        assert len(proj_task_res) == 1
+        assert task_id in proj_task_res[0].content
+
+    asyncio.run(_test())
