@@ -174,6 +174,19 @@ def test_task_filters_and_queries(test_env):
     assert len(res.json()) == 1
     assert res.json()[0]["id"] == t1["id"]
 
+    # Filter by created_before / created_after
+    res = client.get(
+        "/api/projects/default/tasks", params={"created_after": "2020-01-01", "created_before": "2099-12-31"}
+    )
+    assert len(res.json()) == 3
+
+    res_future = client.get("/api/projects/default/tasks", params={"created_after": "2099-01-01"})
+    assert len(res_future.json()) == 0
+
+    # Filter by updated_before / updated_after
+    res_up = client.get("/api/projects/default/tasks", params={"updated_after": "2020-01-01"})
+    assert len(res_up.json()) == 3
+
     # Search keyword
     res = client.get("/api/projects/default/tasks", params={"search": "Three"})
     assert len(res.json()) == 1

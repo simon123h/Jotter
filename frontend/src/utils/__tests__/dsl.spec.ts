@@ -59,6 +59,17 @@ describe('Search DSL', () => {
       expect(parseDSL('due:after:2026-06-01')).toEqual({ due_after: '2026-06-01' });
     });
 
+    it('parses created and updated date attributes', () => {
+      expect(parseDSL('created:after:2026-09-01 created:before:2026-09-30')).toEqual({
+        created_after: '2026-09-01',
+        created_before: '2026-09-30',
+      });
+      expect(parseDSL('updated:after:2026-10-01 updated:before:2026-10-05')).toEqual({
+        updated_after: '2026-10-01',
+        updated_before: '2026-10-05',
+      });
+    });
+
     it('handles quoted values for fields', () => {
       expect(parseDSL('bucket:"in progress"')).toEqual({ buckets: 'in progress' });
       expect(parseDSL('project:"marketing division"')).toEqual({ project: 'marketing division' });
@@ -106,6 +117,15 @@ describe('Search DSL', () => {
       expect(stringifyDSL({ has_due_date: false })).toBe('due:none');
       expect(stringifyDSL({ due_before: '2026-06-15' })).toBe('due:before:2026-06-15');
       expect(stringifyDSL({ due_after: '2026-06-01' })).toBe('due:after:2026-06-01');
+    });
+
+    it('stringifies created and updated dates', () => {
+      expect(stringifyDSL({ created_after: '2026-09-01', created_before: '2026-09-30' })).toBe(
+        'created:before:2026-09-30 created:after:2026-09-01'
+      );
+      expect(stringifyDSL({ updated_after: '2026-10-01', updated_before: '2026-10-05' })).toBe(
+        'updated:before:2026-10-05 updated:after:2026-10-01'
+      );
     });
 
     it('combines multiple filters correctly', () => {

@@ -108,3 +108,7 @@ class TaskFilterParams:
     due_after: str | None = None
     planned_date: str | None = None
     has_due_date: bool | None = None
+    created_before: str | None = None
+    created_after: str | None = None
+    updated_before: str | None = None
+    updated_after: str | None = None

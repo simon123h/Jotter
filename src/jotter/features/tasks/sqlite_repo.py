@@ -142,6 +142,10 @@ class SqliteTaskRepository:
         due_after: str | None = None,
         planned_date: str | None = None,
         has_due_date: bool | None = None,
+        created_before: str | None = None,
+        created_after: str | None = None,
+        updated_before: str | None = None,
+        updated_after: str | None = None,
     ) -> list[Task]:
         cursor = self.conn.cursor()
         query = """
@@ -234,6 +238,27 @@ class SqliteTaskRepository:
             query += " AND due_date IS NOT NULL AND due_date != ''"
         elif has_due_date is False:
             query += " AND (due_date IS NULL OR due_date = '')"
+
+        # Created date filters
+        if created_before:
+            # Match up to end of given date if YYYY-MM-DD
+            c_before = f"{created_before}T23:59:59.999999" if len(created_before) == 10 else created_before
+            query += " AND created_at <= ?"
+            args.append(c_before)
+        if created_after:
+            c_after = f"{created_after}T00:00:00" if len(created_after) == 10 else created_after
+            query += " AND created_at >= ?"
+            args.append(c_after)
+
+        # Updated date filters
+        if updated_before:
+            u_before = f"{updated_before}T23:59:59.999999" if len(updated_before) == 10 else updated_before
+            query += " AND updated_at <= ?"
+            args.append(u_before)
+        if updated_after:
+            u_after = f"{updated_after}T00:00:00" if len(updated_after) == 10 else updated_after
+            query += " AND updated_at >= ?"
+            args.append(u_after)
 
         # FTS5 full-text search across title, body, and tags
         if search:

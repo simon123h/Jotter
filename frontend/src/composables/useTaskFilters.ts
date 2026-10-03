@@ -22,6 +22,10 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
       f.search ||
       f.due_after ||
       f.due_before ||
+      f.created_after ||
+      f.created_before ||
+      f.updated_after ||
+      f.updated_before ||
       f.project ||
       (f.has_due_date !== undefined && f.has_due_date !== null)
     );
@@ -248,6 +252,36 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
     }
     if (taskFilters.value.due_after) {
       list = list.filter((t) => !!t.due_date && t.due_date >= taskFilters.value.due_after!);
+    }
+
+    if (taskFilters.value.created_before) {
+      const cb =
+        taskFilters.value.created_before.length === 10
+          ? `${taskFilters.value.created_before}T23:59:59.999Z`
+          : taskFilters.value.created_before;
+      list = list.filter((t) => !!t.created_at && t.created_at <= cb);
+    }
+    if (taskFilters.value.created_after) {
+      const ca =
+        taskFilters.value.created_after.length === 10
+          ? `${taskFilters.value.created_after}T00:00:00.000Z`
+          : taskFilters.value.created_after;
+      list = list.filter((t) => !!t.created_at && t.created_at >= ca);
+    }
+
+    if (taskFilters.value.updated_before) {
+      const ub =
+        taskFilters.value.updated_before.length === 10
+          ? `${taskFilters.value.updated_before}T23:59:59.999Z`
+          : taskFilters.value.updated_before;
+      list = list.filter((t) => !!t.updated_at && t.updated_at <= ub);
+    }
+    if (taskFilters.value.updated_after) {
+      const ua =
+        taskFilters.value.updated_after.length === 10
+          ? `${taskFilters.value.updated_after}T00:00:00.000Z`
+          : taskFilters.value.updated_after;
+      list = list.filter((t) => !!t.updated_at && t.updated_at >= ua);
     }
 
     return list;

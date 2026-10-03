@@ -66,6 +66,10 @@ def extract_task_filter_params(request: Request) -> TaskFilterParams:
         due_after=_extract_query_param(request, "dueAfter", "due_after"),
         planned_date=_extract_query_param(request, "plannedDate", "planned_date"),
         has_due_date=has_due_date,
+        created_before=_extract_query_param(request, "createdBefore", "created_before"),
+        created_after=_extract_query_param(request, "createdAfter", "created_after"),
+        updated_before=_extract_query_param(request, "updatedBefore", "updated_before"),
+        updated_after=_extract_query_param(request, "updatedAfter", "updated_after"),
     )
 
 

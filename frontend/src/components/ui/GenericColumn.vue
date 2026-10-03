@@ -307,9 +307,9 @@ watch(
           class="cards-container flex-grow pb-6"
           :class="[
             layout === 'grid-3'
-              ? 'columns-3 gap-2.5 [column-fill:_balance]'
+              ? 'columns-1 md:columns-3 gap-2.5 [column-fill:_balance]'
               : layout === 'grid-2'
-                ? 'columns-2 gap-2.5 [column-fill:_balance]'
+                ? 'columns-1 md:columns-2 gap-2.5 [column-fill:_balance]'
                 : 'flex flex-col',
           ]"
         >

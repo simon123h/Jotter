@@ -148,4 +148,31 @@ describe('FilterModal.vue', () => {
 
     expect(store.hideDoneColumn).toBe(true);
   });
+
+  it('populates and emits created and updated date filters', async () => {
+    const wrapper = mount(FilterModal, {
+      props: {
+        ...defaultProps,
+        currentFilters: {
+          created_after: '2026-09-01',
+          created_before: '2026-09-30',
+          updated_after: '2026-10-01',
+          updated_before: '2026-10-05',
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Creation Date');
+    expect(wrapper.text()).toContain('Modification Date');
+
+    const applyBtn = wrapper.findAll('button').find((b) => b.text().includes('Apply Filters'));
+    expect(applyBtn).toBeDefined();
+    await applyBtn!.trigger('click');
+
+    const appliedFilters = wrapper.emitted('apply')?.[0]?.[0] as any;
+    expect(appliedFilters.created_after).toBe('2026-09-01');
+    expect(appliedFilters.created_before).toBe('2026-09-30');
+    expect(appliedFilters.updated_after).toBe('2026-10-01');
+    expect(appliedFilters.updated_before).toBe('2026-10-05');
+  });
 });

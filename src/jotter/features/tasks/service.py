@@ -78,6 +78,10 @@ class TaskApplicationService:
         due_after: str | None = None,
         planned_date: str | None = None,
         has_due_date: bool | None = None,
+        created_before: str | None = None,
+        created_after: str | None = None,
+        updated_before: str | None = None,
+        updated_after: str | None = None,
     ) -> list[TaskResponse]:
         tasks = self.sqlite_repo.find_tasks(
             project_id=project_id,
@@ -94,6 +98,10 @@ class TaskApplicationService:
             due_after=due_after,
             planned_date=planned_date,
             has_due_date=has_due_date,
+            created_before=created_before,
+            created_after=created_after,
+            updated_before=updated_before,
+            updated_after=updated_after,
         )
         return [self._to_response(t) for t in tasks]
 

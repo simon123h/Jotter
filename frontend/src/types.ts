@@ -53,6 +53,10 @@ export interface TaskFilterParams {
   due_after?: string; // YYYY-MM-DD
   planned_date?: string;
   has_due_date?: boolean | null;
+  created_before?: string; // YYYY-MM-DD
+  created_after?: string; // YYYY-MM-DD
+  updated_before?: string; // YYYY-MM-DD
+  updated_after?: string; // YYYY-MM-DD
   project?: string; // Project ID or Title query
 }
 

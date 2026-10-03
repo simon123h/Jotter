@@ -42,6 +42,10 @@ const tagMode = ref<'any' | 'all'>('any');
 const dueDateStatus = ref<'all' | 'has' | 'none'>('all');
 const dueAfter = ref('');
 const dueBefore = ref('');
+const createdAfter = ref('');
+const createdBefore = ref('');
+const updatedAfter = ref('');
+const updatedBefore = ref('');
 const hideDoneColumnLocal = ref(false);
 const hideArchiveColumnLocal = ref(false);
 const hidePostponedColumnLocal = ref(false);
@@ -88,6 +92,10 @@ watch(
 
       dueAfter.value = filters.due_after || '';
       dueBefore.value = filters.due_before || '';
+      createdAfter.value = filters.created_after || '';
+      createdBefore.value = filters.created_before || '';
+      updatedAfter.value = filters.updated_after || '';
+      updatedBefore.value = filters.updated_before || '';
       hideDoneColumnLocal.value = settingsStore.hideDoneColumn;
       hideArchiveColumnLocal.value = settingsStore.hideArchiveColumn;
       hidePostponedColumnLocal.value = settingsStore.hidePostponedColumn;
@@ -100,6 +108,34 @@ const handleClose = () => {
   handleApply();
 };
 
+const setCreatedPreset = (preset: 'today' | '7days' | '30days') => {
+  const now = new Date();
+  createdBefore.value = now.toISOString().split('T')[0];
+  if (preset === 'today') {
+    createdAfter.value = now.toISOString().split('T')[0];
+  } else if (preset === '7days') {
+    const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    createdAfter.value = past.toISOString().split('T')[0];
+  } else if (preset === '30days') {
+    const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    createdAfter.value = past.toISOString().split('T')[0];
+  }
+};
+
+const setUpdatedPreset = (preset: 'today' | '7days' | '30days') => {
+  const now = new Date();
+  updatedBefore.value = now.toISOString().split('T')[0];
+  if (preset === 'today') {
+    updatedAfter.value = now.toISOString().split('T')[0];
+  } else if (preset === '7days') {
+    const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    updatedAfter.value = past.toISOString().split('T')[0];
+  } else if (preset === '30days') {
+    const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    updatedAfter.value = past.toISOString().split('T')[0];
+  }
+};
+
 const handleClear = () => {
   search.value = '';
   selectedBuckets.value = [];
@@ -109,6 +145,10 @@ const handleClear = () => {
   dueDateStatus.value = 'all';
   dueAfter.value = '';
   dueBefore.value = '';
+  createdAfter.value = '';
+  createdBefore.value = '';
+  updatedAfter.value = '';
+  updatedBefore.value = '';
   hideDoneColumnLocal.value = true;
   hideArchiveColumnLocal.value = true;
   hidePostponedColumnLocal.value = true;
@@ -128,6 +168,10 @@ const handleApply = () => {
     has_due_date,
     due_after: dueDateStatus.value !== 'none' && dueAfter.value ? dueAfter.value : undefined,
     due_before: dueDateStatus.value !== 'none' && dueBefore.value ? dueBefore.value : undefined,
+    created_after: createdAfter.value ? createdAfter.value : undefined,
+    created_before: createdBefore.value ? createdBefore.value : undefined,
+    updated_after: updatedAfter.value ? updatedAfter.value : undefined,
+    updated_before: updatedBefore.value ? updatedBefore.value : undefined,
   };
 
   settingsStore.hideDoneColumn = hideDoneColumnLocal.value;
@@ -249,6 +293,118 @@ const handleApply = () => {
                 </label>
                 <input
                   v-model="dueBefore"
+                  type="date"
+                  class="w-full bg-theme-card border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Created Date Section -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">
+                {{ t('filterModal.createdDateLabel') }}
+              </label>
+              <div class="flex items-center gap-1 text-[10px]">
+                <button
+                  type="button"
+                  @click="setCreatedPreset('today')"
+                  class="px-1.5 py-0.5 rounded bg-theme-card border border-theme-border/50 text-theme-text-muted hover:text-theme-text-main cursor-pointer"
+                >
+                  {{ t('filterModal.presetToday') }}
+                </button>
+                <button
+                  type="button"
+                  @click="setCreatedPreset('7days')"
+                  class="px-1.5 py-0.5 rounded bg-theme-card border border-theme-border/50 text-theme-text-muted hover:text-theme-text-main cursor-pointer"
+                >
+                  {{ t('filterModal.presetLast7Days') }}
+                </button>
+                <button
+                  type="button"
+                  @click="setCreatedPreset('30days')"
+                  class="px-1.5 py-0.5 rounded bg-theme-card border border-theme-border/50 text-theme-text-muted hover:text-theme-text-main cursor-pointer"
+                >
+                  {{ t('filterModal.presetLast30Days') }}
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1 flex items-center gap-1">
+                  <Calendar class="w-3 h-3 text-theme-text-muted" />
+                  {{ t('filterModal.createdAfterLabel') }}
+                </label>
+                <input
+                  v-model="createdAfter"
+                  type="date"
+                  class="w-full bg-theme-card border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1 flex items-center gap-1">
+                  <Calendar class="w-3 h-3 text-theme-text-muted" />
+                  {{ t('filterModal.createdBeforeLabel') }}
+                </label>
+                <input
+                  v-model="createdBefore"
+                  type="date"
+                  class="w-full bg-theme-card border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Updated Date Section -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">
+                {{ t('filterModal.updatedDateLabel') }}
+              </label>
+              <div class="flex items-center gap-1 text-[10px]">
+                <button
+                  type="button"
+                  @click="setUpdatedPreset('today')"
+                  class="px-1.5 py-0.5 rounded bg-theme-card border border-theme-border/50 text-theme-text-muted hover:text-theme-text-main cursor-pointer"
+                >
+                  {{ t('filterModal.presetToday') }}
+                </button>
+                <button
+                  type="button"
+                  @click="setUpdatedPreset('7days')"
+                  class="px-1.5 py-0.5 rounded bg-theme-card border border-theme-border/50 text-theme-text-muted hover:text-theme-text-main cursor-pointer"
+                >
+                  {{ t('filterModal.presetLast7Days') }}
+                </button>
+                <button
+                  type="button"
+                  @click="setUpdatedPreset('30days')"
+                  class="px-1.5 py-0.5 rounded bg-theme-card border border-theme-border/50 text-theme-text-muted hover:text-theme-text-main cursor-pointer"
+                >
+                  {{ t('filterModal.presetLast30Days') }}
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1 flex items-center gap-1">
+                  <Calendar class="w-3 h-3 text-theme-text-muted" />
+                  {{ t('filterModal.updatedAfterLabel') }}
+                </label>
+                <input
+                  v-model="updatedAfter"
+                  type="date"
+                  class="w-full bg-theme-card border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-1 flex items-center gap-1">
+                  <Calendar class="w-3 h-3 text-theme-text-muted" />
+                  {{ t('filterModal.updatedBeforeLabel') }}
+                </label>
+                <input
+                  v-model="updatedBefore"
                   type="date"
                   class="w-full bg-theme-card border border-theme-border rounded px-2 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary"
                 />

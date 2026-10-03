@@ -65,6 +65,18 @@ export function parseDSL(query: string): TaskFilterParams {
         } else if (rawValue.startsWith('after:')) {
           filters.due_after = rawValue.substring(6);
         }
+      } else if (lowerKey === 'created') {
+        if (rawValue.startsWith('before:')) {
+          filters.created_before = rawValue.substring(7);
+        } else if (rawValue.startsWith('after:')) {
+          filters.created_after = rawValue.substring(6);
+        }
+      } else if (lowerKey === 'updated') {
+        if (rawValue.startsWith('before:')) {
+          filters.updated_before = rawValue.substring(7);
+        } else if (rawValue.startsWith('after:')) {
+          filters.updated_after = rawValue.substring(6);
+        }
       }
     } else {
       const text = (quotedText !== undefined ? quotedText : unquotedText || '').trim();
@@ -128,7 +140,23 @@ export function stringifyDSL(filters: TaskFilterParams): string {
     parts.push(`due:after:${filters.due_after}`);
   }
 
-  // 6. Text Search (if contains space, quote it)
+  // 6. Created Dates
+  if (filters.created_before) {
+    parts.push(`created:before:${filters.created_before}`);
+  }
+  if (filters.created_after) {
+    parts.push(`created:after:${filters.created_after}`);
+  }
+
+  // 7. Updated Dates
+  if (filters.updated_before) {
+    parts.push(`updated:before:${filters.updated_before}`);
+  }
+  if (filters.updated_after) {
+    parts.push(`updated:after:${filters.updated_after}`);
+  }
+
+  // 8. Text Search (if contains space, quote it)
   if (filters.search) {
     parts.push(filters.search);
   }
