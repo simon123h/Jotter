@@ -89,7 +89,7 @@ const removeNode = () => {
       <TaskCard
         :task="task"
         :show-tags="true"
-        :show-done-button="true"
+        :show-done-button="false"
         :show-footer="true"
         :allow-expand="false"
         :compact="false"
