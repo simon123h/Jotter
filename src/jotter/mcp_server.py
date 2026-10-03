@@ -49,13 +49,13 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
     @server.tool()
     def list_projects() -> list[dict[str, Any]]:
         """List all projects in Jotter."""
-        projects = project_svc.get_all()
+        projects = project_svc.get_all_projects()
         return [p.model_dump() for p in projects]
 
     @server.tool()
     def list_buckets(project_id: str = "default") -> list[dict[str, Any]]:
         """List all Kanban columns/buckets for a given project (e.g. backlog, todo, in-progress, done, archive)."""
-        buckets = bucket_svc.get_all(project_id)
+        buckets = bucket_svc.get_all_buckets(project_id)
         return [b.model_dump() for b in buckets]
 
     @server.tool()
