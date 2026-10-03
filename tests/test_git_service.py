@@ -127,3 +127,30 @@ def test_git_history_and_restore_fallback_to_parent_repo(temp_dir):
     assert task_file.read_text(encoding="utf-8") == "project A initial"
     # Project B's file should remain untouched
     assert other_file.read_text(encoding="utf-8") == "project B updated"
+
+
+def test_git_sync_tracks_and_restores_canvas_files(temp_dir):
+    setup_git_data_dir(temp_dir)
+
+    proj_dir = Path(temp_dir) / "default"
+    proj_dir.mkdir(parents=True, exist_ok=True)
+    canvas_file = proj_dir / "architecture.canvas"
+    canvas_file.write_text('{"nodes":[{"id":"node1","type":"text","text":"v1"}],"edges":[]}', encoding="utf-8")
+
+    # git_sync auto-commits the canvas file
+    git_sync(temp_dir, None)
+
+    history = get_git_history(temp_dir)
+    assert len(history) == 1
+    v1_hash = history[0]["hash"]
+
+    # Update canvas
+    canvas_file.write_text('{"nodes":[{"id":"node1","type":"text","text":"v2"}],"edges":[]}', encoding="utf-8")
+    git_sync(temp_dir, None)
+
+    history_v2 = get_git_history(temp_dir)
+    assert len(history_v2) == 2
+
+    # Restore v1
+    restore_commit(temp_dir, None, v1_hash)
+    assert "v1" in canvas_file.read_text(encoding="utf-8")

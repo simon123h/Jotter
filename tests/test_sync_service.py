@@ -443,3 +443,35 @@ def test_full_sync_with_global_workspace_git(temp_dir, test_env):
     gitignore_file = root_dir / ".gitignore"
     assert gitignore_file.is_file()
     assert "tasks.db" in gitignore_file.read_text(encoding="utf-8")
+
+
+def test_full_sync_commits_canvas_files(temp_dir, test_env):
+    from jotter.features.canvas.schemas import CanvasDocument, CanvasGenericNode
+    from jotter.features.canvas.service import CanvasApplicationService
+    from jotter.features.sync.git_adapter import get_git_history, run_git
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    canvas_svc = CanvasApplicationService(temp_dir)
+
+    proj_dir = Path(temp_dir) / "default"
+    proj_dir.mkdir(parents=True, exist_ok=True)
+    run_git(["init", "-b", "main"], cwd=proj_dir)
+    run_git(["config", "user.name", "Test"], cwd=proj_dir)
+    run_git(["config", "user.email", "test@example.com"], cwd=proj_dir)
+
+    # Create a canvas
+    canvas_svc.save_canvas(
+        "default",
+        "diagram",
+        CanvasDocument(
+            nodes=[CanvasGenericNode(id="node-1", type="text", x=0, y=0, width=100, height=100, text="Architecture")]
+        ),
+    )
+
+    # Call full_sync
+    sync_svc.full_sync()
+
+    history = get_git_history(proj_dir)
+    assert len(history) >= 1
+    assert "jotter: auto-sync" in history[0]["message"]
