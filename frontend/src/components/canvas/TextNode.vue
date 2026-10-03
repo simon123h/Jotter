@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue';
 import { Handle, Position } from '@vue-flow/core';
+import { NodeResizer } from '@vue-flow/node-resizer';
+import '@vue-flow/node-resizer/dist/style.css';
 import { Trash2, Edit3, Check } from '@lucide/vue';
 import { marked } from 'marked';
 import { useCanvasStore } from '@/stores/canvas';
@@ -40,11 +42,15 @@ const saveEditing = () => {
 const removeNode = () => {
   canvasStore.removeNode(props.id);
 };
+
+const onResize = (event: any) => {
+  canvasStore.updateNodePositionAndSize(props.id, event.x, event.y, event.width, event.height);
+};
 </script>
 
 <template>
   <div
-    class="canvas-text-node relative group rounded-lg shadow-sm transition-shadow border-2 bg-theme-card p-3 w-[260px] min-h-[140px] flex flex-col"
+    class="canvas-text-node relative group rounded-lg shadow-sm transition-shadow border-2 bg-theme-card p-3 w-full h-full min-w-[200px] min-h-[120px] flex flex-col"
     :class="[
       selected ? 'border-theme-primary ring-2 ring-theme-primary/20' : 'border-theme-border/60 hover:border-theme-border',
       data.color ? 'custom-colored' : '',
@@ -52,6 +58,14 @@ const removeNode = () => {
     :style="data.color ? { borderColor: data.color } : {}"
     @dblclick="startEditing"
   >
+    <NodeResizer
+      :min-width="200"
+      :min-height="120"
+      :is-visible="selected"
+      line-class-name="border-theme-primary"
+      handle-class-name="bg-theme-primary border-2 border-white rounded-sm w-2.5 h-2.5"
+      @resize-end="onResize"
+    />
     <!-- Vue Flow Connection Handles -->
     <Handle id="top" type="source" :position="Position.Top" class="vue-flow-handle" @mousedown.stop @pointerdown.stop />
     <Handle id="right" type="source" :position="Position.Right" class="vue-flow-handle" @mousedown.stop @pointerdown.stop />
@@ -105,7 +119,8 @@ const removeNode = () => {
 
 <style scoped>
 .canvas-text-node {
-  min-width: 240px;
+  min-width: 200px;
+  min-height: 120px;
 }
 .vue-flow-handle {
   width: 10px;
