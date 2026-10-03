@@ -147,6 +147,13 @@ describe('Canvas Store', () => {
 
     store.updateNodeData(textNode.id, { text: 'Updated Text' });
     expect(updated?.text).toBe('Updated Text');
+
+    // Ignores undefined or null values without corrupting existing coordinates
+    store.updateNodePositionAndSize(textNode.id, undefined, null, 400, undefined);
+    expect(updated?.x).toBe(55);
+    expect(updated?.y).toBe(89);
+    expect(updated?.width).toBe(400);
+    expect(updated?.height).toBe(181);
   });
 
   it('manages edges: adding, deduplicating, updating, reversing, and removing', () => {

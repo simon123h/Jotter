@@ -117,7 +117,18 @@ export const useCanvasStore = defineStore('canvas', () => {
     if (!currentProjectId.value || !activeCanvasId.value) return;
     isSaving.value = true;
     try {
-      await saveCanvas(currentProjectId.value, activeCanvasId.value, currentDocument.value);
+      // Ensure all nodes have valid numeric coordinates and dimensions
+      const sanitizedDoc: CanvasDocument = {
+        ...currentDocument.value,
+        nodes: currentDocument.value.nodes.map((node) => ({
+          ...node,
+          x: typeof node.x === 'number' && !isNaN(node.x) ? Math.round(node.x) : 0,
+          y: typeof node.y === 'number' && !isNaN(node.y) ? Math.round(node.y) : 0,
+          width: typeof node.width === 'number' && !isNaN(node.width) ? Math.round(node.width) : 200,
+          height: typeof node.height === 'number' && !isNaN(node.height) ? Math.round(node.height) : 120,
+        })),
+      };
+      await saveCanvas(currentProjectId.value, activeCanvasId.value, sanitizedDoc);
     } catch (err: any) {
       console.error('Failed to save canvas:', err);
       toast.error(t('canvas.saveError') || 'Failed to save canvas');
@@ -201,13 +212,13 @@ export const useCanvasStore = defineStore('canvas', () => {
     return newNode;
   };
 
-  const updateNodePositionAndSize = (id: string, x: number, y: number, width?: number, height?: number) => {
+  const updateNodePositionAndSize = (id: string, x?: number | null, y?: number | null, width?: number | null, height?: number | null) => {
     const node = currentDocument.value.nodes.find((n) => n.id === id);
     if (node) {
-      node.x = Math.round(x);
-      node.y = Math.round(y);
-      if (width !== undefined) node.width = Math.round(width);
-      if (height !== undefined) node.height = Math.round(height);
+      if (typeof x === 'number' && !isNaN(x)) node.x = Math.round(x);
+      if (typeof y === 'number' && !isNaN(y)) node.y = Math.round(y);
+      if (typeof width === 'number' && !isNaN(width)) node.width = Math.round(width);
+      if (typeof height === 'number' && !isNaN(height)) node.height = Math.round(height);
       triggerAutoSave();
     }
   };

@@ -43,7 +43,9 @@ const removeNode = () => {
 };
 
 const onResize = (event: any) => {
-  canvasStore.updateNodePositionAndSize(props.id, event.x, event.y, event.width, event.height);
+  const params = event?.params || event;
+  if (!params) return;
+  canvasStore.updateNodePositionAndSize(props.id, params.x, params.y, params.width, params.height);
 };
 </script>
 
