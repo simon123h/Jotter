@@ -161,4 +161,7 @@ export interface CanvasDocument {
 export interface CanvasMeta {
   id: string;
   title: string;
+  filename?: string;
+  created_at?: string;
+  updated_at?: string;
 }

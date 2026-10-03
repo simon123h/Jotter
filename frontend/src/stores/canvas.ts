@@ -133,6 +133,7 @@ export const useCanvasStore = defineStore('canvas', () => {
         .trim()
         .toLowerCase()
         .replace(/[^a-z0-9_-]/g, '-')
+        .replace(/^-+|-+$/g, '')
         .replace(/-+/g, '-') || 'canvas';
     const initialDoc: CanvasDocument = { nodes: [], edges: [] };
     await saveCanvas(projectId, slug, initialDoc);
