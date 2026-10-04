@@ -184,21 +184,4 @@ describe('BulkActionBar.vue', () => {
     expect(emitted?.[1][0]).toBe('tag-b');
     expect(emitted?.[1][1]).toBe(false);
   });
-
-  it('stacks above pomodoro bar when pomodoro bar is open', async () => {
-    const { usePomodoroStore } = await import('@/stores/pomodoro');
-    const pomodoroStore = usePomodoroStore();
-    pomodoroStore.is_bar_open = false;
-
-    const wrapper = mount(BulkActionBar, {
-      props: defaultProps,
-    });
-
-    expect(wrapper.find('.fixed').classes()).toContain('bottom-6');
-
-    pomodoroStore.is_bar_open = true;
-    await wrapper.vm.$nextTick();
-
-    expect(wrapper.find('.fixed').classes()).toContain('bottom-20');
-  });
 });

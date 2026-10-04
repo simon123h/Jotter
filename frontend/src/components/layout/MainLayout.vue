@@ -12,7 +12,6 @@ import { useVaultStore } from '@/stores/vault';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
 import MobileNavBar from '@/components/layout/MobileNavBar.vue';
-import PomodoroBar from '@/components/ui/PomodoroBar.vue';
 import ModalRegistry from '@/components/modals/ModalRegistry.vue';
 import { useProjects } from '@/composables/useProjects';
 import { useTaskFilters } from '@/composables/useTaskFilters';
@@ -293,9 +292,6 @@ onBeforeUnmount(() => {
 
     <!-- MOBILE BOTTOM NAVIGATION BAR -->
     <MobileNavBar />
-
-    <!-- POMODORO FLOATING DOCK -->
-    <PomodoroBar />
 
     <!-- MODAL REGISTRY (Utility Modals) -->
     <ModalRegistry />

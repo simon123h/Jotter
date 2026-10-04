@@ -18,16 +18,13 @@ import {
   FileSpreadsheet,
   FileText,
   Box,
-  Timer,
   Network,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
-import { usePomodoroStore } from '@/stores/pomodoro';
 import type { Project, BucketName } from '@/types';
 
 const { t } = useI18n();
 const route = useRoute();
-const pomodoroStore = usePomodoroStore();
 
 defineProps<{
   modelValue: string; // bound to searchQuery
@@ -248,20 +245,6 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
         :title="t('timeblock.toggleSidebarTooltip')"
       >
         <Box class="w-4 h-4 shrink-0" />
-      </button>
-
-      <!-- Pomodoro Timer Toggle Button -->
-      <button
-        @click="pomodoroStore.toggleBar"
-        class="pomodoro-toggle-btn hidden md:flex items-center p-1.5 rounded transition-all cursor-pointer shrink-0 border relative"
-        :class="
-          pomodoroStore.is_bar_open || pomodoroStore.status === 'running'
-            ? 'bg-rose-500/15 border-rose-500/30 text-rose-500'
-            : 'border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main'
-        "
-        :title="t('pomodoro.toggleTooltip')"
-      >
-        <Timer class="w-4 h-4 shrink-0" />
       </button>
 
       <!-- Overflow Menu (Three dots) -->

@@ -18,14 +18,12 @@ import {
   MoreHorizontal,
 } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
-import { usePomodoroStore } from '@/stores/pomodoro';
 import type { Bucket, Project } from '@/types';
 import BulkActionMenu from '@/components/ui/bulk/BulkActionMenu.vue';
 import BulkMoreSheet from '@/components/ui/bulk/BulkMoreSheet.vue';
 import type { BulkMenu } from '@/components/ui/bulk/types';
 
 const { t } = useI18n();
-const pomodoroStore = usePomodoroStore();
 const isMoreSheetOpen = ref(false);
 
 const props = defineProps<{
@@ -86,12 +84,7 @@ defineExpose({
   <transition name="slide-up">
     <div
       v-if="selectedCount > 0"
-      class="fixed left-1/2 -translate-x-1/2 z-[120] flex flex-col items-center gap-2 select-none"
-      :class="
-        pomodoroStore.is_bar_open
-          ? 'bottom-[calc(8.5rem+max(var(--sab),env(safe-area-inset-bottom,0px)))] md:bottom-22 bottom-20'
-          : 'bottom-[calc(4.25rem+max(var(--sab),env(safe-area-inset-bottom,0px)))] md:bottom-6 bottom-6'
-      "
+      class="fixed left-1/2 -translate-x-1/2 z-[120] flex flex-col items-center gap-2 select-none bottom-[calc(4.25rem+max(var(--sab),env(safe-area-inset-bottom,0px)))] md:bottom-6 bottom-6"
     >
       <!-- Nested Menus -->
       <BulkActionMenu

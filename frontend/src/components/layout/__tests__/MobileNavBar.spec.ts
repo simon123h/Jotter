@@ -4,7 +4,6 @@ import { createPinia, setActivePinia } from 'pinia';
 import MobileNavBar from '../MobileNavBar.vue';
 import { useModalStore } from '@/stores/modal';
 import { useSettingsStore } from '@/stores/settings';
-import { usePomodoroStore } from '@/stores/pomodoro';
 import { useUiStore } from '@/stores/ui';
 
 const mockPush = vi.fn();
@@ -49,7 +48,7 @@ describe('MobileNavBar.vue', () => {
     expect(wrapper.exists()).toBe(true);
 
     const navButtons = wrapper.findAll('nav button');
-    expect(navButtons.length).toBe(5);
+    expect(navButtons.length).toBe(4);
 
     // 1. Click Board button
     const boardBtn = navButtons[0];
@@ -67,17 +66,10 @@ describe('MobileNavBar.vue', () => {
     await fabBtn.trigger('click');
     expect(openCreateSpy).toHaveBeenCalledWith('todo');
 
-    // 3. Click Pomodoro button
-    const pomodoroStore = usePomodoroStore();
-    const pomodoroToggleSpy = vi.spyOn(pomodoroStore, 'toggleBar');
-    const pomodoroBtn = navButtons[3];
-    await pomodoroBtn.trigger('click');
-    expect(pomodoroToggleSpy).toHaveBeenCalled();
-
-    // 4. Click Timeblock button
+    // 3. Click Timeblock button
     const settingsStore = useSettingsStore();
     const timeblockToggleSpy = vi.spyOn(settingsStore, 'toggleTimeblockSidebar');
-    const timeblockBtn = navButtons[4];
+    const timeblockBtn = navButtons[3];
     await timeblockBtn.trigger('click');
     expect(timeblockToggleSpy).toHaveBeenCalled();
   });

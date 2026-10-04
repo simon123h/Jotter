@@ -91,7 +91,7 @@ flowchart LR
 ### 5.1 Frontend (Vue 3 Single Page Application & Mobile App)
 
 - **Kanban UI Components**: Vue 3 Composition API components (`<script setup lang="ts">`) styled with Tailwind CSS, responsive mobile navigation bar, and haptic feedback.
-- **Pinia Stores**: Manages client-side settings, current project, active filters, selection states, and pomodoro timer.
+- **Pinia Stores**: Manages client-side settings, current project, active filters, and selection states.
 - **Storage Layer Abstraction (`StorageAdapter`)**:
   - `HttpStorageAdapter`: Handles communication with the FastAPI desktop backend.
   - `CapacitorFsStorageAdapter`: In-process TypeScript storage engine for Android that reads/writes raw `.md` markdown files directly on Android documents storage while maintaining an IndexedDB cache via Dexie.js for millisecond search/filter queries.
