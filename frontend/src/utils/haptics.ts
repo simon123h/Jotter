@@ -1,5 +1,5 @@
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
-import { isNativeMobile } from '@/storage';
+import { isNativeMobile } from '@/platform';
 
 /**
  * Triggers light haptic feedback on mobile touch events (e.g. card drop, checkbox check).

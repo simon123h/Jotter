@@ -4,7 +4,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { getSettings, saveSettings } from '@/api';
 import type { AppSettings } from '@/types';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { isNativeMobile } from '@/storage';
+import { isNativeMobile } from '@/platform';
 import { StoragePermission } from '@/storage/storagePermission';
 import { persistentStorage } from '@/storage/preferencesStorage';
 

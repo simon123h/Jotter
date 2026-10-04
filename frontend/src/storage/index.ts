@@ -1,20 +1,22 @@
-import { Capacitor } from '@capacitor/core';
 import type { StorageAdapter } from './types';
 import { HttpStorageAdapter } from './httpAdapter';
 import { CapacitorFsStorageAdapter } from './capacitorFsAdapter';
+import { DemoStorageAdapter } from './demoAdapter';
+import { isDemoMode, isNativeMobile } from '@/platform';
 
-export const isNativeMobile = Capacitor.isNativePlatform();
-
-let storageInstance: StorageAdapter;
-
-if (isNativeMobile) {
-  storageInstance = new CapacitorFsStorageAdapter();
-} else {
-  storageInstance = new HttpStorageAdapter();
+export function createStorageAdapter(): StorageAdapter {
+  if (isDemoMode) return new DemoStorageAdapter();
+  if (isNativeMobile) return new CapacitorFsStorageAdapter();
+  return new HttpStorageAdapter();
 }
+
+let instance: StorageAdapter | null = null;
 
 export function getStorageAdapter(): StorageAdapter {
-  return storageInstance;
+  return (instance ??= createStorageAdapter());
 }
 
-export const activeStorage = storageInstance;
+/** Replace the active adapter (pass null to reset to the platform default). Intended for tests. */
+export function setStorageAdapter(adapter: StorageAdapter | null): void {
+  instance = adapter;
+}

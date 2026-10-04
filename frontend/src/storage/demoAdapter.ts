@@ -1,4 +1,16 @@
-import type { Task, Bucket, Project, TaskFilterParams, SystemInfo, CanvasDocument, CanvasMeta } from '@/types';
+import type {
+  Task,
+  Bucket,
+  Project,
+  TaskFilterParams,
+  SystemInfo,
+  CanvasDocument,
+  CanvasMeta,
+  AppSettings,
+  GitCommit,
+  Timeblock,
+} from '@/types';
+import type { StorageAdapter } from './types';
 
 // ==========================================
 // LOCAL STORAGE MOCK CLIENT (DEMO MODE)
@@ -196,11 +208,11 @@ function pruneDemoTasks(projectId: string) {
   saveDemoTasksMap(tasksMap);
 }
 
-export async function getProjects(): Promise<Project[]> {
+async function getProjects(): Promise<Project[]> {
   return getDemoProjects();
 }
 
-export async function createProject(title: string): Promise<Project> {
+async function createProject(title: string): Promise<Project> {
   const id = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -230,7 +242,7 @@ export async function createProject(title: string): Promise<Project> {
   return newProj;
 }
 
-export async function updateProject(id: string, updates: { title?: string; done_clean_period?: number | null }): Promise<Project> {
+async function updateProject(id: string, updates: { title?: string; done_clean_period?: number | null }): Promise<Project> {
   const projects = getDemoProjects();
   const idx = projects.findIndex((p) => p.id === id);
   if (idx !== -1) {
@@ -241,7 +253,7 @@ export async function updateProject(id: string, updates: { title?: string; done_
   throw new Error('Project not found');
 }
 
-export async function deleteProject(id: string): Promise<void> {
+async function deleteProject(id: string): Promise<void> {
   const projects = getDemoProjects();
   if (projects.length <= 1) {
     throw new Error('Cannot delete the last remaining project.');
@@ -258,7 +270,7 @@ export async function deleteProject(id: string): Promise<void> {
   saveDemoTasksMap(tasksMap);
 }
 
-export async function getTasks(projectId: string, filters?: TaskFilterParams): Promise<Task[]> {
+async function getTasks(projectId: string, filters?: TaskFilterParams): Promise<Task[]> {
   pruneDemoTasks(projectId);
   let list = getDemoTasksMap()[projectId] || [];
 
@@ -365,14 +377,14 @@ export async function getTasks(projectId: string, filters?: TaskFilterParams): P
   return [...list].sort((a, b) => a.position - b.position);
 }
 
-export async function getTask(projectId: string, id: string): Promise<Task> {
+async function getTask(projectId: string, id: string): Promise<Task> {
   const list = getDemoTasksMap()[projectId] || [];
   const t = list.find((x) => x.id === id);
   if (t) return t;
   throw new Error(`Task with ID ${id} not found in project '${projectId}'`);
 }
 
-export async function createTask(
+async function createTask(
   projectId: string,
   task: {
     title: string;
@@ -433,7 +445,7 @@ export async function createTask(
   return newTask;
 }
 
-export async function updateTask(projectId: string, id: string, task: Partial<Task>): Promise<Task> {
+async function updateTask(projectId: string, id: string, task: Partial<Task>): Promise<Task> {
   const tasksMap = getDemoTasksMap();
   const list = tasksMap[projectId] || [];
   const idx = list.findIndex((t) => t.id === id);
@@ -464,7 +476,7 @@ export async function updateTask(projectId: string, id: string, task: Partial<Ta
   throw new Error('Task not found');
 }
 
-export async function moveTask(projectId: string, id: string, bucket: string, position: number): Promise<Task> {
+async function moveTask(projectId: string, id: string, bucket: string, position: number): Promise<Task> {
   const tasksMap = getDemoTasksMap();
   const list = tasksMap[projectId] || [];
   const idx = list.findIndex((t) => t.id === id);
@@ -491,14 +503,14 @@ export async function moveTask(projectId: string, id: string, bucket: string, po
   throw new Error('Task not found');
 }
 
-export async function deleteTask(projectId: string, id: string): Promise<void> {
+async function deleteTask(projectId: string, id: string): Promise<void> {
   const tasksMap = getDemoTasksMap();
   const list = tasksMap[projectId] || [];
   tasksMap[projectId] = list.filter((t) => t.id !== id);
   saveDemoTasksMap(tasksMap);
 }
 
-export async function getBuckets(projectId: string): Promise<Bucket[]> {
+async function getBuckets(projectId: string): Promise<Bucket[]> {
   const bucketsMap = getDemoBucketsMap();
   if (!bucketsMap[projectId]) {
     bucketsMap[projectId] = [
@@ -513,7 +525,7 @@ export async function getBuckets(projectId: string): Promise<Bucket[]> {
   return [...bucketsMap[projectId]].sort((a, b) => a.position - b.position);
 }
 
-export async function createBucket(
+async function createBucket(
   projectId: string,
   title: string,
   subtitle?: string,
@@ -560,7 +572,7 @@ export async function createBucket(
   return newBucket;
 }
 
-export async function updateBucket(projectId: string, name: string, bucketUpdates: Partial<Bucket>): Promise<Bucket> {
+async function updateBucket(projectId: string, name: string, bucketUpdates: Partial<Bucket>): Promise<Bucket> {
   const bucketsMap = getDemoBucketsMap();
   const list = bucketsMap[projectId] || [];
   const idx = list.findIndex((b) => b.name === name);
@@ -576,14 +588,14 @@ export async function updateBucket(projectId: string, name: string, bucketUpdate
   throw new Error('Column not found');
 }
 
-export async function deleteBucket(projectId: string, name: string): Promise<void> {
+async function deleteBucket(projectId: string, name: string): Promise<void> {
   const bucketsMap = getDemoBucketsMap();
   const list = bucketsMap[projectId] || [];
   bucketsMap[projectId] = list.filter((b) => b.name !== name);
   saveDemoBucketsMap(bucketsMap);
 }
 
-export async function syncSystem(): Promise<{ status: string; synchronized_tasks: number }> {
+async function syncSystem(): Promise<{ status: string; synchronized_tasks: number }> {
   const projects = getDemoProjects();
   projects.forEach((p) => {
     pruneDemoTasks(p.id);
@@ -591,7 +603,7 @@ export async function syncSystem(): Promise<{ status: string; synchronized_tasks
   return { status: 'success', synchronized_tasks: 0 };
 }
 
-export async function getSystemInfo(): Promise<SystemInfo> {
+async function getSystemInfo(): Promise<SystemInfo> {
   return {
     version: '2.9.1 (demo)',
     data_dir: '/demo-local-storage',
@@ -604,7 +616,7 @@ export async function getSystemInfo(): Promise<SystemInfo> {
 
 const DEMO_CANVAS_PREFIX = 'jotter_demo_canvas_';
 
-export async function getCanvases(projectId: string): Promise<CanvasMeta[]> {
+async function getCanvases(projectId: string): Promise<CanvasMeta[]> {
   const key = `${DEMO_CANVAS_PREFIX}${projectId}_list`;
   const data = localStorage.getItem(key);
   if (!data) {
@@ -619,7 +631,7 @@ export async function getCanvases(projectId: string): Promise<CanvasMeta[]> {
   }
 }
 
-export async function getCanvas(projectId: string, canvasId: string): Promise<CanvasDocument> {
+async function getCanvas(projectId: string, canvasId: string): Promise<CanvasDocument> {
   const key = `${DEMO_CANVAS_PREFIX}${projectId}_doc_${canvasId}`;
   const data = localStorage.getItem(key);
   if (!data) {
@@ -632,7 +644,7 @@ export async function getCanvas(projectId: string, canvasId: string): Promise<Ca
   }
 }
 
-export async function saveCanvas(projectId: string, canvasId: string, doc: CanvasDocument): Promise<CanvasDocument> {
+async function saveCanvas(projectId: string, canvasId: string, doc: CanvasDocument): Promise<CanvasDocument> {
   const key = `${DEMO_CANVAS_PREFIX}${projectId}_doc_${canvasId}`;
   localStorage.setItem(key, JSON.stringify(doc));
 
@@ -645,7 +657,7 @@ export async function saveCanvas(projectId: string, canvasId: string, doc: Canva
   return doc;
 }
 
-export async function deleteCanvas(projectId: string, canvasId: string): Promise<void> {
+async function deleteCanvas(projectId: string, canvasId: string): Promise<void> {
   const key = `${DEMO_CANVAS_PREFIX}${projectId}_doc_${canvasId}`;
   localStorage.removeItem(key);
 
@@ -653,4 +665,152 @@ export async function deleteCanvas(projectId: string, canvasId: string): Promise
   const list = await getCanvases(projectId);
   const updated = list.filter((c) => c.id !== canvasId);
   localStorage.setItem(listKey, JSON.stringify(updated));
+}
+
+// ==========================================
+// DEMO SETTINGS & TIMEBLOCKS
+// ==========================================
+
+const DEMO_SETTINGS_KEY = 'jotter-demo-settings';
+const DEFAULT_DEMO_SETTINGS: AppSettings = {
+  hideDoneColumn: true,
+  hideArchiveColumn: true,
+  hidePostponedColumn: true,
+  isSidebarOpen: true,
+  currentTheme: 'nordic-light',
+  thresholdDays: 7,
+  pinnedProjectIds: [],
+  sortBy: 'alpha',
+  hideAddTaskButton: true,
+  projectOrder: [],
+};
+
+async function getSettings(): Promise<AppSettings> {
+  const stored = localStorage.getItem(DEMO_SETTINGS_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return { ...DEFAULT_DEMO_SETTINGS };
+    }
+  }
+  return { ...DEFAULT_DEMO_SETTINGS };
+}
+
+const DEMO_TIMEBLOCKS_KEY = 'jotter_demo_timeblocks';
+
+function loadTimeblocks(): Timeblock[] {
+  try {
+    return JSON.parse(localStorage.getItem(DEMO_TIMEBLOCKS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveTimeblocks(blocks: Timeblock[]) {
+  localStorage.setItem(DEMO_TIMEBLOCKS_KEY, JSON.stringify(blocks));
+}
+
+function requireTimeblock(blocks: Timeblock[], id: string): Timeblock {
+  const block = blocks.find((b) => b.id === id);
+  if (!block) throw new Error(`Timeblock ${id} not found`);
+  return block;
+}
+
+// ==========================================
+// ADAPTER
+// ==========================================
+
+/** Browser-only storage backed by localStorage, used by the static demo. */
+export class DemoStorageAdapter implements StorageAdapter {
+  async checkStatus(): Promise<boolean> {
+    return true;
+  }
+
+  getProjects = getProjects;
+  createProject = createProject;
+  updateProject = updateProject;
+  deleteProject = deleteProject;
+
+  async getAllTasks(filters?: TaskFilterParams): Promise<Task[]> {
+    const projects = await getProjects();
+    const lists = await Promise.all(projects.map((p) => getTasks(p.id, filters)));
+    return lists.flat();
+  }
+  getTasks = getTasks;
+  getTask = getTask;
+  createTask = createTask;
+  updateTask = updateTask;
+  moveTask = moveTask;
+  deleteTask = deleteTask;
+
+  async uploadAttachment(): Promise<Task> {
+    throw new Error('Attachments not supported in demo mode');
+  }
+  async deleteAttachment(): Promise<Task> {
+    throw new Error('Attachments not supported in demo mode');
+  }
+
+  getBuckets = getBuckets;
+  createBucket = createBucket;
+  updateBucket = updateBucket;
+  deleteBucket = deleteBucket;
+
+  getSettings = getSettings;
+  async saveSettings(settings: AppSettings): Promise<void> {
+    localStorage.setItem(DEMO_SETTINGS_KEY, JSON.stringify(settings));
+  }
+
+  async getTimeblocks(params?: { startDate?: string; endDate?: string }): Promise<Timeblock[]> {
+    return loadTimeblocks().filter(
+      (b) => (!params?.startDate || b.date >= params.startDate) && (!params?.endDate || b.date <= params.endDate)
+    );
+  }
+  async getTimeblock(id: string): Promise<Timeblock> {
+    return requireTimeblock(loadTimeblocks(), id);
+  }
+  async createTimeblock(timeblock: Omit<Timeblock, 'id'>): Promise<Timeblock> {
+    const blocks = loadTimeblocks();
+    const created: Timeblock = { ...timeblock, id: `demo-tb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` };
+    blocks.push(created);
+    saveTimeblocks(blocks);
+    return created;
+  }
+  async updateTimeblock(id: string, updates: Partial<Timeblock>): Promise<Timeblock> {
+    const blocks = loadTimeblocks();
+    const block = requireTimeblock(blocks, id);
+    Object.assign(block, updates, { id });
+    saveTimeblocks(blocks);
+    return block;
+  }
+  async deleteTimeblock(id: string): Promise<void> {
+    saveTimeblocks(loadTimeblocks().filter((b) => b.id !== id));
+  }
+  async allocateTaskToTimeblock(timeblockId: string, taskId: string, action: 'add' | 'remove' = 'add'): Promise<Timeblock> {
+    const blocks = loadTimeblocks();
+    const block = requireTimeblock(blocks, timeblockId);
+    const ids = new Set(block.task_ids);
+    if (action === 'add') ids.add(taskId);
+    else ids.delete(taskId);
+    block.task_ids = [...ids];
+    saveTimeblocks(blocks);
+    return block;
+  }
+
+  getCanvases = getCanvases;
+  getCanvas = getCanvas;
+  saveCanvas = saveCanvas;
+  deleteCanvas = deleteCanvas;
+
+  syncSystem = syncSystem;
+  getSystemInfo = getSystemInfo;
+  async updateDataDir(dataDir: string): Promise<{ status: string; data_dir: string }> {
+    return { status: 'ok', data_dir: dataDir };
+  }
+  async getGitHistory(): Promise<GitCommit[]> {
+    return [];
+  }
+  async restoreCommit(): Promise<{ synchronized_tasks: number }> {
+    return { synchronized_tasks: 0 };
+  }
 }

@@ -1,5 +1,5 @@
 import { Preferences } from '@capacitor/preferences';
-import { isNativeMobile } from './index';
+import { isNativeMobile } from '@/platform';
 
 /**
  * Storage adapter that uses @capacitor/preferences (SharedPreferences on Android)

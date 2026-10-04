@@ -48,7 +48,7 @@ export default defineConfig({
     exclude: ['node_modules', 'dist', '.git', '.cache', 'tests/e2e/**'],
     coverage: {
       reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
-      exclude: ['src/api.demo.ts'],
+      exclude: ['src/storage/demoAdapter.ts'],
     },
   },
 })

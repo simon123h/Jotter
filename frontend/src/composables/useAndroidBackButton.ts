@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useModalStore } from '@/stores/modal';
 import { useSettingsStore } from '@/stores/settings';
 import { useUiStore } from '@/stores/ui';
-import { isNativeMobile } from '@/storage';
+import { isNativeMobile } from '@/platform';
 
 /**
  * Handles the Android hardware/gesture back button.

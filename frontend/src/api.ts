@@ -11,26 +11,17 @@ import type {
   CanvasDocument,
   CanvasMeta,
 } from '@/types';
-import * as demoApi from '@/api.demo';
-import { activeStorage, isNativeMobile } from '@/storage';
+import { getStorageAdapter } from '@/storage';
 import { isServerOnline } from '@/storage/connectionState';
 import { crossTabBus } from '@/utils/broadcast';
 
-export { isNativeMobile, isServerOnline };
+export { isServerOnline };
 
-// Auto-detect Demo Mode
-export const IS_DEMO_MODE =
-  import.meta.env.VITE_DEMO_MODE === 'true' ||
-  (typeof window !== 'undefined' &&
-    (window.location.hostname.endsWith('github.io') || window.location.hostname.includes('githubpreview.dev')));
+const storage = getStorageAdapter;
+const isBlankId = (id: string) => !id || id === 'null' || id === 'undefined';
 
-// Centralized status checker
 export async function checkServerStatus(): Promise<boolean> {
-  if (isNativeMobile || IS_DEMO_MODE) {
-    isServerOnline.value = true;
-    return true;
-  }
-  return activeStorage.checkStatus();
+  return storage().checkStatus();
 }
 
 // ==========================================
@@ -38,29 +29,23 @@ export async function checkServerStatus(): Promise<boolean> {
 // ==========================================
 
 export async function getProjects(): Promise<Project[]> {
-  if (IS_DEMO_MODE) return demoApi.getProjects();
-  return activeStorage.getProjects();
+  return storage().getProjects();
 }
 
 export async function createProject(title: string): Promise<Project> {
-  let res: Project;
-  if (IS_DEMO_MODE) res = await demoApi.createProject(title);
-  else res = await activeStorage.createProject(title);
+  const res = await storage().createProject(title);
   crossTabBus.broadcast({ type: 'projects-changed' });
   return res;
 }
 
 export async function updateProject(id: string, updates: Partial<Project>): Promise<Project> {
-  let res: Project;
-  if (IS_DEMO_MODE) res = await demoApi.updateProject(id, updates);
-  else res = await activeStorage.updateProject(id, updates);
+  const res = await storage().updateProject(id, updates);
   crossTabBus.broadcast({ type: 'projects-changed' });
   return res;
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  if (IS_DEMO_MODE) await demoApi.deleteProject(id);
-  else await activeStorage.deleteProject(id);
+  await storage().deleteProject(id);
   crossTabBus.broadcast({ type: 'projects-changed' });
 }
 
@@ -69,19 +54,16 @@ export async function deleteProject(id: string): Promise<void> {
 // ==========================================
 
 export async function getAllTasks(filters?: TaskFilterParams): Promise<Task[]> {
-  if (IS_DEMO_MODE) return demoApi.getTasks('default', filters);
-  return activeStorage.getAllTasks(filters);
+  return storage().getAllTasks(filters);
 }
 
 export async function getTasks(projectId: string, filters?: TaskFilterParams): Promise<Task[]> {
-  if (!projectId || projectId === 'null' || projectId === 'undefined') return [];
-  if (IS_DEMO_MODE) return demoApi.getTasks(projectId, filters);
-  return activeStorage.getTasks(projectId, filters);
+  if (isBlankId(projectId)) return [];
+  return storage().getTasks(projectId, filters);
 }
 
 export async function getTask(projectId: string, id: string): Promise<Task> {
-  if (IS_DEMO_MODE) return demoApi.getTask(projectId, id);
-  return activeStorage.getTask(projectId, id);
+  return storage().getTask(projectId, id);
 }
 
 export async function createTask(
@@ -97,60 +79,46 @@ export async function createTask(
     color?: string | null;
   }
 ): Promise<Task> {
-  let res: Task;
-  if (IS_DEMO_MODE) res = await demoApi.createTask(projectId, task);
-  else res = await activeStorage.createTask(projectId, task);
+  const res = await storage().createTask(projectId, task);
   crossTabBus.broadcast({ type: 'tasks-changed', projectId });
   return res;
 }
 
 export async function updateTask(projectId: string, id: string, task: Partial<Task>): Promise<Task> {
-  let res: Task;
-  if (IS_DEMO_MODE) res = await demoApi.updateTask(projectId, id, task);
-  else res = await activeStorage.updateTask(projectId, id, task);
+  const res = await storage().updateTask(projectId, id, task);
   crossTabBus.broadcast({ type: 'tasks-changed', projectId });
   return res;
 }
 
 export async function moveTask(projectId: string, id: string, bucket: string, position: number): Promise<Task> {
-  let res: Task;
-  if (IS_DEMO_MODE) res = await demoApi.moveTask(projectId, id, bucket, position);
-  else res = await activeStorage.moveTask(projectId, id, bucket, position);
+  const res = await storage().moveTask(projectId, id, bucket, position);
   crossTabBus.broadcast({ type: 'tasks-changed', projectId });
   return res;
 }
 
 export async function deleteTask(projectId: string, id: string): Promise<void> {
-  if (IS_DEMO_MODE) await demoApi.deleteTask(projectId, id);
-  else await activeStorage.deleteTask(projectId, id);
+  await storage().deleteTask(projectId, id);
   crossTabBus.broadcast({ type: 'tasks-changed', projectId });
 }
 
 export async function uploadAttachment(projectId: string, taskId: string, file: File): Promise<Task> {
-  if (IS_DEMO_MODE) throw new Error('Attachments not supported in demo mode');
-  if (activeStorage.uploadAttachment) {
-    const res = await activeStorage.uploadAttachment(projectId, taskId, file);
-    crossTabBus.broadcast({ type: 'tasks-changed', projectId });
-    return res;
-  }
-  throw new Error('Upload attachment not implemented on current adapter');
+  const adapter = storage();
+  if (!adapter.uploadAttachment) throw new Error('Upload attachment not implemented on current adapter');
+  const res = await adapter.uploadAttachment(projectId, taskId, file);
+  crossTabBus.broadcast({ type: 'tasks-changed', projectId });
+  return res;
 }
 
 export async function deleteAttachment(projectId: string, taskId: string, filename: string): Promise<Task> {
-  if (IS_DEMO_MODE) throw new Error('Attachments not supported in demo mode');
-  if (activeStorage.deleteAttachment) {
-    const res = await activeStorage.deleteAttachment(projectId, taskId, filename);
-    crossTabBus.broadcast({ type: 'tasks-changed', projectId });
-    return res;
-  }
-  throw new Error('Delete attachment not implemented on current adapter');
+  const adapter = storage();
+  if (!adapter.deleteAttachment) throw new Error('Delete attachment not implemented on current adapter');
+  const res = await adapter.deleteAttachment(projectId, taskId, filename);
+  crossTabBus.broadcast({ type: 'tasks-changed', projectId });
+  return res;
 }
 
 export function getAttachmentUrl(projectId: string, taskId: string, filename: string): string {
-  if (activeStorage.getAttachmentUrl) {
-    return activeStorage.getAttachmentUrl(projectId, taskId, filename);
-  }
-  return '';
+  return storage().getAttachmentUrl?.(projectId, taskId, filename) ?? '';
 }
 
 // ==========================================
@@ -158,9 +126,8 @@ export function getAttachmentUrl(projectId: string, taskId: string, filename: st
 // ==========================================
 
 export async function getBuckets(projectId: string): Promise<Bucket[]> {
-  if (!projectId || projectId === 'null' || projectId === 'undefined') return [];
-  if (IS_DEMO_MODE) return demoApi.getBuckets(projectId);
-  return activeStorage.getBuckets(projectId);
+  if (isBlankId(projectId)) return [];
+  return storage().getBuckets(projectId);
 }
 
 export async function createBucket(
@@ -171,24 +138,19 @@ export async function createBucket(
   layout?: 'list' | 'grid-2' | 'grid-3',
   max_tasks?: number | null
 ): Promise<Bucket> {
-  let res: Bucket;
-  if (IS_DEMO_MODE) res = await demoApi.createBucket(projectId, title, subtitle, color, layout, max_tasks);
-  else res = await activeStorage.createBucket(projectId, title, subtitle, color, layout, max_tasks);
+  const res = await storage().createBucket(projectId, title, subtitle, color, layout, max_tasks);
   crossTabBus.broadcast({ type: 'buckets-changed', projectId });
   return res;
 }
 
 export async function updateBucket(projectId: string, name: string, bucketUpdates: Partial<Bucket>): Promise<Bucket> {
-  let res: Bucket;
-  if (IS_DEMO_MODE) res = await demoApi.updateBucket(projectId, name, bucketUpdates);
-  else res = await activeStorage.updateBucket(projectId, name, bucketUpdates);
+  const res = await storage().updateBucket(projectId, name, bucketUpdates);
   crossTabBus.broadcast({ type: 'buckets-changed', projectId });
   return res;
 }
 
 export async function deleteBucket(projectId: string, name: string): Promise<void> {
-  if (IS_DEMO_MODE) await demoApi.deleteBucket(projectId, name);
-  else await activeStorage.deleteBucket(projectId, name);
+  await storage().deleteBucket(projectId, name);
   crossTabBus.broadcast({ type: 'buckets-changed', projectId });
 }
 
@@ -197,70 +159,37 @@ export async function deleteBucket(projectId: string, name: string): Promise<voi
 // ==========================================
 
 export async function syncSystem(): Promise<{ status: string; synchronized_tasks: number }> {
-  if (IS_DEMO_MODE) return demoApi.syncSystem();
-  return activeStorage.syncSystem();
+  return storage().syncSystem();
 }
 
 export async function getSystemInfo(): Promise<SystemInfo> {
-  if (IS_DEMO_MODE) return demoApi.getSystemInfo();
-  return activeStorage.getSystemInfo();
+  return storage().getSystemInfo();
 }
 
 export async function updateDataDir(dataDir: string): Promise<{ status: string; data_dir: string; synced?: number }> {
-  if (IS_DEMO_MODE) return { status: 'ok', data_dir: dataDir };
-  if (!activeStorage.updateDataDir) throw new Error('Changing the data directory is not supported; use vaults instead');
-  return activeStorage.updateDataDir(dataDir);
+  const adapter = storage();
+  if (!adapter.updateDataDir) throw new Error('Changing the data directory is not supported; use vaults instead');
+  return adapter.updateDataDir(dataDir);
 }
 
 export async function getGitHistory(projectId?: string): Promise<GitCommit[]> {
-  if (IS_DEMO_MODE) return [];
-  return activeStorage.getGitHistory(projectId);
+  return storage().getGitHistory(projectId);
 }
 
 export async function restoreCommit(commitHash: string, projectId?: string): Promise<{ synchronized_tasks: number }> {
-  if (IS_DEMO_MODE) return { synchronized_tasks: 0 };
-  return activeStorage.restoreCommit(commitHash, projectId);
+  return storage().restoreCommit(commitHash, projectId);
 }
 
 // ==========================================
 // SETTINGS API
 // ==========================================
 
-const DEMO_SETTINGS_KEY = 'jotter-demo-settings';
-const DEFAULT_DEMO_SETTINGS: AppSettings = {
-  hideDoneColumn: true,
-  hideArchiveColumn: true,
-  hidePostponedColumn: true,
-  isSidebarOpen: true,
-  currentTheme: 'nordic-light',
-  thresholdDays: 7,
-  pinnedProjectIds: [],
-  sortBy: 'alpha',
-  hideAddTaskButton: true,
-  projectOrder: [],
-};
-
 export async function getSettings(): Promise<AppSettings> {
-  if (IS_DEMO_MODE) {
-    const stored = localStorage.getItem(DEMO_SETTINGS_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return { ...DEFAULT_DEMO_SETTINGS };
-      }
-    }
-    return { ...DEFAULT_DEMO_SETTINGS };
-  }
-  return activeStorage.getSettings();
+  return storage().getSettings();
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {
-  if (IS_DEMO_MODE) {
-    localStorage.setItem(DEMO_SETTINGS_KEY, JSON.stringify(settings));
-    return;
-  }
-  return activeStorage.saveSettings(settings);
+  return storage().saveSettings(settings);
 }
 
 // ==========================================
@@ -268,32 +197,32 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
 // ==========================================
 
 export async function getTimeblocks(params?: { startDate?: string; endDate?: string }): Promise<Timeblock[]> {
-  return activeStorage.getTimeblocks(params);
+  return storage().getTimeblocks(params);
 }
 
 export async function getTimeblock(id: string): Promise<Timeblock> {
-  return activeStorage.getTimeblock(id);
+  return storage().getTimeblock(id);
 }
 
 export async function createTimeblock(timeblock: Omit<Timeblock, 'id'>): Promise<Timeblock> {
-  const res = await activeStorage.createTimeblock(timeblock);
+  const res = await storage().createTimeblock(timeblock);
   crossTabBus.broadcast({ type: 'timeblocks-changed' });
   return res;
 }
 
 export async function updateTimeblock(id: string, updates: Partial<Timeblock>): Promise<Timeblock> {
-  const res = await activeStorage.updateTimeblock(id, updates);
+  const res = await storage().updateTimeblock(id, updates);
   crossTabBus.broadcast({ type: 'timeblocks-changed' });
   return res;
 }
 
 export async function deleteTimeblock(id: string): Promise<void> {
-  await activeStorage.deleteTimeblock(id);
+  await storage().deleteTimeblock(id);
   crossTabBus.broadcast({ type: 'timeblocks-changed' });
 }
 
 export async function allocateTaskToTimeblock(timeblockId: string, taskId: string, action: 'add' | 'remove' = 'add'): Promise<Timeblock> {
-  const res = await activeStorage.allocateTaskToTimeblock(timeblockId, taskId, action);
+  const res = await storage().allocateTaskToTimeblock(timeblockId, taskId, action);
   crossTabBus.broadcast({ type: 'timeblocks-changed' });
   return res;
 }
@@ -303,26 +232,21 @@ export async function allocateTaskToTimeblock(timeblockId: string, taskId: strin
 // ==========================================
 
 export async function getCanvases(projectId: string): Promise<CanvasMeta[]> {
-  if (IS_DEMO_MODE) return demoApi.getCanvases(projectId);
-  return activeStorage.getCanvases(projectId);
+  return storage().getCanvases(projectId);
 }
 
 export async function getCanvas(projectId: string, canvasId: string): Promise<CanvasDocument> {
-  if (IS_DEMO_MODE) return demoApi.getCanvas(projectId, canvasId);
-  return activeStorage.getCanvas(projectId, canvasId);
+  return storage().getCanvas(projectId, canvasId);
 }
 
 export async function saveCanvas(projectId: string, canvasId: string, doc: CanvasDocument): Promise<CanvasDocument> {
-  let res: CanvasDocument;
-  if (IS_DEMO_MODE) res = await demoApi.saveCanvas(projectId, canvasId, doc);
-  else res = await activeStorage.saveCanvas(projectId, canvasId, doc);
+  const res = await storage().saveCanvas(projectId, canvasId, doc);
   crossTabBus.broadcast({ type: 'canvas-changed', projectId, canvasId });
   return res;
 }
 
 export async function deleteCanvas(projectId: string, canvasId: string): Promise<void> {
-  if (IS_DEMO_MODE) await demoApi.deleteCanvas(projectId, canvasId);
-  else await activeStorage.deleteCanvas(projectId, canvasId);
+  await storage().deleteCanvas(projectId, canvasId);
   crossTabBus.broadcast({ type: 'canvas-changed', projectId, canvasId });
 }
 

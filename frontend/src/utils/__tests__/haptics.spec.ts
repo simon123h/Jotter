@@ -19,7 +19,7 @@ vi.mock('@capacitor/haptics', () => ({
   },
 }));
 
-vi.mock('@/storage', () => ({
+vi.mock('@/platform', () => ({
   isNativeMobile: true,
 }));
 

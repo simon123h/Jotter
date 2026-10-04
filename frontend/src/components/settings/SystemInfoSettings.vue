@@ -5,7 +5,8 @@ import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
 import { useI18n } from '@/composables/useI18n';
 import { useToast } from '@/composables/useToast';
-import { getSystemInfo, updateDataDir, isNativeMobile, syncSystem } from '@/api';
+import { getSystemInfo, updateDataDir, syncSystem } from '@/api';
+import { isNativeMobile } from '@/platform';
 import type { SystemInfo } from '@/types';
 
 const { t } = useI18n();
