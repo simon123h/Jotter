@@ -57,26 +57,27 @@ export function useI18n() {
     );
   }
 
+  const resolveMessage = (lang: Locale, keys: string[]): string | null => {
+    let curr: any = messages[lang];
+    for (const k of keys) {
+      if (curr && typeof curr === 'object' && k in curr) {
+        curr = curr[k];
+      } else {
+        return null;
+      }
+    }
+    return typeof curr === 'string' ? curr : null;
+  };
+
   const t = (key: string, params?: Record<string, string | number>): string => {
     const keys = key.split('.');
-    let value: any = messages[currentLocale.value];
+    const activeLocale = locale.value;
 
-    for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
-        value = value[k];
-      } else {
-        // Fallback to English
-        let fallbackValue: any = messages['en'];
-        for (const fk of keys) {
-          if (fallbackValue && typeof fallbackValue === 'object' && fk in fallbackValue) {
-            fallbackValue = fallbackValue[fk];
-          } else {
-            fallbackValue = null;
-            break;
-          }
-        }
-        return typeof fallbackValue === 'string' ? interpolate(fallbackValue, params) : key;
-      }
+    let value: string | null = resolveMessage(activeLocale, keys);
+
+    // Fallback to English if not found or empty in active locale
+    if ((value === null || value === undefined) && activeLocale !== 'en') {
+      value = resolveMessage('en', keys);
     }
 
     if (typeof value === 'string') {

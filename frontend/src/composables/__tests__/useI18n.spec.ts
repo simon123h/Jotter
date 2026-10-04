@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useI18n } from '@/composables/useI18n';
+import { useI18n, messages } from '@/composables/useI18n';
 
 describe('useI18n composable', () => {
   beforeEach(() => {
@@ -45,8 +45,14 @@ describe('useI18n composable', () => {
   it('falls back to English if key is missing in German', () => {
     const { locale, t } = useI18n();
     locale.value = 'de';
-    // Let's test a key that we might add or mock if it was missing.
-    // In our en.ts / de.ts, brand.title is same, but let's test a key that returns the key path if it is completely absent:
+
+    // Mock an English-only key in messages
+    (messages.en as any).testMissingKey = { subKey: 'English Fallback Phrase' };
+    delete (messages.de as any).testMissingKey;
+
+    expect(t('testMissingKey.subKey')).toBe('English Fallback Phrase');
+
+    // Completely absent keys in both return the key path
     expect(t('nonexistent.key.path')).toBe('nonexistent.key.path');
   });
 });
