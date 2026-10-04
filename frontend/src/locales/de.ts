@@ -32,6 +32,7 @@ export const de = {
     sakura: 'Sakura Rose',
     'nordic-light': 'Nordic Light',
     'desert-light': 'Desert Amber',
+    'earth-light': 'Erde & Moos',
   },
   commit: {
     button: 'Commit',

@@ -206,6 +206,26 @@
   --theme-text-input: #1c1917;
 }
 
+/* Theme: Earth & Moss (Light) */
+.theme-earth-light {
+  --theme-bg-base: #f6f1e7; /* warm light ocher soil */
+  --theme-bg-column: rgba(235, 227, 211, 0.88); /* earthy ocher column */
+  --theme-bg-card: #fffdfa; /* crisp warm-tinted card */
+  --theme-border: #dad0be; /* clay loam border */
+  --theme-primary: #2d6a4f; /* lush moss/plant green */
+  --theme-primary-hover: #1f503a; /* deep botanical forest green */
+  --theme-accent: #40916c; /* fresh leaf green */
+  --theme-accent-hover: #52b788; /* sprout green */
+  --theme-grad-from: #2d6a4f;
+  --theme-grad-to: #74a96c; /* botanical plant gradient */
+  --theme-ring: rgba(45, 106, 79, 0.18);
+
+  --theme-text-main: #211a14; /* deep soil umber */
+  --theme-text-card: #2c241b; /* dark soil */
+  --theme-text-muted: #665b4c; /* warm muted loam */
+  --theme-text-input: #211a14;
+}
+
 /* Custom global high-density thin scrollbar */
 .scroller-thin {
   --scrollbar-thumb: var(--theme-border);

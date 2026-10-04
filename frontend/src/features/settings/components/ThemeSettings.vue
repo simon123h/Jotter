@@ -10,12 +10,13 @@ const { currentTheme } = storeToRefs(settingsStore);
 
 const themes = [
   { id: 'nordic-light', name: 'Nordic Light', color: 'bg-blue-600' },
+  { id: 'desert-light', name: 'Desert Amber', color: 'bg-orange-600' },
+  { id: 'earth-light', name: 'Earth & Moss', color: 'bg-emerald-700' },
   { id: 'frost', name: 'Nordic Frost', color: 'bg-sky-500' },
   { id: 'cyberpunk', name: 'Cyberpunk Neon', color: 'bg-pink-500' },
   { id: 'midnight', name: 'Midnight Violet', color: 'bg-violet-500' },
   { id: 'forest', name: 'Emerald Forest', color: 'bg-emerald-500' },
   { id: 'sakura', name: 'Sakura Rose', color: 'bg-rose-500' },
-  { id: 'desert-light', name: 'Desert Amber', color: 'bg-orange-600' },
 ];
 
 const setTheme = (theme: string) => {

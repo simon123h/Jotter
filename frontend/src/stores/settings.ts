@@ -11,6 +11,7 @@ import { persistentStorage } from '@/storage/preferencesStorage';
 const THEME_STATUS_BAR_MAP: Record<string, { bg: string; style: Style }> = {
   'nordic-light': { bg: '#ffffff', style: Style.Light },
   'desert-light': { bg: '#fdfbf7', style: Style.Light },
+  'earth-light': { bg: '#f6f1e7', style: Style.Light },
   midnight: { bg: '#1e293b', style: Style.Dark },
   forest: { bg: '#064e3b', style: Style.Dark },
   frost: { bg: '#1c2541', style: Style.Dark },
