@@ -36,6 +36,19 @@ class MarkdownFileEventHandler(FileSystemEventHandler):
         ".tempmediastorage",
     }
 
+    @classmethod
+    def register_recent_write(cls, path: Path | str, ttl_seconds: float = 2.0) -> None:
+        """Records a path written by Jotter itself to suppress redundant watcher echo events."""
+        from jotter.shared.fs import register_recent_self_write
+
+        register_recent_self_write(path, ttl_seconds=ttl_seconds)
+
+    @classmethod
+    def is_recent_self_write(cls, path_str: str) -> bool:
+        from jotter.shared.fs import is_recent_self_write
+
+        return is_recent_self_write(path_str)
+
     def __init__(self, on_change_callback: Callable[[], None], debounce_seconds: float = 0.25):
         super().__init__()
         self.on_change_callback = on_change_callback
@@ -44,6 +57,10 @@ class MarkdownFileEventHandler(FileSystemEventHandler):
         self._lock = threading.Lock()
 
     def _should_ignore(self, path_str: str) -> bool:
+        # 1. Suppress recent self-writes from within this process (eliminates watcher echo)
+        if self.is_recent_self_write(path_str):
+            return True
+
         norm = path_str.replace("\\", "/").lower()
         parts = norm.split("/")
         # Ignore hidden / temporary files and directories

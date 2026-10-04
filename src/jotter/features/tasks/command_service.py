@@ -143,10 +143,13 @@ class TaskCommandService:
             if not self.project_repo.exists(target_project_id):
                 raise EntityNotFoundError(f"Project '{target_project_id}' not found")
 
-            # Delete old markdown file from source project
-            self.disk_repo.delete(project_id, task_id)
+            # Update domain entity project_id
+            task.project_id = target_project_id
 
-            # Move any attachments directory to target project
+            # 1. Authoritative persist on disk in target project first (prevents data loss if killed mid-operation)
+            self.disk_repo.save(task)
+
+            # 2. Move attachments directory to target project
             old_attach_dir = self.disk_repo.get_project_dir(project_id) / "attachments" / task_id
             if old_attach_dir.is_dir():
                 new_attach_dir = self.disk_repo.get_project_dir(target_project_id) / "attachments" / task_id
@@ -155,11 +158,11 @@ class TaskCommandService:
                     shutil.rmtree(new_attach_dir)
                 shutil.move(str(old_attach_dir), str(new_attach_dir))
 
-            # Update domain entity project_id
-            task.project_id = target_project_id
-
-        # 1. Authoritative persist on disk
-        self.disk_repo.save(task)
+            # 3. Only delete old markdown file from source project after new file is persisted
+            self.disk_repo.delete(project_id, task_id)
+        else:
+            # 1. Authoritative persist on disk
+            self.disk_repo.save(task)
 
         # 2. Synchronous read-model projection
         self.projector.project_task_upsert(task)

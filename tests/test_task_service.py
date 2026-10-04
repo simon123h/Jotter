@@ -156,6 +156,29 @@ def test_task_partial_update_preserves_attributes(temp_dir, test_env):
     assert updated.tags == ["feature"]
     assert updated.body == "- [x] Checklist item 1\n- [ ] Checklist item 2"
 
+    # Simulate an external tool (Obsidian plugin) injecting custom frontmatter into the file
+    task_file = Path(temp_dir) / "default" / f"{t.id}.md"
+    file_content = task_file.read_text(encoding="utf-8")
+    injected_content = file_content.replace(
+        "title: Task with Color\n",
+        "title: Task with Color\nobsidian_vault_id: vault_12345\ncustom_rating: 4.8\n",
+    )
+    task_file.write_text(injected_content, encoding="utf-8")
+
+    # Update task through Jotter (e.g. moving bucket or modifying priority)
+    updated2 = task_svc.update_task(
+        "default",
+        t.id,
+        TaskUpdate.model_validate({"priority": "urgent"}),
+    )
+    assert updated2.priority == "urgent"
+
+    # Verify that the raw Markdown file on disk still contains the custom unsupported frontmatter!
+    raw_saved = task_file.read_text(encoding="utf-8")
+    assert "obsidian_vault_id: vault_12345" in raw_saved
+    assert "custom_rating: 4.8" in raw_saved
+    assert "priority: urgent" in raw_saved
+
 
 def test_task_search_and_filtering(temp_dir, test_env):
     conn = get_db(str(Path(temp_dir) / "tasks.db"))
