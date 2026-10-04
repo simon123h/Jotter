@@ -20,7 +20,7 @@ def test_mcp_server_tools_workflow(temp_dir):
     assert "move_task" in tool_names
     assert "delete_task" in tool_names
     assert "sync_database" in tool_names
-    assert "commit_changes" in tool_names
+    assert "commit_changes" not in tool_names
 
 
 def test_mcp_direct_service_execution(temp_dir):
@@ -96,11 +96,6 @@ def test_mcp_direct_service_execution(temp_dir):
     sync_db_fn = tool_manager.get_tool("sync_database").fn
     db_res = sync_db_fn()
     assert db_res["status"] == "success"
-
-    commit_fn = tool_manager.get_tool("commit_changes").fn
-    commit_res = commit_fn()
-    assert commit_res["status"] == "success"
-    assert commit_res["committed"] is False  # temp dir is not a git repository
 
 
 def test_mcp_resources(temp_dir):

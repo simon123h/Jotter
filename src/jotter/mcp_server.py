@@ -294,12 +294,6 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         synced_count = sync_svc.sync_db_only()
         return {"status": "success", "synced_tasks": synced_count}
 
-    @server.tool()
-    def commit_changes() -> dict[str, Any]:
-        """Commit local changes in the active vault to its Git repository, if it is one. Never pushes or pulls."""
-        committed = sync_svc.commit_changes()
-        return {"status": "success", "committed": committed}
-
     # ==========================================
     # MCP Resources (Passive Context Attachment)
     # ==========================================

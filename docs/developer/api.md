@@ -119,7 +119,6 @@ Add Jotter to your `claude_desktop_config.json` or agent MCP configuration:
 
 #### Synchronization Tools
 * `sync_database()`: Reconcile Markdown files on disk with the SQLite search index.
-* `commit_changes()`: Commit local changes in the active vault (`add`, `commit`) if it is a Git repository. Never pushes or pulls.
 
 ---
 

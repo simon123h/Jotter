@@ -164,8 +164,8 @@ Jotter's Git integration is local-only. It is implemented in `src/jotter/feature
 
 ### The Local Commit Flow:
 
-1. **Trigger**: The `AutoCommitScheduler` or the MCP `commit_changes` tool call `SyncApplicationService.commit_changes()`.
-2. **Vault Commit**: If the active vault directory is a Git repository, Jotter runs `git add -A` and commits with a summary message such as `jotter: 3 tasks created, 4 modified, 1 deleted` (the same for scheduler and MCP commits), followed by one `verb: title` line per changed task, capped at 20. Folders that are not repositories are left untouched.
+1. **Trigger**: The `AutoCommitScheduler` calls `SyncApplicationService.commit_changes()` (there is no manual commit; MCP write tools only mark the vault dirty).
+2. **Vault Commit**: If the active vault directory is a Git repository, Jotter runs `git add -A` and commits with a summary message such as `jotter: 3 tasks created, 4 modified, 1 deleted`, followed by one `verb: title` line per changed task, capped at 20. Folders that are not repositories are left untouched.
 3. **Legacy Fallback**: Project subdirectories that carry their own `.git` folder are committed individually.
 4. **Local Excludes**: The SQLite index (`tasks.db*`) is added to `.git/info/exclude` so it is never versioned.
 5. **Identity**: Existing `user.name` / `user.email` (at any config level) are never modified. Only a missing value gets a fallback in the repository's local config.
@@ -256,7 +256,7 @@ Jotter provides dual interfaces for external programmatic access:
 
 2. **Model Context Protocol (MCP)**:
    - Built-in stdio-based MCP server (`jotter mcp` implemented via `FastMCP`).
-   - Enables LLMs and AI agents (such as Claude Desktop, Cursor, or Antigravity) to inspect projects, read live Kanban boards, filter tasks, create/update/move tasks, and commit local Git snapshots.
+   - Enables LLMs and AI agents (such as Claude Desktop, Cursor, or Antigravity) to inspect projects, read live Kanban boards, filter tasks, create/update/move tasks.
    - Implements anti-flooding safeguards for agents: `list_tasks` defaults to active tasks (`include_done=False`), and board resources (`jotter://projects/{id}/board`) collapse done/archived columns into count summaries.
    - Detailed specification and parameters are documented in [REST API & MCP Reference](./api.md).
 
