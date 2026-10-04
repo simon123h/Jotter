@@ -48,8 +48,15 @@ const actions = computed<SheetAction[]>(() => [
 ]);
 
 const run = (action: SheetAction) => {
-  if ('menu' in action) emit('menu', action.menu);
-  else emit(action.event);
+  if ('menu' in action) {
+    emit('menu', action.menu);
+  } else if (action.event === 'archive') {
+    emit('archive');
+  } else if (action.event === 'consolidate') {
+    emit('consolidate');
+  } else if (action.event === 'select-all') {
+    emit('select-all');
+  }
 };
 </script>
 
