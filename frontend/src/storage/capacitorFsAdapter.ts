@@ -17,6 +17,7 @@ import type {
 import { db } from './dexieDb';
 import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectManifest, DEFAULT_MOBILE_BUCKETS } from './markdownParser';
 import { StoragePermission } from './storagePermission';
+import { appVersion } from '@/platform';
 
 export const PREF_VAULT_PATH = 'jotter_vault_path';
 export const PREF_VAULT_DIR = 'jotter_vault_dir'; // Directory enum name if relative
@@ -706,7 +707,7 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   }
 
   async getSystemInfo(): Promise<SystemInfo> {
-    let versionStr = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '3.9.5';
+    let versionStr = appVersion;
     try {
       const info = await App.getInfo();
       if (info && info.version && info.version !== '1.0') {

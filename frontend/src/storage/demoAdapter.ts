@@ -11,6 +11,7 @@ import type {
   Timeblock,
 } from '@/types';
 import type { StorageAdapter } from './types';
+import { appVersion } from '@/platform';
 
 // ==========================================
 // LOCAL STORAGE MOCK CLIENT (DEMO MODE)
@@ -605,7 +606,7 @@ async function syncSystem(): Promise<{ status: string; synchronized_tasks: numbe
 
 async function getSystemInfo(): Promise<SystemInfo> {
   return {
-    version: `${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'} (demo)`,
+    version: `${appVersion} (demo)`,
     data_dir: '/demo-local-storage',
   };
 }

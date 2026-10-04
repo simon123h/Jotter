@@ -295,7 +295,9 @@ describe('CapacitorFsStorageAdapter', () => {
 
     it('provides mock system info and git history for mobile', async () => {
       const info = await adapter.getSystemInfo();
-      expect(info.version).toBeDefined();
+      // Falls back to the build version when the native app info is unavailable
+      expect(info.version).toBe(`${__APP_VERSION__} (Mobile)`);
+      expect(info.version).not.toContain('3.9.5');
 
       const history = await adapter.getGitHistory();
       expect(history).toEqual([]);
