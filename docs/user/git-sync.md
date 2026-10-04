@@ -22,8 +22,8 @@ If you prefer the terminal, running `git init` in the vault folder (shown under 
 
 ## How Commits Are Created
 
-* **Manual**: Click the **Commit** button in the sidebar. Jotter stages all changes in the vault and commits them with a timestamped message (`jotter: commit <date>`). If nothing changed, no commit is created.
-* **Automatic**: While Jotter is open, every change you make is committed automatically a few seconds later (`jotter: auto-commit <date>`). To keep the history readable, there is at most one automatic commit per minute: changes made within that minute are collected into one commit at its end. Pending changes are committed when Jotter shuts down or you switch vaults. Edits made outside Jotter (e.g. in a text editor) are picked up as well. There is nothing to configure.
+* **Manual**: Click the **Commit** button in the sidebar. Jotter stages all changes in the vault and commits them with a message that summarizes the changes (e.g. `jotter: 3 tasks created, 4 modified, 1 deleted`). If nothing changed, no commit is created.
+* **Automatic**: While Jotter is open, every change you make is committed automatically a few seconds later, with the same kind of summary message. To keep the history readable, there is at most one automatic commit per minute: changes made within that minute are collected into one commit at its end. Pending changes are committed when Jotter shuts down or you switch vaults. Edits made outside Jotter (e.g. in a text editor) are picked up as well. There is nothing to configure.
 * **Identity**: Commits use your Git `user.name` and `user.email`. Only if none is configured does Jotter set a fallback (`Jotter`) in that repository's local config, and it never overrides an existing identity.
 * **Index stays local**: The SQLite index (`tasks.db`) is a rebuildable cache and is excluded from commits.
 

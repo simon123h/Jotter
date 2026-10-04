@@ -2,8 +2,7 @@
 
 import re
 import subprocess
-from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from jotter.shared.exceptions import ValidationError
 
@@ -99,8 +98,51 @@ def enable_git_versioning(project_dir: str | Path) -> bool:
     return True
 
 
-def git_commit(project_dir: str | Path, message: str) -> bool:
-    """Stages all changes and commits if there are changes. Does nothing outside a git repository."""
+def _is_task_file(path: str) -> bool:
+    """True for a task markdown file (`<project>/<id>.md`, or `<id>.md` in a project-level repo)."""
+    p = PurePosixPath(path)
+    return (
+        len(p.parts) <= 2
+        and p.suffix == ".md"
+        and not p.name.startswith(".")
+        and p.name.lower() not in ("index.md", "readme.md")
+    )
+
+
+def summarize_changes(name_status: str) -> str:
+    """Turns `git diff --cached --name-status -z --no-renames` output into a short commit subject.
+
+    Example: "3 tasks created, 4 modified, 1 deleted, 2 other files changed".
+    """
+    fields = name_status.split("\0")
+    tasks = {"created": 0, "modified": 0, "deleted": 0}
+    other = 0
+    for status, path in zip(fields[0::2], fields[1::2]):
+        if not _is_task_file(path):
+            other += 1
+        elif status == "A":
+            tasks["created"] += 1
+        elif status == "D":
+            tasks["deleted"] += 1
+        else:
+            tasks["modified"] += 1
+
+    parts = []
+    for verb, count in tasks.items():
+        if not count:
+            continue
+        noun = f" task{'s' if count != 1 else ''}" if not parts else ""
+        parts.append(f"{count}{noun} {verb}")
+    if other:
+        parts.append(f"{other} other file{'s' if other != 1 else ''} changed")
+    return ", ".join(parts)
+
+
+def git_commit(project_dir: str | Path, message: str | None = None) -> bool:
+    """Stages all changes and commits if there are changes. Does nothing outside a git repository.
+
+    Without an explicit message, the commit subject summarizes the staged changes.
+    """
     p = Path(project_dir)
     if not is_git_repo(p):
         return False
@@ -118,17 +160,17 @@ def git_commit(project_dir: str | Path, message: str) -> bool:
     if staged_diff.returncode == 0:
         return False
 
+    if message is None:
+        changes = run_git(["diff", "--cached", "--name-status", "-z", "--no-renames"], cwd=p, check=True)
+        message = f"jotter: {summarize_changes(changes.stdout)}"
+
     res = run_git(["commit", "-m", message], cwd=p, check=False)
     return res.returncode == 0
 
 
-def commit_changes(project_dir: str | Path, label: str = "commit") -> bool:
+def commit_changes(project_dir: str | Path) -> bool:
     """Commits local changes if project_dir is a git repository. Returns True if a commit was created."""
-    p = Path(project_dir)
-    if not is_git_repo(p):
-        return False
-    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    return git_commit(p, f"jotter: {label} {now_str}")
+    return git_commit(project_dir)
 
 
 def get_git_history(project_dir: str | Path, limit: int = 50) -> list[dict[str, str]]:

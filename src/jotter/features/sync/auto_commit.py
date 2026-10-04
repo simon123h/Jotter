@@ -27,7 +27,7 @@ def commit_vault(data_dir: Path) -> bool:
 
     conn = create_sqlite_connection(data_dir / "tasks.db")
     try:
-        return SyncApplicationService.from_data_dir(data_dir, conn).commit_changes(label="auto-commit")
+        return SyncApplicationService.from_data_dir(data_dir, conn).commit_changes()
     finally:
         conn.close()
 

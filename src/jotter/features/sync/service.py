@@ -145,7 +145,7 @@ class SyncApplicationService:
 
         return total_synced
 
-    def commit_changes(self, label: str = "commit") -> bool:
+    def commit_changes(self) -> bool:
         """Commits pending changes in the vault (if it is a Git repository) and in project folders with their own repo.
 
         Local only: never initializes a repository and never talks to a remote. Returns True if any commit was created.
@@ -154,7 +154,7 @@ class SyncApplicationService:
         committed = False
         for target in targets:
             try:
-                committed = commit_changes(target, label) or committed
+                committed = commit_changes(target) or committed
             except Exception as e:
                 logger.warning("Local Git commit error for '%s': %s", target, e)
         return committed

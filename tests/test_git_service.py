@@ -10,6 +10,7 @@ from jotter.features.sync.git_adapter import (
     get_git_history,
     restore_commit,
     run_git,
+    summarize_changes,
 )
 from jotter.shared.exceptions import ValidationError
 
@@ -83,7 +84,7 @@ def test_commit_changes_commits_locally(temp_dir):
     # Check commit history contains the commit
     history = get_git_history(temp_dir)
     assert len(history) == 1
-    assert "jotter: commit" in history[0]["message"]
+    assert history[0]["message"] == "jotter: 1 other file changed"
 
 
 def test_commit_changes_keeps_configured_identity(temp_dir):
@@ -220,3 +221,27 @@ def test_enable_git_versioning_requires_git(temp_dir, monkeypatch):
     with pytest.raises(ValidationError, match="not installed"):
         enable_git_versioning(vault)
     assert not (vault / ".git").exists()
+
+
+def _name_status(*entries: tuple[str, str]) -> str:
+    return "".join(f"{status}\0{path}\0" for status, path in entries)
+
+
+def test_summarize_changes_counts_tasks_by_kind():
+    changes = _name_status(
+        ("A", "p/1.md"), ("A", "p/2.md"), ("A", "p/3.md"),
+        ("M", "p/4.md"), ("M", "p/5.md"), ("M", "q/6.md"), ("M", "q/7.md"),
+        ("D", "p/8.md"),
+    )  # fmt: skip
+    assert summarize_changes(changes) == "3 tasks created, 4 modified, 1 deleted"
+
+
+def test_summarize_changes_singular_and_omits_zero_counts():
+    assert summarize_changes(_name_status(("D", "p/1.md"))) == "1 task deleted"
+    assert summarize_changes(_name_status(("M", "p/1.md"), ("D", "p/2.md"))) == "1 task modified, 1 deleted"
+
+
+def test_summarize_changes_counts_non_task_files_separately():
+    changes = _name_status(("A", "p/1.md"), ("M", "p/index.md"), ("A", "p/board.canvas"), ("M", "README.md"))
+    assert summarize_changes(changes) == "1 task created, 3 other files changed"
+    assert summarize_changes(_name_status(("M", "p/board.canvas"))) == "1 other file changed"

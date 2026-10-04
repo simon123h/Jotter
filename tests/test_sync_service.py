@@ -350,7 +350,7 @@ def test_commit_changes_commits_project_level_repo(temp_dir, test_env):
 
     history = get_git_history(proj_dir)
     assert len(history) >= 1
-    assert "jotter: commit" in history[0]["message"]
+    assert history[0]["message"].startswith("jotter: 1 task created")
 
 
 def test_commit_changes_with_global_workspace_git(temp_dir, test_env):
@@ -376,7 +376,7 @@ def test_commit_changes_with_global_workspace_git(temp_dir, test_env):
     # Verify vault-level commit was created
     history = get_git_history(root_dir)
     assert len(history) >= 1
-    assert "jotter: commit" in history[0]["message"]
+    assert history[0]["message"].startswith("jotter: 1 task created")
 
     # Verify the local SQLite index is never versioned
     tracked = run_git(["ls-files"], cwd=root_dir).stdout.splitlines()
@@ -413,4 +413,4 @@ def test_commit_changes_commits_canvas_files(temp_dir, test_env):
 
     history = get_git_history(proj_dir)
     assert len(history) >= 1
-    assert "jotter: commit" in history[0]["message"]
+    assert history[0]["message"] == "jotter: 2 other files changed"

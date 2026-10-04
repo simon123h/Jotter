@@ -160,7 +160,7 @@ def test_commit_vault_creates_auto_commit_in_git_vault(temp_dir):
     (vault / "default" / "a.md").write_text("---\ntitle: a\n---\n", encoding="utf-8")
 
     assert commit_vault(vault) is True
-    assert "jotter: auto-commit" in get_git_history(vault)[0]["message"]
+    assert get_git_history(vault)[0]["message"] == "jotter: 1 task created"
     assert commit_vault(vault) is False  # nothing new
 
 
