@@ -3,9 +3,17 @@ import { defineStore } from 'pinia';
 import { useStorage } from '@vueuse/core';
 import { persistentStorage } from '@/storage/preferencesStorage';
 
+export const STICKY_VIEW_MODES = ['board', 'list', 'matrix', 'time', 'tag', 'review'] as const;
+export const SESSION_VIEW_MODES = ['canvas', 'triage'] as const;
+export type StickyViewMode = (typeof STICKY_VIEW_MODES)[number];
+export type SessionViewMode = (typeof SESSION_VIEW_MODES)[number];
+
 export const useUiStore = defineStore('ui', () => {
   const isMobileViewsSheetOpen = ref(false);
   const lastViewMode = useStorage<string>('jotter-last-view-mode', 'board', persistentStorage, { flush: 'sync' });
+  if (!STICKY_VIEW_MODES.includes(lastViewMode.value as any)) {
+    lastViewMode.value = 'board';
+  }
   const collapsedColumns = useStorage<Record<string, string[]>>('jotter-collapsed-columns', {}, persistentStorage, { flush: 'sync' });
   const collapseEmptyColumns = useStorage<boolean>('jotter-collapse-empty-columns', false, persistentStorage, { flush: 'sync' });
   const virtualColumnLayouts = useStorage<Record<string, 'list' | 'grid-2' | 'grid-3'>>(
@@ -18,7 +26,9 @@ export const useUiStore = defineStore('ui', () => {
   );
 
   const setLastViewMode = (mode: string) => {
-    lastViewMode.value = mode;
+    if (STICKY_VIEW_MODES.includes(mode as any)) {
+      lastViewMode.value = mode;
+    }
   };
 
   const isColumnCollapsed = (projectId: string, bucketName: string): boolean => {

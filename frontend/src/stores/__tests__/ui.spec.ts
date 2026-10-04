@@ -26,6 +26,29 @@ describe('UI Store', () => {
     expect(store.lastViewMode).toBe('list');
   });
 
+  it('does not persist session view modes (like canvas, triage) to lastViewMode', () => {
+    const store = useUiStore();
+    store.setLastViewMode('matrix');
+    expect(store.lastViewMode).toBe('matrix');
+
+    store.setLastViewMode('canvas');
+    expect(store.lastViewMode).toBe('matrix');
+
+    store.setLastViewMode('triage');
+    expect(store.lastViewMode).toBe('matrix');
+  });
+
+  it('sanitizes session view modes from localStorage on initialization to "board"', () => {
+    localStorage.setItem('jotter-last-view-mode', 'canvas');
+    const storeCanvas = useUiStore();
+    expect(storeCanvas.lastViewMode).toBe('board');
+
+    localStorage.setItem('jotter-last-view-mode', 'triage');
+    setActivePinia(createPinia());
+    const storeTriage = useUiStore();
+    expect(storeTriage.lastViewMode).toBe('board');
+  });
+
   it('can manage and persist collapsed columns per project', () => {
     const store = useUiStore();
     expect(store.isColumnCollapsed('proj-1', 'todo')).toBe(false);

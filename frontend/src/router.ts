@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import MainLayout from '@/components/layout/MainLayout.vue';
 import ProjectLayout from '@/components/layout/ProjectLayout.vue';
-import { useUiStore } from '@/stores/ui';
+import { useUiStore, STICKY_VIEW_MODES, SESSION_VIEW_MODES } from '@/stores/ui';
 
 // Lazy-loaded views for code splitting
 const HomeView = () => import('@/components/views/HomeView.vue');
@@ -38,6 +38,14 @@ const routes = [
         redirect: (to: any) => {
           try {
             const uiStore = useUiStore();
+            const fromRoute = router?.currentRoute?.value;
+            const fromMode = (fromRoute?.meta?.backRoute as string) || String(fromRoute?.name || '');
+            if (SESSION_VIEW_MODES.includes(fromMode as any)) {
+              return {
+                name: 'board',
+                params: { projectId: to.params.projectId },
+              };
+            }
             return {
               name: uiStore.lastViewMode || 'board',
               params: { projectId: to.params.projectId },
@@ -172,7 +180,7 @@ router.afterEach((to) => {
   try {
     const uiStore = useUiStore();
     const currentMode = (to.meta.backRoute as string) || String(to.name || '');
-    if (to.params.projectId && ['board', 'list', 'matrix', 'time', 'tag', 'triage', 'review', 'canvas'].includes(currentMode)) {
+    if (to.params.projectId && STICKY_VIEW_MODES.includes(currentMode as any)) {
       uiStore.setLastViewMode(currentMode);
     }
   } catch {
