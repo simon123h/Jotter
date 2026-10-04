@@ -22,8 +22,8 @@ Wenn du das Terminal bevorzugst: `git init` im Vault-Ordner (zu finden unter **E
 
 ## So entstehen Commits
 
-* **Manuell**: Klicke in der Seitenleiste auf **Commit**. Jotter staged alle Änderungen im Vault und committet sie mit einem Zeitstempel (`jotter: auto-sync <Datum>`). Gibt es keine Änderungen, entsteht kein Commit.
-* **Automatisch**: Unter **Einstellungen → Git-Versionierung** kannst du ein **Auto-Commit-Intervall** wählen, damit im Hintergrund Schnappschüsse entstehen, solange Jotter geöffnet ist.
+* **Manuell**: Klicke in der Seitenleiste auf **Commit**. Jotter staged alle Änderungen im Vault und committet sie mit einem Zeitstempel (`jotter: commit <Datum>`). Gibt es keine Änderungen, entsteht kein Commit.
+* **Automatisch**: Solange Jotter geöffnet ist, wird jede Änderung wenige Sekunden später automatisch committet (`jotter: auto-commit <Datum>`). Damit der Verlauf übersichtlich bleibt, gibt es höchstens einen automatischen Commit pro Minute: Änderungen innerhalb dieser Minute werden an deren Ende in einem Commit gesammelt. Ausstehende Änderungen werden beim Beenden von Jotter oder beim Vault-Wechsel committet. Auch Änderungen außerhalb von Jotter (z. B. in einem Texteditor) werden erfasst. Es gibt nichts zu konfigurieren.
 * **Identität**: Commits verwenden dein Git-`user.name` und `user.email`. Nur wenn keine konfiguriert sind, setzt Jotter einen Fallback (`Jotter`) in der lokalen Konfiguration dieses Repositories und überschreibt niemals eine vorhandene Identität.
 * **Index bleibt lokal**: Der SQLite-Index (`tasks.db`) ist ein jederzeit neu aufbaubarer Cache und wird nicht mit committet.
 

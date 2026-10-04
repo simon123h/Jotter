@@ -92,7 +92,6 @@ export interface AppSettings {
   windowMaximized?: boolean;
   language?: string;
   tagColors?: Record<string, string>;
-  autoCommitInterval?: number;
   timeblockStartHour?: number;
   timeblockEndHour?: number;
   isTimeblockSidebarOpen?: boolean;

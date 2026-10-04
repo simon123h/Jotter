@@ -162,6 +162,13 @@ class VaultApplicationService:
             logger.warning("Reconciliation on vault switch failed: %s", e)
 
         # 4. Re-target FileWatcherService
+        scheduler = getattr(app_state, "auto_commit", None)
+        if scheduler is not None:
+            try:
+                scheduler.retarget(vault.path)
+            except Exception as e:
+                logger.warning("Failed to retarget auto-commit for vault %s: %s", vault.path, e)
+
         watcher = getattr(app_state, "watcher", None)
         if watcher is not None:
             try:

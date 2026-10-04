@@ -34,7 +34,6 @@ describe('Settings Store', () => {
     expect(store.thresholdDays).toBe(7);
     expect(store.pinnedProjectIds).toEqual([]);
     expect(store.sortBy).toBe('alpha');
-    expect(store.autoCommitInterval).toBe(0);
   });
 
   it('can toggle hideDoneColumn', () => {
@@ -59,19 +58,12 @@ describe('Settings Store', () => {
     expect(store.projectOrder).toEqual(['project-2', 'project-1']);
   });
 
-  it('migrates the legacy autoSyncInterval setting', async () => {
+  it('drops obsolete auto-commit interval settings on load', async () => {
     const { getSettings } = await import('@/api');
-    vi.mocked(getSettings).mockResolvedValueOnce({ autoSyncInterval: 30 } as any);
+    vi.mocked(getSettings).mockResolvedValueOnce({ autoSyncInterval: 30, autoCommitInterval: 60 } as any);
     const store = useSettingsStore();
     await store.loadSettings();
-    expect(store.autoCommitInterval).toBe(30);
     expect((store as any).autoSyncInterval).toBeUndefined();
-  });
-
-  it('can set auto-commit interval', () => {
-    const store = useSettingsStore();
-    expect(store.autoCommitInterval).toBe(0);
-    store.setAutoCommitInterval(60);
-    expect(store.autoCommitInterval).toBe(60);
+    expect((store as any).autoCommitInterval).toBeUndefined();
   });
 });

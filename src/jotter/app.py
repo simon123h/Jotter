@@ -12,7 +12,7 @@ from jotter.features.buckets import router as buckets_router
 from jotter.features.canvas.router import router as canvas_router
 from jotter.features.projects import router as projects_router
 from jotter.features.settings import router as settings_router
-from jotter.features.sync import FileWatcherService, SyncApplicationService
+from jotter.features.sync import AutoCommitScheduler, FileWatcherService, SyncApplicationService
 from jotter.features.sync import router as system_router
 from jotter.features.tasks import router as tasks_router
 from jotter.features.timeblock.router import router as timeblock_router
@@ -26,14 +26,25 @@ except ImportError:
     app_version = "3.0.0b1"
 
 
-def create_app(config: UserConfig | None = None, version: str = app_version, enable_watcher: bool = True) -> FastAPI:
+def create_app(
+    config: UserConfig | None = None,
+    version: str = app_version,
+    enable_watcher: bool = True,
+    enable_auto_commit: bool | None = None,
+) -> FastAPI:
     cfg = config or load_config()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        scheduler = None
+        if enable_auto_commit if enable_auto_commit is not None else enable_watcher:
+            scheduler = AutoCommitScheduler(app.state.config.data_dir)
+            app.state.auto_commit = scheduler
         watcher = None
         if enable_watcher:
-            watcher = FileWatcherService(app.state.config.data_dir)
+            watcher = FileWatcherService(
+                app.state.config.data_dir, on_external_change=scheduler.mark_dirty if scheduler else None
+            )
             watcher.start()
             app.state.watcher = watcher
         try:
@@ -41,6 +52,8 @@ def create_app(config: UserConfig | None = None, version: str = app_version, ena
         finally:
             if watcher:
                 watcher.stop()
+            if scheduler:
+                scheduler.stop()
 
     app = FastAPI(
         title="Jotter API",
@@ -82,6 +95,22 @@ def create_app(config: UserConfig | None = None, version: str = app_version, ena
     @app.exception_handler(DomainException)
     async def domain_exception_handler(request: Request, exc: DomainException):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+    # Smart auto-commit: any successful data-changing API call marks the vault dirty
+    @app.middleware("http")
+    async def auto_commit_on_change(request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        if (
+            request.method in ("POST", "PUT", "PATCH", "DELETE")
+            and path.startswith("/api/")
+            and not path.startswith(("/api/system/commit", "/api/system/git"))
+            and response.status_code < 400
+        ):
+            scheduler = getattr(request.app.state, "auto_commit", None)
+            if scheduler is not None:
+                scheduler.mark_dirty()
+        return response
 
     # CORS Middleware
     app.add_middleware(

@@ -122,13 +122,13 @@ def git_commit(project_dir: str | Path, message: str) -> bool:
     return res.returncode == 0
 
 
-def commit_changes(project_dir: str | Path) -> bool:
+def commit_changes(project_dir: str | Path, label: str = "commit") -> bool:
     """Commits local changes if project_dir is a git repository. Returns True if a commit was created."""
     p = Path(project_dir)
     if not is_git_repo(p):
         return False
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    return git_commit(p, f"jotter: auto-sync {now_str}")
+    return git_commit(p, f"jotter: {label} {now_str}")
 
 
 def get_git_history(project_dir: str | Path, limit: int = 50) -> list[dict[str, str]]:

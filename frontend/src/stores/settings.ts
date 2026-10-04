@@ -43,7 +43,6 @@ export const useSettingsStore = defineStore('settings', () => {
     projectOrder: [],
     language: '',
     tagColors: {},
-    autoCommitInterval: 0,
     timeblockStartHour: 6,
     timeblockEndHour: 18,
     isTimeblockSidebarOpen: getStoredBool(TIMEBLOCK_SIDEBAR_STORAGE_KEY, false),
@@ -58,19 +57,15 @@ export const useSettingsStore = defineStore('settings', () => {
       const settings = await getSettings();
       Object.assign(state, settings);
 
-      // Migrate the pre-rename key (autoSyncInterval) once
-      const legacy = (settings as unknown as Record<string, unknown>).autoSyncInterval;
-      if (settings.autoCommitInterval === undefined && typeof legacy === 'number') {
-        state.autoCommitInterval = legacy;
-      }
+      // Drop obsolete interval settings (auto-commit is automatic now)
       delete (state as unknown as Record<string, unknown>).autoSyncInterval;
+      delete (state as unknown as Record<string, unknown>).autoCommitInterval;
 
       // Ensure defaults for optional/partial loads
       if (!state.pinnedProjectIds) state.pinnedProjectIds = [];
       if (!state.projectOrder) state.projectOrder = [];
       if (!state.language) state.language = '';
       if (!state.tagColors) state.tagColors = {};
-      if (state.autoCommitInterval === undefined) state.autoCommitInterval = 0;
       if (state.hidePostponedColumn === undefined) state.hidePostponedColumn = true;
 
       const startHour = state.timeblockStartHour ?? 6;
@@ -233,10 +228,6 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   };
 
-  const setAutoCommitInterval = (minutes: number) => {
-    state.autoCommitInterval = minutes;
-  };
-
   const updateSettings = (updates: Partial<AppSettings>) => {
     Object.assign(state, updates);
   };
@@ -258,6 +249,5 @@ export const useSettingsStore = defineStore('settings', () => {
     toggleHideAddTaskButton,
     setTagColor,
     removeTagColor,
-    setAutoCommitInterval,
   };
 });

@@ -80,10 +80,10 @@ def test_commit_changes_commits_locally(temp_dir):
     # Nothing left to commit on a second run
     assert commit_changes(temp_dir) is False
 
-    # Check commit history contains auto-sync
+    # Check commit history contains the commit
     history = get_git_history(temp_dir)
     assert len(history) == 1
-    assert "jotter: auto-sync" in history[0]["message"]
+    assert "jotter: commit" in history[0]["message"]
 
 
 def test_commit_changes_keeps_configured_identity(temp_dir):

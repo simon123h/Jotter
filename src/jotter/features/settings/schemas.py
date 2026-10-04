@@ -23,7 +23,6 @@ class AppSettings(BaseModel):
     windowMaximized: bool = False
     language: str = "en"
     tagColors: dict[str, str] = {}
-    autoCommitInterval: int = 0
     doneCleanPeriod: int | None = None
 
 
@@ -47,5 +46,4 @@ class SettingsUpdate(BaseModel):
     windowMaximized: bool | None = None
     language: str | None = None
     tagColors: dict[str, str] | None = None
-    autoCommitInterval: int | None = None
     doneCleanPeriod: int | None = None

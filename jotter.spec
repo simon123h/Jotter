@@ -1,6 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
 
+from PyInstaller.utils.hooks import collect_submodules
+
 block_cipher = None
 
 datas = []
@@ -17,7 +19,7 @@ a = Analysis(
     pathex=['.', 'src'],
     binaries=[],
     datas=datas,
-    hiddenimports=[
+    hiddenimports=collect_submodules('watchdog') + [
         'uvicorn.logging',
         'uvicorn.loops',
         'uvicorn.loops.auto',

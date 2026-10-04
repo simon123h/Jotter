@@ -117,7 +117,13 @@ class MarkdownFileEventHandler(FileSystemEventHandler):
 class FileWatcherService:
     """Manages the lifecycle of the background filesystem watcher for a Jotter data directory."""
 
-    def __init__(self, data_dir: Path | str, debounce_seconds: float = 0.25):
+    def __init__(
+        self,
+        data_dir: Path | str,
+        debounce_seconds: float = 0.25,
+        on_external_change: Callable[[], None] | None = None,
+    ):
+        self.on_external_change = on_external_change
         self.data_dir = Path(data_dir).resolve()
         self.debounce_seconds = debounce_seconds
         self.observer: Observer | None = None
@@ -148,6 +154,8 @@ class FileWatcherService:
                         self.last_sync_timestamp = time.time()
                         self.change_count += 1
                     logger.debug("Filesystem watcher silently reconciled database (%d tasks)", synced)
+                    if self.on_external_change:
+                        self.on_external_change()
                 finally:
                     conn.close()
             except Exception as e:

@@ -4,6 +4,7 @@ Allows AI coding assistants (Claude Desktop, Cursor, Antigravity, etc.) to query
 create, update, move, and organize tasks and projects directly on the local board.
 """
 
+import functools
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,7 @@ from jotter.features.buckets.schemas import BucketCreate
 from jotter.features.buckets.service import BucketApplicationService
 from jotter.features.projects.schemas import ProjectCreate
 from jotter.features.projects.service import ProjectApplicationService
+from jotter.features.sync import AutoCommitScheduler
 from jotter.features.sync.service import SyncApplicationService
 from jotter.features.tasks.command_service import TaskCommandService
 from jotter.features.tasks.disk_repo import DiskTaskRepository
@@ -50,6 +52,19 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
     bucket_svc = BucketApplicationService.from_data_dir(cfg.data_dir, conn)
     project_svc = ProjectApplicationService.from_data_dir(cfg.data_dir, conn)
 
+    auto_commit = AutoCommitScheduler(cfg.data_dir)
+
+    def commits_changes(fn: Any) -> Any:
+        """Marks the vault dirty after a data-changing tool succeeds so auto-commit picks it up."""
+
+        @functools.wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            result = fn(*args, **kwargs)
+            auto_commit.mark_dirty()
+            return result
+
+        return wrapper
+
     server = MCPServer("jotter")
 
     @server.tool()
@@ -65,6 +80,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         return project.model_dump()
 
     @server.tool()
+    @commits_changes
     def create_project(
         title: str,
         id: str | None = None,
@@ -88,6 +104,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         return [b.model_dump() for b in buckets]
 
     @server.tool()
+    @commits_changes
     def create_bucket(
         title: str,
         project_id: str = "default",
@@ -174,6 +191,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         return task.model_dump()
 
     @server.tool()
+    @commits_changes
     def create_task(
         title: str,
         project_id: str = "default",
@@ -198,6 +216,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         return created.model_dump()
 
     @server.tool()
+    @commits_changes
     def batch_create_tasks(
         tasks: list[dict[str, Any]],
         project_id: str = "default",
@@ -220,6 +239,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         return created_tasks
 
     @server.tool()
+    @commits_changes
     def update_task(
         task_id: str,
         project_id: str = "default",
@@ -243,6 +263,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         return updated.model_dump()
 
     @server.tool()
+    @commits_changes
     def move_task(
         task_id: str,
         bucket: str,
@@ -261,6 +282,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         return moved.model_dump()
 
     @server.tool()
+    @commits_changes
     def delete_task(task_id: str, project_id: str = "default") -> dict[str, str]:
         """Delete a task from Jotter."""
         task_cmd_svc.delete_task(project_id, task_id)
@@ -404,13 +426,17 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         task_entity = task_query_svc.sqlite_repo.get_by_id(project_id, task_id)
         return task_disk_repo.serialize_task(task_entity)
 
+    server.auto_commit = auto_commit  # flushed on shutdown by run_mcp_server
     return server
 
 
 def run_mcp_server():
     """Main CLI entrypoint for running the MCP server over stdio."""
     server = create_mcp_server()
-    server.run(transport="stdio")
+    try:
+        server.run(transport="stdio")
+    finally:
+        server.auto_commit.stop()
 
 
 if __name__ == "__main__":

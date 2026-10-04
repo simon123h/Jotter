@@ -109,6 +109,6 @@ Jotter resolves settings using the following priority (highest overrides lowest)
 
 ## Git Versioning
 
-If your vault folder is a Git repository, Jotter commits local changes to it whenever you click the **Commit** button in the sidebar footer (or periodically, via **Settings → Git Versioning → Auto-Commit Interval**). These commits power the Time Machine.
+If your vault folder is a Git repository, Jotter commits local changes to it automatically shortly after every change (at most once per minute), or whenever you click the **Commit** button in the sidebar footer. These commits power the Time Machine.
 
 Jotter only ever commits locally. It creates a repository only when you click **Enable Git**, and it never pushes or pulls. See [Git Versioning and Time Machine](./git-sync.md) for details and for how to sync a vault across devices.

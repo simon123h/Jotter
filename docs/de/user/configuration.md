@@ -108,6 +108,6 @@ Jotter wertet die Einstellungen in folgender Reihenfolge aus (höhere Priorität
 
 ## Git-Versionierung
 
-Ist der Ordner deines Vaults ein Git-Repository, committet Jotter lokale Änderungen, sobald du in der Fußzeile der Seitenleiste auf **Commit** klickst (oder regelmäßig über **Einstellungen → Git-Versionierung → Auto-Commit-Intervall**). Auf diesen Commits baut die Time Machine auf.
+Ist der Ordner deines Vaults ein Git-Repository, committet Jotter lokale Änderungen, automatisch kurz nach jeder Änderung (höchstens einmal pro Minute) oder sobald du in der Fußzeile der Seitenleiste auf **Commit** klickst. Auf diesen Commits baut die Time Machine auf.
 
 Jotter committet ausschließlich lokal. Ein Repository legt es nur an, wenn du auf **Git aktivieren** klickst, und es führt weder Push noch Pull aus. Details und Hinweise zur Synchronisation über mehrere Geräte findest du unter [Git-Versionierung und Time Machine](./git-sync.md).

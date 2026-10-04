@@ -311,16 +311,8 @@ export const en = {
     selectTagToCustomize: 'Select Tag to Customize',
     noMatchingTags: 'No tags match your search',
     gitSync: 'Git Versioning',
-    autoCommitIntervalLabel: 'Auto-Commit Interval',
-    autoCommitIntervalDesc:
-      'If your vault is a Git repository, Jotter automatically commits local changes at the specified frequency in the background. Jotter never pushes or pulls; use your own Git tooling to sync with a remote.',
-    autoCommitOptions: {
-      disabled: '0 (no auto-commit)',
-      '10min': '10 minutes',
-      '30min': '30 minutes',
-      '60min': '60 minutes',
-      '120min': '120 minutes',
-    },
+    autoCommitDesc:
+      'If your vault is a Git repository, Jotter commits your changes automatically shortly after you make them (at most once per minute). Jotter never pushes or pulls; use your own Git tooling to sync with a remote.',
     systemInfo: 'System Information',
     versionLabel: 'Jotter Version',
     dataDirLabel: 'Data Directory',
