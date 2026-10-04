@@ -7,6 +7,7 @@ from jotter.features.vaults.schemas import (
     VaultCreate,
     VaultResponse,
     VaultSwitchRequest,
+    VaultUpdate,
 )
 from jotter.features.vaults.service import VaultApplicationService
 
@@ -46,6 +47,19 @@ def switch_vault(
     return svc.switch_vault(req.vault_id, app_state=request.app.state)
 
 
+@router.patch("/{vault_id}", response_model=VaultResponse)
+def rename_vault(
+    vault_id: str,
+    req: VaultUpdate,
+    svc: VaultApplicationService = Depends(get_vault_service),
+):
+    return svc.rename_vault(vault_id, req)
+
+
 @router.delete("/{vault_id}", status_code=204)
-def delete_vault(vault_id: str, svc: VaultApplicationService = Depends(get_vault_service)):
-    svc.delete_vault(vault_id)
+def delete_vault(
+    vault_id: str,
+    request: Request,
+    svc: VaultApplicationService = Depends(get_vault_service),
+):
+    svc.delete_vault(vault_id, app_state=request.app.state)

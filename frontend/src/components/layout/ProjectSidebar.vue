@@ -16,6 +16,7 @@ import {
   History,
   Layers,
   Database,
+  Settings2,
   ChevronDown,
   X,
 } from '@lucide/vue';
@@ -253,10 +254,7 @@ const onVaultSelected = async (event: Event) => {
     </div>
 
     <!-- Vault Switcher Header -->
-    <div
-      v-if="vaults.length > 0"
-      class="px-3 py-2 border-b border-theme-border/60 bg-theme-base/40 flex items-center justify-between gap-1.5"
-    >
+    <div class="px-3 py-2 border-b border-theme-border/60 bg-theme-base/40 flex items-center justify-between gap-1.5">
       <div class="flex items-center gap-1.5 min-w-0 flex-1">
         <Database class="w-3.5 h-3.5 text-theme-accent shrink-0" />
         <div class="relative flex-1 min-w-0">
@@ -273,6 +271,14 @@ const onVaultSelected = async (event: Event) => {
           <ChevronDown class="w-3 h-3 text-theme-text-muted absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
       </div>
+      <button
+        @click="modalStore.openVaultManage()"
+        class="p-1 rounded text-theme-text-muted hover:text-theme-accent hover:bg-theme-column transition-colors cursor-pointer shrink-0"
+        :title="t('vaults.manage')"
+        data-testid="manage-vaults-btn"
+      >
+        <Settings2 class="w-3.5 h-3.5" />
+      </button>
       <span
         v-if="activeVault?.is_git"
         class="text-[9px] uppercase font-bold tracking-wider px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 shrink-0"

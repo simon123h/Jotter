@@ -208,6 +208,7 @@ export async function getSystemInfo(): Promise<SystemInfo> {
 
 export async function updateDataDir(dataDir: string): Promise<{ status: string; data_dir: string; synced?: number }> {
   if (IS_DEMO_MODE) return { status: 'ok', data_dir: dataDir };
+  if (!activeStorage.updateDataDir) throw new Error('Changing the data directory is not supported; use vaults instead');
   return activeStorage.updateDataDir(dataDir);
 }
 
@@ -359,7 +360,7 @@ export async function getActiveVault(): Promise<Vault> {
   return res.json();
 }
 
-export async function createVault(payload: { name: string; path: string; id?: string }): Promise<Vault> {
+export async function createVault(payload: { name: string; path: string; id?: string; create_dir?: boolean }): Promise<Vault> {
   const res = await fetch('/api/vaults', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -381,6 +382,19 @@ export async function switchVault(vaultId: string): Promise<Vault> {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || 'Failed to switch vault');
+  }
+  return res.json();
+}
+
+export async function renameVault(vaultId: string, name: string): Promise<Vault> {
+  const res = await fetch(`/api/vaults/${encodeURIComponent(vaultId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to rename vault');
   }
   return res.json();
 }

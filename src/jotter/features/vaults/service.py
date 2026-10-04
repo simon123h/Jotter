@@ -6,8 +6,9 @@ from typing import Any
 
 from jotter.features.vaults.domain import Vault
 from jotter.features.vaults.registry import VaultRegistry
-from jotter.features.vaults.schemas import VaultCreate, VaultResponse
+from jotter.features.vaults.schemas import VaultCreate, VaultResponse, VaultUpdate
 from jotter.shared.exceptions import ValidationError
+from jotter.shared.slug import slugify
 
 logger = logging.getLogger(__name__)
 
@@ -45,16 +46,32 @@ class VaultApplicationService:
 
     def create_vault(self, req: VaultCreate) -> VaultResponse:
         target_path = Path(req.path).expanduser().resolve()
+        if target_path.exists() and not target_path.is_dir():
+            raise ValidationError(f"Path '{target_path}' is not a directory")
+        if not target_path.exists() and not req.create_dir:
+            raise ValidationError(f"Folder '{target_path}' does not exist")
         target_path.mkdir(parents=True, exist_ok=True)
 
         existing = [v for v in self.registry.get_all() if v.path == str(target_path)]
         if existing:
             raise ValidationError(f"Vault already registered for path '{target_path}' with ID '{existing[0].id}'")
 
+        taken_ids = {v.id for v in self.registry.get_all()}
+        if req.id:
+            vault_id = slugify(req.id)
+            if vault_id in taken_ids:
+                raise ValidationError(f"Vault ID '{req.id}' is already in use")
+        else:
+            base = slugify(req.name) or "vault"
+            vault_id, n = base, 2
+            while vault_id in taken_ids:
+                vault_id = f"{base}-{n}"
+                n += 1
+
         vault = Vault.create(
             name=req.name,
             path=target_path,
-            vault_id=req.id,
+            vault_id=vault_id,
         )
         self.registry.save(vault)
         return VaultResponse(
@@ -86,11 +103,33 @@ class VaultApplicationService:
             created_at=vault.created_at,
         )
 
-    def delete_vault(self, vault_id: str) -> None:
+    def rename_vault(self, vault_id: str, req: VaultUpdate) -> VaultResponse:
         vault = self.registry.get(vault_id)
-        all_vaults = self.registry.get_all()
-        if len(all_vaults) <= 1:
-            raise ValidationError("Cannot delete the only configured vault.")
+        name = req.name.strip()
+        if not name:
+            raise ValidationError("Vault name cannot be empty")
+        vault.name = name
+        self.registry.save(vault)
+        return VaultResponse(
+            id=vault.id,
+            name=vault.name,
+            path=vault.path,
+            is_active=vault.is_active,
+            is_git=vault.is_git,
+            created_at=vault.created_at,
+        )
+
+    def delete_vault(self, vault_id: str, app_state: Any = None) -> None:
+        """Unregisters a vault (files on disk are never touched).
+
+        Removing the active vault switches to another one first so runtime state stays consistent.
+        """
+        vault = self.registry.get(vault_id)
+        remaining = [v for v in self.registry.get_all() if v.id != vault.id]
+        if not remaining:
+            raise ValidationError("Cannot remove the only configured vault.")
+        if vault.is_active:
+            self.switch_vault(remaining[0].id, app_state=app_state)
         self.registry.delete(vault.id)
 
     def _rebind_runtime_state(self, app_state: Any, vault: Vault) -> None:

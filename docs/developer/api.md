@@ -51,6 +51,11 @@ Jotter comes with auto-generated interactive OpenAPI documentation built directl
 
 ### System & Sync
 * `POST /api/system/sync` - Reconcile Markdown files on disk with the SQLite index.
+* `GET /api/vaults`, `GET /api/vaults/active` - List registered vaults / get the active one.
+* `POST /api/vaults` - Register a vault (`name`, `path`, optional `id`, `create_dir`). With `create_dir: false` the folder must already exist ("open existing folder"). IDs are made unique automatically.
+* `PATCH /api/vaults/{id}` - Rename a vault.
+* `POST /api/vaults/switch` - Make a vault active (rebinds DB, watcher and config).
+* `DELETE /api/vaults/{id}` - Unregister a vault; files on disk are never touched. Removing the active vault switches to another one first; the last vault cannot be removed.
 * `POST /api/system/commit` - Commit pending changes of the active vault to its local Git repository (no-op if it is not a repository). Never pushes.
 * `POST /api/system/git/init` - Initialize a Git repository in the active vault and record the initial commit. Fails with `400` if Git is missing or the vault already lies inside another repository.
 * `GET /api/system/info` - Get system information (data directory, version, Git status).

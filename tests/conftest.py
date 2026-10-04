@@ -16,6 +16,17 @@ def temp_dir() -> Generator[str, None, None]:
         yield td
 
 
+@pytest.fixture(autouse=True)
+def isolated_user_dirs(tmp_path_factory, monkeypatch):
+    """Keep tests from reading or writing the developer's real jotter.yaml / vaults.json."""
+    home = tmp_path_factory.mktemp("home")
+    monkeypatch.chdir(home)  # portable ./jotter.yaml is searched before the global config
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(home / ".config"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(home / ".local" / "share"))
+    monkeypatch.setenv("APPDATA", str(home / "AppData"))
+
+
 @pytest.fixture
 def test_env(temp_dir: str) -> Generator[tuple[TestClient, str], None, None]:
     db_file = Path(temp_dir) / "tasks.db"

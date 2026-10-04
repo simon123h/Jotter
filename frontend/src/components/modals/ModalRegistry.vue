@@ -9,6 +9,7 @@ import TaskImportModal from './TaskImportModal.vue';
 import MoveTasksConfirmModal from './MoveTasksConfirmModal.vue';
 import TimeMachineModal from './TimeMachineModal.vue';
 import TimeblockEditModal from './TimeblockEditModal.vue';
+import VaultManageModal from './VaultManageModal.vue';
 
 const modalStore = useModalStore();
 const projectStore = useProjectStore();
@@ -89,6 +90,9 @@ const handleTaskCreateSuccess = async () => {
           :initial-end-time="modalProps.initialEndTime"
           @close="modalStore.closeModal"
         />
+
+        <!-- Vault Manage Modal -->
+        <VaultManageModal v-else-if="activeModal === 'vault-manage'" :is-open="true" @close="modalStore.closeModal" />
       </div>
     </Transition>
   </Teleport>

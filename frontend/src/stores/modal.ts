@@ -3,7 +3,15 @@ import { defineStore } from 'pinia';
 import type { BucketName, Project } from '@/types';
 
 export type ModalType =
-  'task-create' | 'project-edit' | 'filter' | 'import-spreadsheet' | 'move-tasks-confirm' | 'time-machine' | 'timeblock-edit' | null;
+  | 'task-create'
+  | 'project-edit'
+  | 'filter'
+  | 'import-spreadsheet'
+  | 'move-tasks-confirm'
+  | 'time-machine'
+  | 'timeblock-edit'
+  | 'vault-manage'
+  | null;
 
 export const useModalStore = defineStore('modal', () => {
   const activeModal = ref<ModalType>(null);
@@ -48,6 +56,10 @@ export const useModalStore = defineStore('modal', () => {
     openModal('timeblock-edit', { timeblock, initialDate, initialStartTime, initialEndTime });
   };
 
+  const openVaultManage = () => {
+    openModal('vault-manage');
+  };
+
   return {
     activeModal,
     modalProps,
@@ -60,5 +72,6 @@ export const useModalStore = defineStore('modal', () => {
     openMoveTasksConfirm,
     openTimeMachine,
     openTimeblockEdit,
+    openVaultManage,
   };
 });

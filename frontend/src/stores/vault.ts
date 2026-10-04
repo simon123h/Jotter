@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { Vault } from '@/types';
-import { getVaults, createVault, switchVault, deleteVault, enableGitVersioning, getSystemInfo } from '@/api';
+import { getVaults, createVault, renameVault, switchVault, deleteVault, enableGitVersioning, getSystemInfo } from '@/api';
 import { useProjectStore } from '@/stores/project';
 import { useTimeblockStore } from '@/stores/timeblock';
 
@@ -32,6 +32,15 @@ export const useVaultStore = defineStore('vault', () => {
     }
   };
 
+  // Invalidate project and timeblock stores so they reload for the active vault
+  const reloadWorkspace = async () => {
+    const projectStore = useProjectStore();
+    const timeblockStore = useTimeblockStore();
+    projectStore.invalidate();
+    await projectStore.fetchProjects();
+    await timeblockStore.fetchTimeblocks();
+  };
+
   const selectVault = async (vaultId: string) => {
     loading.value = true;
     error.value = null;
@@ -40,12 +49,7 @@ export const useVaultStore = defineStore('vault', () => {
       activeVault.value = switched;
       await fetchVaults();
 
-      // Invalidate project and timeblock store to reload for new vault
-      const projectStore = useProjectStore();
-      const timeblockStore = useTimeblockStore();
-      projectStore.invalidate();
-      await projectStore.fetchProjects();
-      await timeblockStore.fetchTimeblocks();
+      await reloadWorkspace();
     } catch (err: any) {
       error.value = err.message || 'Failed to switch vault';
       throw err;
@@ -54,7 +58,7 @@ export const useVaultStore = defineStore('vault', () => {
     }
   };
 
-  const addVault = async (payload: { name: string; path: string; id?: string }) => {
+  const addVault = async (payload: { name: string; path: string; id?: string; create_dir?: boolean }) => {
     loading.value = true;
     error.value = null;
     try {
@@ -74,12 +78,26 @@ export const useVaultStore = defineStore('vault', () => {
     await fetchVaults();
   };
 
+  const editVault = async (vaultId: string, name: string) => {
+    error.value = null;
+    try {
+      const updated = await renameVault(vaultId, name);
+      await fetchVaults();
+      return updated;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to rename vault';
+      throw err;
+    }
+  };
+
   const removeVault = async (vaultId: string) => {
     loading.value = true;
     error.value = null;
     try {
+      const wasActive = activeVault.value?.id === vaultId;
       await deleteVault(vaultId);
       await fetchVaults();
+      if (wasActive) await reloadWorkspace();
     } catch (err: any) {
       error.value = err.message || 'Failed to delete vault';
       throw err;
@@ -98,6 +116,7 @@ export const useVaultStore = defineStore('vault', () => {
     fetchVaults,
     selectVault,
     addVault,
+    editVault,
     removeVault,
     enableGit,
   };

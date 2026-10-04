@@ -4,7 +4,7 @@ import pytest
 
 from jotter.features.vaults.domain import Vault
 from jotter.features.vaults.registry import VaultRegistry
-from jotter.features.vaults.schemas import VaultCreate
+from jotter.features.vaults.schemas import VaultCreate, VaultUpdate
 from jotter.features.vaults.service import VaultApplicationService
 from jotter.shared.exceptions import ValidationError
 
@@ -72,6 +72,22 @@ def test_vault_application_service(temp_dir):
     with pytest.raises(ValidationError):
         svc.create_vault(VaultCreate(name="Duplicate", path=str(work_path)))
 
+    # Same name, different folder gets a unique ID instead of overwriting
+    other = svc.create_vault(VaultCreate(name="Work Team", path=str(Path(temp_dir) / "other_dir")))
+    assert other.id == "work-team"
+    again = svc.create_vault(VaultCreate(name="Work Team", path=str(Path(temp_dir) / "third_dir")))
+    assert again.id == "work-team-2"
+
+    # Opening a missing folder fails when create_dir is False
+    with pytest.raises(ValidationError):
+        svc.create_vault(VaultCreate(name="Ghost", path=str(Path(temp_dir) / "ghost"), create_dir=False))
+
+    # Rename
+    renamed = svc.rename_vault("team", VaultUpdate(name="Team Renamed"))
+    assert renamed.name == "Team Renamed"
+    svc.delete_vault("work-team-2")
+    svc.delete_vault("work-team")
+
     # Switch
     switched = svc.switch_vault("team")
     assert switched.id == "team"
@@ -87,6 +103,11 @@ def test_vault_application_service(temp_dir):
     # Cannot delete only remaining vault
     with pytest.raises(ValidationError):
         svc.delete_vault("team")
+
+    # Deleting the active vault switches to another one first
+    svc.create_vault(VaultCreate(name="Spare", path=str(Path(temp_dir) / "spare"), id="spare"))
+    svc.delete_vault("team")
+    assert svc.get_active_vault().id == "spare"
 
 
 def test_vault_api_routes(test_env):
