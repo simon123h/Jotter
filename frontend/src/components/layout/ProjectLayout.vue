@@ -17,7 +17,7 @@ import { useSelectionStore } from '@/stores/selection';
 import { useToast } from '@/composables/useToast';
 import { consolidateTasksIntoChecklist } from '@/utils/markdown';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
-import TimeblockSidebar from '@/components/layout/TimeblockSidebar.vue';
+import TimeblockSidebar from '@/features/timeblock/components/TimeblockSidebar.vue';
 
 const { t } = useI18n();
 const { showDialog } = useDialog();

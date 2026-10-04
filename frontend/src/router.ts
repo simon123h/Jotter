@@ -10,11 +10,11 @@ const ListView = () => import('@/components/views/ListView.vue');
 const MatrixView = () => import('@/components/views/MatrixView.vue');
 const TimeView = () => import('@/components/views/TimeView.vue');
 const TagView = () => import('@/components/views/TagView.vue');
-const TriageView = () => import('@/components/views/TriageView.vue');
+const TriageView = () => import('@/features/task-triage/components/TriageView.vue');
 const ReviewView = () => import('@/components/views/ReviewView.vue');
-const CanvasView = () => import('@/components/views/CanvasView.vue');
-const SettingsView = () => import('@/components/views/SettingsView.vue');
-const TaskDetailModal = () => import('@/components/modals/TaskDetailModal.vue');
+const CanvasView = () => import('@/features/canvas/components/CanvasView.vue');
+const SettingsView = () => import('@/features/settings/components/SettingsView.vue');
+const TaskDetailModal = () => import('@/features/task-editor/components/TaskDetailModal.vue');
 
 const routes = [
   {

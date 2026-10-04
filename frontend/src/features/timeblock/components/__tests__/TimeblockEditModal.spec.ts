@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import TimeblockEditModal from '@/components/modals/TimeblockEditModal.vue';
-import { useTimeblockStore } from '@/stores/timeblock';
+import TimeblockEditModal from '@/features/timeblock/components/TimeblockEditModal.vue';
+import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 
 vi.mock('@/api', () => ({
   getTimeblocks: vi.fn().mockResolvedValue([]),

@@ -7,7 +7,7 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
-import { useTimeblockStore } from '@/stores/timeblock';
+import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 import { useVaultStore } from '@/stores/vault';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';

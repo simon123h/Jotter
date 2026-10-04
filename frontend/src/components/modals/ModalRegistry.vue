@@ -2,13 +2,13 @@
 import { storeToRefs } from 'pinia';
 import { useModalStore } from '@/stores/modal';
 import { useProjectStore } from '@/stores/project';
-import TaskCreateModal from './TaskCreateModal.vue';
+import TaskCreateModal from '@/features/task-editor/components/TaskCreateModal.vue';
 import ProjectEditModal from './ProjectEditModal.vue';
 import FilterModal from './FilterModal.vue';
 import TaskImportModal from './TaskImportModal.vue';
 import MoveTasksConfirmModal from './MoveTasksConfirmModal.vue';
 import TimeMachineModal from './TimeMachineModal.vue';
-import TimeblockEditModal from './TimeblockEditModal.vue';
+import TimeblockEditModal from '@/features/timeblock/components/TimeblockEditModal.vue';
 import VaultManageModal from './VaultManageModal.vue';
 
 const modalStore = useModalStore();

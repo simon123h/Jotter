@@ -2,7 +2,7 @@
 import { ref, watch, computed, nextTick } from 'vue';
 import { Trash2, Calendar, Clock, Palette, Repeat, Save, Plus, X } from '@lucide/vue';
 import type { Timeblock } from '@/types';
-import { useTimeblockStore } from '@/stores/timeblock';
+import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import BaseModal from '@/components/ui/BaseModal.vue';

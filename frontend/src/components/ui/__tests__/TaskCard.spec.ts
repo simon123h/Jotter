@@ -3,7 +3,7 @@ import { mount, RouterLinkStub } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import TaskCard from '@/components/ui/TaskCard.vue';
 import { updateTask } from '@/api';
-import { useTimeblockStore } from '@/stores/timeblock';
+import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 import { createMockTask } from '@/__tests__/factories';
 
 vi.mock('vue-router', () => ({

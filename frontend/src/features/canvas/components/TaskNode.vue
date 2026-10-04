@@ -5,7 +5,7 @@ import { Trash2 } from '@lucide/vue';
 import { useRouter, useRoute } from 'vue-router';
 import type { Task } from '@/types';
 import TaskCard from '@/components/ui/TaskCard.vue';
-import { useCanvasStore } from '@/stores/canvas';
+import { useCanvasStore } from '@/features/canvas/stores/canvas';
 import { useProjectStore } from '@/stores/project';
 import { useSelectionStore } from '@/stores/selection';
 

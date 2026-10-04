@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import type { Project, Task, Bucket, TaskQuery } from '@/types';
 import { getProjects, deleteProject, getBuckets, getTasks, getTask, getAllTasks, commitChanges, updateTask, restoreCommit } from '@/api';
 import { useSettingsStore } from '@/stores/settings';
-import { useTimeblockStore } from '@/stores/timeblock';
+import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 
 export const useProjectStore = defineStore('project', () => {
   const projects = ref<Project[]>([]);

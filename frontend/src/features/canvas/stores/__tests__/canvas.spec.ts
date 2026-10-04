@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
-import { useCanvasStore } from '@/stores/canvas';
+import { useCanvasStore } from '@/features/canvas/stores/canvas';
 import * as api from '@/api';
 import type { Task, CanvasDocument, CanvasEdge } from '@/types';
 

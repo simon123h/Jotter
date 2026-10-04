@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import TimeblockSidebar from '@/components/layout/TimeblockSidebar.vue';
-import { useTimeblockStore } from '@/stores/timeblock';
+import TimeblockSidebar from '@/features/timeblock/components/TimeblockSidebar.vue';
+import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
 import { useSelectionStore } from '@/stores/selection';

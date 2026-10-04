@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import type { Vault } from '@/types';
 import { getVaults, createVault, renameVault, switchVault, deleteVault, enableGitVersioning, getSystemInfo } from '@/api';
 import { useProjectStore } from '@/stores/project';
-import { useTimeblockStore } from '@/stores/timeblock';
+import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 import { useSettingsStore } from '@/stores/settings';
 
 export const useVaultStore = defineStore('vault', () => {

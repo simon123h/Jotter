@@ -2,8 +2,8 @@
 import { computed } from 'vue';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, Position, type EdgeProps } from '@vue-flow/core';
 import { ArrowRight, ArrowLeftRight, Minus, Repeat, Palette, Trash2 } from '@lucide/vue';
-import { useCanvasStore } from '@/stores/canvas';
-import { CANVAS_COLORS } from '@/constants/canvasColors';
+import { useCanvasStore } from '@/features/canvas/stores/canvas';
+import { CANVAS_COLORS } from '@/features/canvas/constants/canvasColors';
 
 const props = defineProps<EdgeProps>();
 

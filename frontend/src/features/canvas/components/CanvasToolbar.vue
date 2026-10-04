@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Plus, Trash2, FolderOpen, Type, Square, PanelRightOpen, PanelRightClose, Loader2, Check, Hand, MousePointer } from '@lucide/vue';
-import { useCanvasStore } from '@/stores/canvas';
+import { useCanvasStore } from '@/features/canvas/stores/canvas';
 
 const props = defineProps<{
   projectId: string;

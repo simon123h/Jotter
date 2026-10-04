@@ -17,14 +17,14 @@ import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
 import '@vue-flow/controls/dist/style.css';
 
-import TaskNode from '@/components/canvas/TaskNode.vue';
-import TextNode from '@/components/canvas/TextNode.vue';
-import GroupNode from '@/components/canvas/GroupNode.vue';
-import CanvasEdgeComponent from '@/components/canvas/CanvasEdge.vue';
-import CanvasToolbar from '@/components/canvas/CanvasToolbar.vue';
-import CanvasSidebar from '@/components/canvas/CanvasSidebar.vue';
+import TaskNode from '@/features/canvas/components/TaskNode.vue';
+import TextNode from '@/features/canvas/components/TextNode.vue';
+import GroupNode from '@/features/canvas/components/GroupNode.vue';
+import CanvasEdgeComponent from '@/features/canvas/components/CanvasEdge.vue';
+import CanvasToolbar from '@/features/canvas/components/CanvasToolbar.vue';
+import CanvasSidebar from '@/features/canvas/components/CanvasSidebar.vue';
 
-import { useCanvasStore } from '@/stores/canvas';
+import { useCanvasStore } from '@/features/canvas/stores/canvas';
 import { useProjectStore } from '@/stores/project';
 import { useSelectionStore } from '@/stores/selection';
 import type { CanvasEdge, Task } from '@/types';

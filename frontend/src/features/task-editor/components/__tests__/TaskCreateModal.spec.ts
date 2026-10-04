@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { useProjectStore } from '@/stores/project';
-import TaskCreateModal from '@/components/modals/TaskCreateModal.vue';
+import TaskCreateModal from '@/features/task-editor/components/TaskCreateModal.vue';
 
 describe('TaskCreateModal.vue', () => {
   const defaultProps = {

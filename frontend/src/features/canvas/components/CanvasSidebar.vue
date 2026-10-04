@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { X, CheckCircle2 } from '@lucide/vue';
 import type { Task } from '@/types';
-import { useCanvasStore } from '@/stores/canvas';
+import { useCanvasStore } from '@/features/canvas/stores/canvas';
 import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
 import TaskCard from '@/components/ui/TaskCard.vue';

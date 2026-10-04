@@ -7,7 +7,7 @@ import { useI18n } from '@/composables/useI18n';
 import { useSelectionStore } from '@/stores/selection';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
-import { useTimeblockStore } from '@/stores/timeblock';
+import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 import { updateTask } from '@/api';
 import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
 

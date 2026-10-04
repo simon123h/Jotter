@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Settings, GitBranch } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
-import ThemeSettings from '@/components/settings/ThemeSettings.vue';
-import LanguageSettings from '@/components/settings/LanguageSettings.vue';
-import GeneralSettings from '@/components/settings/GeneralSettings.vue';
-import TagColorSettings from '@/components/settings/TagColorSettings.vue';
-import TimeblockSettings from '@/components/settings/TimeblockSettings.vue';
-import SystemInfoSettings from '@/components/settings/SystemInfoSettings.vue';
+import ThemeSettings from '@/features/settings/components/ThemeSettings.vue';
+import LanguageSettings from '@/features/settings/components/LanguageSettings.vue';
+import GeneralSettings from '@/features/settings/components/GeneralSettings.vue';
+import TagColorSettings from '@/features/settings/components/TagColorSettings.vue';
+import TimeblockSettings from '@/features/settings/components/TimeblockSettings.vue';
+import SystemInfoSettings from '@/features/settings/components/SystemInfoSettings.vue';
 
 const { t } = useI18n();
 </script>

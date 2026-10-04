@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { ChevronLeft, ChevronRight, Calendar, X, CheckCircle2, Circle, Box, ListPlus, RotateCcw, Repeat } from '@lucide/vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useTimeblockStore } from '@/stores/timeblock';
+import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
 import { useModalStore } from '@/stores/modal';

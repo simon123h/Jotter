@@ -2,7 +2,7 @@ import { beforeAll, describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import TriageView from '@/components/views/TriageView.vue';
+import TriageView from '@/features/task-triage/components/TriageView.vue';
 import { updateTask, deleteTask } from '@/api';
 import type { Task, Bucket } from '@/types';
 

@@ -3,8 +3,8 @@ import { ref } from 'vue';
 import { NodeResizer } from '@vue-flow/node-resizer';
 import '@vue-flow/node-resizer/dist/style.css';
 import { Trash2, Edit2, Check, Palette } from '@lucide/vue';
-import { useCanvasStore } from '@/stores/canvas';
-import { CANVAS_COLORS } from '@/constants/canvasColors';
+import { useCanvasStore } from '@/features/canvas/stores/canvas';
+import { CANVAS_COLORS } from '@/features/canvas/constants/canvasColors';
 
 const props = defineProps<{
   id: string;

@@ -2,7 +2,7 @@ import { beforeAll, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import TaskDetailModal from '@/components/modals/TaskDetailModal.vue';
+import TaskDetailModal from '@/features/task-editor/components/TaskDetailModal.vue';
 import { getTask, updateTask, deleteTask, createTask } from '@/api';
 
 beforeAll(() => {
