@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { CanvasDocument, CanvasMeta, CanvasNode, CanvasEdge, Task } from '@/types';
-import { getCanvases, getCanvas, saveCanvas, deleteCanvas } from '@/api';
+import { getCanvases, getCanvas, saveCanvas, deleteCanvas, getTask } from '@/api';
 import { useToast } from '@/composables/useToast';
 import { useI18n } from '@/composables/useI18n';
 import { crossTabBus } from '@/utils/broadcast';
@@ -16,6 +16,7 @@ export const useCanvasStore = defineStore('canvas', () => {
   const isSaving = ref<boolean>(false);
   const saveTimeout = ref<any>(null);
   const interactionMode = ref<'pan' | 'select'>('pan');
+  const canvasTasks = ref<Map<string, Task>>(new Map());
 
   const toggleInteractionMode = () => {
     interactionMode.value = interactionMode.value === 'pan' ? 'select' : 'pan';
@@ -59,6 +60,39 @@ export const useCanvasStore = defineStore('canvas', () => {
     }
   };
 
+  // Fetch and resolve task data for all file nodes on the canvas
+  const resolveCanvasTasks = async (projectId?: string) => {
+    const targetProject = projectId || currentProjectId.value;
+    if (!targetProject) return;
+
+    const taskIdsToFetch: string[] = [];
+    for (const node of currentDocument.value.nodes) {
+      if (node.type === 'file' && node.file) {
+        const taskId = node.file.replace(/\.md$/, '');
+        if (!canvasTasks.value.has(taskId)) {
+          taskIdsToFetch.push(taskId);
+        }
+      }
+    }
+
+    if (taskIdsToFetch.length === 0) return;
+
+    await Promise.allSettled(
+      taskIdsToFetch.map(async (taskId) => {
+        try {
+          const task = await getTask(targetProject, taskId);
+          canvasTasks.value.set(taskId, task);
+        } catch (e) {
+          console.debug(`Could not resolve canvas task ${taskId}:`, e);
+        }
+      })
+    );
+  };
+
+  const setCanvasTask = (task: Task) => {
+    canvasTasks.value.set(task.id, task);
+  };
+
   // Load a specific canvas document
   const loadCanvas = async (projectId: string, canvasId: string) => {
     currentProjectId.value = projectId;
@@ -70,6 +104,7 @@ export const useCanvasStore = defineStore('canvas', () => {
         nodes: doc.nodes || [],
         edges: doc.edges || [],
       };
+      await resolveCanvasTasks(projectId);
     } catch (err: any) {
       console.warn('Canvas not found or error loading, initializing empty canvas:', err);
       currentDocument.value = { nodes: [], edges: [] };
@@ -176,6 +211,7 @@ export const useCanvasStore = defineStore('canvas', () => {
       color: task.color || null,
     };
     currentDocument.value.nodes.push(newNode);
+    canvasTasks.value.set(task.id, task);
     triggerAutoSave();
     return newNode;
   };
@@ -333,5 +369,8 @@ export const useCanvasStore = defineStore('canvas', () => {
     toggleDrawer,
     interactionMode,
     toggleInteractionMode,
+    canvasTasks,
+    resolveCanvasTasks,
+    setCanvasTask,
   };
 });

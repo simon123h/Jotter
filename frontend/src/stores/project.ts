@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { Project, Task, Bucket, TaskQuery } from '@/types';
-import { getProjects, getBuckets, getTasks, getAllTasks, syncSystem, updateTask, restoreCommit } from '@/api';
+import { getProjects, getBuckets, getTasks, getTask, getAllTasks, syncSystem, updateTask, restoreCommit } from '@/api';
 import { useSettingsStore } from '@/stores/settings';
 import { useTimeblockStore } from '@/stores/timeblock';
 
@@ -244,6 +244,27 @@ export const useProjectStore = defineStore('project', () => {
     }
   };
 
+  const upsertTask = (task: Task) => {
+    const idx = tasks.value.findIndex((t) => t.id === task.id);
+    if (idx !== -1) {
+      tasks.value[idx] = task;
+    } else {
+      tasks.value.push(task);
+    }
+  };
+
+  const ensureTaskLoaded = async (projectId: string, taskId: string): Promise<Task | undefined> => {
+    const existing = tasks.value.find((t) => t.id === taskId);
+    if (existing) return existing;
+    try {
+      const fetched = await getTask(projectId, taskId);
+      upsertTask(fetched);
+      return fetched;
+    } catch {
+      return undefined;
+    }
+  };
+
   return {
     projects,
     buckets,
@@ -258,6 +279,8 @@ export const useProjectStore = defineStore('project', () => {
     fetchProjects,
     fetchBuckets,
     fetchTasks,
+    upsertTask,
+    ensureTaskLoaded,
     invalidate,
     triggerSync,
     restoreToCommit,

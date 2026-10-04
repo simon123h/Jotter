@@ -72,7 +72,11 @@ const flowNodes = computed(() => {
     position: { x: node.x, y: node.y },
     data: {
       ...node,
-      task: node.type === 'file' && node.file ? projectStore.tasks.find((t) => t.id === node.file!.replace(/\.md$/, '')) : undefined,
+      task:
+        node.type === 'file' && node.file
+          ? projectStore.tasks.find((t) => t.id === node.file!.replace(/\.md$/, '')) ||
+            canvasStore.canvasTasks.get(node.file!.replace(/\.md$/, ''))
+          : undefined,
     },
     style: {
       width: node.width ? `${node.width}px` : undefined,

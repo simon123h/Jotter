@@ -9,6 +9,7 @@ vi.mock('@/api', () => ({
   getCanvas: vi.fn(),
   saveCanvas: vi.fn(),
   deleteCanvas: vi.fn(),
+  getTask: vi.fn(),
 }));
 
 vi.mock('@/composables/useToast', () => ({
@@ -95,6 +96,48 @@ describe('Canvas Store', () => {
     expect(store.currentDocument).toEqual(mockDoc);
     expect(store.nodes).toHaveLength(1);
     expect(store.isLoading).toBe(false);
+  });
+
+  it('resolves task data for file nodes on canvas load and addFileNode', async () => {
+    const store = useCanvasStore();
+    const mockTask: Task = {
+      id: 'task-done-1',
+      project_id: 'proj-1',
+      title: 'Done Task',
+      bucket: 'done',
+      position: 1000,
+      tags: [],
+      attachments: [],
+      body: 'Completed body',
+      created_at: '',
+      updated_at: '',
+    };
+    const mockDoc: CanvasDocument = {
+      nodes: [{ id: 'node-file-1', type: 'file', file: 'task-done-1.md', x: 10, y: 20, width: 280, height: 140 }],
+      edges: [],
+    };
+    vi.mocked(api.getCanvas).mockResolvedValueOnce(mockDoc);
+    vi.mocked(api.getTask).mockResolvedValueOnce(mockTask);
+
+    await store.loadCanvas('proj-1', 'main');
+    expect(api.getTask).toHaveBeenCalledWith('proj-1', 'task-done-1');
+    expect(store.canvasTasks.get('task-done-1')).toEqual(mockTask);
+
+    // Also adding a file node directly populates canvasTasks
+    const addedTask: Task = {
+      id: 'task-added-2',
+      project_id: 'proj-1',
+      title: 'Added Task',
+      bucket: 'todo',
+      position: 2000,
+      tags: [],
+      attachments: [],
+      body: '',
+      created_at: '',
+      updated_at: '',
+    };
+    store.addFileNode(addedTask, 50, 50);
+    expect(store.canvasTasks.get('task-added-2')).toEqual(addedTask);
   });
 
   it('handles load canvas error gracefully with fallback empty document', async () => {

@@ -37,7 +37,7 @@ const task = computed<Task | undefined>(() => {
   if (props.data.task) return props.data.task;
   if (props.data.file) {
     const taskId = props.data.file.replace(/\.md$/, '');
-    return projectStore.tasks.find((t) => t.id === taskId);
+    return projectStore.tasks.find((t) => t.id === taskId) || canvasStore.canvasTasks.get(taskId);
   }
   return undefined;
 });
