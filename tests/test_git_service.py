@@ -5,7 +5,9 @@ import pytest
 
 from jotter.features.sync import git_adapter
 from jotter.features.sync.git_adapter import (
+    MAX_LISTED_TASKS,
     commit_changes,
+    describe_changes,
     enable_git_versioning,
     get_git_history,
     restore_commit,
@@ -245,3 +247,57 @@ def test_summarize_changes_counts_non_task_files_separately():
     changes = _name_status(("A", "p/1.md"), ("M", "p/index.md"), ("A", "p/board.canvas"), ("M", "README.md"))
     assert summarize_changes(changes) == "1 task created, 3 other files changed"
     assert summarize_changes(_name_status(("M", "p/board.canvas"))) == "1 other file changed"
+
+
+def test_describe_changes_lists_titles_grouped_by_kind():
+    files = {
+        "p/1.md": "---\ntitle: Buy milk\n---\n",
+        "p/2.md": "---\ntitle: 'Plan: trip'\n---\n",
+        "p/3.md": "---\ntitle: Old\n---\n",
+    }
+    changes = _name_status(("D", "p/3.md"), ("M", "p/2.md"), ("A", "p/1.md"), ("M", "p/index.md"))
+
+    body = describe_changes(changes, lambda path, deleted: files[path])
+
+    assert body == "created: Buy milk\nmodified: Plan: trip\ndeleted: Old"
+
+
+def test_describe_changes_falls_back_to_file_name_and_collapses_whitespace():
+    def read_file(path, deleted):
+        if path == "p/broken.md":
+            raise RuntimeError("unreadable")
+        return "---\ntitle: |\n  Two\n  lines\n---\n"
+
+    changes = _name_status(("A", "p/multi.md"), ("A", "p/broken.md"), ("A", "p/nofm.md"))
+
+    assert describe_changes(changes, read_file) == "created: Two lines\ncreated: broken\ncreated: Two lines"
+
+
+def test_describe_changes_caps_the_list():
+    count = MAX_LISTED_TASKS + 5
+    changes = _name_status(*[("A", f"p/{i}.md") for i in range(count)])
+
+    lines = describe_changes(changes, lambda path, deleted: "").splitlines()
+
+    assert len(lines) == MAX_LISTED_TASKS + 1
+    assert lines[-1] == "... and 5 more"
+
+
+def test_commit_message_body_lists_task_titles_including_deleted(temp_dir):
+    setup_git_data_dir(temp_dir)
+    proj = Path(temp_dir) / "default"
+    proj.mkdir()
+    (proj / "a.md").write_text("---\ntitle: First\n---\n", encoding="utf-8")
+    (proj / "b.md").write_text("---\ntitle: Second\n---\n", encoding="utf-8")
+    assert commit_changes(temp_dir) is True
+
+    (proj / "a.md").write_text("---\ntitle: First, renamed\n---\n", encoding="utf-8")
+    (proj / "b.md").unlink()
+    (proj / "c.md").write_text("---\ntitle: Third\n---\n", encoding="utf-8")
+    assert commit_changes(temp_dir) is True
+
+    message = run_git(["log", "-1", "--pretty=%B"], cwd=temp_dir).stdout.strip()
+    assert (
+        message
+        == "jotter: 1 task created, 1 modified, 1 deleted\n\ncreated: Third\nmodified: First, renamed\ndeleted: Second"
+    )

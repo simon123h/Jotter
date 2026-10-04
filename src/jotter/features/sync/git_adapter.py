@@ -2,12 +2,18 @@
 
 import re
 import subprocess
+from collections.abc import Callable
 from pathlib import Path, PurePosixPath
+
+import yaml
 
 from jotter.shared.exceptions import ValidationError
 
 # Local-only runtime files that must never be versioned (SQLite index and its WAL/SHM sidecars)
 LOCAL_EXCLUDES = ("tasks.db", "tasks.db-*")
+
+# Maximum number of task titles listed in the body of an automatic commit message
+MAX_LISTED_TASKS = 20
 
 
 def run_git(
@@ -109,23 +115,28 @@ def _is_task_file(path: str) -> bool:
     )
 
 
+def _task_verb(status: str) -> str:
+    return {"A": "created", "D": "deleted"}.get(status, "modified")
+
+
+def _parse_name_status(name_status: str) -> list[tuple[str, str]]:
+    """Splits `git diff --name-status -z --no-renames` output into (status, path) pairs."""
+    fields = name_status.split("\0")
+    return list(zip(fields[0::2], fields[1::2]))
+
+
 def summarize_changes(name_status: str) -> str:
     """Turns `git diff --cached --name-status -z --no-renames` output into a short commit subject.
 
     Example: "3 tasks created, 4 modified, 1 deleted, 2 other files changed".
     """
-    fields = name_status.split("\0")
     tasks = {"created": 0, "modified": 0, "deleted": 0}
     other = 0
-    for status, path in zip(fields[0::2], fields[1::2]):
-        if not _is_task_file(path):
-            other += 1
-        elif status == "A":
-            tasks["created"] += 1
-        elif status == "D":
-            tasks["deleted"] += 1
+    for status, path in _parse_name_status(name_status):
+        if _is_task_file(path):
+            tasks[_task_verb(status)] += 1
         else:
-            tasks["modified"] += 1
+            other += 1
 
     parts = []
     for verb, count in tasks.items():
@@ -138,10 +149,46 @@ def summarize_changes(name_status: str) -> str:
     return ", ".join(parts)
 
 
+def _task_title(markdown: str, fallback: str) -> str:
+    """Reads the `title` from a task's YAML frontmatter, collapsed to one line."""
+    title = None
+    parts = markdown.split("---", 2)
+    if markdown.startswith("---") and len(parts) == 3:
+        try:
+            loaded = yaml.safe_load(parts[1])
+        except yaml.YAMLError:
+            loaded = None
+        if isinstance(loaded, dict):
+            title = loaded.get("title")
+    return " ".join(str(title).split()) if title else fallback
+
+
+def describe_changes(name_status: str, read_file: Callable[[str, bool], str]) -> str:
+    """Lists the changed tasks by title, one `verb: title` line each, capped at MAX_LISTED_TASKS.
+
+    `read_file(path, deleted)` returns the new content of a task file, or its last committed content when deleted.
+    """
+    order = ("created", "modified", "deleted")
+    changes = sorted(
+        ((_task_verb(status), path) for status, path in _parse_name_status(name_status) if _is_task_file(path)),
+        key=lambda change: order.index(change[0]),
+    )
+    lines = []
+    for verb, path in changes[:MAX_LISTED_TASKS]:
+        try:
+            content = read_file(path, verb == "deleted")
+        except Exception:
+            content = ""
+        lines.append(f"{verb}: {_task_title(content, PurePosixPath(path).stem)}")
+    if len(changes) > MAX_LISTED_TASKS:
+        lines.append(f"... and {len(changes) - MAX_LISTED_TASKS} more")
+    return "\n".join(lines)
+
+
 def git_commit(project_dir: str | Path, message: str | None = None) -> bool:
     """Stages all changes and commits if there are changes. Does nothing outside a git repository.
 
-    Without an explicit message, the commit subject summarizes the staged changes.
+    Without an explicit message, the subject summarizes the staged changes and the body lists the changed tasks.
     """
     p = Path(project_dir)
     if not is_git_repo(p):
@@ -160,11 +207,21 @@ def git_commit(project_dir: str | Path, message: str | None = None) -> bool:
     if staged_diff.returncode == 0:
         return False
 
+    args = ["commit", "-m"]
     if message is None:
-        changes = run_git(["diff", "--cached", "--name-status", "-z", "--no-renames"], cwd=p, check=True)
-        message = f"jotter: {summarize_changes(changes.stdout)}"
+        changes = run_git(["diff", "--cached", "--name-status", "-z", "--no-renames"], cwd=p, check=True).stdout
 
-    res = run_git(["commit", "-m", message], cwd=p, check=False)
+        def read_file(path: str, deleted: bool) -> str:
+            return run_git(["show", f"{'HEAD' if deleted else ''}:{path}"], cwd=p, check=True).stdout
+
+        args.append(f"jotter: {summarize_changes(changes)}")
+        body = describe_changes(changes, read_file)
+        if body:
+            args.extend(["-m", body])
+    else:
+        args.append(message)
+
+    res = run_git(args, cwd=p, check=False)
     return res.returncode == 0
 
 

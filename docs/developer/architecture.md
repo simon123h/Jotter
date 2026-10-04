@@ -165,7 +165,7 @@ Jotter's Git integration is local-only. It is implemented in `src/jotter/feature
 ### The Local Commit Flow:
 
 1. **Trigger**: `POST /api/system/commit`, the sidebar **Commit** button, the `AutoCommitScheduler`, or the MCP `commit_changes` tool call `SyncApplicationService.commit_changes()`.
-2. **Vault Commit**: If the active vault directory is a Git repository, Jotter runs `git add -A` and commits with a summary message such as `jotter: 3 tasks created, 4 modified, 1 deleted` (the same for manual and scheduler commits). Folders that are not repositories are left untouched.
+2. **Vault Commit**: If the active vault directory is a Git repository, Jotter runs `git add -A` and commits with a summary message such as `jotter: 3 tasks created, 4 modified, 1 deleted` (the same for manual and scheduler commits), followed by one `verb: title` line per changed task, capped at 20. Folders that are not repositories are left untouched.
 3. **Legacy Fallback**: Project subdirectories that carry their own `.git` folder are committed individually.
 4. **Local Excludes**: The SQLite index (`tasks.db*`) is added to `.git/info/exclude` so it is never versioned.
 5. **Identity**: Existing `user.name` / `user.email` (at any config level) are never modified. Only a missing value gets a fallback in the repository's local config.
