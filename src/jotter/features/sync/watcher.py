@@ -109,27 +109,32 @@ class FileWatcherService:
         self.last_sync_timestamp: float = time.time()
         self.change_count: int = 0
         self._lock = threading.Lock()
+        self._sync_lock = threading.Lock()
 
     def _on_fs_change(self) -> None:
         if not self.is_running:
             return
-        from jotter.features.sync.service import SyncApplicationService
-        from jotter.shared.db import create_sqlite_connection
+        # Ensure only one sync runs at a time and stop() can wait for it to complete
+        with self._sync_lock:
+            if not self.is_running:
+                return
+            from jotter.features.sync.service import SyncApplicationService
+            from jotter.shared.db import create_sqlite_connection
 
-        db_path = self.data_dir / "tasks.db"
-        try:
-            conn = create_sqlite_connection(db_path)
+            db_path = self.data_dir / "tasks.db"
             try:
-                sync_svc = SyncApplicationService.from_data_dir(self.data_dir, conn)
-                synced = sync_svc.sync_db_only()
-                with self._lock:
-                    self.last_sync_timestamp = time.time()
-                    self.change_count += 1
-                logger.debug("Filesystem watcher silently reconciled database (%d tasks)", synced)
-            finally:
-                conn.close()
-        except Exception as e:
-            logger.debug("Watcher sync skipped or failed during shutdown/transition: %s", e)
+                conn = create_sqlite_connection(db_path)
+                try:
+                    sync_svc = SyncApplicationService.from_data_dir(self.data_dir, conn)
+                    synced = sync_svc.sync_db_only()
+                    with self._lock:
+                        self.last_sync_timestamp = time.time()
+                        self.change_count += 1
+                    logger.debug("Filesystem watcher silently reconciled database (%d tasks)", synced)
+                finally:
+                    conn.close()
+            except Exception as e:
+                logger.debug("Watcher sync skipped or failed during shutdown/transition: %s", e)
 
     def start(self) -> bool:
         """Starts watching data_dir in a background daemon thread."""
@@ -158,7 +163,7 @@ class FileWatcherService:
             return False
 
     def stop(self) -> None:
-        """Stops the watcher thread."""
+        """Stops the watcher thread and waits for any pending sync execution to finish."""
         self.is_running = False
         if self.handler:
             self.handler.cancel_timer()
@@ -166,9 +171,13 @@ class FileWatcherService:
         if self.observer:
             try:
                 self.observer.stop()
-                self.observer.join(timeout=1.0)
+                self.observer.join(timeout=3.0)
             except Exception as e:
                 logger.warning("Error stopping filesystem watcher: %s", e)
             finally:
                 self.observer = None
                 logger.info("Filesystem watcher stopped.")
+        # Wait for any in-flight sync to complete so files are not being written
+        # while temporary directories are being cleaned up
+        with self._sync_lock:
+            pass

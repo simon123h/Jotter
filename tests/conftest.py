@@ -12,7 +12,7 @@ from jotter.shared.db import close_db, get_db
 
 @pytest.fixture
 def temp_dir() -> Generator[str, None, None]:
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         yield td
 
 
