@@ -5,6 +5,7 @@ import { Check, Tag, RotateCcw, ChevronDown, Search } from '@lucide/vue';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
+import { getTagClasses } from '@/utils/tagStyles';
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
@@ -92,41 +93,7 @@ watch(
   { immediate: true }
 );
 
-const colorThemes: Record<string, string> = {
-  accent: 'bg-theme-accent/10 text-theme-accent border-theme-accent/20',
-  sky: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
-  emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  indigo: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-  violet: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
-  amber: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  rose: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-  teal: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
-  fuchsia: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20',
-  orange: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  pink: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
-  cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  red: 'bg-red-500/10 text-red-400 border-red-500/20',
-};
-
-const getTagClasses = (tag: string) => {
-  const normalized = tag.trim().toLowerCase();
-  const custom = tagColors.value[normalized];
-  if (custom && colorThemes[custom]) {
-    return colorThemes[custom];
-  }
-
-  const hash = tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const themes = [
-    'bg-theme-accent/10 text-theme-accent border-theme-accent/20',
-    'bg-sky-500/10 text-sky-400 border-sky-500/20',
-    'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-    'bg-violet-500/10 text-violet-400 border-violet-500/20',
-    'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  ];
-  return themes[hash % themes.length];
-};
+const getTagStyle = (tag: string) => getTagClasses(tag, tagColors.value);
 </script>
 
 <template>
@@ -167,7 +134,7 @@ const getTagClasses = (tag: string) => {
             <span
               v-if="selectedTag"
               class="rounded border uppercase tracking-wider leading-none text-[9px] px-2 py-1 font-extrabold shadow-inner shrink-0"
-              :class="getTagClasses(selectedTag)"
+              :class="getTagStyle(selectedTag)"
             >
               {{ selectedTag }}
             </span>
@@ -223,7 +190,7 @@ const getTagClasses = (tag: string) => {
                 <!-- Tag item style preview -->
                 <span
                   class="rounded border uppercase tracking-wider leading-none text-[9px] px-2 py-1 font-extrabold shadow-sm shrink-0"
-                  :class="getTagClasses(tag)"
+                  :class="getTagStyle(tag)"
                 >
                   {{ tag }}
                 </span>
@@ -248,7 +215,7 @@ const getTagClasses = (tag: string) => {
           <!-- Live tag preview badge -->
           <span
             class="rounded border uppercase tracking-wider leading-none text-[10px] px-2.5 py-1.5 font-extrabold shadow-sm transition-all duration-300"
-            :class="getTagClasses(selectedTag)"
+            :class="getTagStyle(selectedTag)"
           >
             {{ selectedTag }}
           </span>

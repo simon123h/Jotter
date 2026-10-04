@@ -1,25 +1,28 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ClipboardList, Check, Calendar, Clock, Paperclip, Hourglass, Box } from '@lucide/vue';
+import { Check } from '@lucide/vue';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
+import { useLongPress } from '@/composables/useLongPress';
 import { useSelectionStore } from '@/stores/selection';
 import { useProjectStore } from '@/stores/project';
-import { useSettingsStore } from '@/stores/settings';
 import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 import { updateTask } from '@/api';
 import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
+import { parseChecklist } from '@/utils/checklist';
+import { getTaskCardTintStyle } from '@/utils/taskColors';
+import { triggerDoneParticleBurst } from '@/utils/effects';
+import { triggerMediumHaptic } from '@/utils/haptics';
+import TaskCardChecklist from '@/components/ui/task-card/TaskCardChecklist.vue';
+import TaskCardFooter from '@/components/ui/task-card/TaskCardFooter.vue';
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const selectionStore = useSelectionStore();
 const projectStore = useProjectStore();
-const settingsStore = useSettingsStore();
 const timeblockStore = useTimeblockStore();
-
-const allocatedTimeblock = computed(() => {
-  return timeblockStore.timeblockForTask(props.task.id);
-});
+const route = useRoute();
+const router = useRouter();
 
 const props = withDefaults(
   defineProps<{
@@ -43,6 +46,14 @@ const props = withDefaults(
   }
 );
 
+const emit = defineEmits<{
+  (e: 'click', task: Task): void;
+  (e: 'mark-done', task: Task): void;
+  (e: 'toggle-select', task: Task): void;
+}>();
+
+const allocatedTimeblock = computed(() => timeblockStore.timeblockForTask(props.task.id));
+
 const projectTitle = computed(() => {
   const proj = projectStore.projects.find((p) => p.id === props.task.project_id);
   return proj ? proj.title : props.task.project_id;
@@ -51,64 +62,11 @@ const projectTitle = computed(() => {
 const isSelected = computed(() => selectionStore.isSelected(props.task.id));
 const selectionCount = computed(() => selectionStore.selectionCount);
 
-import { triggerDoneParticleBurst } from '@/utils/effects';
-import { triggerMediumHaptic } from '@/utils/haptics';
-
-const emit = defineEmits<{
-  (e: 'click', task: Task): void;
-  (e: 'mark-done', task: Task): void;
-  (e: 'toggle-select', task: Task): void;
-}>();
-
-let longPressTimer: any = null;
-let touchStartX = 0;
-let touchStartY = 0;
-const isLongPressTriggered = ref(false);
-
-const handleTouchStart = (e: TouchEvent) => {
-  if (e.touches.length !== 1) return;
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
-  isLongPressTriggered.value = false;
-
-  longPressTimer = setTimeout(() => {
-    isLongPressTriggered.value = true;
-    triggerMediumHaptic();
-    emit('toggle-select', props.task);
-  }, 450);
-};
-
-const handleTouchMove = (e: TouchEvent) => {
-  if (!longPressTimer) return;
-  const dx = Math.abs(e.touches[0].clientX - touchStartX);
-  const dy = Math.abs(e.touches[0].clientY - touchStartY);
-  if (dx > 10 || dy > 10) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-};
-
-const handleTouchEnd = (e: TouchEvent) => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-  if (isLongPressTriggered.value) {
-    e.preventDefault();
-    e.stopPropagation();
-    setTimeout(() => {
-      isLongPressTriggered.value = false;
-    }, 150);
-  }
-};
-
-const handleTouchCancel = () => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-  isLongPressTriggered.value = false;
-};
+// Long-press toggles selection on touch devices
+const { isLongPressTriggered, onTouchStart, onTouchMove, onTouchEnd, onTouchCancel } = useLongPress(() => {
+  triggerMediumHaptic();
+  emit('toggle-select', props.task);
+});
 
 const handleCardClick = (e: MouseEvent) => {
   if (isLongPressTriggered.value) {
@@ -140,7 +98,6 @@ const handleMarkDone = (e: MouseEvent) => {
   emit('mark-done', props.task);
 };
 
-const route = useRoute();
 const targetRoute = computed(() => {
   const viewMode = String(route?.name || '').replace('-task', '') || 'board';
   return {
@@ -153,192 +110,28 @@ const targetRoute = computed(() => {
   };
 });
 
-// Checklist statistics
-const checklistStats = computed(() => {
-  if (!props.task.body) return null;
-  const normalizedBody = props.task.body.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const lines = normalizedBody.split('\n');
-  let total = 0;
-  let checked = 0;
-  for (const line of lines) {
-    const checklistMatch = line.match(/^(\s*)[-*+]\s+\[([ xX])\]\s*(.*)$/);
-    if (checklistMatch) {
-      total++;
-      if (checklistMatch[2].toLowerCase() === 'x') {
-        checked++;
-      }
-    }
-  }
-  if (total === 0) return null;
-  return { checked, total };
-});
-
-interface RenderedChecklistItem {
-  label: string;
-  checked: boolean;
-  globalIndex: number;
-  level: number;
-}
-
-const renderedChecklist = computed<RenderedChecklistItem[]>(() => {
-  if (!props.task.body) return [];
-  const normalizedBody = props.task.body.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const lines = normalizedBody.split('\n');
-  const items: RenderedChecklistItem[] = [];
-  let globalIndex = 0;
-
-  // First pass: find all checklist items and their minimum level
-  const rawItems: { label: string; checked: boolean; globalIndex: number; level: number }[] = [];
-  let minLevel = Infinity;
-
-  for (const line of lines) {
-    // Check if it's a checklist item (any indentation)
-    const checklistMatch = line.match(/^(\s*)[-*+]\s+\[([ xX])\]\s*(.*)$/);
-    if (checklistMatch) {
-      const leadingSpaces = checklistMatch[1];
-      const checked = checklistMatch[2].toLowerCase() === 'x';
-      const label = checklistMatch[3].trim();
-
-      // Calculate nesting level based on leading spaces (2 spaces or tabs per level)
-      const normalizedSpaces = leadingSpaces.replace(/\t/g, '  ');
-      const level = Math.floor(normalizedSpaces.length / 2);
-
-      if (level < minLevel) {
-        minLevel = level;
-      }
-
-      rawItems.push({
-        label,
-        checked,
-        globalIndex,
-        level,
-      });
-      globalIndex++;
-    }
-  }
-
-  // Second pass: filter and normalize nesting levels relative to minLevel
-  const effectiveMaxLevel = minLevel === Infinity ? props.maxNestingLevel : minLevel + props.maxNestingLevel;
-
-  for (const item of rawItems) {
-    if (item.level <= effectiveMaxLevel) {
-      items.push({
-        label: item.label,
-        checked: item.checked,
-        globalIndex: item.globalIndex,
-        level: item.level - minLevel, // Normalize relative to the lowest indentation level found
-      });
-    }
-  }
-
-  return items;
-});
+const checklist = computed(() => parseChecklist(props.task.body, props.maxNestingLevel));
+// When the checklist is shown inside the card, its progress is drawn there instead of in the footer
+const showChecklistInCard = computed(() => !props.compact && checklist.value.items.length > 0);
 
 const toggleChecklistItem = async (targetIndex: number, isChecked: boolean) => {
   const newBody = toggleChecklistItemInMarkdown(props.task.body, targetIndex, isChecked);
 
   try {
-    await updateTask(props.task.project_id, props.task.id, {
-      body: newBody,
-    });
+    await updateTask(props.task.project_id, props.task.id, { body: newBody });
     await projectStore.invalidate();
   } catch (err: any) {
     console.error('Failed to update task checklist:', err);
   }
 };
 
-const colorThemes: Record<string, string> = {
-  accent: 'bg-theme-accent/10 text-theme-accent border-theme-accent/20',
-  sky: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
-  emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  indigo: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-  violet: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
-  amber: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  rose: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-  teal: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
-  fuchsia: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20',
-  orange: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  pink: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
-  cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  red: 'bg-red-500/10 text-red-400 border-red-500/20',
-};
-
-// Helper to assign a consistent, pleasant color theme to each tag (matching the professional theme)
-const getTagClasses = (tag: string) => {
-  const normalized = tag.trim().toLowerCase();
-  if (settingsStore.tagColors && settingsStore.tagColors[normalized]) {
-    const custom = settingsStore.tagColors[normalized];
-    if (colorThemes[custom]) {
-      return colorThemes[custom];
-    }
-  }
-
-  const hash = tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const themes = [
-    'bg-theme-accent/10 text-theme-accent border-theme-accent/20',
-    'bg-sky-500/10 text-sky-400 border-sky-500/20',
-    'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-    'bg-violet-500/10 text-violet-400 border-violet-500/20',
-    'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  ];
-  return themes[hash % themes.length];
-};
-
-const formatDate = (dateStr: string) => {
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' });
-  } catch {
-    return dateStr;
-  }
-};
-
-const getPriorityClasses = (prio: string) => {
-  switch (prio) {
-    case 'low':
-      return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-    case 'medium':
-      return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-    case 'high':
-      return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
-    case 'urgent':
-      return 'bg-red-500/10 text-red-400 border-red-500/20 animate-pulse';
-    default:
-      return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-  }
-};
-
-const colorMap: Record<string, string> = {
-  red: '#ef4444',
-  orange: '#f97316',
-  yellow: '#eab308',
-  green: '#22c55e',
-  blue: '#3b82f6',
-  purple: '#a855f7',
-  pink: '#ec4899',
-};
-
-const cardStyle = computed(() => {
-  const styles: Record<string, string> = {};
-  if (props.task.color && colorMap[props.task.color]) {
-    const hexColor = colorMap[props.task.color];
-    styles['--card-tint'] = hexColor;
-    styles['background-color'] = `color-mix(in srgb, ${hexColor} 20%, var(--theme-bg-card))`;
-    styles['border-color'] = `color-mix(in srgb, ${hexColor} 40%, var(--theme-border))`;
-  }
-  return styles;
-});
-
-const router = useRouter();
+const cardStyle = computed(() => getTaskCardTintStyle(props.task.color));
 
 const handleTagClick = (tag: string) => {
-  const normalizedTag = tag.trim().toLowerCase();
   router.replace({
     query: {
       ...route.query,
-      tags: normalizedTag,
+      tags: tag.trim().toLowerCase(),
     },
   });
 };
@@ -348,10 +141,10 @@ const handleTagClick = (tag: string) => {
   <router-link
     :to="selectionCount > 0 ? '' : targetRoute"
     :data-task-id="task.id"
-    @touchstart.passive="handleTouchStart"
-    @touchmove.passive="handleTouchMove"
-    @touchend="handleTouchEnd"
-    @touchcancel="handleTouchCancel"
+    @touchstart.passive="onTouchStart"
+    @touchmove.passive="onTouchMove"
+    @touchend="onTouchEnd"
+    @touchcancel="onTouchCancel"
     @click="handleCardClick"
     class="task-card bg-theme-card border border-theme-border rounded shadow-sm hover:border-theme-accent hover:shadow-theme-ring transition-all duration-150 cursor-pointer group flex flex-col select-none relative no-underline text-inherit"
     :class="[
@@ -414,142 +207,19 @@ const handleTagClick = (tag: string) => {
     </div>
 
     <!-- Checklist Items (Directly below the title) -->
-    <div
-      v-if="!compact && renderedChecklist.length > 0"
-      class="task-card-checklist flex flex-col gap-1.5 mt-1 pt-2 border-t border-theme-border/20 relative pr-14"
-      @click.stop
-    >
-      <!-- Floating Checklist Stats at top-right corner of the checklist bounding box -->
-      <div
-        v-if="checklistStats"
-        class="absolute top-2 right-0 flex items-center gap-1 font-semibold pointer-events-none select-none"
-        :class="[
-          checklistStats.checked === checklistStats.total
-            ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
-            : 'text-theme-text-muted',
-        ]"
-      >
-        <ClipboardList class="w-3.5 h-3.5 shrink-0" />
-        <span class="text-xs">{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
-      </div>
+    <TaskCardChecklist v-if="showChecklistInCard" :items="checklist.items" :stats="checklist.stats" @toggle="toggleChecklistItem" />
 
-      <label
-        v-for="item in renderedChecklist"
-        :key="item.globalIndex"
-        class="flex items-start gap-2 text-xs text-theme-text-card cursor-pointer hover:text-theme-text-main transition-colors select-none"
-        :class="{ 'line-through text-theme-text-muted/60': item.checked }"
-        :style="{ paddingLeft: `${item.level * 16}px` }"
-      >
-        <input
-          type="checkbox"
-          :checked="item.checked"
-          @click.stop.prevent="toggleChecklistItem(item.globalIndex, !item.checked)"
-          class="mt-0.5 rounded border-theme-border text-theme-accent focus:ring-theme-accent/30 cursor-pointer"
-        />
-        <span class="leading-snug break-words">{{ item.label }}</span>
-      </label>
-    </div>
-
-    <!-- Flexible Combined Row: Tags, Due Date, Planned Date, Priority, and List Counter (when compact or no visible list items) -->
-    <div
-      v-if="
-        showFooter &&
-        (task.due_date ||
-          task.planned_date ||
-          task.priority ||
-          task.postponed_until ||
-          (task.attachments && task.attachments.length) ||
-          (showTags && task.tags && task.tags.length) ||
-          (checklistStats && (compact || renderedChecklist.length === 0)))
-      "
-      class="flex flex-wrap items-center gap-2 text-xs text-theme-text-muted select-none mt-1"
-    >
-      <!-- Tags List inside the combined flexible row -->
-      <div v-if="showTags && task.tags && task.tags.length" class="flex flex-wrap gap-1">
-        <span
-          v-for="tag in task.tags"
-          :key="tag"
-          class="rounded border uppercase tracking-wider leading-none cursor-pointer transition-transform"
-          :class="[getTagClasses(tag), compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold']"
-          @click.stop.prevent="handleTagClick(tag)"
-        >
-          {{ tag }}
-        </span>
-      </div>
-
-      <!-- Due Date -->
-      <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted" :title="'Due: ' + formatDate(task.due_date)">
-        <Calendar :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
-        <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.due_date) }}</span>
-      </div>
-
-      <!-- Planned date -->
-      <div
-        v-if="task.planned_date"
-        class="flex items-center gap-1 text-theme-accent/80"
-        :title="'Planned: ' + t('plannedDateOptions.' + task.planned_date)"
-      >
-        <Clock class="w-3 h-3" />
-        <span :class="{ 'text-[10px]': compact }">{{ t('plannedDateOptions.' + task.planned_date) }}</span>
-      </div>
-
-      <!-- Postponed date -->
-      <div
-        v-if="task.postponed_until"
-        class="flex items-center gap-1 text-yellow-500/80"
-        :title="'Postponed Until: ' + formatDate(task.postponed_until)"
-      >
-        <Hourglass :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
-        <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.postponed_until) }}</span>
-      </div>
-
-      <!-- Attachments -->
-      <div
-        v-if="task.attachments && task.attachments.length"
-        class="flex items-center gap-1 text-theme-text-muted hover:text-theme-text-main transition-colors"
-        :title="t('form.attachmentsCount', { count: task.attachments.length })"
-      >
-        <Paperclip :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0 text-theme-text-muted/80" />
-        <span v-if="task.attachments.length > 1" :class="{ 'text-[10px]': compact }">{{ task.attachments.length }}</span>
-      </div>
-
-      <!-- Priority -->
-      <div
-        v-if="task.priority"
-        class="rounded border uppercase tracking-wider leading-none"
-        :class="[
-          getPriorityClasses(task.priority),
-          compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold',
-        ]"
-      >
-        {{ task.priority }}
-      </div>
-
-      <!-- Timeblock Allocation Badge -->
-      <div
-        v-if="allocatedTimeblock"
-        class="inline-flex items-center gap-1 px-1.5 py-0.25 rounded text-[10px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30"
-        :title="`${allocatedTimeblock.date} ${allocatedTimeblock.start_time}-${allocatedTimeblock.end_time}: ${allocatedTimeblock.title}`"
-      >
-        <Box :class="compact ? 'w-2.5 h-2.5' : 'w-3 h-3'" class="text-indigo-400 shrink-0" />
-        <span class="truncate max-w-[100px]">{{ allocatedTimeblock.title }}</span>
-      </div>
-
-      <!-- Checklist Stats (Only displayed in footer row if not already shown inside the checklist bounding box) -->
-      <div
-        v-if="checklistStats && (compact || renderedChecklist.length === 0)"
-        class="flex items-center gap-1 font-semibold ml-auto"
-        :class="[
-          checklistStats.checked === checklistStats.total
-            ? 'text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20'
-            : 'text-theme-text-muted',
-          { 'text-[10px]': compact },
-        ]"
-      >
-        <ClipboardList :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
-        <span>{{ checklistStats.checked }}/{{ checklistStats.total }}</span>
-      </div>
-    </div>
+    <!-- Tags, dates, priority, attachments and timeblock badge -->
+    <TaskCardFooter
+      v-if="showFooter"
+      :task="task"
+      :compact="compact"
+      :show-tags="showTags"
+      :checklist-stats="checklist.stats"
+      :show-checklist-stats="!showChecklistInCard"
+      :allocated-timeblock="allocatedTimeblock"
+      @tag-click="handleTagClick"
+    />
   </router-link>
 </template>
 

@@ -1,4 +1,5 @@
 import type { Task, Timeblock } from '@/types';
+import { TASK_COLOR_HEX } from '@/utils/taskColors';
 
 /** Pixel height of one hour on the day grid. */
 export const HOUR_HEIGHT = 132;
@@ -25,17 +26,6 @@ export const minutesToTime = (mins: number): string => {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 };
 
-// Matches the Task Card color palette
-const TASK_CARD_COLOR_MAP: Record<string, string> = {
-  red: '#ef4444',
-  orange: '#f97316',
-  yellow: '#eab308',
-  green: '#22c55e',
-  blue: '#3b82f6',
-  purple: '#a855f7',
-  pink: '#ec4899',
-};
-
 /** Absolute position, size and tint of a timeblock box within the visible hour range. */
 export const getTimeblockStyle = (tb: Timeblock, startHour: number, endHour: number) => {
   const minMinutes = startHour * 60;
@@ -49,7 +39,7 @@ export const getTimeblockStyle = (tb: Timeblock, startHour: number, endHour: num
   const heightPx = (durationMin / 60) * HOUR_HEIGHT;
 
   const rawColor = tb.color || 'blue';
-  const hex = TASK_CARD_COLOR_MAP[rawColor] || TASK_CARD_COLOR_MAP.blue;
+  const hex = TASK_COLOR_HEX[rawColor] || TASK_COLOR_HEX.blue;
 
   return {
     top: `${topPx}px`,
