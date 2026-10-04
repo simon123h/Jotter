@@ -29,17 +29,20 @@ def test_file_watcher_service_lifecycle_and_reconciliation(temp_dir):
     assert started is True
     assert watcher.is_running is True
 
-    # Write a new markdown task file directly to disk
-    task_file = default_dir / "external-task.md"
-    task_file.write_text(
-        "---\ntype: task\nid: external-task\nproject_id: default\ntitle: External Task\nstatus: todo\nposition: 1000.0\n---\nBody from outside\n",
-        encoding="utf-8",
-    )
+    try:
+        # Write a new markdown task file directly to disk
+        task_file = default_dir / "external-task.md"
+        task_file.write_text(
+            "---\ntype: task\nid: external-task\nproject_id: default\ntitle: External Task\nstatus: todo\nposition: 1000.0\n---\nBody from outside\n",
+            encoding="utf-8",
+        )
 
-    # Wait for debounced watcher to run
-    time.sleep(0.4)
+        # Wait for debounced watcher to run (poll up to 3 seconds for CI environments)
+        start_time = time.time()
+        while watcher.change_count < 1 and (time.time() - start_time) < 3.0:
+            time.sleep(0.05)
 
-    assert watcher.change_count >= 1
-
-    watcher.stop()
-    assert watcher.is_running is False
+        assert watcher.change_count >= 1
+    finally:
+        watcher.stop()
+        assert watcher.is_running is False
