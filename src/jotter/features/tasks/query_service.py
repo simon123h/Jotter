@@ -4,10 +4,9 @@ import sqlite3
 from pathlib import Path
 from typing import Self
 
-from jotter.features.tasks.domain import Task
+from jotter.features.tasks.domain import Priority, Task
 from jotter.features.tasks.schemas import TaskResponse
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
-from jotter.shared.value_objects import Priority
 
 
 class TaskQueryService:

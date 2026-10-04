@@ -2,9 +2,8 @@ import pytest
 
 from jotter.features.buckets.domain import Bucket
 from jotter.features.projects.domain import Project
-from jotter.features.tasks.domain import Task
+from jotter.features.tasks.domain import DueDate, Priority, Tag, Task, TaskId
 from jotter.shared.exceptions import ValidationError
-from jotter.shared.value_objects import DueDate, Priority, Tag, TaskId
 
 
 def test_priority_value_object():

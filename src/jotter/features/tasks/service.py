@@ -24,7 +24,10 @@ from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 
 
 class TaskApplicationService:
-    """Facade delegating commands to TaskCommandService and queries to TaskQueryService."""
+    """[DEPRECATED] Facade delegating commands to TaskCommandService and queries to TaskQueryService.
+
+    Prefer injecting TaskCommandService for writes and TaskQueryService for reads directly.
+    """
 
     def __init__(
         self,

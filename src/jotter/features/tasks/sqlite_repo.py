@@ -8,9 +8,8 @@ from datetime import datetime, timezone
 from itertools import batched
 from typing import Any
 
-from jotter.features.tasks.domain import Task
+from jotter.features.tasks.domain import DueDate, Priority, Tag, Task, TaskId
 from jotter.shared.exceptions import EntityNotFoundError
-from jotter.shared.value_objects import DueDate, Priority, Tag, TaskId
 
 _sqlite_write_lock = threading.Lock()
 

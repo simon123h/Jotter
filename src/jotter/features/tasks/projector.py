@@ -4,8 +4,7 @@ import json
 import sqlite3
 import threading
 
-from jotter.features.tasks.domain import Task
-from jotter.shared.value_objects import Priority
+from jotter.features.tasks.domain import Priority, Task
 
 _sqlite_write_lock = threading.Lock()
 

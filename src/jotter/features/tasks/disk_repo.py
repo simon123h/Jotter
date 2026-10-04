@@ -5,9 +5,8 @@ from pathlib import Path
 
 import yaml
 
-from jotter.features.tasks.domain import Task
+from jotter.features.tasks.domain import DueDate, Task
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
-from jotter.shared.value_objects import DueDate
 
 
 class DiskTaskRepository:

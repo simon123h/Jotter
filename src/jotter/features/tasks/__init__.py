@@ -1,7 +1,10 @@
 """Task feature package."""
 
+from jotter.features.tasks.command_service import TaskCommandService
 from jotter.features.tasks.disk_repo import DiskTaskRepository
-from jotter.features.tasks.domain import Task
+from jotter.features.tasks.domain import DueDate, Priority, Tag, Task, TaskId
+from jotter.features.tasks.projector import TaskProjector
+from jotter.features.tasks.query_service import TaskQueryService
 from jotter.features.tasks.router import router
 from jotter.features.tasks.schemas import (
     TaskCreate,
@@ -15,8 +18,15 @@ from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 
 __all__ = [
     "Task",
+    "TaskId",
+    "Priority",
+    "DueDate",
+    "Tag",
     "DiskTaskRepository",
     "SqliteTaskRepository",
+    "TaskProjector",
+    "TaskCommandService",
+    "TaskQueryService",
     "TaskApplicationService",
     "TaskCreate",
     "TaskUpdate",

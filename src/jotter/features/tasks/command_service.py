@@ -9,7 +9,7 @@ from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository
 from jotter.features.projects.repo import ProjectRepository
 from jotter.features.tasks.disk_repo import DiskTaskRepository
-from jotter.features.tasks.domain import Task
+from jotter.features.tasks.domain import Priority, Task
 from jotter.features.tasks.projector import TaskProjector
 from jotter.features.tasks.schemas import (
     TaskCreate,
@@ -18,7 +18,6 @@ from jotter.features.tasks.schemas import (
     TaskUpdate,
 )
 from jotter.shared.exceptions import EntityNotFoundError
-from jotter.shared.value_objects import Priority
 
 
 class TaskCommandService:

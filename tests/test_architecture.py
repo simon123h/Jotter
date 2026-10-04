@@ -51,3 +51,14 @@ def test_projector_owns_sqlite_task_mutations():
         .should_not_import("jotter.features.tasks.sqlite_repo")
         .check("jotter")
     )
+
+
+def test_shared_kernel_does_not_import_features():
+    """Ensure shared kernel components (db, fs, exceptions, ulid, slug) do not depend on features."""
+    (
+        archrule("pure-shared-kernel")
+        .match("jotter.shared.*")
+        .exclude("jotter.shared.value_objects")  # deprecated backwards compatibility re-export
+        .should_not_import("jotter.features.*")
+        .check("jotter", only_direct_imports=True)
+    )

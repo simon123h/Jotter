@@ -21,8 +21,10 @@ from jotter.features.buckets.service import BucketApplicationService
 from jotter.features.projects.schemas import ProjectCreate
 from jotter.features.projects.service import ProjectApplicationService
 from jotter.features.sync.service import SyncApplicationService
+from jotter.features.tasks.command_service import TaskCommandService
+from jotter.features.tasks.disk_repo import DiskTaskRepository
+from jotter.features.tasks.query_service import TaskQueryService
 from jotter.features.tasks.schemas import TaskCreate, TaskMove, TaskUpdate
-from jotter.features.tasks.service import TaskApplicationService
 from jotter.shared.db import create_sqlite_connection
 
 
@@ -42,7 +44,9 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
     sync_svc = SyncApplicationService.from_data_dir(cfg.data_dir, conn)
     sync_svc.sync_db_only()
 
-    task_svc = TaskApplicationService.from_data_dir(cfg.data_dir, conn)
+    task_cmd_svc = TaskCommandService.from_data_dir(cfg.data_dir, conn)
+    task_query_svc = TaskQueryService.from_conn(conn)
+    task_disk_repo = DiskTaskRepository(cfg.data_dir)
     bucket_svc = BucketApplicationService.from_data_dir(cfg.data_dir, conn)
     project_svc = ProjectApplicationService.from_data_dir(cfg.data_dir, conn)
 
@@ -141,7 +145,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         elif not include_done and not bucket and not (buckets and ("done" in buckets or "archive" in buckets)):
             resolved_exclude = ["done", "archive"]
 
-        tasks = task_svc.get_tasks(
+        tasks = task_query_svc.get_tasks(
             project_id=project_id,
             bucket=bucket,
             buckets=buckets,
@@ -168,7 +172,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
     @server.tool()
     def get_task(task_id: str, project_id: str = "default") -> dict[str, Any]:
         """Retrieve full details of a specific task, including its markdown body content and metadata."""
-        task = task_svc.get_task(project_id, task_id)
+        task = task_query_svc.get_task(project_id, task_id)
         return task.model_dump()
 
     @server.tool()
@@ -192,7 +196,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
             due_date=due_date,
             planned_date=planned_date,
         )
-        created = task_svc.create_task(project_id, req)
+        created = task_cmd_svc.create_task(project_id, req)
         return created.model_dump()
 
     @server.tool()
@@ -213,7 +217,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
                 planned_date=t.get("planned_date"),
                 position=t.get("position"),
             )
-            created = task_svc.create_task(project_id, req)
+            created = task_cmd_svc.create_task(project_id, req)
             created_tasks.append(created.model_dump())
         return created_tasks
 
@@ -237,7 +241,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
             planned_date=planned_date,
             tags=tags,
         )
-        updated = task_svc.update_task(project_id, task_id, req)
+        updated = task_cmd_svc.update_task(project_id, task_id, req)
         return updated.model_dump()
 
     @server.tool()
@@ -252,16 +256,16 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         dest_project = target_project_id or project_id
         if dest_project != project_id:
             req = TaskUpdate(project_id=dest_project, bucket=bucket, position=position)
-            moved = task_svc.update_task(project_id, task_id, req)
+            moved = task_cmd_svc.update_task(project_id, task_id, req)
         else:
             req = TaskMove(bucket=bucket, position=position)
-            moved = task_svc.move_task(project_id, task_id, req)
+            moved = task_cmd_svc.move_task(project_id, task_id, req)
         return moved.model_dump()
 
     @server.tool()
     def delete_task(task_id: str, project_id: str = "default") -> dict[str, str]:
         """Delete a task from Jotter."""
-        task_svc.delete_task(project_id, task_id)
+        task_cmd_svc.delete_task(project_id, task_id)
         return {"status": "success", "message": f"Task '{task_id}' deleted"}
 
     @server.tool()
@@ -314,7 +318,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         """Active board view showing all columns and tasks for a specific project."""
         project = project_svc.get_project(project_id)
         buckets = bucket_svc.get_all_buckets(project_id)
-        all_tasks = task_svc.get_tasks(project_id=project_id)
+        all_tasks = task_query_svc.get_tasks(project_id=project_id)
 
         # Group tasks by bucket name
         tasks_by_bucket: dict[str, list[Any]] = {b.name: [] for b in buckets}
@@ -370,7 +374,7 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
 
         for p in projects:
             try:
-                target_task = task_svc.get_task(p.id, task_id)
+                target_task = task_query_svc.get_task(p.id, task_id)
                 target_project_id = p.id
                 break
             except Exception:
@@ -380,13 +384,13 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
             raise ValueError(f"Task '{task_id}' not found in any project.")
 
         # Read the raw Markdown file from disk repo if present
-        task_path = task_svc.disk_repo.get_task_file_path(target_project_id, task_id)
+        task_path = task_disk_repo.get_task_file_path(target_project_id, task_id)
         if task_path.is_file():
             return task_path.read_text(encoding="utf-8")
 
         # Fallback to serialized entity
-        task_entity = task_svc.sqlite_repo.get_by_id(target_project_id, task_id)
-        return task_svc.disk_repo.serialize_task(task_entity)
+        task_entity = task_query_svc.sqlite_repo.get_by_id(target_project_id, task_id)
+        return task_disk_repo.serialize_task(task_entity)
 
     @server.resource(
         "jotter://projects/{project_id}/tasks/{task_id}",
@@ -397,12 +401,12 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
     )
     def resource_project_task_detail(project_id: str, task_id: str) -> str:
         """Reads a specific task's Markdown content for a given project."""
-        task_path = task_svc.disk_repo.get_task_file_path(project_id, task_id)
+        task_path = task_disk_repo.get_task_file_path(project_id, task_id)
         if task_path.is_file():
             return task_path.read_text(encoding="utf-8")
 
-        task_entity = task_svc.sqlite_repo.get_by_id(project_id, task_id)
-        return task_svc.disk_repo.serialize_task(task_entity)
+        task_entity = task_query_svc.sqlite_repo.get_by_id(project_id, task_id)
+        return task_disk_repo.serialize_task(task_entity)
 
     return server
 
