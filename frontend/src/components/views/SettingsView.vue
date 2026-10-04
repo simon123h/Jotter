@@ -5,21 +5,8 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
-import {
-  Settings,
-  Check,
-  Globe,
-  GitBranch,
-  Info,
-  Folder,
-  FolderOpen,
-  Tag,
-  RotateCcw,
-  ChevronDown,
-  Search,
-  Box,
-  RefreshCw,
-} from '@lucide/vue';
+import { Settings, Check, Globe, GitBranch, Info, Folder, Tag, RotateCcw, ChevronDown, Search, Box, RefreshCw } from '@lucide/vue';
+import { useModalStore } from '@/stores/modal';
 import { getSystemInfo, updateDataDir, isNativeMobile, syncSystem } from '@/api';
 
 import { useToast } from '@/composables/useToast';
@@ -28,6 +15,7 @@ import type { SystemInfo } from '@/types';
 const { locale, t } = useI18n();
 const { success: toastSuccess, error: toastError } = useToast();
 const settingsStore = useSettingsStore();
+const modalStore = useModalStore();
 const projectStore = useProjectStore();
 const { currentTheme, hideAddTaskButton, autoCommitInterval, doneCleanPeriod } = storeToRefs(settingsStore);
 const tagColors = computed(() => settingsStore.tagColors || {});
@@ -36,44 +24,6 @@ const systemInfo = ref<SystemInfo | null>(null);
 const isEditingDataDir = ref(false);
 const isUpdatingDataDir = ref(false);
 const newDataDir = ref('');
-const folderInputRef = ref<HTMLInputElement | null>(null);
-
-const browseDirectory = async () => {
-  if (isNativeMobile) {
-    startEditDataDir();
-    return;
-  }
-  if (typeof (window as any).showDirectoryPicker === 'function') {
-    try {
-      const dirHandle = await (window as any).showDirectoryPicker();
-      if (dirHandle && dirHandle.name) {
-        newDataDir.value = dirHandle.name;
-        isEditingDataDir.value = true;
-      }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        console.error('Directory picker error:', err);
-      }
-    }
-  } else if (folderInputRef.value) {
-    folderInputRef.value.click();
-  }
-};
-
-const onFolderSelected = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target.files && target.files.length > 0) {
-    const file = target.files[0];
-    const relPath = file.webkitRelativePath || file.name;
-    const folderName = relPath.split('/')[0];
-    if (folderName) {
-      newDataDir.value = folderName;
-      isEditingDataDir.value = true;
-    }
-  }
-  target.value = '';
-};
-
 const startEditDataDir = () => {
   if (systemInfo.value) {
     // Strip trailing platform notes like (Android Documents) for mobile clean editing
@@ -665,15 +615,14 @@ const getTagClasses = (tag: string) => {
                 <button
                   v-if="!isEditingDataDir && !isNativeMobile"
                   type="button"
-                  @click="browseDirectory"
-                  class="px-2.5 py-1 text-xs font-semibold bg-theme-bg/60 hover:bg-theme-column/60 text-theme-text-main rounded border border-theme-border/60 transition-all cursor-pointer flex items-center gap-1"
-                  :title="t('settingsView.browseFolder')"
+                  @click="modalStore.openVaultManage()"
+                  class="px-2.5 py-1 text-xs font-semibold bg-theme-primary/10 hover:bg-theme-primary/20 text-theme-accent rounded border border-theme-accent/20 transition-all cursor-pointer whitespace-nowrap"
+                  data-testid="settings-manage-vaults"
                 >
-                  <FolderOpen class="w-3.5 h-3.5 text-theme-accent" />
-                  <span class="hidden sm:inline">{{ t('settingsView.browseFolder') }}</span>
+                  {{ t('vaults.manage') }}
                 </button>
                 <button
-                  v-if="!isEditingDataDir"
+                  v-if="!isEditingDataDir && isNativeMobile"
                   type="button"
                   @click="startEditDataDir"
                   class="px-2.5 py-1 text-xs font-semibold bg-theme-primary/10 hover:bg-theme-primary/20 text-theme-accent rounded border border-theme-accent/20 transition-all cursor-pointer whitespace-nowrap"
@@ -703,20 +652,7 @@ const getTagClasses = (tag: string) => {
                     :disabled="isUpdatingDataDir"
                     @keydown.enter="saveDataDir"
                   />
-                  <button
-                    v-if="!isNativeMobile"
-                    type="button"
-                    @click="browseDirectory"
-                    :disabled="isUpdatingDataDir"
-                    class="px-2.5 py-2 border border-theme-border/70 hover:border-theme-primary bg-theme-card/80 hover:bg-theme-column/40 rounded-lg text-xs font-semibold text-theme-text-main flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
-                    :title="t('settingsView.browseFolder')"
-                  >
-                    <FolderOpen class="w-4 h-4 text-theme-accent" />
-                    <span class="hidden sm:inline">{{ t('settingsView.browseFolder') }}</span>
-                  </button>
                 </div>
-                <!-- Hidden file input for webkitdirectory browser fallback -->
-                <input ref="folderInputRef" type="file" webkitdirectory directory class="hidden" @change="onFolderSelected" />
                 <div class="flex items-center justify-end gap-2 mt-1">
                   <button
                     type="button"

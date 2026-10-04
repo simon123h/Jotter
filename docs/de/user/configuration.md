@@ -10,7 +10,7 @@ Du kannst anpassen, wie Jotter ausgeführt wird (z. B. den Netzwerk-Port ändern
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Port** | `--port <nummer>` | `port: <nummer>` | _N/A_ | `58271` | Der Netzwerk-Port, auf dem der Server lauscht. |
 | **Host** | `--host <adresse>` | `host: "<adresse>"` | _N/A_ | `127.0.0.1` | Die Host-IP-Adresse, an die sich der Server bindet (z. B. `0.0.0.0`, um Zugriff aus dem lokalen Netzwerk zu erlauben). |
-| **Datenverzeichnis** | `--data-dir <pfad>` | `data_dir: "<pfad>"` | `JOTTER_DATA_DIR` | _Siehe Speicherorte_ | Der Ordner, in dem deine Markdown-Aufgaben gespeichert werden. Unterstützt `~` zur Pfadauflösung des Home-Verzeichnisses. |
+| **Datenverzeichnis** | `--data-dir <pfad>` | `data_dir: "<pfad>"` | `JOTTER_DATA_DIR` | _Siehe Speicherorte_ | Start-Ordner, der nur den ersten Vault anlegt (siehe unten). Unterstützt `~` zur Pfadauflösung des Home-Verzeichnisses. |
 | **Log-Verzeichnis** | _N/A_ | `log_dir: "<pfad>"` | `JOTTER_LOG_DIR` | _Siehe Speicherorte_ | Das Verzeichnis, in dem Jotter die Datei `jotter.log` speichert. Getrennt von den Notizen, um Git-Konflikte zu vermeiden. |
 | **Log-Level** | `--log-level <level>` | `log_level: "<level>"` | `JOTTER_LOG_LEVEL` | `info` (Dev) / `warning` (Prod) | Detailtiefe der Log-Ausgaben (`debug`, `info`, `warning`, `error`, `critical`). |
 | **Log-Farben** | `--no-color` | `use_colors: false` | `NO_COLOR` / `JOTTER_USE_COLORS` | `true` (Auto) | ANSI-Farbausgabe in Terminal-Logs umschalten. Hilfreich, falls ältere Windows-Terminals Escape-Codes (`[32m`) anzeigen. |
@@ -23,6 +23,8 @@ Du kannst anpassen, wie Jotter ausgeführt wird (z. B. den Netzwerk-Port ändern
 Jotter ist extrem flexibel und kann entweder als vollständig eigenständige **portable App** oder als global installierte Standardanwendung ausgeführt werden.
 
 ### 1. Portabler Modus (Eigenständig)
+
+> **Hinweis:** Die Einstellung für das Datenverzeichnis legt nur den ersten Vault an. Sobald `vaults.json` im Konfigurationsordner existiert, gilt der Ordner des aktiven Vaults und `data_dir` wird ignoriert. Ordner verwaltest du über die Vault-Verwaltung in der Seitenleiste (Zahnrad neben der Vault-Auswahl).
 
 Wenn sich im aktuellen Arbeitsverzeichnis (CWD), in dem Jotter gestartet wird, ein Ordner namens `tasks/` befindet:
 

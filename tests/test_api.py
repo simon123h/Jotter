@@ -284,7 +284,9 @@ def test_enable_git_refuses_vault_inside_other_repo(test_env):
     nested = Path(temp_dir) / "inner"
     nested.mkdir()
 
-    res = client.post("/api/system/data-dir", json={"data_dir": str(nested)})
+    res = client.post("/api/vaults", json={"name": "Inner", "path": str(nested), "id": "inner"})
+    assert res.status_code == 201
+    res = client.post("/api/vaults/switch", json={"vault_id": "inner"})
     assert res.status_code == 200
 
     res = client.post("/api/system/git/init")

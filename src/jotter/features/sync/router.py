@@ -7,14 +7,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
-from jotter.config import save_user_config
 from jotter.features.sync.git_adapter import (
     get_git_history,
     git_restore,
     is_git_installed,
 )
 from jotter.features.sync.service import SyncApplicationService
-from jotter.shared.db import create_sqlite_connection
 from jotter.shared.deps import get_data_dir, get_db_conn
 
 router = APIRouter(prefix="/api/system", tags=["system"])
@@ -24,10 +22,6 @@ class RestoreRequest(BaseModel):
     commitHash: str
     projectId: str | None = None
     project_id: str | None = None
-
-
-class DataDirUpdateRequest(BaseModel):
-    data_dir: str
 
 
 def get_sync_service(
@@ -73,43 +67,6 @@ def get_system_info(request: Request, data_dir: str = Depends(get_data_dir)):
         "gitInstalled": git_inst,
         "change_count": getattr(watcher, "change_count", 0),
         "last_sync_timestamp": getattr(watcher, "last_sync_timestamp", 0),
-    }
-
-
-@router.post("/data-dir")
-@router.put("/data-dir")
-def update_data_dir(
-    req: DataDirUpdateRequest,
-    request: Request,
-):
-    new_dir = req.data_dir.strip()
-    if not new_dir:
-        raise HTTPException(status_code=400, detail="data_dir cannot be empty")
-
-    resolved_path = str(Path(new_dir).expanduser().resolve())
-    Path(resolved_path).mkdir(parents=True, exist_ok=True)
-
-    config = request.app.state.config
-    config.data_dir = resolved_path
-
-    # Persist in user config file
-    save_user_config(config)
-
-    # Reconnect and sync new database
-    db_path = str(Path(resolved_path) / "tasks.db")
-    request.app.state.db_path = db_path
-    conn = create_sqlite_connection(db_path)
-    request.app.state.db = conn
-
-    # Trigger initial sync for the newly selected directory
-    sync_svc = SyncApplicationService.from_data_dir(resolved_path, conn)
-    synced_count = sync_svc.sync_db_only()
-
-    return {
-        "status": "ok",
-        "data_dir": resolved_path,
-        "dataDir": resolved_path,
-        "synced": synced_count,
     }
 
 
