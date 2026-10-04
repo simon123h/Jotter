@@ -13,8 +13,8 @@ hero:
       text: Erste Schritte
       link: /de/installation/precompiled
     - theme: alt
-      text: Entwickler-Doku
-      link: /de/developer/architecture
+      text: Entwickler-Doku (EN)
+      link: /developer/architecture
     - theme: alt
       text: 🚀 Live-Demo
       link: /demo/

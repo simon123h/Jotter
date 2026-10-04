@@ -89,7 +89,7 @@ export default defineConfig({
 				nav: [
 					{ text: 'Startseite', link: '/de/' },
 					{ text: 'Benutzerhandbuch', link: '/de/installation/precompiled' },
-					{ text: 'Entwickler-Doku', link: '/de/developer/architecture' },
+					{ text: 'Entwickler-Doku (EN)', link: '/developer/architecture' },
 					{ text: 'Live-Demo', link: '/demo/', target: '_blank' }
 				],
 				sidebar: {
@@ -117,6 +117,13 @@ export default defineConfig({
 								{ text: 'Git-Sync & Zusammenarbeit', link: '/de/user/git-sync' },
 								{ text: 'Datensicherheit & Recovery', link: '/de/user/safety' }
 							]
+						},
+						{
+							text: 'Entwickler-Referenz (EN)',
+							items: [
+								{ text: 'Architecture (arc42)', link: '/developer/architecture' },
+								{ text: 'REST API & OpenAPI', link: '/developer/api' }
+							]
 						}
 					],
 					'/de/user/': [
@@ -143,14 +150,12 @@ export default defineConfig({
 								{ text: 'Git-Sync & Zusammenarbeit', link: '/de/user/git-sync' },
 								{ text: 'Datensicherheit & Recovery', link: '/de/user/safety' }
 							]
-						}
-					],
-					'/de/developer/': [
+						},
 						{
-							text: 'Entwickler-Referenz',
+							text: 'Entwickler-Referenz (EN)',
 							items: [
-								{ text: 'Architektur (arc42)', link: '/de/developer/architecture' },
-								{ text: 'REST-API & OpenAPI', link: '/de/developer/api' }
+								{ text: 'Architecture (arc42)', link: '/developer/architecture' },
+								{ text: 'REST API & OpenAPI', link: '/developer/api' }
 							]
 						}
 					]
