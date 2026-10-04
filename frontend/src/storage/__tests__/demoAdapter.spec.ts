@@ -28,6 +28,13 @@ describe('DemoStorageAdapter', () => {
     expect(all.length).toBe(perProject.length + 1);
   });
 
+  it('reports the build version, marked as demo', async () => {
+    const { version, data_dir } = await adapter.getSystemInfo();
+    expect(version).toBe(`${__APP_VERSION__} (demo)`);
+    expect(version).not.toContain('2.9.1');
+    expect(data_dir).toBe('/demo-local-storage');
+  });
+
   it('rejects attachment uploads', async () => {
     await expect(adapter.uploadAttachment()).rejects.toThrow('not supported in demo mode');
   });

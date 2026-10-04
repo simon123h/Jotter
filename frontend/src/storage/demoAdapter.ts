@@ -605,7 +605,7 @@ async function syncSystem(): Promise<{ status: string; synchronized_tasks: numbe
 
 async function getSystemInfo(): Promise<SystemInfo> {
   return {
-    version: '2.9.1 (demo)',
+    version: `${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'} (demo)`,
     data_dir: '/demo-local-storage',
   };
 }
