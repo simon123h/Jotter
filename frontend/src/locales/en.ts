@@ -33,7 +33,6 @@ export const en = {
     'nordic-light': 'Nordic Light',
     'desert-light': 'Desert Amber',
     'earth-light': 'Earth & Moss',
-    'tokyo-night': 'Tokyo Night',
   },
   commit: {
     button: 'Commit',

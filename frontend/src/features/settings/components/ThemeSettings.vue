@@ -17,7 +17,6 @@ const themes = [
   { id: 'midnight', name: 'Midnight Violet', color: 'bg-violet-500' },
   { id: 'forest', name: 'Emerald Forest', color: 'bg-emerald-500' },
   { id: 'sakura', name: 'Sakura Rose', color: 'bg-rose-500' },
-  { id: 'tokyo-night', name: 'Tokyo Night', color: 'bg-[#7aa2f7]' },
 ];
 
 const setTheme = (theme: string) => {
