@@ -308,7 +308,7 @@ useBoardNavigation({
     </div>
 
     <div
-      class="flex flex-col gap-3 shrink-0 w-[100vw] min-w-[100vw] max-w-[100vw] px-3 md:px-0 md:w-72 md:min-w-0 md:max-w-none snap-center md:snap-align-none"
+      class="flex flex-col gap-3 shrink-0 w-[100vw] min-w-[100vw] max-w-[100vw] px-3 md:px-0 md:w-72 md:min-w-0 md:max-w-none snap-center snap-always md:snap-align-none"
     >
       <!-- Add Column Card -->
       <button
