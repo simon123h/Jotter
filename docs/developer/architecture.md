@@ -271,13 +271,14 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0003: Support Arbitrary File Slugs and Non-Enforcement of ULID Format](./adr/0003-arbitrary-task-slugs.md)
 - [ADR 0004: Silent Filesystem Indexing via Watchdog and Decoupling Git Sync](./adr/0004-silent-watchdog-sync.md)
 - [ADR 0005: Explicit In-Process CQRS and Architecture Enforcement](./adr/0005-explicit-in-process-cqrs.md)
-- [ADR 0006: Dual-Runtime Architecture (Desktop HTTP vs. Android In-Process Engine)](./adr/0006-dual-runtime-architecture.md)
+- [ADR 0006: Pluggable Storage Adapters (Desktop HTTP, Android In-Process, Browser Demo)](./adr/0006-dual-runtime-architecture.md)
 - [ADR 0007: Project Manifest (index.md) & Obsidian Folder Notes Integration](./adr/0007-project-manifest-index-md.md)
 - [ADR 0008: Selective Per-Project Git Synchronization and Offline Isolation](./adr/0008-selective-per-project-git-sync.md) (superseded by ADR 0012)
 - [ADR 0009: Cross-Platform Atomic Filesystem Writes with Exponential Backoff](./adr/0009-cross-platform-atomic-writes.md)
 - [ADR 0010: Adopting the Open JSON Canvas Format for Visual 2D Boards](./adr/0010-open-json-canvas-format.md)
 - [ADR 0011: Cross-Tab Broadcast Synchronization and Window Focus Revalidation](./adr/0011-cross-tab-broadcast-sync.md)
 - [ADR 0012: Vault Abstraction and Local-Only Git Versioning](./adr/0012-vault-abstraction-and-simplified-git-sync.md)
+- [ADR 0013: Frontend Code Organization: Feature Slices and When to Split Components](./adr/0013-frontend-feature-slices.md)
 
 
 
