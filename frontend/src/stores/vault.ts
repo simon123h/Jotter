@@ -4,6 +4,7 @@ import type { Vault } from '@/types';
 import { getVaults, createVault, renameVault, switchVault, deleteVault, enableGitVersioning, getSystemInfo } from '@/api';
 import { useProjectStore } from '@/stores/project';
 import { useTimeblockStore } from '@/stores/timeblock';
+import { useSettingsStore } from '@/stores/settings';
 
 export const useVaultStore = defineStore('vault', () => {
   const vaults = ref<Vault[]>([]);
@@ -37,6 +38,8 @@ export const useVaultStore = defineStore('vault', () => {
   const reloadWorkspace = async () => {
     const projectStore = useProjectStore();
     const timeblockStore = useTimeblockStore();
+    // Per-vault settings (pins, project order, tag colors, ...) live in the vault's settings.json
+    await useSettingsStore().loadSettings();
     projectStore.invalidate();
     await projectStore.fetchProjects();
     await timeblockStore.fetchTimeblocks();

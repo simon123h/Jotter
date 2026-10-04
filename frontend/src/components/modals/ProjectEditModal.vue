@@ -5,7 +5,7 @@ import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
 import { useDialog } from '@/composables/useDialog';
-import { updateProject, deleteProject } from '@/api';
+import { updateProject } from '@/api';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import type { Project } from '@/types';
 
@@ -82,9 +82,10 @@ const handleDelete = async () => {
   });
 
   if (confirmed) {
-    await deleteProject(props.project.id);
-    await projectStore.invalidate();
+    const projectId = props.project.id;
+    // Close first and let the store drop the project from the sidebar immediately
     emit('close');
+    await projectStore.removeProject(projectId);
   }
 };
 

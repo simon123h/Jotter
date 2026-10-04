@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { Project, Task, Bucket, TaskQuery } from '@/types';
-import { getProjects, getBuckets, getTasks, getTask, getAllTasks, commitChanges, updateTask, restoreCommit } from '@/api';
+import { getProjects, deleteProject, getBuckets, getTasks, getTask, getAllTasks, commitChanges, updateTask, restoreCommit } from '@/api';
 import { useSettingsStore } from '@/stores/settings';
 import { useTimeblockStore } from '@/stores/timeblock';
 
@@ -156,6 +156,14 @@ export const useProjectStore = defineStore('project', () => {
     }
   };
 
+  // Delete a project and drop it from the list right away (before the refetch round-trip)
+  const removeProject = async (projectId: string) => {
+    await deleteProject(projectId);
+    projects.value = projects.value.filter((p) => p.id !== projectId);
+    await fetchProjects();
+    await invalidate();
+  };
+
   const invalidate = async () => {
     const promises: Promise<any>[] = [];
     if (currentQuery.value) {
@@ -285,6 +293,7 @@ export const useProjectStore = defineStore('project', () => {
     upsertTask,
     ensureTaskLoaded,
     invalidate,
+    removeProject,
     reset,
     triggerCommit,
     restoreToCommit,
