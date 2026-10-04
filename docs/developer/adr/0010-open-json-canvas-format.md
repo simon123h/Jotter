@@ -62,7 +62,7 @@ Specifically:
 3. **Standard Edge Connections**:
    - Connects source and target nodes with directional arrows, colors, and line labels.
 4. **Service & Route Layer**:
-   - Managed via [`CanvasApplicationService`](file:///home/simon/Code/jotter/src/jotter/features/canvas/service.py) on backend and [`canvasStore.ts`](file:///home/simon/Code/jotter/frontend/src/stores/canvasStore.ts) on frontend.
+   - Managed via `src/jotter/features/canvas/service.py` on backend and `frontend/src/stores/canvasStore.ts` on frontend.
    - Git synchronization (`src/jotter/features/sync/git_adapter.py`) automatically tracks, commits, and restores `.canvas` files alongside tasks.
 
 ## Rationale

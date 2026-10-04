@@ -64,7 +64,7 @@ Specifically:
 
 ### 2. Architecture Enforcement with `pytest-archon`
 
-To guarantee that future development preserves these boundaries, we introduced architecture unit tests in [`tests/test_architecture.py`](file:///home/simon/Code/jotter/tests/test_architecture.py):
+To guarantee that future development preserves these boundaries, we introduced architecture unit tests in `tests/test_architecture.py`:
 
 1. **Query Isolation**: `TaskQueryService` is strictly forbidden from importing `DiskTaskRepository`.
 2. **Pure Domain**: Domain entities and value objects must never import database drivers (`sqlite3`), repositories, or application services.

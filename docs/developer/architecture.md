@@ -245,7 +245,7 @@ Jotter provides dual interfaces for external programmatic access:
    - Built-in stdio-based MCP server (`jotter mcp` implemented via `FastMCP`).
    - Enables LLMs and AI agents (such as Claude Desktop, Cursor, or Antigravity) to inspect projects, read live Kanban boards, filter tasks, create/update/move tasks, and run Git synchronization.
    - Implements anti-flooding safeguards for agents: `list_tasks` defaults to active tasks (`include_done=False`), and board resources (`jotter://projects/{id}/board`) collapse done/archived columns into count summaries.
-   - Detailed specification and parameters are documented in [REST API & MCP Reference](file:///home/simon/Code/jotter/docs/developer/api.md).
+   - Detailed specification and parameters are documented in [REST API & MCP Reference](./api.md).
 
 ---
 
@@ -253,17 +253,17 @@ Jotter provides dual interfaces for external programmatic access:
 
 Key architectural decisions are documented as Architecture Decision Records (ADRs):
 
-- [ADR 0001: Immutable Bucket Slugs in Markdown Task Frontmatter](file:///home/simon/Code/jotter/docs/developer/adr/0001-immutable-bucket-slugs.md)
-- [ADR 0002: Postponed Implementation of Recurrent Tasks](file:///home/simon/Code/jotter/docs/developer/adr/0002-decline-recurring-tasks.md)
-- [ADR 0003: Support Arbitrary File Slugs and Non-Enforcement of ULID Format](file:///home/simon/Code/jotter/docs/developer/adr/0003-arbitrary-task-slugs.md)
-- [ADR 0004: Silent Filesystem Indexing via Watchdog and Decoupling Git Sync](file:///home/simon/Code/jotter/docs/developer/adr/0004-silent-watchdog-sync.md)
-- [ADR 0005: Explicit In-Process CQRS and Architecture Enforcement](file:///home/simon/Code/jotter/docs/developer/adr/0005-explicit-in-process-cqrs.md)
-- [ADR 0006: Dual-Runtime Architecture (Desktop HTTP vs. Android In-Process Engine)](file:///home/simon/Code/jotter/docs/developer/adr/0006-dual-runtime-architecture.md)
-- [ADR 0007: Project Manifest (index.md) & Obsidian Folder Notes Integration](file:///home/simon/Code/jotter/docs/developer/adr/0007-project-manifest-index-md.md)
-- [ADR 0008: Selective Per-Project Git Synchronization and Offline Isolation](file:///home/simon/Code/jotter/docs/developer/adr/0008-selective-per-project-git-sync.md)
-- [ADR 0009: Cross-Platform Atomic Filesystem Writes with Exponential Backoff](file:///home/simon/Code/jotter/docs/developer/adr/0009-cross-platform-atomic-writes.md)
-- [ADR 0010: Adopting the Open JSON Canvas Format for Visual 2D Boards](file:///home/simon/Code/jotter/docs/developer/adr/0010-open-json-canvas-format.md)
-- [ADR 0011: Cross-Tab Broadcast Synchronization and Window Focus Revalidation](file:///home/simon/Code/jotter/docs/developer/adr/0011-cross-tab-broadcast-sync.md)
+- [ADR 0001: Immutable Bucket Slugs in Markdown Task Frontmatter](./adr/0001-immutable-bucket-slugs.md)
+- [ADR 0002: Postponed Implementation of Recurrent Tasks](./adr/0002-decline-recurring-tasks.md)
+- [ADR 0003: Support Arbitrary File Slugs and Non-Enforcement of ULID Format](./adr/0003-arbitrary-task-slugs.md)
+- [ADR 0004: Silent Filesystem Indexing via Watchdog and Decoupling Git Sync](./adr/0004-silent-watchdog-sync.md)
+- [ADR 0005: Explicit In-Process CQRS and Architecture Enforcement](./adr/0005-explicit-in-process-cqrs.md)
+- [ADR 0006: Dual-Runtime Architecture (Desktop HTTP vs. Android In-Process Engine)](./adr/0006-dual-runtime-architecture.md)
+- [ADR 0007: Project Manifest (index.md) & Obsidian Folder Notes Integration](./adr/0007-project-manifest-index-md.md)
+- [ADR 0008: Selective Per-Project Git Synchronization and Offline Isolation](./adr/0008-selective-per-project-git-sync.md)
+- [ADR 0009: Cross-Platform Atomic Filesystem Writes with Exponential Backoff](./adr/0009-cross-platform-atomic-writes.md)
+- [ADR 0010: Adopting the Open JSON Canvas Format for Visual 2D Boards](./adr/0010-open-json-canvas-format.md)
+- [ADR 0011: Cross-Tab Broadcast Synchronization and Window Focus Revalidation](./adr/0011-cross-tab-broadcast-sync.md)
 
 
 

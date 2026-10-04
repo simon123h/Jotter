@@ -19,7 +19,7 @@ In practice, operating systems and desktop environments exhibit complex filesyst
 
 ## Decision
 
-We decided to implement a centralized, robust atomic writing and replacement pipeline in [`src/jotter/shared/fs.py`](file:///home/simon/Code/jotter/src/jotter/shared/fs.py) using temporary file staging, exponential backoff retries, and fallback copy mechanics.
+We decided to implement a centralized, robust atomic writing and replacement pipeline in `src/jotter/shared/fs.py` using temporary file staging, exponential backoff retries, and fallback copy mechanics.
 
 ```mermaid
 sequenceDiagram
