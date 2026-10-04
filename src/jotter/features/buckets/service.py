@@ -7,7 +7,7 @@ from typing import Self
 from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository
 from jotter.features.buckets.schemas import BucketCreate, BucketResponse, BucketUpdate
-from jotter.shared.exceptions import ValidationError
+from jotter.shared.exceptions import EntityNotFoundError, ValidationError
 
 
 class BucketApplicationService:
@@ -21,6 +21,9 @@ class BucketApplicationService:
     def get_all_buckets(self, project_id: str) -> list[BucketResponse]:
         buckets = self.bucket_repo.get_all(project_id)
         if not buckets:
+            # Unknown project (e.g. stale ID after a vault switch): don't seed buckets or create folders
+            if not self.bucket_repo.project_exists(project_id):
+                raise EntityNotFoundError(f"Project '{project_id}' not found")
             # Seed default buckets
             disk_buckets = self.bucket_repo.load_buckets_file(project_id)
             for b_data in disk_buckets:

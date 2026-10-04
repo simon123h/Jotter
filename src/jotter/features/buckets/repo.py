@@ -26,6 +26,11 @@ class BucketRepository:
         p.mkdir(parents=True, exist_ok=True)
         return p
 
+    def project_exists(self, project_id: str) -> bool:
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,))
+        return cursor.fetchone() is not None
+
     def get_all(self, project_id: str) -> list[Bucket]:
         if (
             not project_id

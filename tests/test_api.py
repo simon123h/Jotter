@@ -403,3 +403,11 @@ def test_concurrent_multithreaded_requests(test_env):
         futures = [executor.submit(worker, i) for i in range(24)]
         results = [f.result() for f in concurrent.futures.as_completed(futures)]
         assert len(results) == 24
+
+
+def test_list_buckets_unknown_project_returns_404_without_creating_folder(test_env):
+    client, temp_dir = test_env
+
+    res = client.get("/api/projects/ghost/buckets")
+    assert res.status_code == 404
+    assert not (Path(temp_dir) / "ghost").exists()
