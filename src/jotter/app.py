@@ -104,7 +104,7 @@ def create_app(
         if (
             request.method in ("POST", "PUT", "PATCH", "DELETE")
             and path.startswith("/api/")
-            and not path.startswith(("/api/system/commit", "/api/system/git"))
+            and not path.startswith("/api/system/git")
             and response.status_code < 400
         ):
             scheduler = getattr(request.app.state, "auto_commit", None)

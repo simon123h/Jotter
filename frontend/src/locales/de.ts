@@ -35,10 +35,6 @@ export const de = {
     'earth-light': 'Erde & Moos',
   },
   commit: {
-    button: 'Commit',
-    committing: 'Committe...',
-    committed: 'Committet',
-    tooltip: 'Alle Änderungen dieses Vaults in die Git-Historie committen',
     enable: 'Git aktivieren',
     enableTooltip: 'Ein Git-Repository in diesem Vault anlegen, um eine lokale Versionshistorie zu führen',
     gitMissing: 'Git ist auf diesem System nicht installiert',
@@ -134,8 +130,6 @@ export const de = {
   },
   toasts: {
     syncSuccess: 'Arbeitsbereich erfolgreich synchronisiert',
-    commitError: 'Commit fehlgeschlagen: {message}',
-    commitErrorTitle: 'Commit-Fehler',
     gitEnabled: 'Git aktiviert. Der erste Commit wurde angelegt.',
     gitEnableError: 'Git konnte nicht aktiviert werden: {message}',
     gitEnableErrorTitle: 'Git-Fehler',

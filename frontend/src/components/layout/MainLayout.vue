@@ -150,14 +150,6 @@ const handleCreateProject = async (title: string) => {
 
 let unsubscribeCrossTab: (() => void) | null = null;
 
-const triggerCommit = async () => {
-  try {
-    await projectStore.triggerCommit();
-  } catch (err: any) {
-    toast.error(t('toasts.commitError', { message: err.message || err }), t('toasts.commitErrorTitle'));
-  }
-};
-
 const handleEnableGit = async () => {
   try {
     await vaultStore.enableGit();
@@ -270,11 +262,10 @@ onBeforeUnmount(() => {
           v-show="isSidebarOpen"
           :projects="projects"
           :active-project-id="activeProjectId"
-          :commit-loading="syncLoading"
-          :commit-success="syncSuccess"
+          :sync-loading="syncLoading"
+          :sync-success="syncSuccess"
           @create-project="handleCreateProject"
           @edit-project="modalStore.openProjectEdit"
-          @commit="triggerCommit"
           @enable-git="handleEnableGit"
           @import-spreadsheet="modalStore.openImportSpreadsheet"
           @move-tasks-to-project="handleMoveTasksToProject"

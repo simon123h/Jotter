@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { Project, Task, Bucket, TaskQuery } from '@/types';
-import { getProjects, deleteProject, getBuckets, getTasks, getTask, getAllTasks, commitChanges, updateTask, restoreCommit } from '@/api';
+import { getProjects, deleteProject, getBuckets, getTasks, getTask, getAllTasks, updateTask, restoreCommit } from '@/api';
 import { useSettingsStore } from '@/stores/settings';
 import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 
@@ -184,25 +184,6 @@ export const useProjectStore = defineStore('project', () => {
     error.value = null;
   };
 
-  const triggerCommit = async () => {
-    if (syncLoading.value) return;
-    syncLoading.value = true;
-    syncSuccess.value = false;
-    error.value = null;
-    try {
-      await commitChanges();
-      syncSuccess.value = true;
-      setTimeout(() => {
-        syncSuccess.value = false;
-      }, 2000);
-    } catch (err: any) {
-      error.value = err.message || 'Failed to commit changes';
-      throw err;
-    } finally {
-      syncLoading.value = false;
-    }
-  };
-
   const restoreToCommit = async (commitHash: string, projectId?: string) => {
     syncLoading.value = true;
     syncSuccess.value = false;
@@ -295,7 +276,6 @@ export const useProjectStore = defineStore('project', () => {
     invalidate,
     removeProject,
     reset,
-    triggerCommit,
     restoreToCommit,
     moveTasksToProject,
   };

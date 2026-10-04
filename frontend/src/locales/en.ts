@@ -35,10 +35,6 @@ export const en = {
     'earth-light': 'Earth & Moss',
   },
   commit: {
-    button: 'Commit',
-    committing: 'Committing...',
-    committed: 'Committed',
-    tooltip: 'Commit all changes in this vault to its Git history',
     enable: 'Enable Git',
     enableTooltip: 'Create a Git repository in this vault to keep a local version history',
     gitMissing: 'Git is not installed on this system',
@@ -133,8 +129,6 @@ export const en = {
   },
   toasts: {
     syncSuccess: 'Workspace synchronized successfully',
-    commitError: 'Commit failed: {message}',
-    commitErrorTitle: 'Commit Error',
     gitEnabled: 'Git enabled. The initial commit has been created.',
     gitEnableError: 'Could not enable Git: {message}',
     gitEnableErrorTitle: 'Git Error',

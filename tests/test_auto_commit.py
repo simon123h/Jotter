@@ -193,5 +193,5 @@ def test_mutating_api_calls_mark_vault_dirty(temp_dir):
         assert client.post("/api/projects", json={}).status_code >= 400
         assert rec.calls == 1  # failed requests don't count
 
-        client.post("/api/system/commit")
-        assert rec.calls == 1  # the commit endpoint itself doesn't re-dirty
+        client.post("/api/system/git/init")
+        assert rec.calls == 1  # the Git-init endpoint itself doesn't re-dirty

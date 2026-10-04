@@ -164,8 +164,8 @@ Jotter's Git integration is local-only. It is implemented in `src/jotter/feature
 
 ### The Local Commit Flow:
 
-1. **Trigger**: `POST /api/system/commit`, the sidebar **Commit** button, the `AutoCommitScheduler`, or the MCP `commit_changes` tool call `SyncApplicationService.commit_changes()`.
-2. **Vault Commit**: If the active vault directory is a Git repository, Jotter runs `git add -A` and commits with a summary message such as `jotter: 3 tasks created, 4 modified, 1 deleted` (the same for manual and scheduler commits), followed by one `verb: title` line per changed task, capped at 20. Folders that are not repositories are left untouched.
+1. **Trigger**: The `AutoCommitScheduler` or the MCP `commit_changes` tool call `SyncApplicationService.commit_changes()`.
+2. **Vault Commit**: If the active vault directory is a Git repository, Jotter runs `git add -A` and commits with a summary message such as `jotter: 3 tasks created, 4 modified, 1 deleted` (the same for scheduler and MCP commits), followed by one `verb: title` line per changed task, capped at 20. Folders that are not repositories are left untouched.
 3. **Legacy Fallback**: Project subdirectories that carry their own `.git` folder are committed individually.
 4. **Local Excludes**: The SQLite index (`tasks.db*`) is added to `.git/info/exclude` so it is never versioned.
 5. **Identity**: Existing `user.name` / `user.email` (at any config level) are never modified. Only a missing value gets a fallback in the repository's local config.
@@ -176,7 +176,7 @@ Commits and index reconciliation (`POST /api/system/sync`) are independent opera
 
 `src/jotter/features/sync/auto_commit.py` commits automatically after data changes; there is no user setting.
 
-- **Dirty signal**: an HTTP middleware in `app.py` calls `AutoCommitScheduler.mark_dirty()` after every successful `POST`/`PUT`/`PATCH`/`DELETE` under `/api/` (except the commit and Git-init endpoints). The filesystem watcher calls it for external edits; it deliberately ignores Jotter's own writes, which is why the API path needs its own hook. MCP write tools mark the vault dirty as well.
+- **Dirty signal**: an HTTP middleware in `app.py` calls `AutoCommitScheduler.mark_dirty()` after every successful `POST`/`PUT`/`PATCH`/`DELETE` under `/api/` (except the Git-init endpoint). The filesystem watcher calls it for external edits; it deliberately ignores Jotter's own writes, which is why the API path needs its own hook. MCP write tools mark the vault dirty as well.
 - **Cooldown**: the first change commits after a 3 s debounce. Changes made within 60 s of the last commit are coalesced into one commit at the end of the cooldown. A run that creates no commit does not consume the cooldown.
 - **Flush**: pending changes are committed on app shutdown, MCP shutdown and vault switch (`retarget`).
 - Vaults that are not Git repositories are skipped; the scheduler never initializes a repository.

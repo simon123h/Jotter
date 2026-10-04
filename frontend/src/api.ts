@@ -254,15 +254,6 @@ export async function deleteCanvas(projectId: string, canvasId: string): Promise
 // VAULT API
 // ==========================================
 
-export async function commitChanges(): Promise<{ status: string; committed: boolean }> {
-  const res = await fetch('/api/system/commit', { method: 'POST' });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Failed to commit changes');
-  }
-  return res.json();
-}
-
 export async function enableGitVersioning(): Promise<{ status: string; created: boolean }> {
   const res = await fetch('/api/system/git/init', { method: 'POST' });
   if (!res.ok) {

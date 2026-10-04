@@ -8,9 +8,7 @@ import {
   Plus,
   Pin,
   GitBranch,
-  GitCommitHorizontal,
   Settings,
-  Check,
   BookOpen,
   FileSpreadsheet,
   History,
@@ -36,14 +34,13 @@ const { t } = useI18n();
 const props = defineProps<{
   projects: Project[];
   activeProjectId: string;
-  commitLoading?: boolean;
-  commitSuccess?: boolean;
+  syncLoading?: boolean;
+  syncSuccess?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'create-project', title: string): void;
   (e: 'edit-project', project: Project): void;
-  (e: 'commit'): void;
   (e: 'enable-git'): void;
   (e: 'import-spreadsheet', projectId: string): void;
   (e: 'move-tasks-to-project', payload: { taskIds: string[]; projectId: string }): void;
@@ -440,59 +437,29 @@ const onVaultSelected = async (event: Event) => {
 
     <!-- Sidebar Footer Actions -->
     <div class="p-3 border-t border-theme-border flex flex-col gap-1.5 shrink-0 bg-transparent">
-      <!-- Commit Button with Time Machine (Git vaults only) -->
-      <div
+      <!-- Time Machine (Git vaults only); tints while a restore runs / succeeds -->
+      <button
         v-if="activeVault?.is_git"
-        class="relative w-full flex items-stretch rounded transition-all duration-300"
+        @click="openTimeMachineModal"
+        class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded transition-all duration-300 cursor-pointer"
         :class="
-          commitSuccess
+          syncSuccess
             ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400'
-            : commitLoading
+            : syncLoading
               ? 'bg-theme-column/20 text-theme-text-main animate-pulse'
-              : 'bg-transparent text-theme-text-muted'
-        "
-      >
-        <!-- Main Commit Button (85%) -->
-        <button
-          @click="emit('commit')"
-          class="flex-grow flex items-center justify-center gap-2 py-2 pl-3 text-xs font-semibold rounded-l transition-all duration-300 cursor-pointer"
-          :class="
-            commitSuccess
-              ? 'text-emerald-500 dark:text-emerald-400'
-              : commitLoading
-                ? 'text-theme-text-main'
-                : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30'
-          "
-          :disabled="commitLoading"
-          :title="t('commit.tooltip')"
-        >
-          <Check v-if="commitSuccess" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 animate-bounce" />
-          <GitCommitHorizontal v-else class="w-3.5 h-3.5" :class="{ 'animate-pulse': commitLoading }" />
-          <span>
-            {{ commitSuccess ? t('commit.committed') : commitLoading ? t('commit.committing') : t('commit.button') }}
-          </span>
-        </button>
-
-        <!-- Dropdown Arrow Button (15%) -->
-        <button
-          @click.stop="openTimeMachineModal"
-          class="px-2 rounded-r transition-all duration-300 cursor-pointer"
-          :class="
-            commitSuccess
-              ? 'text-emerald-500 hover:bg-emerald-500/5'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30'
-          "
-          :title="t('sidebar.timeMachineTooltip')"
-        >
-          <History class="w-3.5 h-3.5" />
-        </button>
-      </div>
+        "
+        :title="t('sidebar.timeMachineTooltip')"
+      >
+        <History class="w-3.5 h-3.5" />
+        <span>{{ t('timeMachineModal.title') }}</span>
+      </button>
 
       <!-- Enable Git versioning for non-Git vaults -->
       <button
         v-else-if="activeVault"
         @click="emit('enable-git')"
-        :disabled="!gitInstalled || commitLoading"
+        :disabled="!gitInstalled || syncLoading"
         :title="gitInstalled ? t('commit.enableTooltip') : t('commit.gitMissing')"
         class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded text-theme-text-muted transition-all cursor-pointer hover:text-theme-text-main hover:bg-theme-column/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
       >
