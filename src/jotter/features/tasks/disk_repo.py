@@ -14,9 +14,9 @@ class DiskTaskRepository:
         self.data_dir = Path(data_dir)
 
     def get_project_dir(self, project_id: str) -> Path:
-        p = self.data_dir / project_id
-        p.mkdir(parents=True, exist_ok=True)
-        return p
+        # Pure path lookup: reads must never (re)create a project folder, otherwise a late request
+        # for a deleted project resurrects it. Writers create the folder themselves.
+        return self.data_dir / project_id
 
     def get_task_file_path(self, project_id: str, task_id: str) -> Path:
         return self.get_project_dir(project_id) / f"{task_id}.md"
@@ -57,6 +57,8 @@ class DiskTaskRepository:
 
     def get_all_task_files(self, project_id: str) -> list[Path]:
         p = self.get_project_dir(project_id)
+        if not p.is_dir():
+            return []
         return [
             f
             for f in p.glob("*.md")

@@ -22,9 +22,8 @@ class BucketRepository:
             or project_id in ("null", "undefined")
         ):
             return None
-        p = self.data_dir / project_id
-        p.mkdir(parents=True, exist_ok=True)
-        return p
+        # Pure path lookup; write_project_manifest creates the folder when actually writing
+        return self.data_dir / project_id
 
     def project_exists(self, project_id: str) -> bool:
         cursor = self.conn.cursor()

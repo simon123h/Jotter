@@ -411,3 +411,17 @@ def test_list_buckets_unknown_project_returns_404_without_creating_folder(test_e
     res = client.get("/api/projects/ghost/buckets")
     assert res.status_code == 404
     assert not (Path(temp_dir) / "ghost").exists()
+
+
+def test_requests_for_deleted_project_do_not_recreate_its_folder(test_env):
+    client, temp_dir = test_env
+    pid = client.post("/api/projects", json={"title": "Doomed"}).json()["id"]
+    tid = client.post(f"/api/projects/{pid}/tasks", json={"title": "x", "bucket": "todo"}).json()["id"]
+    assert client.delete(f"/api/projects/{pid}").status_code in (200, 204)
+    assert not (Path(temp_dir) / pid).exists()
+
+    assert client.patch(f"/api/projects/{pid}/tasks/{tid}", json={"title": "y"}).status_code == 404
+    assert client.get(f"/api/projects/{pid}/tasks").status_code == 200
+    assert client.get(f"/api/projects/{pid}/buckets").status_code == 404
+    assert client.post(f"/api/projects/{pid}/buckets", json={"title": "B"}).status_code == 404
+    assert not (Path(temp_dir) / pid).exists()

@@ -46,6 +46,8 @@ class BucketApplicationService:
         return self._to_response(b)
 
     def create_bucket(self, project_id: str, req: BucketCreate) -> BucketResponse:
+        if not self.bucket_repo.project_exists(project_id):
+            raise EntityNotFoundError(f"Project '{project_id}' not found")
         existing = self.bucket_repo.get_all(project_id)
         max_pos = max((b.position for b in existing), default=0.0)
         req_pos = getattr(req, "position", None)
