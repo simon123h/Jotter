@@ -17,6 +17,7 @@ const THEME_STATUS_BAR_MAP: Record<string, { bg: string; style: Style }> = {
   frost: { bg: '#1c2541', style: Style.Dark },
   cyberpunk: { bg: '#18181b', style: Style.Dark },
   sakura: { bg: '#4c0519', style: Style.Dark },
+  'tokyo-night': { bg: '#1a1b26', style: Style.Dark },
 };
 
 export type SortBy = 'alpha' | 'manual';

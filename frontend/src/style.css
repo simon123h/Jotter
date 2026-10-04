@@ -166,6 +166,26 @@
   --theme-text-input: #fff1f2;
 }
 
+/* Theme: Tokyo Night (Dark) */
+.theme-tokyo-night {
+  --theme-bg-base: #1a1b26; /* Tokyo Night Storm/Night dark blue-black */
+  --theme-bg-column: rgba(26, 27, 38, 0.7); /* dark navy column */
+  --theme-bg-card: #24283b; /* Tokyo Night card background */
+  --theme-border: rgba(65, 72, 104, 0.6); /* Tokyo Night dark border */
+  --theme-primary: #7aa2f7; /* Tokyo Night blue */
+  --theme-primary-hover: #89b4fa; /* brightened blue */
+  --theme-accent: #bb9af7; /* Tokyo Night purple */
+  --theme-accent-hover: #c0caf5; /* light lavender text */
+  --theme-grad-from: #7aa2f7;
+  --theme-grad-to: #bb9af7; /* blue to purple gradient */
+  --theme-ring: rgba(122, 162, 247, 0.3);
+
+  --theme-text-main: #c0caf5; /* Tokyo Night primary fg */
+  --theme-text-card: #c0caf5;
+  --theme-text-muted: #7982a9; /* Tokyo Night comments/muted */
+  --theme-text-input: #c0caf5;
+}
+
 /* Theme: Nordic Light (Light) */
 .theme-nordic-light {
   --theme-bg-base: #f8fafc; /* slate-50 */
