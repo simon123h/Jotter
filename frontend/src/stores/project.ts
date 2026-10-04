@@ -166,6 +166,16 @@ export const useProjectStore = defineStore('project', () => {
     await Promise.all(promises);
   };
 
+  // Drop all vault-specific data immediately (e.g. while switching vaults)
+  const reset = () => {
+    projects.value = [];
+    buckets.value = [];
+    tasks.value = [];
+    projectsLoaded.value = false;
+    cachedQueryKey.value = null;
+    error.value = null;
+  };
+
   const triggerCommit = async () => {
     if (syncLoading.value) return;
     syncLoading.value = true;
@@ -275,6 +285,7 @@ export const useProjectStore = defineStore('project', () => {
     upsertTask,
     ensureTaskLoaded,
     invalidate,
+    reset,
     triggerCommit,
     restoreToCommit,
     moveTasksToProject,

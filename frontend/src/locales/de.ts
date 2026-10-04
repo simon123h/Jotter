@@ -232,6 +232,7 @@ export const de = {
     manage: 'Vaults verwalten',
     active: 'Aktiv',
     switch: 'Wechseln',
+    loading: 'Vault wird geladen...',
     switchTitle: 'Vault wechseln?',
     switchPrompt: 'Jetzt zu "{name}" wechseln?',
     notNow: 'Nicht jetzt',

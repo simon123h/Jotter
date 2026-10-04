@@ -9,6 +9,7 @@ export const useVaultStore = defineStore('vault', () => {
   const vaults = ref<Vault[]>([]);
   const activeVault = ref<Vault | null>(null);
   const loading = ref(false);
+  const switching = ref(false);
   const error = ref<string | null>(null);
 
   const gitInstalled = ref(false);
@@ -43,7 +44,11 @@ export const useVaultStore = defineStore('vault', () => {
 
   const selectVault = async (vaultId: string) => {
     loading.value = true;
+    switching.value = true;
     error.value = null;
+    // Clear the old vault's data right away so the UI reacts immediately
+    useProjectStore().reset();
+    useTimeblockStore().reset();
     try {
       const switched = await switchVault(vaultId);
       activeVault.value = switched;
@@ -52,9 +57,13 @@ export const useVaultStore = defineStore('vault', () => {
       await reloadWorkspace();
     } catch (err: any) {
       error.value = err.message || 'Failed to switch vault';
+      // Restore the previous vault's data that was cleared above
+      await fetchVaults();
+      await reloadWorkspace().catch(() => {});
       throw err;
     } finally {
       loading.value = false;
+      switching.value = false;
     }
   };
 
@@ -95,14 +104,20 @@ export const useVaultStore = defineStore('vault', () => {
     error.value = null;
     try {
       const wasActive = activeVault.value?.id === vaultId;
+      if (wasActive) switching.value = true;
       await deleteVault(vaultId);
       await fetchVaults();
-      if (wasActive) await reloadWorkspace();
+      if (wasActive) {
+        useProjectStore().reset();
+        useTimeblockStore().reset();
+        await reloadWorkspace();
+      }
     } catch (err: any) {
       error.value = err.message || 'Failed to delete vault';
       throw err;
     } finally {
       loading.value = false;
+      switching.value = false;
     }
   };
 
@@ -110,6 +125,7 @@ export const useVaultStore = defineStore('vault', () => {
     vaults,
     activeVault,
     loading,
+    switching,
     error,
     isCurrentGit,
     gitInstalled,

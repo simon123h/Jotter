@@ -152,8 +152,13 @@ export const useTimeblockStore = defineStore('timeblock', () => {
     }
   };
 
+  const reset = () => {
+    timeblocks.value = [];
+  };
+
   return {
     timeblocks,
+    reset,
     loading,
     error,
     timeblockForTask,

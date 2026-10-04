@@ -230,6 +230,7 @@ export const en = {
     manage: 'Manage vaults',
     active: 'Active',
     switch: 'Switch',
+    loading: 'Loading vault...',
     switchTitle: 'Switch vault?',
     switchPrompt: 'Switch to "{name}" now?',
     notNow: 'Not now',

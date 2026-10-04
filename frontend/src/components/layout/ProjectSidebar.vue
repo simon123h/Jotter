@@ -223,7 +223,7 @@ const openTimeMachineModal = () => {
 
 // Vault management
 const vaultStore = useVaultStore();
-const { vaults, activeVault, gitInstalled } = storeToRefs(vaultStore);
+const { vaults, activeVault, gitInstalled, switching } = storeToRefs(vaultStore);
 
 onMounted(() => {
   vaultStore.fetchVaults();
@@ -317,8 +317,14 @@ const onVaultSelected = async (event: Event) => {
 
     <!-- Projects List -->
     <div ref="projectsListEl" class="flex-grow overflow-y-auto p-2 space-y-1 scroller-thin">
+      <div v-if="switching" class="flex items-center justify-center gap-2 py-6 text-xs text-theme-text-muted" data-testid="vault-switching">
+        <span class="w-3.5 h-3.5 border-2 border-theme-accent border-t-transparent rounded-full animate-spin"></span>
+        {{ t('vaults.loading') }}
+      </div>
+
       <!-- Virtual "All Projects" Item -->
       <router-link
+        v-if="!switching"
         :to="{
           name: 'project',
           params: { projectId: 'all' },
@@ -340,7 +346,7 @@ const onVaultSelected = async (event: Event) => {
       </router-link>
 
       <router-link
-        v-for="project in sortedProjects"
+        v-for="project in switching ? [] : sortedProjects"
         :key="project.id"
         :to="{
           name: 'project',
