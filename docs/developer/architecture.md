@@ -258,5 +258,12 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0003: Support Arbitrary File Slugs and Non-Enforcement of ULID Format](file:///home/simon/Code/jotter/docs/developer/adr/0003-arbitrary-task-slugs.md)
 - [ADR 0004: Silent Filesystem Indexing via Watchdog and Decoupling Git Sync](file:///home/simon/Code/jotter/docs/developer/adr/0004-silent-watchdog-sync.md)
 - [ADR 0005: Explicit In-Process CQRS and Architecture Enforcement](file:///home/simon/Code/jotter/docs/developer/adr/0005-explicit-in-process-cqrs.md)
+- [ADR 0006: Dual-Runtime Architecture (Desktop HTTP vs. Android In-Process Engine)](file:///home/simon/Code/jotter/docs/developer/adr/0006-dual-runtime-architecture.md)
+- [ADR 0007: Project Manifest (index.md) & Obsidian Folder Notes Integration](file:///home/simon/Code/jotter/docs/developer/adr/0007-project-manifest-index-md.md)
+- [ADR 0008: Selective Per-Project Git Synchronization and Offline Isolation](file:///home/simon/Code/jotter/docs/developer/adr/0008-selective-per-project-git-sync.md)
+- [ADR 0009: Cross-Platform Atomic Filesystem Writes with Exponential Backoff](file:///home/simon/Code/jotter/docs/developer/adr/0009-cross-platform-atomic-writes.md)
+- [ADR 0010: Adopting the Open JSON Canvas Format for Visual 2D Boards](file:///home/simon/Code/jotter/docs/developer/adr/0010-open-json-canvas-format.md)
+- [ADR 0011: Cross-Tab Broadcast Synchronization and Window Focus Revalidation](file:///home/simon/Code/jotter/docs/developer/adr/0011-cross-tab-broadcast-sync.md)
+
 
 
