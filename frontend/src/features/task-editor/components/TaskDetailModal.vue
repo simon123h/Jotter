@@ -3,25 +3,24 @@ import { ref, watch, computed, onUnmounted, nextTick, onMounted } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import type { Task } from '@/types';
-import { getTask, deleteTask, getAttachmentUrl, createTask } from '@/api';
+import { getTask, getAttachmentUrl } from '@/api';
 import { useI18n } from '@/composables/useI18n';
-import { useDialog } from '@/composables/useDialog';
+import { useFileDrop } from '@/composables/useFileDrop';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useProjectStore } from '@/stores/project';
-import { X, ClipboardList, Split, Trash2, Archive, ArchiveRestore, Check, Pencil, Save } from '@lucide/vue';
+import { X } from '@lucide/vue';
 import { parseTitleState } from '@/utils/titleParser';
-import { extractAllChecklistItems } from '@/utils/markdown';
 
 // Modular sub-components and composables
 import { useTaskEditor, provideTaskEditor } from '@/features/task-editor/composables/useTaskEditor';
-import TaskChecklist from '@/features/task-editor/components/TaskChecklist.vue';
-import TaskAttachments from '@/features/task-editor/components/TaskAttachments.vue';
+import { useTaskDetailActions } from '@/features/task-editor/composables/useTaskDetailActions';
+import TaskDetailView from '@/features/task-editor/components/TaskDetailView.vue';
+import TaskDetailFooter from '@/features/task-editor/components/TaskDetailFooter.vue';
 import TaskEditFields from '@/features/task-editor/components/TaskEditFields.vue';
 import TaskImageLightbox from '@/features/task-editor/components/TaskImageLightbox.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 
 const { locale, t } = useI18n();
-const { showDialog } = useDialog();
 const route = useRoute();
 const router = useRouter();
 const projectStore = useProjectStore();
@@ -53,14 +52,7 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 
 const editFieldsRef = ref<any>(null);
-const attachmentsRef = ref<any>(null);
-
-const formatTimestamp = (isoString?: string | null): string => {
-  if (!isoString) return '';
-  const d = new Date(isoString);
-  if (isNaN(d.getTime())) return isoString;
-  return d.toLocaleString();
-};
+const detailViewRef = ref<InstanceType<typeof TaskDetailView> | null>(null);
 
 const { patchTask } = useTaskMutations(
   tasks,
@@ -187,95 +179,13 @@ watch(
   { immediate: true }
 );
 
-const toggleCheckboxInBody = async (newBody: string) => {
-  if (!task.value) return;
-  try {
-    const updated = await patchTask(task.value, { body: newBody });
-    task.value = updated;
-  } catch (err: any) {
-    error.value = t('errors.updateTask', { message: err.message || err });
-  }
-};
-
-const handleSplitAllSubtasks = async () => {
-  if (!task.value || !task.value.body) return;
-
-  const { items, cleanedBody } = extractAllChecklistItems(task.value.body);
-  if (items.length === 0) return;
-
-  const confirmed = await showDialog({
-    title: t('form.splitSubtasks'),
-    message: t('form.splitSubtasksConfirm', { count: items.length }),
-    type: 'info',
-    showCancel: true,
-    confirmText: t('form.splitSubtasks'),
-    cancelText: t('buttons.cancel'),
-  });
-  if (!confirmed) return;
-
-  loading.value = true;
-  error.value = null;
-
-  try {
-    // 1. Create independent task cards for all subtasks in the current bucket
-    for (const item of items) {
-      await createTask(actualProjectId.value, {
-        title: item.title,
-        bucket: task.value.bucket,
-        tags: [...(task.value.tags || [])],
-        priority: task.value.priority || undefined,
-      });
-    }
-
-    // 2. Update current task body removing the checklist items
-    const updated = await patchTask(task.value, { body: cleanedBody });
-    task.value = updated;
-    editForm.body = cleanedBody;
-
-    // 3. Refresh board to show all newly created cards
-    refreshBoard();
-  } catch (err: any) {
-    error.value = t('errors.createTask', { message: err.message || err });
-  } finally {
-    loading.value = false;
-  }
-};
-
 const addChecklistItem = () => {
   editorAddChecklistItem(() => editFieldsRef.value?.markdownEditorRef);
-};
-
-// Full-modal Drag & Drop orchestration mapped straight into `<TaskAttachments>`
-const isDragging = ref(false);
-
-const handleDragOver = (e: DragEvent) => {
-  e.preventDefault();
-  if (e.dataTransfer?.types.includes('Files')) {
-    isDragging.value = true;
-  }
-};
-
-const handleDragLeave = (e: DragEvent) => {
-  e.preventDefault();
-  isDragging.value = false;
-};
-
-const handleDrop = async (e: DragEvent) => {
-  e.preventDefault();
-  isDragging.value = false;
-  const files = e.dataTransfer?.files;
-  if (files && files.length > 0 && attachmentsRef.value) {
-    await attachmentsRef.value.uploadFiles(files);
-  }
 };
 
 const handleUpdateTaskFromAttachments = (updated: Task) => {
   task.value = updated;
   refreshBoard();
-};
-
-const handleAttachmentsError = (message: string) => {
-  error.value = message;
 };
 
 const handlePreviewImage = (filename: string) => {
@@ -306,88 +216,24 @@ const handleSave = async () => {
   );
 };
 
-const handleDelete = async () => {
-  if (!task.value) return;
-  const confirmed = await showDialog({
-    title: t('buttons.deleteTask'),
-    message: t('deleteConfirm'),
-    type: 'warning',
-    showCancel: true,
-    confirmText: t('buttons.delete'),
-    cancelText: t('buttons.cancel'),
-  });
-  if (!confirmed) return;
-
-  loading.value = true;
-  error.value = null;
-  try {
-    await deleteTask(actualProjectId.value, task.value.id);
-    refreshBoard();
-    closeModal();
-  } catch (err: any) {
-    error.value = t('errors.deleteTask', { message: err.message || err });
-    loading.value = false;
-  }
-};
-
-const handleMarkDone = async () => {
-  if (!task.value) return;
-  try {
-    await patchTask(task.value, {
-      bucket: 'done',
-      position: 1000000.0,
-    });
-    closeModal();
-  } catch (err: any) {
-    error.value = t('errors.updateTask', { message: err.message || err });
-  }
-};
-
-const handleArchive = async () => {
-  if (!task.value) return;
-  try {
-    const updated = await patchTask(task.value, {
-      bucket: 'archive',
-    });
-    task.value = updated;
-    closeModal();
-  } catch (err: any) {
-    error.value = t('errors.updateTask', { message: err.message || err });
-  }
-};
-
-const handleUnarchive = async () => {
-  if (!task.value) return;
-  try {
-    const targetBucket = buckets.value.find((b) => b.name === 'todo')?.name || buckets.value[0]?.name || 'todo';
-    const updated = await patchTask(task.value, {
-      bucket: targetBucket,
-    });
-    task.value = updated;
-    closeModal();
-  } catch (err: any) {
-    error.value = t('errors.updateTask', { message: err.message || err });
-  }
-};
-
 const refreshBoard = () => {
   emit('refresh');
 };
 
-const getPriorityClasses = (prio: string) => {
-  switch (prio) {
-    case 'low':
-      return 'bg-blue-500/10 text-blue-400 border-blue-500/25';
-    case 'medium':
-      return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/25';
-    case 'high':
-      return 'bg-orange-500/10 text-orange-400 border-orange-500/25';
-    case 'urgent':
-      return 'bg-red-500/10 text-red-400 border-red-500/25 animate-pulse';
-    default:
-      return 'bg-slate-500/10 text-slate-400 border-slate-500/25';
-  }
-};
+const { toggleCheckboxInBody, splitAllSubtasks, deleteCurrentTask, markDone, archive, unarchive } = useTaskDetailActions({
+  task,
+  buckets,
+  actualProjectId,
+  patchTask,
+  editForm,
+  loading,
+  error,
+  closeModal,
+  refreshBoard,
+});
+
+// Dropping files anywhere on the modal uploads them as attachments (view mode only)
+const { isDragging, onDragOver, onDragLeave, onDrop } = useFileDrop((files) => detailViewRef.value?.uploadFiles(files));
 
 const handleDblClick = (event: MouseEvent) => {
   if (isEditing.value) return;
@@ -460,9 +306,9 @@ onBeforeRouteLeave(async () => {
     <div
       class="flex flex-col flex-grow overflow-hidden"
       @dblclick="handleDblClick"
-      @dragover.prevent="handleDragOver"
-      @dragleave.prevent="handleDragLeave"
-      @drop.prevent="handleDrop"
+      @dragover.prevent="onDragOver"
+      @dragleave.prevent="onDragLeave"
+      @drop.prevent="onDrop"
     >
       <!-- Error alert -->
       <div v-if="error" class="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded">
@@ -478,191 +324,38 @@ onBeforeRouteLeave(async () => {
         </div>
 
         <div v-else-if="task">
-          <!-- View Mode -->
-          <div v-if="!isEditing" class="space-y-4">
-            <div>
-              <h2 class="text-xl font-bold text-theme-text-main mb-1.5 leading-snug task-title select-text">
-                {{ task.title }}
-              </h2>
-
-              <!-- Tags -->
-              <div v-if="task.tags?.length" class="flex flex-wrap gap-1 mt-2">
-                <span
-                  v-for="tag in task.tags"
-                  :key="tag"
-                  class="text-xs font-semibold px-2 py-0.5 bg-theme-card text-theme-text-card border border-theme-border rounded cursor-pointer transition-transform hover:scale-105"
-                  @click="handleTagClick(tag)"
-                >
-                  {{ tag }}
-                </span>
-              </div>
-
-              <!-- Due Date, Planned Date & Priority Info -->
-              <div v-if="task.due_date || task.planned_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
-                <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.dueLabel') }}</span>
-                  <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-                    {{ new Date(task.due_date).toLocaleDateString() }}
-                  </span>
-                </div>
-                <div v-if="task.planned_date" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.plannedLabel') }}</span>
-                  <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-                    {{ t('plannedDateOptions.' + task.planned_date) }}
-                  </span>
-                </div>
-                <div v-if="task.postponed_until" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{
-                    t('taskDetail.postponedUntilLabel')
-                  }}</span>
-                  <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-                    {{ new Date(task.postponed_until).toLocaleDateString() }}
-                  </span>
-                </div>
-                <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
-                  <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.priorityLabel') }}</span>
-                  <span
-                    class="px-2 py-0.5 rounded border text-xs font-extrabold uppercase tracking-wider"
-                    :class="getPriorityClasses(task.priority)"
-                  >
-                    {{ t('priorityOptions.' + task.priority) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div class="border-t border-theme-border pt-4">
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('notesLabel') }}</h4>
-                <div class="flex items-center gap-2">
-                  <button
-                    v-if="hasChecklist"
-                    type="button"
-                    @click="handleSplitAllSubtasks"
-                    class="p-1 text-theme-text-muted hover:text-theme-accent hover:bg-theme-border/20 rounded transition-colors cursor-pointer opacity-70 hover:opacity-100"
-                    :title="t('form.splitSubtasksTooltip')"
-                    :aria-label="t('form.splitSubtasksTooltip')"
-                  >
-                    <Split class="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    v-if="!hasChecklist"
-                    type="button"
-                    @click="addChecklistItem"
-                    class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
-                  >
-                    <ClipboardList class="w-3.5 h-3.5" />
-                    {{ t('form.quickAddChecklist') }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Rendered Markdown with interactive checkboxes -->
-              <TaskChecklist :body="task.body" @update:body="toggleCheckboxInBody" @error="error = $event" />
-            </div>
-
-            <div
-              v-if="task.created_at || task.updated_at"
-              class="text-xs text-theme-text-muted flex gap-4 border-t border-theme-border pt-3 font-mono"
-            >
-              <span v-if="task.created_at">{{ t('timestampCreated', { date: formatTimestamp(task.created_at) }) }}</span>
-              <span v-if="task.updated_at">{{ t('timestampUpdated', { date: formatTimestamp(task.updated_at) }) }}</span>
-            </div>
-
-            <!-- Attachments subcomponent -->
-            <TaskAttachments
-              ref="attachmentsRef"
-              :project-id="actualProjectId"
-              :task-id="task.id"
-              :attachments="task.attachments ?? []"
-              @update-task="handleUpdateTaskFromAttachments"
-              @error="handleAttachmentsError"
-              @preview-image="handlePreviewImage"
-            />
-          </div>
+          <TaskDetailView
+            v-if="!isEditing"
+            ref="detailViewRef"
+            :task="task"
+            :project-id="actualProjectId"
+            :has-checklist="hasChecklist"
+            @tag-click="handleTagClick"
+            @update-body="toggleCheckboxInBody"
+            @split-subtasks="splitAllSubtasks"
+            @add-checklist="addChecklistItem"
+            @update-task="handleUpdateTaskFromAttachments"
+            @error="error = $event"
+            @preview-image="handlePreviewImage"
+          />
 
           <!-- Edit Mode -->
           <TaskEditFields v-else ref="editFieldsRef" :buckets="buckets" @add-checklist="addChecklistItem" />
         </div>
       </div>
 
-      <!-- Footer Buttons -->
-      <div class="px-4 py-3 border-t border-theme-border flex flex-wrap justify-between items-center gap-2 bg-theme-card/30 shrink-0">
-        <div>
-          <button
-            v-if="task && !isEditing"
-            @click="handleDelete"
-            class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-            :title="t('buttons.delete')"
-          >
-            <Trash2 class="w-4 h-4" />
-            <span class="hidden sm:inline">{{ t('buttons.delete') }}</span>
-          </button>
-        </div>
-        <div class="flex flex-wrap items-center gap-2 ml-auto">
-          <!-- View mode buttons -->
-          <template v-if="!isEditing">
-            <button
-              v-if="task && task.bucket !== 'archive'"
-              @click="handleArchive"
-              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-              :title="t('buttons.archive')"
-            >
-              <Archive class="w-4 h-4" />
-              <span class="hidden sm:inline">{{ t('buttons.archive') }}</span>
-            </button>
-            <button
-              v-if="task && task.bucket === 'archive'"
-              @click="handleUnarchive"
-              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-              :title="t('buttons.unarchive')"
-            >
-              <ArchiveRestore class="w-4 h-4" />
-              <span class="hidden sm:inline">{{ t('buttons.unarchive') }}</span>
-            </button>
-            <button
-              v-if="task && task.bucket !== 'done' && task.bucket !== 'archive'"
-              @click="handleMarkDone"
-              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-              :title="t('buttons.markDone')"
-            >
-              <Check class="w-4 h-4" />
-              <span class="hidden sm:inline">{{ t('buttons.markDone') }}</span>
-            </button>
-            <button
-              @click="isEditing = true"
-              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/25 rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-              :title="t('buttons.edit')"
-            >
-              <Pencil class="w-4 h-4" />
-              <span class="hidden sm:inline">{{ t('buttons.edit') }}</span>
-            </button>
-          </template>
-
-          <!-- Edit mode buttons -->
-          <template v-else>
-            <button
-              @click="cancelEdit"
-              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-              :disabled="loading"
-              :title="t('buttons.cancel')"
-            >
-              <X class="w-4 h-4" />
-              <span class="hidden sm:inline">{{ t('buttons.cancel') }}</span>
-            </button>
-            <button
-              @click="handleSave"
-              class="text-sm font-semibold px-2.5 sm:px-3 py-1.5 bg-theme-primary hover:bg-theme-primary-hover text-white rounded shadow-sm transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-              :disabled="loading"
-              :title="t('buttons.save')"
-            >
-              <span v-if="loading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <Save v-else class="w-4 h-4" />
-              <span class="hidden sm:inline">{{ t('buttons.save') }}</span>
-            </button>
-          </template>
-        </div>
-      </div>
+      <TaskDetailFooter
+        :task="task"
+        :is-editing="isEditing"
+        :loading="loading"
+        @delete="deleteCurrentTask"
+        @archive="archive"
+        @unarchive="unarchive"
+        @mark-done="markDone"
+        @edit="isEditing = true"
+        @cancel="cancelEdit"
+        @save="handleSave"
+      />
     </div>
   </BaseModal>
 
