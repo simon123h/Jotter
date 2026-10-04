@@ -51,48 +51,45 @@ const moveToBucket = async (bucketName: string) => {
   next();
 };
 
-// Global hotkeys inside triage mode
-useKeyboardShortcuts([
-  { key: 'j', callback: () => !showBucketPicker.value && next() },
-  { key: 'ArrowRight', callback: () => !showBucketPicker.value && next() },
-  { key: 'k', callback: () => !showBucketPicker.value && prev() },
-  { key: 'ArrowLeft', callback: () => !showBucketPicker.value && prev() },
-  {
-    key: 'h',
-    callback: () => {
-      showHelp.value = !showHelp.value;
+// Global hotkeys inside triage mode. They are inert while the bucket picker is open, which owns the keyboard
+// (number keys pick a bucket, Escape closes) and must not also change priority, dates and so on.
+const unlessPickerOpen = (callback: () => unknown) => () => {
+  if (!showBucketPicker.value) callback();
+};
+
+useKeyboardShortcuts(
+  [
+    { key: 'j', callback: next },
+    { key: 'ArrowRight', callback: next },
+    { key: 'k', callback: prev },
+    { key: 'ArrowLeft', callback: prev },
+    { key: 'h', callback: () => (showHelp.value = !showHelp.value) },
+    { key: '1', callback: () => patchCurrentTask({ priority: 'urgent' }) },
+    { key: '2', callback: () => patchCurrentTask({ priority: 'high' }) },
+    { key: '3', callback: () => patchCurrentTask({ priority: 'medium' }) },
+    { key: '4', callback: () => patchCurrentTask({ priority: 'low' }) },
+    { key: '0', callback: () => patchCurrentTask({ priority: 'none' }) },
+    { key: 't', callback: () => patchCurrentTask({ planned_date: 'today' }) },
+    { key: 'o', callback: () => patchCurrentTask({ planned_date: 'tomorrow' }) },
+    { key: 'w', callback: () => patchCurrentTask({ planned_date: 'thisWeek' }) },
+    { key: 's', callback: () => patchCurrentTask({ planned_date: 'sometime' }) },
+    { key: 'u', callback: () => patchCurrentTask({ planned_date: '' }) },
+    { key: 'c', callback: cycleColor },
+    { key: 'v', callback: markTaskDone },
+    { key: 'd', callback: removeCurrentTask },
+    { key: 'Backspace', callback: removeCurrentTask },
+    { key: 'm', callback: () => (showBucketPicker.value = true) },
+    { key: 'a', callback: () => triageCardRef.value?.startAddTag() },
+    {
+      key: 'Enter',
+      callback: () => {
+        if (triageCardRef.value && !triageCardRef.value.isEditingTitle && !triageCardRef.value.isEditingDescription) {
+          triageCardRef.value.startEditTitle();
+        }
+      },
     },
-  },
-  { key: '1', callback: () => patchCurrentTask({ priority: 'urgent' }) },
-  { key: '2', callback: () => patchCurrentTask({ priority: 'high' }) },
-  { key: '3', callback: () => patchCurrentTask({ priority: 'medium' }) },
-  { key: '4', callback: () => patchCurrentTask({ priority: 'low' }) },
-  { key: '0', callback: () => patchCurrentTask({ priority: 'none' }) },
-  { key: 't', callback: () => patchCurrentTask({ planned_date: 'today' }) },
-  { key: 'o', callback: () => patchCurrentTask({ planned_date: 'tomorrow' }) },
-  { key: 'w', callback: () => patchCurrentTask({ planned_date: 'thisWeek' }) },
-  { key: 's', callback: () => patchCurrentTask({ planned_date: 'sometime' }) },
-  { key: 'u', callback: () => patchCurrentTask({ planned_date: '' }) },
-  { key: 'c', callback: () => cycleColor() },
-  { key: 'v', callback: () => markTaskDone() },
-  { key: 'd', callback: () => removeCurrentTask() },
-  { key: 'Backspace', callback: () => removeCurrentTask() },
-  {
-    key: 'm',
-    callback: () => {
-      showBucketPicker.value = true;
-    },
-  },
-  { key: 'a', callback: () => triageCardRef.value?.startAddTag() },
-  {
-    key: 'Enter',
-    callback: () => {
-      if (triageCardRef.value && !triageCardRef.value.isEditingTitle && !triageCardRef.value.isEditingDescription) {
-        triageCardRef.value.startEditTitle();
-      }
-    },
-  },
-]);
+  ].map((shortcut) => ({ ...shortcut, callback: unlessPickerOpen(shortcut.callback) }))
+);
 </script>
 
 <template>

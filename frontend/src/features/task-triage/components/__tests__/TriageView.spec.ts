@@ -1,5 +1,5 @@
-import { beforeAll, describe, it, expect, vi, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { afterEach, beforeAll, describe, it, expect, vi, beforeEach } from 'vitest';
+import { mount, enableAutoUnmount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import TriageView from '@/features/task-triage/components/TriageView.vue';
@@ -11,6 +11,9 @@ vi.mock('@/api', () => ({
   updateTask: vi.fn().mockResolvedValue({}),
   deleteTask: vi.fn().mockResolvedValue({}),
 }));
+
+// Each mounted view listens for hotkeys on window, so unmount between tests to keep them isolated
+enableAutoUnmount(afterEach);
 
 describe('TriageView.vue', () => {
   let pinia: any;
@@ -235,7 +238,35 @@ describe('TriageView.vue', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     await nextTick();
 
+    expect(updateTask).toHaveBeenCalledTimes(1);
     expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { bucket: 'progress' });
+  });
+
+  it('ignores the other hotkeys while the bucket picker is open', async () => {
+    const wrapper = mount(TriageView, {
+      props: {
+        tasks: mockTasks,
+        buckets: mockBuckets,
+      },
+    });
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm' }));
+    await nextTick();
+    expect(wrapper.text()).toContain('Move to Column:');
+
+    // 'v' (mark done), 't' (plan today) and '0' (clear priority; not a valid bucket number) must do nothing behind the picker
+    for (const key of ['v', 't', '0']) {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key }));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(updateTask).not.toHaveBeenCalled();
+
+    // Once the picker is closed they work again
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await nextTick();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '0' }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { priority: 'none' });
   });
 
   it('deletes the task and confirms', async () => {
