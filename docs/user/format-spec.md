@@ -122,7 +122,7 @@ Welcome to the project board documentation note. You can freely edit this markdo
 | `buckets` | Array of Objects | Yes | List of board columns (buckets), ordered by `position`. Each object contains `name` (slug), `title`, `position`, `color`, `layout`, `max_tasks`, and `is_default`. |
 
 > [!NOTE]
-> **Automatic Migration**: Workspaces containing legacy `projects.json` or `buckets.json` files are automatically migrated to `index.md` files upon launch or synchronization.
+> **Automatic Migration**: Workspaces containing legacy per-project `buckets.json` files are automatically migrated to `index.md` files upon launch or synchronization. The old workspace-level `projects.json` is no longer read; project metadata comes from each project's `index.md`.
 
 ---
 

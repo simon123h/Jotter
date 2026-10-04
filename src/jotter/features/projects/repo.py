@@ -122,31 +122,13 @@ class ProjectRepository:
         return int(row["cnt"]) if row else 0
 
     def discover_disk_projects(self) -> list[str]:
-        """Discovers valid project folders on disk, including legacy projects.json definitions."""
+        """Discovers valid project folders on disk."""
         if not self.data_dir or not self.data_dir.is_dir():
             return []
         projects: set[str] = set()
         for entry in self.data_dir.iterdir():
             if entry.is_dir() and not entry.name.startswith(".") and entry.name != "tasks.db":
                 projects.add(entry.name)
-
-        legacy_file = self.data_dir / "projects.json"
-        if legacy_file.is_file():
-            try:
-                import json
-
-                content = json.loads(legacy_file.read_text(encoding="utf-8"))
-                if isinstance(content, list):
-                    for p in content:
-                        if isinstance(p, dict) and p.get("id"):
-                            projects.add(str(p["id"]).strip())
-                elif isinstance(content, dict):
-                    for k, v in content.items():
-                        p_id = (v.get("id") if isinstance(v, dict) else None) or k
-                        if p_id:
-                            projects.add(str(p_id).strip())
-            except Exception:
-                pass
 
         return sorted(list(projects))
 

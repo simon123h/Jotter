@@ -252,36 +252,13 @@ def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
     assert tasks_c[0].id == t_c_old.id
 
 
-def test_sync_migrates_projects_json_to_index_md(temp_dir, test_env):
+def test_sync_migrates_buckets_json_to_index_md(temp_dir, test_env):
     conn = get_db(str(Path(temp_dir) / "tasks.db"))
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
     bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
 
-    # 1. Simulate legacy projects.json in root data directory
-    projects_json_path = Path(temp_dir) / "projects.json"
-    projects_json_path.write_text(
-        json.dumps(
-            [
-                {
-                    "id": "alpha",
-                    "title": "Alpha Project",
-                    "description": "Alpha team notes and tasks",
-                    "done_clean_period": 30,
-                    "created_at": "2026-01-01T10:00:00Z",
-                },
-                {
-                    "id": "beta",
-                    "name": "Beta Board",
-                    "description": "Beta project board",
-                    "doneCleanPeriod": 7,
-                },
-            ]
-        ),
-        encoding="utf-8",
-    )
-
-    # 2. Simulate legacy buckets.json in alpha project folder
+    # 1. Simulate legacy buckets.json in alpha project folder
     alpha_dir = Path(temp_dir) / "alpha"
     alpha_dir.mkdir(parents=True, exist_ok=True)
     alpha_buckets_file = alpha_dir / "buckets.json"
@@ -295,10 +272,10 @@ def test_sync_migrates_projects_json_to_index_md(temp_dir, test_env):
         encoding="utf-8",
     )
 
-    # 3. Trigger sync
+    # 2. Trigger sync
     sync_svc.sync_db_only()
 
-    # 4. Verify index.md was generated for both projects
+    # 3. Verify index.md was generated
     alpha_index = alpha_dir / "index.md"
     assert alpha_index.is_file()
     alpha_content = alpha_index.read_text(encoding="utf-8")
@@ -306,33 +283,14 @@ def test_sync_migrates_projects_json_to_index_md(temp_dir, test_env):
     # Frontmatter should contain project metadata and buckets
     assert "type: project" in alpha_content
     assert "id: alpha" in alpha_content
-    assert "title: Alpha Project" in alpha_content
-    assert "description: Alpha team notes and tasks" in alpha_content
-    assert "done_clean_period: 30" in alpha_content
+    assert "title: Alpha" in alpha_content
     assert "name: ideas" in alpha_content
     assert "title: Ideas Column" in alpha_content
 
-    # Beta project
-    beta_dir = Path(temp_dir) / "beta"
-    beta_index = beta_dir / "index.md"
-    assert beta_index.is_file()
-    beta_content = beta_index.read_text(encoding="utf-8")
-    assert "id: beta" in beta_content
-    assert "title: Beta Board" in beta_content
-    assert "done_clean_period: 7" in beta_content
-
-    # 5. Verify SQLite contains the project metadata
     proj_alpha = proj_svc.get_project("alpha")
-    assert proj_alpha.id == "alpha"
-    assert proj_alpha.title == "Alpha Project"
-    assert proj_alpha.done_clean_period == 30
+    assert proj_alpha.title == "Alpha"
 
-    proj_beta = proj_svc.get_project("beta")
-    assert proj_beta.id == "beta"
-    assert proj_beta.title == "Beta Board"
-    assert proj_beta.done_clean_period == 7
-
-    # 6. Verify buckets were registered in SQLite
+    # 4. Verify buckets were registered in SQLite
     alpha_buckets = bucket_svc.get_all_buckets("alpha")
     assert len(alpha_buckets) == 2
     assert alpha_buckets[0].name == "ideas"

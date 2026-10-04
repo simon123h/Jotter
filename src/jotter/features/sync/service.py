@@ -44,25 +44,7 @@ class SyncApplicationService:
         """Reconciles SQLite database index against disk files and prunes expired done tasks."""
         from jotter.features.projects.manifest import read_project_manifest
 
-        # 0. Load legacy projects.json if present
-        legacy_projects_file = Path(self.data_dir) / "projects.json"
-        legacy_projects_map: dict[str, dict] = {}
-        if legacy_projects_file.is_file():
-            try:
-                content = json.loads(legacy_projects_file.read_text(encoding="utf-8"))
-                if isinstance(content, list):
-                    for p in content:
-                        if isinstance(p, dict) and p.get("id"):
-                            legacy_projects_map[str(p["id"]).strip()] = p
-                elif isinstance(content, dict):
-                    for k, v in content.items():
-                        if isinstance(v, dict):
-                            p_id = str(v.get("id") or k).strip()
-                            legacy_projects_map[p_id] = v
-            except Exception as e:
-                logger.warning("Failed to parse legacy projects.json: %s", e)
-
-        # 1. Discover all projects on disk (and from legacy projects.json)
+        # 1. Discover all projects on disk
         disk_projects = self.project_repo.discover_disk_projects()
         existing_db_projects = self.project_repo.get_all()
 
@@ -74,9 +56,8 @@ class SyncApplicationService:
         for proj_id in disk_projects:
             proj_dir = Path(self.data_dir) / proj_id
             proj_dir.mkdir(parents=True, exist_ok=True)
-            legacy_data = legacy_projects_map.get(proj_id)
 
-            project, buckets = read_project_manifest(proj_dir, fallback_id=proj_id, legacy_data=legacy_data)
+            project, buckets = read_project_manifest(proj_dir, fallback_id=proj_id)
 
             self.project_repo.save(project)
             for b in buckets:

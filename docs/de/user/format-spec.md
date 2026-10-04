@@ -122,7 +122,7 @@ Willkommen in der Dokumentations-Notiz des Projekt-Boards. Du kannst diesen Mark
 | `buckets` | Array von Objekten | Ja | Liste der Spalten (Buckets), sortiert nach `position`. Jedes Objekt enthält `name` (Slug), `title`, `position`, `color`, `layout`, `max_tasks` und `is_default`. |
 
 > [!NOTE]
-> **Automatische Migration**: Workspaces mit älteren `projects.json`- oder `buckets.json`-Dateien werden beim Starten oder Synchronisieren automatisch in `index.md`-Dateien migriert.
+> **Automatische Migration**: Workspaces mit älteren projektbezogenen `buckets.json`-Dateien werden beim Starten oder Synchronisieren automatisch in `index.md`-Dateien migriert. Die frühere workspace-weite `projects.json` wird nicht mehr gelesen; Projektdaten stammen aus der `index.md` des jeweiligen Projekts.
 
 ---
 
