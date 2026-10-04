@@ -233,11 +233,19 @@ Project overview notes and documentation.
 
 ---
 
-## 10. API & OpenAPI Documentation
+## 10. API, OpenAPI & MCP Documentation
 
-Jotter provides automated OpenAPI 3.0 documentation served directly by FastAPI.
+Jotter provides dual interfaces for external programmatic access:
 
-- **Interactive API Docs**: When running the Jotter server, interactive documentation is available at `http://localhost:58271/docs` (Swagger UI) and `http://localhost:58271/redoc` (ReDoc).
+1. **REST & OpenAPI 3.0**:
+   - Automated OpenAPI specification served directly by FastAPI.
+   - **Interactive API Docs**: When running the Jotter server, interactive documentation is available at `http://localhost:58271/docs` (Swagger UI) and `http://localhost:58271/redoc` (ReDoc).
+
+2. **Model Context Protocol (MCP)**:
+   - Built-in stdio-based MCP server (`jotter mcp` implemented via `FastMCP`).
+   - Enables LLMs and AI agents (such as Claude Desktop, Cursor, or Antigravity) to inspect projects, read live Kanban boards, filter tasks, create/update/move tasks, and run Git synchronization.
+   - Implements anti-flooding safeguards for agents: `list_tasks` defaults to active tasks (`include_done=False`), and board resources (`jotter://projects/{id}/board`) collapse done/archived columns into count summaries.
+   - Detailed specification and parameters are documented in [REST API & MCP Reference](file:///home/simon/Code/jotter/docs/developer/api.md).
 
 ---
 

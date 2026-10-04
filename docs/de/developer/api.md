@@ -64,8 +64,8 @@ Jotter verfügt über einen integrierten MCP-Server, mit dem KI-Assistenten (Cla
 jotter mcp
 ```
 
-### Claude Desktop Konfiguration
-Füge Jotter zu deiner `claude_desktop_config.json` hinzu:
+### Claude Desktop & Agenten-Konfiguration
+Füge Jotter zu deiner `claude_desktop_config.json` bzw. Agenten-Konfiguration hinzu:
 
 ```json
 {
@@ -79,25 +79,49 @@ Füge Jotter zu deiner `claude_desktop_config.json` hinzu:
 ```
 
 ### Verfügbare MCP-Tools
-* `list_projects`: Alle Projekte auflisten.
-* `get_project`: Projektdetails und Einstellungen anhand der ID abrufen.
-* `create_project`: Neues Projektboard mit Standardspalten erstellen.
-* `list_buckets`: Kanban-Spalten für ein Projekt auflisten.
-* `create_bucket`: Neue Kanban-Spalte/Bucket zu einem Projekt hinzufügen.
-* `list_tasks`: Aufgaben nach Spalte, Tag, Priorität, Datum oder Suchbegriff filtern.
-* `get_task`: Vollständige Aufgabendetails und Markdown-Beschreibung abrufen.
-* `create_task`: Neue Aufgabe auf dem Board erstellen.
-* `batch_create_tasks`: Mehrere Aufgaben in einer einzigen Batch-Operation erstellen.
-* `update_task`: Metadaten oder Beschreibung einer Aufgabe bearbeiten.
-* `move_task`: Aufgabe zwischen Spalten oder über Projekte hinweg verschieben.
-* `delete_task`: Aufgabe löschen.
-* `sync_database`: Dateisystem-Markdown-Dateien mit dem SQLite-Suchindex abgleichen.
-* `git_sync`: Git-Synchronisierung (Add, Commit, Pull, Push) für konfigurierte Git-Remotes ausführen.
+
+#### Projekt-Operationen
+* `list_projects()`: Alle Projekte auflisten (ID, Titel, Beschreibung, Git-Remote).
+* `get_project(project_id="default")`: Projektdetails und Einstellungen anhand der ID abrufen.
+* `create_project(title, id=None, description=None, git_remote=None)`: Neues Projektboard mit Standardspalten (`todo`, `in-progress`, `done`) erstellen.
+
+#### Spalten- / Bucket-Operationen
+* `list_buckets(project_id="default")`: Kanban-Spalten/Buckets für ein Projekt auflisten.
+* `create_bucket(title, project_id="default", name=None)`: Neue Kanban-Spalte/Bucket zu einem Projekt hinzufügen.
+
+#### Aufgaben-Operationen
+* `list_tasks(...)`: Aufgaben mit flexiblen Filtern abfragen:
+  - `project_id: str | None`: Zielprojekt (`None` = Standardprojekt).
+  - `bucket: str | None`: Einzelne Spalte (z. B. `"todo"`).
+  - `buckets: list[str] | None`: Mehrere Spalten filtern (z. B. `["todo", "in-progress"]`).
+  - `include_done: bool = False`: **Standardmäßig (`False`) werden erledigte und archivierte Aufgaben (`done`, `archive`) ausgeschlossen**, um Kontext-Überflutung für KI-Modelle zu verhindern. Auf `True` setzen, um alle Aufgaben einzubeziehen.
+  - `exclude_buckets: list[str] | None`: Explizite Ausschlussliste von Spaltennamen.
+  - `tag: str | None` / `tags: list[str] | None`: Einzelne oder mehrere Tags filtern.
+  - `tag_mode: "any" | "all" = "any"`: Mindestens ein Tag (`any`) oder alle Tags (`all`) erforderlich.
+  - `search: str | None`: Volltextsuche in Titeln und Notizen.
+  - `priority: "none" | "low" | "medium" | "high" | "urgent" | None`: Nach Priorität filtern.
+  - `due_before: str | None` / `due_after: str | None`: Fälligkeitszeitraum (`YYYY-MM-DD`).
+  - `planned_date: str | None`: Nach geplantem Datum filtern (`YYYY-MM-DD`).
+  - `created_before / created_after / updated_before / updated_after: str | None`: Zeitstempel-Filter (ISO-Format).
+  - `limit: int | None`: Maximale Anzahl zurückzugebender Aufgaben.
+* `get_task(task_id, project_id="default")`: Vollständige Aufgabendetails und Markdown-Beschreibung abrufen.
+* `create_task(title, body="", project_id="default", bucket="todo", tags=None, priority=None, due_date=None, planned_date=None)`: Neue Aufgabe auf dem Board anlegen.
+* `batch_create_tasks(tasks, project_id="default")`: Mehrere Aufgaben auf einmal erstellen.
+* `update_task(task_id, title=None, body=None, bucket=None, tags=None, priority=None, due_date=None, planned_date=None, project_id="default")`: Metadaten oder Notiztext bearbeiten.
+* `move_task(task_id, bucket, position=None, project_id="default", target_project_id=None)`: Aufgabe zwischen Spalten oder über Projekte hinweg verschieben.
+* `delete_task(task_id, project_id="default")`: Aufgabe löschen und Markdown-Datei entfernen.
+
+#### Synchronisations-Tools
+* `sync_database()`: Dateisystem-Markdown-Dateien mit dem SQLite-Suchindex abgleichen.
+* `git_sync()`: Git-Synchronisierung (`add`, `commit`, `pull`, `push`) für konfigurierte Git-Remotes ausführen und SQLite-Index aktualisieren.
+
+---
 
 ### Verfügbare MCP-Ressourcen
+
 MCP-Clients können Board-Kontexte direkt und ohne separate Tool-Aufrufe über standardisierte URI-Schemata einbinden:
 * `jotter://projects`: Markdown-Übersicht aller Projekte, Beschreibungen und Spaltenstrukturen.
-* `jotter://projects/{project_id}/board`: Live-Kanban-Board-Ansicht in Markdown mit allen Spalten und aktiven Aufgaben inkl. Prioritäten und Fälligkeiten.
+* `jotter://projects/{project_id}/board`: Live-Kanban-Board-Ansicht in Markdown mit Spalten und aktiven Aufgaben inkl. Prioritäten, Fälligkeiten und Tags. **Hinweis**: Die Spalten `done` und `archive` werden automatisch auf eine Aufgabenanzahl zusammengeklappt, um den Kontext schlank zu halten (z. B. `## Done (done) — 42 tasks (collapsed)`).
 * `jotter://tasks/{task_id}`: Roher Markdown-Dateiinhalt mit YAML-Frontmatter und Notiztext für eine bestimmte Aufgabe.
 * `jotter://projects/{project_id}/tasks/{task_id}`: Roher Markdown-Dateiinhalt für eine bestimmte Aufgabe innerhalb eines definierten Projekts.
 

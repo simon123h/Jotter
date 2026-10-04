@@ -57,15 +57,15 @@ Jotter comes with auto-generated interactive OpenAPI documentation built directl
 
 ## Model Context Protocol (MCP) Integration
 
-Jotter includes a built-in MCP server that allows AI assistants (Claude Desktop, Cursor, Antigravity, etc.) to query, create, update, and move tasks on your board.
+Jotter includes a built-in MCP server that allows AI assistants (Claude Desktop, Cursor, Antigravity, etc.) to query, create, update, and move tasks on your board via standard stdio JSON-RPC.
 
 ### Running the MCP Server
 ```bash
 jotter mcp
 ```
 
-### Claude Desktop Configuration
-Add Jotter to your `claude_desktop_config.json`:
+### Claude Desktop & Agent Configuration
+Add Jotter to your `claude_desktop_config.json` or agent MCP configuration:
 
 ```json
 {
@@ -79,26 +79,50 @@ Add Jotter to your `claude_desktop_config.json`:
 ```
 
 ### Available MCP Tools
-* `list_projects`: List all projects.
-* `get_project`: Retrieve project details and settings by ID.
-* `create_project`: Create a new project board with default columns.
-* `list_buckets`: List Kanban columns for a project.
-* `create_bucket`: Add a new Kanban column/bucket to a project.
-* `list_tasks`: Query tasks with filters (`project_id`, `bucket`, `tag`, `search`, `priority`, `due_before`, `due_after`).
-* `get_task`: Retrieve task details and markdown content.
-* `create_task`: Create a new task on the board.
-* `batch_create_tasks`: Create multiple tasks on the board in a single batch operation.
-* `update_task`: Update task properties or notes.
-* `move_task`: Move a task between columns or across projects.
-* `delete_task`: Delete a task.
-* `sync_database`: Reconcile Markdown files on disk with the SQLite search index.
-* `git_sync`: Run Git synchronization (add, commit, pull, push) for configured Git remotes.
+
+#### Project Operations
+* `list_projects()`: List all projects with id, title, description, and git remote.
+* `get_project(project_id="default")`: Retrieve project details and settings by ID.
+* `create_project(title, id=None, description=None, git_remote=None)`: Create a new project board with default columns (`todo`, `in-progress`, `done`).
+
+#### Column / Bucket Operations
+* `list_buckets(project_id="default")`: List Kanban columns/buckets for a project.
+* `create_bucket(title, project_id="default", name=None)`: Add a new Kanban column/bucket to a project.
+
+#### Task Operations
+* `list_tasks(...)`: Query and filter tasks with rich options:
+  - `project_id: str | None`: Target project (`None` defaults to default project).
+  - `bucket: str | None`: Single column bucket to filter by (e.g. `"todo"`).
+  - `buckets: list[str] | None`: Filter by multiple column buckets (e.g. `["todo", "in-progress"]`).
+  - `include_done: bool = False`: **By default (`False`), completed and archived tasks (`done`, `archive`) are excluded** to protect AI agents from context bloating. Set to `True` to include all tasks.
+  - `exclude_buckets: list[str] | None`: Explicit list of bucket names to exclude.
+  - `tag: str | None` / `tags: list[str] | None`: Single or multiple tags to filter by.
+  - `tag_mode: "any" | "all" = "any"`: Match any tag in list or require all tags.
+  - `search: str | None`: Full-text search across titles and markdown notes.
+  - `priority: "none" | "low" | "medium" | "high" | "urgent" | None`: Filter by priority level.
+  - `due_before: str | None` / `due_after: str | None`: Filter by due date range (`YYYY-MM-DD`).
+  - `planned_date: str | None`: Filter by planned date (`YYYY-MM-DD`).
+  - `created_before / created_after / updated_before / updated_after: str | None`: ISO timestamp filters.
+  - `limit: int | None`: Maximum number of tasks to return.
+* `get_task(task_id, project_id="default")`: Retrieve complete task properties and full Markdown body content.
+* `create_task(title, body="", project_id="default", bucket="todo", tags=None, priority=None, due_date=None, planned_date=None)`: Create a new task file on the board.
+* `batch_create_tasks(tasks, project_id="default")`: Create multiple tasks in a single call (useful for planning subtasks or milestones).
+* `update_task(task_id, title=None, body=None, bucket=None, tags=None, priority=None, due_date=None, planned_date=None, project_id="default")`: Update task metadata or description.
+* `move_task(task_id, bucket, position=None, project_id="default", target_project_id=None)`: Move a task to a different column or across projects.
+* `delete_task(task_id, project_id="default")`: Delete a task and remove its Markdown file.
+
+#### Synchronization Tools
+* `sync_database()`: Reconcile Markdown files on disk with the SQLite search index.
+* `git_sync()`: Run Git synchronization (`add`, `commit`, `pull`, `push`) for configured Git remotes and reconcile the SQLite index.
+
+---
 
 ### Available MCP Resources
+
 MCP clients can read or attach live board contexts using standard URI schemes without tool calls:
 * `jotter://projects`: Overview of all projects, descriptions, and column structures in Markdown format.
-* `jotter://projects/{project_id}/board`: Live Kanban board markdown view showing all columns and active tasks with priority and due dates.
+* `jotter://projects/{project_id}/board`: Live Kanban board markdown view showing columns and active tasks with priorities, due dates, and tags. **Note**: The `done` and `archive` columns are automatically collapsed to a task count to prevent context bloating (e.g. `## Done (done) — 42 tasks (collapsed)`).
 * `jotter://tasks/{task_id}`: Raw Markdown file content and YAML frontmatter for a specific task.
-* `jotter://projects/{project_id}/tasks/{task_id}`: Raw Markdown file content for a specific task in a specific project.
+* `jotter://projects/{project_id}/tasks/{task_id}`: Raw Markdown file content for a specific task within a specific project.
 
 
