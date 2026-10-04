@@ -1,3 +1,14 @@
+export interface Vault {
+  id: string;
+  name: string;
+  path: string;
+  git_remote?: string | null;
+  auto_sync?: boolean;
+  is_active: boolean;
+  is_git: boolean;
+  created_at: string;
+}
+
 export interface Project {
   id: string;
   title: string;

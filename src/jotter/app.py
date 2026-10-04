@@ -16,6 +16,7 @@ from jotter.features.sync import FileWatcherService, SyncApplicationService
 from jotter.features.sync import router as system_router
 from jotter.features.tasks import router as tasks_router
 from jotter.features.timeblock.router import router as timeblock_router
+from jotter.features.vaults import router as vaults_router
 from jotter.shared.db import create_sqlite_connection
 from jotter.shared.exceptions import DomainException, EntityNotFoundError, ValidationError
 
@@ -49,6 +50,16 @@ def create_app(config: UserConfig | None = None, version: str = app_version, ena
     )
     app.state.config = cfg
     app.state.version = version
+
+    from jotter.features.vaults.registry import VaultRegistry
+
+    vault_registry = VaultRegistry(
+        config_file=cfg.vaults_config_path,
+        default_data_dir=cfg.data_dir,
+    )
+    app.state.vault_registry = vault_registry
+    active_vault = vault_registry.get_active()
+    cfg.data_dir = active_vault.path
 
     # Setup database connection on app state
     db_path = str(Path(cfg.data_dir) / "tasks.db")
@@ -89,6 +100,7 @@ def create_app(config: UserConfig | None = None, version: str = app_version, ena
     app.include_router(system_router)
     app.include_router(timeblock_router)
     app.include_router(canvas_router)
+    app.include_router(vaults_router)
 
     # Locate static frontend distribution (PyInstaller MEIPASS, bundled package dist, or local dev frontend/dist)
     meipass = getattr(sys, "_MEIPASS", None)

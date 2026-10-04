@@ -15,6 +15,8 @@ import {
   FileSpreadsheet,
   History,
   Layers,
+  Database,
+  ChevronDown,
   X,
 } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
@@ -22,6 +24,7 @@ import Sortable from 'sortablejs';
 import { useSettingsStore } from '@/stores/settings';
 import { useModalStore } from '@/stores/modal';
 import { useProjectStore } from '@/stores/project';
+import { useVaultStore } from '@/stores/vault';
 import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
@@ -215,6 +218,21 @@ const modalStore = useModalStore();
 const openTimeMachineModal = () => {
   modalStore.openTimeMachine(props.activeProjectId || undefined);
 };
+
+// Vault management
+const vaultStore = useVaultStore();
+const { vaults, activeVault } = storeToRefs(vaultStore);
+
+onMounted(() => {
+  vaultStore.fetchVaults();
+});
+
+const onVaultSelected = async (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  if (target.value && target.value !== activeVault.value?.id) {
+    await vaultStore.selectVault(target.value);
+  }
+};
 </script>
 
 <template>
@@ -231,6 +249,36 @@ const openTimeMachineModal = () => {
         <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
         <span class="text-[11px] font-semibold font-mono text-red-400"> {{ t('projects.offline') }} </span>
       </div>
+    </div>
+
+    <!-- Vault Switcher Header -->
+    <div
+      v-if="vaults.length > 0"
+      class="px-3 py-2 border-b border-theme-border/60 bg-theme-base/40 flex items-center justify-between gap-1.5"
+    >
+      <div class="flex items-center gap-1.5 min-w-0 flex-1">
+        <Database class="w-3.5 h-3.5 text-theme-accent shrink-0" />
+        <div class="relative flex-1 min-w-0">
+          <select
+            :value="activeVault?.id"
+            @change="onVaultSelected"
+            class="w-full text-xs font-semibold bg-transparent text-theme-text-main appearance-none pr-5 truncate cursor-pointer hover:text-theme-accent focus:outline-none"
+            :title="activeVault?.path"
+          >
+            <option v-for="v in vaults" :key="v.id" :value="v.id" class="bg-theme-card text-theme-text-main">
+              {{ v.name }}
+            </option>
+          </select>
+          <ChevronDown class="w-3 h-3 text-theme-text-muted absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
+      </div>
+      <span
+        v-if="activeVault?.is_git"
+        class="text-[9px] uppercase font-bold tracking-wider px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 shrink-0"
+        title="Git Versioned Vault"
+      >
+        Git
+      </span>
     </div>
 
     <!-- Sidebar Header -->

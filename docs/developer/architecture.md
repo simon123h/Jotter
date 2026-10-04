@@ -264,6 +264,7 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0009: Cross-Platform Atomic Filesystem Writes with Exponential Backoff](./adr/0009-cross-platform-atomic-writes.md)
 - [ADR 0010: Adopting the Open JSON Canvas Format for Visual 2D Boards](./adr/0010-open-json-canvas-format.md)
 - [ADR 0011: Cross-Tab Broadcast Synchronization and Window Focus Revalidation](./adr/0011-cross-tab-broadcast-sync.md)
+- [ADR 0012: Vault Abstraction and Simplified Git Sync](./adr/0012-vault-abstraction-and-simplified-git-sync.md)
 
 
 

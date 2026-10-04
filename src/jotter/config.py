@@ -39,6 +39,7 @@ class UserConfig(BaseModel):
     log_level: str = "INFO"
     open_browser: bool = True
     use_colors: bool | None = None
+    vaults_config_path: str | None = None
 
 
 def get_default_data_dir() -> str:

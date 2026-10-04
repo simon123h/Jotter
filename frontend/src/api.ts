@@ -2,6 +2,7 @@ import type {
   Task,
   Bucket,
   Project,
+  Vault,
   TaskFilterParams,
   AppSettings,
   SystemInfo,
@@ -323,4 +324,62 @@ export async function deleteCanvas(projectId: string, canvasId: string): Promise
   if (IS_DEMO_MODE) await demoApi.deleteCanvas(projectId, canvasId);
   else await activeStorage.deleteCanvas(projectId, canvasId);
   crossTabBus.broadcast({ type: 'canvas-changed', projectId, canvasId });
+}
+
+// ==========================================
+// VAULT API
+// ==========================================
+
+export async function getVaults(): Promise<Vault[]> {
+  const res = await fetch('/api/vaults');
+  if (!res.ok) throw new Error('Failed to load vaults');
+  return res.json();
+}
+
+export async function getActiveVault(): Promise<Vault> {
+  const res = await fetch('/api/vaults/active');
+  if (!res.ok) throw new Error('Failed to load active vault');
+  return res.json();
+}
+
+export async function createVault(payload: {
+  name: string;
+  path: string;
+  id?: string;
+  git_remote?: string;
+  auto_sync?: boolean;
+}): Promise<Vault> {
+  const res = await fetch('/api/vaults', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to create vault');
+  }
+  return res.json();
+}
+
+export async function switchVault(vaultId: string): Promise<Vault> {
+  const res = await fetch('/api/vaults/switch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ vault_id: vaultId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to switch vault');
+  }
+  return res.json();
+}
+
+export async function deleteVault(vaultId: string): Promise<void> {
+  const res = await fetch(`/api/vaults/${encodeURIComponent(vaultId)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to delete vault');
+  }
 }
