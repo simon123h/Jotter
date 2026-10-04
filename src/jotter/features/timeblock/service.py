@@ -1,4 +1,5 @@
 import datetime
+import sqlite3
 from typing import Any
 
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
@@ -44,6 +45,10 @@ class TimeblockApplicationService:
     def __init__(self, repo: TimeblockDiskRepo, task_repo: SqliteTaskRepository | None = None):
         self.repo = repo
         self.task_repo = task_repo
+
+    @classmethod
+    def from_data_dir(cls, data_dir: str, conn: sqlite3.Connection) -> "TimeblockApplicationService":
+        return cls(repo=TimeblockDiskRepo(data_dir), task_repo=SqliteTaskRepository(conn))
 
     def _populate_tasks(self, item: dict[str, Any]) -> dict[str, Any]:
         if not self.task_repo:

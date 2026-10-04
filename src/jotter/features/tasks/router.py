@@ -6,6 +6,8 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
+from jotter.features.tasks.command_service import TaskCommandService
+from jotter.features.tasks.query_service import TaskQueryService
 from jotter.features.tasks.schemas import (
     TaskCreate,
     TaskFilterParams,
@@ -24,6 +26,19 @@ def get_task_service(
     conn: sqlite3.Connection = Depends(get_db_conn),
 ) -> TaskApplicationService:
     return TaskApplicationService.from_data_dir(data_dir, conn)
+
+
+def get_task_query_service(
+    conn: sqlite3.Connection = Depends(get_db_conn),
+) -> TaskQueryService:
+    return TaskQueryService.from_conn(conn)
+
+
+def get_task_command_service(
+    data_dir: str = Depends(get_data_dir),
+    conn: sqlite3.Connection = Depends(get_db_conn),
+) -> TaskCommandService:
+    return TaskCommandService.from_data_dir(data_dir, conn)
 
 
 def _extract_query_param(request: Request, *names: str, default: str | None = None) -> str | None:
@@ -77,9 +92,9 @@ def extract_task_filter_params(request: Request) -> TaskFilterParams:
 @router.get("/api/tasks", response_model=list[TaskResponse])
 def list_all_tasks(
     filters: TaskFilterParams = Depends(extract_task_filter_params),
-    svc: TaskApplicationService = Depends(get_task_service),
+    query_svc: TaskQueryService = Depends(get_task_query_service),
 ):
-    return svc.get_tasks(**vars(filters))
+    return query_svc.get_tasks(**vars(filters))
 
 
 # Project tasks endpoint
@@ -87,20 +102,20 @@ def list_all_tasks(
 def list_project_tasks(
     project_id: str,
     filters: TaskFilterParams = Depends(extract_task_filter_params),
-    svc: TaskApplicationService = Depends(get_task_service),
+    query_svc: TaskQueryService = Depends(get_task_query_service),
 ):
     filters.project_id = project_id
-    return svc.get_tasks(**vars(filters))
+    return query_svc.get_tasks(**vars(filters))
 
 
 @router.get("/api/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
-def get_single_task(project_id: str, task_id: str, svc: TaskApplicationService = Depends(get_task_service)):
-    return svc.get_task(project_id, task_id)
+def get_single_task(project_id: str, task_id: str, query_svc: TaskQueryService = Depends(get_task_query_service)):
+    return query_svc.get_task(project_id, task_id)
 
 
 @router.post("/api/projects/{project_id}/tasks", response_model=TaskResponse, status_code=201)
-def create_new_task(project_id: str, req: TaskCreate, svc: TaskApplicationService = Depends(get_task_service)):
-    return svc.create_task(project_id, req)
+def create_new_task(project_id: str, req: TaskCreate, cmd_svc: TaskCommandService = Depends(get_task_command_service)):
+    return cmd_svc.create_task(project_id, req)
 
 
 @router.patch("/api/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
@@ -109,9 +124,9 @@ def update_existing_task(
     project_id: str,
     task_id: str,
     req: TaskUpdate,
-    svc: TaskApplicationService = Depends(get_task_service),
+    cmd_svc: TaskCommandService = Depends(get_task_command_service),
 ):
-    return svc.update_task(project_id, task_id, req)
+    return cmd_svc.update_task(project_id, task_id, req)
 
 
 @router.patch("/api/projects/{project_id}/tasks/{task_id}/move", response_model=TaskResponse)
@@ -119,14 +134,18 @@ def move_existing_task(
     project_id: str,
     task_id: str,
     req: TaskMove,
-    svc: TaskApplicationService = Depends(get_task_service),
+    cmd_svc: TaskCommandService = Depends(get_task_command_service),
 ):
-    return svc.move_task(project_id, task_id, req)
+    return cmd_svc.move_task(project_id, task_id, req)
 
 
 @router.delete("/api/projects/{project_id}/tasks/{task_id}", status_code=204)
-def delete_existing_task(project_id: str, task_id: str, svc: TaskApplicationService = Depends(get_task_service)):
-    svc.delete_task(project_id, task_id)
+def delete_existing_task(
+    project_id: str,
+    task_id: str,
+    cmd_svc: TaskCommandService = Depends(get_task_command_service),
+):
+    cmd_svc.delete_task(project_id, task_id)
 
 
 # Attachments
@@ -135,11 +154,11 @@ def upload_task_attachment(
     project_id: str,
     task_id: str,
     file: UploadFile = File(...),
-    svc: TaskApplicationService = Depends(get_task_service),
+    cmd_svc: TaskCommandService = Depends(get_task_command_service),
 ):
     filename = file.filename or "attachment"
     content = file.file.read()
-    return svc.add_attachment(project_id, task_id, filename, content)
+    return cmd_svc.add_attachment(project_id, task_id, filename, content)
 
 
 @router.delete("/api/projects/{project_id}/tasks/{task_id}/attachments/{filename}", response_model=TaskResponse)
@@ -147,9 +166,9 @@ def delete_task_attachment(
     project_id: str,
     task_id: str,
     filename: str,
-    svc: TaskApplicationService = Depends(get_task_service),
+    cmd_svc: TaskCommandService = Depends(get_task_command_service),
 ):
-    return svc.remove_attachment(project_id, task_id, filename)
+    return cmd_svc.remove_attachment(project_id, task_id, filename)
 
 
 @router.get("/api/projects/{project_id}/tasks/{task_id}/attachments/{filename}")

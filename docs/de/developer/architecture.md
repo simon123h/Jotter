@@ -257,4 +257,6 @@ Wichtige architektonische Entscheidungen sind als Architecture Decision Records 
 - [ADR 0002: Aufgeschobene Implementierung wiederkehrender Aufgaben](file:///home/simon/Code/jotter/docs/developer/adr/0002-decline-recurring-tasks.md)
 - [ADR 0003: Unterstützung beliebiger Datei-Slugs und Verzicht auf strikte ULID-Erzwingung](file:///home/simon/Code/jotter/docs/developer/adr/0003-arbitrary-task-slugs.md)
 - [ADR 0004: Lautlose Dateisystem-Indexierung via Watchdog und Entkopplung von Git-Sync](file:///home/simon/Code/jotter/docs/developer/adr/0004-silent-watchdog-sync.md)
+- [ADR 0005: Explizites In-Process-CQRS und Architekturdurchsetzung](file:///home/simon/Code/jotter/docs/developer/adr/0005-explicit-in-process-cqrs.md)
+
 

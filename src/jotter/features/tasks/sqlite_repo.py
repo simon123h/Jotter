@@ -27,61 +27,17 @@ def _format_fts5_query(search: str) -> str | None:
 class SqliteTaskRepository:
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
+        from jotter.features.tasks.projector import TaskProjector
+
+        self._projector = TaskProjector(conn)
 
     def upsert_task(self, task: Task) -> None:
-        """Indexes or updates a task in SQLite."""
-        tags_json = json.dumps([t.value for t in task.tags])
-        attachments_json = json.dumps(task.attachments)
-        filename = f"{task.id}.md"
-
-        with _sqlite_write_lock:
-            cursor = self.conn.cursor()
-            cursor.execute(
-                """
-                INSERT INTO tasks (
-                    id, project_id, title, bucket, position, tags, attachments, filename, body,
-                    due_date, planned_date, priority, color, postponed_until, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                    project_id = excluded.project_id,
-                    title = excluded.title,
-                    bucket = excluded.bucket,
-                    position = excluded.position,
-                    tags = excluded.tags,
-                    attachments = excluded.attachments,
-                    filename = excluded.filename,
-                    body = excluded.body,
-                    due_date = excluded.due_date,
-                    planned_date = excluded.planned_date,
-                    priority = excluded.priority,
-                    color = excluded.color,
-                    postponed_until = excluded.postponed_until,
-                    updated_at = excluded.updated_at
-                """,
-                (
-                    str(task.id),
-                    task.project_id,
-                    task.title,
-                    task.bucket,
-                    task.position,
-                    tags_json,
-                    attachments_json,
-                    filename,
-                    task.body or "",
-                    task.due_date.value,
-                    task.planned_date.value,
-                    task.priority.value if task.priority != Priority.NONE else None,
-                    task.color,
-                    task.postponed_until.value,
-                    task.created_at,
-                    task.updated_at,
-                ),
-            )
+        """Indexes or updates a task in SQLite via TaskProjector."""
+        self._projector.project_task_upsert(task)
 
     def delete_task(self, task_id: str) -> None:
-        with _sqlite_write_lock:
-            cursor = self.conn.cursor()
-            cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        """Deletes a task from SQLite via TaskProjector."""
+        self._projector.project_task_delete(task_id)
 
     def get_by_id(self, project_id: str, task_id: str) -> Task:
         if (
