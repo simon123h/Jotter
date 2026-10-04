@@ -132,6 +132,7 @@ def test_mcp_resources(temp_dir):
         assert "Kanban Board: Default" in board_res[0].content
         assert "Resource Task" in board_res[0].content
         assert "Priority: high" in board_res[0].content
+        assert "## Done (`done`) — 0 tasks (collapsed)" in board_res[0].content
 
         # 3. Read jotter://tasks/{task_id}
         task_res = await server.read_resource(f"jotter://tasks/{task_id}")
@@ -146,3 +147,56 @@ def test_mcp_resources(temp_dir):
         assert task_id in proj_task_res[0].content
 
     asyncio.run(_test())
+
+
+def test_mcp_list_tasks_filtering(temp_dir):
+    config = UserConfig(data_dir=temp_dir, port=8000)
+    server = create_mcp_server(config)
+    tool_manager = getattr(server, "_tool_manager", server)
+
+    create_task_fn = tool_manager.get_tool("create_task").fn
+    list_tasks_fn = tool_manager.get_tool("list_tasks").fn
+
+    create_task_fn(title="Active Task 1", bucket="todo", tags=["urgent"], project_id="default")
+    create_task_fn(title="Active Task 2", bucket="in-progress", tags=["backend"], project_id="default")
+    create_task_fn(title="Finished Task", bucket="done", tags=["urgent"], project_id="default")
+    create_task_fn(title="Old Archived Task", bucket="archive", project_id="default")
+
+    # 1. Default list_tasks excludes done and archive
+    default_tasks = list_tasks_fn(project_id="default")
+    titles = [t["title"] for t in default_tasks]
+    assert "Active Task 1" in titles
+    assert "Active Task 2" in titles
+    assert "Finished Task" not in titles
+    assert "Old Archived Task" not in titles
+
+    # 2. include_done=True includes done and archive
+    all_tasks = list_tasks_fn(project_id="default", include_done=True)
+    all_titles = [t["title"] for t in all_tasks]
+    assert len(all_titles) == 4
+    assert "Finished Task" in all_titles
+    assert "Old Archived Task" in all_titles
+
+    # 3. Explicit bucket="done" returns done tasks
+    done_tasks = list_tasks_fn(project_id="default", bucket="done")
+    assert len(done_tasks) == 1
+    assert done_tasks[0]["title"] == "Finished Task"
+
+    # 4. Filter by buckets list
+    inprogress_tasks = list_tasks_fn(project_id="default", buckets=["in-progress"])
+    assert len(inprogress_tasks) == 1
+    assert inprogress_tasks[0]["title"] == "Active Task 2"
+
+    # 5. Filter by tags
+    urgent_tasks = list_tasks_fn(project_id="default", tags=["urgent"])
+    # Default excludes done, so only Active Task 1
+    assert len(urgent_tasks) == 1
+    assert urgent_tasks[0]["title"] == "Active Task 1"
+
+    # Urgent tasks with include_done=True
+    urgent_all = list_tasks_fn(project_id="default", tags=["urgent"], include_done=True)
+    assert len(urgent_all) == 2
+
+    # 6. Limit
+    limited = list_tasks_fn(project_id="default", limit=1)
+    assert len(limited) == 1

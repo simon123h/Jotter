@@ -109,23 +109,60 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
     def list_tasks(
         project_id: str | None = None,
         bucket: str | None = None,
+        buckets: list[str] | None = None,
+        include_done: bool = False,
+        exclude_buckets: list[str] | None = None,
         tag: str | None = None,
+        tags: list[str] | None = None,
+        tag_mode: str = "any",
         search: str | None = None,
         priority: str | None = None,
         due_before: str | None = None,
         due_after: str | None = None,
+        planned_date: str | None = None,
+        created_before: str | None = None,
+        created_after: str | None = None,
+        updated_before: str | None = None,
+        updated_after: str | None = None,
+        limit: int | None = None,
     ) -> list[dict[str, Any]]:
-        """Query and list tasks with optional filtering by project, column bucket, tag, search query, priority, or due date."""
+        """Query and list tasks with rich filtering options.
+
+        By default, active tasks are returned and completed/archived tasks are excluded
+        (`include_done=False`). Set `include_done=True` or explicitly specify `bucket="done"`
+        or `exclude_buckets=[]` to include finished tasks.
+        """
         priorities = [priority] if priority else None
+
+        # Determine effective exclude_buckets
+        resolved_exclude: list[str] | None = None
+        if exclude_buckets is not None:
+            resolved_exclude = exclude_buckets
+        elif not include_done and not bucket and not (buckets and ("done" in buckets or "archive" in buckets)):
+            resolved_exclude = ["done", "archive"]
+
         tasks = task_svc.get_tasks(
             project_id=project_id,
             bucket=bucket,
+            buckets=buckets,
             tag=tag,
-            search=search,
+            tags=tags,
+            tag_mode=tag_mode,
+            exclude_buckets=resolved_exclude,
             priorities=priorities,
+            search=search,
             due_before=due_before,
             due_after=due_after,
+            planned_date=planned_date,
+            created_before=created_before,
+            created_after=created_after,
+            updated_before=updated_before,
+            updated_after=updated_after,
         )
+
+        if limit is not None and limit >= 0:
+            tasks = tasks[:limit]
+
         return [t.model_dump() for t in tasks]
 
     @server.tool()
@@ -290,6 +327,16 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
 
         for b in buckets:
             bucket_tasks = tasks_by_bucket.get(b.name, [])
+            if b.name in ("done", "archive"):
+                lines.append(f"## {b.title} (`{b.name}`) — {len(bucket_tasks)} tasks (collapsed)")
+                if not bucket_tasks:
+                    lines.append("_(empty)_\n")
+                else:
+                    lines.append(
+                        f"_{len(bucket_tasks)} completed/archived tasks hidden to reduce context bloat. Use list_tasks(bucket='{b.name}') to inspect._\n"
+                    )
+                continue
+
             lines.append(f"## {b.title} (`{b.name}`) — {len(bucket_tasks)} tasks")
             if not bucket_tasks:
                 lines.append("_(empty)_\n")
