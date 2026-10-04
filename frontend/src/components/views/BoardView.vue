@@ -5,6 +5,7 @@ import { Plus, MoreHorizontal, ChevronLeft } from '@lucide/vue';
 import Sortable from 'sortablejs';
 import type { Task, Bucket, BucketName } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
+import SnapScroller from '@/components/ui/SnapScroller.vue';
 import ColumnEditModal from '@/components/modals/ColumnEditModal.vue';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
@@ -206,9 +207,7 @@ useBoardNavigation({
 </script>
 
 <template>
-  <div
-    class="flex gap-0 md:gap-3.5 items-stretch overflow-x-auto pb-0 md:pb-2 h-full select-none w-full scroller-thin snap-x snap-mandatory md:snap-none scroll-px-0 md:scroll-px-4"
-  >
+  <SnapScroller>
     <div ref="columnsContainer" class="flex gap-0 md:gap-3.5 items-stretch h-full">
       <GenericColumn
         v-for="b in buckets"
@@ -307,9 +306,7 @@ useBoardNavigation({
       </GenericColumn>
     </div>
 
-    <div
-      class="flex flex-col gap-3 shrink-0 w-[100vw] min-w-[100vw] max-w-[100vw] px-3 md:px-0 md:w-72 md:min-w-0 md:max-w-none snap-center snap-always md:snap-align-none"
-    >
+    <div class="flex flex-col gap-3 shrink-0 w-[100vw] min-w-[100vw] max-w-[100vw] px-3 md:px-0 md:w-72 md:min-w-0 md:max-w-none snap-page">
       <!-- Add Column Card -->
       <button
         v-if="!isAddingColumn && activeProjectId !== 'all'"
@@ -434,5 +431,5 @@ useBoardNavigation({
       @save="onSaveColumn"
       @delete-column="onColumnDeleted(currentEditingBucket.name)"
     />
-  </div>
+  </SnapScroller>
 </template>

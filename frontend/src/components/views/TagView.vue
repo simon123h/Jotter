@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import type { Task } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
+import SnapScroller from '@/components/ui/SnapScroller.vue';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
@@ -123,9 +124,7 @@ const onMarkDone = async (task: Task) => {
 </script>
 
 <template>
-  <div
-    class="flex gap-0 md:gap-3.5 items-stretch overflow-x-auto pb-0 md:pb-2 h-full select-none w-full scroller-thin snap-x snap-mandatory md:snap-none scroll-px-0 md:scroll-px-4"
-  >
+  <SnapScroller>
     <div v-if="tagColumns.length === 0" class="flex-grow flex items-center justify-center text-theme-text-muted italic">
       {{ t('tagView.noTags') || 'No tags found in this project' }}
     </div>
@@ -160,5 +159,5 @@ const onMarkDone = async (task: Task) => {
         </div>
       </template>
     </GenericColumn>
-  </div>
+  </SnapScroller>
 </template>

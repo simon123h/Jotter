@@ -377,6 +377,11 @@ body.dragging-active .task-card.is-selected:not(.sortable-chosen) {
 }
 
 /* Safe area insets utilities */
+/* A scroll-snap page inside <SnapScroller>: centered and never skipped on mobile, unsnapped on desktop */
+@utility snap-page {
+  @apply snap-center snap-always md:snap-align-none;
+}
+
 @utility pt-safe {
   padding-top: max(var(--sat), env(safe-area-inset-top, 0px));
 }
