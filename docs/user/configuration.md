@@ -48,7 +48,7 @@ If no local `tasks` directory is found in the CWD, Jotter defaults to OS-specifi
 
 Jotter employs a **Dual-Writer Logging** mechanism. This means that all log statements (starting up information, synchronization reports, git activities, and system errors) are output to both standard output (`stdout`) and appended to a persistent local log file named `jotter.log`.
 
-This file is isolated from your markdown data directory so that it is never automatically tracked or pushed by the Git synchronization feature.
+This file is isolated from your markdown data directory so that it is never tracked by Jotter's Git auto-commits.
 
 ### Log Rotation
 
@@ -105,23 +105,8 @@ Jotter resolves settings using the following priority (highest overrides lowest)
 
 ---
 
-## Git Synchronization
+## Git Versioning
 
-Jotter supports built-in Git synchronization on a **per-project basis**. This allows you to keep some projects private (local-only) while sharing others via different Git remotes (GitHub, GitLab, etc.).
+If your vault folder is a Git repository, Jotter commits local changes to it whenever you click the **Commit** button in the sidebar footer (or periodically, via **Settings → Git Versioning → Auto-Commit Interval**). These commits power the Time Machine.
 
-### How to enable:
-
-1. Open the **Project Settings** by clicking the edit icon next to a project in the sidebar.
-2. Enter your **Git Remote URL** (e.g., `https://github.com/user/repo.git`) in the provided field and click **Save**.
-3. A Git icon will appear next to the project title in the sidebar, indicating it is now backed by Git.
-4. Ensure your Git credentials are cached (using an SSH agent or a credential helper), as Jotter runs Git commands in the background.
-
-### Sync Behavior:
-
-When you click the **Sync** button in the sidebar footer, Jotter iterates through all projects with a configured remote:
-
-- **Auto-Initialization**: If the project folder is not yet a Git repository, Jotter will automatically run `git init` and connect the remote.
-- **Commit**: Local changes in that specific project are committed with a timestamp.
-- **Merge**: Jotter fetches and merges remote changes. If a **merge conflict** occurs, Jotter will abort the merge to protect your files and log an error to the terminal.
-- **Push**: Successful merges are pushed back to the remote.
-- **Database Update**: The internal search index is refreshed for all projects.
+Jotter only ever commits locally. It creates a repository only when you click **Enable Git**, and it never pushes or pulls. See [Git Versioning and Time Machine](./git-sync.md) for details and for how to sync a vault across devices.

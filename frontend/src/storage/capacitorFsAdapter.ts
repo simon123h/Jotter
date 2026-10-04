@@ -34,7 +34,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   sortBy: 'alpha',
   hideAddTaskButton: true,
   projectOrder: [],
-  gitRemoteUrl: '',
 };
 
 export class CapacitorFsStorageAdapter implements StorageAdapter {
@@ -123,7 +122,7 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
     return projects.sort((a, b) => a.title.localeCompare(b.title));
   }
 
-  async createProject(title: string, git_remote?: string | null): Promise<Project> {
+  async createProject(title: string): Promise<Project> {
     await this.ensureInitialized();
     const cleanTitle = title.trim();
     const id =
@@ -136,7 +135,6 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
       id,
       title: cleanTitle,
       created_at: new Date().toISOString(),
-      git_remote: git_remote || undefined,
     };
 
     const projDir = `${this.vaultPath}/${id}`;

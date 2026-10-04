@@ -51,7 +51,6 @@ export function createMockProject(overrides: Partial<Project> = {}): Project {
     title: overrides.title ?? `Project ${id}`,
     created_at: overrides.created_at ?? new Date().toISOString(),
     done_clean_period: overrides.done_clean_period ?? null,
-    git_remote: overrides.git_remote ?? null,
   };
 }
 

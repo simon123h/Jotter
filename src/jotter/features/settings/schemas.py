@@ -21,10 +21,9 @@ class AppSettings(BaseModel):
     windowX: int = 0
     windowY: int = 0
     windowMaximized: bool = False
-    gitRemoteUrl: str = ""
     language: str = "en"
     tagColors: dict[str, str] = {}
-    autoSyncInterval: int = 0
+    autoCommitInterval: int = 0
     doneCleanPeriod: int | None = None
 
 
@@ -46,8 +45,7 @@ class SettingsUpdate(BaseModel):
     windowX: int | None = None
     windowY: int | None = None
     windowMaximized: bool | None = None
-    gitRemoteUrl: str | None = None
     language: str | None = None
     tagColors: dict[str, str] | None = None
-    autoSyncInterval: int | None = None
+    autoCommitInterval: int | None = None
     doneCleanPeriod: int | None = None

@@ -39,8 +39,23 @@ def get_sync_service(
 
 @router.api_route("/sync", methods=["GET", "POST"])
 def trigger_sync(svc: SyncApplicationService = Depends(get_sync_service)):
-    synced_count = svc.full_sync()
+    """Reconciles Markdown files on disk with the SQLite index."""
+    synced_count = svc.sync_db_only()
     return {"status": "success", "synced": synced_count}
+
+
+@router.post("/commit")
+def commit_changes(svc: SyncApplicationService = Depends(get_sync_service)):
+    """Commits pending changes of the active vault to its local Git repository (never pushes)."""
+    committed = svc.commit_changes()
+    return {"status": "success", "committed": committed}
+
+
+@router.post("/git/init")
+def enable_git_versioning(svc: SyncApplicationService = Depends(get_sync_service)):
+    """Initializes a Git repository in the active vault and records the first commit."""
+    created = svc.enable_git_versioning()
+    return {"status": "success", "created": created}
 
 
 @router.get("/info")

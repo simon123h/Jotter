@@ -37,7 +37,7 @@ export default defineConfig({
 								{ text: 'Postponing Tasks', link: '/user/postponing' },
 								{ text: 'Markdown File Spec', link: '/user/format-spec' },
 								{ text: 'Obsidian & PKM Sync', link: '/user/obsidian' },
-								{ text: 'Git Sync & Collaboration', link: '/user/git-sync' },
+								{ text: 'Git Versioning & Time Machine', link: '/user/git-sync' },
 								{ text: 'Data Safety & Recovery', link: '/user/safety' }
 							]
 						}
@@ -63,7 +63,7 @@ export default defineConfig({
 								{ text: 'Postponing Tasks', link: '/user/postponing' },
 								{ text: 'Markdown File Spec', link: '/user/format-spec' },
 								{ text: 'Obsidian & PKM Sync', link: '/user/obsidian' },
-								{ text: 'Git Sync & Collaboration', link: '/user/git-sync' },
+								{ text: 'Git Versioning & Time Machine', link: '/user/git-sync' },
 								{ text: 'Data Safety & Recovery', link: '/user/safety' }
 							]
 						}
@@ -114,7 +114,7 @@ export default defineConfig({
 								{ text: 'Aufgaben aufschieben', link: '/de/user/postponing' },
 								{ text: 'Markdown-Spezifikation', link: '/de/user/format-spec' },
 								{ text: 'Obsidian & PKM-Sync', link: '/de/user/obsidian' },
-								{ text: 'Git-Sync & Zusammenarbeit', link: '/de/user/git-sync' },
+								{ text: 'Git-Versionierung & Time Machine', link: '/de/user/git-sync' },
 								{ text: 'Datensicherheit & Recovery', link: '/de/user/safety' }
 							]
 						},
@@ -147,7 +147,7 @@ export default defineConfig({
 								{ text: 'Aufgaben aufschieben', link: '/de/user/postponing' },
 								{ text: 'Markdown-Spezifikation', link: '/de/user/format-spec' },
 								{ text: 'Obsidian & PKM-Sync', link: '/de/user/obsidian' },
-								{ text: 'Git-Sync & Zusammenarbeit', link: '/de/user/git-sync' },
+								{ text: 'Git-Versionierung & Time Machine', link: '/de/user/git-sync' },
 								{ text: 'Datensicherheit & Recovery', link: '/de/user/safety' }
 							]
 						},

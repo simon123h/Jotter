@@ -48,7 +48,7 @@ Wenn kein lokaler `tasks`-Ordner im aktuellen Arbeitsverzeichnis gefunden wird, 
 
 Jotter verwendet einen **Dual-Writer-Logging-Mechanismus**. Das bedeutet, dass alle Log-Ausgaben (Startup-Informationen, Synchronisationsberichte, Git-Aktivitäten und Systemfehler) sowohl auf die Standardausgabe (`stdout`) ausgegeben als auch an eine persistente lokale Protokolldatei namens `jotter.log` angehängt werden.
 
-Diese Datei ist von deinem Markdown-Datenverzeichnis isoliert, sodass sie von der automatischen Git-Synchronisation nicht erfasst oder hochgeladen wird.
+Diese Datei ist von deinem Markdown-Datenverzeichnis isoliert, sodass sie von Jotters automatischen Git-Commits nicht erfasst wird.
 
 ### Log-Rotation
 Um lokalen Speicherplatz zu sparen, begrenzt Jotter die Größe der Datei `jotter.log` automatisch. Wenn die Datei beim Starten von Jotter größer als **5 MB** ist, wird sie gelöscht und ein neues, leeres Log-File angelegt.
@@ -104,23 +104,8 @@ Jotter wertet die Einstellungen in folgender Reihenfolge aus (höhere Priorität
 
 ---
 
-## Git-Synchronisation
+## Git-Versionierung
 
-Jotter unterstützt eine integrierte Git-Synchronisation **auf Projektbasis**. Dies ermöglicht es dir, einige Projekte privat (nur lokal) zu halten, während du andere über verschiedene Git-Remotes (GitHub, GitLab etc.) teilst.
+Ist der Ordner deines Vaults ein Git-Repository, committet Jotter lokale Änderungen, sobald du in der Fußzeile der Seitenleiste auf **Commit** klickst (oder regelmäßig über **Einstellungen → Git-Versionierung → Auto-Commit-Intervall**). Auf diesen Commits baut die Time Machine auf.
 
-### Aktivierung:
-
-1. Öffne die **Projekteinstellungen**, indem du auf das Stift-Symbol neben einem Projektnamen in der Seitenleiste klickst.
-2. Trage deine **Git-Remote-URL** (z. B. `https://github.com/user/repo.git`) in das Feld ein und klicke auf **Speichern**.
-3. Ein Git-Symbol erscheint neben dem Projektnamen in der Seitenleiste und signalisiert, dass das Projekt nun Git-unterstützt ist.
-4. Stelle sicher, dass deine Git-Anmeldedaten lokal hinterlegt sind (z. B. über einen SSH-Agenten oder Credential-Helper), da Jotter Git-Befehle im Hintergrund ausführt.
-
-### Synchronisations-Verhalten:
-
-Wenn du auf die Schaltfläche **Synchronisieren** in der Fußzeile der Seitenleiste klickst, arbeitet Jotter alle Projekte mit eingerichteter Remote-URL nacheinander ab:
-
-* **Auto-Initialisierung**: Falls der Projektordner noch kein Git-Repository ist, führt Jotter automatisch `git init` aus und verbindet das Remote.
-* **Commit**: Lokale Änderungen in diesem Projekt werden mit einem Zeitstempel committed.
-* **Merge**: Jotter holt Remote-Änderungen ab und führt sie zusammen (`git pull --rebase`). Tritt ein **Merge-Konflikt** auf, bricht Jotter den Vorgang ab, um deine Dateien zu schützen, und gibt einen Fehler im Terminal aus.
-* **Push**: Erfolgreich zusammengeführte Stände werden an das Remote gepusht.
-* **Datenbank-Update**: Der interne Suchindex wird für alle Projekte aktualisiert.
+Jotter committet ausschließlich lokal. Ein Repository legt es nur an, wenn du auf **Git aktivieren** klickst, und es führt weder Push noch Pull aus. Details und Hinweise zur Synchronisation über mehrere Geräte findest du unter [Git-Versionierung und Time Machine](./git-sync.md).

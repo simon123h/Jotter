@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { Folder, Plus, ArrowRight, GitBranch, Pin, Kanban } from '@lucide/vue';
+import { Folder, Plus, ArrowRight, Pin, Kanban } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
@@ -156,12 +156,8 @@ const welcomeParts = computed(() => {
                           :class="{ 'fill-theme-accent text-theme-accent': pinnedProjectIds.includes(project.id) }"
                         />
                       </button>
-                      <GitBranch v-if="project.git_remote" class="w-3 h-3 text-theme-accent shrink-0" :title="t('home.gitConnected')" />
                     </div>
                   </div>
-                  <p v-if="project.git_remote" class="hidden sm:block text-[10px] text-theme-text-muted truncate mt-1">
-                    {{ project.git_remote }}
-                  </p>
                 </div>
 
                 <div

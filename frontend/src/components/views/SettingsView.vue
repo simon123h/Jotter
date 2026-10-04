@@ -29,7 +29,7 @@ const { locale, t } = useI18n();
 const { success: toastSuccess, error: toastError } = useToast();
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
-const { currentTheme, hideAddTaskButton, gitRemoteUrl, autoSyncInterval, doneCleanPeriod } = storeToRefs(settingsStore);
+const { currentTheme, hideAddTaskButton, autoCommitInterval, doneCleanPeriod } = storeToRefs(settingsStore);
 const tagColors = computed(() => settingsStore.tagColors || {});
 
 const systemInfo = ref<SystemInfo | null>(null);
@@ -554,45 +554,27 @@ const getTagClasses = (tag: string) => {
       </h3>
       <div class="bg-theme-card/60 border border-theme-border/60 rounded-xl p-5 flex flex-col gap-3">
         <div class="flex flex-col gap-1.5">
-          <label for="global-git-remote" class="text-xs font-bold text-theme-text-main">
-            {{ t('settingsView.gitRemoteLabel') }}
-          </label>
-          <input
-            id="global-git-remote"
-            type="text"
-            v-model="gitRemoteUrl"
-            placeholder="git@github.com:username/repo.git"
-            class="w-full px-3.5 py-2.5 bg-theme-bg border border-theme-border/60 rounded-xl text-xs text-theme-text-main placeholder:text-theme-text-muted focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary/30 transition-all font-mono"
-          />
-        </div>
-        <p class="text-xs text-theme-text-muted leading-relaxed">
-          {{ t('settingsView.gitRemoteDesc') }}
-        </p>
-
-        <div class="border-t border-theme-border/20 my-1"></div>
-
-        <div class="flex flex-col gap-1.5">
-          <label for="auto-sync-interval" class="text-xs font-bold text-theme-text-main">
-            {{ t('settingsView.autoSyncIntervalLabel') || 'Auto-Sync Interval' }}
+          <label for="auto-commit-interval" class="text-xs font-bold text-theme-text-main">
+            {{ t('settingsView.autoCommitIntervalLabel') || 'Auto-Commit Interval' }}
           </label>
           <div class="relative w-full max-w-xs">
             <select
-              id="auto-sync-interval"
-              v-model="autoSyncInterval"
+              id="auto-commit-interval"
+              v-model="autoCommitInterval"
               class="w-full pl-3.5 pr-10 py-2.5 bg-theme-bg border border-theme-border/60 rounded-xl text-xs text-theme-text-main font-semibold focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary/30 transition-all cursor-pointer appearance-none"
             >
-              <option :value="0">{{ t('settingsView.autoSyncOptions.disabled') || '0 (no sync)' }}</option>
-              <option :value="10">{{ t('settingsView.autoSyncOptions.10min') || '10 minutes' }}</option>
-              <option :value="30">{{ t('settingsView.autoSyncOptions.30min') || '30 minutes' }}</option>
-              <option :value="60">{{ t('settingsView.autoSyncOptions.60min') || '60 minutes' }}</option>
-              <option :value="120">{{ t('settingsView.autoSyncOptions.120min') || '120 minutes' }}</option>
+              <option :value="0">{{ t('settingsView.autoCommitOptions.disabled') || '0 (no auto-commit)' }}</option>
+              <option :value="10">{{ t('settingsView.autoCommitOptions.10min') || '10 minutes' }}</option>
+              <option :value="30">{{ t('settingsView.autoCommitOptions.30min') || '30 minutes' }}</option>
+              <option :value="60">{{ t('settingsView.autoCommitOptions.60min') || '60 minutes' }}</option>
+              <option :value="120">{{ t('settingsView.autoCommitOptions.120min') || '120 minutes' }}</option>
             </select>
             <ChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-theme-text-muted pointer-events-none" />
           </div>
           <p class="text-xs text-theme-text-muted leading-relaxed">
             {{
-              t('settingsView.autoSyncIntervalDesc') ||
-              'Automatically synchronize local notes with your Git remote at the specified frequency.'
+              t('settingsView.autoCommitIntervalDesc') ||
+              "Automatically commit local changes to the vault's Git repository at the specified frequency."
             }}
           </p>
         </div>

@@ -42,10 +42,10 @@ export async function getProjects(): Promise<Project[]> {
   return activeStorage.getProjects();
 }
 
-export async function createProject(title: string, git_remote?: string | null): Promise<Project> {
+export async function createProject(title: string): Promise<Project> {
   let res: Project;
   if (IS_DEMO_MODE) res = await demoApi.createProject(title);
-  else res = await activeStorage.createProject(title, git_remote);
+  else res = await activeStorage.createProject(title);
   crossTabBus.broadcast({ type: 'projects-changed' });
   return res;
 }
@@ -237,7 +237,6 @@ const DEFAULT_DEMO_SETTINGS: AppSettings = {
   sortBy: 'alpha',
   hideAddTaskButton: true,
   projectOrder: [],
-  gitRemoteUrl: '',
 };
 
 export async function getSettings(): Promise<AppSettings> {
@@ -330,6 +329,24 @@ export async function deleteCanvas(projectId: string, canvasId: string): Promise
 // VAULT API
 // ==========================================
 
+export async function commitChanges(): Promise<{ status: string; committed: boolean }> {
+  const res = await fetch('/api/system/commit', { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to commit changes');
+  }
+  return res.json();
+}
+
+export async function enableGitVersioning(): Promise<{ status: string; created: boolean }> {
+  const res = await fetch('/api/system/git/init', { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to enable Git versioning');
+  }
+  return res.json();
+}
+
 export async function getVaults(): Promise<Vault[]> {
   const res = await fetch('/api/vaults');
   if (!res.ok) throw new Error('Failed to load vaults');
@@ -342,13 +359,7 @@ export async function getActiveVault(): Promise<Vault> {
   return res.json();
 }
 
-export async function createVault(payload: {
-  name: string;
-  path: string;
-  id?: string;
-  git_remote?: string;
-  auto_sync?: boolean;
-}): Promise<Vault> {
+export async function createVault(payload: { name: string; path: string; id?: string }): Promise<Vault> {
   const res = await fetch('/api/vaults', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

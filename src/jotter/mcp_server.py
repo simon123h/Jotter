@@ -69,7 +69,6 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         title: str,
         id: str | None = None,
         description: str = "",
-        git_remote: str | None = None,
         done_clean_period: int | None = None,
     ) -> dict[str, Any]:
         """Create a new project board in Jotter with default columns."""
@@ -77,7 +76,6 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
             title=title,
             id=id,
             description=description,
-            git_remote=git_remote,
             done_clean_period=done_clean_period,
         )
         project = project_svc.create_project(req)
@@ -275,10 +273,10 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
         return {"status": "success", "synced_tasks": synced_count}
 
     @server.tool()
-    def git_sync() -> dict[str, Any]:
-        """Run Git synchronization (add, commit, pull, push) for configured Git remotes and reconcile SQLite index."""
-        synced_count = sync_svc.full_sync()
-        return {"status": "success", "synced_tasks": synced_count}
+    def commit_changes() -> dict[str, Any]:
+        """Commit local changes in the active vault to its Git repository, if it is one. Never pushes or pulls."""
+        committed = sync_svc.commit_changes()
+        return {"status": "success", "committed": committed}
 
     # ==========================================
     # MCP Resources (Passive Context Attachment)
@@ -302,8 +300,6 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
             buckets = bucket_svc.get_all_buckets(p.id)
             bucket_list = ", ".join(f"`{b.name}` ({b.title})" for b in buckets)
             lines.append(f"- **Columns**: {bucket_list}")
-            if p.git_remote:
-                lines.append(f"- **Git Remote**: `{p.git_remote}`")
             lines.append("")
         return "\n".join(lines)
 

@@ -161,7 +161,6 @@ export function parseProjectManifest(content: string, fallbackId: string): { pro
     title,
     created_at: String(fmData.created_at || new Date().toISOString()),
     done_clean_period: doneCleanPeriod,
-    git_remote: fmData.git_remote ? String(fmData.git_remote).trim() : undefined,
   };
 
   const buckets: Bucket[] = [];

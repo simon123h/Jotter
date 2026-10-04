@@ -16,8 +16,6 @@ class Vault:
     id: str
     name: str
     path: str
-    git_remote: str | None = None
-    auto_sync: bool = False
     is_active: bool = False
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -38,8 +36,6 @@ class Vault:
         name: str,
         path: str | Path,
         vault_id: str | None = None,
-        git_remote: str | None = None,
-        auto_sync: bool = False,
     ) -> Self:
         clean_name = str(name).strip()
         vid = slugify(vault_id or clean_name)
@@ -49,8 +45,6 @@ class Vault:
             id=vid,
             name=clean_name,
             path=str(path),
-            git_remote=git_remote.strip() if git_remote else None,
-            auto_sync=auto_sync,
             is_active=False,
         )
 

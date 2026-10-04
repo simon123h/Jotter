@@ -25,7 +25,6 @@ const emit = defineEmits<{
 
 const title = ref('');
 const doneCleanPeriod = ref<number | null>(null);
-const gitRemote = ref('');
 const titleInput = ref<HTMLInputElement | null>(null);
 
 const doneCleanPeriodPlaceholder = computed(() => {
@@ -42,7 +41,6 @@ watch(
     if (open && currentProject) {
       title.value = currentProject.title;
       doneCleanPeriod.value = currentProject.done_clean_period ?? null;
-      gitRemote.value = currentProject.git_remote || '';
 
       nextTick(() => {
         titleInput.value?.focus();
@@ -66,7 +64,6 @@ const handleSave = async () => {
   await updateProject(props.project.id, {
     title: title.value.trim(),
     done_clean_period: cleanPeriod,
-    git_remote: gitRemote.value.trim() || undefined,
   });
 
   await projectStore.invalidate();
@@ -137,22 +134,6 @@ const closeAndSave = async () => {
         </div>
         <p class="text-[11px] text-theme-text-muted mt-1 leading-tight">
           {{ t('projectEdit.doneCleanPeriodHelp') }}
-        </p>
-      </div>
-
-      <!-- Git Remote URL -->
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-          {{ t('projectEdit.gitRemoteLabel') }}
-        </label>
-        <input
-          v-model="gitRemote"
-          type="text"
-          :placeholder="t('projectEdit.gitRemotePlaceholder')"
-          class="w-full bg-theme-card border border-theme-border rounded px-3 py-2 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary font-mono text-xs"
-        />
-        <p class="text-[11px] text-theme-text-muted mt-1 leading-tight">
-          {{ t('projectEdit.gitRemoteHelp') }}
         </p>
       </div>
 

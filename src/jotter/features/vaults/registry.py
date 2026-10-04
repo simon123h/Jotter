@@ -82,8 +82,6 @@ class VaultRegistry:
                     id=rv["id"],
                     name=rv["name"],
                     path=rv["path"],
-                    git_remote=rv.get("git_remote"),
-                    auto_sync=bool(rv.get("auto_sync", False)),
                     is_active=(rv["id"] == active_id),
                     created_at=rv.get("created_at") or "",
                 )
@@ -130,8 +128,6 @@ class VaultRegistry:
             "id": vault.id,
             "name": vault.name,
             "path": vault.path,
-            "git_remote": vault.git_remote,
-            "auto_sync": vault.auto_sync,
             "created_at": vault.created_at,
         }
 

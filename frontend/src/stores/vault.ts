@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { Vault } from '@/types';
-import { getVaults, createVault, switchVault, deleteVault } from '@/api';
+import { getVaults, createVault, switchVault, deleteVault, enableGitVersioning, getSystemInfo } from '@/api';
 import { useProjectStore } from '@/stores/project';
 import { useTimeblockStore } from '@/stores/timeblock';
 
@@ -10,6 +10,8 @@ export const useVaultStore = defineStore('vault', () => {
   const activeVault = ref<Vault | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+
+  const gitInstalled = ref(false);
 
   const isCurrentGit = computed(() => !!activeVault.value?.is_git);
 
@@ -20,6 +22,9 @@ export const useVaultStore = defineStore('vault', () => {
       vaults.value = await getVaults();
       const current = vaults.value.find((v) => v.is_active) || vaults.value[0] || null;
       activeVault.value = current;
+      gitInstalled.value = await getSystemInfo()
+        .then((info) => !!info.git_installed)
+        .catch(() => false);
     } catch (err: any) {
       error.value = err.message || 'Failed to load vaults';
     } finally {
@@ -49,7 +54,7 @@ export const useVaultStore = defineStore('vault', () => {
     }
   };
 
-  const addVault = async (payload: { name: string; path: string; id?: string; git_remote?: string; auto_sync?: boolean }) => {
+  const addVault = async (payload: { name: string; path: string; id?: string }) => {
     loading.value = true;
     error.value = null;
     try {
@@ -62,6 +67,11 @@ export const useVaultStore = defineStore('vault', () => {
     } finally {
       loading.value = false;
     }
+  };
+
+  const enableGit = async () => {
+    await enableGitVersioning();
+    await fetchVaults();
   };
 
   const removeVault = async (vaultId: string) => {
@@ -84,9 +94,11 @@ export const useVaultStore = defineStore('vault', () => {
     loading,
     error,
     isCurrentGit,
+    gitInstalled,
     fetchVaults,
     selectVault,
     addVault,
     removeVault,
+    enableGit,
   };
 });

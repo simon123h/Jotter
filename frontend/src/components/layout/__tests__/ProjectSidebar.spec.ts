@@ -24,8 +24,8 @@ describe('ProjectSidebar.vue', () => {
       { id: '2', title: 'Project B', created_at: '2026-06-08T00:00:00Z' },
     ] as Project[],
     activeProjectId: '1',
-    syncLoading: false,
-    syncSuccess: false,
+    commitLoading: false,
+    commitSuccess: false,
   };
 
   const getMountOptions = () => ({

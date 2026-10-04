@@ -50,7 +50,9 @@ Jotter comes with auto-generated interactive OpenAPI documentation built directl
 * `DELETE /api/projects/{id}/tasks/{taskId}` - Delete a task and remove its Markdown file.
 
 ### System & Sync
-* `POST /api/system/sync` - Reconcile Markdown files with SQLite index and run Git sync.
+* `POST /api/system/sync` - Reconcile Markdown files on disk with the SQLite index.
+* `POST /api/system/commit` - Commit pending changes of the active vault to its local Git repository (no-op if it is not a repository). Never pushes.
+* `POST /api/system/git/init` - Initialize a Git repository in the active vault and record the initial commit. Fails with `400` if Git is missing or the vault already lies inside another repository.
 * `GET /api/system/info` - Get system information (data directory, version, Git status).
 
 ---
@@ -81,9 +83,9 @@ Add Jotter to your `claude_desktop_config.json` or agent MCP configuration:
 ### Available MCP Tools
 
 #### Project Operations
-* `list_projects()`: List all projects with id, title, description, and git remote.
+* `list_projects()`: List all projects with id, title, and description.
 * `get_project(project_id="default")`: Retrieve project details and settings by ID.
-* `create_project(title, id=None, description=None, git_remote=None)`: Create a new project board with default columns (`todo`, `in-progress`, `done`).
+* `create_project(title, id=None, description=None)`: Create a new project board with default columns (`todo`, `in-progress`, `done`).
 
 #### Column / Bucket Operations
 * `list_buckets(project_id="default")`: List Kanban columns/buckets for a project.
@@ -113,7 +115,7 @@ Add Jotter to your `claude_desktop_config.json` or agent MCP configuration:
 
 #### Synchronization Tools
 * `sync_database()`: Reconcile Markdown files on disk with the SQLite search index.
-* `git_sync()`: Run Git synchronization (`add`, `commit`, `pull`, `push`) for configured Git remotes and reconcile the SQLite index.
+* `commit_changes()`: Commit local changes in the active vault (`add`, `commit`) if it is a Git repository. Never pushes or pulls.
 
 ---
 

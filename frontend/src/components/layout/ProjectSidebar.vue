@@ -7,10 +7,10 @@ import {
   MoreHorizontal,
   Plus,
   Pin,
-  RefreshCw,
+  GitBranch,
+  GitCommitHorizontal,
   Settings,
   Check,
-  GitBranch,
   BookOpen,
   FileSpreadsheet,
   History,
@@ -35,14 +35,15 @@ const { t } = useI18n();
 const props = defineProps<{
   projects: Project[];
   activeProjectId: string;
-  syncLoading?: boolean;
-  syncSuccess?: boolean;
+  commitLoading?: boolean;
+  commitSuccess?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'create-project', title: string): void;
   (e: 'edit-project', project: Project): void;
-  (e: 'sync'): void;
+  (e: 'commit'): void;
+  (e: 'enable-git'): void;
   (e: 'import-spreadsheet', projectId: string): void;
   (e: 'move-tasks-to-project', payload: { taskIds: string[]; projectId: string }): void;
   (e: 'close'): void;
@@ -221,7 +222,7 @@ const openTimeMachineModal = () => {
 
 // Vault management
 const vaultStore = useVaultStore();
-const { vaults, activeVault } = storeToRefs(vaultStore);
+const { vaults, activeVault, gitInstalled } = storeToRefs(vaultStore);
 
 onMounted(() => {
   vaultStore.fetchVaults();
@@ -359,9 +360,8 @@ const onVaultSelected = async (event: Event) => {
         <!-- Project Title -->
         <div class="flex items-center gap-2 overflow-hidden flex-grow mr-2">
           <Hash class="w-3.5 h-3.5 text-theme-text-muted shrink-0" :class="{ 'text-theme-accent': project.id === draggingOverProjectId }" />
-          <span class="truncate font-sans flex items-center gap-1.5" :title="t('projects.gitConnectedTooltip')">
+          <span class="truncate font-sans">
             {{ project.title }}
-            <GitBranch v-if="project.git_remote" class="w-3 h-3 text-theme-accent shrink-0" />
           </span>
         </div>
 
@@ -428,34 +428,36 @@ const onVaultSelected = async (event: Event) => {
 
     <!-- Sidebar Footer Actions -->
     <div class="p-3 border-t border-theme-border flex flex-col gap-1.5 shrink-0 bg-transparent">
-      <!-- Sync Index Button with Dropdown -->
+      <!-- Commit Button with Time Machine (Git vaults only) -->
       <div
+        v-if="activeVault?.is_git"
         class="relative w-full flex items-stretch rounded transition-all duration-300"
         :class="
-          syncSuccess
+          commitSuccess
             ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400'
-            : syncLoading
+            : commitLoading
               ? 'bg-theme-column/20 text-theme-text-main animate-pulse'
               : 'bg-transparent text-theme-text-muted'
         "
       >
-        <!-- Main Sync Button (85%) -->
+        <!-- Main Commit Button (85%) -->
         <button
-          @click="emit('sync')"
+          @click="emit('commit')"
           class="flex-grow flex items-center justify-center gap-2 py-2 pl-3 text-xs font-semibold rounded-l transition-all duration-300 cursor-pointer"
           :class="
-            syncSuccess
+            commitSuccess
               ? 'text-emerald-500 dark:text-emerald-400'
-              : syncLoading
+              : commitLoading
                 ? 'text-theme-text-main'
                 : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30'
           "
-          :disabled="syncLoading"
+          :disabled="commitLoading"
+          :title="t('commit.tooltip')"
         >
-          <Check v-if="syncSuccess" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 animate-bounce" />
-          <RefreshCw v-else class="w-3.5 h-3.5" :class="{ 'animate-spin': syncLoading }" />
+          <Check v-if="commitSuccess" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 animate-bounce" />
+          <GitCommitHorizontal v-else class="w-3.5 h-3.5" :class="{ 'animate-pulse': commitLoading }" />
           <span>
-            {{ syncSuccess ? t('sync.synced') : syncLoading ? t('sync.syncing') : t('sync.button') }}
+            {{ commitSuccess ? t('commit.committed') : commitLoading ? t('commit.committing') : t('commit.button') }}
           </span>
         </button>
 
@@ -464,7 +466,7 @@ const onVaultSelected = async (event: Event) => {
           @click.stop="openTimeMachineModal"
           class="px-2 rounded-r transition-all duration-300 cursor-pointer"
           :class="
-            syncSuccess
+            commitSuccess
               ? 'text-emerald-500 hover:bg-emerald-500/5'
               : 'text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30'
           "
@@ -473,6 +475,18 @@ const onVaultSelected = async (event: Event) => {
           <History class="w-3.5 h-3.5" />
         </button>
       </div>
+
+      <!-- Enable Git versioning for non-Git vaults -->
+      <button
+        v-else-if="activeVault"
+        @click="emit('enable-git')"
+        :disabled="!gitInstalled || commitLoading"
+        :title="gitInstalled ? t('commit.enableTooltip') : t('commit.gitMissing')"
+        class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded text-theme-text-muted transition-all cursor-pointer hover:text-theme-text-main hover:bg-theme-column/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+      >
+        <GitBranch class="w-3.5 h-3.5" />
+        <span>{{ t('commit.enable') }}</span>
+      </button>
 
       <!-- Import Spreadsheet Button -->
       <button

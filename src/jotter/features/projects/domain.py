@@ -13,7 +13,6 @@ class Project:
     id: str  # Immutable directory / workspace slug (e.g. "default", "work-tasks")
     name: str  # Display name / title (e.g. "Default", "Work & Office")
     description: str = ""
-    git_remote: str | None = None
     done_clean_period: int | None = None
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -29,7 +28,6 @@ class Project:
         name: str,
         project_id: str | None = None,
         description: str = "",
-        git_remote: str | None = None,
         done_clean_period: int | None = None,
         **kwargs: Any,
     ) -> Self:
@@ -45,7 +43,6 @@ class Project:
             id=slug,
             name=clean_name,
             description=description.strip() if description else "",
-            git_remote=git_remote.strip() if git_remote else None,
             done_clean_period=done_clean_period,
             created_at=datetime.now(timezone.utc).isoformat(),
         )
@@ -54,7 +51,6 @@ class Project:
         self,
         name: str | None = None,
         description: str | None = None,
-        git_remote: str | None = ...,
         done_clean_period: int | None = ...,
     ) -> None:
         if name is not None:
@@ -65,9 +61,6 @@ class Project:
 
         if description is not None:
             self.description = description.strip()
-
-        if git_remote is not ...:
-            self.git_remote = git_remote.strip() if git_remote else None
 
         if done_clean_period is not ...:
             self.done_clean_period = done_clean_period

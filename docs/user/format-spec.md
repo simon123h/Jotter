@@ -122,8 +122,6 @@ Welcome to the project board documentation note. You can freely edit this markdo
 | `buckets` | Array of Objects | Yes | List of board columns (buckets), ordered by `position`. Each object contains `name` (slug), `title`, `position`, `color`, `layout`, `max_tasks`, and `is_default`. |
 
 > [!NOTE]
-> **Local vs. Shared Configuration**: Per-project Git remote URLs (`git_remote`) are stored in your local repository configuration (`.git/config` / local SQLite index) and omitted from `index.md`. This ensures credential safety and prevents remote URL conflicts when `index.md` is committed and shared among team members.
->
 > **Automatic Migration**: Workspaces containing legacy `projects.json` or `buckets.json` files are automatically migrated to `index.md` files upon launch or synchronization.
 
 ---
@@ -154,4 +152,4 @@ Because Markdown files on your hard drive are the actual database, Jotter implem
 
 * **Startup Scan**: When you start Jotter, the backend scans your project's folders for `.md` files, parses their frontmatter, and updates an ephemeral SQLite index in your home directory's app data cache.
 * **File System Watchers**: While Jotter is running, a background file system watcher listens for file events. If you edit or save a markdown file using an external text editor (like Obsidian or VS Code), Jotter automatically parses the updated file and refreshes the UI instantly.
-* **Manual Re-indexing**: If watch events are missed or files are synced in bulk, you can always click the **Sync** button in the sidebar to run a complete clean scan and rebuild the ephemeral database index.
+* **Manual Re-indexing**: If watch events are missed or files are synced in bulk, you can always click **Rebuild Search Index** in **Settings** to run a complete clean scan and rebuild the ephemeral database index.

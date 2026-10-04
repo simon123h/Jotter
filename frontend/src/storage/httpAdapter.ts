@@ -72,11 +72,11 @@ export class HttpStorageAdapter implements StorageAdapter {
     return res.json();
   }
 
-  async createProject(title: string, git_remote?: string | null): Promise<Project> {
+  async createProject(title: string): Promise<Project> {
     const res = await this.customFetch(`${API_BASE}/projects`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, git_remote }),
+      body: JSON.stringify({ title }),
     });
     if (!res.ok) await this.handleResponseError(res, 'Failed to create project');
     return res.json();

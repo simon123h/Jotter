@@ -1,13 +1,17 @@
 import subprocess
 from pathlib import Path
 
+import pytest
+
+from jotter.features.sync import git_adapter
 from jotter.features.sync.git_adapter import (
+    commit_changes,
+    enable_git_versioning,
     get_git_history,
-    git_sync,
-    is_offline_error,
     restore_commit,
     run_git,
 )
+from jotter.shared.exceptions import ValidationError
 
 
 def setup_git_data_dir(temp_dir: str):
@@ -16,12 +20,6 @@ def setup_git_data_dir(temp_dir: str):
     subprocess.run(["git", "init"], cwd=temp_dir, check=True, capture_output=True)
     subprocess.run(["git", "config", "user.name", "Test User"], cwd=temp_dir, check=True)
     subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=temp_dir, check=True)
-
-
-def test_offline_error_detection():
-    assert is_offline_error("fatal: unable to access 'https://github.com/...': Could not resolve host")
-    assert is_offline_error("ssh: connect to host github.com port 22: Connection refused")
-    assert not is_offline_error("syntax error in commit message")
 
 
 def test_git_commit_and_history(temp_dir):
@@ -71,20 +69,58 @@ def test_git_restore_commit(temp_dir):
     assert any("Restored" in c["message"] for c in history_after)
 
 
-def test_git_sync_no_remote(temp_dir):
+def test_commit_changes_commits_locally(temp_dir):
     setup_git_data_dir(temp_dir)
     # Write a file in the repo
     file_path = Path(temp_dir) / "test.txt"
     file_path.write_text("hello", encoding="utf-8")
 
-    # git_sync should commit changes locally and return None when remote is None
-    res = git_sync(temp_dir, None)
-    assert res is None
+    # commit_changes should commit changes locally and report that a commit was created
+    assert commit_changes(temp_dir) is True
+    # Nothing left to commit on a second run
+    assert commit_changes(temp_dir) is False
 
     # Check commit history contains auto-sync
     history = get_git_history(temp_dir)
     assert len(history) == 1
     assert "jotter: auto-sync" in history[0]["message"]
+
+
+def test_commit_changes_keeps_configured_identity(temp_dir):
+    setup_git_data_dir(temp_dir)
+    (Path(temp_dir) / "test.txt").write_text("hello", encoding="utf-8")
+
+    assert commit_changes(temp_dir) is True
+
+    # An identity that is already configured must never be overwritten
+    assert run_git(["config", "user.name"], cwd=temp_dir).stdout.strip() == "Test User"
+    assert run_git(["config", "user.email"], cwd=temp_dir).stdout.strip() == "test@example.com"
+    assert get_git_history(temp_dir)[0]["author"] == "Test User"
+
+
+def test_commit_changes_sets_local_fallback_identity_when_unset(temp_dir, monkeypatch):
+    # Isolate from the developer's global/system git identity
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(Path(temp_dir) / "no-global-config"))
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    repo = Path(temp_dir) / "vault"
+    repo.mkdir()
+    run_git(["init"], cwd=repo)
+    (repo / "test.txt").write_text("hello", encoding="utf-8")
+
+    assert commit_changes(repo) is True
+
+    assert run_git(["config", "--local", "user.name"], cwd=repo).stdout.strip() == "Jotter"
+    assert run_git(["config", "--local", "user.email"], cwd=repo).stdout.strip() == "jotter@local"
+    assert get_git_history(repo)[0]["author"] == "Jotter"
+
+
+def test_commit_changes_skips_non_repo(temp_dir):
+    file_path = Path(temp_dir) / "test.txt"
+    file_path.write_text("hello", encoding="utf-8")
+
+    # commit_changes must not turn a plain folder into a git repository
+    assert commit_changes(temp_dir) is False
+    assert not (Path(temp_dir) / ".git").exists()
 
 
 def test_git_history_and_restore_fallback_to_parent_repo(temp_dir):
@@ -129,7 +165,7 @@ def test_git_history_and_restore_fallback_to_parent_repo(temp_dir):
     assert other_file.read_text(encoding="utf-8") == "project B updated"
 
 
-def test_git_sync_tracks_and_restores_canvas_files(temp_dir):
+def test_commit_changes_tracks_and_restores_canvas_files(temp_dir):
     setup_git_data_dir(temp_dir)
 
     proj_dir = Path(temp_dir) / "default"
@@ -137,8 +173,8 @@ def test_git_sync_tracks_and_restores_canvas_files(temp_dir):
     canvas_file = proj_dir / "architecture.canvas"
     canvas_file.write_text('{"nodes":[{"id":"node1","type":"text","text":"v1"}],"edges":[]}', encoding="utf-8")
 
-    # git_sync auto-commits the canvas file
-    git_sync(temp_dir, None)
+    # commit_changes commits the canvas file
+    commit_changes(temp_dir)
 
     history = get_git_history(temp_dir)
     assert len(history) == 1
@@ -146,7 +182,7 @@ def test_git_sync_tracks_and_restores_canvas_files(temp_dir):
 
     # Update canvas
     canvas_file.write_text('{"nodes":[{"id":"node1","type":"text","text":"v2"}],"edges":[]}', encoding="utf-8")
-    git_sync(temp_dir, None)
+    commit_changes(temp_dir)
 
     history_v2 = get_git_history(temp_dir)
     assert len(history_v2) == 2
@@ -154,3 +190,33 @@ def test_git_sync_tracks_and_restores_canvas_files(temp_dir):
     # Restore v1
     restore_commit(temp_dir, None, v1_hash)
     assert "v1" in canvas_file.read_text(encoding="utf-8")
+
+
+def test_enable_git_versioning_initializes_repo(temp_dir):
+    vault = Path(temp_dir) / "vault"
+    vault.mkdir()
+
+    assert enable_git_versioning(vault) is True
+    assert (vault / ".git").is_dir()
+    # Idempotent: an existing repository is left alone
+    assert enable_git_versioning(vault) is False
+
+
+def test_enable_git_versioning_refuses_nested_repo(temp_dir):
+    setup_git_data_dir(temp_dir)
+    vault = Path(temp_dir) / "vault"
+    vault.mkdir()
+
+    with pytest.raises(ValidationError, match="already inside another Git repository"):
+        enable_git_versioning(vault)
+    assert not (vault / ".git").exists()
+
+
+def test_enable_git_versioning_requires_git(temp_dir, monkeypatch):
+    monkeypatch.setattr(git_adapter, "is_git_installed", lambda: False)
+    vault = Path(temp_dir) / "vault"
+    vault.mkdir()
+
+    with pytest.raises(ValidationError, match="not installed"):
+        enable_git_versioning(vault)
+    assert not (vault / ".git").exists()

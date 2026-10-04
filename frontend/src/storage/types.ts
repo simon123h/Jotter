@@ -6,7 +6,7 @@ export interface StorageAdapter {
 
   // Projects
   getProjects(): Promise<Project[]>;
-  createProject(title: string, gitRemote?: string | null): Promise<Project>;
+  createProject(title: string): Promise<Project>;
   updateProject(id: string, updates: Partial<Project>): Promise<Project>;
   deleteProject(id: string): Promise<void>;
 

@@ -10,7 +10,6 @@ class ProjectCreate(BaseModel):
     id: str | None = None
     description: str = ""
     done_clean_period: int | None = None
-    git_remote: str | None = None
 
 
 class ProjectUpdate(BaseModel):
@@ -19,7 +18,6 @@ class ProjectUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     done_clean_period: int | None = None
-    git_remote: str | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -30,5 +28,4 @@ class ProjectResponse(BaseModel):
     description: str = ""
     created_at: str
     done_clean_period: int | None = None
-    git_remote: str | None = None
     task_count: int | None = None

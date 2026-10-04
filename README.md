@@ -27,7 +27,7 @@ Jotter is a **local-first, privacy-focused task management web application** des
 - **Flexible Views**: Organise tasks your way with Kanban columns, list view, a priority-based **Eisenhower Matrix**, and a chronological **Time View** grouping by due dates.
 - **Smart Task Creation**: Create rich tasks quickly with keywords for tags, due dates or priorities in the task title.
 - **Offline-First & Local Index**: Runs entirely on your computer with a lightning-fast local SQLite database index. If the database index is ever deleted, the system automatically rebuilds it instantly from your markdown files.
-- **Selective Per-Project Git Sync**: Enable synchronization for individual projects by connecting them to different Git remotes. Keep "Home" local while sharing "Work" with a team.
+- **Local Git Versioning**: If your vault is a Git repository, Jotter snapshots your changes as local commits. Pushing, pulling, and sharing stay in your hands, using your own Git workflow or any file sync tool.
 - **Git-Backed Time Machine**: Roll your workspace or individual projects back to any historical snapshot in your Git history using a dedicated, searchable, and spacious dialog. Automatically creates pre-restore backup commits so you can revert any rollback operation at any time.
 - **Multi-Language Support**: Fully localized in English and German.
 - **Model Context Protocol (MCP) Support**: Connect AI assistants directly to your local Kanban board via `jotter mcp`.
@@ -122,7 +122,7 @@ Alternatively, you can refer to the raw Markdown source files in the `docs/` fol
   - [Postponing Tasks](docs/user/postponing.md)
   - [Markdown File Format Specification](docs/user/format-spec.md)
   - [Obsidian & PKM Sync](docs/user/obsidian.md)
-  - [Git Sync & Collaboration](docs/user/git-sync.md)
+  - [Git Versioning & Time Machine](docs/user/git-sync.md)
   - [Data Safety & Recovery](docs/user/safety.md)
 - **Developer Reference**:
   - [Architectural Design (arc42)](docs/developer/architecture.md)

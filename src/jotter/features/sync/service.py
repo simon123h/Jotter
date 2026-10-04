@@ -8,7 +8,7 @@ from typing import Self
 from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository
 from jotter.features.projects.repo import ProjectRepository
-from jotter.features.sync.git_adapter import git_sync
+from jotter.features.sync.git_adapter import commit_changes, enable_git_versioning
 from jotter.features.tasks.disk_repo import DiskTaskRepository
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 
@@ -76,18 +76,7 @@ class SyncApplicationService:
             proj_dir.mkdir(parents=True, exist_ok=True)
             legacy_data = legacy_projects_map.get(proj_id)
 
-            existing_proj = None
-            if self.project_repo.exists(proj_id):
-                try:
-                    existing_proj = self.project_repo.get(proj_id)
-                except Exception:
-                    pass
-
             project, buckets = read_project_manifest(proj_dir, fallback_id=proj_id, legacy_data=legacy_data)
-
-            # Preserve existing SQLite git_remote if index.md or legacy data did not specify one
-            if not project.git_remote and existing_proj and existing_proj.git_remote:
-                project.git_remote = existing_proj.git_remote
 
             self.project_repo.save(project)
             for b in buckets:
@@ -175,38 +164,23 @@ class SyncApplicationService:
 
         return total_synced
 
-    def full_sync(self) -> int:
-        """Runs Git sync for the active vault (or configured project remotes) and reconciles SQLite."""
-        settings_file = Path(self.data_dir) / "settings.json"
-        global_remote = None
-        if settings_file.is_file():
+    def commit_changes(self) -> bool:
+        """Commits pending changes in the vault (if it is a Git repository) and in project folders with their own repo.
+
+        Local only: never initializes a repository and never talks to a remote. Returns True if any commit was created.
+        """
+        targets = [self.data_dir, *(str(Path(self.data_dir) / p.id) for p in self.project_repo.get_all())]
+        committed = False
+        for target in targets:
             try:
-                with open(settings_file, encoding="utf-8") as f:
-                    s_data = json.load(f)
-                    global_remote = s_data.get("gitRemoteUrl") or s_data.get("git_remote_url")
+                committed = commit_changes(target) or committed
             except Exception as e:
-                logger.warning("Failed to read settings.json for global git remote: %s", e)
+                logger.warning("Local Git commit error for '%s': %s", target, e)
+        return committed
 
-        # 1. Primary Vault-Level Git Sync
-        try:
-            git_sync(self.data_dir, global_remote)
-        except Exception as e:
-            logger.warning("Git sync error for vault '%s': %s", self.data_dir, e)
-
-        # 2. Per-project Git Sync fallback (for legacy / existing setups with project remotes or sub-repos)
-        projects = self.project_repo.get_all()
-        for p in projects:
-            proj_dir = str(Path(self.data_dir) / p.id)
-            if p.git_remote:
-                try:
-                    git_sync(proj_dir, p.git_remote)
-                except Exception as e:
-                    logger.warning("Git sync error for project '%s': %s", p.id, e)
-            elif not global_remote:
-                # If no global remote is active, commit local project repo if it has its own .git
-                try:
-                    git_sync(proj_dir, None)
-                except Exception as e:
-                    logger.warning("Local Git commit error for project '%s': %s", p.id, e)
-
-        return self.sync_db_only()
+    def enable_git_versioning(self) -> bool:
+        """Turns the vault into a Git repository and records the initial commit. Returns True if newly created."""
+        created = enable_git_versioning(self.data_dir)
+        if created:
+            self.commit_changes()
+        return created

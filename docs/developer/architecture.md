@@ -158,20 +158,25 @@ jotter
 
 ---
 
-## 8. Git Synchronization Logic
+## 8. Git Versioning Logic
 
-Jotter treats each project directory as a potential independent Git repository. The logic is implemented in `src/jotter/features/git/service.py` and is triggered sequentially for all configured projects during a system sync.
+Jotter's Git integration is local-only. It is implemented in `src/jotter/features/sync/git_adapter.py` and never performs network operations (no `fetch`, `pull`, or `push`) and never stores remote URLs.
 
-### The Per-Project Sync Flow:
+### The Local Commit Flow:
 
-1. **Discovery**: The backend queries the database for all projects that have a `git_remote` URL.
-2. **Auto-Setup**: For each project, Jotter checks if a `.git` folder exists. If not, it executes `git init` and `git remote add origin` before proceeding.
-3. **Commit**: Runs `git add .` and `git commit` inside the project subdirectory.
-4. **Fetch & Merge**: Fetches from `origin` and attempts a safe merge (Fast-Forward first, then Recursive).
-5. **Conflict Isolation**: Conflicts are handled on a per-project basis. If Project A has a conflict, it will abort that project's merge, but Project B will still continue to sync.
-6. **Push**: Successful merges are pushed to the project-specific remote.
+1. **Trigger**: `POST /api/system/commit`, the sidebar **Commit** button, the auto-commit interval, or the MCP `commit_changes` tool call `SyncApplicationService.commit_changes()`.
+2. **Vault Commit**: If the active vault directory is a Git repository, Jotter runs `git add -A` and commits with a timestamped `jotter: auto-sync` message. Folders that are not repositories are left untouched.
+3. **Legacy Fallback**: Project subdirectories that carry their own `.git` folder are committed individually.
+4. **Local Excludes**: The SQLite index (`tasks.db*`) is added to `.git/info/exclude` so it is never versioned.
+5. **Identity**: Existing `user.name` / `user.email` (at any config level) are never modified. Only a missing value gets a fallback in the repository's local config.
 
-This architecture enables **selective sharing**, where different boards can be shared with different teams or kept strictly local.
+Commits and index reconciliation (`POST /api/system/sync`) are independent operations.
+
+### Enabling Versioning:
+
+`POST /api/system/git/init` (`enable_git_versioning`) is the only code path that runs `git init`, and only on explicit user action. It refuses to run if Git is not installed or if the vault already lies inside another work tree (no nested repositories), then records the initial commit.
+
+The same commits back the Time Machine (`get_git_history`, `git_restore`). Synchronizing a vault between devices is out of scope and left to the user's own Git workflow or file sync tooling.
 
 ---
 
@@ -209,7 +214,6 @@ Each project folder contains an `index.md` note defining board columns and proje
 type: project
 id: default
 title: Main Project Board
-git_remote: "https://github.com/user/my-tasks.git"
 done_clean_period: "after_1_week"
 buckets:
   - name: todo
@@ -243,7 +247,7 @@ Jotter provides dual interfaces for external programmatic access:
 
 2. **Model Context Protocol (MCP)**:
    - Built-in stdio-based MCP server (`jotter mcp` implemented via `FastMCP`).
-   - Enables LLMs and AI agents (such as Claude Desktop, Cursor, or Antigravity) to inspect projects, read live Kanban boards, filter tasks, create/update/move tasks, and run Git synchronization.
+   - Enables LLMs and AI agents (such as Claude Desktop, Cursor, or Antigravity) to inspect projects, read live Kanban boards, filter tasks, create/update/move tasks, and commit local Git snapshots.
    - Implements anti-flooding safeguards for agents: `list_tasks` defaults to active tasks (`include_done=False`), and board resources (`jotter://projects/{id}/board`) collapse done/archived columns into count summaries.
    - Detailed specification and parameters are documented in [REST API & MCP Reference](./api.md).
 
@@ -260,11 +264,11 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0005: Explicit In-Process CQRS and Architecture Enforcement](./adr/0005-explicit-in-process-cqrs.md)
 - [ADR 0006: Dual-Runtime Architecture (Desktop HTTP vs. Android In-Process Engine)](./adr/0006-dual-runtime-architecture.md)
 - [ADR 0007: Project Manifest (index.md) & Obsidian Folder Notes Integration](./adr/0007-project-manifest-index-md.md)
-- [ADR 0008: Selective Per-Project Git Synchronization and Offline Isolation](./adr/0008-selective-per-project-git-sync.md)
+- [ADR 0008: Selective Per-Project Git Synchronization and Offline Isolation](./adr/0008-selective-per-project-git-sync.md) (superseded by ADR 0012)
 - [ADR 0009: Cross-Platform Atomic Filesystem Writes with Exponential Backoff](./adr/0009-cross-platform-atomic-writes.md)
 - [ADR 0010: Adopting the Open JSON Canvas Format for Visual 2D Boards](./adr/0010-open-json-canvas-format.md)
 - [ADR 0011: Cross-Tab Broadcast Synchronization and Window Focus Revalidation](./adr/0011-cross-tab-broadcast-sync.md)
-- [ADR 0012: Vault Abstraction and Simplified Git Sync](./adr/0012-vault-abstraction-and-simplified-git-sync.md)
+- [ADR 0012: Vault Abstraction and Local-Only Git Versioning](./adr/0012-vault-abstraction-and-simplified-git-sync.md)
 
 
 

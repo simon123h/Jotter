@@ -2,8 +2,6 @@ export interface Vault {
   id: string;
   name: string;
   path: string;
-  git_remote?: string | null;
-  auto_sync?: boolean;
   is_active: boolean;
   is_git: boolean;
   created_at: string;
@@ -14,7 +12,6 @@ export interface Project {
   title: string;
   created_at: string;
   done_clean_period?: number | null;
-  git_remote?: string | null;
 }
 
 export interface Task {
@@ -93,10 +90,9 @@ export interface AppSettings {
   windowX?: number;
   windowY?: number;
   windowMaximized?: boolean;
-  gitRemoteUrl?: string;
   language?: string;
   tagColors?: Record<string, string>;
-  autoSyncInterval?: number;
+  autoCommitInterval?: number;
   timeblockStartHour?: number;
   timeblockEndHour?: number;
   isTimeblockSidebarOpen?: boolean;
@@ -106,6 +102,7 @@ export interface AppSettings {
 export interface SystemInfo {
   version: string;
   data_dir: string;
+  git_installed?: boolean;
 }
 
 export interface GitCommit {

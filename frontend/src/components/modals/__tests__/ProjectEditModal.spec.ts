@@ -31,7 +31,6 @@ describe('ProjectEditModal.vue', () => {
       id: 'proj-123',
       title: 'Our Awesome Project',
       done_clean_period: 14,
-      git_remote: 'git@github.com:user/repo.git',
       created_at: '2026-06-01T12:00:00Z',
       updated_at: '2026-06-01T12:00:00Z',
     },
@@ -85,7 +84,6 @@ describe('ProjectEditModal.vue', () => {
     expect(updateProject).toHaveBeenCalledWith('proj-123', {
       title: 'Our Awesome Project',
       done_clean_period: 14,
-      git_remote: 'git@github.com:user/repo.git',
     });
     expect(wrapper.emitted('close')).toBeTruthy();
   });
@@ -104,7 +102,6 @@ describe('ProjectEditModal.vue', () => {
     expect(updateProject).toHaveBeenCalledWith('proj-123', {
       title: 'Our Awesome Project',
       done_clean_period: 14,
-      git_remote: 'git@github.com:user/repo.git',
     });
     expect(wrapper.emitted('close')).toBeTruthy();
   });
@@ -124,7 +121,6 @@ describe('ProjectEditModal.vue', () => {
     expect(updateProject).toHaveBeenCalledWith('proj-123', {
       title: 'Our Awesome Project',
       done_clean_period: 14,
-      git_remote: 'git@github.com:user/repo.git',
     });
     expect(wrapper.emitted('close')).toBeTruthy();
   });

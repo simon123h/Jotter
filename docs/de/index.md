@@ -31,8 +31,8 @@ features:
     title: Auf Geschwindigkeit ausgelegt
     details: Ein lokaler SQLite-basierter Index ermöglicht blitzschnelles Drag-and-Drop, Filtern und Suchen.
   - icon: 🖧
-    title: Git-Synchronisation
-    details: Projekte können mit Git-Repositories synchronisiert werden, um die Nutzung auf mehreren Geräten oder im Team zu ermöglichen.
+    title: Git-Versionierung
+    details: Vaults lassen sich mit einem lokalen Git-Repository versionieren – die Grundlage der integrierten Time Machine für Schnappschüsse und Rollbacks.
 ---
 
 <div class="markdown-feature-container">

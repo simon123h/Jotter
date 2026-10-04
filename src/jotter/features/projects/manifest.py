@@ -70,13 +70,6 @@ def read_project_manifest(
     description = str(
         fm_data.get("description") or (legacy_data.get("description") if legacy_data else "") or ""
     ).strip()
-    git_remote = (
-        fm_data.get("git_remote")
-        or fm_data.get("gitRemote")
-        or (legacy_data.get("git_remote") or legacy_data.get("gitRemote") if legacy_data else None)
-    )
-    git_remote_str = str(git_remote).strip() if git_remote else None
-
     raw_clean_period = (
         fm_data.get("done_clean_period") if "done_clean_period" in fm_data else fm_data.get("doneCleanPeriod")
     )
@@ -98,7 +91,6 @@ def read_project_manifest(
         name=title,
         project_id=proj_id,
         description=description,
-        git_remote=git_remote_str,
         done_clean_period=clean_period_int,
     )
     if created_at:
@@ -239,7 +231,6 @@ def write_project_manifest(
         fm_dict["created_at"] = project.created_at
     if project.done_clean_period is not None:
         fm_dict["done_clean_period"] = project.done_clean_period
-    # Note: git_remote is intentionally omitted from index.md to keep credentials/remotes local
 
     fm_dict["buckets"] = [
         {

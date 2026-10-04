@@ -22,8 +22,8 @@ Da die SQLite-Datenbank lediglich als schneller Zwischenspeicher (Cache) dient, 
 
 ### Den Index neu aufbauen
 Wenn du feststellst, dass deine Boardansicht nicht mehr den Dateien auf der Festplatte entspricht oder wenn du manuell Aufgaben-Dateien in den Ordner kopiert hast:
-1. Öffne die Seitenleiste der Jotter-Anwendung.
-2. Klicke ganz unten auf die Schaltfläche **Synchronisieren**.
+1. Öffne die **Einstellungen** der Jotter-Anwendung.
+2. Klicke auf **Suchindex neu aufbauen**.
 3. Jotter scannt deine Ordner blitzschnell neu ein, löscht den veralteten Cache und baut den SQLite-Index komplett neu auf.
 
 ### Den Cache manuell zurücksetzen
@@ -35,7 +35,7 @@ Falls ein schwerwiegender Fehler im App-Index vorliegt und du die Datenbank komp
    * **Windows**: `%APPDATA%\jotter`
 3. Lösche die dort liegende Datenbankdatei (meist `index.db` oder `cache.db`).
 4. Starte Jotter neu.
-5. Klicke in der Seitenleiste auf **Synchronisieren**, um die Datenbank sauber aus deinen Original-Markdown-Dateien zu rekonstruieren.
+5. Öffne die **Einstellungen** und klicke auf **Suchindex neu aufbauen**, um die Datenbank sauber aus deinen Original-Markdown-Dateien zu rekonstruieren.
 
 ---
 
@@ -61,7 +61,7 @@ Du kannst jedes beliebige Cloud-Synchronisations-Tool verwenden, um deine Daten 
 Da deine Aufgaben in einfachen Textdateien liegen, kannst du Bearbeitungshistorien einsehen und Fehler mithilfe von Standard-Versionskontrollen korrigieren.
 
 ### Git-Versionskontrolle
-Wenn du die Git-Synchronisation nutzt, wird jede deiner Änderungen als eigenständiger Commit protokolliert.
+Ist dein Vault ein Git-Repository, sichert Jotter deine Änderungen als lokale Git-Commits (siehe [Git-Versionierung und Time Machine](./git-sync.md)).
 * **Gelöschte Aufgabe wiederherstellen**: Wenn du versehentlich eine Aufgabenkarte gelöscht hast, kannst du sie aus der Git-Historie wieder zurückholen:
   ```bash
   git checkout HEAD~1 -- tasks/meine-versehentlich-geloeschte-aufgabe-id.md

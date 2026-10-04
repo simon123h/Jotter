@@ -1,6 +1,6 @@
 # ADR 8: Selective Per-Project Git Synchronization and Offline Isolation
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR 0012](./0012-vault-abstraction-and-simplified-git-sync.md). Remote synchronization and per-project `git_remote` configuration were removed; Jotter only creates local commits.
 - **Date**: 2026-09-15
 - **Author**: Antigravity (AI Coding Assistant) & User
 

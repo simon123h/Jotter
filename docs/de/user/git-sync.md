@@ -1,56 +1,31 @@
-# Git-Synchronisation und Zusammenarbeit
+# Git-Versionierung und Time Machine
 
-Jotter verfügt über eine tiefe, automatisierte Git-Integration im Hintergrund. Wenn du deine Boards mit einem Git-Remote-Repository (z. B. auf GitHub, GitLab, Gitea oder einem eigenen Server) verbindest, kannst du deine Daten automatisch sichern und über mehrere Rechner hinweg synchron halten.
+Jotter kann eine lokale Git-Historie deines Vaults führen. Jeder Schnappschuss ist ein gewöhnlicher Git-Commit. Darauf baut die integrierte **Time Machine** auf, und du kannst Änderungen mit jedem Git-Werkzeug einsehen oder zurückrollen.
 
-Diese Seite beschreibt die Einrichtung, Authentifizierung und das kollaborative Arbeiten auf Basis einfacher Textdateien.
-
----
-
-## Funktionsweise der Synchronisation
-
-Sobald die Git-Integration für ein Projekt aktiviert ist, agiert Jotter als stiller Versionskontroll-Assistent im Hintergrund:
-
-* **Automatisches Rebuild-Triggering**: Wenn du eine Synchronisation anstößt (entweder manuell über die Schaltfläche **Synchronisieren** in der Seitenleiste oder im Hintergrund), führt Jotter im Hintergrund Git-Aktionen aus.
-* **Intelligente Commits**: Jotter erkennt erstellte, geänderte oder gelöschte Aufgabendateien, fügt sie zur Versionskontrolle hinzu und committet sie mit strukturierten Commit-Nachrichten.
-* **Upstream-Abgleich**: Es führt ein `git pull --rebase` aus, um Änderungen von anderen Geräten herunterzuladen, integriert diese und führt anschließend ein `git push` aus, um deine Änderungen hochzuladen.
+Jotters Git-Integration ist bewusst **rein lokal**: Jotter erstellt Commits, führt aber niemals Push oder Pull aus und kommuniziert mit keinem Remote. Das Teilen eines Vaults über mehrere Geräte oder im Team bleibt den dafür gemachten Werkzeugen überlassen (siehe [Synchronisation über mehrere Geräte](#synchronisation-uber-mehrere-gerate)).
 
 ---
 
-## Ein Git-Remote einrichten
+## Git-Versionierung aktivieren
 
-Du kannst die Git-Synchronisation entweder global für deinen gesamten Arbeitsbereich oder individuell für jedes Projekt einzeln konfigurieren.
+Die Versionierung ist pro Vault freiwillig. Jotter legt niemals ungefragt ein Git-Repository an.
 
-### Einzelsynchronisation für ein Projekt einrichten
-1. Öffne die Seitenleiste, fahre über das gewünschte Projekt und klicke auf das Stift-Symbol (**Projekt bearbeiten**).
-2. Trage in das Feld **Git-Remote-URL** die Git-Adresse deines Repositories ein:
-   * **SSH**: `git@github.com:benutzername/mein-jotter-board.git` (Empfohlen)
-   * **HTTPS**: `https://github.com/benutzername/mein-jotter-board.git`
-3. Klicke auf **Speichern**.
+1. Stelle sicher, dass `git` installiert und im `PATH` verfügbar ist.
+2. Klicke unten in der Seitenleiste auf **Git aktivieren**. Jotter legt im aktiven Vault ein Git-Repository an und erstellt einen ersten Commit. Ist Git nicht installiert, ist die Schaltfläche deaktiviert.
+3. An ihrer Stelle erscheinen die Schaltfläche **Commit** und die Time Machine.
 
-### Globale Synchronisation einrichten
-Wenn du alle deine Projekte und Boards in einem einzigen zentralen Ordner aufbewahrst:
-1. Öffne die **Einstellungen** über das Zahnrad-Symbol in der Seitenleiste.
-2. Trage die Repository-Adresse unter **Globale Git-Remote-URL** ein.
-3. Sobald diese gespeichert ist, verwaltet Jotter die Synchronisation für deinen gesamten Arbeitsbereich.
+Liegt ein Vault bereits in einem anderen Git-Repository, lehnt Jotter die Aktivierung ab, um verschachtelte Repositories zu vermeiden. Nutze in diesem Fall das umgebende Repository direkt oder verschiebe den Vault in einen eigenen Ordner.
+
+Wenn du das Terminal bevorzugst: `git init` im Vault-Ordner (zu finden unter **Einstellungen → Systeminformationen**) hat denselben Effekt.
 
 ---
 
-## Authentifizierung und Sicherheit
+## So entstehen Commits
 
-Jotter nutzt die lokal auf deinem Computer installierte Git-Umgebung. Dadurch werden alle dort hinterlegten Keys, Passwörter und Sicherheitskonfigurationen automatisch übernommen.
-
-### Authentifizierung per SSH (Empfohlen)
-Wir empfehlen dringend die Verwendung von SSH-URLs (`git@github.com:...`).
-* Wenn deine SSH-Schlüssel im lokalen SSH-Agenten geladen und bei GitHub/GitLab registriert sind, kann sich Jotter im Hintergrund völlig lautlos ohne Passwort-Abfragen authentifizieren.
-* Stelle sicher, dass du deinen SSH-Schlüssel vor dem Start von Jotter mit `ssh-add` geladen hast.
-
-### Authentifizierung per HTTPS und Token
-Falls du HTTPS-URLs (`https://github.com/...`) bevorzugst:
-* Richte den lokalen Git-Credential-Helper ein, um deine Anmeldedaten zu speichern:
-  ```bash
-  git config --global credential.helper store
-  ```
-* Beim ersten manuellen Push oder Pull wirst du nach Benutzername und Passwort gefragt. Verwende hierbei ein **Personal Access Token (PAT)** anstelle deines normalen Account-Passworts. Sobald die Daten gespeichert sind, läuft die Synchronisation automatisch im Hintergrund.
+* **Manuell**: Klicke in der Seitenleiste auf **Commit**. Jotter staged alle Änderungen im Vault und committet sie mit einem Zeitstempel (`jotter: auto-sync <Datum>`). Gibt es keine Änderungen, entsteht kein Commit.
+* **Automatisch**: Unter **Einstellungen → Git-Versionierung** kannst du ein **Auto-Commit-Intervall** wählen, damit im Hintergrund Schnappschüsse entstehen, solange Jotter geöffnet ist.
+* **Identität**: Commits verwenden dein Git-`user.name` und `user.email`. Nur wenn keine konfiguriert sind, setzt Jotter einen Fallback (`Jotter`) in der lokalen Konfiguration dieses Repositories und überschreibt niemals eine vorhandene Identität.
+* **Index bleibt lokal**: Der SQLite-Index (`tasks.db`) ist ein jederzeit neu aufbaubarer Cache und wird nicht mit committet.
 
 ---
 
@@ -61,8 +36,8 @@ Jotter verfügt über eine integrierte **Time Machine**-Funktion, mit der du dei
 Dies bietet eine risikofreie Umgebung für Experimente, versehentliches Löschen oder das Ansehen früherer Zustände deiner Boards.
 
 ### So greifst du auf die Time Machine zu
-1. Suche in der Seitenleiste die Schaltfläche **Synchronisieren** ganz unten.
-2. Klicke auf das kleine **Chevron-Abwärts-Symbol** auf der rechten Seite der Schaltfläche.
+1. Suche in der Seitenleiste die Schaltfläche **Commit** ganz unten.
+2. Klicke auf das kleine **Verlauf-Symbol** (History) rechts neben der Commit-Schaltfläche.
 3. Dadurch öffnet sich das Overlay der **Time Machine**, das die letzten 10 Schnappschüsse (Commits) deines Repositories anzeigt.
 4. Jeder Schnappschuss zeigt:
    * Die **Nachricht** des Commits.
@@ -76,7 +51,7 @@ Wenn du auf einen Schnappschuss klickst, um ihn wiederherzustellen, führt Jotte
 1. **Automatisches Backup vor der Wiederherstellung**: Jotter prüft zuerst, ob ungespeicherte Änderungen oder Entwürfe in deinem Arbeitsverzeichnis vorliegen. Falls vorhanden, werden diese automatisch gestaged und committet (`backup: snapshot before restoring to <hash>`). Dies garantiert **vollständigen Schutz vor Datenverlust**—du kannst jederzeit wieder zum aktuellen Stand zurückkehren!
 2. **Hard-Reset**: Es wird ein sauberer Reset durchgeführt, um die Dateien exakt an den Ziel-Commit anzupassen (gelöschte und neue, ungetrackte Dateien werden dabei sauber bereinigt).
 3. **Soft-Reset & Vorwärts-Commit**: Jotter setzt den Git-Pointer zurück, ohne die Historie zu überschreiben oder zu verändern. Der wiederhergestellte Stand wird als neuer Revert-Commit erfasst (`revert: restore workspace to commit <hash>`).
-4. **Kein Überschreiben der Historie (Force-Push)**: Da dieses Verfahren die Git-Historie linear fortschreibt und niemals `git push --force` erzwingt, bleibt die Synchronisation über mehrere Geräte hinweg völlig ungestört und stabil.
+4. **Kein Überschreiben der Historie**: Dieses Verfahren schreibt die Git-Historie linear fort und löscht niemals bestehende Commits.
 5. **Datenbank-Reindexierung**: Sobald die Dateien auf der Festplatte wiederhergestellt wurden, reindexiert Jotter im Hintergrund die SQLite-Datenbank. Dein Aufgabenboard, die Spalten und die Filter aktualisieren sich sofort in der App.
 
 > [!TIP]
@@ -84,23 +59,14 @@ Wenn du auf einen Schnappschuss klickst, um ihn wiederherzustellen, führt Jotte
 
 ---
 
-## Nutzung auf mehreren Geräten und im Team
+## Synchronisation über mehrere Geräte
 
-Da Git Konflikte in Textdateien hervorragend verarbeiten kann, kannst du denselben Aufgabenordner auf mehreren Rechnern parallel nutzen oder sogar im Team bearbeiten.
+Da ein Vault ein einfacher Ordner mit Markdown-Dateien (und optional ein gewöhnliches Git-Repository) ist, kannst du ihn mit den Werkzeugen synchronisieren, die du ohnehin nutzt:
 
-### Normaler Ablauf
-Wenn du Jotter auf einem Gerät startest, klicke einfach auf **Synchronisieren**. Es lädt die neuesten Stände herunter, pflegt sie in den SQLite-Index ein und aktualisiert das Board. Sobald du Karten bewegst oder bearbeitest, werden lokale Commits erzeugt und direkt hochgeladen, sodass sie für deine anderen Rechner bereitstehen.
-
-### Umgang mit Merge-Konflikten
-In seltenen Fällen, wenn dieselbe Zeile einer Aufgabendatei auf zwei Computern exakt gleichzeitig geändert wurde, kann ein Git-Merge-Konflikt entstehen.
-* **Auswirkung in Jotter**: Da Jotter im Hintergrund ein `git pull --rebase` ausführt, wird die Synchronisation bei einem Konflikt gestoppt, um Datenverlust zu verhindern. Es wird ein Fehler protokolliert.
-* **Lösung des Konflikts**:
-  1. Öffne ein Terminal und wechsle in deinen Projektordner.
-  2. Führe `git status` aus, um die betroffenen Dateien zu identifizieren.
-  3. Öffne die konfliktbehafteten `.md`-Dateien im Editor deiner Wahl. Die Git-Konfliktmarker (`<<<<<<< HEAD` und `>>>>>>>`) zeigen dir genau die Unterschiede.
-  4. Bereinige die Stellen, speichere die Dateien ab und führe im Terminal aus:
-     ```bash
-     git add tasks/konflikt-aufgabe.md
-     git rebase --continue
-     ```
-  5. Sobald der Rebase abgeschlossen ist, ist dein lokales Git wieder sauber. Ein Klick auf **Synchronisieren** in der Jotter-Seitenleiste setzt die automatische Synchronisation fort.
+* **Dateisynchronisation**: Syncthing, Dropbox, Nextcloud und ähnliche Tools funktionieren ohne weitere Einrichtung. Jotters Dateisystem-Watcher übernimmt eingehende Änderungen automatisch.
+* **Git-Remote**: Richte selbst ein Remote ein und nutze deinen gewohnten Git-Workflow für Push und Pull:
+  ```bash
+  git remote add origin git@github.com:username/my-jotter-vault.git
+  git push -u origin main
+  ```
+  Jotters Schnappschüsse sind normale Commits und werden wie alle anderen gepusht. Authentifizierung und Merge-Konflikte löst du direkt mit Git, außerhalb von Jotter. Nach einem Pull indexiert Jotter die geänderten Dateien automatisch neu.

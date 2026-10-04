@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
 import { useTimeblockStore } from '@/stores/timeblock';
+import { useVaultStore } from '@/stores/vault';
 import NavigationBar from '@/components/layout/NavigationBar.vue';
 import ProjectSidebar from '@/components/layout/ProjectSidebar.vue';
 import MobileNavBar from '@/components/layout/MobileNavBar.vue';
@@ -34,9 +35,10 @@ const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();
 const modalStore = useModalStore();
 const timeblockStore = useTimeblockStore();
+const vaultStore = useVaultStore();
 
 const { isSidebarOpen, currentTheme, isTimeblockSidebarOpen } = storeToRefs(settingsStore);
-const autoSyncInterval = computed(() => settingsStore.autoSyncInterval ?? 0);
+const autoCommitInterval = computed(() => settingsStore.autoCommitInterval ?? 0);
 const { projects, syncLoading, syncSuccess, error: projectError } = storeToRefs(projectStore);
 
 // Watch for global project errors and notify non-intrusively via toast
@@ -149,38 +151,47 @@ const handleCreateProject = async (title: string) => {
   }
 };
 
-let autoSyncCheckInterval: any = null;
+let autoCommitCheckInterval: any = null;
 let unsubscribeCrossTab: (() => void) | null = null;
 
-const triggerSync = async (isManual = false) => {
+const triggerCommit = async (isManual = false) => {
   try {
-    await projectStore.triggerSync();
-    persistentStorage.setItem('jotter-last-sync-time', String(Date.now()));
+    await projectStore.triggerCommit();
+    persistentStorage.setItem('jotter-last-commit-time', String(Date.now()));
   } catch (err: any) {
     if (isManual) {
-      toast.error(t('toasts.syncError', { message: err.message || err }), t('toasts.syncErrorTitle'));
+      toast.error(t('toasts.commitError', { message: err.message || err }), t('toasts.commitErrorTitle'));
     }
   }
 };
 
-const checkAutoSync = () => {
-  const interval = autoSyncInterval?.value;
-  if (!interval || interval <= 0) return;
+const handleEnableGit = async () => {
+  try {
+    await vaultStore.enableGit();
+    toast.success(t('toasts.gitEnabled'));
+  } catch (err: any) {
+    toast.error(t('toasts.gitEnableError', { message: err.message || err }), t('toasts.gitEnableErrorTitle'));
+  }
+};
 
-  const lastSyncTimeStr = persistentStorage.getItem('jotter-last-sync-time');
-  const lastSyncTime = lastSyncTimeStr ? Number(lastSyncTimeStr) : 0;
+const checkAutoCommit = () => {
+  const interval = autoCommitInterval?.value;
+  if (!interval || interval <= 0 || !vaultStore.isCurrentGit) return;
+
+  const lastCommitTimeStr = persistentStorage.getItem('jotter-last-commit-time');
+  const lastCommitTime = lastCommitTimeStr ? Number(lastCommitTimeStr) : 0;
   const now = Date.now();
 
-  if (!lastSyncTime || now - lastSyncTime >= interval * 60 * 1000) {
-    triggerSync(false);
+  if (!lastCommitTime || now - lastCommitTime >= interval * 60 * 1000) {
+    triggerCommit(false);
   }
 };
 
 watch(
-  () => autoSyncInterval?.value,
+  () => autoCommitInterval?.value,
   (newVal) => {
     if (newVal && newVal > 0) {
-      checkAutoSync();
+      checkAutoCommit();
     }
   }
 );
@@ -207,9 +218,9 @@ onMounted(async () => {
   await Promise.all([projectStore.fetchProjects(), timeblockStore.fetchTimeblocks()]);
   setTheme(currentTheme.value);
 
-  // Set up auto-sync periodic check
-  checkAutoSync(); // run once on startup
-  autoSyncCheckInterval = setInterval(checkAutoSync, 15000); // check every 15 seconds
+  // Set up auto-commit periodic check
+  checkAutoCommit(); // run once on startup
+  autoCommitCheckInterval = setInterval(checkAutoCommit, 15000); // check every 15 seconds
 
   // Listen for mutations from other open tabs
   unsubscribeCrossTab = crossTabBus.subscribe(async (event) => {
@@ -252,8 +263,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  if (autoSyncCheckInterval) {
-    clearInterval(autoSyncCheckInterval);
+  if (autoCommitCheckInterval) {
+    clearInterval(autoCommitCheckInterval);
   }
   if (unsubscribeCrossTab) {
     unsubscribeCrossTab();
@@ -295,11 +306,12 @@ onBeforeUnmount(() => {
           v-show="isSidebarOpen"
           :projects="projects"
           :active-project-id="activeProjectId"
-          :sync-loading="syncLoading"
-          :sync-success="syncSuccess"
+          :commit-loading="syncLoading"
+          :commit-success="syncSuccess"
           @create-project="handleCreateProject"
           @edit-project="modalStore.openProjectEdit"
-          @sync="() => triggerSync(true)"
+          @commit="() => triggerCommit(true)"
+          @enable-git="handleEnableGit"
           @import-spreadsheet="modalStore.openImportSpreadsheet"
           @move-tasks-to-project="handleMoveTasksToProject"
           @close="settingsStore.isSidebarOpen = false"

@@ -267,7 +267,6 @@ def test_sync_migrates_projects_json_to_index_md(temp_dir, test_env):
                     "id": "alpha",
                     "title": "Alpha Project",
                     "description": "Alpha team notes and tasks",
-                    "git_remote": "git@github.com:org/alpha.git",
                     "done_clean_period": 30,
                     "created_at": "2026-01-01T10:00:00Z",
                 },
@@ -275,7 +274,6 @@ def test_sync_migrates_projects_json_to_index_md(temp_dir, test_env):
                     "id": "beta",
                     "name": "Beta Board",
                     "description": "Beta project board",
-                    "gitRemote": "https://github.com/org/beta.git",
                     "doneCleanPeriod": 7,
                 },
             ]
@@ -314,10 +312,6 @@ def test_sync_migrates_projects_json_to_index_md(temp_dir, test_env):
     assert "name: ideas" in alpha_content
     assert "title: Ideas Column" in alpha_content
 
-    # git_remote must NOT be written to index.md
-    assert "git_remote" not in alpha_content
-    assert "git@github.com:org/alpha.git" not in alpha_content
-
     # Beta project
     beta_dir = Path(temp_dir) / "beta"
     beta_index = beta_dir / "index.md"
@@ -326,20 +320,16 @@ def test_sync_migrates_projects_json_to_index_md(temp_dir, test_env):
     assert "id: beta" in beta_content
     assert "title: Beta Board" in beta_content
     assert "done_clean_period: 7" in beta_content
-    assert "git_remote" not in beta_content
-    assert "https://github.com/org/beta.git" not in beta_content
 
-    # 5. Verify SQLite contains the git_remote and project metadata locally
+    # 5. Verify SQLite contains the project metadata
     proj_alpha = proj_svc.get_project("alpha")
     assert proj_alpha.id == "alpha"
     assert proj_alpha.title == "Alpha Project"
-    assert proj_alpha.git_remote == "git@github.com:org/alpha.git"
     assert proj_alpha.done_clean_period == 30
 
     proj_beta = proj_svc.get_project("beta")
     assert proj_beta.id == "beta"
     assert proj_beta.title == "Beta Board"
-    assert proj_beta.git_remote == "https://github.com/org/beta.git"
     assert proj_beta.done_clean_period == 7
 
     # 6. Verify buckets were registered in SQLite
@@ -381,7 +371,7 @@ def test_sync_removes_deleted_project_and_does_not_resurrect_default(temp_dir, t
     assert "default" not in proj_ids_after
 
 
-def test_full_sync_commits_local_projects_without_remote(temp_dir, test_env):
+def test_commit_changes_commits_project_level_repo(temp_dir, test_env):
     from jotter.features.sync.git_adapter import get_git_history, run_git
 
     conn = get_db(str(Path(temp_dir) / "tasks.db"))
@@ -397,15 +387,15 @@ def test_full_sync_commits_local_projects_without_remote(temp_dir, test_env):
     task = task_svc.create_task("default", TaskCreate(title="Test Git Sync Task", bucket="todo"))
     assert task.title == "Test Git Sync Task"
 
-    # Call full_sync
-    sync_svc.full_sync()
+    # Call commit_changes
+    sync_svc.commit_changes()
 
     history = get_git_history(proj_dir)
     assert len(history) >= 1
     assert "jotter: auto-sync" in history[0]["message"]
 
 
-def test_full_sync_with_global_workspace_git(temp_dir, test_env):
+def test_commit_changes_with_global_workspace_git(temp_dir, test_env):
     from jotter.features.sync.git_adapter import get_git_history, run_git
 
     conn = get_db(str(Path(temp_dir) / "tasks.db"))
@@ -418,34 +408,25 @@ def test_full_sync_with_global_workspace_git(temp_dir, test_env):
     run_git(["config", "user.name", "Test"], cwd=root_dir)
     run_git(["config", "user.email", "test@example.com"], cwd=root_dir)
 
-    # Setup a local remote bare repository
-    bare_remote = root_dir.parent / "bare_workspace.git"
-    bare_remote.mkdir(parents=True, exist_ok=True)
-    run_git(["init", "--bare", "-b", "main"], cwd=bare_remote)
-
-    # Configure settings.json with gitRemoteUrl
-    settings_file = root_dir / "settings.json"
-    settings_file.write_text(json.dumps({"gitRemoteUrl": str(bare_remote)}), encoding="utf-8")
-
     # Create a task
     task = task_svc.create_task("default", TaskCreate(title="Global Sync Task", bucket="todo"))
     assert task.title == "Global Sync Task"
 
-    # Call full_sync
-    sync_svc.full_sync()
+    # Call commit_changes
+    sync_svc.commit_changes()
 
-    # Verify global commit created and pushed
+    # Verify vault-level commit was created
     history = get_git_history(root_dir)
     assert len(history) >= 1
     assert "jotter: auto-sync" in history[0]["message"]
 
-    # Verify .gitignore was created
-    gitignore_file = root_dir / ".gitignore"
-    assert gitignore_file.is_file()
-    assert "tasks.db" in gitignore_file.read_text(encoding="utf-8")
+    # Verify the local SQLite index is never versioned
+    tracked = run_git(["ls-files"], cwd=root_dir).stdout.splitlines()
+    assert any(f.endswith(".md") for f in tracked)
+    assert not any(f.startswith("tasks.db") for f in tracked)
 
 
-def test_full_sync_commits_canvas_files(temp_dir, test_env):
+def test_commit_changes_commits_canvas_files(temp_dir, test_env):
     from jotter.features.canvas.schemas import CanvasDocument, CanvasGenericNode
     from jotter.features.canvas.service import CanvasApplicationService
     from jotter.features.sync.git_adapter import get_git_history, run_git
@@ -469,8 +450,8 @@ def test_full_sync_commits_canvas_files(temp_dir, test_env):
         ),
     )
 
-    # Call full_sync
-    sync_svc.full_sync()
+    # Call commit_changes
+    sync_svc.commit_changes()
 
     history = get_git_history(proj_dir)
     assert len(history) >= 1

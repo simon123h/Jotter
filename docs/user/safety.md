@@ -22,8 +22,8 @@ Since the SQLite database is just a performance cache, if the database file is e
 
 ### Re-indexing Your Workspace
 If you notice that your board does not match the files on disk, or if you manually copied new markdown files into your `tasks` directory:
-1. Open the sidebar in the Jotter application.
-2. Click the **Sync** button at the bottom of the sidebar.
+1. Open **Settings** in the Jotter application.
+2. Click **Rebuild Search Index**.
 3. Jotter will instantly scan your task directories, clear the ephemeral cache, parse your markdown files, and reconstruct the SQLite index.
 
 ### Completely Rebuilding the Cache
@@ -35,7 +35,7 @@ If the application index becomes corrupted or if you want a completely fresh dat
    * **Windows**: `%APPDATA%\jotter`
 3. Delete the cache database file (typically named `index.db` or `cache.db`).
 4. Start Jotter.
-5. Click **Sync** in the sidebar. Jotter will reconstruct the entire database from your markdown files in a few seconds.
+5. Open **Settings** and click **Rebuild Search Index**. Jotter will reconstruct the entire database from your markdown files in a few seconds.
 
 ---
 
@@ -61,7 +61,7 @@ Because your files are standard folder layouts, you can use any existing cloud s
 Because your files are stored in plain text, you can easily track history, view edits, and roll back mistakes using standard text-versioning systems.
 
 ### Git Version Control
-If you configure Git synchronization, every single change you make inside Jotter is saved as a Git commit.
+If your vault is a Git repository, Jotter snapshots your changes as local Git commits (see [Git Versioning and Time Machine](./git-sync.md)).
 * **Roll back a deleted task**: If you accidentally delete a task card, you can easily restore it using your Git history:
   ```bash
   git checkout HEAD~1 -- tasks/accidental-deleted-task-id.md

@@ -47,8 +47,7 @@ def init_schema(conn: sqlite3.Connection) -> None:
         title TEXT NOT NULL,
         description TEXT DEFAULT '',
         created_at TEXT NOT NULL,
-        done_clean_period INTEGER DEFAULT NULL,
-        git_remote TEXT DEFAULT NULL
+        done_clean_period INTEGER DEFAULT NULL
     );
 
     CREATE TABLE IF NOT EXISTS buckets (

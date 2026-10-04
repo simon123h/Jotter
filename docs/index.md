@@ -31,8 +31,8 @@ features:
     title: Built for Speed
     details: An local SQLite-based index delivers instant drag-and-drop, filter, and search operations.
   - icon: 🖧
-    title: Git Sync
-    details: Projects can be synced with Git repositories, allowing for multi-device support or team sharing.
+    title: Git Versioning
+    details: Vaults can be versioned with a local Git repository, powering the built-in Time Machine for snapshots and rollbacks.
 ---
 
 <div class="markdown-feature-container">

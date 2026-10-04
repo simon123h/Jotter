@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { Project, Task, Bucket, TaskQuery } from '@/types';
-import { getProjects, getBuckets, getTasks, getTask, getAllTasks, syncSystem, updateTask, restoreCommit } from '@/api';
+import { getProjects, getBuckets, getTasks, getTask, getAllTasks, commitChanges, updateTask, restoreCommit } from '@/api';
 import { useSettingsStore } from '@/stores/settings';
 import { useTimeblockStore } from '@/stores/timeblock';
 
@@ -166,26 +166,19 @@ export const useProjectStore = defineStore('project', () => {
     await Promise.all(promises);
   };
 
-  const triggerSync = async () => {
+  const triggerCommit = async () => {
     if (syncLoading.value) return;
     syncLoading.value = true;
     syncSuccess.value = false;
     error.value = null;
     try {
-      await syncSystem();
+      await commitChanges();
       syncSuccess.value = true;
       setTimeout(() => {
         syncSuccess.value = false;
       }, 2000);
-      await fetchProjects();
-      if (currentQuery.value) {
-        if (currentQuery.value.projectId) {
-          await fetchBuckets(currentQuery.value.projectId);
-        }
-        await invalidate();
-      }
     } catch (err: any) {
-      error.value = err.message || 'Failed to synchronize';
+      error.value = err.message || 'Failed to commit changes';
       throw err;
     } finally {
       syncLoading.value = false;
@@ -282,7 +275,7 @@ export const useProjectStore = defineStore('project', () => {
     upsertTask,
     ensureTaskLoaded,
     invalidate,
-    triggerSync,
+    triggerCommit,
     restoreToCommit,
     moveTasksToProject,
   };

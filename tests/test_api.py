@@ -253,6 +253,46 @@ def test_system_sync_and_info(test_env):
     assert res.json()["status"] == "success"
 
 
+def test_system_commit_and_enable_git(test_env):
+    client, temp_dir = test_env
+    (Path(temp_dir) / "note.txt").write_text("hello", encoding="utf-8")
+
+    # Not a repository yet: nothing to commit, and Jotter must not create one on its own
+    res = client.post("/api/system/commit")
+    assert res.status_code == 200
+    assert res.json() == {"status": "success", "committed": False}
+    assert not (Path(temp_dir) / ".git").exists()
+
+    # Explicitly enabling versioning creates the repository and the initial commit
+    res = client.post("/api/system/git/init")
+    assert res.status_code == 200
+    assert res.json()["created"] is True
+    assert (Path(temp_dir) / ".git").is_dir()
+    assert len(client.get("/api/system/history").json()) == 1
+
+    # Enabling again is a no-op, and a later commit picks up new changes
+    assert client.post("/api/system/git/init").json()["created"] is False
+    (Path(temp_dir) / "note.txt").write_text("changed", encoding="utf-8")
+    assert client.post("/api/system/commit").json()["committed"] is True
+
+
+def test_enable_git_refuses_vault_inside_other_repo(test_env):
+    import subprocess
+
+    client, temp_dir = test_env
+    subprocess.run(["git", "init"], cwd=temp_dir, check=True, capture_output=True)
+    nested = Path(temp_dir) / "inner"
+    nested.mkdir()
+
+    res = client.post("/api/system/data-dir", json={"data_dir": str(nested)})
+    assert res.status_code == 200
+
+    res = client.post("/api/system/git/init")
+    assert res.status_code == 400
+    assert "already inside another Git repository" in res.json()["detail"]
+    assert not (nested / ".git").exists()
+
+
 def test_null_tags_and_attachments_handling(test_env):
     client, temp_dir = test_env
 

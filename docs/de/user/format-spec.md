@@ -122,8 +122,6 @@ Willkommen in der Dokumentations-Notiz des Projekt-Boards. Du kannst diesen Mark
 | `buckets` | Array von Objekten | Ja | Liste der Spalten (Buckets), sortiert nach `position`. Jedes Objekt enthält `name` (Slug), `title`, `position`, `color`, `layout`, `max_tasks` und `is_default`. |
 
 > [!NOTE]
-> **Lokale vs. geteilte Konfiguration**: Git-Remote-URLs (`git_remote`) pro Projekt werden in der lokalen Repository-Konfiguration (`.git/config` / lokaler SQLite-Index) gespeichert und nicht in `index.md` geschrieben. Dies schützt Zugangsdaten und verhindert Remote-Konflikte bei geteilten Repositories.
->
 > **Automatische Migration**: Workspaces mit älteren `projects.json`- oder `buckets.json`-Dateien werden beim Starten oder Synchronisieren automatisch in `index.md`-Dateien migriert.
 
 ---
@@ -154,4 +152,4 @@ Da deine Markdown-Dateien auf der Festplatte die eigentliche Datenbank sind, ver
 
 * **Scan beim Start**: Beim Starten scannt der Backend-Dienst deine Projektordner nach `.md`-Dateien, analysiert deren Frontmatter und aktualisiert einen ephemeren SQLite-Index im App-Daten-Cache deines Benutzers.
 * **Dateisystem-Beobachter**: Während Jotter läuft, lauscht ein Hintergrund-Watcher auf Änderungen im Dateisystem. Wenn du eine Datei extern mit einem anderen Editor (z. B. Obsidian) bearbeitest, aktualisiert Jotter die Ansicht in Echtzeit.
-* **Manuelle Synchronisation**: Sollte ein Ereignis verpasst werden oder Dateien manuell kopiert worden sein, kannst du jederzeit auf **Synchronisieren** in der Seitenleiste klicken, um den SQLite-Index vollständig sauber neu aufzubauen.
+* **Manuelle Synchronisation**: Sollte ein Ereignis verpasst werden oder Dateien manuell kopiert worden sein, kannst du jederzeit in den **Einstellungen** auf **Suchindex neu aufbauen** klicken, um den SQLite-Index vollständig sauber neu aufzubauen.

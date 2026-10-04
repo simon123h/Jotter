@@ -41,10 +41,9 @@ export const useSettingsStore = defineStore('settings', () => {
     sortBy: 'alpha',
     hideAddTaskButton: true,
     projectOrder: [],
-    gitRemoteUrl: '',
     language: '',
     tagColors: {},
-    autoSyncInterval: 0,
+    autoCommitInterval: 0,
     timeblockStartHour: 6,
     timeblockEndHour: 18,
     isTimeblockSidebarOpen: getStoredBool(TIMEBLOCK_SIDEBAR_STORAGE_KEY, false),
@@ -59,13 +58,19 @@ export const useSettingsStore = defineStore('settings', () => {
       const settings = await getSettings();
       Object.assign(state, settings);
 
+      // Migrate the pre-rename key (autoSyncInterval) once
+      const legacy = (settings as unknown as Record<string, unknown>).autoSyncInterval;
+      if (settings.autoCommitInterval === undefined && typeof legacy === 'number') {
+        state.autoCommitInterval = legacy;
+      }
+      delete (state as unknown as Record<string, unknown>).autoSyncInterval;
+
       // Ensure defaults for optional/partial loads
       if (!state.pinnedProjectIds) state.pinnedProjectIds = [];
       if (!state.projectOrder) state.projectOrder = [];
-      if (!state.gitRemoteUrl) state.gitRemoteUrl = '';
       if (!state.language) state.language = '';
       if (!state.tagColors) state.tagColors = {};
-      if (state.autoSyncInterval === undefined) state.autoSyncInterval = 0;
+      if (state.autoCommitInterval === undefined) state.autoCommitInterval = 0;
       if (state.hidePostponedColumn === undefined) state.hidePostponedColumn = true;
 
       const startHour = state.timeblockStartHour ?? 6;
@@ -228,8 +233,8 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   };
 
-  const setAutoSyncInterval = (minutes: number) => {
-    state.autoSyncInterval = minutes;
+  const setAutoCommitInterval = (minutes: number) => {
+    state.autoCommitInterval = minutes;
   };
 
   const updateSettings = (updates: Partial<AppSettings>) => {
@@ -253,6 +258,6 @@ export const useSettingsStore = defineStore('settings', () => {
     toggleHideAddTaskButton,
     setTagColor,
     removeTagColor,
-    setAutoSyncInterval,
+    setAutoCommitInterval,
   };
 });
