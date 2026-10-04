@@ -116,7 +116,7 @@ def main():
     display_host = "127.0.0.1" if config.host in ("0.0.0.0", "::") else config.host
     server_url = f"http://{display_host}:{config.port}"
 
-    print(f"Starting Jotter server on {server_url}")
+    print(f"Starting Jotter {app_version} server on {server_url}")
     print(f"Data Directory: {config.data_dir}")
 
     if config.open_browser:
