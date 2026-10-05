@@ -1,6 +1,6 @@
 # ADR 4: Silent Filesystem Indexing via Watchdog and Decoupling Git Sync
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR 0014](./0014-periodic-scan-instead-of-watcher.md)
 - **Date**: 2026-10-03
 - **Author**: Antigravity (AI Coding Assistant) & User
 

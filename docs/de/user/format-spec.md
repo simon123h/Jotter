@@ -151,5 +151,5 @@ Wenn du Checkboxen in der Jotter-App anklickst, editiert Jotter die Markdown-Dat
 Da deine Markdown-Dateien auf der Festplatte die eigentliche Datenbank sind, verfügt Jotter über eine hocheffiziente, automatische Synchronisation:
 
 * **Scan beim Start**: Beim Starten scannt der Backend-Dienst deine Projektordner nach `.md`-Dateien, analysiert deren Frontmatter und aktualisiert einen ephemeren SQLite-Index im App-Daten-Cache deines Benutzers.
-* **Dateisystem-Beobachter**: Während Jotter läuft, lauscht ein Hintergrund-Watcher auf Änderungen im Dateisystem. Wenn du eine Datei extern mit einem anderen Editor (z. B. Obsidian) bearbeitest, aktualisiert Jotter die Ansicht in Echtzeit.
+* **Regelmäßiger Scan**: Während Jotter läuft, durchsucht es deine Aufgabendateien einmal pro Minute. Dateien mit unveränderter Größe und Änderungszeit werden übersprungen, der Scan bleibt also auch bei großen Vaults günstig. Wenn du eine Datei extern mit einem anderen Editor (z. B. Obsidian) bearbeitest oder ein Sync-Tool Änderungen liefert, übernimmt Jotter sie innerhalb einer Minute.
 * **Manuelle Synchronisation**: Sollte ein Ereignis verpasst werden oder Dateien manuell kopiert worden sein, kannst du jederzeit in den **Einstellungen** auf **Suchindex neu aufbauen** klicken, um den SQLite-Index vollständig sauber neu aufzubauen.

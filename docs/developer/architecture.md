@@ -164,7 +164,7 @@ Jotter's Git integration is local-only. It is implemented in `src/jotter/feature
 
 ### The Local Commit Flow:
 
-1. **Trigger**: The `AutoCommitScheduler` calls `SyncApplicationService.commit_changes()` (there is no manual commit; MCP write tools only mark the vault dirty).
+1. **Trigger**: The `VaultSyncScheduler` calls `SyncApplicationService.commit_changes()` during its periodic cycle (there is no manual commit; MCP write tools only mark the vault dirty).
 2. **Vault Commit**: If the active vault directory is a Git repository, Jotter runs `git add -A` and commits with a summary message such as `jotter: 3 tasks created, 4 modified, 1 deleted`, followed by one `verb: title` line per changed task, capped at 20. Folders that are not repositories are left untouched.
 3. **Legacy Fallback**: Project subdirectories that carry their own `.git` folder are committed individually.
 4. **Local Excludes**: The SQLite index (`tasks.db*`) is added to `.git/info/exclude` so it is never versioned.
@@ -172,14 +172,16 @@ Jotter's Git integration is local-only. It is implemented in `src/jotter/feature
 
 Commits and index reconciliation (`POST /api/system/sync`) are independent operations.
 
-### Smart Auto-Commit:
+### Periodic Sync and Auto-Commit:
 
-`src/jotter/features/sync/auto_commit.py` commits automatically after data changes; there is no user setting.
+`src/jotter/features/sync/scheduler.py` runs one background thread (`VaultSyncScheduler`) that wakes up every 60 s and does both jobs of keeping the vault consistent. There is no filesystem watcher ([ADR 0014](./adr/0014-periodic-scan-instead-of-watcher.md)).
 
-- **Dirty signal**: an HTTP middleware in `app.py` calls `AutoCommitScheduler.mark_dirty()` after every successful `POST`/`PUT`/`PATCH`/`DELETE` under `/api/` (except the Git-init endpoint). The filesystem watcher calls it for external edits; it deliberately ignores Jotter's own writes, which is why the API path needs its own hook. MCP write tools mark the vault dirty as well.
-- **Cooldown**: the first change commits after a 3 s debounce. Changes made within 60 s of the last commit are coalesced into one commit at the end of the cooldown. A run that creates no commit does not consume the cooldown.
-- **Flush**: pending changes are committed on app shutdown, MCP shutdown and vault switch (`retarget`).
-- Vaults that are not Git repositories are skipped; the scheduler never initializes a repository.
+1. **Index reconciliation**: `SyncApplicationService.sync_db_only()` re-reads task files into SQLite. Each indexed task stores its file's `mtime_ns` and size, and a file whose stat still matches is skipped. Files modified in the last two seconds are always re-read, as their mtime may not have advanced yet.
+2. **Commit**: if Jotter changed something (an HTTP middleware in `app.py` calls `mark_dirty()` after every successful `POST`/`PUT`/`PATCH`/`DELETE` under `/api/`, except the Git-init endpoint; MCP write tools do the same) or the scan re-read or removed task files, the vault is committed. Every tenth cycle checks Git even without a signal, to catch changes the index does not track (settings, attachments, canvases, files delivered by a sync tool).
+3. **Flush**: pending changes are committed on app shutdown, MCP shutdown and vault switch (`retarget`).
+4. **Opt-out**: the `autoCommit` setting (Settings → General, default on) turns committing off; the index scan always runs. Vaults that are not Git repositories are skipped; the scheduler never initializes a repository.
+
+A full rebuild that ignores the recorded file stats happens on the manual sync (`POST /api/system/sync`, the MCP `sync_database` tool), after a Git restore, and once after a Jotter upgrade (the version that built the index is stored in the `meta` table).
 
 ### Enabling Versioning:
 
@@ -269,7 +271,7 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0001: Immutable Bucket Slugs in Markdown Task Frontmatter](./adr/0001-immutable-bucket-slugs.md)
 - [ADR 0002: Postponed Implementation of Recurrent Tasks](./adr/0002-decline-recurring-tasks.md)
 - [ADR 0003: Support Arbitrary File Slugs and Non-Enforcement of ULID Format](./adr/0003-arbitrary-task-slugs.md)
-- [ADR 0004: Silent Filesystem Indexing via Watchdog and Decoupling Git Sync](./adr/0004-silent-watchdog-sync.md)
+- [ADR 0004: Silent Filesystem Indexing via Watchdog and Decoupling Git Sync](./adr/0004-silent-watchdog-sync.md) (superseded by ADR 0014)
 - [ADR 0005: Explicit In-Process CQRS and Architecture Enforcement](./adr/0005-explicit-in-process-cqrs.md)
 - [ADR 0006: Pluggable Storage Adapters (Desktop HTTP, Android In-Process, Browser Demo)](./adr/0006-dual-runtime-architecture.md)
 - [ADR 0007: Project Manifest (index.md) & Obsidian Folder Notes Integration](./adr/0007-project-manifest-index-md.md)
@@ -279,6 +281,7 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0011: Cross-Tab Broadcast Synchronization and Window Focus Revalidation](./adr/0011-cross-tab-broadcast-sync.md)
 - [ADR 0012: Vault Abstraction and Local-Only Git Versioning](./adr/0012-vault-abstraction-and-simplified-git-sync.md)
 - [ADR 0013: Frontend Code Organization: Feature Slices and When to Split Components](./adr/0013-frontend-feature-slices.md)
+- [ADR 0014: A Periodic Scan Instead of a Filesystem Watcher](./adr/0014-periodic-scan-instead-of-watcher.md)
 
 
 

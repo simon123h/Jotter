@@ -151,5 +151,5 @@ When you check or uncheck items in the task detail overlay inside the Jotter app
 Because Markdown files on your hard drive are the actual database, Jotter implements an incredibly fast, automatic index synchronization engine:
 
 * **Startup Scan**: When you start Jotter, the backend scans your project's folders for `.md` files, parses their frontmatter, and updates an ephemeral SQLite index in your home directory's app data cache.
-* **File System Watchers**: While Jotter is running, a background file system watcher listens for file events. If you edit or save a markdown file using an external text editor (like Obsidian or VS Code), Jotter automatically parses the updated file and refreshes the UI instantly.
-* **Manual Re-indexing**: If watch events are missed or files are synced in bulk, you can always click **Rebuild Search Index** in **Settings** to run a complete clean scan and rebuild the ephemeral database index.
+* **Periodic Scan**: While Jotter is running, it re-scans your task files once a minute. Files whose size and modification time are unchanged are skipped, so the scan stays cheap even for large vaults. If you edit or save a markdown file using an external text editor (like Obsidian or VS Code) or a sync tool delivers changes, Jotter picks them up within a minute.
+* **Manual Re-indexing**: If you want changes to show up right away, or suspect the index is out of date, you can always click **Rebuild Search Index** in **Settings** to run a complete clean scan and rebuild the ephemeral database index.
