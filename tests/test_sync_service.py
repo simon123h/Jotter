@@ -576,3 +576,26 @@ def test_manual_sync_endpoint_rereads_every_file(test_env, monkeypatch):
 
     assert client.post("/api/system/sync").status_code == 200
     assert len(reads) == 1
+
+
+def test_sync_does_not_rewrite_project_manifests_when_nothing_changed(temp_dir, monkeypatch):
+    import jotter.shared.fs as fs
+
+    vault = Path(temp_dir)
+    (vault / "default").mkdir()
+    (vault / "default" / "a.md").write_text(
+        "---\ntype: task\nid: a\nproject_id: default\ntitle: A\nstatus: todo\nposition: 1000.0\n---\n", encoding="utf-8"
+    )
+    conn = get_db(str(vault / "tasks.db"))
+    sync_svc = SyncApplicationService.from_data_dir(vault, conn)
+    sync_svc.sync_db_only()  # creates and settles the manifest
+
+    writes = []
+    original = fs.atomic_write
+    monkeypatch.setattr(
+        fs, "atomic_write", lambda path, *a, **k: writes.append(Path(path).name) or original(path, *a, **k)
+    )
+    sync_svc.sync_db_only()
+    sync_svc.sync_db_only()
+
+    assert writes == []

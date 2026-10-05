@@ -193,6 +193,10 @@ def write_project_manifest(
 
     final_content = f"---\n{yaml_content}---\n{body_to_write}"
 
+    # The periodic sync saves every project and bucket each cycle: don't rewrite (and fsync) an identical file
+    if index_file.is_file() and index_file.read_text(encoding="utf-8") == final_content:
+        return
+
     from jotter.shared.fs import atomic_write
 
     atomic_write(index_file, final_content, encoding="utf-8", prefix=".index_", suffix=".tmp")
