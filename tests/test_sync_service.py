@@ -578,6 +578,27 @@ def test_manual_sync_endpoint_rereads_every_file(test_env, monkeypatch):
     assert len(reads) == 1
 
 
+def test_recording_a_file_stat_does_not_rewrite_the_fts_entry(temp_dir):
+    from jotter.features.tasks.domain import Task
+    from jotter.features.tasks.projector import TaskProjector
+    from jotter.shared.db import create_sqlite_connection
+
+    conn = create_sqlite_connection(f"{temp_dir}/stat.db")
+    conn.execute("INSERT INTO projects (id, title, created_at) VALUES ('p', 'P', '2024-01-01')")
+    conn.execute("INSERT INTO buckets (project_id, name, title) VALUES ('p', 'todo', 'Todo')")
+    projector = TaskProjector(conn)
+    task = Task.create(project_id="p", title="One", bucket="todo", position=1000.0)
+    projector.project_task_upsert(task)
+    fts = []
+    conn.set_trace_callback(lambda sql: fts.append(sql) if "tasks_fts" in sql else None)
+
+    projector.project_task_upsert(task, (123, 456))  # only the file stat differs
+
+    assert fts == []
+    assert conn.execute("SELECT file_mtime_ns FROM tasks").fetchone()[0] == 123
+    conn.close()
+
+
 def test_sync_does_not_rewrite_project_manifests_when_nothing_changed(temp_dir, monkeypatch):
     import jotter.shared.fs as fs
 

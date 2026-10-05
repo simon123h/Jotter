@@ -115,9 +115,13 @@ def init_schema(conn: sqlite3.Connection) -> None:
         DELETE FROM tasks_fts WHERE rowid = old.rowid;
     END;
 
-    -- Only rewrite the FTS entry when an indexed column is updated (not for e.g. file stat bookkeeping)
+    -- Only rewrite the FTS entry when an indexed value actually changes (not for e.g. file stat bookkeeping).
+    -- "UPDATE OF <columns>" would not do: it fires whenever a column is in the SET list, even with the same value.
     DROP TRIGGER IF EXISTS tasks_au;
-    CREATE TRIGGER tasks_au AFTER UPDATE OF project_id, title, body, tags ON tasks BEGIN
+    CREATE TRIGGER tasks_au AFTER UPDATE ON tasks
+    WHEN old.project_id IS NOT new.project_id OR old.title IS NOT new.title
+        OR old.body IS NOT new.body OR old.tags IS NOT new.tags
+    BEGIN
         DELETE FROM tasks_fts WHERE rowid = old.rowid;
         INSERT INTO tasks_fts(rowid, id, project_id, title, body, tags)
         VALUES (new.rowid, new.id, new.project_id, new.title, new.body, new.tags);
