@@ -21,9 +21,10 @@ Treat `tasks.db` as a cache that can be thrown away and rebuilt at any time, and
 3. **Clear the stat when Jotter writes the task itself.** A write through the API projects the task without a stat, so the next sync re-reads that file once and records its stat. Jotter never needs to stat files on its own write path.
 4. **Rebuild completely, ignoring recorded stats, when trust is in doubt:**
    - the manual sync (Settings), the MCP `sync_database` tool and after a Git restore (`sync_db_only(force=True)`);
-   - once after a Jotter upgrade, because the projection (columns, parsing, normalisation) may have changed. The version that built the index is kept in a `meta` table and compared when a vault is opened (`sync_on_startup`).
+   - once after a Jotter upgrade, because the projection (columns, parsing, normalisation) may have changed. The version that built the index is kept in a `meta` table and compared when a vault is opened (`sync_on_startup`). The version is recorded only after a rebuild in which no file failed with an I/O error (for example a Windows file lock), so such a rebuild is retried at the next start. Files that cannot be parsed do not count, as they would fail again every time.
 5. **Skip unchanged rows on write.** Re-projecting an unchanged task does not update its row, and the FTS update trigger only fires when an indexed column (`project_id`, `title`, `body`, `tags`) changes, so bookkeeping such as recording a file stat does not rewrite the search index.
-6. **Derive values from the index, not by scanning files.** For example, the next position for a new task comes from `MAX(position)` for its bucket in SQLite instead of reading every task file of the project.
+6. **Do not rewrite unchanged files while reconciling.** A sync saves every project and bucket, and each save used to rewrite the project manifest (`index.md`). A manifest whose content would be identical is left alone, so a periodic scan does not touch files, and therefore does not wake antivirus or sync tools, when nothing changed.
+7. **Derive values from the index, not by scanning files.** For example, the next position for a new task comes from `MAX(position)` for its bucket in SQLite instead of reading every task file of the project.
 
 ## Alternatives Considered
 

@@ -29,4 +29,5 @@ A full rebuild that ignores the recorded stats runs on the manual sync, after a 
 - External edits and sync-tool deliveries appear within a minute instead of a second. The manual sync (Settings) is available when that is too slow.
 - Idle cost is one `stat` per task file and a few small queries per minute, with no per-event work and no dependency on OS notification APIs. The `watchdog` dependency and its PyInstaller hidden imports are removed.
 - Commits are naturally rate-limited to one per cycle, so the separate debounce and cooldown logic is gone.
+- An idle cycle must not write anything: unchanged project manifests are not rewritten ([ADR 0015](./0015-index-as-disposable-cache.md)), and git is only invoked when something changed or on the periodic safety-net cycle. A commit takes at most four git processes (`add`, `diff`, a single `cat-file --batch` for deleted task titles, `commit`).
 - A change that keeps both a file's size and its mtime is not noticed until a full rebuild. Files younger than two seconds are re-read to avoid the common case of this.

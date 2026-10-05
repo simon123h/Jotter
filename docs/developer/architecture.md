@@ -181,7 +181,7 @@ Commits and index reconciliation (`POST /api/system/sync`) are independent opera
 3. **Flush**: pending changes are committed on app shutdown, MCP shutdown and vault switch (`retarget`).
 4. **Opt-out**: the `autoCommit` setting (Settings → General, default on) turns committing off; the index scan always runs. Vaults that are not Git repositories are skipped; the scheduler never initializes a repository.
 
-A full rebuild that ignores the recorded file stats happens on the manual sync (`POST /api/system/sync`, the MCP `sync_database` tool), after a Git restore, and once after a Jotter upgrade (the version that built the index is stored in the `meta` table).
+A full rebuild that ignores the recorded file stats happens on the manual sync (`POST /api/system/sync`, the MCP `sync_database` tool), after a Git restore, and once after a Jotter upgrade (the version that built the index is stored in the `meta` table and only recorded when no file hit an I/O error, so a locked file makes the next start retry).
 
 ### Enabling Versioning:
 
