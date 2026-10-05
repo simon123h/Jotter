@@ -114,4 +114,18 @@ Fix bearer token parsing in middleware.
     const serialized = dumpTaskMarkdown(task);
     expect(serialized).toContain('id: fix-auth-header');
   });
+
+  it('writes the column as status and still reads the legacy bucket key', () => {
+    const legacy = parseTaskMarkdown('---\nid: t1\ntitle: Old\nbucket: done\n---\n', 'default', 't1.md');
+    expect(legacy.bucket).toBe('done');
+
+    const serialized = dumpTaskMarkdown(legacy);
+    expect(serialized).toContain('status: done');
+    expect(serialized).not.toContain('bucket:');
+  });
+
+  it('prefers status over bucket when a file has both', () => {
+    const task = parseTaskMarkdown('---\nid: t1\ntitle: Both\nstatus: todo\nbucket: done\n---\n', 'default', 't1.md');
+    expect(task.bucket).toBe('todo');
+  });
 });

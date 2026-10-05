@@ -41,7 +41,7 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
   const id = String(fmData.id || filename.replace(/\.md$/i, '') || `task_${Date.now()}`).trim();
   const projectId = String(fmData.project_id || fmData.projectId || defaultProjectId).trim() || defaultProjectId;
   const title = String(fmData.title || (body.split('\n')[0] || '').replace(/^#*\s*/, '') || 'Untitled').trim();
-  const bucket = String(fmData.bucket || fmData.status || 'todo')
+  const bucket = String(fmData.status || fmData.bucket || 'todo')
     .trim()
     .toLowerCase();
   const position = typeof fmData.position === 'number' ? fmData.position : parseFloat(String(fmData.position || '1000.0')) || 1000.0;
@@ -93,7 +93,7 @@ export function dumpTaskMarkdown(task: Task): string {
     id: task.id,
     project_id: task.project_id,
     title: task.title,
-    bucket: task.bucket,
+    status: task.bucket,
     position: task.position,
   };
 
