@@ -130,7 +130,7 @@ sequenceDiagram
     participant Disk as Local Disk (.md)
 
     Main->>App: create_app(config)
-    App->>DB: get_db(db_path)
+    App->>DB: ConnectionPool(db_path)
     DB-->>App: SQLite connection ready (WAL enabled)
     App->>Sync: sync_all()
     Sync->>Disk: Read project index.md & task *.md files
@@ -140,6 +140,8 @@ sequenceDiagram
     Sync-->>App: Return synchronized tasks count
     App-->>Main: FastAPI server ready to accept requests
 ```
+
+Requests borrow SQLite connections from a small pool (`ConnectionPool`, `get_db_conn` dependency) and hand them back afterwards. A connection is never used by two requests at once, which matters because sync endpoints run on a thread pool. Idle connections stay open, so there are no file opens per request (costly on Windows with antivirus) and SQLite keeps its `-wal`/`-shm` files instead of recreating and checkpointing them. A vault switch replaces the pool.
 
 ---
 

@@ -6,12 +6,12 @@ from jotter.features.buckets.schemas import BucketCreate, BucketUpdate
 from jotter.features.buckets.service import BucketApplicationService
 from jotter.features.tasks.schemas import TaskCreate, TaskMove
 from jotter.features.tasks.service import TaskApplicationService
-from jotter.shared.db import get_db
+from jotter.shared.db import create_sqlite_connection
 from jotter.shared.exceptions import ValidationError
 
 
 def test_bucket_crud(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
     buckets = bucket_svc.get_all_buckets("default")
     assert len(buckets) == 5
@@ -35,7 +35,7 @@ def test_bucket_crud(temp_dir, test_env):
 
 
 def test_bucket_delete_safety_and_task_move(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
 
@@ -59,7 +59,7 @@ def test_bucket_delete_safety_and_task_move(temp_dir, test_env):
 
 
 def test_bucket_row_to_bucket_with_none_position(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
 
     # Insert a bucket row directly into sqlite where position is NULL
@@ -76,7 +76,7 @@ def test_bucket_row_to_bucket_with_none_position(temp_dir, test_env):
 
 
 def test_index_md_project_manifest_roundtrip(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
 
     # Initializing default project should generate index.md in default/

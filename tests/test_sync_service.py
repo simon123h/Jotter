@@ -8,11 +8,11 @@ from jotter.features.projects.service import ProjectApplicationService
 from jotter.features.sync.service import SyncApplicationService
 from jotter.features.tasks.schemas import TaskCreate
 from jotter.features.tasks.service import TaskApplicationService
-from jotter.shared.db import get_db
+from jotter.shared.db import create_sqlite_connection
 
 
 def test_sync_auto_creates_missing_buckets_from_markdown(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
@@ -30,7 +30,7 @@ def test_sync_auto_creates_missing_buckets_from_markdown(temp_dir, test_env):
 
 
 def test_sync_removes_deleted_markdown_files_from_index(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
 
@@ -55,7 +55,7 @@ def test_sync_does_not_delete_task_created_concurrently_during_sync(temp_dir, te
 
     was taken, but before the SQLite cleanup step executes.
     """
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
 
@@ -90,7 +90,7 @@ def test_sync_does_not_delete_task_created_concurrently_during_sync(temp_dir, te
 
 def test_sync_does_not_delete_project_created_concurrently(temp_dir, test_env, monkeypatch):
     """Simulates a project created concurrently after discover_disk_projects snapshot."""
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
 
@@ -117,7 +117,7 @@ def test_sync_retains_tasks_on_transient_read_error(temp_dir, test_env, monkeypa
 
     it is NOT purged from the SQLite index.
     """
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
 
@@ -142,7 +142,7 @@ def test_sync_retains_tasks_on_transient_read_error(temp_dir, test_env, monkeypa
 
 
 def test_sync_handles_legacy_dates_and_folder_project_override(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
 
@@ -177,7 +177,7 @@ Notes
 
 
 def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
@@ -253,7 +253,7 @@ def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
 
 
 def test_sync_migrates_buckets_json_to_index_md(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
     bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
@@ -301,7 +301,7 @@ def test_sync_migrates_buckets_json_to_index_md(temp_dir, test_env):
 def test_sync_removes_deleted_project_and_does_not_resurrect_default(temp_dir, test_env):
     import shutil
 
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
 
@@ -332,7 +332,7 @@ def test_sync_removes_deleted_project_and_does_not_resurrect_default(temp_dir, t
 def test_commit_changes_commits_project_level_repo(temp_dir, test_env):
     from jotter.features.sync.git_adapter import get_git_history, run_git
 
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
 
@@ -356,7 +356,7 @@ def test_commit_changes_commits_project_level_repo(temp_dir, test_env):
 def test_commit_changes_with_global_workspace_git(temp_dir, test_env):
     from jotter.features.sync.git_adapter import get_git_history, run_git
 
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
 
@@ -389,7 +389,7 @@ def test_commit_changes_commits_canvas_files(temp_dir, test_env):
     from jotter.features.canvas.service import CanvasApplicationService
     from jotter.features.sync.git_adapter import get_git_history, run_git
 
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     canvas_svc = CanvasApplicationService(temp_dir)
 
@@ -466,7 +466,7 @@ def _count_reads(monkeypatch):
 
 
 def test_sync_skips_unchanged_task_files(temp_dir, test_env, monkeypatch):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
@@ -483,7 +483,7 @@ def test_sync_skips_unchanged_task_files(temp_dir, test_env, monkeypatch):
 def test_sync_rereads_changed_files_and_when_forced(temp_dir, test_env, monkeypatch):
     import os
 
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     changed = task_svc.create_task("default", TaskCreate(title="Changed", bucket="todo"))
@@ -510,7 +510,7 @@ def test_sync_rereads_changed_files_and_when_forced(temp_dir, test_env, monkeypa
 
 
 def test_sync_rereads_recently_modified_files(temp_dir, test_env, monkeypatch):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     task_svc.create_task("default", TaskCreate(title="Fresh", bucket="todo"))
@@ -522,7 +522,7 @@ def test_sync_rereads_recently_modified_files(temp_dir, test_env, monkeypatch):
 
 
 def test_sync_still_prunes_unchanged_expired_done_tasks(temp_dir, test_env, monkeypatch):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
@@ -546,7 +546,7 @@ def test_sync_still_prunes_unchanged_expired_done_tasks(temp_dir, test_env, monk
 def test_startup_sync_rebuilds_only_when_the_app_version_changes(temp_dir, test_env, monkeypatch):
     from jotter.features.sync import service as sync_module
 
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
     task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
@@ -607,7 +607,7 @@ def test_sync_does_not_rewrite_project_manifests_when_nothing_changed(temp_dir, 
     (vault / "default" / "a.md").write_text(
         "---\ntype: task\nid: a\nproject_id: default\ntitle: A\nstatus: todo\nposition: 1000.0\n---\n", encoding="utf-8"
     )
-    conn = get_db(str(vault / "tasks.db"))
+    conn = create_sqlite_connection(str(vault / "tasks.db"))
     sync_svc = SyncApplicationService.from_data_dir(vault, conn)
     sync_svc.sync_db_only()  # creates and settles the manifest
 
@@ -626,7 +626,7 @@ def test_startup_rebuild_is_retried_when_a_file_could_not_be_read(temp_dir, test
     from jotter.features.sync import service as sync_module
     from jotter.features.tasks.disk_repo import DiskTaskRepository
 
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
     monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
@@ -651,7 +651,7 @@ def test_startup_rebuild_is_recorded_despite_unparseable_files(temp_dir, test_en
     from jotter.features.sync import service as sync_module
     from jotter.features.tasks.disk_repo import DiskTaskRepository
 
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
     monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")

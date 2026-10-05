@@ -1,6 +1,6 @@
 """Shared domain primitives and technical foundations."""
 
-from jotter.shared.db import close_db, create_sqlite_connection, get_db
+from jotter.shared.db import create_sqlite_connection
 from jotter.shared.exceptions import (
     DomainException,
     EntityNotFoundError,
@@ -12,8 +12,6 @@ from jotter.shared.ulid import generate_ulid
 
 __all__ = [
     "create_sqlite_connection",
-    "get_db",
-    "close_db",
     "DomainException",
     "EntityNotFoundError",
     "ValidationError",

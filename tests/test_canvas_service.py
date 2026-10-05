@@ -4,11 +4,11 @@ from jotter.features.canvas.schemas import CanvasDocument, CanvasEdge, CanvasGen
 from jotter.features.canvas.service import CanvasApplicationService
 from jotter.features.projects.schemas import ProjectCreate
 from jotter.features.projects.service import ProjectApplicationService
-from jotter.shared.db import get_db
+from jotter.shared.db import create_sqlite_connection
 
 
 def test_canvas_crud_workflow(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
     canvas_svc = CanvasApplicationService(temp_dir)
 
@@ -89,7 +89,7 @@ def test_canvas_error_and_fallback_handling(temp_dir, test_env):
 
     from jotter.shared.exceptions import EntityNotFoundError, ValidationError
 
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
     canvas_svc = CanvasApplicationService(temp_dir)
 

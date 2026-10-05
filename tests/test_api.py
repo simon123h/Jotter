@@ -1,6 +1,11 @@
 from io import BytesIO
 from pathlib import Path
 
+from fastapi.testclient import TestClient
+
+from jotter.app import create_app
+from jotter.config import UserConfig
+
 
 def test_projects_crud(test_env):
     client, temp_dir = test_env
@@ -440,3 +445,45 @@ def test_create_task_position_does_not_read_other_task_files(test_env, monkeypat
     assert second["position"] == 2000.0
     other = client.post("/api/projects/default/tasks", json={"title": "C", "bucket": "doing"}).json()
     assert other["position"] == 1000.0
+
+
+def test_parallel_requests_do_not_share_a_connection(temp_dir):
+    """Sync endpoints run on a thread pool: concurrent writers and readers must not trip over one connection."""
+    import threading
+
+    config = UserConfig(
+        data_dir=temp_dir,
+        port=8000,
+        vaults_config_path=str(Path(temp_dir) / "vaults.json"),
+    )
+    errors: list[tuple[int, str]] = []
+
+    def writer(client: TestClient, k: int) -> None:
+        for j in range(20):
+            r = client.post(
+                "/api/projects/default/tasks",
+                json={"title": f"w{k}-{j}", "position": float(k * 100000 + j * 10 + 1)},
+            )
+            if r.status_code != 201:
+                errors.append((r.status_code, r.text[:80]))
+            r = client.get("/api/projects/default/tasks")
+            if r.status_code != 200:
+                errors.append((r.status_code, r.text[:80]))
+
+    with TestClient(create_app(config, enable_background_sync=False)) as client:
+        threads = [threading.Thread(target=writer, args=(client, k)) for k in range(4)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        total = len(client.get("/api/projects/default/tasks").json())
+
+    assert errors == []
+    assert total == 80
+
+
+def test_wal_files_stay_between_requests(test_env):
+    """A kept-open connection stops SQLite from recreating and checkpointing the WAL on every request."""
+    client, data_dir = test_env
+    assert client.get("/api/projects/default/tasks").status_code == 200
+    assert (Path(data_dir) / "tasks.db-wal").exists()

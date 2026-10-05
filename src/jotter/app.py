@@ -19,7 +19,7 @@ from jotter.features.sync import router as system_router
 from jotter.features.tasks import router as tasks_router
 from jotter.features.timeblock.router import router as timeblock_router
 from jotter.features.vaults import router as vaults_router
-from jotter.shared.db import create_sqlite_connection
+from jotter.shared.db import ConnectionPool
 from jotter.shared.exceptions import DomainException, EntityNotFoundError, ValidationError
 
 try:
@@ -52,6 +52,7 @@ def create_app(
         finally:
             if scheduler:
                 scheduler.stop()
+            app.state.db_pool.close()
 
     app = FastAPI(
         title="Jotter API",
@@ -72,14 +73,12 @@ def create_app(
     active_vault = vault_registry.get_active()
     cfg.data_dir = active_vault.path
 
-    # Setup database connection on app state
-    db_path = str(Path(cfg.data_dir) / "tasks.db")
-    app.state.db_path = db_path
-    conn = create_sqlite_connection(db_path)
-    app.state.db = conn
+    # Requests borrow their SQLite connections from this pool (see get_db_conn)
+    app.state.db_pool = ConnectionPool(Path(cfg.data_dir) / "tasks.db")
 
     # Initial DB sync from disk
-    SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_on_startup()
+    with app.state.db_pool.connection() as conn:
+        SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_on_startup()
 
     # Global Domain Exception Handlers
     @app.exception_handler(EntityNotFoundError)
