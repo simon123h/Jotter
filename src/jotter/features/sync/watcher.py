@@ -55,6 +55,28 @@ class MarkdownFileEventHandler(FileSystemEventHandler):
         self.debounce_seconds = debounce_seconds
         self._timer: threading.Timer | None = None
         self._lock = threading.Lock()
+        self._changed_paths: set[str] = set()
+        self._structure_changed = False
+
+    def take_changes(self) -> tuple[set[str], bool]:
+        """Returns and clears the changes recorded since the last call.
+
+        The result is the changed file paths and whether a directory was created, deleted or moved
+        (which the paths alone cannot describe).
+        """
+        with self._lock:
+            paths, structure = self._changed_paths, self._structure_changed
+            self._changed_paths = set()
+            self._structure_changed = False
+        return paths, structure
+
+    def _record(self, path: str, is_directory: bool) -> None:
+        with self._lock:
+            if is_directory:
+                self._structure_changed = True
+            else:
+                self._changed_paths.add(path)
+        self._schedule_sync()
 
     def _should_ignore(self, path_str: str) -> bool:
         # 1. Suppress recent self-writes from within this process (eliminates watcher echo)
@@ -98,20 +120,39 @@ class MarkdownFileEventHandler(FileSystemEventHandler):
 
     def on_created(self, event: "FileSystemEvent") -> None:
         if not self._should_ignore(event.src_path):
-            self._schedule_sync()
+            self._record(event.src_path, event.is_directory)
 
     def on_modified(self, event: "FileSystemEvent") -> None:
+        # Directories report a modification whenever a file inside them changes; the file event carries the detail
+        if event.is_directory:
+            return
         if not self._should_ignore(event.src_path):
-            self._schedule_sync()
+            self._record(event.src_path, False)
 
     def on_deleted(self, event: "FileSystemEvent") -> None:
         if not self._should_ignore(event.src_path):
-            self._schedule_sync()
+            self._record(event.src_path, event.is_directory)
 
     def on_moved(self, event: "FileSystemEvent") -> None:
         dest = getattr(event, "dest_path", "")
-        if not self._should_ignore(event.src_path) or (dest and not self._should_ignore(dest)):
-            self._schedule_sync()
+        if not self._should_ignore(event.src_path):
+            self._record(event.src_path, event.is_directory)
+        if dest and not self._should_ignore(dest):
+            self._record(dest, event.is_directory)
+
+
+def task_file_key(data_dir: Path, path: str) -> tuple[str, str] | None:
+    """Maps a changed path to (project_id, task_id) if it is a task file (`<data_dir>/<project>/<id>.md`)."""
+    try:
+        parts = Path(path).relative_to(data_dir).parts
+    except ValueError:
+        return None
+    if len(parts) != 2:
+        return None
+    project_id, name = parts
+    if name.startswith(".") or not name.lower().endswith(".md") or name.lower() in ("index.md", "readme.md"):
+        return None
+    return project_id, name[: -len(".md")]
 
 
 class FileWatcherService:
@@ -149,7 +190,13 @@ class FileWatcherService:
                 conn = create_sqlite_connection(db_path)
                 try:
                     sync_svc = SyncApplicationService.from_data_dir(self.data_dir, conn)
-                    synced = sync_svc.sync_db_only()
+                    paths, structure_changed = self.handler.take_changes() if self.handler else (set(), True)
+                    task_keys = {task_file_key(self.data_dir, p) for p in paths}
+                    # Only task files changed: reconcile just those instead of rescanning the whole vault
+                    if structure_changed or None in task_keys or not sync_svc.sync_task_files(task_keys):
+                        synced = sync_svc.sync_db_only()
+                    else:
+                        synced = len(task_keys)
                     with self._lock:
                         self.last_sync_timestamp = time.time()
                         self.change_count += 1

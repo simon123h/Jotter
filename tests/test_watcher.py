@@ -50,3 +50,88 @@ def test_file_watcher_service_lifecycle_and_reconciliation(temp_dir):
     finally:
         watcher.stop()
         assert watcher.is_running is False
+
+
+def _task_md(task_id, title="T", bucket="todo"):
+    return (
+        f"---\ntype: task\nid: {task_id}\nproject_id: default\ntitle: {title}\nstatus: {bucket}\n"
+        "position: 1000.0\n---\nBody\n"
+    )
+
+
+def _wait_for(predicate, timeout=3.0):
+    start = time.time()
+    while not predicate() and time.time() - start < timeout:
+        time.sleep(0.05)
+    return predicate()
+
+
+def test_task_file_key_only_matches_project_task_files(temp_dir):
+    from jotter.features.sync.watcher import task_file_key
+
+    data_dir = Path(temp_dir)
+    assert task_file_key(data_dir, str(data_dir / "default" / "abc.md")) == ("default", "abc")
+    assert task_file_key(data_dir, str(data_dir / "default" / "index.md")) is None
+    assert task_file_key(data_dir, str(data_dir / "default" / ".hidden.md")) is None
+    assert task_file_key(data_dir, str(data_dir / "default" / "sub" / "abc.md")) is None
+    assert task_file_key(data_dir, str(data_dir / "abc.md")) is None
+    assert task_file_key(data_dir, "/elsewhere/default/abc.md") is None
+
+
+def test_watcher_reconciles_only_changed_task_files(temp_dir, monkeypatch):
+    from jotter.features.sync.service import SyncApplicationService
+    from jotter.shared.db import create_sqlite_connection
+
+    data_dir = Path(temp_dir)
+    (data_dir / "default").mkdir()
+    conn = create_sqlite_connection(data_dir / "tasks.db")
+    SyncApplicationService.from_data_dir(data_dir, conn).sync_db_only()
+
+    full_syncs = []
+    original = SyncApplicationService.sync_db_only
+
+    def counting(self):
+        full_syncs.append(1)
+        return original(self)
+
+    monkeypatch.setattr(SyncApplicationService, "sync_db_only", counting)
+
+    def titles():
+        return {r["title"] for r in conn.execute("SELECT title FROM tasks")}
+
+    watcher = FileWatcherService(data_dir, debounce_seconds=0.1)
+    assert watcher.start()
+    try:
+        task_file = data_dir / "default" / "ext.md"
+        task_file.write_text(_task_md("ext", "First"), encoding="utf-8")
+        assert _wait_for(lambda: "First" in titles())
+
+        task_file.write_text(_task_md("ext", "Second"), encoding="utf-8")
+        assert _wait_for(lambda: "Second" in titles())
+
+        task_file.unlink()
+        assert _wait_for(lambda: "Second" not in titles())
+        assert full_syncs == []
+
+        # A new project folder cannot be handled incrementally
+        (data_dir / "other").mkdir()
+        assert _wait_for(lambda: bool(full_syncs))
+    finally:
+        watcher.stop()
+        conn.close()
+
+
+def test_sync_task_files_requires_full_sync_for_unknown_project(temp_dir):
+    from jotter.features.sync.service import SyncApplicationService
+    from jotter.shared.db import create_sqlite_connection
+
+    data_dir = Path(temp_dir)
+    (data_dir / "default").mkdir()
+    conn = create_sqlite_connection(data_dir / "tasks.db")
+    svc = SyncApplicationService.from_data_dir(data_dir, conn)
+    svc.sync_db_only()
+    try:
+        assert svc.sync_task_files({("unknown", "x")}) is False
+        assert svc.sync_task_files({("default", "missing")}) is True
+    finally:
+        conn.close()

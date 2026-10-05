@@ -1,6 +1,7 @@
 import json
 import logging
 import sqlite3
+from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Self
@@ -144,6 +145,35 @@ class SyncApplicationService:
                         self.sqlite_task_repo.delete_task(str(st.id))
 
         return total_synced
+
+    def sync_task_files(self, changes: Iterable[tuple[str, str]]) -> bool:
+        """Reconciles only the given (project_id, task_id) task files with SQLite.
+
+        Returns False without doing anything if a change belongs to a project SQLite does not know yet,
+        in which case the caller must run a full `sync_db_only()`.
+        """
+        changes = set(changes)
+        if not all(self.project_repo.exists(project_id) for project_id, _ in changes):
+            return False
+
+        known_buckets: dict[str, set[str]] = {}
+        for project_id, task_id in sorted(changes):
+            path = self.disk_task_repo.get_task_file_path(project_id, task_id)
+            if not path.is_file():
+                self.sqlite_task_repo.delete_task(task_id)
+                continue
+            try:
+                task = self.disk_task_repo.read_task_file(path, default_project_id=project_id)
+                if project_id not in known_buckets:
+                    known_buckets[project_id] = {b.name for b in self.bucket_repo.get_all(project_id)}
+                if task.bucket not in known_buckets[project_id]:
+                    self.bucket_repo.save(project_id, Bucket.create(title=task.bucket.capitalize(), name=task.bucket))
+                    known_buckets[project_id].add(task.bucket)
+                self.sqlite_task_repo.upsert_task(task)
+            except Exception as e:
+                # Keep the indexed task on transient read errors (e.g. a Windows file lock)
+                logger.warning("Failed to sync task file %s: %s", path, e)
+        return True
 
     def commit_changes(self) -> bool:
         """Commits pending changes in the vault (if it is a Git repository) and in project folders with their own repo.
