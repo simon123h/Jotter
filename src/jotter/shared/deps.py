@@ -2,11 +2,8 @@
 
 import sqlite3
 from collections.abc import Iterator
-from pathlib import Path
 
 from fastapi import Request
-
-from jotter.shared.db import create_sqlite_connection
 
 
 def get_data_dir(request: Request) -> str:
@@ -15,16 +12,10 @@ def get_data_dir(request: Request) -> str:
 
 
 def get_db_conn(request: Request) -> Iterator[sqlite3.Connection]:
-    """Opens a SQLite connection for this request and closes it afterwards.
+    """Borrows a SQLite connection from the pool for this request and returns it afterwards.
 
-    A connection is never shared between requests: sync endpoints run on a thread pool, so a thread-local or
-    app-wide connection would be used by several requests at once. Opening one is cheap (WAL, schema set up once).
+    A connection is never used by two requests at once: sync endpoints run on a thread pool, so one shared or
+    thread-local connection would be.
     """
-    db_path = getattr(request.app.state, "db_path", None)
-    if not db_path:
-        db_path = str(Path(get_data_dir(request)) / "tasks.db")
-    conn = create_sqlite_connection(db_path)
-    try:
+    with request.app.state.db_pool.connection() as conn:
         yield conn
-    finally:
-        conn.close()

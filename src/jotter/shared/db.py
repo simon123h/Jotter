@@ -2,6 +2,8 @@
 
 import sqlite3
 import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 _schema_lock = threading.Lock()
@@ -170,3 +172,56 @@ def init_schema(conn: sqlite3.Connection) -> None:
             )
     except Exception:
         pass
+
+
+class ConnectionPool:
+    """A small pool of SQLite connections to one database, so requests never share a connection.
+
+    Sync endpoints run on a thread pool: every request borrows its own connection and hands it back afterwards.
+    Idle connections stay open (warm page and statement caches, no file opens per request, and SQLite keeps its
+    -wal/-shm files instead of recreating them). At most `max_idle` are kept; extra ones are closed on return.
+    """
+
+    def __init__(self, db_path: Path | str, max_idle: int = 8):
+        self.db_path = Path(db_path)
+        self.max_idle = max_idle
+        self._idle: list[sqlite3.Connection] = []
+        self._lock = threading.Lock()
+        self._closed = False
+        # Open one connection now: it creates the schema and fails early if the database is unusable
+        self._idle.append(create_sqlite_connection(self.db_path))
+
+    def acquire(self) -> sqlite3.Connection:
+        with self._lock:
+            if self._idle:
+                return self._idle.pop()
+        return create_sqlite_connection(self.db_path)
+
+    def release(self, conn: sqlite3.Connection) -> None:
+        try:
+            if conn.in_transaction:
+                conn.rollback()
+        except sqlite3.Error:
+            conn.close()
+            return
+        with self._lock:
+            if not self._closed and len(self._idle) < self.max_idle:
+                self._idle.append(conn)
+                return
+        conn.close()
+
+    @contextmanager
+    def connection(self) -> Iterator[sqlite3.Connection]:
+        conn = self.acquire()
+        try:
+            yield conn
+        finally:
+            self.release(conn)
+
+    def close(self) -> None:
+        """Closes the idle connections; connections still borrowed are closed when they come back."""
+        with self._lock:
+            self._closed = True
+            idle, self._idle = self._idle, []
+        for conn in idle:
+            conn.close()
