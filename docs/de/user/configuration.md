@@ -23,7 +23,7 @@ Jotter ist extrem flexibel und kann entweder als vollständig eigenständige **p
 
 ### 1. Portabler Modus (Eigenständig)
 
-> **Hinweis:** Vaults verwaltest du in der App (Zahnrad neben der Vault-Auswahl); sie werden in `vaults.json` im Konfigurationsordner gespeichert. Der frühere Konfigurationsschlüssel `data_dir`, die Umgebungsvariable `JOTTER_DATA_DIR` und die Option `--data-dir` werden nicht mehr unterstützt; Schlüssel und Umgebungsvariable werden ignoriert.
+> **Hinweis:** Vaults verwaltest du in der App (Zahnrad neben der Vault-Auswahl); sie werden in `vaults.json` im Konfigurationsordner gespeichert. Der frühere Konfigurationsschlüssel `data_dir`, die Umgebungsvariable `JOTTER_DATA_DIR` und die Option `--data-dir` werden nicht mehr unterstützt; Schlüssel und Umgebungsvariable werden mit einer Warnung ignoriert.
 
 Wenn sich im aktuellen Arbeitsverzeichnis (CWD), in dem Jotter gestartet wird, ein Ordner namens `tasks/` befindet:
 

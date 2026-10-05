@@ -23,7 +23,7 @@ Jotter is extremely flexible and can be run as a completely self-contained **Por
 
 ### 1. Portable Mode (Self-Contained)
 
-> **Note:** Vaults are managed in the app (gear icon next to the vault switcher) and stored in `vaults.json` in the config folder. The former `data_dir` config key, `JOTTER_DATA_DIR` environment variable and `--data-dir` option are no longer supported; the config key and environment variable are ignored.
+> **Note:** Vaults are managed in the app (gear icon next to the vault switcher) and stored in `vaults.json` in the config folder. The former `data_dir` config key, `JOTTER_DATA_DIR` environment variable and `--data-dir` option are no longer supported; the config key and environment variable are ignored with a warning.
 
 If a folder named `tasks/` is present in the Current Working Directory (CWD) where Jotter is started:
 

@@ -105,6 +105,11 @@ def load_config() -> UserConfig:
                 with open(path, encoding="utf-8") as f:
                     data = yaml.safe_load(f)
                     if isinstance(data, dict):
+                        if data.get("data_dir"):
+                            logger.warning(
+                                "Ignoring 'data_dir' in %s: it is no longer supported. Manage vaults in the app instead.",
+                                path,
+                            )
                         if data.get("log_dir"):
                             config.log_dir = str(Path(data["log_dir"]).expanduser().resolve())
                         if data.get("host"):
@@ -120,6 +125,8 @@ def load_config() -> UserConfig:
                 logger.warning("Failed to read config from %s: %s", path, e)
 
     # Environment variables override
+    if os.environ.get("JOTTER_DATA_DIR"):
+        logger.warning("Ignoring JOTTER_DATA_DIR: it is no longer supported. Manage vaults in the app instead.")
     if os.environ.get("JOTTER_PORT"):
         try:
             config.port = int(os.environ["JOTTER_PORT"])
