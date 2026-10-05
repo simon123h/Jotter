@@ -1,4 +1,6 @@
+import logging
 import sys
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -12,7 +14,7 @@ from jotter.features.buckets import router as buckets_router
 from jotter.features.canvas.router import router as canvas_router
 from jotter.features.projects import router as projects_router
 from jotter.features.settings import router as settings_router
-from jotter.features.sync import AutoCommitScheduler, FileWatcherService, SyncApplicationService
+from jotter.features.sync import SyncApplicationService, VaultSyncScheduler
 from jotter.features.sync import router as system_router
 from jotter.features.tasks import router as tasks_router
 from jotter.features.timeblock.router import router as timeblock_router
@@ -25,33 +27,29 @@ try:
 except ImportError:
     app_version = "3.0.0b1"
 
+logger = logging.getLogger(__name__)
+
+# Requests slower than this are logged, to diagnose environments with slow file access (e.g. antivirus on Windows)
+SLOW_REQUEST_SECONDS = 0.5
+
 
 def create_app(
     config: UserConfig | None = None,
     version: str = app_version,
-    enable_watcher: bool = True,
-    enable_auto_commit: bool | None = None,
+    enable_background_sync: bool = True,
 ) -> FastAPI:
     cfg = config or load_config()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         scheduler = None
-        if enable_auto_commit if enable_auto_commit is not None else enable_watcher:
-            scheduler = AutoCommitScheduler(app.state.config.data_dir)
-            app.state.auto_commit = scheduler
-        watcher = None
-        if enable_watcher:
-            watcher = FileWatcherService(
-                app.state.config.data_dir, on_external_change=scheduler.mark_dirty if scheduler else None
-            )
-            watcher.start()
-            app.state.watcher = watcher
+        if enable_background_sync:
+            scheduler = VaultSyncScheduler(app.state.config.data_dir)
+            scheduler.start()
+            app.state.sync_scheduler = scheduler
         try:
             yield
         finally:
-            if watcher:
-                watcher.stop()
             if scheduler:
                 scheduler.stop()
 
@@ -81,7 +79,7 @@ def create_app(
     app.state.db = conn
 
     # Initial DB sync from disk
-    SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_db_only()
+    SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_on_startup()
 
     # Global Domain Exception Handlers
     @app.exception_handler(EntityNotFoundError)
@@ -96,10 +94,14 @@ def create_app(
     async def domain_exception_handler(request: Request, exc: DomainException):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
-    # Smart auto-commit: any successful data-changing API call marks the vault dirty
+    # Any successful data-changing API call marks the vault dirty, so the next periodic cycle commits it
     @app.middleware("http")
-    async def auto_commit_on_change(request: Request, call_next):
+    async def mark_vault_dirty_on_change(request: Request, call_next):
+        started = time.perf_counter()
         response = await call_next(request)
+        elapsed = time.perf_counter() - started
+        if elapsed > SLOW_REQUEST_SECONDS:
+            logger.warning("Slow request: %s %s took %.2fs", request.method, request.url.path, elapsed)
         path = request.url.path
         if (
             request.method in ("POST", "PUT", "PATCH", "DELETE")
@@ -107,7 +109,7 @@ def create_app(
             and not path.startswith("/api/system/git")
             and response.status_code < 400
         ):
-            scheduler = getattr(request.app.state, "auto_commit", None)
+            scheduler = getattr(request.app.state, "sync_scheduler", None)
             if scheduler is not None:
                 scheduler.mark_dirty()
         return response

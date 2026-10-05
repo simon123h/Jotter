@@ -2,9 +2,10 @@
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useI18n } from '@/composables/useI18n';
+import { isDemoMode, isNativeMobile } from '@/platform';
 
 const { t } = useI18n();
-const { hideAddTaskButton, doneCleanPeriod } = storeToRefs(useSettingsStore());
+const { hideAddTaskButton, doneCleanPeriod, autoCommit } = storeToRefs(useSettingsStore());
 </script>
 
 <template>
@@ -22,6 +23,21 @@ const { hideAddTaskButton, doneCleanPeriod } = storeToRefs(useSettingsStore());
         <div class="flex flex-col">
           <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.hideAddTask') }}</span>
           <span class="text-xs text-theme-text-muted mt-0.5">{{ t('settingsView.hideAddTaskDesc') }}</span>
+        </div>
+      </label>
+
+      <label
+        v-if="!isNativeMobile && !isDemoMode"
+        class="flex items-start gap-3 p-4 bg-theme-card/60 border border-theme-border/60 rounded-xl cursor-pointer hover:bg-theme-column/30 transition-all select-none"
+      >
+        <input
+          type="checkbox"
+          v-model="autoCommit"
+          class="mt-1 w-4 h-4 rounded text-theme-primary border border-theme-border/60 focus:ring-theme-ring focus:ring-2 focus:ring-offset-0 bg-theme-card/60"
+        />
+        <div class="flex flex-col">
+          <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.autoCommitToggle') }}</span>
+          <span class="text-xs text-theme-text-muted mt-0.5">{{ t('settingsView.autoCommitToggleDesc') }}</span>
         </div>
       </label>
 

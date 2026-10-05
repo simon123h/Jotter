@@ -50,6 +50,11 @@ def init_schema(conn: sqlite3.Connection) -> None:
         done_clean_period INTEGER DEFAULT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS buckets (
         project_id TEXT NOT NULL,
         name TEXT NOT NULL,
@@ -81,6 +86,8 @@ def init_schema(conn: sqlite3.Connection) -> None:
         postponed_until TEXT DEFAULT NULL,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
+        file_mtime_ns INTEGER DEFAULT NULL,
+        file_size INTEGER DEFAULT NULL,
         FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
         FOREIGN KEY (project_id, bucket) REFERENCES buckets(project_id, name) ON DELETE CASCADE
     );
@@ -108,7 +115,13 @@ def init_schema(conn: sqlite3.Connection) -> None:
         DELETE FROM tasks_fts WHERE rowid = old.rowid;
     END;
 
-    CREATE TRIGGER IF NOT EXISTS tasks_au AFTER UPDATE ON tasks BEGIN
+    -- Only rewrite the FTS entry when an indexed value actually changes (not for e.g. file stat bookkeeping).
+    -- "UPDATE OF <columns>" would not do: it fires whenever a column is in the SET list, even with the same value.
+    DROP TRIGGER IF EXISTS tasks_au;
+    CREATE TRIGGER tasks_au AFTER UPDATE ON tasks
+    WHEN old.project_id IS NOT new.project_id OR old.title IS NOT new.title
+        OR old.body IS NOT new.body OR old.tags IS NOT new.tags
+    BEGIN
         DELETE FROM tasks_fts WHERE rowid = old.rowid;
         INSERT INTO tasks_fts(rowid, id, project_id, title, body, tags)
         VALUES (new.rowid, new.id, new.project_id, new.title, new.body, new.tags);
@@ -137,6 +150,12 @@ def init_schema(conn: sqlite3.Connection) -> None:
         conn.execute("SELECT description FROM projects LIMIT 0")
     except sqlite3.OperationalError:
         conn.execute("ALTER TABLE projects ADD COLUMN description TEXT DEFAULT ''")
+
+    for column in ("file_mtime_ns", "file_size"):
+        try:
+            conn.execute(f"SELECT {column} FROM tasks LIMIT 0")
+        except sqlite3.OperationalError:
+            conn.execute(f"ALTER TABLE tasks ADD COLUMN {column} INTEGER DEFAULT NULL")
 
     # Backfill FTS index if table was newly created
     try:

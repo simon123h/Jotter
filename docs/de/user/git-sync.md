@@ -22,7 +22,7 @@ Wenn du das Terminal bevorzugst: `git init` im Vault-Ordner (zu finden unter **E
 
 ## So entstehen Commits
 
-* **Automatisch**: Solange Jotter geöffnet ist, wird jede Änderung wenige Sekunden später automatisch committet. Jotter staged alle Änderungen im Vault und committet sie mit einer Zusammenfassung der Änderungen (z. B. `jotter: 3 tasks created, 4 modified, 1 deleted`), gefolgt von den Titeln der geänderten Aufgaben (maximal 20). Gibt es keine Änderungen, entsteht kein Commit. Einen manuellen Commit-Button gibt es nicht. Damit der Verlauf übersichtlich bleibt, gibt es höchstens einen automatischen Commit pro Minute: Änderungen innerhalb dieser Minute werden an deren Ende in einem Commit gesammelt. Ausstehende Änderungen werden beim Beenden von Jotter oder beim Vault-Wechsel committet. Auch Änderungen außerhalb von Jotter (z. B. in einem Texteditor) werden erfasst. Es gibt nichts zu konfigurieren.
+* **Automatisch**: Solange Jotter geöffnet ist, werden deine Änderungen innerhalb etwa einer Minute automatisch committet. Jotter staged alle Änderungen im Vault und committet sie mit einer Zusammenfassung der Änderungen (z. B. `jotter: 3 tasks created, 4 modified, 1 deleted`), gefolgt von den Titeln der geänderten Aufgaben (maximal 20). Gibt es keine Änderungen, entsteht kein Commit. Einen manuellen Commit-Button gibt es nicht. Jotter prüft einmal pro Minute, damit der Verlauf übersichtlich bleibt: Änderungen innerhalb dieser Minute werden in einem Commit gesammelt. Ausstehende Änderungen werden beim Beenden von Jotter oder beim Vault-Wechsel committet. Auch Änderungen außerhalb von Jotter (z. B. in einem Texteditor) werden erfasst. Automatische Commits lassen sich unter **Einstellungen → Allgemein → Automatische Git-Commits** abschalten.
 * **Identität**: Commits verwenden dein Git-`user.name` und `user.email`. Nur wenn keine konfiguriert sind, setzt Jotter einen Fallback (`Jotter`) in der lokalen Konfiguration dieses Repositories und überschreibt niemals eine vorhandene Identität.
 * **Index bleibt lokal**: Der SQLite-Index (`tasks.db`) ist ein jederzeit neu aufbaubarer Cache und wird nicht mit committet.
 
@@ -62,7 +62,7 @@ Wenn du auf einen Schnappschuss klickst, um ihn wiederherzustellen, führt Jotte
 
 Da ein Vault ein einfacher Ordner mit Markdown-Dateien (und optional ein gewöhnliches Git-Repository) ist, kannst du ihn mit den Werkzeugen synchronisieren, die du ohnehin nutzt:
 
-* **Dateisynchronisation**: Syncthing, Dropbox, Nextcloud und ähnliche Tools funktionieren ohne weitere Einrichtung. Jotters Dateisystem-Watcher übernimmt eingehende Änderungen automatisch.
+* **Dateisynchronisation**: Syncthing, Dropbox, Nextcloud und ähnliche Tools funktionieren ohne weitere Einrichtung. Jotter durchsucht den Vault jede Minute neu und übernimmt eingehende Änderungen automatisch.
 * **Git-Remote**: Richte selbst ein Remote ein und nutze deinen gewohnten Git-Workflow für Push und Pull:
   ```bash
   git remote add origin git@github.com:username/my-jotter-vault.git

@@ -24,6 +24,7 @@ class AppSettings(BaseModel):
     language: str = "en"
     tagColors: dict[str, str] = {}
     doneCleanPeriod: int | None = None
+    autoCommit: bool = True
 
 
 class SettingsUpdate(BaseModel):
@@ -47,3 +48,4 @@ class SettingsUpdate(BaseModel):
     language: str | None = None
     tagColors: dict[str, str] | None = None
     doneCleanPeriod: int | None = None
+    autoCommit: bool | None = None

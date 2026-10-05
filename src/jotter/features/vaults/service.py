@@ -86,7 +86,7 @@ class VaultApplicationService:
     def switch_vault(self, vault_id: str, app_state: Any = None) -> VaultResponse:
         """Switches the active vault.
 
-        If FastAPI app_state is provided, updates DB connection, resets watcher, and runs initial sync.
+        If FastAPI app_state is provided, updates DB connection, retargets the periodic sync, and runs initial sync.
         """
         vault = self.registry.get(vault_id)
         self.registry.set_active_id(vault.id)
@@ -133,7 +133,7 @@ class VaultApplicationService:
         self.registry.delete(vault.id)
 
     def _rebind_runtime_state(self, app_state: Any, vault: Vault) -> None:
-        """Rebinds runtime dependencies (DB, watcher, config) when active vault changes."""
+        """Rebinds runtime dependencies (DB, periodic sync, config) when active vault changes."""
         from jotter.features.sync.service import SyncApplicationService
         from jotter.shared.db import close_db, create_sqlite_connection
 
@@ -157,23 +157,14 @@ class VaultApplicationService:
 
         # 3. Synchronize new vault SQLite index
         try:
-            SyncApplicationService.from_data_dir(vault.path, new_conn).sync_db_only()
+            SyncApplicationService.from_data_dir(vault.path, new_conn).sync_on_startup()
         except Exception as e:
             logger.warning("Reconciliation on vault switch failed: %s", e)
 
-        # 4. Re-target FileWatcherService
-        scheduler = getattr(app_state, "auto_commit", None)
+        # 4. Re-target the periodic sync and commit
+        scheduler = getattr(app_state, "sync_scheduler", None)
         if scheduler is not None:
             try:
                 scheduler.retarget(vault.path)
             except Exception as e:
-                logger.warning("Failed to retarget auto-commit for vault %s: %s", vault.path, e)
-
-        watcher = getattr(app_state, "watcher", None)
-        if watcher is not None:
-            try:
-                watcher.stop()
-                watcher.data_dir = Path(vault.path)
-                watcher.start()
-            except Exception as e:
-                logger.warning("Failed to restart file watcher for vault %s: %s", vault.path, e)
+                logger.warning("Failed to retarget periodic sync for vault %s: %s", vault.path, e)

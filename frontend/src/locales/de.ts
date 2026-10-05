@@ -300,6 +300,9 @@ export const de = {
     general: 'Allgemeine Einstellungen',
     hideAddTask: 'Kleinere Schaltfläche für "Aufgabe hinzufügen"',
     hideAddTaskDesc: 'Ersetzt die große Schaltfläche zum Erstellen einer neuen Aufgabe in jeder Spalte durch ein Kleines "+"-Symbol.',
+    autoCommitToggle: 'Automatische Git-Commits',
+    autoCommitToggleDesc:
+      'Committet Änderungen kurz nach dem Bearbeiten im Git-Repository des Vaults. Deaktivieren, wenn das Speichern auf Rechnern mit aggressivem Virenscanner langsam ist.',
     globalDoneCleanPeriod: 'Globale Aufbewahrungsfrist für erledigte Aufgaben (Tage)',
     globalDoneCleanPeriodDesc:
       'Löscht Aufgaben in der Spalte "Erledigt" automatisch nach dieser Anzahl von Tagen projektübergreifend (sofern nicht in den Projekteinstellungen überschrieben). Leer lassen oder auf 0 setzen, um das automatische Löschen zu deaktivieren.',

@@ -22,7 +22,7 @@ If you prefer the terminal, running `git init` in the vault folder (shown under 
 
 ## How Commits Are Created
 
-* **Automatic**: While Jotter is open, every change you make is committed automatically a few seconds later. Jotter stages all changes in the vault and commits them with a message that summarizes the changes (e.g. `jotter: 3 tasks created, 4 modified, 1 deleted`), followed by the titles of the changed tasks (up to 20). If nothing changed, no commit is created. There is no manual commit button. To keep the history readable, there is at most one automatic commit per minute: changes made within that minute are collected into one commit at its end. Pending changes are committed when Jotter shuts down or you switch vaults. Edits made outside Jotter (e.g. in a text editor) are picked up as well. There is nothing to configure.
+* **Automatic**: While Jotter is open, your changes are committed automatically within about a minute. Jotter stages all changes in the vault and commits them with a message that summarizes the changes (e.g. `jotter: 3 tasks created, 4 modified, 1 deleted`), followed by the titles of the changed tasks (up to 20). If nothing changed, no commit is created. There is no manual commit button. Jotter checks once a minute, so the history stays readable: changes made within that minute are collected into one commit. Pending changes are committed when Jotter shuts down or you switch vaults. Edits made outside Jotter (e.g. in a text editor) are picked up as well. You can turn automatic commits off under **Settings → General → Automatic Git commits**.
 * **Identity**: Commits use your Git `user.name` and `user.email`. Only if none is configured does Jotter set a fallback (`Jotter`) in that repository's local config, and it never overrides an existing identity.
 * **Index stays local**: The SQLite index (`tasks.db`) is a rebuildable cache and is excluded from commits.
 
@@ -69,7 +69,7 @@ When you click on **Restore State** for any snapshot, Jotter executes a bulletpr
 
 Because a vault is a plain folder of Markdown files (and optionally a plain Git repository), you can sync it with whatever you already use:
 
-* **File sync**: Syncthing, Dropbox, Nextcloud, or similar tools work out of the box. Jotter's filesystem watcher picks up incoming changes automatically.
+* **File sync**: Syncthing, Dropbox, Nextcloud, or similar tools work out of the box. Jotter re-scans the vault every minute and picks up incoming changes automatically.
 * **Git remote**: Add a remote yourself and push/pull with your regular Git workflow:
   ```bash
   git remote add origin git@github.com:username/my-jotter-vault.git

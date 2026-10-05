@@ -73,3 +73,12 @@ Specifically:
 
 - All disk writes throughout the codebase (tasks, manifests, settings, canvases) must use `atomic_write` rather than standard `open(..., "w")`.
 - Temporary `.tmp_*` files should be cleaned up during sync reconciliation if any orphaned files remain after hard system crashes.
+
+## Update (2026-10-05): Cost of the retry loop, and the watcher is gone
+
+- **The retry loop runs inside the request.** A save that hits a locked file sleeps in `atomic_replace` for 20, 40, 80, 160 and 320 ms before the final attempt, about 0.6 s per file in the worst case, before falling back to copy. A save that writes several files (the task, a manifest) can multiply that. On a Windows machine where antivirus or a sync client keeps files open, this can be a visible part of a save.
+- **Retries are now logged.** `atomic_replace` logs a warning with the file and the time spent when it succeeds only after retrying, and the HTTP layer logs requests slower than 0.5 s. Together with `jotter.log` (see the configuration docs) this shows whether file locks, and not the database or the index, explain a slow save.
+- **Reducing contention is preferable to shortening the backoff.** Work that opens many vault files in the background competes with saves, which is part of why the filesystem watcher was replaced by a cheap periodic scan ([ADR 0014](./0014-periodic-scan-instead-of-watcher.md)) and why auto-commit spawns fewer git processes. The backoff itself is unchanged.
+- **The watcher points above are historical.** There is no filesystem watcher any more, so "Watcher Event Flooding" no longer applies and the registry that told the watcher about Jotter's own writes was removed. Writing through a temporary file still matters: it prevents half-written files, and the periodic scan only reads `*.md` files, so `.tmp_*` files are never indexed.
+- **`fsync` is deliberately kept.** `atomic_write` calls `os.fsync` before the replace so a power loss cannot leave an empty or truncated task file. It costs one `fsync` per file and does not grow with vault size. It is the next thing to measure if saves stay slow after the points above, but it should not be dropped for task and manifest files without evidence.
+

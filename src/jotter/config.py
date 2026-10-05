@@ -136,6 +136,8 @@ def load_config() -> UserConfig:
             pass
     if os.environ.get("JOTTER_HOST"):
         config.host = os.environ["JOTTER_HOST"]
+    if os.environ.get("JOTTER_LOG_DIR"):
+        config.log_dir = str(Path(os.environ["JOTTER_LOG_DIR"]).expanduser().resolve())
     if os.environ.get("JOTTER_LOG_LEVEL"):
         config.log_level = normalize_log_level(os.environ["JOTTER_LOG_LEVEL"])
 

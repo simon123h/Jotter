@@ -1,6 +1,5 @@
 """Sync & Git feature package."""
 
-from jotter.features.sync.auto_commit import AutoCommitScheduler
 from jotter.features.sync.git_adapter import (
     commit_changes,
     enable_git_versioning,
@@ -12,13 +11,12 @@ from jotter.features.sync.git_adapter import (
     is_git_repo,
 )
 from jotter.features.sync.router import router
+from jotter.features.sync.scheduler import VaultSyncScheduler
 from jotter.features.sync.service import SyncApplicationService
-from jotter.features.sync.watcher import FileWatcherService
 
 __all__ = [
-    "AutoCommitScheduler",
     "SyncApplicationService",
-    "FileWatcherService",
+    "VaultSyncScheduler",
     "is_git_installed",
     "is_git_repo",
     "init_git_repo",

@@ -34,7 +34,7 @@ def get_sync_service(
 @router.api_route("/sync", methods=["GET", "POST"])
 def trigger_sync(svc: SyncApplicationService = Depends(get_sync_service)):
     """Reconciles Markdown files on disk with the SQLite index."""
-    synced_count = svc.sync_db_only()
+    synced_count = svc.sync_db_only(force=True)
     return {"status": "success", "synced": synced_count}
 
 
@@ -50,7 +50,6 @@ def get_system_info(request: Request, data_dir: str = Depends(get_data_dir)):
     config = request.app.state.config
     version = getattr(request.app.state, "version", "3.0.0b1")
     git_inst = is_git_installed()
-    watcher = getattr(request.app.state, "watcher", None)
     return {
         "version": version,
         "data_dir": data_dir,
@@ -58,8 +57,6 @@ def get_system_info(request: Request, data_dir: str = Depends(get_data_dir)):
         "port": config.port,
         "git_installed": git_inst,
         "gitInstalled": git_inst,
-        "change_count": getattr(watcher, "change_count", 0),
-        "last_sync_timestamp": getattr(watcher, "last_sync_timestamp", 0),
     }
 
 
@@ -90,7 +87,7 @@ def restore_project_commit(
     proj_dir = str(Path(data_dir) / project_id)
     try:
         git_restore(proj_dir, req.commitHash)
-        svc.sync_db_only()
+        svc.sync_db_only(force=True)
         return {"status": "ok", "message": f"Restored to {req.commitHash}"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

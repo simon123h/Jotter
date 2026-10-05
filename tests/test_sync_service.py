@@ -414,3 +414,253 @@ def test_commit_changes_commits_canvas_files(temp_dir, test_env):
     history = get_git_history(proj_dir)
     assert len(history) >= 1
     assert history[0]["message"] == "jotter: 2 other files changed"
+
+
+def test_reprojecting_an_unchanged_task_does_not_rewrite_its_row(temp_dir):
+    from jotter.features.tasks.domain import Task
+    from jotter.features.tasks.projector import TaskProjector
+    from jotter.shared.db import create_sqlite_connection
+
+    conn = create_sqlite_connection(f"{temp_dir}/tasks.db")
+    conn.execute("INSERT INTO projects (id, title, created_at) VALUES ('p', 'P', '2024-01-01')")
+    conn.execute("INSERT INTO buckets (project_id, name, title) VALUES ('p', 'todo', 'Todo')")
+    projector = TaskProjector(conn)
+    task = Task.create(project_id="p", title="One", bucket="todo", position=1000.0)
+    updates = []
+    conn.set_trace_callback(lambda sql: updates.append(sql) if "tasks_fts" in sql else None)
+
+    projector.project_task_upsert(task)
+    inserted = len(updates)
+    projector.project_task_upsert(task)
+    assert len(updates) == inserted  # unchanged: the update trigger (FTS rewrite) did not fire
+
+    task.title = "Two"
+    projector.project_task_upsert(task)
+    assert len(updates) > inserted
+    assert conn.execute("SELECT title FROM tasks").fetchone()["title"] == "Two"
+    conn.close()
+
+
+def _age_files(project_dir: Path, seconds: int = 3600) -> None:
+    """Back-dates task files so their stat is trusted (very recent files are re-read on purpose)."""
+    import os
+    import time
+
+    old = time.time() - seconds
+    for f in project_dir.glob("*.md"):
+        os.utime(f, (old, old))
+
+
+def _count_reads(monkeypatch):
+    from jotter.features.tasks.disk_repo import DiskTaskRepository
+
+    reads = []
+    original = DiskTaskRepository.read_task_file
+
+    def counting(self, file_path, default_project_id):
+        reads.append(Path(file_path).name)
+        return original(self, file_path, default_project_id)
+
+    monkeypatch.setattr(DiskTaskRepository, "read_task_file", counting)
+    return reads
+
+
+def test_sync_skips_unchanged_task_files(temp_dir, test_env, monkeypatch):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
+    task_svc.create_task("default", TaskCreate(title="Two", bucket="todo"))
+    _age_files(Path(temp_dir) / "default")
+
+    sync_svc.sync_db_only()  # records the stats
+    reads = _count_reads(monkeypatch)
+
+    assert sync_svc.sync_db_only() >= 2
+    assert reads == []
+
+
+def test_sync_rereads_changed_files_and_when_forced(temp_dir, test_env, monkeypatch):
+    import os
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    changed = task_svc.create_task("default", TaskCreate(title="Changed", bucket="todo"))
+    task_svc.create_task("default", TaskCreate(title="Same", bucket="todo"))
+    project_dir = Path(temp_dir) / "default"
+    _age_files(project_dir)
+    sync_svc.sync_db_only()
+    reads = _count_reads(monkeypatch)
+
+    # Same size, different mtime: must still be noticed
+    path = project_dir / f"{changed.id}.md"
+    content = path.read_text(encoding="utf-8").replace("Changed", "Chunged")
+    path.write_text(content, encoding="utf-8")
+    old = path.stat().st_mtime - 100
+    os.utime(path, (old, old))
+
+    sync_svc.sync_db_only()
+    assert reads == [path.name]
+    assert conn.execute("SELECT title FROM tasks WHERE id = ?", (changed.id,)).fetchone()["title"] == "Chunged"
+
+    reads.clear()
+    sync_svc.sync_db_only(force=True)
+    assert len(reads) == 2
+
+
+def test_sync_rereads_recently_modified_files(temp_dir, test_env, monkeypatch):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    task_svc.create_task("default", TaskCreate(title="Fresh", bucket="todo"))
+    sync_svc.sync_db_only()
+    reads = _count_reads(monkeypatch)
+
+    sync_svc.sync_db_only()  # mtime is within the racy window, so the stat was never trusted
+    assert len(reads) == 1
+
+
+def test_sync_still_prunes_unchanged_expired_done_tasks(temp_dir, test_env, monkeypatch):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    proj_svc.create_project(ProjectCreate(title="Proj", id="proj"))
+    task = task_svc.create_task("proj", TaskCreate(title="Old done", bucket="done"))
+    project_dir = Path(temp_dir) / "proj"
+    path = project_dir / f"{task.id}.md"
+    old_iso = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+    path.write_text(path.read_text(encoding="utf-8").replace(task.updated_at, old_iso), encoding="utf-8")
+    _age_files(project_dir)
+    sync_svc.sync_db_only()  # indexes the task (retention disabled)
+    assert path.exists()
+
+    (Path(temp_dir) / "settings.json").write_text(json.dumps({"doneCleanPeriod": 7}), encoding="utf-8")
+    reads = _count_reads(monkeypatch)
+    sync_svc.sync_db_only()
+    assert reads == []  # unchanged file was not parsed...
+    assert not path.exists()  # ...yet retention applied from the indexed dates
+
+
+def test_startup_sync_rebuilds_only_when_the_app_version_changes(temp_dir, test_env, monkeypatch):
+    from jotter.features.sync import service as sync_module
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
+    _age_files(Path(temp_dir) / "default")
+
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
+    reads = _count_reads(monkeypatch)
+
+    sync_svc.sync_on_startup()  # first open of this index: full rebuild
+    assert len(reads) == 1
+
+    reads.clear()
+    sync_svc.sync_on_startup()  # same version: unchanged files are skipped
+    assert reads == []
+
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "1.1.0")
+    sync_svc.sync_on_startup()  # upgrade: rebuild again
+    assert len(reads) == 1
+
+
+def test_manual_sync_endpoint_rereads_every_file(test_env, monkeypatch):
+    client, temp_dir = test_env
+    client.post("/api/projects/default/tasks", json={"title": "One", "bucket": "todo"})
+    _age_files(Path(temp_dir) / "default")
+    client.post("/api/system/sync")
+    reads = _count_reads(monkeypatch)
+
+    assert client.post("/api/system/sync").status_code == 200
+    assert len(reads) == 1
+
+
+def test_recording_a_file_stat_does_not_rewrite_the_fts_entry(temp_dir):
+    from jotter.features.tasks.domain import Task
+    from jotter.features.tasks.projector import TaskProjector
+    from jotter.shared.db import create_sqlite_connection
+
+    conn = create_sqlite_connection(f"{temp_dir}/stat.db")
+    conn.execute("INSERT INTO projects (id, title, created_at) VALUES ('p', 'P', '2024-01-01')")
+    conn.execute("INSERT INTO buckets (project_id, name, title) VALUES ('p', 'todo', 'Todo')")
+    projector = TaskProjector(conn)
+    task = Task.create(project_id="p", title="One", bucket="todo", position=1000.0)
+    projector.project_task_upsert(task)
+    fts = []
+    conn.set_trace_callback(lambda sql: fts.append(sql) if "tasks_fts" in sql else None)
+
+    projector.project_task_upsert(task, (123, 456))  # only the file stat differs
+
+    assert fts == []
+    assert conn.execute("SELECT file_mtime_ns FROM tasks").fetchone()[0] == 123
+    conn.close()
+
+
+def test_sync_does_not_rewrite_project_manifests_when_nothing_changed(temp_dir, monkeypatch):
+    import jotter.shared.fs as fs
+
+    vault = Path(temp_dir)
+    (vault / "default").mkdir()
+    (vault / "default" / "a.md").write_text(
+        "---\ntype: task\nid: a\nproject_id: default\ntitle: A\nstatus: todo\nposition: 1000.0\n---\n", encoding="utf-8"
+    )
+    conn = get_db(str(vault / "tasks.db"))
+    sync_svc = SyncApplicationService.from_data_dir(vault, conn)
+    sync_svc.sync_db_only()  # creates and settles the manifest
+
+    writes = []
+    original = fs.atomic_write
+    monkeypatch.setattr(
+        fs, "atomic_write", lambda path, *a, **k: writes.append(Path(path).name) or original(path, *a, **k)
+    )
+    sync_svc.sync_db_only()
+    sync_svc.sync_db_only()
+
+    assert writes == []
+
+
+def test_startup_rebuild_is_retried_when_a_file_could_not_be_read(temp_dir, test_env, monkeypatch):
+    from jotter.features.sync import service as sync_module
+    from jotter.features.tasks.disk_repo import DiskTaskRepository
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
+    original = DiskTaskRepository.read_task_file
+
+    def locked(self, file_path, default_project_id):
+        raise PermissionError("file is locked")
+
+    monkeypatch.setattr(DiskTaskRepository, "read_task_file", locked)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc.sync_on_startup()
+    assert sync_svc.last_io_errors == 1
+    row = conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()
+    assert row is None or row["value"] != "1.0.0"  # the new version was not recorded
+
+    monkeypatch.setattr(DiskTaskRepository, "read_task_file", original)
+    sync_svc.sync_on_startup()  # the next start rebuilds again and now succeeds
+    assert conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()["value"] == "1.0.0"
+
+
+def test_startup_rebuild_is_recorded_despite_unparseable_files(temp_dir, test_env, monkeypatch):
+    from jotter.features.sync import service as sync_module
+    from jotter.features.tasks.disk_repo import DiskTaskRepository
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
+
+    def broken(self, file_path, default_project_id):
+        raise ValueError("invalid frontmatter")
+
+    monkeypatch.setattr(DiskTaskRepository, "read_task_file", broken)
+    SyncApplicationService.from_data_dir(temp_dir, conn).sync_on_startup()
+
+    # It would fail identically every time, so it must not force a rebuild at every start
+    assert conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()["value"] == "1.0.0"

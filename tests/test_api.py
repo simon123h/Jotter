@@ -421,3 +421,22 @@ def test_requests_for_deleted_project_do_not_recreate_its_folder(test_env):
     assert client.get(f"/api/projects/{pid}/buckets").status_code == 404
     assert client.post(f"/api/projects/{pid}/buckets", json={"title": "B"}).status_code == 404
     assert not (Path(temp_dir) / pid).exists()
+
+
+def test_create_task_position_does_not_read_other_task_files(test_env, monkeypatch):
+    from jotter.features.tasks.disk_repo import DiskTaskRepository
+
+    client, _ = test_env
+    first = client.post("/api/projects/default/tasks", json={"title": "A", "bucket": "todo"}).json()
+    assert first["position"] == 1000.0
+
+    def fail(*args, **kwargs):
+        raise AssertionError("creating a task must not scan the project's task files")
+
+    monkeypatch.setattr(DiskTaskRepository, "read_task_file", fail)
+    monkeypatch.setattr(DiskTaskRepository, "get_all_task_files", fail)
+
+    second = client.post("/api/projects/default/tasks", json={"title": "B", "bucket": "todo"}).json()
+    assert second["position"] == 2000.0
+    other = client.post("/api/projects/default/tasks", json={"title": "C", "bucket": "doing"}).json()
+    assert other["position"] == 1000.0

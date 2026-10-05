@@ -4,7 +4,6 @@ import logging
 import os
 import shutil
 import tempfile
-import threading
 import time
 from pathlib import Path
 
@@ -22,9 +21,17 @@ def atomic_replace(src: Path | str, dst: Path | str, max_retries: int = 6, initi
     src_path = Path(src)
     dst_path = Path(dst)
 
+    started = time.perf_counter()
     for attempt in range(max_retries):
         try:
             src_path.replace(dst_path)
+            if attempt:
+                logger.warning(
+                    "atomic_replace of %s succeeded after %d retries (%.2fs): file was locked",
+                    dst_path,
+                    attempt,
+                    time.perf_counter() - started,
+                )
             return
         except PermissionError as e:
             if attempt == max_retries - 1:
@@ -49,32 +56,6 @@ def atomic_replace(src: Path | str, dst: Path | str, max_retries: int = 6, initi
             time.sleep(initial_delay * (2**attempt))
 
 
-_recent_self_writes: dict[str, float] = {}
-_recent_writes_lock = threading.Lock()
-
-
-def register_recent_self_write(path: Path | str, ttl_seconds: float = 2.0) -> None:
-    """Records a path written by Jotter itself to suppress redundant watcher echo events."""
-    norm = str(Path(path).resolve()).replace("\\", "/").lower()
-    now = time.time()
-    with _recent_writes_lock:
-        # Prune stale entries older than 10 seconds
-        global _recent_self_writes
-        _recent_self_writes = {p: ts for p, ts in _recent_self_writes.items() if now - ts < 10.0}
-        _recent_self_writes[norm] = now + ttl_seconds
-
-
-def is_recent_self_write(path_str: str) -> bool:
-    """Checks whether a path was modified by Jotter within its suppression TTL."""
-    norm = str(Path(path_str).resolve()).replace("\\", "/").lower()
-    now = time.time()
-    with _recent_writes_lock:
-        expiry = _recent_self_writes.get(norm)
-        if expiry and now < expiry:
-            return True
-    return False
-
-
 def atomic_write(
     target_path: Path | str, content: str, encoding: str = "utf-8", prefix: str = ".tmp_", suffix: str = ".tmp"
 ) -> None:
@@ -82,9 +63,6 @@ def atomic_write(
     path = Path(target_path)
     parent_dir = path.parent
     parent_dir.mkdir(parents=True, exist_ok=True)
-
-    # Automatically register self write
-    register_recent_self_write(path)
 
     with tempfile.NamedTemporaryFile(
         "w", dir=parent_dir, delete=False, encoding=encoding, prefix=prefix, suffix=suffix
