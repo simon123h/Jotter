@@ -5,6 +5,7 @@ window: the first change commits after a short debounce (so bursts settle), chan
 coalesced into one trailing commit at its end.
 """
 
+import json
 import logging
 import threading
 import time
@@ -14,16 +15,27 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 AUTO_COMMIT_COOLDOWN_SECONDS = 60.0
-AUTO_COMMIT_DEBOUNCE_SECONDS = 3.0
+AUTO_COMMIT_DEBOUNCE_SECONDS = 15.0
 
 CommitFn = Callable[[Path], bool]
 TimerFactory = Callable[[float, Callable[[], None]], threading.Timer]
+
+
+def _auto_commit_enabled(data_dir: Path) -> bool:
+    """Reads the `autoCommit` setting without creating settings.json (that would itself be an uncommitted change)."""
+    try:
+        return bool(json.loads((data_dir / "settings.json").read_text(encoding="utf-8")).get("autoCommit", True))
+    except (OSError, ValueError, AttributeError):
+        return True
 
 
 def commit_vault(data_dir: Path) -> bool:
     """Default commit function: commits the vault and its project folders. Returns True if a commit was created."""
     from jotter.features.sync.service import SyncApplicationService
     from jotter.shared.db import create_sqlite_connection
+
+    if not _auto_commit_enabled(data_dir):
+        return False
 
     conn = create_sqlite_connection(data_dir / "tasks.db")
     try:
@@ -92,10 +104,14 @@ class AutoCommitScheduler:
                 # Claim the cooldown up front so changes arriving during the commit wait it out
                 self._last_commit_at = self._clock()
             committed = False
+            started = time.perf_counter()
             try:
                 committed = self._commit_fn(self.data_dir)
             except Exception as e:
                 logger.warning("Auto-commit failed for %s: %s", self.data_dir, e)
+            logger.debug(
+                "Auto-commit of %s took %.2fs (committed=%s)", self.data_dir, time.perf_counter() - started, committed
+            )
             if not committed:
                 with self._lock:
                     self._last_commit_at = previous

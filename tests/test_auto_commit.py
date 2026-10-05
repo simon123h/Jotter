@@ -195,3 +195,20 @@ def test_mutating_api_calls_mark_vault_dirty(temp_dir):
 
         client.post("/api/system/git/init")
         assert rec.calls == 1  # the Git-init endpoint itself doesn't re-dirty
+
+
+def test_commit_vault_respects_auto_commit_setting(temp_dir):
+    from jotter.features.settings.schemas import SettingsUpdate
+    from jotter.features.settings.service import SettingsApplicationService
+
+    vault = Path(temp_dir)
+    run_git(["init", "-b", "main"], cwd=vault)
+    run_git(["config", "user.name", "Test"], cwd=vault)
+    run_git(["config", "user.email", "test@example.com"], cwd=vault)
+    (vault / "default").mkdir()
+    (vault / "default" / "a.md").write_text("---\ntitle: a\n---\n", encoding="utf-8")
+    SettingsApplicationService(str(vault)).update_settings(SettingsUpdate(autoCommit=False))
+
+    assert commit_vault(vault) is False
+    SettingsApplicationService(str(vault)).update_settings(SettingsUpdate(autoCommit=True))
+    assert commit_vault(vault) is True

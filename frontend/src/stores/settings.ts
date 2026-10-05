@@ -48,6 +48,7 @@ export const useSettingsStore = defineStore('settings', () => {
     timeblockEndHour: 18,
     isTimeblockSidebarOpen: getStoredBool(TIMEBLOCK_SIDEBAR_STORAGE_KEY, false),
     doneCleanPeriod: null,
+    autoCommit: true,
   });
 
   let skipSave = false;

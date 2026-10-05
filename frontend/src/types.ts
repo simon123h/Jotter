@@ -96,6 +96,7 @@ export interface AppSettings {
   timeblockEndHour?: number;
   isTimeblockSidebarOpen?: boolean;
   doneCleanPeriod?: number | null;
+  autoCommit?: boolean;
 }
 
 export interface SystemInfo {
