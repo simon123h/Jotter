@@ -10,7 +10,6 @@ Du kannst anpassen, wie Jotter ausgeführt wird (z. B. den Netzwerk-Port ändern
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Port** | `--port <nummer>` | `port: <nummer>` | _N/A_ | `58271` | Der Netzwerk-Port, auf dem der Server lauscht. |
 | **Host** | `--host <adresse>` | `host: "<adresse>"` | _N/A_ | `127.0.0.1` | Die Host-IP-Adresse, an die sich der Server bindet (z. B. `0.0.0.0`, um Zugriff aus dem lokalen Netzwerk zu erlauben). |
-| **Datenverzeichnis** | `--data-dir <pfad>` | _N/A_ | _N/A_ | _Siehe Speicherorte_ | Start-Ordner, der nur den ersten Vault anlegt (siehe unten). Unterstützt `~` zur Pfadauflösung des Home-Verzeichnisses. |
 | **Log-Verzeichnis** | _N/A_ | `log_dir: "<pfad>"` | `JOTTER_LOG_DIR` | _Siehe Speicherorte_ | Das Verzeichnis, in dem Jotter die Datei `jotter.log` speichert. Getrennt von den Notizen, um Git-Konflikte zu vermeiden. |
 | **Log-Level** | `--log-level <level>` | `log_level: "<level>"` | `JOTTER_LOG_LEVEL` | `info` (Dev) / `warning` (Prod) | Detailtiefe der Log-Ausgaben (`debug`, `info`, `warning`, `error`, `critical`). |
 | **Log-Farben** | `--no-color` | `use_colors: false` | `NO_COLOR` / `JOTTER_USE_COLORS` | `true` (Auto) | ANSI-Farbausgabe in Terminal-Logs umschalten. Hilfreich, falls ältere Windows-Terminals Escape-Codes (`[32m`) anzeigen. |
@@ -24,7 +23,7 @@ Jotter ist extrem flexibel und kann entweder als vollständig eigenständige **p
 
 ### 1. Portabler Modus (Eigenständig)
 
-> **Hinweis:** Vaults verwaltest du in der App (Zahnrad neben der Vault-Auswahl); sie werden in `vaults.json` im Konfigurationsordner gespeichert. `--data-dir` legt nur den ersten Vault an und wird ignoriert, sobald `vaults.json` existiert. Der frühere Konfigurationsschlüssel `data_dir` und die Umgebungsvariable `JOTTER_DATA_DIR` werden nicht mehr unterstützt und mit einer Warnung ignoriert.
+> **Hinweis:** Vaults verwaltest du in der App (Zahnrad neben der Vault-Auswahl); sie werden in `vaults.json` im Konfigurationsordner gespeichert. Der frühere Konfigurationsschlüssel `data_dir`, die Umgebungsvariable `JOTTER_DATA_DIR` und die Option `--data-dir` werden nicht mehr unterstützt; Schlüssel und Umgebungsvariable werden mit einer Warnung ignoriert.
 
 Wenn sich im aktuellen Arbeitsverzeichnis (CWD), in dem Jotter gestartet wird, ein Ordner namens `tasks/` befindet:
 
@@ -90,12 +89,6 @@ Jotter wertet die Einstellungen in folgender Reihenfolge aus (höhere Priorität
 
   ```bash
   ./jotter-server --port 8080
-  ```
-
-* **Markdown-Aufgaben in einem anderen Ordner speichern:**
-
-  ```bash
-  ./jotter-server --data-dir ~/Documents/kanban-tasks
   ```
 
 * **Eine bestimmte Konfigurationsdatei laden:**

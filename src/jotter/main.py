@@ -14,6 +14,7 @@ if _src_dir not in sys.path:
 
 from jotter.app import app_version, create_app  # noqa: E402
 from jotter.config import load_config, normalize_log_level  # noqa: E402
+from jotter.features.vaults.registry import VaultRegistry  # noqa: E402
 from jotter.shared.exceptions import EntityNotFoundError  # noqa: E402
 
 
@@ -72,7 +73,6 @@ def main():
     )
     parser.add_argument("--host", type=str, default=None, help="Host address to bind to")
     parser.add_argument("--port", type=int, default=None, help="Port to listen on")
-    parser.add_argument("--data-dir", type=str, default=None, help="Directory to store markdown tasks and database")
     parser.add_argument("--log-level", type=str, default=None, help="Logging level (DEBUG, INFO, WARNING, ERROR)")
     parser.add_argument(
         "--no-browser",
@@ -117,8 +117,6 @@ def main():
         config.host = args.host
     if args.port:
         config.port = args.port
-    if args.data_dir:
-        config.data_dir = args.data_dir
     if args.log_level:
         config.log_level = normalize_log_level(args.log_level)
     if args.no_color:
@@ -136,7 +134,8 @@ def main():
     server_url = f"http://{display_host}:{config.port}"
 
     print(f"Starting Jotter {app_version} server on {server_url}")
-    print(f"Data Directory: {config.data_dir}")
+    active_vault = VaultRegistry(config_file=config.vaults_config_path, default_data_dir=config.data_dir).get_active()
+    print(f"Active vault: {active_vault.name} ({active_vault.path})")
 
     if config.open_browser:
         open_browser_delayed(server_url)
