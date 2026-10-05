@@ -10,7 +10,7 @@ You can customize how Jotter operates (such as altering the network port or chan
 | :----------------- | :----------------------- | :--------------------- | :----------------- | :------------------------------ | :------------------------------------------------------------------------------------------------------------ |
 | **Port**           | `--port <number>`        | `port: <number>`       | _N/A_              | `58271`                         | The network port the server listens on.                                                                       |
 | **Host**           | `--host <address>`       | `host: "<address>"`    | _N/A_              | `127.0.0.1`                     | The host IP address to bind to (e.g. `0.0.0.0` to allow local network access).                                |
-| **Data Directory** | `--data-dir <path>`      | `data_dir: "<path>"`   | `JOTTER_DATA_DIR`  | _See Storage Locations_         | Initial vault folder, used only to seed the first vault (see below). Supports `~` home folder expansion.      |
+| **Data Directory** | `--data-dir <path>`      | _N/A_                  | _N/A_              | _See Storage Locations_         | Initial vault folder, used only to seed the first vault (see below). Supports `~` home folder expansion.      |
 | **Log Directory**  | _N/A_                    | `log_dir: "<path>"`    | `JOTTER_LOG_DIR`   | _See Storage Locations_         | The directory where Jotter saves its `jotter.log` file. Separated from notes to avoid Git tracking conflicts. |
 | **Log Level**      | `--log-level <level>`    | `log_level: "<level>"` | `JOTTER_LOG_LEVEL` | `info` (dev) / `warning` (prod) | Logging verbosity (`debug`, `info`, `warning`, `error`, `critical`).                                          |
 | **Log Colors**     | `--no-color`             | `use_colors: false`    | `NO_COLOR` / `JOTTER_USE_COLORS` | `true` (auto)                   | Toggle ANSI colored terminal log output. Useful if legacy Windows terminals show escape codes (`[32m`).       |
@@ -24,7 +24,7 @@ Jotter is extremely flexible and can be run as a completely self-contained **Por
 
 ### 1. Portable Mode (Self-Contained)
 
-> **Note:** The data directory setting only seeds the first vault. Once `vaults.json` exists in the config folder, the active vault's folder is used and `data_dir` is ignored. Manage folders via the vault manager in the sidebar (gear icon next to the vault switcher).
+> **Note:** Vaults are managed in the app (gear icon next to the vault switcher) and stored in `vaults.json` in the config folder. `--data-dir` only seeds the first vault; once `vaults.json` exists it is ignored. The former `data_dir` config key and `JOTTER_DATA_DIR` environment variable are no longer supported and are ignored with a warning.
 
 If a folder named `tasks/` is present in the Current Working Directory (CWD) where Jotter is started:
 
@@ -66,7 +66,6 @@ The created file contains template parameters that are commented out, serving as
 
 ```yaml
 # Jotter Configuration File
-# data_dir: ""
 # log_dir: ""
 # host: "127.0.0.1"
 # port: 58271
@@ -80,7 +79,7 @@ The created file contains template parameters that are commented out, serving as
 Jotter resolves settings using the following priority (highest overrides lowest):
 
 1. **Command Line Arguments** (e.g. `--port 9000`)
-2. **Environment Variables** (e.g. `JOTTER_DATA_DIR`)
+2. **Environment Variables** (e.g. `JOTTER_PORT`)
 3. **Loaded Configuration File** (`jotter.yaml`/`jotter.yml`/`jotter.json`)
 4. **Default Paths** (Portable fallback if local `tasks` exists, otherwise OS standard directories)
 

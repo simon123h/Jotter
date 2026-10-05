@@ -49,13 +49,11 @@ def test_config_paths_discovery(tmp_path):
 
 def test_load_config_with_file(tmp_path):
     config_file = tmp_path / "jotter.yaml"
-    custom_data = tmp_path / "custom_data"
     config_file.write_text(
-        f"""
+        """
 host: 0.0.0.0
 port: 9090
 log_level: warn
-data_dir: {custom_data}
 """,
         encoding="utf-8",
     )
@@ -65,7 +63,18 @@ data_dir: {custom_data}
         assert cfg.host == "0.0.0.0"
         assert cfg.port == 9090
         assert cfg.log_level == "WARNING"
-        assert cfg.data_dir == str(custom_data.resolve())
+
+
+def test_legacy_data_dir_settings_are_ignored(tmp_path):
+    config_file = tmp_path / "jotter.yaml"
+    config_file.write_text(f"data_dir: {tmp_path / 'from_yaml'}\n", encoding="utf-8")
+
+    with (
+        patch("jotter.config.get_default_config_paths", return_value=[config_file]),
+        patch.dict(os.environ, {"JOTTER_DATA_DIR": str(tmp_path / "from_env")}),
+    ):
+        cfg = load_config()
+        assert cfg.data_dir == get_default_data_dir()
 
 
 def test_load_config_env_overrides(tmp_path):
@@ -73,14 +82,12 @@ def test_load_config_env_overrides(tmp_path):
         "JOTTER_HOST": "127.0.0.2",
         "JOTTER_PORT": "6000",
         "JOTTER_LOG_LEVEL": "debug",
-        "JOTTER_DATA_DIR": str(tmp_path / "env_data"),
     }
     with patch.dict(os.environ, env, clear=True):
         cfg = load_config()
         assert cfg.host == "127.0.0.2"
         assert cfg.port == 6000
         assert cfg.log_level == "DEBUG"
-        assert cfg.data_dir == str((tmp_path / "env_data").resolve())
 
 
 def test_load_config_with_colors_setting(tmp_path):

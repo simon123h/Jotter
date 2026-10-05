@@ -106,7 +106,10 @@ def load_config() -> UserConfig:
                     data = yaml.safe_load(f)
                     if isinstance(data, dict):
                         if data.get("data_dir"):
-                            config.data_dir = str(Path(data["data_dir"]).expanduser().resolve())
+                            logger.warning(
+                                "Ignoring 'data_dir' in %s: it is no longer supported. Manage vaults in the app instead.",
+                                path,
+                            )
                         if data.get("log_dir"):
                             config.log_dir = str(Path(data["log_dir"]).expanduser().resolve())
                         if data.get("host"):
@@ -125,7 +128,7 @@ def load_config() -> UserConfig:
 
     # Environment variables override
     if os.environ.get("JOTTER_DATA_DIR"):
-        config.data_dir = str(Path(os.environ["JOTTER_DATA_DIR"]).expanduser().resolve())
+        logger.warning("Ignoring JOTTER_DATA_DIR: it is no longer supported. Manage vaults in the app instead.")
     if os.environ.get("JOTTER_PORT"):
         try:
             config.port = int(os.environ["JOTTER_PORT"])
@@ -176,7 +179,7 @@ def save_user_config(config: UserConfig, target_path: Path | None = None) -> Pat
         except Exception:
             existing_data = {}
 
-    existing_data["data_dir"] = config.data_dir
+    existing_data.pop("data_dir", None)  # legacy key, vaults.json is the source of truth
     existing_data["host"] = config.host
     existing_data["port"] = config.port
     existing_data["log_level"] = config.log_level

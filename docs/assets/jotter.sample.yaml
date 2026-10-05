@@ -8,9 +8,6 @@ port: 9000
 # Host IP address
 # host: "127.0.0.1"
 
-# Custom user data storage dir (where the markdown files and sqlite database will be stored)
-# data_dir: "/home/USER/Documents/my-jotter-data/
-
 # Custom the log level ("info", "warning", "error")
 # log_level: "warning"
 
