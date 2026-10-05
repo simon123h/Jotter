@@ -42,18 +42,18 @@ Sie können die Spalte "Postponed" jederzeit ein- oder ausblenden:
 ## Funktionsweise im Hintergrund
 
 ### Speicherung in reinem Markdown
-Jotter ist "local-first" und speichert Ihre Aufgaben in einfachen Markdown-Dateien. Im Gegensatz zum Verschieben in einen physisch anderen Ordner bleibt beim Aufschieben der ursprüngliche `bucket`-Parameter (z. B. `bucket: todo` oder `bucket: in-progress`) in der YAML-Frontmatter erhalten und es wird eine `postponed_until`-Eigenschaft hinzugefügt:
+Jotter ist "local-first" und speichert Ihre Aufgaben in einfachen Markdown-Dateien. Im Gegensatz zum Verschieben in einen physisch anderen Ordner bleibt beim Aufschieben der ursprüngliche Spalte (z. B. `status: todo` oder `status: in-progress`) in der YAML-Frontmatter erhalten und es wird eine `postponed_until`-Eigenschaft hinzugefügt:
 
 ```yaml
 ---
 id: 01HJKM7ST89AB234CDEFGHJKMN
 title: Landingpage überarbeiten
-bucket: todo
+status: todo
 postponed_until: 2026-07-15
 ---
 ```
 
-Da die ursprüngliche Spalte (`bucket`) gespeichert bleibt, weiß Jotter nach Ablauf der Frist genau, in welche Spalte die Aufgabe zurückkehren soll.
+Da die ursprüngliche Spalte (`status`) gespeichert bleibt, weiß Jotter nach Ablauf der Frist genau, in welche Spalte die Aufgabe zurückkehren soll.
 
 ### Abgelaufene Aufschiebungen
 Beim Starten von Jotter (oder Laden der Aufgaben) vergleicht das System die Aufschiebedaten mit dem aktuellen Kalenderdatum:

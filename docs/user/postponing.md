@@ -42,20 +42,20 @@ You can toggle the visibility of the virtual Postponed column at any time:
 ## How It Works Under the Hood
 
 ### Plain-Text Markdown Storage
-Jotter is local-first and stores your tasks in plain-text Markdown files. Unlike moving a task to a separate physical folder, postponing preserves the task's original `bucket` parameter (e.g., `bucket: todo` or `bucket: in-progress`) in the YAML frontmatter and adds a `postponed_until` property:
+Jotter is local-first and stores your tasks in plain-text Markdown files. Unlike moving a task to a separate physical folder, postponing preserves the task's original column (e.g., `status: todo` or `status: in-progress`) in the YAML frontmatter and adds a `postponed_until` property:
 
 ```yaml
 ---
 id: 01HJKM7ST89AB234CDEFGHJKMN
 title: Redesign landing page
-bucket: todo
+status: todo
 postponed_until: 2026-07-15
 ---
 ```
 
-Because the original `bucket` is preserved, Jotter knows exactly where to return the task when the postponement expires.
+Because the original `status` is preserved, Jotter knows exactly where to return the task when the postponement expires.
 
 ### Expired Postponements
 When Jotter loads, it evaluates task postponement dates against the local calendar date:
 * If `postponed_until` is in the **future**, the task is virtually mapped to the Postponed column.
-* If `postponed_until` is in the **past** or is **today**, the task surfaces in its original `bucket` (e.g. `todo`) and renders as a normal active task. The expired date remains passively in the markdown frontmatter as a historical reference without triggering automatic file re-writes, keeping your Git synchronization history clean.
+* If `postponed_until` is in the **past** or is **today**, the task surfaces in its original column (e.g. `todo`) and renders as a normal active task. The expired date remains passively in the markdown frontmatter as a historical reference without triggering automatic file re-writes, keeping your Git synchronization history clean.
