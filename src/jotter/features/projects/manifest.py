@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from typing import Any
 
@@ -16,9 +15,8 @@ def read_project_manifest(
     project_dir: Path,
     fallback_id: str,
 ) -> tuple[Project, list[Bucket]]:
-    """Reads index.md (or falls back to legacy buckets.json / directory name) from project directory."""
+    """Reads index.md (falling back to defaults and the directory name) from project directory."""
     index_file = get_index_md_path(project_dir)
-    legacy_buckets_file = project_dir / "buckets.json"
 
     fm_data: dict[str, Any] = {}
 
@@ -81,35 +79,6 @@ def read_project_manifest(
                         is_default=b_def,
                     )
                 )
-    elif legacy_buckets_file.is_file():
-        try:
-            with open(legacy_buckets_file, encoding="utf-8") as f:
-                l_data = json.load(f)
-                if isinstance(l_data, list):
-                    for idx, b_item in enumerate(l_data):
-                        if isinstance(b_item, dict):
-                            b_name = str(b_item.get("name") or f"column_{idx}").strip()
-                            b_title = str(b_item.get("title") or b_name.capitalize()).strip()
-                            b_sub = str(b_item.get("subtitle") or "").strip()
-                            b_pos = float(b_item.get("position") or (idx + 1) * 1000.0)
-                            b_color = str(b_item.get("color")).strip() if b_item.get("color") else None
-                            b_layout = str(b_item.get("layout") or "list")
-                            b_max = int(b_item["max_tasks"]) if b_item.get("max_tasks") is not None else None
-                            b_def = bool(b_item.get("is_default", False))
-                            buckets.append(
-                                Bucket(
-                                    name=b_name,
-                                    title=b_title,
-                                    subtitle=b_sub,
-                                    position=b_pos,
-                                    color=b_color,
-                                    layout=b_layout,
-                                    max_tasks=b_max,
-                                    is_default=b_def,
-                                )
-                            )
-        except Exception:
-            pass
 
     if not buckets:
         for idx, b_dict in enumerate(DEFAULT_DOMAIN_BUCKETS):

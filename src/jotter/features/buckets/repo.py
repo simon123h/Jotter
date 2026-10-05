@@ -1,4 +1,4 @@
-"""Repository for managing bucket columns on disk (index.md / buckets.json) and SQLite."""
+"""Repository for managing bucket columns on disk (index.md) and SQLite."""
 
 import sqlite3
 from pathlib import Path
