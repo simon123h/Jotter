@@ -9,14 +9,12 @@ class TimeblockDiskRepo:
     def __init__(self, data_dir: str | Path):
         self.data_dir = Path(data_dir)
         self.file_path = self.data_dir / "timeblocks.json"
-        self.legacy_file_path = self.data_dir / "timeboxes.json"
 
     def _load(self) -> list[dict[str, Any]]:
-        target_file = self.file_path if self.file_path.exists() else self.legacy_file_path
-        if not target_file.exists():
+        if not self.file_path.exists():
             return []
         try:
-            content = target_file.read_text(encoding="utf-8").strip()
+            content = self.file_path.read_text(encoding="utf-8").strip()
             if not content:
                 return []
             data = json.loads(content)

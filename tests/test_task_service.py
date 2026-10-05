@@ -2,6 +2,7 @@ from pathlib import Path
 
 from jotter.features.projects.domain import Project
 from jotter.features.projects.repo import ProjectRepository
+from jotter.features.sync.service import SyncApplicationService
 from jotter.features.tasks.disk_repo import DiskTaskRepository
 from jotter.features.tasks.schemas import (
     TaskCreate,
@@ -373,7 +374,8 @@ Fix bearer token parsing in middleware.
     assert str(task.id) == "fix-auth-header"
     assert task.title == "Fix Authentication Header Bug"
 
-    # 3. Task service can get the task by its slug
+    # 3. Once the sync has indexed the file, the task service can get the task by its slug
+    SyncApplicationService.from_data_dir(temp_dir, conn).sync_db_only()
     fetched = task_svc.get_task("arb", "fix-auth-header")
     assert fetched.id == "fix-auth-header"
     assert fetched.title == "Fix Authentication Header Bug"

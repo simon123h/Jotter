@@ -58,7 +58,6 @@ def test_shared_kernel_does_not_import_features():
     (
         archrule("pure-shared-kernel")
         .match("jotter.shared.*")
-        .exclude("jotter.shared.value_objects")  # deprecated backwards compatibility re-export
         .should_not_import("jotter.features.*")
         .check("jotter", only_direct_imports=True)
     )
