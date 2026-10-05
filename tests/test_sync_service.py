@@ -253,52 +253,6 @@ def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
     assert tasks_c[0].id == t_c_old.id
 
 
-def test_sync_migrates_buckets_json_to_index_md(temp_dir, test_env):
-    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
-    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
-    proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
-    bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
-
-    # 1. Simulate legacy buckets.json in alpha project folder
-    alpha_dir = Path(temp_dir) / "alpha"
-    alpha_dir.mkdir(parents=True, exist_ok=True)
-    alpha_buckets_file = alpha_dir / "buckets.json"
-    alpha_buckets_file.write_text(
-        json.dumps(
-            [
-                {"name": "ideas", "title": "Ideas Column", "color": "#123456", "position": 100.0},
-                {"name": "done", "title": "Finished", "color": "#00ff00", "position": 200.0},
-            ]
-        ),
-        encoding="utf-8",
-    )
-
-    # 2. Trigger sync
-    sync_svc.sync_db_only()
-
-    # 3. Verify index.md was generated
-    alpha_index = alpha_dir / "index.md"
-    assert alpha_index.is_file()
-    alpha_content = alpha_index.read_text(encoding="utf-8")
-
-    # Frontmatter should contain project metadata and buckets
-    assert "type: project" in alpha_content
-    assert "id: alpha" in alpha_content
-    assert "title: Alpha" in alpha_content
-    assert "name: ideas" in alpha_content
-    assert "title: Ideas Column" in alpha_content
-
-    proj_alpha = proj_svc.get_project("alpha")
-    assert proj_alpha.title == "Alpha"
-
-    # 4. Verify buckets were registered in SQLite
-    alpha_buckets = bucket_svc.get_all_buckets("alpha")
-    assert len(alpha_buckets) == 2
-    assert alpha_buckets[0].name == "ideas"
-    assert alpha_buckets[0].title == "Ideas Column"
-    assert alpha_buckets[1].name == "done"
-
-
 def test_sync_removes_deleted_project_and_does_not_resurrect_default(temp_dir, test_env):
     import shutil
 

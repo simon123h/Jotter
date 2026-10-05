@@ -120,8 +120,6 @@ def load_config() -> UserConfig:
                             config.log_level = normalize_log_level(data["log_level"])
                         if "use_colors" in data:
                             config.use_colors = bool(data["use_colors"])
-                        elif "colors" in data:
-                            config.use_colors = bool(data["colors"])
                 break
             except Exception as e:
                 logger.warning("Failed to read config from %s: %s", path, e)

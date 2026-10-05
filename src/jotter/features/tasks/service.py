@@ -1,7 +1,6 @@
 """Composite Application Service providing unified access to Task commands and queries.
 
-Preserves full backwards compatibility while delegating to specialized
-TaskCommandService (writes + projections) and TaskQueryService (reads).
+Delegates to TaskCommandService (writes + projections) and TaskQueryService (reads).
 """
 
 import sqlite3
@@ -24,10 +23,7 @@ from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 
 
 class TaskApplicationService:
-    """[DEPRECATED] Facade delegating commands to TaskCommandService and queries to TaskQueryService.
-
-    Prefer injecting TaskCommandService for writes and TaskQueryService for reads directly.
-    """
+    """Facade delegating commands to TaskCommandService and queries to TaskQueryService."""
 
     def __init__(
         self,
@@ -64,21 +60,7 @@ class TaskApplicationService:
     # --- Query Delegations ---
 
     def get_task(self, project_id: str, task_id: str) -> TaskResponse:
-        try:
-            return self.queries.get_task(project_id, task_id)
-        except Exception:
-            # Fallback to loading and projecting from disk for test/external edge cases
-            if self.disk_repo.exists(project_id, task_id):
-                task = self.disk_repo.get_task(project_id, task_id)
-                known_buckets = {b.name for b in self.bucket_repo.get_all(project_id)}
-                if task.bucket not in known_buckets:
-                    from jotter.features.buckets.domain import Bucket
-
-                    new_b = Bucket.create(title=task.bucket.capitalize(), name=task.bucket)
-                    self.bucket_repo.save(project_id, new_b)
-                self.projector.project_task_upsert(task)
-                return self.queries.get_task(project_id, task_id)
-            raise
+        return self.queries.get_task(project_id, task_id)
 
     def get_tasks(self, project_id: str | None = None, **kwargs) -> list[TaskResponse]:
         return self.queries.get_tasks(project_id=project_id, **kwargs)

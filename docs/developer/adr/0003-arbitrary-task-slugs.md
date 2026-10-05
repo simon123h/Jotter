@@ -8,7 +8,7 @@
 
 Originally, Jotter generated 26-character Crockford Base32 ULIDs (e.g. `01ARZ3NDEKTSV4RRFFQ69G5FAV`) for all new task files (`<id>.md`). When reading and writing task Markdown files, the system used the task ID as the file stem.
 
-As Jotter adopts the Open Kanban Format (OKF) specification and embraces the "file-over-app" philosophy, users may point Jotter to existing Markdown vaults or note collections (e.g. Obsidian vaults, Foam workspaces, or external task repositories) where filenames follow diverse naming conventions (e.g. `fix-auth-header.md`, `t_2024_01_bug.md`, `my-meeting-notes.md`).
+As Jotter adopts the Open Knowledge Format (OKF) specification and embraces the "file-over-app" philosophy, users may point Jotter to existing Markdown vaults or note collections (e.g. Obsidian vaults, Foam workspaces, or external task repositories) where filenames follow diverse naming conventions (e.g. `fix-auth-header.md`, `t_2024_01_bug.md`, `my-meeting-notes.md`).
 
 We needed to decide whether:
 1. **Strict ULID Enforcement**: Enforce standard 26-character Crockford ULIDs for all task IDs and filenames, rejecting or force-renaming files that do not conform.
@@ -28,7 +28,7 @@ Specifically:
 
 ## Rationale
 
-- **Interoperability & Open Kanban Format (OKF)**: Jotter can act as an unobtrusive, zero-friction kanban view for existing Markdown repositories and note systems without demanding destructive file renames.
+- **Interoperability & Open Knowledge Format (OKF)**: Jotter can act as an unobtrusive, zero-friction kanban view for existing Markdown repositories and note systems without demanding destructive file renames.
 - **Safety**: By validating against path traversal (`/`, `\`, `..`), arbitrary slugs cannot escape project directories while still providing maximum naming flexibility.
 - **Zero Disruption to Existing Workflows**: Existing projects and default task creation continue to use ULIDs without alteration.
 
