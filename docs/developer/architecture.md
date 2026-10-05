@@ -282,6 +282,7 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0012: Vault Abstraction and Local-Only Git Versioning](./adr/0012-vault-abstraction-and-simplified-git-sync.md)
 - [ADR 0013: Frontend Code Organization: Feature Slices and When to Split Components](./adr/0013-frontend-feature-slices.md)
 - [ADR 0014: A Periodic Scan Instead of a Filesystem Watcher](./adr/0014-periodic-scan-instead-of-watcher.md)
+- [ADR 0015: The SQLite Index Is a Disposable Cache, Kept Valid by File Stats](./adr/0015-index-as-disposable-cache.md)
 
 
 
