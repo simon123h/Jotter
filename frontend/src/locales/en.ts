@@ -298,8 +298,8 @@ export const en = {
     general: 'General Preferences',
     hideAddTask: 'Smaller "Add task" button',
     hideAddTaskDesc: 'Replaces the large quick-add button at the top of each column with a small "+" symbol.',
-    autoCommit: 'Automatic Git commits',
-    autoCommitDesc:
+    autoCommitToggle: 'Automatic Git commits',
+    autoCommitToggleDesc:
       "Commits changes to the vault's Git repository shortly after you make them. Turn off if saving feels slow on a machine with aggressive antivirus.",
     globalDoneCleanPeriod: 'Global Done Task Retention (Days)',
     globalDoneCleanPeriodDesc:

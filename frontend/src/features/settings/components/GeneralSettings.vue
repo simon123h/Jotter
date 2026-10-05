@@ -36,8 +36,8 @@ const { hideAddTaskButton, doneCleanPeriod, autoCommit } = storeToRefs(useSettin
           class="mt-1 w-4 h-4 rounded text-theme-primary border border-theme-border/60 focus:ring-theme-ring focus:ring-2 focus:ring-offset-0 bg-theme-card/60"
         />
         <div class="flex flex-col">
-          <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.autoCommit') }}</span>
-          <span class="text-xs text-theme-text-muted mt-0.5">{{ t('settingsView.autoCommitDesc') }}</span>
+          <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.autoCommitToggle') }}</span>
+          <span class="text-xs text-theme-text-muted mt-0.5">{{ t('settingsView.autoCommitToggleDesc') }}</span>
         </div>
       </label>
 
