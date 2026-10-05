@@ -130,7 +130,7 @@ sequenceDiagram
     participant Disk as Local Disk (.md)
 
     Main->>App: create_app(config)
-    App->>DB: get_db(db_path)
+    App->>DB: create_sqlite_connection(db_path)
     DB-->>App: SQLite connection ready (WAL enabled)
     App->>Sync: sync_all()
     Sync->>Disk: Read project index.md & task *.md files
@@ -140,6 +140,8 @@ sequenceDiagram
     Sync-->>App: Return synchronized tasks count
     App-->>Main: FastAPI server ready to accept requests
 ```
+
+The startup connection is closed after the sync. Every API request opens its own SQLite connection (the `get_db_conn` dependency) and closes it when the request ends. Sync endpoints run on a thread pool, so one shared or thread-local connection would be used by several requests at once.
 
 ---
 

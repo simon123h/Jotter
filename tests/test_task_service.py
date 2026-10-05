@@ -9,7 +9,7 @@ from jotter.features.tasks.schemas import (
     TaskUpdate,
 )
 from jotter.features.tasks.service import TaskApplicationService
-from jotter.shared.db import get_db
+from jotter.shared.db import create_sqlite_connection
 
 
 def test_frontmatter_parse_and_dump():
@@ -83,7 +83,7 @@ Body text.
 
 
 def test_task_crud_and_positioning(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
 
     # Create task
@@ -121,7 +121,7 @@ def test_task_crud_and_positioning(temp_dir, test_env):
 
 
 def test_task_partial_update_preserves_attributes(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
 
     # Create task with color, priority, due date, tags, body
@@ -181,7 +181,7 @@ def test_task_partial_update_preserves_attributes(temp_dir, test_env):
 
 
 def test_task_search_and_filtering(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
 
     task_svc.create_task(
@@ -235,7 +235,7 @@ def test_task_search_and_filtering(temp_dir, test_env):
 
 def test_fts5_live_lifecycle_mutations(temp_dir, test_env):
     """Verifies that tasks created, updated, or deleted during runtime immediately sync to FTS5."""
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
 
     # 1. Create a task at runtime
@@ -289,7 +289,7 @@ def test_fts5_live_lifecycle_mutations(temp_dir, test_env):
 
 
 def test_task_move_between_projects(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     proj_repo = ProjectRepository(temp_dir, conn)
     proj_repo.save(Project.create("Init Project", project_id="init"))
     proj_repo.save(Project.create("GGG Project", project_id="ggg"))
@@ -347,7 +347,7 @@ def test_task_move_between_projects(temp_dir, test_env):
 
 
 def test_arbitrary_task_slugs(temp_dir, test_env):
-    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     project_repo = ProjectRepository(temp_dir, conn)
     project_repo.save(Project.create(name="Arbitrary Test", project_id="arb"))
 

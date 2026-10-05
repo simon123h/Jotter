@@ -75,11 +75,13 @@ def create_app(
     # Setup database connection on app state
     db_path = str(Path(cfg.data_dir) / "tasks.db")
     app.state.db_path = db_path
-    conn = create_sqlite_connection(db_path)
-    app.state.db = conn
 
-    # Initial DB sync from disk
-    SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_on_startup()
+    # Initial DB sync from disk (requests open their own connections, see get_db_conn)
+    conn = create_sqlite_connection(db_path)
+    try:
+        SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_on_startup()
+    finally:
+        conn.close()
 
     # Global Domain Exception Handlers
     @app.exception_handler(EntityNotFoundError)

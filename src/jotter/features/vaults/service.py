@@ -135,29 +135,23 @@ class VaultApplicationService:
     def _rebind_runtime_state(self, app_state: Any, vault: Vault) -> None:
         """Rebinds runtime dependencies (DB, periodic sync, config) when active vault changes."""
         from jotter.features.sync.service import SyncApplicationService
-        from jotter.shared.db import close_db, create_sqlite_connection
+        from jotter.shared.db import create_sqlite_connection
 
         # 1. Update active config data_dir
         if hasattr(app_state, "config"):
             app_state.config.data_dir = vault.path
 
-        # 2. Update DB connection
+        # 2. Point requests at the new vault's database (each request opens its own connection)
         new_db_path = str(Path(vault.path) / "tasks.db")
-        old_conn = getattr(app_state, "db", None)
-        if old_conn:
-            try:
-                old_conn.close()
-            except Exception:
-                pass
-        close_db()
-
         app_state.db_path = new_db_path
-        new_conn = create_sqlite_connection(new_db_path)
-        app_state.db = new_conn
 
         # 3. Synchronize new vault SQLite index
         try:
-            SyncApplicationService.from_data_dir(vault.path, new_conn).sync_on_startup()
+            new_conn = create_sqlite_connection(new_db_path)
+            try:
+                SyncApplicationService.from_data_dir(vault.path, new_conn).sync_on_startup()
+            finally:
+                new_conn.close()
         except Exception as e:
             logger.warning("Reconciliation on vault switch failed: %s", e)
 

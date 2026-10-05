@@ -4,7 +4,6 @@ import sqlite3
 import threading
 from pathlib import Path
 
-_local = threading.local()
 _schema_lock = threading.Lock()
 _initialized_schemas: set[str] = set()
 
@@ -171,36 +170,3 @@ def init_schema(conn: sqlite3.Connection) -> None:
             )
     except Exception:
         pass
-
-
-def get_db(db_path: Path | str | None = None) -> sqlite3.Connection:
-    """Returns a thread-local SQLite connection for the given database path."""
-    if not hasattr(_local, "connections"):
-        _local.connections = {}
-
-    if db_path is None:
-        if not _local.connections:
-            raise ValueError("Database path must be provided on first connection initialization.")
-        return next(iter(_local.connections.values()))
-
-    path_key = str(Path(db_path).resolve())
-    conn = _local.connections.get(path_key)
-    if conn is None:
-        conn = create_sqlite_connection(db_path)
-        _local.connections[path_key] = conn
-    return conn
-
-
-def close_db() -> None:
-    """Closes all thread-local SQLite connections for the current thread."""
-    if hasattr(_local, "connections"):
-        for conn in list(_local.connections.values()):
-            try:
-                conn.execute("PRAGMA optimize;")
-            except Exception:
-                pass
-            try:
-                conn.close()
-            except Exception:
-                pass
-        _local.connections.clear()
