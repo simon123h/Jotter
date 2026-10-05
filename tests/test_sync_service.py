@@ -439,3 +439,105 @@ def test_reprojecting_an_unchanged_task_does_not_rewrite_its_row(temp_dir):
     assert len(updates) > inserted
     assert conn.execute("SELECT title FROM tasks").fetchone()["title"] == "Two"
     conn.close()
+
+
+def _age_files(project_dir: Path, seconds: int = 3600) -> None:
+    """Back-dates task files so their stat is trusted (very recent files are re-read on purpose)."""
+    import os
+    import time
+
+    old = time.time() - seconds
+    for f in project_dir.glob("*.md"):
+        os.utime(f, (old, old))
+
+
+def _count_reads(monkeypatch):
+    from jotter.features.tasks.disk_repo import DiskTaskRepository
+
+    reads = []
+    original = DiskTaskRepository.read_task_file
+
+    def counting(self, file_path, default_project_id):
+        reads.append(Path(file_path).name)
+        return original(self, file_path, default_project_id)
+
+    monkeypatch.setattr(DiskTaskRepository, "read_task_file", counting)
+    return reads
+
+
+def test_sync_skips_unchanged_task_files(temp_dir, test_env, monkeypatch):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
+    task_svc.create_task("default", TaskCreate(title="Two", bucket="todo"))
+    _age_files(Path(temp_dir) / "default")
+
+    sync_svc.sync_db_only()  # records the stats
+    reads = _count_reads(monkeypatch)
+
+    assert sync_svc.sync_db_only() >= 2
+    assert reads == []
+
+
+def test_sync_rereads_changed_files_and_when_forced(temp_dir, test_env, monkeypatch):
+    import os
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    changed = task_svc.create_task("default", TaskCreate(title="Changed", bucket="todo"))
+    task_svc.create_task("default", TaskCreate(title="Same", bucket="todo"))
+    project_dir = Path(temp_dir) / "default"
+    _age_files(project_dir)
+    sync_svc.sync_db_only()
+    reads = _count_reads(monkeypatch)
+
+    # Same size, different mtime: must still be noticed
+    path = project_dir / f"{changed.id}.md"
+    content = path.read_text(encoding="utf-8").replace("Changed", "Chunged")
+    path.write_text(content, encoding="utf-8")
+    old = path.stat().st_mtime - 100
+    os.utime(path, (old, old))
+
+    sync_svc.sync_db_only()
+    assert reads == [path.name]
+    assert conn.execute("SELECT title FROM tasks WHERE id = ?", (changed.id,)).fetchone()["title"] == "Chunged"
+
+    reads.clear()
+    sync_svc.sync_db_only(force=True)
+    assert len(reads) == 2
+
+
+def test_sync_rereads_recently_modified_files(temp_dir, test_env, monkeypatch):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    task_svc.create_task("default", TaskCreate(title="Fresh", bucket="todo"))
+    sync_svc.sync_db_only()
+    reads = _count_reads(monkeypatch)
+
+    sync_svc.sync_db_only()  # mtime is within the racy window, so the stat was never trusted
+    assert len(reads) == 1
+
+
+def test_sync_still_prunes_unchanged_expired_done_tasks(temp_dir, test_env, monkeypatch):
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    proj_svc.create_project(ProjectCreate(title="Proj", id="proj"))
+    task = task_svc.create_task("proj", TaskCreate(title="Old done", bucket="done"))
+    project_dir = Path(temp_dir) / "proj"
+    path = project_dir / f"{task.id}.md"
+    old_iso = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+    path.write_text(path.read_text(encoding="utf-8").replace(task.updated_at, old_iso), encoding="utf-8")
+    _age_files(project_dir)
+    sync_svc.sync_db_only()  # indexes the task (retention disabled)
+    assert path.exists()
+
+    (Path(temp_dir) / "settings.json").write_text(json.dumps({"doneCleanPeriod": 7}), encoding="utf-8")
+    reads = _count_reads(monkeypatch)
+    sync_svc.sync_db_only()
+    assert reads == []  # unchanged file was not parsed...
+    assert not path.exists()  # ...yet retention applied from the indexed dates

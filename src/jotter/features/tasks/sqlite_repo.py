@@ -6,7 +6,7 @@ import sqlite3
 import threading
 from datetime import datetime, timezone
 from itertools import batched
-from typing import Any
+from typing import Any, NamedTuple
 
 from jotter.features.tasks.domain import DueDate, Priority, Tag, Task, TaskId
 from jotter.shared.exceptions import EntityNotFoundError
@@ -23,6 +23,15 @@ def _format_fts5_query(search: str) -> str | None:
     return " ".join(f'"{t}"*' for t in tokens)
 
 
+class IndexedFile(NamedTuple):
+    """What the SQLite index recorded about a task file when it was last read."""
+
+    bucket: str
+    created_at: str | None
+    updated_at: str | None
+    file_stat: tuple[int, int] | None
+
+
 class SqliteTaskRepository:
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
@@ -30,9 +39,9 @@ class SqliteTaskRepository:
 
         self._projector = TaskProjector(conn)
 
-    def upsert_task(self, task: Task) -> None:
+    def upsert_task(self, task: Task, file_stat: tuple[int, int] | None = None) -> None:
         """Indexes or updates a task in SQLite via TaskProjector."""
-        self._projector.project_task_upsert(task)
+        self._projector.project_task_upsert(task, file_stat)
 
     def delete_task(self, task_id: str) -> None:
         """Deletes a task from SQLite via TaskProjector."""
@@ -80,6 +89,22 @@ class SqliteTaskRepository:
             rows = cursor.fetchall()
             tasks.extend(self._row_to_task(row) for row in rows)
         return tasks
+
+    def get_index_state(self, project_id: str) -> dict[str, IndexedFile]:
+        """Returns what the index knows about each task file of a project, keyed by task ID."""
+        rows = self.conn.execute(
+            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size FROM tasks WHERE project_id = ?",
+            (project_id,),
+        ).fetchall()
+        return {
+            row["id"]: IndexedFile(
+                bucket=row["bucket"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+                file_stat=(row["file_mtime_ns"], row["file_size"]) if row["file_mtime_ns"] is not None else None,
+            )
+            for row in rows
+        }
 
     def get_task_ids(self, project_id: str) -> set[str]:
         """Returns the IDs of all indexed tasks of a project without materializing them."""

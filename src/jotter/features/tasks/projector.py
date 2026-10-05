@@ -29,10 +29,12 @@ class TaskProjector:
         ).fetchone()
         return None if row is None or row[0] is None else float(row[0])
 
-    def project_task_upsert(self, task: Task) -> None:
+    def project_task_upsert(self, task: Task, file_stat: tuple[int, int] | None = None) -> None:
         """Projects a Task domain aggregate into the tasks table and FTS5 search index.
 
         An unchanged task is left untouched, so re-projecting it does not rewrite its FTS entry.
+        `file_stat` is the (mtime_ns, size) of the task file the task was read from; it lets a later sync skip the
+        file while it is unchanged. Without it the stored stat is cleared, as it no longer describes the file.
         """
         tags_json = json.dumps([t.value for t in task.tags])
         attachments_json = json.dumps(task.attachments)
@@ -44,8 +46,9 @@ class TaskProjector:
                 """
                 INSERT INTO tasks (
                     id, project_id, title, bucket, position, tags, attachments, filename, body,
-                    due_date, planned_date, priority, color, postponed_until, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    due_date, planned_date, priority, color, postponed_until, created_at, updated_at,
+                    file_mtime_ns, file_size
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     project_id = excluded.project_id,
                     title = excluded.title,
@@ -60,16 +63,19 @@ class TaskProjector:
                     priority = excluded.priority,
                     color = excluded.color,
                     postponed_until = excluded.postponed_until,
-                    updated_at = excluded.updated_at
+                    updated_at = excluded.updated_at,
+                    file_mtime_ns = excluded.file_mtime_ns,
+                    file_size = excluded.file_size
                 WHERE (
                     tasks.project_id, tasks.title, tasks.bucket, tasks.position, tasks.tags, tasks.attachments,
                     tasks.filename, tasks.body, tasks.due_date, tasks.planned_date, tasks.priority, tasks.color,
-                    tasks.postponed_until, tasks.updated_at
+                    tasks.postponed_until, tasks.updated_at,
+                    tasks.file_mtime_ns, tasks.file_size
                 ) IS NOT (
                     excluded.project_id, excluded.title, excluded.bucket, excluded.position, excluded.tags,
                     excluded.attachments, excluded.filename, excluded.body, excluded.due_date,
                     excluded.planned_date, excluded.priority, excluded.color, excluded.postponed_until,
-                    excluded.updated_at
+                    excluded.updated_at, excluded.file_mtime_ns, excluded.file_size
                 )
                 """,
                 (
@@ -89,6 +95,8 @@ class TaskProjector:
                     task.postponed_until.value,
                     task.created_at,
                     task.updated_at,
+                    file_stat[0] if file_stat else None,
+                    file_stat[1] if file_stat else None,
                 ),
             )
 
