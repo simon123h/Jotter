@@ -42,6 +42,19 @@ class UserConfig(BaseModel):
     vaults_config_path: str | None = None
 
 
+def get_config_dir() -> Path:
+    """The folder for jotter.yaml and vaults.json."""
+    if sys.platform.startswith("linux"):
+        xdg_config = os.environ.get("XDG_CONFIG_HOME")
+        return (Path(xdg_config) if xdg_config else Path.home() / ".config") / "jotter"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "jotter"
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA")
+        return (Path(appdata) if appdata else Path.home() / "AppData" / "Roaming") / "jotter"
+    return Path.home() / ".jotter"
+
+
 def get_default_data_dir() -> str:
     # 1. Portable Mode: check if "tasks" directory exists in current working directory
     cwd = Path.cwd()
@@ -55,43 +68,16 @@ def get_default_data_dir() -> str:
         if xdg_data:
             return str((Path(xdg_data) / "jotter").resolve())
         return str((Path.home() / ".local" / "share" / "jotter").resolve())
-    elif sys.platform == "darwin":
-        return str((Path.home() / "Library" / "Application Support" / "Jotter").resolve())
-    elif sys.platform == "win32":
-        appdata = os.environ.get("APPDATA")
-        if appdata:
-            return str((Path(appdata) / "Jotter").resolve())
-        return str((Path.home() / "AppData" / "Roaming" / "Jotter").resolve())
-    else:
-        return str((Path.home() / ".jotter").resolve())
+    # Windows and macOS ignore letter case, so the data folder cannot be a sibling named "Jotter" of the config
+    # folder "jotter": it would be the same folder, and vaults.json would end up inside the vault. It lives in it.
+    return str((get_config_dir() / "tasks").resolve())
 
 
 def get_default_config_paths() -> list[Path]:
-    paths: list[Path] = []
     cwd = Path.cwd()
 
-    # Portable configs in CWD
-    paths.append(cwd / "jotter.yaml")
-    paths.append(cwd / "jotter.yml")
-    paths.append(cwd / "jotter.json")
-
-    # Global configs based on OS
-    if sys.platform.startswith("linux"):
-        xdg_config = os.environ.get("XDG_CONFIG_HOME")
-        if xdg_config:
-            paths.append(Path(xdg_config) / "jotter" / "jotter.yaml")
-        else:
-            paths.append(Path.home() / ".config" / "jotter" / "jotter.yaml")
-    elif sys.platform == "darwin":
-        paths.append(Path.home() / "Library" / "Application Support" / "jotter" / "jotter.yaml")
-    elif sys.platform == "win32":
-        appdata = os.environ.get("APPDATA")
-        if appdata:
-            paths.append(Path(appdata) / "jotter" / "jotter.yaml")
-        else:
-            paths.append(Path.home() / "AppData" / "Roaming" / "jotter" / "jotter.yaml")
-
-    return paths
+    # Portable configs in CWD, then the global config of the OS
+    return [cwd / "jotter.yaml", cwd / "jotter.yml", cwd / "jotter.json", get_config_dir() / "jotter.yaml"]
 
 
 def load_config() -> UserConfig:
