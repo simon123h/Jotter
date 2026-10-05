@@ -62,6 +62,8 @@ def create_mcp_server(config: UserConfig | None = None, vault: str | None = None
     cfg.data_dir = selected.path
     logger.info("Jotter MCP server using vault '%s' at %s", selected.name, selected.path)
     db_path = str(Path(cfg.data_dir) / "tasks.db")
+    # One shared connection is only safe because the mcp library runs sync tools one at a time on the event loop
+    # thread. If tools ever run on several threads, borrow a connection per call from a shared.db.ConnectionPool.
     conn = create_sqlite_connection(db_path)
 
     # Initial sync from disk
