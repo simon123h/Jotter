@@ -47,9 +47,9 @@ const dueDatePresets = computed<DatePreset[]>(() => [
 ]);
 
 const postponedPresets = computed<DatePreset[]>(() => [
-  { id: 'tomorrow', label: t('dueDateOptions.postponedTomorrow') || 'Tomorrow', offsetDays: 1 },
-  { id: 'nextWeek', label: t('dueDateOptions.postponedNextWeek') || 'Next Week', offsetDays: 7 },
-  { id: 'clear', label: t('dueDateOptions.postponedClear') || 'Clear Postponement', offsetDays: null, wide: true },
+  { id: 'tomorrow', label: t('bulkActions.postponedTomorrow') || 'Tomorrow', offsetDays: 1 },
+  { id: 'nextWeek', label: t('bulkActions.postponedNextWeek') || 'Next Week', offsetDays: 7 },
+  { id: 'clear', label: t('bulkActions.postponedClear') || 'Clear Postponement', offsetDays: null, wide: true },
 ]);
 
 defineExpose({
