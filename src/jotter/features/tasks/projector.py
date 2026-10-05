@@ -19,6 +19,16 @@ class TaskProjector:
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
+    def max_position(self, project_id: str, bucket: str) -> float | None:
+        """Returns the highest task position in a bucket, or None if the bucket has no tasks.
+
+        Answered from the index, so callers need not open and parse every task file.
+        """
+        row = self.conn.execute(
+            "SELECT MAX(position) FROM tasks WHERE project_id = ? AND bucket = ?", (project_id, bucket)
+        ).fetchone()
+        return None if row is None or row[0] is None else float(row[0])
+
     def project_task_upsert(self, task: Task) -> None:
         """Projects a Task domain aggregate into the tasks table and FTS5 search index."""
         tags_json = json.dumps([t.value for t in task.tags])

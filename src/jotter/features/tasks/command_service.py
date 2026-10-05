@@ -69,17 +69,9 @@ class TaskCommandService:
         # Calculate position if not provided
         position = getattr(req, "position", None)
         if position is None:
-            # Query existing tasks in the bucket from disk to maintain position ordering
-            disk_tasks = [
-                self.disk_repo.read_task_file(f, default_project_id=project_id)
-                for f in self.disk_repo.get_all_task_files(project_id)
-            ]
-            bucket_tasks = [t for t in disk_tasks if t.bucket == target_bucket]
-            if bucket_tasks:
-                max_pos = max(t.position for t in bucket_tasks)
-                position = max_pos + 1000.0
-            else:
-                position = 1000.0
+            # Read the highest position from the index: scanning every task file is O(tasks) file opens
+            max_pos = self.projector.max_position(project_id, target_bucket)
+            position = 1000.0 if max_pos is None else max_pos + 1000.0
 
         attachments = getattr(req, "attachments", None) or []
 
