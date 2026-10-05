@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 
 def plot_loc():
     dates = []
-    backend_loc = []
-    frontend_loc = []
+    code_loc = []
     total_loc = []
 
     # Read the data from the CSV file
@@ -19,17 +18,15 @@ def plot_loc():
             # Parse the date
             date_val = datetime.strptime(row["Date"], "%Y-%m-%d")
             dates.append(date_val)
-            backend_loc.append(int(row["Backend_LOC"]))
-            frontend_loc.append(int(row["TS_Vue_CSS_LOC"]))
+            code_loc.append(int(row["Code_LOC"]))
             total_loc.append(int(row["Total_LOC"]))
 
     # Create the plot
     fig, ax = plt.subplots(figsize=(12, 6))
 
     # Plot each line
-    ax.plot(dates, total_loc, label="Total LOC", color="#1f77b4", linewidth=2.5)
-    ax.plot(dates, backend_loc, label="Backend LOC", color="#2ca02c", linewidth=1.8, linestyle="--")
-    ax.plot(dates, frontend_loc, label="TS/Vue/CSS (Frontend) LOC", color="#d62728", linewidth=1.8, linestyle=":")
+    ax.plot(dates, total_loc, label="Total LOC (code + tests)", color="#1f77b4", linewidth=2.5)
+    ax.plot(dates, code_loc, label="Non-test LOC", color="#2ca02c", linewidth=1.8, linestyle="--")
 
     # Format the title and labels
     ax.set_title("Jotter Codebase Growth Over Time", fontsize=16, fontweight="bold", pad=15)

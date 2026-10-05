@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Calculates lines of code (LOC) across repository commit history without git checkout."""
 
+import re
 import subprocess
 import time
 
@@ -17,14 +18,24 @@ EXCLUDED_PATHS = (
     "/.github/",
 )
 
-BACKEND_EXTENSIONS = (".go", ".py")
-FRONTEND_EXTENSIONS = (".ts", ".vue", ".css")
+SOURCE_EXTENSIONS = (".go", ".py", ".ts", ".vue", ".css")
+
+# A file counts as test code if any of these match its path
+TEST_PATH_PATTERN = re.compile(
+    r"(^|/)(tests?|__tests__|e2e)/"  # test directories
+    r"|(^|/)(test_[^/]*\.py|conftest\.py|test-setup\.ts)$"  # Python test modules and shared setup
+    r"|\.(spec|test)\.(ts|vue)$"  # frontend test files
+)
 
 
 def is_excluded(path: str) -> bool:
     if path.endswith(".d.ts"):
         return True
     return any(p in path or path.startswith(p.lstrip("/")) for p in EXCLUDED_PATHS)
+
+
+def is_test(path: str) -> bool:
+    return TEST_PATH_PATTERN.search(path) is not None
 
 
 def count_loc_history(output_file: str = "loc_history.txt") -> None:
@@ -87,8 +98,8 @@ def count_loc_history(output_file: str = "loc_history.txt") -> None:
                 text=True,
             ).strip()
 
-            backend_loc = 0
-            frontend_loc = 0
+            code_loc = 0
+            test_loc = 0
 
             if tree_output:
                 for entry in tree_output.split("\n"):
@@ -103,19 +114,21 @@ def count_loc_history(output_file: str = "loc_history.txt") -> None:
                         continue
                     sha = parts[2]
 
-                    if path.endswith(BACKEND_EXTENSIONS):
-                        backend_loc += get_blob_lines(sha)
-                    elif path.endswith(FRONTEND_EXTENSIONS):
-                        frontend_loc += get_blob_lines(sha)
+                    if not path.endswith(SOURCE_EXTENSIONS):
+                        continue
+                    if is_test(path):
+                        test_loc += get_blob_lines(sha)
+                    else:
+                        code_loc += get_blob_lines(sha)
 
-            total_loc = backend_loc + frontend_loc
-            results.append(f"{commit_date},{commit_hash[:7]},{backend_loc},{frontend_loc},{total_loc}")
+            total_loc = code_loc + test_loc
+            results.append(f"{commit_date},{commit_hash[:7]},{code_loc},{test_loc},{total_loc}")
 
     finally:
         cat_proc.terminate()
 
     with open(output_file, "w", encoding="utf-8") as f:
-        f.write("Date,Commit,Backend_LOC,TS_Vue_CSS_LOC,Total_LOC\n")
+        f.write("Date,Commit,Code_LOC,Test_LOC,Total_LOC\n")
         f.write("\n".join(results) + "\n")
 
     elapsed = time.time() - start_time
