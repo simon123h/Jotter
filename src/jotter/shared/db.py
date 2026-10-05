@@ -40,9 +40,11 @@ def create_sqlite_connection(db_path: Path | str, init: bool = True) -> sqlite3.
     return conn
 
 
-def init_schema(conn: sqlite3.Connection) -> None:
-    """Creates required database tables and indexes if they do not exist."""
-    schema = """
+# Bump when the table layout changes. It is part of the recorded index version, so a schema change in a build
+# without a version number (a development checkout) still recreates the index.
+SCHEMA_VERSION = 1
+
+_SCHEMA = """
     CREATE TABLE IF NOT EXISTS projects (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
@@ -118,8 +120,7 @@ def init_schema(conn: sqlite3.Connection) -> None:
 
     -- Only rewrite the FTS entry when an indexed value actually changes (not for e.g. file stat bookkeeping).
     -- "UPDATE OF <columns>" would not do: it fires whenever a column is in the SET list, even with the same value.
-    DROP TRIGGER IF EXISTS tasks_au;
-    CREATE TRIGGER tasks_au AFTER UPDATE ON tasks
+    CREATE TRIGGER IF NOT EXISTS tasks_au AFTER UPDATE ON tasks
     WHEN old.project_id IS NOT new.project_id OR old.title IS NOT new.title
         OR old.body IS NOT new.body OR old.tags IS NOT new.tags
     BEGIN
@@ -127,51 +128,38 @@ def init_schema(conn: sqlite3.Connection) -> None:
         INSERT INTO tasks_fts(rowid, id, project_id, title, body, tags)
         VALUES (new.rowid, new.id, new.project_id, new.title, new.body, new.tags);
     END;
+"""
+
+_DROP_SCHEMA = """
+DROP TRIGGER IF EXISTS tasks_ai;
+DROP TRIGGER IF EXISTS tasks_ad;
+DROP TRIGGER IF EXISTS tasks_au;
+DROP TABLE IF EXISTS tasks_fts;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS buckets;
+DROP TABLE IF EXISTS projects;
+DROP TABLE IF EXISTS meta;
+"""
+
+
+def init_schema(conn: sqlite3.Connection) -> None:
+    """Creates the database tables and indexes if they do not exist. Never alters an existing table."""
+    conn.executescript(_SCHEMA)
+
+
+def recreate_schema(conn: sqlite3.Connection) -> None:
+    """Drops every table and recreates the schema from scratch, leaving the index empty.
+
+    The index is a disposable cache, so a schema change is handled by rebuilding it from the files instead of by
+    migrating it. Tables are dropped rather than the file deleted, because other connections keep it open. It runs
+    in one transaction, so a concurrent reader sees either the old schema or the new one, never a partial one.
     """
-    conn.executescript(schema)
-
-    # Clean up any existing NULL positions in buckets
     try:
-        conn.execute("UPDATE buckets SET position = 1000.0 WHERE position IS NULL")
-    except sqlite3.OperationalError:
-        pass
-
-    # Column migrations
-    try:
-        conn.execute("SELECT postponed_until FROM tasks LIMIT 0")
-    except sqlite3.OperationalError:
-        conn.execute("ALTER TABLE tasks ADD COLUMN postponed_until TEXT DEFAULT NULL")
-
-    try:
-        conn.execute("SELECT done_clean_period FROM projects LIMIT 0")
-    except sqlite3.OperationalError:
-        conn.execute("ALTER TABLE projects ADD COLUMN done_clean_period INTEGER DEFAULT NULL")
-
-    try:
-        conn.execute("SELECT description FROM projects LIMIT 0")
-    except sqlite3.OperationalError:
-        conn.execute("ALTER TABLE projects ADD COLUMN description TEXT DEFAULT ''")
-
-    for column in ("file_mtime_ns", "file_size"):
-        try:
-            conn.execute(f"SELECT {column} FROM tasks LIMIT 0")
-        except sqlite3.OperationalError:
-            conn.execute(f"ALTER TABLE tasks ADD COLUMN {column} INTEGER DEFAULT NULL")
-
-    # Backfill FTS index if table was newly created
-    try:
-        cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM tasks_fts")
-        fts_count = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM tasks")
-        tasks_count = cur.fetchone()[0]
-        if fts_count == 0 and tasks_count > 0:
-            cur.execute(
-                "INSERT INTO tasks_fts(rowid, id, project_id, title, body, tags) "
-                "SELECT rowid, id, project_id, title, body, tags FROM tasks"
-            )
+        conn.executescript(f"BEGIN IMMEDIATE;\n{_DROP_SCHEMA}\n{_SCHEMA}\nCOMMIT;")
     except Exception:
-        pass
+        if conn.in_transaction:
+            conn.execute("ROLLBACK")
+        raise
 
 
 class ConnectionPool:

@@ -1,4 +1,5 @@
 import json
+import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -640,11 +641,14 @@ def test_startup_rebuild_is_retried_when_a_file_could_not_be_read(temp_dir, test
     sync_svc.sync_on_startup()
     assert sync_svc.last_io_errors == 1
     row = conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()
-    assert row is None or row["value"] != "1.0.0"  # the new version was not recorded
+    assert row is None or row["value"] != sync_module._index_version()  # the new version was not recorded
 
     monkeypatch.setattr(DiskTaskRepository, "read_task_file", original)
     sync_svc.sync_on_startup()  # the next start rebuilds again and now succeeds
-    assert conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()["value"] == "1.0.0"
+    assert (
+        conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()["value"]
+        == sync_module._index_version()
+    )
 
 
 def test_startup_rebuild_is_recorded_despite_unparseable_files(temp_dir, test_env, monkeypatch):
@@ -663,4 +667,112 @@ def test_startup_rebuild_is_recorded_despite_unparseable_files(temp_dir, test_en
     SyncApplicationService.from_data_dir(temp_dir, conn).sync_on_startup()
 
     # It would fail identically every time, so it must not force a rebuild at every start
-    assert conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()["value"] == "1.0.0"
+    assert (
+        conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()["value"]
+        == sync_module._index_version()
+    )
+
+
+def _schema_objects(conn):
+    rows = conn.execute(
+        "SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name"
+    ).fetchall()
+    return [tuple(r) for r in rows]
+
+
+def _write_task(vault: Path, task_id: str = "a", title: str = "Alpha"):
+    (vault / "default").mkdir(exist_ok=True)
+    (vault / "default" / f"{task_id}.md").write_text(
+        f"---\ntype: task\nid: {task_id}\nproject_id: default\ntitle: {title}\nstatus: todo\nposition: 1000.0\n---\n",
+        encoding="utf-8",
+    )
+
+
+def test_startup_recreates_an_index_with_an_outdated_schema(temp_dir):
+    import sqlite3
+
+    from jotter.shared.db import create_sqlite_connection
+
+    vault = Path(temp_dir)
+    _write_task(vault)
+
+    # An index from an older Jotter: a column that no longer exists, missing columns, an old FTS layout and trigger
+    old = sqlite3.connect(vault / "tasks.db")
+    old.executescript(
+        """
+        CREATE TABLE projects (id TEXT PRIMARY KEY, title TEXT NOT NULL, created_at TEXT NOT NULL);
+        CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+        CREATE TABLE buckets (project_id TEXT NOT NULL, name TEXT NOT NULL, title TEXT NOT NULL,
+            PRIMARY KEY (project_id, name));
+        CREATE TABLE tasks (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, title TEXT NOT NULL, bucket TEXT NOT NULL,
+            position REAL NOT NULL, tags TEXT NOT NULL, filename TEXT NOT NULL, body TEXT DEFAULT '',
+            legacy_column TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+        CREATE VIRTUAL TABLE tasks_fts USING fts5(id UNINDEXED, title);
+        CREATE TRIGGER tasks_au AFTER UPDATE OF title ON tasks BEGIN SELECT 1; END;
+        INSERT INTO meta VALUES ('index_version', '0.0.1');
+        """
+    )
+    old.close()
+
+    conn = create_sqlite_connection(vault / "tasks.db")
+    SyncApplicationService.from_data_dir(vault, conn).sync_on_startup()
+
+    fresh = create_sqlite_connection(vault / "fresh.db")
+    assert _schema_objects(conn) == _schema_objects(fresh)
+    assert [r["id"] for r in conn.execute("SELECT id FROM tasks")] == ["a"]
+    assert conn.execute("SELECT id FROM tasks_fts WHERE tasks_fts MATCH 'Alpha'").fetchone()["id"] == "a"
+
+
+def test_startup_keeps_the_index_when_the_version_matches(temp_dir, monkeypatch):
+    from jotter.features.sync import service as sync_module
+
+    vault = Path(temp_dir)
+    _write_task(vault)
+    _age_files(vault / "default")
+    conn = get_db(str(vault / "tasks.db"))
+    sync_svc = SyncApplicationService.from_data_dir(vault, conn)
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
+    sync_svc.sync_on_startup()
+
+    dropped = []
+    monkeypatch.setattr(sync_module, "recreate_schema", lambda c: dropped.append(c))
+    conn.execute("UPDATE tasks SET title = 'Marker'")
+    sync_svc.sync_on_startup()
+
+    assert dropped == []
+    assert conn.execute("SELECT title FROM tasks").fetchone()["title"] == "Marker"  # untouched, files were skipped
+
+
+def test_a_schema_version_bump_rebuilds_even_with_the_same_app_version(temp_dir, monkeypatch):
+    from jotter.features.sync import service as sync_module
+
+    vault = Path(temp_dir)
+    _write_task(vault)
+    conn = get_db(str(vault / "tasks.db"))
+    sync_svc = SyncApplicationService.from_data_dir(vault, conn)
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "unknown")
+    sync_svc.sync_on_startup()
+    conn.execute("UPDATE tasks SET title = 'Marker'")
+
+    monkeypatch.setattr(sync_module, "SCHEMA_VERSION", sync_module.SCHEMA_VERSION + 1)
+    sync_svc.sync_on_startup()
+
+    assert conn.execute("SELECT title FROM tasks").fetchone()["title"] == "Alpha"
+
+
+def test_a_failed_schema_recreation_leaves_the_old_schema_intact(temp_dir, monkeypatch):
+    import pytest
+
+    from jotter.shared import db as db_module
+
+    conn = db_module.create_sqlite_connection(f"{temp_dir}/atomic.db")
+    conn.execute("INSERT INTO projects (id, title, created_at) VALUES ('p', 'P', '2024-01-01')")
+    before = _schema_objects(conn)
+
+    monkeypatch.setattr(db_module, "_SCHEMA", "CREATE TABLE broken (")
+    with pytest.raises(sqlite3.Error):
+        db_module.recreate_schema(conn)
+
+    assert not conn.in_transaction
+    assert _schema_objects(conn) == before
+    assert conn.execute("SELECT id FROM projects").fetchone()["id"] == "p"
