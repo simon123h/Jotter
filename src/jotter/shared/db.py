@@ -1,5 +1,6 @@
 """SQLite connection creation and schema setup."""
 
+import hashlib
 import sqlite3
 import threading
 from collections.abc import Iterator
@@ -39,10 +40,6 @@ def create_sqlite_connection(db_path: Path | str, init: bool = True) -> sqlite3.
 
     return conn
 
-
-# Bump when the table layout changes. It is part of the recorded index version, so a schema change in a build
-# without a version number (a development checkout) still recreates the index.
-SCHEMA_VERSION = 1
 
 _SCHEMA = """
     CREATE TABLE IF NOT EXISTS projects (
@@ -129,6 +126,11 @@ _SCHEMA = """
         VALUES (new.rowid, new.id, new.project_id, new.title, new.body, new.tags);
     END;
 """
+
+# Identifies the table layout. It is derived from the schema text, so any change to it (ignoring whitespace) is
+# noticed automatically, even in a build without a version number (a development checkout). It is part of the
+# recorded index version, so changing it makes the next start recreate the index.
+SCHEMA_VERSION = hashlib.sha256(" ".join(_SCHEMA.split()).encode()).hexdigest()[:8]
 
 _DROP_SCHEMA = """
 DROP TRIGGER IF EXISTS tasks_ai;

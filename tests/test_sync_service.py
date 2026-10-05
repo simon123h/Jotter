@@ -754,7 +754,7 @@ def test_a_schema_version_bump_rebuilds_even_with_the_same_app_version(temp_dir,
     sync_svc.sync_on_startup()
     conn.execute("UPDATE tasks SET title = 'Marker'")
 
-    monkeypatch.setattr(sync_module, "SCHEMA_VERSION", sync_module.SCHEMA_VERSION + 1)
+    monkeypatch.setattr(sync_module, "SCHEMA_VERSION", "other-layout")
     sync_svc.sync_on_startup()
 
     assert conn.execute("SELECT title FROM tasks").fetchone()["title"] == "Alpha"
@@ -815,3 +815,16 @@ def test_file_that_was_locked_during_the_rebuild_is_indexed_by_the_next_periodic
     sync_svc.sync_db_only()  # what the periodic scan does
 
     assert [r["id"] for r in conn.execute("SELECT id FROM tasks")] == ["a"]
+
+
+def test_schema_version_follows_the_schema_text_but_not_its_whitespace():
+    import hashlib
+
+    from jotter.shared import db as db_module
+
+    def version_of(text: str) -> str:
+        return hashlib.sha256(" ".join(text.split()).encode()).hexdigest()[:8]
+
+    assert db_module.SCHEMA_VERSION == version_of(db_module._SCHEMA)
+    assert version_of(db_module._SCHEMA) == version_of(db_module._SCHEMA.replace("\n    ", "\n\n        "))
+    assert version_of(db_module._SCHEMA) != version_of(db_module._SCHEMA.replace("tags TEXT", "tags BLOB", 1))

@@ -31,7 +31,7 @@ def _app_version() -> str:
 
 def _index_version() -> str:
     """The version an index is built for: the app version plus the table layout, so a schema change always counts."""
-    return f"{_app_version()}+s{SCHEMA_VERSION}"
+    return f"{_app_version()}+{SCHEMA_VERSION}"
 
 
 def _file_stat(path: Path) -> tuple[int, int] | None:
