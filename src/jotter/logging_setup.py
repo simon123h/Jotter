@@ -46,8 +46,11 @@ def configure_logging(config: UserConfig) -> Path | None:
     log_path = Path(config.log_dir) / LOG_FILE_NAME if config.log_dir else get_default_log_dir() / LOG_FILE_NAME
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        if log_path.is_file() and log_path.stat().st_size > MAX_LOG_FILE_BYTES:
-            log_path.unlink()
+        try:
+            if log_path.is_file() and log_path.stat().st_size > MAX_LOG_FILE_BYTES:
+                log_path.unlink()
+        except OSError:
+            pass  # e.g. another instance holds it open on Windows: keep appending instead of losing the log
         file_handler = logging.FileHandler(log_path, encoding="utf-8")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
