@@ -73,6 +73,8 @@ class SyncApplicationService:
         self.project_repo = project_repo
         # Task files re-read or removed from the index by the last sync_db_only(); zero means nothing changed
         self.last_changes = 0
+        # Task files the last sync_db_only() could not read because of an I/O error (e.g. a Windows file lock)
+        self.last_io_errors = 0
 
     @classmethod
     def from_data_dir(cls, data_dir: Path | str, conn: sqlite3.Connection) -> Self:
@@ -91,6 +93,7 @@ class SyncApplicationService:
         unless `force` is set (a full rebuild).
         """
         self.last_changes = 0
+        self.last_io_errors = 0
         from jotter.features.projects.manifest import read_project_manifest
 
         # 1. Discover all projects on disk
@@ -188,6 +191,8 @@ class SyncApplicationService:
                     self.sqlite_task_repo.upsert_task(task, file_stat)
                     total_synced += 1
                 except Exception as e:
+                    if isinstance(e, OSError):
+                        self.last_io_errors += 1
                     logger.warning("Failed to sync task file %s: %s", file_path, e)
 
             # 4. Clean up deleted markdown tasks from SQLite
@@ -211,7 +216,9 @@ class SyncApplicationService:
         version = _app_version()
         rebuild = row is None or row["value"] != version
         synced = self.sync_db_only(force=rebuild)
-        if rebuild:
+        # A file that could not be read keeps its old row, so retry the rebuild at the next start instead of
+        # recording the version (unreadable content, as opposed to an I/O error, would fail again every time)
+        if rebuild and self.last_io_errors == 0:
             conn.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_version', ?)", (version,))
         return synced
 

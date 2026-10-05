@@ -620,3 +620,47 @@ def test_sync_does_not_rewrite_project_manifests_when_nothing_changed(temp_dir, 
     sync_svc.sync_db_only()
 
     assert writes == []
+
+
+def test_startup_rebuild_is_retried_when_a_file_could_not_be_read(temp_dir, test_env, monkeypatch):
+    from jotter.features.sync import service as sync_module
+    from jotter.features.tasks.disk_repo import DiskTaskRepository
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
+    original = DiskTaskRepository.read_task_file
+
+    def locked(self, file_path, default_project_id):
+        raise PermissionError("file is locked")
+
+    monkeypatch.setattr(DiskTaskRepository, "read_task_file", locked)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc.sync_on_startup()
+    assert sync_svc.last_io_errors == 1
+    row = conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()
+    assert row is None or row["value"] != "1.0.0"  # the new version was not recorded
+
+    monkeypatch.setattr(DiskTaskRepository, "read_task_file", original)
+    sync_svc.sync_on_startup()  # the next start rebuilds again and now succeeds
+    assert conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()["value"] == "1.0.0"
+
+
+def test_startup_rebuild_is_recorded_despite_unparseable_files(temp_dir, test_env, monkeypatch):
+    from jotter.features.sync import service as sync_module
+    from jotter.features.tasks.disk_repo import DiskTaskRepository
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
+
+    def broken(self, file_path, default_project_id):
+        raise ValueError("invalid frontmatter")
+
+    monkeypatch.setattr(DiskTaskRepository, "read_task_file", broken)
+    SyncApplicationService.from_data_dir(temp_dir, conn).sync_on_startup()
+
+    # It would fail identically every time, so it must not force a rebuild at every start
+    assert conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()["value"] == "1.0.0"
