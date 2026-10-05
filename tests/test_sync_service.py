@@ -414,3 +414,28 @@ def test_commit_changes_commits_canvas_files(temp_dir, test_env):
     history = get_git_history(proj_dir)
     assert len(history) >= 1
     assert history[0]["message"] == "jotter: 2 other files changed"
+
+
+def test_reprojecting_an_unchanged_task_does_not_rewrite_its_row(temp_dir):
+    from jotter.features.tasks.domain import Task
+    from jotter.features.tasks.projector import TaskProjector
+    from jotter.shared.db import create_sqlite_connection
+
+    conn = create_sqlite_connection(f"{temp_dir}/tasks.db")
+    conn.execute("INSERT INTO projects (id, title, created_at) VALUES ('p', 'P', '2024-01-01')")
+    conn.execute("INSERT INTO buckets (project_id, name, title) VALUES ('p', 'todo', 'Todo')")
+    projector = TaskProjector(conn)
+    task = Task.create(project_id="p", title="One", bucket="todo", position=1000.0)
+    updates = []
+    conn.set_trace_callback(lambda sql: updates.append(sql) if "tasks_fts" in sql else None)
+
+    projector.project_task_upsert(task)
+    inserted = len(updates)
+    projector.project_task_upsert(task)
+    assert len(updates) == inserted  # unchanged: the update trigger (FTS rewrite) did not fire
+
+    task.title = "Two"
+    projector.project_task_upsert(task)
+    assert len(updates) > inserted
+    assert conn.execute("SELECT title FROM tasks").fetchone()["title"] == "Two"
+    conn.close()

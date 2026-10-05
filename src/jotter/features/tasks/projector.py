@@ -30,7 +30,10 @@ class TaskProjector:
         return None if row is None or row[0] is None else float(row[0])
 
     def project_task_upsert(self, task: Task) -> None:
-        """Projects a Task domain aggregate into the tasks table and FTS5 search index."""
+        """Projects a Task domain aggregate into the tasks table and FTS5 search index.
+
+        An unchanged task is left untouched, so re-projecting it does not rewrite its FTS entry.
+        """
         tags_json = json.dumps([t.value for t in task.tags])
         attachments_json = json.dumps(task.attachments)
         filename = f"{task.id}.md"
@@ -58,6 +61,16 @@ class TaskProjector:
                     color = excluded.color,
                     postponed_until = excluded.postponed_until,
                     updated_at = excluded.updated_at
+                WHERE (
+                    tasks.project_id, tasks.title, tasks.bucket, tasks.position, tasks.tags, tasks.attachments,
+                    tasks.filename, tasks.body, tasks.due_date, tasks.planned_date, tasks.priority, tasks.color,
+                    tasks.postponed_until, tasks.updated_at
+                ) IS NOT (
+                    excluded.project_id, excluded.title, excluded.bucket, excluded.position, excluded.tags,
+                    excluded.attachments, excluded.filename, excluded.body, excluded.due_date,
+                    excluded.planned_date, excluded.priority, excluded.color, excluded.postponed_until,
+                    excluded.updated_at
+                )
                 """,
                 (
                     str(task.id),

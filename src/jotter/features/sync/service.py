@@ -136,13 +136,11 @@ class SyncApplicationService:
                     logger.warning("Failed to sync task file %s: %s", file_path, e)
 
             # 4. Clean up deleted markdown tasks from SQLite
-            sqlite_tasks = self.sqlite_task_repo.find_tasks(project_id=p_id)
-            for st in sqlite_tasks:
-                if str(st.id) not in disk_task_ids:
-                    # Guard against race conditions: verify the file actually doesn't exist on disk
-                    # (a task could have been created concurrently while the disk snapshot was being processed)
-                    if not self.disk_task_repo.exists(p_id, str(st.id)):
-                        self.sqlite_task_repo.delete_task(str(st.id))
+            for indexed_id in self.sqlite_task_repo.get_task_ids(p_id) - disk_task_ids:
+                # Guard against race conditions: verify the file actually doesn't exist on disk
+                # (a task could have been created concurrently while the disk snapshot was being processed)
+                if not self.disk_task_repo.exists(p_id, indexed_id):
+                    self.sqlite_task_repo.delete_task(indexed_id)
 
         return total_synced
 

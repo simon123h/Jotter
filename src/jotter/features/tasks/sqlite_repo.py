@@ -81,6 +81,11 @@ class SqliteTaskRepository:
             tasks.extend(self._row_to_task(row) for row in rows)
         return tasks
 
+    def get_task_ids(self, project_id: str) -> set[str]:
+        """Returns the IDs of all indexed tasks of a project without materializing them."""
+        rows = self.conn.execute("SELECT id FROM tasks WHERE project_id = ?", (project_id,)).fetchall()
+        return {row["id"] for row in rows}
+
     def find_tasks(
         self,
         project_id: str | None = None,
