@@ -115,6 +115,21 @@ class VaultRegistry:
         v.is_active = True
         return v
 
+    def resolve(self, ref: str | None = None) -> Vault:
+        """Finds a vault by id or (case-insensitive) name; with no ref, returns the active vault."""
+        if ref is None:
+            return self.get_active()
+        vaults = self.get_all()
+        for v in vaults:
+            if v.id == ref:
+                return v
+        wanted = ref.strip().casefold()
+        for v in vaults:
+            if v.name.casefold() == wanted:
+                return v
+        available = ", ".join(f"'{v.name}' (id: {v.id})" for v in vaults) or "none"
+        raise EntityNotFoundError(f"Vault '{ref}' not found. Available vaults: {available}")
+
     def save(self, vault: Vault) -> None:
         data = self._load_data()
         raw_vaults = data.get("vaults", [])

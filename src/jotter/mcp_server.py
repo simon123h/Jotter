@@ -5,6 +5,7 @@ create, update, move, and organize tasks and projects directly on the local boar
 """
 
 import functools
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +28,10 @@ from jotter.features.tasks.command_service import TaskCommandService
 from jotter.features.tasks.disk_repo import DiskTaskRepository
 from jotter.features.tasks.query_service import TaskQueryService
 from jotter.features.tasks.schemas import TaskCreate, TaskMove, TaskUpdate
+from jotter.features.vaults.registry import VaultRegistry
 from jotter.shared.db import create_sqlite_connection
+
+logger = logging.getLogger(__name__)
 
 
 class McpUnavailableError(ImportError):
@@ -44,12 +48,19 @@ MCP_MISSING_MESSAGE = (
 )
 
 
-def create_mcp_server(config: UserConfig | None = None) -> Any:
-    """Creates and configures the Jotter MCP server with tools."""
+def create_mcp_server(config: UserConfig | None = None, vault: str | None = None) -> Any:
+    """Creates and configures the Jotter MCP server with tools.
+
+    The server works on one vault: the one named by `vault` (id or name), or the registry's active vault.
+    """
     if MCPServer is None:
         raise McpUnavailableError(MCP_MISSING_MESSAGE)
 
-    cfg = config or load_config()
+    cfg = (config or load_config()).model_copy()
+    registry = VaultRegistry(config_file=cfg.vaults_config_path, default_data_dir=cfg.data_dir)
+    selected = registry.resolve(vault)
+    cfg.data_dir = selected.path
+    logger.info("Jotter MCP server using vault '%s' at %s", selected.name, selected.path)
     db_path = str(Path(cfg.data_dir) / "tasks.db")
     conn = create_sqlite_connection(db_path)
 
@@ -435,9 +446,9 @@ def create_mcp_server(config: UserConfig | None = None) -> Any:
     return server
 
 
-def run_mcp_server():
+def run_mcp_server(vault: str | None = None):
     """Main CLI entrypoint for running the MCP server over stdio."""
-    server = create_mcp_server()
+    server = create_mcp_server(vault=vault)
     try:
         server.run(transport="stdio")
     finally:

@@ -1,9 +1,11 @@
+from pathlib import Path
+
 from jotter.config import UserConfig
 from jotter.mcp_server import create_mcp_server
 
 
 def test_mcp_server_tools_workflow(temp_dir):
-    config = UserConfig(data_dir=temp_dir, port=8000)
+    config = UserConfig(data_dir=temp_dir, port=8000, vaults_config_path=str(Path(temp_dir) / "vaults.json"))
     server = create_mcp_server(config)
 
     # FastMCP / MCPServer internal tool list
@@ -24,7 +26,7 @@ def test_mcp_server_tools_workflow(temp_dir):
 
 
 def test_mcp_direct_service_execution(temp_dir):
-    config = UserConfig(data_dir=temp_dir, port=8000)
+    config = UserConfig(data_dir=temp_dir, port=8000, vaults_config_path=str(Path(temp_dir) / "vaults.json"))
     server = create_mcp_server(config)
     assert server is not None
 
@@ -101,7 +103,7 @@ def test_mcp_direct_service_execution(temp_dir):
 def test_mcp_resources(temp_dir):
     import asyncio
 
-    config = UserConfig(data_dir=temp_dir, port=8000)
+    config = UserConfig(data_dir=temp_dir, port=8000, vaults_config_path=str(Path(temp_dir) / "vaults.json"))
     server = create_mcp_server(config)
 
     tool_manager = getattr(server, "_tool_manager", server)
@@ -146,7 +148,7 @@ def test_mcp_resources(temp_dir):
 
 
 def test_mcp_list_tasks_filtering(temp_dir):
-    config = UserConfig(data_dir=temp_dir, port=8000)
+    config = UserConfig(data_dir=temp_dir, port=8000, vaults_config_path=str(Path(temp_dir) / "vaults.json"))
     server = create_mcp_server(config)
     tool_manager = getattr(server, "_tool_manager", server)
 
@@ -206,3 +208,42 @@ def test_missing_mcp_package_gives_install_hint(monkeypatch):
     monkeypatch.setattr(mcp_server, "MCPServer", None)
     with pytest.raises(mcp_server.McpUnavailableError, match=r"jotter-app\[mcp\]"):
         mcp_server.create_mcp_server()
+
+
+def _two_vault_config(tmp_path):
+    from jotter.features.vaults.domain import Vault
+    from jotter.features.vaults.registry import VaultRegistry
+
+    registry_file = tmp_path / "vaults.json"
+    registry = VaultRegistry(config_file=registry_file)
+    work = Vault.create(name="Work", path=tmp_path / "work", vault_id="work")
+    home = Vault.create(name="Home", path=tmp_path / "home", vault_id="home")
+    registry.save(work)
+    registry.save(home)
+    registry.set_active_id("work")
+    return UserConfig(vaults_config_path=str(registry_file)), work, home
+
+
+def test_mcp_serves_active_vault_by_default(tmp_path):
+    config, work, _ = _two_vault_config(tmp_path)
+    server = create_mcp_server(config)
+    assert (Path(work.path) / "tasks.db").exists()
+    assert not (tmp_path / "home" / "tasks.db").exists()
+    assert server is not None
+
+
+def test_mcp_vault_option_selects_by_id_or_name(tmp_path):
+    config, _, home = _two_vault_config(tmp_path)
+    create_mcp_server(config, vault="HOME")
+    assert (Path(home.path) / "tasks.db").exists()
+    assert not (tmp_path / "work" / "tasks.db").exists()
+
+
+def test_mcp_unknown_vault_lists_available(tmp_path):
+    import pytest
+
+    from jotter.shared.exceptions import EntityNotFoundError
+
+    config, _, _ = _two_vault_config(tmp_path)
+    with pytest.raises(EntityNotFoundError, match="Available vaults: 'Work'.*'Home'"):
+        create_mcp_server(config, vault="nope")

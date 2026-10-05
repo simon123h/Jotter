@@ -14,6 +14,7 @@ if _src_dir not in sys.path:
 
 from jotter.app import app_version, create_app  # noqa: E402
 from jotter.config import load_config, normalize_log_level  # noqa: E402
+from jotter.shared.exceptions import EntityNotFoundError  # noqa: E402
 
 
 def open_browser_delayed(url: str, delay_seconds: float = 0.5):
@@ -26,13 +27,24 @@ def open_browser_delayed(url: str, delay_seconds: float = 0.5):
     threading.Timer(delay_seconds, _open).start()
 
 
-def _run_mcp():
+def _run_mcp(argv: list[str]):
     from jotter.mcp_server import McpUnavailableError, run_mcp_server
 
+    parser = argparse.ArgumentParser(prog="jotter mcp", description="Run the Jotter MCP server over stdio")
+    parser.add_argument(
+        "--vault",
+        type=str,
+        default=None,
+        help="Vault (name or id) to serve; defaults to the active vault",
+    )
+    args = parser.parse_args(argv)
     try:
-        run_mcp_server()
+        run_mcp_server(vault=args.vault)
     except McpUnavailableError as e:
         # Missing optional 'mcp' dependency: show the install hint without a traceback.
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except EntityNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
@@ -40,7 +52,7 @@ def _run_mcp():
 def main():
     # Direct MCP subcommand fast-path
     if len(sys.argv) > 1 and sys.argv[1] == "mcp":
-        _run_mcp()
+        _run_mcp(sys.argv[2:])
         return
 
     parser = argparse.ArgumentParser(description="Jotter - Local-First Markdown Kanban Board")
@@ -97,7 +109,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == "mcp":
-        _run_mcp()
+        _run_mcp([])
         return
 
     config = load_config()
