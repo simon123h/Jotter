@@ -26,12 +26,21 @@ def open_browser_delayed(url: str, delay_seconds: float = 0.5):
     threading.Timer(delay_seconds, _open).start()
 
 
+def _run_mcp():
+    from jotter.mcp_server import McpUnavailableError, run_mcp_server
+
+    try:
+        run_mcp_server()
+    except McpUnavailableError as e:
+        # Missing optional 'mcp' dependency: show the install hint without a traceback.
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
     # Direct MCP subcommand fast-path
     if len(sys.argv) > 1 and sys.argv[1] == "mcp":
-        from jotter.mcp_server import run_mcp_server
-
-        run_mcp_server()
+        _run_mcp()
         return
 
     parser = argparse.ArgumentParser(description="Jotter - Local-First Markdown Kanban Board")
@@ -88,9 +97,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == "mcp":
-        from jotter.mcp_server import run_mcp_server
-
-        run_mcp_server()
+        _run_mcp()
         return
 
     config = load_config()

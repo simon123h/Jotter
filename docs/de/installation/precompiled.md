@@ -60,6 +60,20 @@ jotter
 
 ---
 
+## Optional: MCP-Server für KI-Assistenten
+
+`jotter mcp` startet einen [Model-Context-Protocol](https://modelcontextprotocol.io)-Server, über den KI-Assistenten mit deinem Board arbeiten können. Dafür wird das optionale Python-Paket `mcp` benötigt, das **nicht** standardmäßig installiert wird. Installiere Jotter mit dem Extra `mcp`:
+
+```bash
+pipx install 'jotter-app[mcp]'      # oder zu einer bestehenden Installation hinzufügen: pipx inject jotter-app mcp
+pip install 'jotter-app[mcp]'
+uvx --from 'jotter-app[mcp]' jotter mcp
+```
+
+Die eigenständige ausführbare Datei (Option 2) enthält den MCP-Server nicht.
+
+---
+
 ## Aus dem Quellcode ausführen
 
 1. Repository klonen:

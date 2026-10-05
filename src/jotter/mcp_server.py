@@ -30,13 +30,24 @@ from jotter.features.tasks.schemas import TaskCreate, TaskMove, TaskUpdate
 from jotter.shared.db import create_sqlite_connection
 
 
+class McpUnavailableError(ImportError):
+    """Raised when the optional 'mcp' package is not installed."""
+
+
+MCP_MISSING_MESSAGE = (
+    "The Jotter MCP server needs the optional 'mcp' Python package, which is not installed.\n"
+    "Install it together with Jotter using the 'mcp' extra:\n"
+    "  pipx:  pipx install --force 'jotter-app[mcp]'   (or: pipx inject jotter-app mcp)\n"
+    "  pip:   pip install 'jotter-app[mcp]'\n"
+    "  uvx:   uvx --from 'jotter-app[mcp]' jotter mcp\n"
+    "The standalone executable does not include the MCP server; use one of the Python installs above."
+)
+
+
 def create_mcp_server(config: UserConfig | None = None) -> Any:
     """Creates and configures the Jotter MCP server with tools."""
     if MCPServer is None:
-        raise ImportError(
-            "The 'mcp' package is required to run the Jotter MCP server. "
-            "Please install it with: pip install 'mcp>=1.0.0'"
-        )
+        raise McpUnavailableError(MCP_MISSING_MESSAGE)
 
     cfg = config or load_config()
     db_path = str(Path(cfg.data_dir) / "tasks.db")

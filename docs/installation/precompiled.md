@@ -58,6 +58,20 @@ jotter
 
 ---
 
+## Optional: MCP Server for AI Assistants
+
+`jotter mcp` starts a [Model Context Protocol](https://modelcontextprotocol.io) server so AI assistants can work with your board. It needs the optional `mcp` Python package, which is **not** installed by default. Install Jotter with the `mcp` extra:
+
+```bash
+pipx install 'jotter-app[mcp]'      # or add it to an existing install: pipx inject jotter-app mcp
+pip install 'jotter-app[mcp]'
+uvx --from 'jotter-app[mcp]' jotter mcp
+```
+
+The standalone executable (Option 2) does not include the MCP server.
+
+---
+
 ## Running from Source
 
 1. Clone or download the repository:

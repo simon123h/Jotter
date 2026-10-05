@@ -30,7 +30,7 @@ Jotter is a **local-first, privacy-focused task management web application** des
 - **Local Git Versioning**: If your vault is a Git repository, Jotter snapshots your changes as local commits. Pushing, pulling, and sharing stay in your hands, using your own Git workflow or any file sync tool.
 - **Git-Backed Time Machine**: Roll your workspace or individual projects back to any historical snapshot in your Git history using a dedicated, searchable, and spacious dialog. Automatically creates pre-restore backup commits so you can revert any rollback operation at any time.
 - **Multi-Language Support**: Fully localized in English and German.
-- **Model Context Protocol (MCP) Support**: Connect AI assistants directly to your local Kanban board via `jotter mcp`.
+- **Model Context Protocol (MCP) Support**: Connect AI assistants directly to your local Kanban board via `jotter mcp` (optional: install with `pipx install 'jotter-app[mcp]'`).
 - **Excel & CSV Import & Export**: Seamlessly import tasks, checklists, priorities, and custom columns from any standard Excel or CSV spreadsheet with support for sheet auto-detection, interactive previews, and custom mappings. Export all tasks from your current filtered view as `.xlsx` or `.csv` client-side.
 - **Obsidian & PKM Native**: Project directories include an `index.md` manifest compatible with Obsidian Folder Notes and PKM namespaces, allowing task boards to live directly within your personal knowledge vault.
 - **Android App**: Carry your tasks in your pocket with the native Android APK. Operates 100% offline using local Markdown files. Syncs seamlessly with your desktop via Syncthing, Git, or cloud drives.

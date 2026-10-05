@@ -196,3 +196,13 @@ def test_mcp_list_tasks_filtering(temp_dir):
     # 6. Limit
     limited = list_tasks_fn(project_id="default", limit=1)
     assert len(limited) == 1
+
+
+def test_missing_mcp_package_gives_install_hint(monkeypatch):
+    import pytest
+
+    from jotter import mcp_server
+
+    monkeypatch.setattr(mcp_server, "MCPServer", None)
+    with pytest.raises(mcp_server.McpUnavailableError, match=r"jotter-app\[mcp\]"):
+        mcp_server.create_mcp_server()
