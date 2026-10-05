@@ -4,6 +4,13 @@ import * as path from 'path';
 // The e2e server gets its own home, config and data folders, so it never touches the developer's real vaults.
 // Jotter picks its vault from vaults.json in the config folder, so these have to be redirected on every platform.
 const e2eHome = path.resolve('./tests/e2e/temp_data');
+// Only the variable the platform reads is redirected: HOME on Linux would hide Python's user site-packages
+const e2eFolders: Record<string, string> =
+  process.platform === 'darwin'
+    ? { HOME: e2eHome }
+    : process.platform === 'win32'
+      ? { APPDATA: e2eHome }
+      : { XDG_CONFIG_HOME: path.join(e2eHome, 'config'), XDG_DATA_HOME: path.join(e2eHome, 'data') };
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -35,11 +42,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       env: {
         JOTTER_PORT: '58273',
-        HOME: e2eHome,
-        USERPROFILE: e2eHome,
-        APPDATA: e2eHome,
-        XDG_CONFIG_HOME: path.join(e2eHome, 'config'),
-        XDG_DATA_HOME: path.join(e2eHome, 'data'),
+        ...e2eFolders,
       },
     },
     {
