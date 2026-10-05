@@ -86,13 +86,15 @@ class VaultApplicationService:
     def switch_vault(self, vault_id: str, app_state: Any = None) -> VaultResponse:
         """Switches the active vault.
 
-        If FastAPI app_state is provided, updates DB connection, retargets the periodic sync, and runs initial sync.
+        If FastAPI app_state is provided, the new vault's index is synchronized before it becomes active. A failure
+        leaves the previous vault active and is raised to the caller.
         """
         vault = self.registry.get(vault_id)
-        self.registry.set_active_id(vault.id)
 
+        # Prepare the new vault first: if that fails, the old vault stays active and the error reaches the caller
         if app_state is not None:
             self._rebind_runtime_state(app_state, vault)
+        self.registry.set_active_id(vault.id)
 
         return VaultResponse(
             id=vault.id,
@@ -137,21 +139,22 @@ class VaultApplicationService:
         from jotter.features.sync.service import SyncApplicationService
         from jotter.shared.db import ConnectionPool
 
-        # 1. Update active config data_dir
-        if hasattr(app_state, "config"):
-            app_state.config.data_dir = vault.path
-
-        # 2. Point requests at the new vault's database and synchronize its index
-        old_pool = getattr(app_state, "db_pool", None)
+        # 1. Open the new vault's database and synchronize its index before any request can see it
+        new_pool = ConnectionPool(Path(vault.path) / "tasks.db")
         try:
-            new_pool = ConnectionPool(Path(vault.path) / "tasks.db")
-            app_state.db_pool = new_pool
-            if old_pool is not None:
-                old_pool.close()
             with new_pool.connection() as conn:
                 SyncApplicationService.from_data_dir(vault.path, conn).sync_on_startup()
-        except Exception as e:
-            logger.warning("Reconciliation on vault switch failed: %s", e)
+        except Exception:
+            new_pool.close()
+            raise
+
+        # 2. Switch over. Requests still holding a connection to the old pool finish on it; it closes on return
+        if hasattr(app_state, "config"):
+            app_state.config.data_dir = vault.path
+        old_pool = getattr(app_state, "db_pool", None)
+        app_state.db_pool = new_pool
+        if old_pool is not None:
+            old_pool.close()
 
         # 3. Re-target the periodic sync and commit
         scheduler = getattr(app_state, "sync_scheduler", None)

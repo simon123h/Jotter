@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -6,6 +7,7 @@ from jotter.features.vaults.domain import Vault
 from jotter.features.vaults.registry import VaultRegistry
 from jotter.features.vaults.schemas import VaultCreate, VaultUpdate
 from jotter.features.vaults.service import VaultApplicationService
+from jotter.shared.db import ConnectionPool
 from jotter.shared.exceptions import ValidationError
 
 
@@ -139,3 +141,53 @@ def test_vault_api_routes(test_env):
     assert switch_res.status_code == 200
     assert switch_res.json()["id"] == "client-vault"
     assert switch_res.json()["is_active"] is True
+
+
+def _service_with_two_vaults(temp_dir):
+    registry = VaultRegistry(config_file=Path(temp_dir) / "vaults.json", default_data_dir=Path(temp_dir) / "default")
+    svc = VaultApplicationService(registry)
+    svc.create_vault(VaultCreate(name="Team", path=str(Path(temp_dir) / "team"), id="team"))
+    old_pool = ConnectionPool(Path(registry.get_active().path) / "tasks.db")
+    state = SimpleNamespace(config=SimpleNamespace(data_dir=registry.get_active().path), db_pool=old_pool)
+    return svc, state, old_pool
+
+
+def test_switching_vaults_publishes_the_new_pool_only_after_its_index_is_synced(temp_dir, monkeypatch):
+    from jotter.features.sync.service import SyncApplicationService
+
+    svc, state, old_pool = _service_with_two_vaults(temp_dir)
+    seen = {}
+    real = SyncApplicationService.sync_on_startup
+
+    def spy(self):
+        seen["published_during_sync"] = state.db_pool is not old_pool
+        return real(self)
+
+    monkeypatch.setattr(SyncApplicationService, "sync_on_startup", spy)
+    svc.switch_vault("team", app_state=state)
+
+    assert seen["published_during_sync"] is False
+    assert state.db_pool is not old_pool
+    assert state.db_pool.db_path == Path(svc.registry.get("team").path) / "tasks.db"
+    assert old_pool._closed
+    assert svc.get_active_vault().id == "team"
+
+
+def test_a_failed_vault_switch_leaves_the_previous_vault_active(temp_dir, monkeypatch):
+    from jotter.features.sync.service import SyncApplicationService
+
+    svc, state, old_pool = _service_with_two_vaults(temp_dir)
+    previous = svc.get_active_vault().id
+    previous_dir = state.config.data_dir
+
+    def boom(self):
+        raise RuntimeError("sync failed")
+
+    monkeypatch.setattr(SyncApplicationService, "sync_on_startup", boom)
+    with pytest.raises(RuntimeError):
+        svc.switch_vault("team", app_state=state)
+
+    assert state.db_pool is old_pool
+    assert not old_pool._closed
+    assert state.config.data_dir == previous_dir
+    assert svc.get_active_vault().id == previous

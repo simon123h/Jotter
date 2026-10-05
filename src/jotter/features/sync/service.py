@@ -12,6 +12,7 @@ from jotter.features.projects.repo import ProjectRepository
 from jotter.features.sync.git_adapter import commit_changes, enable_git_versioning
 from jotter.features.tasks.disk_repo import DiskTaskRepository
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
+from jotter.shared.db import SCHEMA_VERSION, recreate_schema
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,11 @@ def _app_version() -> str:
         return __version__
     except ImportError:
         return "unknown"
+
+
+def _index_version() -> str:
+    """The version an index is built for: the app version plus the table layout, so a schema change always counts."""
+    return f"{_app_version()}+{SCHEMA_VERSION}"
 
 
 def _file_stat(path: Path) -> tuple[int, int] | None:
@@ -208,16 +214,20 @@ class SyncApplicationService:
     def sync_on_startup(self) -> int:
         """Reconciles the index when a vault is opened, rebuilding it completely after a Jotter upgrade.
 
-        The index is a disposable cache whose contents depend on how Jotter projects tasks, so a new version
-        re-reads every task file once instead of trusting the recorded file stats.
+        The index is a disposable cache whose contents and table layout depend on the Jotter version, so a new
+        version drops the schema, recreates it and re-reads every task file instead of migrating anything.
         """
         conn = self.sqlite_task_repo.conn
-        row = conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()
-        version = _app_version()
-        rebuild = row is None or row["value"] != version
+        # fetchall() so the statement is finished: a cursor left half-read would make the DROP TABLE below fail
+        rows = conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchall()
+        version = _index_version()
+        rebuild = not rows or rows[0]["value"] != version
+        if rebuild:
+            recreate_schema(conn)
         synced = self.sync_db_only(force=rebuild)
-        # A file that could not be read keeps its old row, so retry the rebuild at the next start instead of
-        # recording the version (unreadable content, as opposed to an I/O error, would fail again every time)
+        # A file that could not be read has no row after the rebuild (the old ones were dropped). Do not record the
+        # version, so the rebuild is retried at the next start, and the periodic sync indexes the file as soon as it
+        # can be read again. Unreadable content, as opposed to an I/O error, would fail again every time, so it counts.
         if rebuild and self.last_io_errors == 0:
             conn.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_version', ?)", (version,))
         return synced
