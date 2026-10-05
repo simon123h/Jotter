@@ -39,10 +39,7 @@ class DiskTaskRepository:
 
         import re
 
-        from jotter.shared.fs import atomic_write, register_recent_self_write
-
-        # Register self-write before saving so watcher immediately ignores the upcoming filesystem event
-        register_recent_self_write(path)
+        from jotter.shared.fs import atomic_write
 
         safe_slug = re.sub(r"[^\w\-.]", "_", str(task.id))
         atomic_write(path, content, encoding="utf-8", prefix=f".{safe_slug}_", suffix=".tmp")
@@ -50,9 +47,6 @@ class DiskTaskRepository:
     def delete(self, project_id: str, task_id: str) -> None:
         path = self.get_task_file_path(project_id, task_id)
         if path.is_file():
-            from jotter.shared.fs import register_recent_self_write
-
-            register_recent_self_write(path)
             path.unlink()
 
     def get_all_task_files(self, project_id: str) -> list[Path]:

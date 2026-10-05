@@ -13,7 +13,7 @@ class TaskProjector:
     """Synchronous in-process projector that maintains the SQLite query read-model.
 
     Invoked both by internal Command services (immediate read-your-own-writes consistency)
-    and by external file synchronizers (FileWatcherService, SyncApplicationService).
+    and by the file synchronizer (SyncApplicationService) for external disk changes.
     """
 
     def __init__(self, conn: sqlite3.Connection):
