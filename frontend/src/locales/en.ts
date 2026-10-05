@@ -53,6 +53,10 @@ export const en = {
   tagsAll: 'All',
   loadingBoard: 'Loading Jotter Board...',
   loadingTask: 'Loading task...',
+  loading: 'Loading...',
+  colors: {
+    default: 'Default',
+  },
   emptyStateTitle: 'No tasks found',
   emptyStateText: 'Get started by creating a new task, or sync the index if you already have Markdown files in the `tasks` folder.',
   createFirstTaskButton: 'Create First Task',
@@ -204,6 +208,8 @@ export const en = {
     hideText: 'Hide Postponed',
   },
   projects: {
+    noProjectsTitle: 'No Projects Yet',
+    noProjectsDesc: 'Create your first project to start organizing your tasks.',
     sidebarTitle: 'Projects',
     serverStatus: 'Server Status',
     newProject: 'New Project',
@@ -346,6 +352,7 @@ export const en = {
     saveError: 'Failed to save canvas document',
   },
   timeblock: {
+    createButton: 'Create',
     sidebarTitle: 'Time Blocking',
     toggleSidebarTooltip: 'Toggle Time Blocking daily schedule sidebar',
     today: 'Today',
@@ -422,6 +429,7 @@ export const en = {
   },
   taskCard: {
     markDone: 'Mark as done',
+    markNotDone: 'Mark as not done',
     collapseNotes: 'Collapse notes',
     expandNotes: 'Expand notes',
   },
@@ -539,6 +547,7 @@ export const en = {
     fetchErrorFallback: 'Failed to fetch git history',
   },
   triage: {
+    moveToColumn: 'Move to Column',
     title: 'Task Triage',
     noTasks: 'No tasks to triage based on your current filters.',
     congratsTitle: 'Congratulations! 🎉',

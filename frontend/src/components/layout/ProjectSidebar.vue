@@ -305,7 +305,7 @@ const onVaultSelected = async (event: Event) => {
         <button
           @click="emit('close')"
           class="md:hidden p-1 rounded text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40"
-          :title="t('close') || 'Close'"
+          :title="t('buttons.close') || 'Close'"
         >
           <X class="w-4 h-4" />
         </button>

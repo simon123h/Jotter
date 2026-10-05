@@ -288,11 +288,11 @@ const handleDelete = async () => {
             type="submit"
             :disabled="loading || !title.trim()"
             class="px-3 sm:px-4 py-2 text-xs font-semibold text-white bg-theme-primary hover:bg-theme-primary-hover rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-            :title="activeTimeblock ? t('buttons.save') : t('timeblockModal.createButton')"
+            :title="activeTimeblock ? t('buttons.save') : t('timeblock.createButton')"
           >
             <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             <component :is="activeTimeblock ? Save : Plus" v-else class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">{{ activeTimeblock ? t('buttons.save') : t('timeblockModal.createButton') }}</span>
+            <span class="hidden sm:inline">{{ activeTimeblock ? t('buttons.save') : t('timeblock.createButton') }}</span>
           </button>
         </div>
       </div>

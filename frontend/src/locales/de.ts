@@ -53,6 +53,10 @@ export const de = {
   tagsAll: 'Alle',
   loadingBoard: 'Jotter Board wird geladen...',
   loadingTask: 'Aufgabe wird geladen...',
+  loading: 'Wird geladen...',
+  colors: {
+    default: 'Standard',
+  },
   emptyStateTitle: 'Keine Aufgaben gefunden',
   emptyStateText:
     'Beginne mit dem Erstellen einer neuen Aufgabe oder synchronisiere den Index, falls du bereits Markdown-Dateien im Ordner `tasks` hast.',
@@ -205,6 +209,8 @@ export const de = {
     hideText: 'Zurückgestellt ausblenden',
   },
   projects: {
+    noProjectsTitle: 'Noch keine Projekte',
+    noProjectsDesc: 'Erstelle dein erstes Projekt, um deine Aufgaben zu organisieren.',
     sidebarTitle: 'Projekte',
     serverStatus: 'Server-Status',
     newProject: 'Neues Projekt',
@@ -348,6 +354,7 @@ export const de = {
     saveError: 'Fehler beim Speichern des Canvas-Dokuments',
   },
   timeblock: {
+    createButton: 'Erstellen',
     sidebarTitle: 'Time Blocking',
     toggleSidebarTooltip: 'Time Blocking Tagesplaner-Seitenleiste ein-/ausblenden',
     today: 'Heute',
@@ -424,6 +431,7 @@ export const de = {
   },
   taskCard: {
     markDone: 'Als erledigt markieren',
+    markNotDone: 'Als nicht erledigt markieren',
     collapseNotes: 'Notizen zuklappen',
     expandNotes: 'Notizen aufklappen',
   },
@@ -541,6 +549,7 @@ export const de = {
     fetchErrorFallback: 'Fehler beim Abrufen des Git-Verlaufs',
   },
   triage: {
+    moveToColumn: 'In Spalte verschieben',
     title: 'Aufgaben-Triage',
     noTasks: 'Keine Aufgaben für die Triage basierend auf den aktuellen Filtern.',
     congratsTitle: 'Herzlichen Glückwunsch! 🎉',
