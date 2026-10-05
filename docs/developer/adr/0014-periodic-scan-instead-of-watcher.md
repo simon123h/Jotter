@@ -13,7 +13,7 @@ ADR 0004 replaced a periodic full re-index with an in-process `watchdog` watcher
 - **Fragility**: event delivery can overflow or drop events during bursts (a commit, a sync tool writing many files), so a periodic full scan was needed as a safety net anyway.
 - **Little user-visible benefit**: the frontend never polled for the changes the watcher found, so a fresh index only mattered at the next reload, and Jotter is mostly used by one person on one machine with an occasional (slow) sync tool.
 
-The original reason for abandoning periodic scans was their cost, since every scan opened and parsed every task file. That changed once the index recorded each task file's modification time and size and a scan skipped files whose stat is unchanged.
+The original reason for abandoning periodic scans was their cost, since every scan opened and parsed every task file. That changed once the index recorded each task file's modification time and size and a scan skipped files whose stat is unchanged ([ADR 0015](./0015-index-as-disposable-cache.md)).
 
 ## Decision
 
