@@ -729,7 +729,7 @@ def test_startup_keeps_the_index_when_the_version_matches(temp_dir, monkeypatch)
     vault = Path(temp_dir)
     _write_task(vault)
     _age_files(vault / "default")
-    conn = get_db(str(vault / "tasks.db"))
+    conn = create_sqlite_connection(vault / "tasks.db")
     sync_svc = SyncApplicationService.from_data_dir(vault, conn)
     monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
     sync_svc.sync_on_startup()
@@ -748,7 +748,7 @@ def test_a_schema_version_bump_rebuilds_even_with_the_same_app_version(temp_dir,
 
     vault = Path(temp_dir)
     _write_task(vault)
-    conn = get_db(str(vault / "tasks.db"))
+    conn = create_sqlite_connection(vault / "tasks.db")
     sync_svc = SyncApplicationService.from_data_dir(vault, conn)
     monkeypatch.setattr(sync_module, "_app_version", lambda: "unknown")
     sync_svc.sync_on_startup()
@@ -801,7 +801,7 @@ def test_file_that_was_locked_during_the_rebuild_is_indexed_by_the_next_periodic
 
     vault = Path(temp_dir)
     _write_task(vault)
-    conn = get_db(str(vault / "tasks.db"))
+    conn = create_sqlite_connection(vault / "tasks.db")
     monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
     original = DiskTaskRepository.read_task_file
     monkeypatch.setattr(
