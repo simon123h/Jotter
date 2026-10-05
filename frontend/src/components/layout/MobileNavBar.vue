@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { LayoutGrid, Layers, Plus, Box, List, Grid2X2, Tag, Clock, CheckCircle2, X, ChevronRight } from '@lucide/vue';
+import { LayoutGrid, Layers, Plus, Box, Folder, List, Grid2X2, Tag, Clock, CheckCircle2, X, ChevronRight } from '@lucide/vue';
 import { useModalStore } from '@/stores/modal';
 import { useSettingsStore } from '@/stores/settings';
 import { useUiStore } from '@/stores/ui';
@@ -33,6 +33,7 @@ const isViewsActive = computed(() => {
     ['list', 'matrix', 'tag', 'time', 'triage', 'review'].includes((route.meta.backRoute as string) || String(route.name || ''))
   );
 });
+const isProjectsActive = computed(() => Boolean(settingsStore.isSidebarOpen));
 const isTimeblockActive = computed(() => Boolean(settingsStore.isTimeblockSidebarOpen));
 
 const toggleViewsSheet = () => {
@@ -50,6 +51,11 @@ const navigateTo = (viewName: string) => {
 const handleQuickAdd = () => {
   triggerMediumHaptic();
   modalStore.openTaskCreate('todo');
+};
+
+const handleToggleProjects = () => {
+  triggerLightHaptic();
+  settingsStore.toggleSidebar();
 };
 
 const handleToggleTimeblock = () => {
@@ -130,7 +136,19 @@ const viewOptions = computed(() => [
         </button>
       </div>
 
-      <!-- 4. Time Blocking Panel Toggle -->
+      <!-- 4. Projects Sidebar Toggle -->
+      <button
+        @click="handleToggleProjects"
+        class="flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors flex-1"
+        :class="isProjectsActive ? 'text-theme-accent font-bold' : 'text-theme-text-muted hover:text-theme-text-main'"
+        :title="t('projects.sidebarTitle')"
+        data-testid="mobile-projects-btn"
+      >
+        <Folder class="w-5 h-5 mb-0.5" />
+        <span class="text-[10px] tracking-tight">{{ t('projects.sidebarTitle') }}</span>
+      </button>
+
+      <!-- 5. Time Blocking Panel Toggle -->
       <button
         @click="handleToggleTimeblock"
         class="flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors flex-1"

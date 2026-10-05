@@ -48,7 +48,7 @@ describe('MobileNavBar.vue', () => {
     expect(wrapper.exists()).toBe(true);
 
     const navButtons = wrapper.findAll('nav button');
-    expect(navButtons.length).toBe(4);
+    expect(navButtons.length).toBe(5);
 
     // 1. Click Board button
     const boardBtn = navButtons[0];
@@ -66,12 +66,26 @@ describe('MobileNavBar.vue', () => {
     await fabBtn.trigger('click');
     expect(openCreateSpy).toHaveBeenCalledWith('todo');
 
-    // 3. Click Timeblock button
+    // 3. Click Projects button (toggles the sidebar)
     const settingsStore = useSettingsStore();
+    const sidebarToggleSpy = vi.spyOn(settingsStore, 'toggleSidebar');
+    const projectsBtn = navButtons[3];
+    await projectsBtn.trigger('click');
+    expect(sidebarToggleSpy).toHaveBeenCalled();
+
+    // 4. Click Timeblock button
     const timeblockToggleSpy = vi.spyOn(settingsStore, 'toggleTimeblockSidebar');
-    const timeblockBtn = navButtons[3];
+    const timeblockBtn = navButtons[4];
     await timeblockBtn.trigger('click');
     expect(timeblockToggleSpy).toHaveBeenCalled();
+  });
+
+  it('keeps the quick-add FAB centered with two buttons on each side', () => {
+    const wrapper = mount(MobileNavBar);
+    const buttons = wrapper.findAll('nav button');
+    const fabIndex = buttons.findIndex((b) => b.classes().includes('rounded-full'));
+    expect(fabIndex).toBe(2);
+    expect(buttons.length - 1 - fabIndex).toBe(fabIndex);
   });
 
   it('opens views bottom sheet and navigates to selected view', async () => {
