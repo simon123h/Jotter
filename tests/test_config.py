@@ -1,7 +1,11 @@
 import os
+from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from jotter.config import (
+    get_config_dir,
     get_default_config_paths,
     get_default_data_dir,
     load_config,
@@ -117,3 +121,20 @@ def test_module_execution_main():
     import jotter.__main__ as jmain
 
     assert hasattr(jmain, "main")
+
+
+@pytest.mark.parametrize("platform", ["win32", "darwin", "linux"])
+def test_default_data_dir_is_never_the_config_dir(tmp_path, platform):
+    # Windows and macOS ignore case, so the two folders must not be siblings that differ only in case
+    env = {"APPDATA": str(tmp_path / "appdata"), "XDG_CONFIG_HOME": str(tmp_path / "cfg")}
+    with (
+        patch("jotter.config.sys.platform", platform),
+        patch("pathlib.Path.cwd", return_value=tmp_path),
+        patch("pathlib.Path.home", return_value=tmp_path),
+        patch.dict(os.environ, env, clear=True),
+    ):
+        config_dir = get_config_dir().resolve()
+        data_dir = Path(get_default_data_dir())
+        assert str(config_dir).lower() != str(data_dir).lower()
+        if platform != "linux":
+            assert data_dir == config_dir / "tasks"

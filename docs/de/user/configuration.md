@@ -40,8 +40,10 @@ Wenn kein lokaler `tasks`-Ordner im aktuellen Arbeitsverzeichnis gefunden wird, 
 | Betriebssystem | Standard-Datenverzeichnis | Standard-Konfigurationsdatei | Standard-Log-Verzeichnis |
 | :--- | :--- | :--- | :--- |
 | **Linux** | `~/.local/share/jotter` | `~/.config/jotter/jotter.yaml` | `~/.cache/jotter` |
-| **macOS** | `~/Library/Application Support/Jotter` | `~/Library/Application Support/jotter/jotter.yaml` | `~/Library/Logs/Jotter` |
-| **Windows** | `%APPDATA%\Jotter` | `%APPDATA%\jotter\jotter.yaml` | `%LocalAppData%\Jotter` |
+| **macOS** | `~/Library/Application Support/jotter/tasks` | `~/Library/Application Support/jotter/jotter.yaml` | `~/Library/Logs/Jotter` |
+| **Windows** | `%APPDATA%\jotter\tasks` | `%APPDATA%\jotter\jotter.yaml` | `%LocalAppData%\Jotter` |
+
+> **Hinweis:** Unter Windows und macOS liegt der Standard-Vault im Konfigurationsordner (`jotter/tasks`), weil diese Systeme nicht zwischen Groß- und Kleinschreibung unterscheiden und ein Datenordner `Jotter` derselbe Ordner wie `jotter` wäre. Installationen mit vorhandener `vaults.json` behalten den dort gespeicherten Vault-Pfad.
 
 ---
 

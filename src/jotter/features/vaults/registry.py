@@ -2,11 +2,10 @@
 
 import json
 import logging
-import os
-import sys
 from pathlib import Path
 from typing import Any
 
+from jotter.config import get_config_dir
 from jotter.features.vaults.domain import Vault
 from jotter.shared.exceptions import EntityNotFoundError
 
@@ -15,20 +14,7 @@ logger = logging.getLogger(__name__)
 
 def get_default_vaults_config_path() -> Path:
     """Returns the persistent global path for vaults.json."""
-    if sys.platform.startswith("linux"):
-        xdg_config = os.environ.get("XDG_CONFIG_HOME")
-        if xdg_config:
-            base = Path(xdg_config) / "jotter"
-        else:
-            base = Path.home() / ".config" / "jotter"
-    elif sys.platform == "darwin":
-        base = Path.home() / "Library" / "Application Support" / "jotter"
-    elif sys.platform == "win32":
-        appdata = os.environ.get("APPDATA")
-        base = (Path(appdata) / "jotter") if appdata else (Path.home() / "AppData" / "Roaming" / "jotter")
-    else:
-        base = Path.home() / ".jotter"
-
+    base = get_config_dir()
     base.mkdir(parents=True, exist_ok=True)
     return base / "vaults.json"
 

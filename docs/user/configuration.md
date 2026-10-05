@@ -40,8 +40,10 @@ If no local `tasks` directory is found in the CWD, Jotter defaults to OS-specifi
 | Operating System | Default Data Directory                 | Default Configuration File                         | Default Log Directory   |
 | :--------------- | :------------------------------------- | :------------------------------------------------- | :---------------------- |
 | **Linux**        | `~/.local/share/jotter`                | `~/.config/jotter/jotter.yaml`                     | `~/.cache/jotter`       |
-| **macOS**        | `~/Library/Application Support/Jotter` | `~/Library/Application Support/jotter/jotter.yaml` | `~/Library/Logs/Jotter` |
-| **Windows**      | `%APPDATA%\Jotter`                     | `%APPDATA%\jotter\jotter.yaml`                     | `%LocalAppData%\Jotter` |
+| **macOS**        | `~/Library/Application Support/jotter/tasks` | `~/Library/Application Support/jotter/jotter.yaml` | `~/Library/Logs/Jotter` |
+| **Windows**      | `%APPDATA%\jotter\tasks`                     | `%APPDATA%\jotter\jotter.yaml`                     | `%LocalAppData%\Jotter` |
+
+> **Note:** On Windows and macOS the default vault lives inside the configuration folder (`jotter/tasks`), because those systems ignore letter case and a data folder named `Jotter` would be the same folder as `jotter`. Installs that already have a `vaults.json` keep the vault path stored in it.
 
 ---
 
