@@ -88,7 +88,7 @@ def create_app(
     app.state.db = conn
 
     # Initial DB sync from disk
-    SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_db_only()
+    SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_on_startup()
 
     # Global Domain Exception Handlers
     @app.exception_handler(EntityNotFoundError)

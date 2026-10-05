@@ -541,3 +541,38 @@ def test_sync_still_prunes_unchanged_expired_done_tasks(temp_dir, test_env, monk
     sync_svc.sync_db_only()
     assert reads == []  # unchanged file was not parsed...
     assert not path.exists()  # ...yet retention applied from the indexed dates
+
+
+def test_startup_sync_rebuilds_only_when_the_app_version_changes(temp_dir, test_env, monkeypatch):
+    from jotter.features.sync import service as sync_module
+
+    conn = get_db(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
+    _age_files(Path(temp_dir) / "default")
+
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
+    reads = _count_reads(monkeypatch)
+
+    sync_svc.sync_on_startup()  # first open of this index: full rebuild
+    assert len(reads) == 1
+
+    reads.clear()
+    sync_svc.sync_on_startup()  # same version: unchanged files are skipped
+    assert reads == []
+
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "1.1.0")
+    sync_svc.sync_on_startup()  # upgrade: rebuild again
+    assert len(reads) == 1
+
+
+def test_manual_sync_endpoint_rereads_every_file(test_env, monkeypatch):
+    client, temp_dir = test_env
+    client.post("/api/projects/default/tasks", json={"title": "One", "bucket": "todo"})
+    _age_files(Path(temp_dir) / "default")
+    client.post("/api/system/sync")
+    reads = _count_reads(monkeypatch)
+
+    assert client.post("/api/system/sync").status_code == 200
+    assert len(reads) == 1

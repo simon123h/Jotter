@@ -50,6 +50,11 @@ def init_schema(conn: sqlite3.Connection) -> None:
         done_clean_period INTEGER DEFAULT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS buckets (
         project_id TEXT NOT NULL,
         name TEXT NOT NULL,

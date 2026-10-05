@@ -66,7 +66,7 @@ def create_mcp_server(config: UserConfig | None = None, vault: str | None = None
 
     # Initial sync from disk
     sync_svc = SyncApplicationService.from_data_dir(cfg.data_dir, conn)
-    sync_svc.sync_db_only()
+    sync_svc.sync_on_startup()
 
     task_cmd_svc = TaskCommandService.from_data_dir(cfg.data_dir, conn)
     task_query_svc = TaskQueryService.from_conn(conn)
@@ -313,7 +313,7 @@ def create_mcp_server(config: UserConfig | None = None, vault: str | None = None
     @server.tool()
     def sync_database() -> dict[str, Any]:
         """Reconcile and sync disk Markdown files into the SQLite database index."""
-        synced_count = sync_svc.sync_db_only()
+        synced_count = sync_svc.sync_db_only(force=True)
         return {"status": "success", "synced_tasks": synced_count}
 
     # ==========================================

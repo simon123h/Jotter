@@ -157,7 +157,7 @@ class VaultApplicationService:
 
         # 3. Synchronize new vault SQLite index
         try:
-            SyncApplicationService.from_data_dir(vault.path, new_conn).sync_db_only()
+            SyncApplicationService.from_data_dir(vault.path, new_conn).sync_on_startup()
         except Exception as e:
             logger.warning("Reconciliation on vault switch failed: %s", e)
 

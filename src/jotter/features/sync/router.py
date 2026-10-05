@@ -34,7 +34,7 @@ def get_sync_service(
 @router.api_route("/sync", methods=["GET", "POST"])
 def trigger_sync(svc: SyncApplicationService = Depends(get_sync_service)):
     """Reconciles Markdown files on disk with the SQLite index."""
-    synced_count = svc.sync_db_only()
+    synced_count = svc.sync_db_only(force=True)
     return {"status": "success", "synced": synced_count}
 
 
@@ -90,7 +90,7 @@ def restore_project_commit(
     proj_dir = str(Path(data_dir) / project_id)
     try:
         git_restore(proj_dir, req.commitHash)
-        svc.sync_db_only()
+        svc.sync_db_only(force=True)
         return {"status": "ok", "message": f"Restored to {req.commitHash}"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -20,6 +20,15 @@ logger = logging.getLogger(__name__)
 RACY_MTIME_NS = 2_000_000_000
 
 
+def _app_version() -> str:
+    try:
+        from jotter._version import __version__
+
+        return __version__
+    except ImportError:
+        return "unknown"
+
+
 def _file_stat(path: Path) -> tuple[int, int] | None:
     """Returns (mtime_ns, size) for skipping an unchanged file on a later sync, or None if it cannot be trusted."""
     try:
@@ -185,6 +194,21 @@ class SyncApplicationService:
                     self.sqlite_task_repo.delete_task(indexed_id)
 
         return total_synced
+
+    def sync_on_startup(self) -> int:
+        """Reconciles the index when a vault is opened, rebuilding it completely after a Jotter upgrade.
+
+        The index is a disposable cache whose contents depend on how Jotter projects tasks, so a new version
+        re-reads every task file once instead of trusting the recorded file stats.
+        """
+        conn = self.sqlite_task_repo.conn
+        row = conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()
+        version = _app_version()
+        rebuild = row is None or row["value"] != version
+        synced = self.sync_db_only(force=rebuild)
+        if rebuild:
+            conn.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_version', ?)", (version,))
+        return synced
 
     def sync_task_files(self, changes: Iterable[tuple[str, str]]) -> bool:
         """Reconciles only the given (project_id, task_id) task files with SQLite.
