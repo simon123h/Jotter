@@ -16,8 +16,6 @@ Jotter is a **local-first, privacy-focused task management web application** des
 
 **Documentation**: [simon123h.github.io/Jotter](https://simon123h.github.io/Jotter/)
 
-![Jotter Kanban Board Screenshot](docs/assets/screenshot.png)
-
 ---
 
 ## 🌟 Key Features
