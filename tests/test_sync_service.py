@@ -776,3 +776,42 @@ def test_a_failed_schema_recreation_leaves_the_old_schema_intact(temp_dir, monke
     assert not conn.in_transaction
     assert _schema_objects(conn) == before
     assert conn.execute("SELECT id FROM projects").fetchone()["id"] == "p"
+
+
+def test_recreating_the_schema_works_while_another_connection_is_open(temp_dir):
+    from jotter.shared.db import create_sqlite_connection, recreate_schema
+
+    path = f"{temp_dir}/shared.db"
+    writer = create_sqlite_connection(path)
+    reader = create_sqlite_connection(path)
+    writer.execute("INSERT INTO projects (id, title, created_at) VALUES ('p', 'P', '2024-01-01')")
+    reader.execute("BEGIN")
+    reader.execute("SELECT count(*) FROM projects").fetchone()  # an open read transaction on the old schema
+
+    recreate_schema(writer)
+    reader.execute("COMMIT")
+
+    assert reader.execute("SELECT count(*) FROM projects").fetchone()[0] == 0
+    assert reader.execute("SELECT count(*) FROM tasks_fts").fetchone()[0] == 0
+
+
+def test_file_that_was_locked_during_the_rebuild_is_indexed_by_the_next_periodic_sync(temp_dir, monkeypatch):
+    from jotter.features.sync import service as sync_module
+    from jotter.features.tasks.disk_repo import DiskTaskRepository
+
+    vault = Path(temp_dir)
+    _write_task(vault)
+    conn = get_db(str(vault / "tasks.db"))
+    monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
+    original = DiskTaskRepository.read_task_file
+    monkeypatch.setattr(
+        DiskTaskRepository, "read_task_file", lambda self, *a, **k: (_ for _ in ()).throw(PermissionError("locked"))
+    )
+    sync_svc = SyncApplicationService.from_data_dir(vault, conn)
+    sync_svc.sync_on_startup()
+    assert conn.execute("SELECT count(*) FROM tasks").fetchone()[0] == 0  # dropped with the old index, not readable
+
+    monkeypatch.setattr(DiskTaskRepository, "read_task_file", original)
+    sync_svc.sync_db_only()  # what the periodic scan does
+
+    assert [r["id"] for r in conn.execute("SELECT id FROM tasks")] == ["a"]

@@ -218,14 +218,16 @@ class SyncApplicationService:
         version drops the schema, recreates it and re-reads every task file instead of migrating anything.
         """
         conn = self.sqlite_task_repo.conn
-        row = conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchone()
+        # fetchall() so the statement is finished: a cursor left half-read would make the DROP TABLE below fail
+        rows = conn.execute("SELECT value FROM meta WHERE key = 'index_version'").fetchall()
         version = _index_version()
-        rebuild = row is None or row["value"] != version
+        rebuild = not rows or rows[0]["value"] != version
         if rebuild:
             recreate_schema(conn)
         synced = self.sync_db_only(force=rebuild)
-        # A file that could not be read keeps its old row, so retry the rebuild at the next start instead of
-        # recording the version (unreadable content, as opposed to an I/O error, would fail again every time)
+        # A file that could not be read has no row after the rebuild (the old ones were dropped). Do not record the
+        # version, so the rebuild is retried at the next start, and the periodic sync indexes the file as soon as it
+        # can be read again. Unreadable content, as opposed to an I/O error, would fail again every time, so it counts.
         if rebuild and self.last_io_errors == 0:
             conn.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_version', ?)", (version,))
         return synced
