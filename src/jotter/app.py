@@ -52,6 +52,9 @@ def create_app(
         finally:
             if scheduler:
                 scheduler.stop()
+            keepalive = getattr(app.state, "db_keepalive", None)
+            if keepalive is not None:
+                keepalive.close()
 
     app = FastAPI(
         title="Jotter API",
@@ -76,12 +79,11 @@ def create_app(
     db_path = str(Path(cfg.data_dir) / "tasks.db")
     app.state.db_path = db_path
 
-    # Initial DB sync from disk (requests open their own connections, see get_db_conn)
+    # Initial DB sync from disk. Requests open their own connections (see get_db_conn); this one is only kept open,
+    # unused, so SQLite does not create and delete the -wal/-shm files (and checkpoint) on every request.
     conn = create_sqlite_connection(db_path)
-    try:
-        SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_on_startup()
-    finally:
-        conn.close()
+    app.state.db_keepalive = conn
+    SyncApplicationService.from_data_dir(cfg.data_dir, conn).sync_on_startup()
 
     # Global Domain Exception Handlers
     @app.exception_handler(EntityNotFoundError)

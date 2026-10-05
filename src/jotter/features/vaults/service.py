@@ -144,16 +144,17 @@ class VaultApplicationService:
         # 2. Point requests at the new vault's database (each request opens its own connection)
         new_db_path = str(Path(vault.path) / "tasks.db")
         app_state.db_path = new_db_path
+        old_keepalive = getattr(app_state, "db_keepalive", None)
 
-        # 3. Synchronize new vault SQLite index
+        # 3. Synchronize new vault SQLite index; keep this connection open so the WAL files stay in place
         try:
             new_conn = create_sqlite_connection(new_db_path)
-            try:
-                SyncApplicationService.from_data_dir(vault.path, new_conn).sync_on_startup()
-            finally:
-                new_conn.close()
+            app_state.db_keepalive = new_conn
+            SyncApplicationService.from_data_dir(vault.path, new_conn).sync_on_startup()
         except Exception as e:
             logger.warning("Reconciliation on vault switch failed: %s", e)
+        if old_keepalive is not None:
+            old_keepalive.close()
 
         # 4. Re-target the periodic sync and commit
         scheduler = getattr(app_state, "sync_scheduler", None)

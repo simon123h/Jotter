@@ -480,3 +480,10 @@ def test_parallel_requests_do_not_share_a_connection(temp_dir):
 
     assert errors == []
     assert total == 80
+
+
+def test_wal_files_stay_between_requests(test_env):
+    """A kept-open connection stops SQLite from recreating and checkpointing the WAL on every request."""
+    client, data_dir = test_env
+    assert client.get("/api/projects/default/tasks").status_code == 200
+    assert (Path(data_dir) / "tasks.db-wal").exists()

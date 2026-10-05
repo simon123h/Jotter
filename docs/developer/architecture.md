@@ -141,7 +141,7 @@ sequenceDiagram
     App-->>Main: FastAPI server ready to accept requests
 ```
 
-The startup connection is closed after the sync. Every API request opens its own SQLite connection (the `get_db_conn` dependency) and closes it when the request ends. Sync endpoints run on a thread pool, so one shared or thread-local connection would be used by several requests at once.
+The startup connection stays open, unused, so SQLite keeps its `-wal`/`-shm` files instead of recreating and checkpointing them on every request. Every API request opens its own SQLite connection (the `get_db_conn` dependency) and closes it when the request ends. Sync endpoints run on a thread pool, so one shared or thread-local connection would be used by several requests at once.
 
 ---
 
