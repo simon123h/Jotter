@@ -276,13 +276,6 @@ const onVaultSelected = async (event: Event) => {
       >
         <Settings2 class="w-3.5 h-3.5" />
       </button>
-      <span
-        v-if="activeVault?.is_git"
-        class="text-[9px] uppercase font-bold tracking-wider px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 shrink-0"
-        title="Git Versioned Vault"
-      >
-        Git
-      </span>
     </div>
 
     <!-- Sidebar Header -->
