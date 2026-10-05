@@ -1,4 +1,6 @@
+import logging
 import sys
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -24,6 +26,11 @@ try:
     from jotter._version import __version__ as app_version
 except ImportError:
     app_version = "3.0.0b1"
+
+logger = logging.getLogger(__name__)
+
+# Requests slower than this are logged, to diagnose environments with slow file access (e.g. antivirus on Windows)
+SLOW_REQUEST_SECONDS = 0.5
 
 
 def create_app(
@@ -99,7 +106,11 @@ def create_app(
     # Smart auto-commit: any successful data-changing API call marks the vault dirty
     @app.middleware("http")
     async def auto_commit_on_change(request: Request, call_next):
+        started = time.perf_counter()
         response = await call_next(request)
+        elapsed = time.perf_counter() - started
+        if elapsed > SLOW_REQUEST_SECONDS:
+            logger.warning("Slow request: %s %s took %.2fs", request.method, request.url.path, elapsed)
         path = request.url.path
         if (
             request.method in ("POST", "PUT", "PATCH", "DELETE")

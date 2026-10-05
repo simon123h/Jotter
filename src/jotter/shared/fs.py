@@ -22,9 +22,17 @@ def atomic_replace(src: Path | str, dst: Path | str, max_retries: int = 6, initi
     src_path = Path(src)
     dst_path = Path(dst)
 
+    started = time.perf_counter()
     for attempt in range(max_retries):
         try:
             src_path.replace(dst_path)
+            if attempt:
+                logger.warning(
+                    "atomic_replace of %s succeeded after %d retries (%.2fs): file was locked",
+                    dst_path,
+                    attempt,
+                    time.perf_counter() - started,
+                )
             return
         except PermissionError as e:
             if attempt == max_retries - 1:
