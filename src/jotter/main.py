@@ -15,6 +15,7 @@ if _src_dir not in sys.path:
 from jotter.app import app_version, create_app  # noqa: E402
 from jotter.config import load_config, normalize_log_level  # noqa: E402
 from jotter.features.vaults.registry import VaultRegistry  # noqa: E402
+from jotter.logging_setup import configure_logging  # noqa: E402
 from jotter.shared.exceptions import EntityNotFoundError  # noqa: E402
 
 
@@ -133,9 +134,13 @@ def main():
     display_host = "127.0.0.1" if config.host in ("0.0.0.0", "::") else config.host
     server_url = f"http://{display_host}:{config.port}"
 
+    log_file = configure_logging(config)
+
     print(f"Starting Jotter {app_version} server on {server_url}")
     active_vault = VaultRegistry(config_file=config.vaults_config_path, default_data_dir=config.data_dir).get_active()
     print(f"Active vault: {active_vault.name} ({active_vault.path})")
+    if log_file:
+        print(f"Log file: {log_file}")
 
     if config.open_browser:
         open_browser_delayed(server_url)

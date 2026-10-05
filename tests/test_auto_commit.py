@@ -212,3 +212,14 @@ def test_commit_vault_respects_auto_commit_setting(temp_dir):
     assert commit_vault(vault) is False
     SettingsApplicationService(str(vault)).update_settings(SettingsUpdate(autoCommit=True))
     assert commit_vault(vault) is True
+
+
+def test_slow_commit_is_logged_as_warning(tmp_path, caplog, monkeypatch):
+    import jotter.features.sync.auto_commit as module
+
+    monkeypatch.setattr(module, "SLOW_COMMIT_SECONDS", -1.0)
+    h = Harness(tmp_path)
+    h.scheduler.mark_dirty()
+    with caplog.at_level("WARNING", logger="jotter.features.sync.auto_commit"):
+        h.fire()
+    assert any("Auto-commit of" in r.message and r.levelname == "WARNING" for r in caplog.records)

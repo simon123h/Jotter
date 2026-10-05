@@ -17,6 +17,9 @@ logger = logging.getLogger(__name__)
 AUTO_COMMIT_COOLDOWN_SECONDS = 60.0
 AUTO_COMMIT_DEBOUNCE_SECONDS = 15.0
 
+# Commits slower than this are logged as warnings (slow git on machines with aggressive antivirus)
+SLOW_COMMIT_SECONDS = 1.0
+
 CommitFn = Callable[[Path], bool]
 TimerFactory = Callable[[float, Callable[[], None]], threading.Timer]
 
@@ -109,9 +112,9 @@ class AutoCommitScheduler:
                 committed = self._commit_fn(self.data_dir)
             except Exception as e:
                 logger.warning("Auto-commit failed for %s: %s", self.data_dir, e)
-            logger.debug(
-                "Auto-commit of %s took %.2fs (committed=%s)", self.data_dir, time.perf_counter() - started, committed
-            )
+            elapsed = time.perf_counter() - started
+            log = logger.warning if elapsed > SLOW_COMMIT_SECONDS else logger.debug
+            log("Auto-commit of %s took %.2fs (committed=%s)", self.data_dir, elapsed, committed)
             if not committed:
                 with self._lock:
                     self._last_commit_at = previous
