@@ -301,3 +301,45 @@ def test_commit_message_body_lists_task_titles_including_deleted(temp_dir):
         message
         == "jotter: 1 task created, 1 modified, 1 deleted\n\ncreated: Third\nmodified: First, renamed\ndeleted: Second"
     )
+
+
+def test_deleted_task_titles_are_read_in_a_single_git_process(temp_dir, monkeypatch):
+    from jotter.features.sync import git_adapter
+
+    setup_git_data_dir(temp_dir)
+    proj = Path(temp_dir) / "default"
+    proj.mkdir()
+    for i in range(5):
+        (proj / f"t{i}.md").write_text(f"---\ntitle: Täsk {i}\n---\n", encoding="utf-8")
+    assert commit_changes(temp_dir) is True
+    for i in range(5):
+        (proj / f"t{i}.md").unlink()
+
+    calls = []
+    original = git_adapter.subprocess.run
+    monkeypatch.setattr(
+        git_adapter.subprocess, "run", lambda cmd, *a, **k: calls.append(cmd[1]) or original(cmd, *a, **k)
+    )
+    assert commit_changes(temp_dir) is True
+
+    assert calls.count("cat-file") == 1
+    assert "show" not in calls
+    message = run_git(["log", "-1", "--pretty=%B"], cwd=temp_dir).stdout
+    assert [f"deleted: Täsk {i}" for i in range(5)] == [
+        line for line in message.splitlines() if line.startswith("deleted")
+    ]
+
+
+def test_read_committed_files_skips_missing_paths_and_keeps_binary_safe_content(temp_dir):
+    from jotter.features.sync.git_adapter import read_committed_files
+
+    setup_git_data_dir(temp_dir)
+    (Path(temp_dir) / "a.md").write_bytes("line1\r\nline2 ü\n".encode())
+    (Path(temp_dir) / "b.md").write_text("b", encoding="utf-8")
+    run_git(["config", "core.autocrlf", "false"], cwd=temp_dir)
+    assert commit_changes(temp_dir) is True
+
+    result = read_committed_files(temp_dir, ["a.md", "missing.md", "b.md", "bad\nname.md"])
+
+    assert result == {"a.md": "line1\r\nline2 ü\n", "b.md": "b"}
+    assert read_committed_files(temp_dir, []) == {}

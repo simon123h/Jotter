@@ -4,6 +4,7 @@ import re
 import subprocess
 from collections.abc import Callable
 from pathlib import Path, PurePosixPath
+from typing import Any
 
 import yaml
 
@@ -21,15 +22,21 @@ def run_git(
     cwd: str | Path | None = None,
     check: bool = True,
     env: dict[str, str] | None = None,
-) -> subprocess.CompletedProcess[str]:
-    """Runs a git command in the specified directory."""
+    input: bytes | None = None,
+    text: bool = True,
+) -> subprocess.CompletedProcess[Any]:
+    """Runs a git command in the specified directory.
+
+    With `text=False` the output (and `input`) are bytes, for content that must not be decoded or newline-translated.
+    """
     return subprocess.run(
         ["git", *args],
         cwd=str(cwd) if cwd else None,
         capture_output=True,
-        text=True,
+        text=text,
         check=check,
         env=env,
+        input=input,
     )
 
 
@@ -191,6 +198,30 @@ def describe_changes(name_status: str, read_file: Callable[[str, bool], str]) ->
     return "\n".join(lines)
 
 
+def read_committed_files(project_dir: str | Path, paths: list[str]) -> dict[str, str]:
+    """Reads the last committed content of several files with a single `git cat-file --batch` process.
+
+    Paths that are missing from HEAD (or cannot be requested) are left out of the result.
+    """
+    requested = [path for path in paths if "\n" not in path]
+    if not requested:
+        return {}
+    request = "".join(f"HEAD:{path}\n" for path in requested).encode("utf-8")
+    output = run_git(["cat-file", "--batch"], cwd=project_dir, check=True, input=request, text=False).stdout
+
+    contents: dict[str, str] = {}
+    pos = 0
+    for path in requested:
+        header_end = output.index(b"\n", pos)
+        header = output[pos:header_end].split()
+        pos = header_end + 1
+        if len(header) == 3 and header[1] == b"blob":  # "<sha> blob <size>", followed by the content and a newline
+            size = int(header[2])
+            contents[path] = output[pos : pos + size].decode("utf-8", errors="replace")
+            pos += size + 1
+    return contents
+
+
 def git_commit(project_dir: str | Path, message: str | None = None) -> bool:
     """Stages all changes and commits if there are changes. Does nothing outside a git repository.
 
@@ -210,10 +241,16 @@ def git_commit(project_dir: str | Path, message: str | None = None) -> bool:
 
     args = ["commit", "-m"]
     if message is None:
+        # Titles of deleted tasks come from HEAD, all in one process however many were deleted
+        deleted_tasks = [path for status, path in _parse_name_status(changes) if status == "D" and _is_task_file(path)]
+        try:
+            committed = read_committed_files(p, deleted_tasks[:MAX_LISTED_TASKS])
+        except Exception:
+            committed = {}  # titles are cosmetic: fall back to file names
 
         def read_file(path: str, deleted: bool) -> str:
             if deleted:
-                return run_git(["show", f"HEAD:{path}"], cwd=p, check=True).stdout
+                return committed[path]
             # After `add -A` the index equals the work tree, so no git process is needed
             return (p / path).read_text(encoding="utf-8")
 
