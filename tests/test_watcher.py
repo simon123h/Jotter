@@ -135,3 +135,16 @@ def test_sync_task_files_requires_full_sync_for_unknown_project(temp_dir):
         assert svc.sync_task_files({("default", "missing")}) is True
     finally:
         conn.close()
+
+
+def test_should_ignore_skips_filesystem_checks_for_ignored_paths(monkeypatch):
+    handler = MarkdownFileEventHandler(lambda: None)
+
+    def fail(path_str):
+        raise AssertionError("self-write detection must not run for paths ignored by name")
+
+    monkeypatch.setattr(MarkdownFileEventHandler, "is_recent_self_write", classmethod(lambda cls, p: fail(p)))
+    assert handler._should_ignore("/vault/.git/objects/ab/cdef") is True
+    assert handler._should_ignore("/vault/tasks.db-wal") is True
+    assert handler._should_ignore("/vault/default/.tmp_x.tmp") is True
+    assert handler._should_ignore("/vault/notes.txt") is True

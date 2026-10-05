@@ -79,10 +79,8 @@ class MarkdownFileEventHandler(FileSystemEventHandler):
         self._schedule_sync()
 
     def _should_ignore(self, path_str: str) -> bool:
-        # 1. Suppress recent self-writes from within this process (eliminates watcher echo)
-        if self.is_recent_self_write(path_str):
-            return True
-
+        # Cheap string checks first: self-write detection resolves the path against the filesystem, which is
+        # slow on Windows and would otherwise run for every event inside .git
         norm = path_str.replace("\\", "/").lower()
         parts = norm.split("/")
         # Ignore hidden / temporary files and directories
@@ -96,7 +94,8 @@ class MarkdownFileEventHandler(FileSystemEventHandler):
         path = Path(path_str)
         if path.suffix and path.suffix.lower() != ".md":
             return True
-        return False
+        # Suppress recent self-writes from within this process (eliminates watcher echo)
+        return self.is_recent_self_write(path_str)
 
     def _schedule_sync(self):
         with self._lock:
