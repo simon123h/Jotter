@@ -37,7 +37,7 @@ def test_env(temp_dir: str) -> Generator[tuple[TestClient, str], None, None]:
         port=8000,
         vaults_config_path=str(Path(temp_dir) / "vaults.json"),
     )
-    app = create_app(config, enable_watcher=False)
+    app = create_app(config, enable_background_sync=False)
 
     with TestClient(app) as client:
         yield client, temp_dir

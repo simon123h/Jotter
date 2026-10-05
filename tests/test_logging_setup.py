@@ -29,7 +29,7 @@ def test_log_level_applies_to_jotter_loggers_and_file(temp_dir):
     log_file = configure_logging(UserConfig(data_dir=temp_dir, log_dir=temp_dir, log_level="DEBUG"))
     assert log_file == Path(temp_dir) / LOG_FILE_NAME
 
-    logging.getLogger("jotter.features.sync.auto_commit").debug("debug-message")
+    logging.getLogger("jotter.features.sync.scheduler").debug("debug-message")
     _flush()
     assert "debug-message" in log_file.read_text(encoding="utf-8")
 

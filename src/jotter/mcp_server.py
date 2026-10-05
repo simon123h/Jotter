@@ -22,7 +22,7 @@ from jotter.features.buckets.schemas import BucketCreate
 from jotter.features.buckets.service import BucketApplicationService
 from jotter.features.projects.schemas import ProjectCreate
 from jotter.features.projects.service import ProjectApplicationService
-from jotter.features.sync import AutoCommitScheduler
+from jotter.features.sync import VaultSyncScheduler
 from jotter.features.sync.service import SyncApplicationService
 from jotter.features.tasks.command_service import TaskCommandService
 from jotter.features.tasks.disk_repo import DiskTaskRepository
@@ -74,15 +74,15 @@ def create_mcp_server(config: UserConfig | None = None, vault: str | None = None
     bucket_svc = BucketApplicationService.from_data_dir(cfg.data_dir, conn)
     project_svc = ProjectApplicationService.from_data_dir(cfg.data_dir, conn)
 
-    auto_commit = AutoCommitScheduler(cfg.data_dir)
+    sync_scheduler = VaultSyncScheduler(cfg.data_dir)
 
     def commits_changes(fn: Any) -> Any:
-        """Marks the vault dirty after a data-changing tool succeeds so auto-commit picks it up."""
+        """Marks the vault dirty after a data-changing tool succeeds so the next periodic cycle commits it."""
 
         @functools.wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = fn(*args, **kwargs)
-            auto_commit.mark_dirty()
+            sync_scheduler.mark_dirty()
             return result
 
         return wrapper
@@ -442,7 +442,8 @@ def create_mcp_server(config: UserConfig | None = None, vault: str | None = None
         task_entity = task_query_svc.sqlite_repo.get_by_id(project_id, task_id)
         return task_disk_repo.serialize_task(task_entity)
 
-    server.auto_commit = auto_commit  # flushed on shutdown by run_mcp_server
+    sync_scheduler.start()
+    server.sync_scheduler = sync_scheduler  # stopped (and flushed) on shutdown by run_mcp_server
     return server
 
 
@@ -452,7 +453,7 @@ def run_mcp_server(vault: str | None = None):
     try:
         server.run(transport="stdio")
     finally:
-        server.auto_commit.stop()
+        server.sync_scheduler.stop()
 
 
 if __name__ == "__main__":

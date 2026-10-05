@@ -2,7 +2,6 @@ import json
 import logging
 import sqlite3
 import time
-from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Self
@@ -72,6 +71,8 @@ class SyncApplicationService:
         self.sqlite_task_repo = sqlite_task_repo
         self.bucket_repo = bucket_repo
         self.project_repo = project_repo
+        # Task files re-read or removed from the index by the last sync_db_only(); zero means nothing changed
+        self.last_changes = 0
 
     @classmethod
     def from_data_dir(cls, data_dir: Path | str, conn: sqlite3.Connection) -> Self:
@@ -89,6 +90,7 @@ class SyncApplicationService:
         Task files whose size and modification time match what the index recorded are not read again,
         unless `force` is set (a full rebuild).
         """
+        self.last_changes = 0
         from jotter.features.projects.manifest import read_project_manifest
 
         # 1. Discover all projects on disk
@@ -160,11 +162,13 @@ class SyncApplicationService:
                         if _is_expired(known.bucket, known.updated_at, known.created_at, clean_period, now):
                             self.disk_task_repo.delete(p_id, file_path.stem)
                             self.sqlite_task_repo.delete_task(file_path.stem)
+                            self.last_changes += 1
                         else:
                             total_synced += 1
                         continue
 
                     task = self.disk_task_repo.read_task_file(file_path, default_project_id=p_id)
+                    self.last_changes += 1
 
                     # Check if done task should be pruned based on retention period
                     if _is_expired(task.bucket, task.updated_at, task.created_at, clean_period, now):
@@ -192,6 +196,7 @@ class SyncApplicationService:
                 # (a task could have been created concurrently while the disk snapshot was being processed)
                 if not self.disk_task_repo.exists(p_id, indexed_id):
                     self.sqlite_task_repo.delete_task(indexed_id)
+                    self.last_changes += 1
 
         return total_synced
 
@@ -209,36 +214,6 @@ class SyncApplicationService:
         if rebuild:
             conn.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_version', ?)", (version,))
         return synced
-
-    def sync_task_files(self, changes: Iterable[tuple[str, str]]) -> bool:
-        """Reconciles only the given (project_id, task_id) task files with SQLite.
-
-        Returns False without doing anything if a change belongs to a project SQLite does not know yet,
-        in which case the caller must run a full `sync_db_only()`.
-        """
-        changes = set(changes)
-        if not all(self.project_repo.exists(project_id) for project_id, _ in changes):
-            return False
-
-        known_buckets: dict[str, set[str]] = {}
-        for project_id, task_id in sorted(changes):
-            path = self.disk_task_repo.get_task_file_path(project_id, task_id)
-            if not path.is_file():
-                self.sqlite_task_repo.delete_task(task_id)
-                continue
-            try:
-                file_stat = _file_stat(path)  # before reading, so a concurrent change is never masked
-                task = self.disk_task_repo.read_task_file(path, default_project_id=project_id)
-                if project_id not in known_buckets:
-                    known_buckets[project_id] = {b.name for b in self.bucket_repo.get_all(project_id)}
-                if task.bucket not in known_buckets[project_id]:
-                    self.bucket_repo.save(project_id, Bucket.create(title=task.bucket.capitalize(), name=task.bucket))
-                    known_buckets[project_id].add(task.bucket)
-                self.sqlite_task_repo.upsert_task(task, file_stat)
-            except Exception as e:
-                # Keep the indexed task on transient read errors (e.g. a Windows file lock)
-                logger.warning("Failed to sync task file %s: %s", path, e)
-        return True
 
     def commit_changes(self) -> bool:
         """Commits pending changes in the vault (if it is a Git repository) and in project folders with their own repo.
