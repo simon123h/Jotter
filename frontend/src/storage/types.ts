@@ -1,6 +1,21 @@
 import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock, Vault } from '@/types';
 
+/** Features a runtime may not offer. The UI shows or hides them based on these flags, never on the platform. */
+export interface AdapterCapabilities {
+  /** Time blocking sidebar, settings and allocation. */
+  timeblocks: boolean;
+  /** 2D canvas board. */
+  canvas: boolean;
+  /** Git versioning: enabling it, the Time Machine. */
+  git: boolean;
+}
+
+export const FULL_CAPABILITIES: AdapterCapabilities = { timeblocks: true, canvas: true, git: true };
+
 export interface StorageAdapter {
+  /** Omitted flags default to supported. */
+  readonly capabilities?: Partial<AdapterCapabilities>;
+
   // Connection / status
   checkStatus(): Promise<boolean>;
 

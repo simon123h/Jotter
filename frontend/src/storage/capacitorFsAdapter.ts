@@ -57,6 +57,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 export class CapacitorFsStorageAdapter implements StorageAdapter {
   private vaultPath = 'Jotter';
   private vaultDirectory = Directory.Documents;
+  readonly capabilities = { timeblocks: false, canvas: false, git: false };
   private isInitialized = false;
   private registry: VaultRegistry | null = null;
   /** file:// URI of the storage root, resolved lazily so attachment URLs can be built synchronously. */

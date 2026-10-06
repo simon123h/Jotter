@@ -809,6 +809,8 @@ export class DemoStorageAdapter implements StorageAdapter {
   async updateDataDir(dataDir: string): Promise<{ status: string; data_dir: string }> {
     return { status: 'ok', data_dir: dataDir };
   }
+  readonly capabilities = { git: false };
+
   // The demo has a single built-in vault; managing vaults is not supported
   private demoVault(): Vault {
     return { id: 'demo', name: 'Demo', path: '/demo-local-storage', is_active: true, is_git: false, created_at: '' };
