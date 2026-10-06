@@ -351,4 +351,71 @@ describe('CapacitorFsStorageAdapter', () => {
       expect(task?.title).toBe('Synced Task 1');
     });
   });
+
+  describe('Vaults', () => {
+    beforeEach(async () => {
+      await Preferences.clear();
+      vi.mocked(Filesystem.readdir).mockResolvedValue({ files: [] } as any);
+    });
+
+    it('migrates the legacy vault path into a single active default vault', async () => {
+      await Preferences.set({ key: PREF_VAULT_PATH, value: 'Notes/Jotter' });
+      const vaults = await adapter.getVaults();
+      expect(vaults).toHaveLength(1);
+      expect(vaults[0]).toMatchObject({ id: 'default', name: 'Jotter', path: 'Notes/Jotter', is_active: true, is_git: false });
+    });
+
+    it('creates a vault folder and rejects duplicates and paths escaping Documents', async () => {
+      const created = await adapter.createVault({ name: 'Work', path: 'Work/Jotter', create_dir: true });
+      expect(created).toMatchObject({ id: 'work', path: 'Work/Jotter', is_active: false });
+      expect(Filesystem.mkdir).toHaveBeenCalledWith(expect.objectContaining({ path: 'Work/Jotter', recursive: true }));
+      await expect(adapter.createVault({ name: 'Again', path: 'Work/Jotter' })).rejects.toThrow('already exists');
+      await expect(adapter.createVault({ name: 'Evil', path: '../outside' })).rejects.toThrow('inside Documents');
+    });
+
+    it('refuses to open a folder that does not exist', async () => {
+      vi.mocked(Filesystem.readdir).mockRejectedValueOnce(new Error('missing'));
+      await expect(adapter.createVault({ name: 'Ghost', path: 'Ghost' })).rejects.toThrow('Folder not found');
+    });
+
+    it('switches vaults, rebuilds the index and keeps timeblocks and settings per vault', async () => {
+      await adapter.getVaults();
+      await adapter.saveSettings({ ...(await adapter.getSettings()), thresholdDays: 3 });
+      await db.timeblocks.put({ id: 'tb1', date: '2026-01-01', start_time: '09:00' } as any);
+      await db.projects.put({ id: 'old', title: 'Old', created_at: '' });
+      await adapter.createVault({ name: 'Work', path: 'Work', create_dir: true });
+
+      vi.mocked(Filesystem.readdir).mockImplementation((async ({ path }: { path: string }) =>
+        path === 'Work' ? { files: [{ name: 'newproj', type: 'directory' }] } : { files: [] }) as any);
+      vi.mocked(Filesystem.readFile).mockRejectedValue(new Error('none'));
+
+      const switched = await adapter.switchVault('work');
+      expect(switched.is_active).toBe(true);
+      expect((await adapter.getVaults()).find((v) => v.id === 'default')?.is_active).toBe(false);
+      expect((await db.projects.toArray()).map((p) => p.id)).toEqual(['newproj']);
+      expect(await db.timeblocks.count()).toBe(0);
+      expect((await adapter.getSettings()).thresholdDays).not.toBe(3);
+
+      await adapter.switchVault('default');
+      expect(await db.timeblocks.get('tb1')).toBeTruthy();
+      expect((await adapter.getSettings()).thresholdDays).toBe(3);
+    });
+
+    it('renames vaults and refuses to remove the last one', async () => {
+      await adapter.getVaults();
+      expect((await adapter.renameVault('default', 'Home')).name).toBe('Home');
+      await expect(adapter.deleteVault('default')).rejects.toThrow('last vault');
+    });
+
+    it('removes a vault registration and falls back to another vault when it was active', async () => {
+      await adapter.getVaults();
+      await adapter.createVault({ name: 'Work', path: 'Work', create_dir: true });
+      await adapter.switchVault('work');
+      await adapter.deleteVault('work');
+      const vaults = await adapter.getVaults();
+      expect(vaults.map((v) => v.id)).toEqual(['default']);
+      expect(vaults[0].is_active).toBe(true);
+      expect(Filesystem.rmdir).not.toHaveBeenCalled();
+    });
+  });
 });

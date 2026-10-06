@@ -9,6 +9,7 @@ import type {
   AppSettings,
   GitCommit,
   Timeblock,
+  Vault,
 } from '@/types';
 import type { StorageAdapter } from './types';
 import { appVersion } from '@/platform';
@@ -807,6 +808,19 @@ export class DemoStorageAdapter implements StorageAdapter {
   getSystemInfo = getSystemInfo;
   async updateDataDir(dataDir: string): Promise<{ status: string; data_dir: string }> {
     return { status: 'ok', data_dir: dataDir };
+  }
+  // The demo has a single built-in vault; managing vaults is not supported
+  private demoVault(): Vault {
+    return { id: 'demo', name: 'Demo', path: '/demo-local-storage', is_active: true, is_git: false, created_at: '' };
+  }
+  async getVaults(): Promise<Vault[]> {
+    return [this.demoVault()];
+  }
+  async getActiveVault(): Promise<Vault> {
+    return this.demoVault();
+  }
+  async switchVault(): Promise<Vault> {
+    return this.demoVault();
   }
   async getGitHistory(): Promise<GitCommit[]> {
     return [];

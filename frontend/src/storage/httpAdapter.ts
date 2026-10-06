@@ -10,6 +10,7 @@ import type {
   Timeblock,
   CanvasDocument,
   CanvasMeta,
+  Vault,
 } from '@/types';
 import { isServerOnline } from './connectionState';
 
@@ -363,5 +364,48 @@ export class HttpStorageAdapter implements StorageAdapter {
     });
     if (!res.ok) await this.handleResponseError(res, 'Failed to restore commit');
     return res.json();
+  }
+
+  // ==========================================
+  // VAULTS
+  // ==========================================
+
+  private async sendVault(url: string, method: string, body: unknown, fallback: string): Promise<Response> {
+    const res = await this.customFetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) await this.handleResponseError(res, fallback);
+    return res;
+  }
+
+  async getVaults(): Promise<Vault[]> {
+    const res = await this.customFetch(`${API_BASE}/vaults`);
+    if (!res.ok) await this.handleResponseError(res, 'Failed to load vaults');
+    return res.json();
+  }
+
+  async getActiveVault(): Promise<Vault> {
+    const res = await this.customFetch(`${API_BASE}/vaults/active`);
+    if (!res.ok) await this.handleResponseError(res, 'Failed to load active vault');
+    return res.json();
+  }
+
+  async createVault(payload: { name: string; path: string; id?: string; create_dir?: boolean }): Promise<Vault> {
+    return (await this.sendVault(`${API_BASE}/vaults`, 'POST', payload, 'Failed to create vault')).json();
+  }
+
+  async switchVault(vaultId: string): Promise<Vault> {
+    return (await this.sendVault(`${API_BASE}/vaults/switch`, 'POST', { vault_id: vaultId }, 'Failed to switch vault')).json();
+  }
+
+  async renameVault(vaultId: string, name: string): Promise<Vault> {
+    return (await this.sendVault(`${API_BASE}/vaults/${encodeURIComponent(vaultId)}`, 'PATCH', { name }, 'Failed to rename vault')).json();
+  }
+
+  async deleteVault(vaultId: string): Promise<void> {
+    const res = await this.customFetch(`${API_BASE}/vaults/${encodeURIComponent(vaultId)}`, { method: 'DELETE' });
+    if (!res.ok) await this.handleResponseError(res, 'Failed to delete vault');
   }
 }

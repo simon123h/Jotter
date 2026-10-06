@@ -263,63 +263,32 @@ export async function enableGitVersioning(): Promise<{ status: string; created: 
   return res.json();
 }
 
+function vaultAdapter() {
+  const adapter = storage();
+  if (!adapter.getVaults) throw new Error('Vaults are not supported in this runtime');
+  return adapter;
+}
+
 export async function getVaults(): Promise<Vault[]> {
-  const res = await fetch('/api/vaults');
-  if (!res.ok) throw new Error('Failed to load vaults');
-  return res.json();
+  return vaultAdapter().getVaults!();
 }
 
 export async function getActiveVault(): Promise<Vault> {
-  const res = await fetch('/api/vaults/active');
-  if (!res.ok) throw new Error('Failed to load active vault');
-  return res.json();
+  return vaultAdapter().getActiveVault!();
 }
 
 export async function createVault(payload: { name: string; path: string; id?: string; create_dir?: boolean }): Promise<Vault> {
-  const res = await fetch('/api/vaults', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Failed to create vault');
-  }
-  return res.json();
+  return vaultAdapter().createVault!(payload);
 }
 
 export async function switchVault(vaultId: string): Promise<Vault> {
-  const res = await fetch('/api/vaults/switch', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ vault_id: vaultId }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Failed to switch vault');
-  }
-  return res.json();
+  return vaultAdapter().switchVault!(vaultId);
 }
 
 export async function renameVault(vaultId: string, name: string): Promise<Vault> {
-  const res = await fetch(`/api/vaults/${encodeURIComponent(vaultId)}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Failed to rename vault');
-  }
-  return res.json();
+  return vaultAdapter().renameVault!(vaultId, name);
 }
 
 export async function deleteVault(vaultId: string): Promise<void> {
-  const res = await fetch(`/api/vaults/${encodeURIComponent(vaultId)}`, {
-    method: 'DELETE',
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Failed to delete vault');
-  }
+  return vaultAdapter().deleteVault!(vaultId);
 }

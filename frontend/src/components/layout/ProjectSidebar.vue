@@ -24,6 +24,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { useModalStore } from '@/stores/modal';
 import { useProjectStore } from '@/stores/project';
 import { useVaultStore } from '@/stores/vault';
+import { isNativeMobile } from '@/platform';
 import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
@@ -450,7 +451,7 @@ const onVaultSelected = async (event: Event) => {
 
       <!-- Enable Git versioning for non-Git vaults -->
       <button
-        v-else-if="activeVault"
+        v-else-if="activeVault && !isNativeMobile"
         @click="emit('enable-git')"
         :disabled="!gitInstalled || syncLoading"
         :title="gitInstalled ? t('commit.enableTooltip') : t('commit.gitMissing')"

@@ -1,4 +1,4 @@
-import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock } from '@/types';
+import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock, Vault } from '@/types';
 
 export interface StorageAdapter {
   // Connection / status
@@ -69,6 +69,13 @@ export interface StorageAdapter {
   syncSystem(): Promise<{ status: string; synchronized_tasks: number }>;
   getSystemInfo(): Promise<SystemInfo>;
   updateDataDir?(dataDir: string): Promise<{ status: string; data_dir: string; synced?: number }>;
+  // Vaults (optional: not every runtime can manage them)
+  getVaults?(): Promise<Vault[]>;
+  getActiveVault?(): Promise<Vault>;
+  createVault?(payload: { name: string; path: string; id?: string; create_dir?: boolean }): Promise<Vault>;
+  switchVault?(vaultId: string): Promise<Vault>;
+  renameVault?(vaultId: string, name: string): Promise<Vault>;
+  deleteVault?(vaultId: string): Promise<void>;
   getGitHistory(projectId?: string): Promise<GitCommit[]>;
   restoreCommit(commitHash: string, projectId?: string): Promise<{ synchronized_tasks: number }>;
 }

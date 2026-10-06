@@ -245,6 +245,7 @@ export const en = {
     folderPath: 'Folder path',
     pathPlaceholderOpen: '/path/to/existing/folder',
     pathPlaceholderCreate: '/path/to/new/folder',
+    pathPlaceholderMobile: 'Folder inside Documents, e.g. Work/Jotter',
     name: 'Name',
     namePlaceholder: 'Defaults to the folder name',
     open: 'Open vault',

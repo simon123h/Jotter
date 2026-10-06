@@ -88,5 +88,5 @@ Specifically:
   - TypeScript on mobile (`frontend/src/storage/capacitorFsAdapter.ts`).
 - The demo adapter is a third implementation of the data layer. It is small because it stores plain objects and does no Markdown parsing, but any new `StorageAdapter` method needs a (possibly trivial) demo implementation.
 - Any schema additions or new frontmatter properties must be verified in both Python unit tests (`pytest`) and TypeScript frontend tests (`vitest`).
-- A few operations in `api.ts` still bypass the adapter and call the backend directly with `fetch`: vault management, manual commits and enabling Git versioning. They are HTTP-only and unavailable in the Android and demo runtimes. Moving them behind the adapter interface is possible future work.
+- Vault management is part of the adapter interface as optional methods. The HTTP adapter forwards to `/api/vaults`; the Android adapter keeps a vault registry in Capacitor Preferences (folders below `Documents`, one rebuilt index and one settings/timeblock snapshot per vault); the demo exposes a single built-in vault. Enabling Git versioning and manual commits still bypass the adapter and are HTTP-only, since Android has no Git.
 - The demo adapter and the adapter factory are covered by unit tests, but the demo is excluded from coverage reporting.

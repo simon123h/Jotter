@@ -13,6 +13,7 @@ import type {
   Timeblock,
   CanvasDocument,
   CanvasMeta,
+  Vault,
 } from '@/types';
 import { db } from './dexieDb';
 import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectManifest, DEFAULT_MOBILE_BUCKETS } from './markdownParser';
@@ -23,6 +24,21 @@ export const PREF_VAULT_PATH = 'jotter_vault_path';
 export const PREF_VAULT_DIR = 'jotter_vault_dir'; // Directory enum name if relative
 export const PREF_SEEDED_DEFAULT = 'jotter_seeded_default_project';
 export const PREF_SETTINGS = 'jotter_app_settings';
+export const PREF_VAULTS = 'jotter_vaults';
+export const PREF_TIMEBLOCKS_PREFIX = 'jotter_timeblocks:';
+export const DEFAULT_VAULT_ID = 'default';
+
+interface StoredVault {
+  id: string;
+  name: string;
+  path: string;
+  created_at: string;
+}
+
+interface VaultRegistry {
+  vaults: StoredVault[];
+  active: string;
+}
 
 const DEFAULT_SETTINGS: AppSettings = {
   hideDoneColumn: true,
@@ -41,6 +57,7 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   private vaultPath = 'Jotter';
   private vaultDirectory = Directory.Documents;
   private isInitialized = false;
+  private registry: VaultRegistry | null = null;
 
   async checkStatus(): Promise<boolean> {
     return true; // Always online for local mobile storage
@@ -51,12 +68,196 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
     this.vaultDirectory = directory;
     await Preferences.set({ key: PREF_VAULT_PATH, value: path });
     await Preferences.set({ key: PREF_VAULT_DIR, value: directory });
+    const registry = await this.loadRegistry();
+    const active = registry.vaults.find((v) => v.id === registry.active);
+    if (active) {
+      active.path = path;
+      await this.saveRegistry(registry);
+    }
     await this.syncSystem();
   }
 
   async getVaultPath(): Promise<string> {
     const { value } = await Preferences.get({ key: PREF_VAULT_PATH });
     return value || 'Jotter';
+  }
+
+  // ==========================================
+  // VAULTS
+  // ==========================================
+
+  private async saveRegistry(registry: VaultRegistry): Promise<void> {
+    this.registry = registry;
+    await Preferences.set({ key: PREF_VAULTS, value: JSON.stringify(registry) });
+  }
+
+  /** Loads the vault registry, migrating the single legacy vault path on first use. */
+  private async loadRegistry(): Promise<VaultRegistry> {
+    if (this.registry) return this.registry;
+    let registry: VaultRegistry | null = null;
+    try {
+      const { value } = await Preferences.get({ key: PREF_VAULTS });
+      const parsed = value ? JSON.parse(value) : null;
+      if (parsed && Array.isArray(parsed.vaults) && parsed.vaults.length > 0) {
+        registry = parsed;
+      }
+    } catch {
+      // Corrupt registry: rebuild from the legacy path below
+    }
+    if (!registry) {
+      const { value: legacyPath } = await Preferences.get({ key: PREF_VAULT_PATH });
+      const path = legacyPath || this.vaultPath;
+      registry = {
+        vaults: [{ id: DEFAULT_VAULT_ID, name: path.split('/').pop() || path, path, created_at: new Date().toISOString() }],
+        active: DEFAULT_VAULT_ID,
+      };
+      await this.saveRegistry(registry);
+    }
+    if (!registry.vaults.some((v) => v.id === registry!.active)) {
+      registry.active = registry.vaults[0].id;
+    }
+    this.registry = registry;
+    return registry;
+  }
+
+  private toVault(stored: StoredVault, registry: VaultRegistry): Vault {
+    return { ...stored, is_active: stored.id === registry.active, is_git: false };
+  }
+
+  /** Vaults are plain folders below Documents; reject anything that could escape it. */
+  private normalizeVaultPath(path: string): string {
+    const clean = path
+      .trim()
+      .replace(/\\/g, '/')
+      .replace(/^\/+|\/+$/g, '');
+    if (!clean) throw new Error('Vault folder cannot be empty');
+    if (clean.split('/').some((seg) => seg === '..' || seg === '.' || seg === '')) {
+      throw new Error('Vault folder must be a path inside Documents');
+    }
+    return clean;
+  }
+
+  private settingsKey(registry: VaultRegistry): string {
+    return registry.active === DEFAULT_VAULT_ID ? 'app_settings' : `app_settings:${registry.active}`;
+  }
+
+  private prefSettingsKey(registry: VaultRegistry): string {
+    return registry.active === DEFAULT_VAULT_ID ? PREF_SETTINGS : `${PREF_SETTINGS}:${registry.active}`;
+  }
+
+  async getVaults(): Promise<Vault[]> {
+    const registry = await this.loadRegistry();
+    return registry.vaults.map((v) => this.toVault(v, registry));
+  }
+
+  async getActiveVault(): Promise<Vault> {
+    const registry = await this.loadRegistry();
+    return this.toVault(
+      registry.vaults.find((v) => v.id === registry.active)!,
+      registry
+    );
+  }
+
+  async createVault(payload: { name: string; path: string; id?: string; create_dir?: boolean }): Promise<Vault> {
+    const registry = await this.loadRegistry();
+    const path = this.normalizeVaultPath(payload.path);
+    const name = payload.name.trim() || path.split('/').pop()!;
+    if (registry.vaults.some((v) => v.path === path)) throw new Error('A vault for this folder already exists');
+
+    if (payload.create_dir) {
+      await Filesystem.mkdir({ path, directory: this.vaultDirectory, recursive: true }).catch(() => {
+        // Already exists
+      });
+    } else {
+      try {
+        await Filesystem.readdir({ path, directory: this.vaultDirectory });
+      } catch {
+        throw new Error('Folder not found in Documents');
+      }
+    }
+
+    const slug =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'vault';
+    let id = payload.id || slug;
+    for (let n = 2; registry.vaults.some((v) => v.id === id); n++) id = `${slug}-${n}`;
+
+    const stored: StoredVault = { id, name, path, created_at: new Date().toISOString() };
+    registry.vaults.push(stored);
+    await this.saveRegistry(registry);
+    return this.toVault(stored, registry);
+  }
+
+  async renameVault(vaultId: string, name: string): Promise<Vault> {
+    const registry = await this.loadRegistry();
+    const stored = registry.vaults.find((v) => v.id === vaultId);
+    if (!stored) throw new Error('Vault not found');
+    const clean = name.trim();
+    if (!clean) throw new Error('Vault name cannot be empty');
+    stored.name = clean;
+    await this.saveRegistry(registry);
+    return this.toVault(stored, registry);
+  }
+
+  async switchVault(vaultId: string): Promise<Vault> {
+    const registry = await this.loadRegistry();
+    const target = registry.vaults.find((v) => v.id === vaultId);
+    if (!target) throw new Error('Vault not found');
+    if (registry.active !== vaultId) {
+      await this.activateVault(registry, target);
+    }
+    return this.toVault(target, registry);
+  }
+
+  async deleteVault(vaultId: string): Promise<void> {
+    const registry = await this.loadRegistry();
+    if (!registry.vaults.some((v) => v.id === vaultId)) throw new Error('Vault not found');
+    if (registry.vaults.length <= 1) throw new Error('Cannot remove the last vault');
+
+    const removedActive = registry.active === vaultId;
+    const remaining = registry.vaults.filter((v) => v.id !== vaultId);
+    if (removedActive) {
+      // Nothing to snapshot: the removed vault's state is dropped with it
+      const next = remaining[0];
+      registry.vaults = remaining;
+      await this.activateVault(registry, next, false);
+    } else {
+      registry.vaults = remaining;
+      await this.saveRegistry(registry);
+    }
+    // Only the registration goes; the folder and its markdown files stay on disk
+    await Preferences.remove({ key: `${PREF_TIMEBLOCKS_PREFIX}${vaultId}` });
+    await Preferences.remove({ key: `${PREF_SETTINGS}:${vaultId}` });
+  }
+
+  /** Re-targets the adapter at another vault: swaps the per-vault caches and rebuilds the index from disk. */
+  private async activateVault(registry: VaultRegistry, target: StoredVault, snapshotCurrent = true): Promise<void> {
+    if (snapshotCurrent) {
+      // Timeblocks live only in the cache, so park them per vault
+      const timeblocks = await db.timeblocks.toArray();
+      await Preferences.set({ key: `${PREF_TIMEBLOCKS_PREFIX}${registry.active}`, value: JSON.stringify(timeblocks) });
+    }
+    await Promise.all([db.tasks.clear(), db.projects.clear(), db.buckets.clear(), db.timeblocks.clear(), db.settings.clear()]);
+
+    registry.active = target.id;
+    await this.saveRegistry(registry);
+    this.vaultPath = target.path;
+    this.vaultDirectory = Directory.Documents;
+    await Preferences.set({ key: PREF_VAULT_PATH, value: target.path });
+    await Preferences.set({ key: PREF_VAULT_DIR, value: this.vaultDirectory });
+
+    try {
+      const { value } = await Preferences.get({ key: `${PREF_TIMEBLOCKS_PREFIX}${target.id}` });
+      if (value) await db.timeblocks.bulkPut(JSON.parse(value));
+    } catch {
+      // Ignore unreadable snapshot
+    }
+    await Filesystem.mkdir({ path: target.path, directory: this.vaultDirectory, recursive: true }).catch(() => {
+      // Already exists
+    });
+    await this.syncSystem();
   }
 
   private async ensureInitialized(): Promise<void> {
@@ -77,9 +278,10 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
       // StoragePermission plugin is Android native only
     }
 
-    const { value: savedPath } = await Preferences.get({ key: PREF_VAULT_PATH });
-    if (savedPath) {
-      this.vaultPath = savedPath;
+    const registry = await this.loadRegistry();
+    const activeVault = registry.vaults.find((v) => v.id === registry.active);
+    if (activeVault) {
+      this.vaultPath = activeVault.path;
     }
     const { value: savedDir } = await Preferences.get({ key: PREF_VAULT_DIR });
     if (savedDir) {
@@ -474,18 +676,19 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   // ==========================================
 
   async getSettings(): Promise<AppSettings> {
-    const settingRow = await db.settings.get('app_settings');
+    const registry = await this.loadRegistry();
+    const settingRow = await db.settings.get(this.settingsKey(registry));
     if (settingRow && settingRow.value) {
       return { ...DEFAULT_SETTINGS, ...settingRow.value };
     }
 
     // Fallback to native Preferences if Dexie was cleared
     try {
-      const { value: prefValue } = await Preferences.get({ key: PREF_SETTINGS });
+      const { value: prefValue } = await Preferences.get({ key: this.prefSettingsKey(registry) });
       if (prefValue) {
         const parsed = JSON.parse(prefValue);
         // Restore to Dexie
-        await db.settings.put({ key: 'app_settings', value: parsed });
+        await db.settings.put({ key: this.settingsKey(registry), value: parsed });
         return { ...DEFAULT_SETTINGS, ...parsed };
       }
     } catch {
@@ -496,10 +699,11 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   }
 
   async saveSettings(settings: AppSettings): Promise<void> {
-    await db.settings.put({ key: 'app_settings', value: settings });
+    const registry = await this.loadRegistry();
+    await db.settings.put({ key: this.settingsKey(registry), value: settings });
     try {
       await Preferences.set({
-        key: PREF_SETTINGS,
+        key: this.prefSettingsKey(registry),
         value: JSON.stringify(settings),
       });
     } catch {

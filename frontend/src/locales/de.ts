@@ -247,6 +247,7 @@ export const de = {
     folderPath: 'Ordnerpfad',
     pathPlaceholderOpen: '/pfad/zum/vorhandenen/ordner',
     pathPlaceholderCreate: '/pfad/zum/neuen/ordner',
+    pathPlaceholderMobile: 'Ordner in Dokumente, z. B. Arbeit/Jotter',
     name: 'Name',
     namePlaceholder: 'Standardmäßig der Ordnername',
     open: 'Vault öffnen',
