@@ -5,17 +5,10 @@ create, update, move, and organize tasks and projects directly on the local boar
 """
 
 import functools
+import importlib
 import logging
 from pathlib import Path
-from typing import Any
-
-try:
-    from mcp.server.mcpserver import MCPServer
-except (ImportError, ModuleNotFoundError):
-    try:
-        from mcp.server.fastmcp import FastMCP as MCPServer  # type: ignore[attr-defined,no-redef]
-    except (ImportError, ModuleNotFoundError):
-        MCPServer = None  # type: ignore
+from typing import TYPE_CHECKING, Any
 
 from jotter.config import UserConfig, load_config
 from jotter.features.buckets.schemas import BucketCreate
@@ -34,6 +27,23 @@ from jotter.shared.db import create_sqlite_connection
 logger = logging.getLogger(__name__)
 
 
+def _load_server_class() -> Any:
+    """Finds the MCP server class across mcp releases, or None when the optional package is missing."""
+    for module_name, class_name in (("mcp.server.mcpserver", "MCPServer"), ("mcp.server.fastmcp", "FastMCP")):
+        try:
+            return getattr(importlib.import_module(module_name), class_name)
+        except (ImportError, AttributeError):
+            continue
+    return None
+
+
+if TYPE_CHECKING:
+    from mcp.server.mcpserver import MCPServer
+else:
+    # None when the optional 'mcp' package is missing; create_mcp_server then raises McpUnavailableError
+    MCPServer = _load_server_class()
+
+
 class McpUnavailableError(ImportError):
     """Raised when the optional 'mcp' package is not installed."""
 
@@ -47,8 +57,13 @@ MCP_MISSING_MESSAGE = (
 )
 
 
-def create_mcp_server(config: UserConfig | None = None, vault: str | None = None) -> Any:
-    """Creates and configures the Jotter MCP server with tools.
+def create_mcp_server(config: UserConfig | None = None, vault: str | None = None) -> MCPServer:
+    """Creates and configures the Jotter MCP server with tools (see `_create_server`)."""
+    return _create_server(config, vault)[0]
+
+
+def _create_server(config: UserConfig | None, vault: str | None) -> tuple[MCPServer, VaultSyncScheduler]:
+    """Builds the MCP server and starts its vault sync scheduler, which the caller must stop on shutdown.
 
     The server works on one vault: the one named by `vault` (id or name), or the registry's active vault.
     """
@@ -444,17 +459,16 @@ def create_mcp_server(config: UserConfig | None = None, vault: str | None = None
         return task_disk_repo.serialize_task(task_entity)
 
     sync_scheduler.start()
-    server.sync_scheduler = sync_scheduler  # type: ignore[attr-defined]  # stopped (and flushed) on shutdown by run_mcp_server
-    return server
+    return server, sync_scheduler
 
 
 def run_mcp_server(vault: str | None = None) -> None:
     """Main CLI entrypoint for running the MCP server over stdio."""
-    server = create_mcp_server(vault=vault)
+    server, sync_scheduler = _create_server(None, vault)
     try:
         server.run(transport="stdio")
     finally:
-        server.sync_scheduler.stop()
+        sync_scheduler.stop()  # also flushes pending changes
 
 
 if __name__ == "__main__":
