@@ -20,7 +20,7 @@ describe('getCapabilities', () => {
   });
 
   it('declares the real runtimes', () => {
-    expect(new HttpStorageAdapter().capabilities).toBeUndefined();
+    expect((new HttpStorageAdapter() as StorageAdapter).capabilities).toBeUndefined();
     expect(new CapacitorFsStorageAdapter().capabilities).toEqual({ timeblocks: false, canvas: false, git: false });
     expect(new DemoStorageAdapter().capabilities).toEqual({ git: false });
   });
