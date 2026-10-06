@@ -1,5 +1,29 @@
 @import 'tailwindcss';
 
+@theme {
+  --color-surface: #f7f7f5;
+  --color-card: #ffffff;
+  --color-ink: #1c1c1a;
+  --color-muted: #6b6b66;
+  --color-line: #e3e3de;
+  --color-accent: #3b6fd4;
+  --color-accent-ink: #ffffff;
+  --color-danger: #c0392b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: #131416;
+    --color-card: #1d1f23;
+    --color-ink: #ececea;
+    --color-muted: #9a9a95;
+    --color-line: #2c2f35;
+    --color-accent: #6c97ec;
+    --color-accent-ink: #0b1220;
+    --color-danger: #e5766a;
+  }
+}
+
 html,
 body,
 #app {
@@ -8,6 +32,29 @@ body,
 
 body {
   margin: 0;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#app {
   /* Keep content out of the notch and the gesture bar */
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  display: flex;
+  flex-direction: column;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
 }

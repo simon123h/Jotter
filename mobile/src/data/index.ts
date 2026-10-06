@@ -5,7 +5,7 @@ import { VaultRepository } from './repository';
 
 export type { Vault } from './vaults';
 export type { TaskFilter, NewTask, TaskUpdate, SyncResult } from './repository';
-export { VaultRepository } from './repository';
+export { VaultRepository, applyTaskFilter } from './repository';
 
 let repository: VaultRepository | null = null;
 

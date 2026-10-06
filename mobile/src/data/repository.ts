@@ -56,8 +56,18 @@ const isTaskFile = (entry: { name: string; type: string }) => {
   return entry.type === 'file' && lower.endsWith('.md') && !entry.name.startsWith('.') && lower !== 'index.md' && lower !== 'readme.md';
 };
 
+/** Keeps the tasks matching the filter, sorted by position. */
+export function applyTaskFilter<T extends Task>(tasks: T[], filter: TaskFilter): T[] {
+  const search = filter.search?.trim().toLowerCase();
+  return tasks
+    .filter((t) => !filter.bucket || t.bucket === filter.bucket)
+    .filter((t) => !filter.priority || t.priority === filter.priority)
+    .filter((t) => !filter.tags?.length || filter.tags.every((tag) => t.tags.includes(tag)))
+    .filter((t) => !search || `${t.title}\n${t.body}\n${t.tags.join(' ')}`.toLowerCase().includes(search))
+    .sort((a, b) => a.position - b.position);
+}
+
 function toTask(row: CachedTask): Task {
-   
   const { file, size, mtime, ...task } = row;
   return task;
 }
@@ -208,7 +218,7 @@ export class VaultRepository {
   async listProjects(): Promise<Project[]> {
     const { db } = this.current();
     const rows = await db.projects.toArray();
-     
+
     return rows.map(({ size, mtime, ...project }) => project).sort((a, b) => a.title.localeCompare(b.title));
   }
 
@@ -307,7 +317,7 @@ export class VaultRepository {
     const row = await db.projects.get(projectId);
     if (!row) return;
     const path = `${this.projectDir(projectId)}/index.md`;
-     
+
     const { size, mtime, ...project } = row;
     await this.fs.writeText(path, dumpProjectManifest(project, await this.listBuckets(projectId)));
     const stat = await this.fs.stat(path);
@@ -322,14 +332,7 @@ export class VaultRepository {
   async listTasks(projectId: string | null, filter: TaskFilter = {}): Promise<Task[]> {
     const { db } = this.current();
     const rows = projectId === null ? await db.tasks.toArray() : await db.tasks.where('project_id').equals(projectId).toArray();
-    const search = filter.search?.trim().toLowerCase();
-    return rows
-      .filter((t) => !filter.bucket || t.bucket === filter.bucket)
-      .filter((t) => !filter.priority || t.priority === filter.priority)
-      .filter((t) => !filter.tags?.length || filter.tags.every((tag) => t.tags.includes(tag)))
-      .filter((t) => !search || `${t.title}\n${t.body}\n${t.tags.join(' ')}`.toLowerCase().includes(search))
-      .sort((a, b) => a.position - b.position)
-      .map(toTask);
+    return applyTaskFilter(rows, filter).map(toTask);
   }
 
   async getTask(projectId: string, id: string): Promise<Task> {
