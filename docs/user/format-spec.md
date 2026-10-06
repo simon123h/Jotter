@@ -2,7 +2,7 @@
 
 Jotter is built on the philosophy that plain Markdown files are the single source of truth. Every task is stored as an individual `.md` file inside its project's folder (`<vault>/<project>/<task id>.md`). You can open, read, edit, and backup these files using any standard text editor, markdown tool, or version control system.
 
-This page documents the schema and syntax Jotter uses to serialize and parse tasks. The normative definition, which all Jotter apps (desktop and Android) are tested against, lives in the repository at [`spec/FORMAT.md`](https://github.com/simon123h/Jotter/blob/main/spec/FORMAT.md).
+This page documents the schema and syntax Jotter uses to serialize and parse tasks. The normative definition, which all Jotter apps (desktop and mobile) are tested against, lives in the repository at [`spec/FORMAT.md`](https://github.com/simon123h/Jotter/blob/main/spec/FORMAT.md).
 
 ---
 

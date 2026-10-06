@@ -13,7 +13,6 @@ import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
 import { parseChecklist } from '@/utils/checklist';
 import { getTaskCardTintStyle } from '@/utils/taskColors';
 import { triggerDoneParticleBurst } from '@/utils/effects';
-import { triggerMediumHaptic } from '@/utils/haptics';
 import TaskCardChecklist from '@/components/ui/task-card/TaskCardChecklist.vue';
 import TaskCardFooter from '@/components/ui/task-card/TaskCardFooter.vue';
 
@@ -64,7 +63,6 @@ const selectionCount = computed(() => selectionStore.selectionCount);
 
 // Long-press toggles selection on touch devices
 const { isLongPressTriggered, onTouchStart, onTouchMove, onTouchEnd, onTouchCancel } = useLongPress(() => {
-  triggerMediumHaptic();
   emit('toggle-select', props.task);
 });
 

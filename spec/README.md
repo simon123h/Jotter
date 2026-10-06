@@ -27,7 +27,7 @@ Each implementation must pass two checks per case:
 | Implementation | Runner | Command |
 | :-- | :-- | :-- |
 | Python backend | `tests/test_format_conformance.py` | `pytest tests/test_format_conformance.py` |
-| Android TypeScript parser | `frontend/src/storage/__tests__/formatConformance.spec.ts` | `npm --prefix frontend test -- formatConformance` |
+| TypeScript parser (Jotter Lite) | `packages/vault-format/src/formatConformance.spec.ts` | `npm --prefix packages/vault-format test` |
 
 A new implementation only needs a small runner that loads these files and compares the same normalized view.
 

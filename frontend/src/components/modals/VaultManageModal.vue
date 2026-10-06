@@ -3,7 +3,6 @@ import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { Database, FolderOpen, FolderPlus, Pencil, Trash2, Check, X, GitBranch } from '@lucide/vue';
 import { useVaultStore } from '@/stores/vault';
-import { isNativeMobile } from '@/platform';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { useToast } from '@/composables/useToast';
@@ -212,13 +211,7 @@ const remove = async (id: string, name: string) => {
           <input
             v-model="newPath"
             required
-            :placeholder="
-              isNativeMobile
-                ? t('vaults.pathPlaceholderMobile')
-                : mode === 'open'
-                  ? t('vaults.pathPlaceholderOpen')
-                  : t('vaults.pathPlaceholderCreate')
-            "
+            :placeholder="mode === 'open' ? t('vaults.pathPlaceholderOpen') : t('vaults.pathPlaceholderCreate')"
             class="w-full text-sm font-mono bg-theme-base border border-theme-border rounded-lg px-3 py-2 text-theme-text-main focus:outline-none focus:border-theme-accent"
             data-testid="vault-path-input"
             @input="onPathInput"

@@ -3,7 +3,6 @@ import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import Sortable from 'sortablejs';
 import type { Task } from '@/types';
 import { useI18n } from '@/composables/useI18n';
-import { triggerLightHaptic } from '@/utils/haptics';
 
 const { t } = useI18n();
 import TaskCard from '@/components/ui/TaskCard.vue';
@@ -177,7 +176,6 @@ const setupSortables = () => {
       onEnd: (evt: any) => {
         document.body.classList.remove('dragging-active');
         selectionStore.stopDragging();
-        triggerLightHaptic();
         const { item, to, from, oldIndex } = evt;
         if (!item || !to) return;
 

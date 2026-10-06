@@ -166,12 +166,6 @@ export async function getSystemInfo(): Promise<SystemInfo> {
   return storage().getSystemInfo();
 }
 
-export async function updateDataDir(dataDir: string): Promise<{ status: string; data_dir: string; synced?: number }> {
-  const adapter = storage();
-  if (!adapter.updateDataDir) throw new Error('Changing the data directory is not supported; use vaults instead');
-  return adapter.updateDataDir(dataDir);
-}
-
 export async function getGitHistory(projectId?: string): Promise<GitCommit[]> {
   return storage().getGitHistory(projectId);
 }

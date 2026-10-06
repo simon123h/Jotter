@@ -1,8 +1,10 @@
 # ADR 6: Pluggable Storage Adapters (Desktop HTTP, Android In-Process, Browser Demo)
 
-- **Status**: Accepted (rewritten 2026-10-04 to include the demo adapter and the adapter factory)
+- **Status**: Accepted; the Android runtime was removed on 2026-10-06 and is replaced by the separate mobile app of [ADR 0017](./0017-jotter-lite-mobile-app.md) (rewritten 2026-10-04 to include the demo adapter and the adapter factory)
 - **Date**: 2026-09-08
 - **Author**: Antigravity (AI Coding Assistant) & User
+
+> **Update 2026-10-06.** The `CapacitorFsStorageAdapter`, the Android project and the `isNativeMobile` and capability branches described below were removed from `frontend/`. Android is now served by Jotter Lite (`mobile/`), a separate app ([ADR 0017](./0017-jotter-lite-mobile-app.md)). The desktop frontend has two runtimes left, HTTP and the demo, behind the same `StorageAdapter`. The text below records the original decision.
 
 ## Context
 

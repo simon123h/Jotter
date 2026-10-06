@@ -2,7 +2,6 @@ import { ref, computed, watch } from 'vue';
 import { en } from '@/locales/en';
 import { de } from '@/locales/de';
 import { useSettingsStore } from '@/stores/settings';
-import { persistentStorage } from '@/storage/preferencesStorage';
 
 export type Locale = 'en' | 'de';
 
@@ -15,7 +14,7 @@ const getBrowserLocale = (): Locale => {
   return lang.toLowerCase().startsWith('de') ? 'de' : 'en';
 };
 
-const savedLocale = persistentStorage.getItem('jotter-lang') as Locale | null;
+const savedLocale = localStorage.getItem('jotter-lang') as Locale | null;
 const currentLocale = ref<Locale>(savedLocale && (savedLocale === 'en' || savedLocale === 'de') ? savedLocale : getBrowserLocale());
 
 export function useI18n() {
@@ -35,7 +34,7 @@ export function useI18n() {
     },
     set: (value: Locale) => {
       currentLocale.value = value;
-      persistentStorage.setItem('jotter-lang', value);
+      localStorage.setItem('jotter-lang', value);
       if (settingsStore) {
         settingsStore.language = value;
       }
@@ -49,7 +48,7 @@ export function useI18n() {
         if (newLang === 'en' || newLang === 'de') {
           if (currentLocale.value !== newLang) {
             currentLocale.value = newLang;
-            persistentStorage.setItem('jotter-lang', newLang);
+            localStorage.setItem('jotter-lang', newLang);
           }
         }
       },

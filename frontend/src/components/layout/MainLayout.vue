@@ -19,15 +19,12 @@ import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useToast } from '@/composables/useToast';
 import { useI18n } from '@/composables/useI18n';
 import { useTaskExport } from '@/composables/useTaskExport';
-import { useAndroidBackButton } from '@/composables/useAndroidBackButton';
 import { crossTabBus } from '@/utils/broadcast';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-
-useAndroidBackButton();
 
 const settingsStore = useSettingsStore();
 const projectStore = useProjectStore();

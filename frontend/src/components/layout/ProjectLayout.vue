@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getCapabilities } from '@/capabilities';
 import { ref, onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -445,8 +444,6 @@ const handleBulkConsolidate = async () => {
     toast.error(t('toasts.bulkConsolidateError', { message: err.message || err }));
   }
 };
-
-const capabilities = getCapabilities();
 </script>
 
 <template>
@@ -519,7 +516,7 @@ const capabilities = getCapabilities();
 
     <!-- Right Timeblock Sidebar Scoped to Project -->
     <transition :name="isMounted ? 'timeblock-sidebar' : ''">
-      <TimeblockSidebar v-if="isTimeblockOpen && capabilities.timeblocks" @close="toggleTimeblockSidebar" />
+      <TimeblockSidebar v-if="isTimeblockOpen" @close="toggleTimeblockSidebar" />
     </transition>
   </div>
 </template>

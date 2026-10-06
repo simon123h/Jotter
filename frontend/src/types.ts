@@ -7,9 +7,43 @@ export interface Vault {
   created_at: string;
 }
 
-export type { Task, Project, Bucket, BucketName } from '@jotter/vault-format';
-// The entities are defined next to the parser that reads and writes them
-import type { Task, Project, Bucket } from '@jotter/vault-format';
+export interface Project {
+  id: string;
+  title: string;
+  created_at: string;
+  done_clean_period?: number | null;
+}
+
+export interface Task {
+  id: string;
+  project_id: string;
+  title: string;
+  bucket: string;
+  position: number;
+  tags: string[];
+  attachments: string[];
+  body: string;
+  due_date?: string;
+  planned_date?: string;
+  priority?: string;
+  color?: string | null;
+  postponed_until?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type BucketName = string;
+
+export interface Bucket {
+  name: BucketName;
+  title: string;
+  subtitle: string;
+  position: number;
+  color?: string | null;
+  layout?: 'list' | 'grid-2' | 'grid-3';
+  max_tasks?: number | null;
+  is_default?: boolean;
+}
 
 export interface TaskFilterParams {
   bucket?: string;

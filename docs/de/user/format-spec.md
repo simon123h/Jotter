@@ -2,7 +2,7 @@
 
 Jotter basiert auf der Philosophie, dass einfache Markdown-Dateien die einzige Quelle der Wahrheit darstellen. Jede Aufgabe wird als eigene `.md`-Datei im Ordner ihres Projekts abgelegt (`<Vault>/<Projekt>/<Aufgaben-ID>.md`). Du kannst diese Dateien mit jedem herkömmlichen Texteditor, Markdown-Programm oder Versionskontrollsystem öffnen, lesen, bearbeiten und sichern.
 
-Diese Seite dokumentiert das Schema und die Syntax, die Jotter zum Speichern und Lesen von Aufgaben verwendet. Die verbindliche englische Definition, gegen die alle Jotter-Apps (Desktop und Android) getestet werden, liegt im Repository unter [`spec/FORMAT.md`](https://github.com/simon123h/Jotter/blob/main/spec/FORMAT.md).
+Diese Seite dokumentiert das Schema und die Syntax, die Jotter zum Speichern und Lesen von Aufgaben verwendet. Die verbindliche englische Definition, gegen die alle Jotter-Apps (Desktop und Mobil) getestet werden, liegt im Repository unter [`spec/FORMAT.md`](https://github.com/simon123h/Jotter/blob/main/spec/FORMAT.md).
 
 ---
 

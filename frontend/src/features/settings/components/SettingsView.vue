@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getCapabilities } from '@/capabilities';
 import { Settings, GitBranch } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import ThemeSettings from '@/features/settings/components/ThemeSettings.vue';
@@ -10,8 +9,6 @@ import TimeblockSettings from '@/features/settings/components/TimeblockSettings.
 import SystemInfoSettings from '@/features/settings/components/SystemInfoSettings.vue';
 
 const { t } = useI18n();
-
-const capabilities = getCapabilities();
 </script>
 
 <template>
@@ -57,11 +54,9 @@ const capabilities = getCapabilities();
 
     <div class="border-t border-theme-border/30"></div>
 
-    <template v-if="capabilities.timeblocks">
-      <TimeblockSettings />
+    <TimeblockSettings />
 
-      <div class="border-t border-theme-border/30"></div>
-    </template>
+    <div class="border-t border-theme-border/30"></div>
 
     <SystemInfoSettings />
   </div>

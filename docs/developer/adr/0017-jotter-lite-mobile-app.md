@@ -27,11 +27,11 @@ Build **Jotter Lite**, a separate mobile app that implements only the core, in a
   - themes and translations
 - **Out of scope**: list view and the other views, canvas, time blocking, Git and the Time Machine, the MCP server, iOS, and a browser build. Anything not listed needs an explicit decision before it is added.
 - **The vault format is the contract.** Lite and the desktop app agree on the files, not on code. Lite MUST keep what it does not understand: unknown frontmatter keys, unknown files and attachments (`spec/FORMAT.md`, section 5).
-- **One shared piece of code.** The markdown parser is the implementation of that contract, so it lives in `packages/vault-format` and is used by both apps. It is covered by the shared fixtures. Everything else is copied into `mobile/` first and extracted later only if it proves identical in both apps.
+- **The parser is its own package.** The TypeScript implementation of the format lives in `packages/vault-format` and is used by Jotter Lite. It is covered by the shared fixtures that the Python backend also passes. The desktop frontend does not use it: it talks to the Python backend, so nothing is shared between the two apps except the format itself.
 
 ### Transition
 
-The existing Android build stays until Lite covers the core scope. Then the Android platform, the Capacitor adapter and the mobile branches (`isNativeMobile`, the capability flags for mobile, mobile only settings) are removed from `frontend/`. That removal is the payoff of the split.
+The old Android build was removed from `frontend/` on 2026-10-06, once Lite covered the core scope (the release job now builds Lite): the Android project, the Capacitor storage adapter, the `isNativeMobile` and capability branches, haptics, the Android back button handling and the mobile only settings. That removal is the payoff of the split.
 
 ## Rationale
 
@@ -44,7 +44,7 @@ The existing Android build stays until Lite covers the core scope. Then the Andr
 
 - Two frontends to maintain. Features that exist in both (translations, task rules) are implemented twice until something is proven common and extracted.
 - A change to the format must update `spec/FORMAT.md` and the fixtures, and pass in the Python backend and `packages/vault-format`. That is the intended friction.
-- Releases gain a second APK. CI builds and tests `mobile/` separately.
+- The Android release artifact is now Jotter Lite (`jotter-lite-<tag>-android.apk`); CI builds and tests `mobile/` separately.
 
 ## Alternatives Considered
 
