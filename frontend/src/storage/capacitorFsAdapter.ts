@@ -480,6 +480,7 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
 
     // If project changed, move file
     if (updates.project_id && updates.project_id !== existing.project_id) {
+      await this.moveAttachmentDir(existing.project_id, updates.project_id, id);
       try {
         await Filesystem.deleteFile({
           path: `${this.vaultPath}/${existing.project_id}/${id}.md`,
@@ -509,6 +510,7 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   async deleteTask(projectId: string, id: string): Promise<void> {
     await this.ensureInitialized();
     await db.tasks.delete(id);
+    await this.removeAttachmentDir(projectId, id);
 
     try {
       await Filesystem.deleteFile({
@@ -526,6 +528,38 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
 
   private attachmentDir(projectId: string, taskId: string): string {
     return `${this.vaultPath}/${projectId}/attachments/${taskId}`;
+  }
+
+  /** Moves a task's attachment folder along with the task, replacing any stale folder at the target. */
+  private async moveAttachmentDir(fromProject: string, toProject: string, taskId: string): Promise<void> {
+    const from = this.attachmentDir(fromProject, taskId);
+    try {
+      await Filesystem.readdir({ path: from, directory: this.vaultDirectory });
+    } catch {
+      return; // No attachments to move
+    }
+    await this.removeAttachmentDir(toProject, taskId);
+    await Filesystem.mkdir({
+      path: `${this.vaultPath}/${toProject}/attachments`,
+      directory: this.vaultDirectory,
+      recursive: true,
+    }).catch(() => {
+      // Already exists
+    });
+    await Filesystem.rename({
+      from,
+      to: this.attachmentDir(toProject, taskId),
+      directory: this.vaultDirectory,
+      toDirectory: this.vaultDirectory,
+    });
+  }
+
+  private async removeAttachmentDir(projectId: string, taskId: string): Promise<void> {
+    try {
+      await Filesystem.rmdir({ path: this.attachmentDir(projectId, taskId), directory: this.vaultDirectory, recursive: true });
+    } catch {
+      // Folder may not exist
+    }
   }
 
   /** Keeps only the file name: no directories, no traversal. */

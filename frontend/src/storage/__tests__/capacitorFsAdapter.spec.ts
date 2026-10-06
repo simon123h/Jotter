@@ -12,6 +12,7 @@ vi.mock('@capacitor/filesystem', () => ({
     readFile: vi.fn(),
     deleteFile: vi.fn().mockResolvedValue({}),
     rmdir: vi.fn().mockResolvedValue({}),
+    rename: vi.fn().mockResolvedValue({}),
     readdir: vi.fn().mockResolvedValue({ files: [] }),
     getUri: vi.fn().mockResolvedValue({ uri: 'file:///storage/emulated/0/Documents' }),
   },
@@ -370,6 +371,37 @@ describe('CapacitorFsStorageAdapter', () => {
       expect(Filesystem.deleteFile).toHaveBeenCalledWith(
         expect.objectContaining({ path: `Jotter/${proj.id}/attachments/${task.id}/a.png` })
       );
+    });
+
+    it('removes the attachment folder when the task is deleted', async () => {
+      const { proj, task } = await makeTask();
+      await adapter.deleteTask(proj.id, task.id);
+      expect(Filesystem.rmdir).toHaveBeenCalledWith(
+        expect.objectContaining({ path: `Jotter/${proj.id}/attachments/${task.id}`, recursive: true })
+      );
+    });
+
+    it('moves the attachment folder when the task changes project', async () => {
+      const { proj, task } = await makeTask();
+      await adapter.uploadAttachment(proj.id, task.id, new File(['x'], 'a.png'));
+      vi.mocked(Filesystem.rename).mockClear();
+
+      await adapter.updateTask(proj.id, task.id, { project_id: 'other' });
+
+      expect(Filesystem.rename).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: `Jotter/${proj.id}/attachments/${task.id}`,
+          to: `Jotter/other/attachments/${task.id}`,
+        })
+      );
+    });
+
+    it('does not rename anything when the task has no attachment folder', async () => {
+      const { proj, task } = await makeTask();
+      vi.mocked(Filesystem.rename).mockClear();
+      vi.mocked(Filesystem.readdir).mockRejectedValueOnce(new Error('missing'));
+      await adapter.updateTask(proj.id, task.id, { project_id: 'other' });
+      expect(Filesystem.rename).not.toHaveBeenCalled();
     });
 
     it('builds a loadable URL for an attachment once initialized', async () => {
