@@ -91,12 +91,12 @@ Jotter resolves settings using the following priority (highest overrides lowest)
 - **Run on a custom port:**
 
   ```bash
-  ./jotter-server --port 8080
+  jotter --port 8080
   ```
 
 - **Use a specific config file in another location:**
   ```bash
-  ./jotter-server --config /etc/jotter/config.yaml
+  jotter --config /etc/jotter/config.yaml
   ```
 
 ---

@@ -90,12 +90,12 @@ Jotter wertet die Einstellungen in folgender Reihenfolge aus (höhere Priorität
 * **Auf einem benutzerdefinierten Port ausführen:**
 
   ```bash
-  ./jotter-server --port 8080
+  jotter --port 8080
   ```
 
 * **Eine bestimmte Konfigurationsdatei laden:**
   ```bash
-  ./jotter-server --config /etc/jotter/config.yaml
+  jotter --config /etc/jotter/config.yaml
   ```
 
 ---

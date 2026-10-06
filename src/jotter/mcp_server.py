@@ -43,8 +43,7 @@ MCP_MISSING_MESSAGE = (
     "Install it together with Jotter using the 'mcp' extra:\n"
     "  pipx:  pipx install --force 'jotter-app[mcp]'   (or: pipx inject jotter-app mcp)\n"
     "  pip:   pip install 'jotter-app[mcp]'\n"
-    "  uvx:   uvx --from 'jotter-app[mcp]' jotter mcp\n"
-    "The standalone executable does not include the MCP server; use one of the Python installs above."
+    "  uvx:   uvx --from 'jotter-app[mcp]' jotter mcp"
 )
 
 
