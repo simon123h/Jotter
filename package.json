@@ -51,6 +51,7 @@
   },
   "overrides": {
     "vite": "^6.4.2",
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "shell-quote": "^1.11.0"
   }
 }
