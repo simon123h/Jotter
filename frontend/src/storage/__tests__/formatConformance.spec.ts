@@ -10,21 +10,7 @@ import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectM
  * KNOWN_DIVERGENCES lists fixtures this implementation does not pass yet. Each one is a bug to fix: remove
  * its entry once fixed (a fixed case fails the suite until you do, so the list cannot rot).
  */
-const KNOWN_DIVERGENCES: Record<string, string> = {
-  'task/unknown-keys': 'unknown frontmatter keys are dropped on read, so they are lost on the next write (data loss)',
-  'task/full': 'leading blank lines of the body are kept instead of stripped',
-  'task/body-with-rules': 'leading blank lines of the body are kept instead of stripped',
-  'task/unicode': 'leading blank lines of the body are kept instead of stripped',
-  'task/legacy-keys': 'camelCase aliases (dueDate, plannedDate, postponedUntil) are not read',
-  'task/due-datetime-trimmed': 'a time part in a date is not dropped',
-  'task/due-keyword-moves-to-planned': 'a planning keyword in due_date is not moved to planned_date',
-  'task/attachments-json-string': 'attachments given as a JSON string are not read',
-  'task/no-frontmatter': 'title is taken from the first body line, the spec says `Untitled Task` (open question 3)',
-  'project/minimal': 'default buckets differ: no archive bucket, backlog is not the default bucket',
-  'project/no-frontmatter': 'default buckets differ: no archive bucket, backlog is not the default bucket',
-  'project/full': 'the project description is dropped',
-  'project/legacy-keys': 'doneCleanPeriod alias is not read',
-};
+const KNOWN_DIVERGENCES: Record<string, string> = {};
 
 // Vitest runs from frontend/
 const fixturesDir = `${resolve(process.cwd(), '../spec/fixtures')}/`;

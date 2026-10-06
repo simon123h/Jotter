@@ -12,6 +12,11 @@ export interface Project {
   title: string;
   created_at: string;
   done_clean_period?: number | null;
+  description?: string;
+  /** Markdown below the manifest's frontmatter, kept when the manifest is rewritten. */
+  body?: string;
+  /** Manifest keys this app does not know, kept when the manifest is rewritten. */
+  extra_frontmatter?: Record<string, unknown>;
 }
 
 export interface Task {
@@ -30,6 +35,8 @@ export interface Task {
   postponed_until?: string;
   created_at: string;
   updated_at: string;
+  /** Frontmatter keys this app does not know. Kept so that saving a task does not delete them. */
+  extra_frontmatter?: Record<string, unknown>;
 }
 
 export type BucketName = string;

@@ -1,0 +1,23 @@
+{
+  "description": "The status is the bucket's slug as written: readers do not change its case.",
+  "context": {
+    "file_stem": "status-case-preserved",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "status-case-preserved",
+    "project_id": "proj",
+    "title": "Status keeps its case",
+    "bucket": "In-Progress",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

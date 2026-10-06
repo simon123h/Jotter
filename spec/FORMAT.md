@@ -127,8 +127,9 @@ A **bucket** is a board column:
 
 These matter most, because several programs edit the same vault.
 
-1. **Unknown frontmatter keys survive.** A task or manifest read and written back MUST keep keys it does not
-   know, with their values (including nested lists and mappings). See the `unknown-keys` fixture.
+1. **Unknown frontmatter keys survive.** A task read and written back MUST keep keys it does not know, with
+   their values (including nested lists and mappings). See the `unknown-keys` fixture. A project manifest
+   SHOULD do the same, and MUST keep its body.
 2. **Unknown files survive.** An implementation MUST NOT delete or rewrite files it does not own: other
    folders, `.canvas` files, `timeblocks.json`, `settings.json`, attachments of other tasks, and so on.
 3. **No gratuitous rewrites.** Writers SHOULD NOT rewrite a file whose content would not change, so that sync
@@ -171,3 +172,5 @@ Decisions the fixtures currently record as they are, but that deserve an explici
    would let a newer vault be detected instead of silently misread.
 6. **Whitespace.** Implementations write slightly different whitespace around the body. Fixtures compare
    parsed values, not bytes. Is a byte-exact canonical form worth defining?
+7. **Unknown keys in `index.md`.** The Android parser keeps them when it rewrites a manifest, the Python backend
+   does not yet. The rule is a SHOULD until Python does, then it can become a MUST with a fixture.
