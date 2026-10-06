@@ -13,6 +13,7 @@ vi.mock('@capacitor/filesystem', () => ({
     deleteFile: vi.fn().mockResolvedValue({}),
     rmdir: vi.fn().mockResolvedValue({}),
     readdir: vi.fn().mockResolvedValue({ files: [] }),
+    getUri: vi.fn().mockResolvedValue({ uri: 'file:///storage/emulated/0/Documents' }),
   },
   Directory: {
     Documents: 'DOCUMENTS',
@@ -322,6 +323,59 @@ describe('CapacitorFsStorageAdapter', () => {
 
       const task = await db.tasks.get('task1');
       expect(task?.title).toBe('Synced Task 1');
+    });
+  });
+
+  describe('Attachments', () => {
+    beforeEach(async () => {
+      await Preferences.clear();
+    });
+
+    const makeTask = async () => {
+      const proj = await adapter.createProject('Attach Proj');
+      const task = await adapter.createTask(proj.id, { title: 'With files', bucket: 'todo' });
+      return { proj, task };
+    };
+
+    it('writes the file below the project attachments folder and records it on the task', async () => {
+      const { proj, task } = await makeTask();
+      const file = new File(['hello'], 'note.txt', { type: 'text/plain' });
+
+      const updated = await adapter.uploadAttachment(proj.id, task.id, file);
+
+      expect(updated.attachments).toEqual(['note.txt']);
+      expect(Filesystem.writeFile).toHaveBeenCalledWith(
+        expect.objectContaining({ path: `Jotter/${proj.id}/attachments/${task.id}/note.txt`, data: btoa('hello'), recursive: true })
+      );
+      expect((await adapter.getTask(proj.id, task.id)).attachments).toEqual(['note.txt']);
+    });
+
+    it('strips directories from uploaded file names and does not duplicate references', async () => {
+      const { proj, task } = await makeTask();
+      await adapter.uploadAttachment(proj.id, task.id, new File(['a'], '../../evil.txt'));
+      const again = await adapter.uploadAttachment(proj.id, task.id, new File(['b'], 'evil.txt'));
+      expect(again.attachments).toEqual(['evil.txt']);
+      expect(Filesystem.writeFile).toHaveBeenCalledWith(
+        expect.objectContaining({ path: `Jotter/${proj.id}/attachments/${task.id}/evil.txt` })
+      );
+    });
+
+    it('deletes the file and the reference', async () => {
+      const { proj, task } = await makeTask();
+      await adapter.uploadAttachment(proj.id, task.id, new File(['x'], 'a.png'));
+
+      const updated = await adapter.deleteAttachment(proj.id, task.id, 'a.png');
+
+      expect(updated.attachments).toEqual([]);
+      expect(Filesystem.deleteFile).toHaveBeenCalledWith(
+        expect.objectContaining({ path: `Jotter/${proj.id}/attachments/${task.id}/a.png` })
+      );
+    });
+
+    it('builds a loadable URL for an attachment once initialized', async () => {
+      const { proj, task } = await makeTask();
+      const url = adapter.getAttachmentUrl(proj.id, task.id, 'my photo.png');
+      expect(url).toContain(`Documents/Jotter/${proj.id}/attachments/${task.id}/my%20photo.png`);
     });
   });
 

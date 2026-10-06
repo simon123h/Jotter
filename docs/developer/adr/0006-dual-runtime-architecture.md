@@ -90,3 +90,4 @@ Specifically:
 - Any schema additions or new frontmatter properties must be verified in both Python unit tests (`pytest`) and TypeScript frontend tests (`vitest`).
 - Vault management is part of the adapter interface as optional methods. The HTTP adapter forwards to `/api/vaults`; the Android adapter keeps a vault registry in Capacitor Preferences (folders below `Documents`, one rebuilt index and one settings/timeblock snapshot per vault); the demo exposes a single built-in vault. Enabling Git versioning and manual commits still bypass the adapter and are HTTP-only, since Android has no Git.
 - The demo adapter and the adapter factory are covered by unit tests, but the demo is excluded from coverage reporting.
+- The Android runtime stores attachments in `<project>/attachments/<task id>/` like the desktop backend and serves them to the WebView through `Capacitor.convertFileSrc`. Time blocking and the canvas are not available on Android and are hidden there.

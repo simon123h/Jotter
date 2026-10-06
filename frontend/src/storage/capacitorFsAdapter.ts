@@ -1,6 +1,7 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import type { StorageAdapter } from './types';
 import type {
   Task,
@@ -58,6 +59,8 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   private vaultDirectory = Directory.Documents;
   private isInitialized = false;
   private registry: VaultRegistry | null = null;
+  /** file:// URI of the storage root, resolved lazily so attachment URLs can be built synchronously. */
+  private baseUri: string | null = null;
 
   async checkStatus(): Promise<boolean> {
     return true; // Always online for local mobile storage
@@ -286,6 +289,13 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
       // Ignore if already exists
     }
 
+    try {
+      const { uri } = await Filesystem.getUri({ path: '', directory: this.vaultDirectory });
+      this.baseUri = uri.replace(/\/+$/, '');
+    } catch {
+      // Attachment previews are unavailable without a base URI
+    }
+
     this.isInitialized = true;
     await this.syncSystem();
   }
@@ -507,6 +517,70 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
     } catch {
       // File may already be removed
     }
+  }
+
+  // ==========================================
+  // ATTACHMENTS
+  // ==========================================
+
+  private attachmentDir(projectId: string, taskId: string): string {
+    return `${this.vaultPath}/${projectId}/attachments/${taskId}`;
+  }
+
+  /** Keeps only the file name: no directories, no traversal. */
+  private safeAttachmentName(name: string): string {
+    const base = name.split(/[\\/]/).pop()?.trim() ?? '';
+    if (!base || base === '.' || base === '..') throw new Error('Invalid attachment file name');
+    return base;
+  }
+
+  private readFileAsBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'));
+      reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async uploadAttachment(projectId: string, taskId: string, file: File): Promise<Task> {
+    await this.ensureInitialized();
+    const task = await db.tasks.get(taskId);
+    if (!task) throw new Error(`Task ${taskId} not found`);
+    const filename = this.safeAttachmentName(file.name || 'attachment');
+
+    await Filesystem.writeFile({
+      path: `${this.attachmentDir(projectId, taskId)}/${filename}`,
+      directory: this.vaultDirectory,
+      data: await this.readFileAsBase64(file),
+      recursive: true,
+    });
+
+    const attachments = task.attachments.includes(filename) ? task.attachments : [...task.attachments, filename];
+    return this.updateTask(projectId, taskId, { attachments });
+  }
+
+  async deleteAttachment(projectId: string, taskId: string, filename: string): Promise<Task> {
+    await this.ensureInitialized();
+    const task = await db.tasks.get(taskId);
+    if (!task) throw new Error(`Task ${taskId} not found`);
+    const name = this.safeAttachmentName(filename);
+
+    try {
+      await Filesystem.deleteFile({
+        path: `${this.attachmentDir(projectId, taskId)}/${name}`,
+        directory: this.vaultDirectory,
+      });
+    } catch {
+      // File may already be gone; still drop the reference
+    }
+    return this.updateTask(projectId, taskId, { attachments: task.attachments.filter((a) => a !== name) });
+  }
+
+  getAttachmentUrl(projectId: string, taskId: string, filename: string): string {
+    if (this.baseUri === null) return '';
+    const segments = [...this.vaultPath.split('/'), projectId, 'attachments', taskId, filename].map(encodeURIComponent);
+    return Capacitor.convertFileSrc(`${this.baseUri}/${segments.join('/')}`);
   }
 
   private applyFilters(tasks: Task[], filters?: TaskFilterParams): Task[] {
