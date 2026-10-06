@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isNativeMobile } from '@/platform';
 import { ref } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import { useRoute } from 'vue-router';
@@ -219,6 +220,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
           <span class="hidden sm:inline">{{ t('views.review') || 'Review' }}</span>
         </router-link>
         <router-link
+          v-if="!isNativeMobile"
           :to="{ name: 'canvas', params: { projectId: activeProjectId }, query: $route.query }"
           class="hidden lg:flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
@@ -235,6 +237,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
 
       <!-- Timeblock Sidebar Toggle Button -->
       <button
+        v-if="!isNativeMobile"
         @click="emit('toggle-timeblock-sidebar')"
         class="timeblock-toggle-btn hidden md:flex items-center p-1.5 rounded transition-all cursor-pointer shrink-0 border"
         :class="

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isNativeMobile } from '@/platform';
 import { ref, onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -516,7 +517,7 @@ const handleBulkConsolidate = async () => {
 
     <!-- Right Timeblock Sidebar Scoped to Project -->
     <transition :name="isMounted ? 'timeblock-sidebar' : ''">
-      <TimeblockSidebar v-if="isTimeblockOpen" @close="toggleTimeblockSidebar" />
+      <TimeblockSidebar v-if="isTimeblockOpen && !isNativeMobile" @close="toggleTimeblockSidebar" />
     </transition>
   </div>
 </template>

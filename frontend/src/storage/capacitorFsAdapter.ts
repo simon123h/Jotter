@@ -25,8 +25,8 @@ export const PREF_VAULT_DIR = 'jotter_vault_dir'; // Directory enum name if rela
 export const PREF_SEEDED_DEFAULT = 'jotter_seeded_default_project';
 export const PREF_SETTINGS = 'jotter_app_settings';
 export const PREF_VAULTS = 'jotter_vaults';
-export const PREF_TIMEBLOCKS_PREFIX = 'jotter_timeblocks:';
 export const DEFAULT_VAULT_ID = 'default';
+const TIMEBLOCKS_UNSUPPORTED = 'Time blocking is not supported on mobile';
 
 interface StoredVault {
   id: string;
@@ -219,27 +219,20 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
     const removedActive = registry.active === vaultId;
     const remaining = registry.vaults.filter((v) => v.id !== vaultId);
     if (removedActive) {
-      // Nothing to snapshot: the removed vault's state is dropped with it
       const next = remaining[0];
       registry.vaults = remaining;
-      await this.activateVault(registry, next, false);
+      await this.activateVault(registry, next);
     } else {
       registry.vaults = remaining;
       await this.saveRegistry(registry);
     }
     // Only the registration goes; the folder and its markdown files stay on disk
-    await Preferences.remove({ key: `${PREF_TIMEBLOCKS_PREFIX}${vaultId}` });
     await Preferences.remove({ key: `${PREF_SETTINGS}:${vaultId}` });
   }
 
-  /** Re-targets the adapter at another vault: swaps the per-vault caches and rebuilds the index from disk. */
-  private async activateVault(registry: VaultRegistry, target: StoredVault, snapshotCurrent = true): Promise<void> {
-    if (snapshotCurrent) {
-      // Timeblocks live only in the cache, so park them per vault
-      const timeblocks = await db.timeblocks.toArray();
-      await Preferences.set({ key: `${PREF_TIMEBLOCKS_PREFIX}${registry.active}`, value: JSON.stringify(timeblocks) });
-    }
-    await Promise.all([db.tasks.clear(), db.projects.clear(), db.buckets.clear(), db.timeblocks.clear(), db.settings.clear()]);
+  /** Re-targets the adapter at another vault: drops the caches and rebuilds the index from disk. */
+  private async activateVault(registry: VaultRegistry, target: StoredVault): Promise<void> {
+    await Promise.all([db.tasks.clear(), db.projects.clear(), db.buckets.clear(), db.settings.clear()]);
 
     registry.active = target.id;
     await this.saveRegistry(registry);
@@ -248,12 +241,6 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
     await Preferences.set({ key: PREF_VAULT_PATH, value: target.path });
     await Preferences.set({ key: PREF_VAULT_DIR, value: this.vaultDirectory });
 
-    try {
-      const { value } = await Preferences.get({ key: `${PREF_TIMEBLOCKS_PREFIX}${target.id}` });
-      if (value) await db.timeblocks.bulkPut(JSON.parse(value));
-    } catch {
-      // Ignore unreadable snapshot
-    }
     await Filesystem.mkdir({ path: target.path, directory: this.vaultDirectory, recursive: true }).catch(() => {
       // Already exists
     });
@@ -715,69 +702,29 @@ export class CapacitorFsStorageAdapter implements StorageAdapter {
   // TIMEBLOCKS
   // ==========================================
 
-  async getTimeblocks(params?: { startDate?: string; endDate?: string }): Promise<Timeblock[]> {
-    await this.ensureInitialized();
-    let timeblocks = await db.timeblocks.toArray();
-    if (params?.startDate && params?.endDate) {
-      timeblocks = timeblocks.filter((t) => t.date >= params.startDate! && t.date <= params.endDate!);
-    }
-    return timeblocks.sort((a, b) => a.start_time.localeCompare(b.start_time));
+  // Time blocking is not available on mobile
+  async getTimeblocks(): Promise<Timeblock[]> {
+    return [];
   }
 
-  async getTimeblock(id: string): Promise<Timeblock> {
-    await this.ensureInitialized();
-    const tb = await db.timeblocks.get(id);
-    if (!tb) throw new Error('Timeblock not found');
-    return tb;
+  async getTimeblock(_id: string): Promise<Timeblock> {
+    throw new Error(TIMEBLOCKS_UNSUPPORTED);
   }
 
-  async createTimeblock(data: Omit<Timeblock, 'id'>): Promise<Timeblock> {
-    await this.ensureInitialized();
-    const id = `tb_${Date.now()}`;
-    const tb: Timeblock = { id, ...data, task_ids: data.task_ids || [] };
-    await db.timeblocks.put(tb);
-    return tb;
+  async createTimeblock(_data: Omit<Timeblock, 'id'>): Promise<Timeblock> {
+    throw new Error(TIMEBLOCKS_UNSUPPORTED);
   }
 
-  async updateTimeblock(id: string, updates: Partial<Timeblock>): Promise<Timeblock> {
-    await this.ensureInitialized();
-    const existing = await db.timeblocks.get(id);
-    if (!existing) throw new Error('Timeblock not found');
-    const updated: Timeblock = { ...existing, ...updates };
-    await db.timeblocks.put(updated);
-    return updated;
+  async updateTimeblock(_id: string, _updates: Partial<Timeblock>): Promise<Timeblock> {
+    throw new Error(TIMEBLOCKS_UNSUPPORTED);
   }
 
-  async deleteTimeblock(id: string): Promise<void> {
-    await this.ensureInitialized();
-    await db.timeblocks.delete(id);
+  async deleteTimeblock(_id: string): Promise<void> {
+    throw new Error(TIMEBLOCKS_UNSUPPORTED);
   }
 
-  async allocateTaskToTimeblock(timeblockId: string, taskId: string, action: 'add' | 'remove' = 'add'): Promise<Timeblock> {
-    await this.ensureInitialized();
-    const all = await db.timeblocks.toArray();
-    if (action === 'add') {
-      for (const tb of all) {
-        if (tb.task_ids.includes(taskId)) {
-          tb.task_ids = tb.task_ids.filter((t) => t !== taskId);
-          await db.timeblocks.put(tb);
-        }
-      }
-      const target = await db.timeblocks.get(timeblockId);
-      if (target) {
-        target.task_ids.push(taskId);
-        await db.timeblocks.put(target);
-        return target;
-      }
-    } else {
-      const target = await db.timeblocks.get(timeblockId);
-      if (target) {
-        target.task_ids = target.task_ids.filter((t) => t !== taskId);
-        await db.timeblocks.put(target);
-        return target;
-      }
-    }
-    throw new Error('Timeblock not found');
+  async allocateTaskToTimeblock(_timeblockId: string, _taskId: string, _action: 'add' | 'remove' = 'add'): Promise<Timeblock> {
+    throw new Error(TIMEBLOCKS_UNSUPPORTED);
   }
 
   // ==========================================

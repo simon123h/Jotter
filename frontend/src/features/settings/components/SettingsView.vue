@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isNativeMobile } from '@/platform';
 import { Settings, GitBranch } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import ThemeSettings from '@/features/settings/components/ThemeSettings.vue';
@@ -54,9 +55,11 @@ const { t } = useI18n();
 
     <div class="border-t border-theme-border/30"></div>
 
-    <TimeblockSettings />
+    <template v-if="!isNativeMobile">
+      <TimeblockSettings />
 
-    <div class="border-t border-theme-border/30"></div>
+      <div class="border-t border-theme-border/30"></div>
+    </template>
 
     <SystemInfoSettings />
   </div>

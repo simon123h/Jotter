@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
+import { isNativeMobile } from '@/platform';
 import MainLayout from '@/components/layout/MainLayout.vue';
 import ProjectLayout from '@/components/layout/ProjectLayout.vue';
 import { useUiStore, STICKY_VIEW_MODES, SESSION_VIEW_MODES } from '@/stores/ui';
@@ -174,6 +175,13 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
+});
+
+// The canvas is not available in the mobile app: send any canvas route (e.g. a remembered view) to the board
+router.beforeEach((to) => {
+  if (isNativeMobile && (to.name === 'canvas' || to.name === 'canvas-task')) {
+    return { name: 'board', params: { projectId: to.params.projectId }, query: to.query };
+  }
 });
 
 router.afterEach((to) => {

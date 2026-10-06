@@ -8,6 +8,7 @@ import {
   deleteTimeblock as apiDeleteTimeblock,
   allocateTaskToTimeblock as apiAllocateTask,
 } from '@/api';
+import { isNativeMobile } from '@/platform';
 import { useToast } from '@/composables/useToast';
 
 function matchesTimeblockDate(tb: Timeblock, targetDateStr: string): boolean {
@@ -48,6 +49,7 @@ export const useTimeblockStore = defineStore('timeblock', () => {
   });
 
   const fetchTimeblocks = async (startDate?: string, endDate?: string) => {
+    if (isNativeMobile) return;
     loading.value = true;
     error.value = null;
     try {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isNativeMobile } from '@/platform';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { LayoutGrid, Layers, Plus, Box, Folder, List, Grid2X2, Tag, Clock, CheckCircle2, X, ChevronRight } from '@lucide/vue';
@@ -150,6 +151,7 @@ const viewOptions = computed(() => [
 
       <!-- 5. Time Blocking Panel Toggle -->
       <button
+        v-if="!isNativeMobile"
         @click="handleToggleTimeblock"
         class="flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors flex-1"
         :class="isTimeblockActive ? 'text-theme-accent font-bold' : 'text-theme-text-muted hover:text-theme-text-main'"

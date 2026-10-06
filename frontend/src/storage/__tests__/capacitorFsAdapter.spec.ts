@@ -233,38 +233,11 @@ describe('CapacitorFsStorageAdapter', () => {
   });
 
   describe('Timeblock Operations', () => {
-    it('creates, updates, filters, and deletes timeblocks', async () => {
-      const tb = await adapter.createTimeblock({
-        title: 'Focus Sprint',
-        date: '2026-09-22',
-        start_time: '09:00',
-        end_time: '11:00',
-        task_ids: [],
-      });
-
-      expect(tb.id).toBeDefined();
-      expect(tb.title).toBe('Focus Sprint');
-
-      const single = await adapter.getTimeblock(tb.id);
-      expect(single.title).toBe('Focus Sprint');
-
-      const rangeList = await adapter.getTimeblocks({
-        startDate: '2026-09-20',
-        endDate: '2026-09-25',
-      });
-      expect(rangeList).toHaveLength(1);
-
-      // Allocate task
-      const withAlloc = await adapter.allocateTaskToTimeblock(tb.id, 'task-123', 'add');
-      expect(withAlloc.task_ids).toContain('task-123');
-
-      // Remove task
-      const withoutAlloc = await adapter.allocateTaskToTimeblock(tb.id, 'task-123', 'remove');
-      expect(withoutAlloc.task_ids).not.toContain('task-123');
-
-      // Delete timeblock
-      await adapter.deleteTimeblock(tb.id);
-      await expect(adapter.getTimeblock(tb.id)).rejects.toThrow();
+    it('is not supported on mobile: lists nothing and rejects writes', async () => {
+      expect(await adapter.getTimeblocks()).toEqual([]);
+      await expect(
+        adapter.createTimeblock({ title: 'Focus', date: '2026-09-22', start_time: '09:00', end_time: '11:00', task_ids: [] })
+      ).rejects.toThrow('not supported');
     });
   });
 
@@ -378,10 +351,9 @@ describe('CapacitorFsStorageAdapter', () => {
       await expect(adapter.createVault({ name: 'Ghost', path: 'Ghost' })).rejects.toThrow('Folder not found');
     });
 
-    it('switches vaults, rebuilds the index and keeps timeblocks and settings per vault', async () => {
+    it('switches vaults, rebuilds the index and keeps settings per vault', async () => {
       await adapter.getVaults();
       await adapter.saveSettings({ ...(await adapter.getSettings()), thresholdDays: 3 });
-      await db.timeblocks.put({ id: 'tb1', date: '2026-01-01', start_time: '09:00' } as any);
       await db.projects.put({ id: 'old', title: 'Old', created_at: '' });
       await adapter.createVault({ name: 'Work', path: 'Work', create_dir: true });
 
@@ -393,11 +365,9 @@ describe('CapacitorFsStorageAdapter', () => {
       expect(switched.is_active).toBe(true);
       expect((await adapter.getVaults()).find((v) => v.id === 'default')?.is_active).toBe(false);
       expect((await db.projects.toArray()).map((p) => p.id)).toEqual(['newproj']);
-      expect(await db.timeblocks.count()).toBe(0);
       expect((await adapter.getSettings()).thresholdDays).not.toBe(3);
 
       await adapter.switchVault('default');
-      expect(await db.timeblocks.get('tb1')).toBeTruthy();
       expect((await adapter.getSettings()).thresholdDays).toBe(3);
     });
 
