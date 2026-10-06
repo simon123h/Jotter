@@ -216,3 +216,7 @@ jobs:
         run: |
           npm run build:frontend
           python3 -m build
+
+      - name: Build Jotter Lite Web Assets
+        run: |
+          cd mobile && npm run build
