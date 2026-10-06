@@ -109,6 +109,7 @@ describe('capturing and editing tasks', () => {
     await find('fab').trigger('click');
     await type('quick-add-input', 'Buy milk');
     await submit('quick-add-input');
+    expect(find('quick-add-added').text()).toContain('Buy milk');
     await find('sheet-backdrop').trigger('click');
     await settle();
     expect(all('task-card')).toHaveLength(1);

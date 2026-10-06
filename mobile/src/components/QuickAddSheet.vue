@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { Check } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -12,6 +13,8 @@ const ui = useUiStore();
 const title = ref('');
 const input = ref<HTMLInputElement | null>(null);
 const busy = ref(false);
+// What was added in this sheet, so the next capture can follow without leaving
+const added = ref<string[]>([]);
 
 onMounted(() => input.value?.focus());
 
@@ -22,7 +25,7 @@ async function submit() {
   try {
     await app.addTask({ title: clean, bucket: props.bucket ?? undefined });
     title.value = '';
-    ui.showToast(clean);
+    added.value.unshift(clean);
     // Stay open for the next one: quick capture is the point of this sheet
     input.value?.focus();
   } catch (err) {
@@ -53,5 +56,10 @@ async function submit() {
         {{ t('task.add') }}
       </button>
     </form>
+    <ul v-if="added.length" class="space-y-1 pb-2" data-testid="quick-add-added">
+      <li v-for="(item, i) in added" :key="i" class="flex items-center gap-2 text-sm text-muted">
+        <Check class="h-4 w-4 shrink-0 text-accent" /><span class="truncate">{{ item }}</span>
+      </li>
+    </ul>
   </BottomSheet>
 </template>

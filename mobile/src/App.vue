@@ -74,7 +74,7 @@ watch(
 
   <div
     v-if="ui.toast"
-    class="pointer-events-none fixed bottom-24 left-1/2 z-50 max-w-[85%] -translate-x-1/2 truncate rounded-full bg-ink px-4 py-2 text-sm text-surface shadow-lg"
+    class="pointer-events-none fixed left-1/2 top-4 z-50 max-w-[85%] -translate-x-1/2 truncate rounded-full bg-ink px-4 py-2 text-sm text-surface shadow-lg"
     role="status"
     data-testid="toast"
   >

@@ -101,7 +101,7 @@ async function removeAttachment(name: string) {
 </script>
 
 <template>
-  <BottomSheet v-if="task" :title="t('task.title')" full @close="close">
+  <BottomSheet v-if="task" :title="t('task.heading')" full @close="close">
     <template #actions>
       <button
         class="rounded-full p-2 text-danger active:bg-line"
