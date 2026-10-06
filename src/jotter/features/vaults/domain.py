@@ -19,7 +19,7 @@ class Vault:
     is_active: bool = False
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.id or not str(self.id).strip():
             raise ValidationError("Vault id cannot be empty")
         if not self.name or not str(self.name).strip():

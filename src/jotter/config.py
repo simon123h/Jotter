@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 import yaml
 from pydantic import BaseModel
@@ -155,7 +156,7 @@ def save_user_config(config: UserConfig, target_path: Path | None = None) -> Pat
     target_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Read existing content if available to preserve extra fields
-    existing_data: dict = {}
+    existing_data: dict[str, Any] = {}
     if target_path.is_file():
         try:
             with open(target_path, encoding="utf-8") as f:

@@ -13,7 +13,7 @@ try:
     from mcp.server.mcpserver import MCPServer
 except (ImportError, ModuleNotFoundError):
     try:
-        from mcp.server.fastmcp import FastMCP as MCPServer
+        from mcp.server.fastmcp import FastMCP as MCPServer  # type: ignore[attr-defined,no-redef]
     except (ImportError, ModuleNotFoundError):
         MCPServer = None  # type: ignore
 
@@ -297,11 +297,11 @@ def create_mcp_server(config: UserConfig | None = None, vault: str | None = None
         """Move a task to a different Kanban column (e.g. 'todo', 'in-progress', 'done') or across projects."""
         dest_project = target_project_id or project_id
         if dest_project != project_id:
-            req = TaskUpdate(project_id=dest_project, bucket=bucket, position=position)
-            moved = task_cmd_svc.update_task(project_id, task_id, req)
+            update_req = TaskUpdate(project_id=dest_project, bucket=bucket, position=position)
+            moved = task_cmd_svc.update_task(project_id, task_id, update_req)
         else:
-            req = TaskMove(bucket=bucket, position=position)
-            moved = task_cmd_svc.move_task(project_id, task_id, req)
+            move_req = TaskMove(bucket=bucket, position=position)
+            moved = task_cmd_svc.move_task(project_id, task_id, move_req)
         return moved.model_dump()
 
     @server.tool()
@@ -444,11 +444,11 @@ def create_mcp_server(config: UserConfig | None = None, vault: str | None = None
         return task_disk_repo.serialize_task(task_entity)
 
     sync_scheduler.start()
-    server.sync_scheduler = sync_scheduler  # stopped (and flushed) on shutdown by run_mcp_server
+    server.sync_scheduler = sync_scheduler  # type: ignore[attr-defined]  # stopped (and flushed) on shutdown by run_mcp_server
     return server
 
 
-def run_mcp_server(vault: str | None = None):
+def run_mcp_server(vault: str | None = None) -> None:
     """Main CLI entrypoint for running the MCP server over stdio."""
     server = create_mcp_server(vault=vault)
     try:

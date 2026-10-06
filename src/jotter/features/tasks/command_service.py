@@ -18,6 +18,7 @@ from jotter.features.tasks.schemas import (
     TaskUpdate,
 )
 from jotter.shared.exceptions import EntityNotFoundError
+from jotter.shared.unset import UNSET
 
 
 class TaskCommandService:
@@ -115,11 +116,11 @@ class TaskCommandService:
         task.update_details(
             title=req.title if "title" in fields_set else None,
             body=req.body if "body" in fields_set else None,
-            priority=req.priority if "priority" in fields_set else ...,
-            due_date=req.due_date if "due_date" in fields_set else ...,
-            planned_date=req.planned_date if "planned_date" in fields_set else ...,
-            color=req.color if "color" in fields_set else ...,
-            postponed_until=req.postponed_until if "postponed_until" in fields_set else ...,
+            priority=req.priority if "priority" in fields_set else UNSET,
+            due_date=req.due_date if "due_date" in fields_set else UNSET,
+            planned_date=req.planned_date if "planned_date" in fields_set else UNSET,
+            color=req.color if "color" in fields_set else UNSET,
+            postponed_until=req.postponed_until if "postponed_until" in fields_set else UNSET,
             tags=req.tags if "tags" in fields_set else None,
         )
         if "attachments" in fields_set and req.attachments is not None:

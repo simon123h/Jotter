@@ -7,6 +7,7 @@ from typing import Self
 
 from jotter.shared.exceptions import ValidationError
 from jotter.shared.ulid import generate_ulid
+from jotter.shared.unset import UNSET, Unset
 
 
 class Priority(str, Enum):
@@ -34,7 +35,7 @@ class Priority(str, Enum):
 class TaskId:
     value: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.value or not str(self.value).strip():
             raise ValidationError("TaskId cannot be empty")
         val = str(self.value).strip()
@@ -122,7 +123,7 @@ class DueDate:
 class Tag:
     value: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         clean = self.value.strip().lstrip("#").lower()
         if not clean or " " in clean:
             raise ValidationError(f"Invalid tag: '{self.value}'")
@@ -151,7 +152,7 @@ class Task:
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.project_id or not self.project_id.strip():
             raise ValidationError("Task project_id cannot be empty")
         if not self.title or not self.title.strip():
@@ -218,11 +219,11 @@ class Task:
         self,
         title: str | None = None,
         body: str | None = None,
-        priority: str | None = ...,
-        due_date: str | None = ...,
-        planned_date: str | None = ...,
-        color: str | None = ...,
-        postponed_until: str | None = ...,
+        priority: str | Unset | None = UNSET,
+        due_date: str | Unset | None = UNSET,
+        planned_date: str | Unset | None = UNSET,
+        color: str | Unset | None = UNSET,
+        postponed_until: str | Unset | None = UNSET,
         tags: list[str] | None = None,
     ) -> None:
         if title is not None:
@@ -234,19 +235,19 @@ class Task:
         if body is not None:
             self.body = body
 
-        if priority is not ...:
+        if priority is not UNSET:
             self.priority = Priority.from_str(priority)
 
-        if due_date is not ...:
+        if due_date is not UNSET:
             self.due_date = DueDate.from_str(due_date)
 
-        if planned_date is not ...:
+        if planned_date is not UNSET:
             self.planned_date = DueDate.from_str(planned_date)
 
-        if color is not ...:
+        if color is not UNSET:
             self.color = color.strip() if color else None
 
-        if postponed_until is not ...:
+        if postponed_until is not UNSET:
             self.postponed_until = DueDate.from_str(postponed_until)
 
         if tags is not None:

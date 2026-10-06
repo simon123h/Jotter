@@ -60,7 +60,7 @@ npm run format
 npm run lint
 ```
 
-- **Python Backend**: Uses **Ruff** for linting and formatting.
+- **Python Backend**: Uses **Ruff** for linting and formatting, and **mypy** (strict) for type checking (`npm run typecheck:backend`).
 - **Frontend UI**: Uses **ESLint** and **Prettier** for code formatting and TypeScript linting.
 
 ### Testing

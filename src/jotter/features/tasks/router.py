@@ -93,7 +93,7 @@ def extract_task_filter_params(request: Request) -> TaskFilterParams:
 def list_all_tasks(
     filters: TaskFilterParams = Depends(extract_task_filter_params),
     query_svc: TaskQueryService = Depends(get_task_query_service),
-):
+) -> list[TaskResponse]:
     return query_svc.get_tasks(**vars(filters))
 
 
@@ -103,18 +103,22 @@ def list_project_tasks(
     project_id: str,
     filters: TaskFilterParams = Depends(extract_task_filter_params),
     query_svc: TaskQueryService = Depends(get_task_query_service),
-):
+) -> list[TaskResponse]:
     filters.project_id = project_id
     return query_svc.get_tasks(**vars(filters))
 
 
 @router.get("/api/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
-def get_single_task(project_id: str, task_id: str, query_svc: TaskQueryService = Depends(get_task_query_service)):
+def get_single_task(
+    project_id: str, task_id: str, query_svc: TaskQueryService = Depends(get_task_query_service)
+) -> TaskResponse:
     return query_svc.get_task(project_id, task_id)
 
 
 @router.post("/api/projects/{project_id}/tasks", response_model=TaskResponse, status_code=201)
-def create_new_task(project_id: str, req: TaskCreate, cmd_svc: TaskCommandService = Depends(get_task_command_service)):
+def create_new_task(
+    project_id: str, req: TaskCreate, cmd_svc: TaskCommandService = Depends(get_task_command_service)
+) -> TaskResponse:
     return cmd_svc.create_task(project_id, req)
 
 
@@ -125,7 +129,7 @@ def update_existing_task(
     task_id: str,
     req: TaskUpdate,
     cmd_svc: TaskCommandService = Depends(get_task_command_service),
-):
+) -> TaskResponse:
     return cmd_svc.update_task(project_id, task_id, req)
 
 
@@ -135,7 +139,7 @@ def move_existing_task(
     task_id: str,
     req: TaskMove,
     cmd_svc: TaskCommandService = Depends(get_task_command_service),
-):
+) -> TaskResponse:
     return cmd_svc.move_task(project_id, task_id, req)
 
 
@@ -144,7 +148,7 @@ def delete_existing_task(
     project_id: str,
     task_id: str,
     cmd_svc: TaskCommandService = Depends(get_task_command_service),
-):
+) -> None:
     cmd_svc.delete_task(project_id, task_id)
 
 
@@ -155,7 +159,7 @@ def upload_task_attachment(
     task_id: str,
     file: UploadFile = File(...),
     cmd_svc: TaskCommandService = Depends(get_task_command_service),
-):
+) -> TaskResponse:
     filename = file.filename or "attachment"
     content = file.file.read()
     return cmd_svc.add_attachment(project_id, task_id, filename, content)
@@ -167,7 +171,7 @@ def delete_task_attachment(
     task_id: str,
     filename: str,
     cmd_svc: TaskCommandService = Depends(get_task_command_service),
-):
+) -> TaskResponse:
     return cmd_svc.remove_attachment(project_id, task_id, filename)
 
 
@@ -177,7 +181,7 @@ def serve_task_attachment(
     task_id: str,
     filename: str,
     data_dir: str = Depends(get_data_dir),
-):
+) -> FileResponse:
     path = Path(data_dir) / project_id / "attachments" / task_id / filename
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Attachment file not found")

@@ -5,6 +5,7 @@ from typing import Any, Self
 
 from jotter.shared.exceptions import ValidationError
 from jotter.shared.slug import slugify
+from jotter.shared.unset import UNSET, Unset
 
 
 @dataclass
@@ -18,7 +19,7 @@ class Bucket:
     max_tasks: int | None = None
     is_default: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.name or not self.name.strip():
             raise ValidationError("Bucket name cannot be empty")
         if not self.title or not self.title.strip():
@@ -54,9 +55,9 @@ class Bucket:
         title: str | None = None,
         subtitle: str | None = None,
         position: float | None = None,
-        color: str | None = ...,
+        color: str | Unset | None = UNSET,
         layout: str | None = None,
-        max_tasks: int | None = ...,
+        max_tasks: int | Unset | None = UNSET,
         is_default: bool | None = None,
     ) -> None:
         if title is not None:
@@ -71,13 +72,13 @@ class Bucket:
         if position is not None:
             self.position = position
 
-        if color is not ...:
+        if color is not UNSET:
             self.color = color.strip() if color else None
 
         if layout is not None:
             self.layout = layout or "list"
 
-        if max_tasks is not ...:
+        if max_tasks is not UNSET:
             self.max_tasks = max_tasks
 
         if is_default is not None:

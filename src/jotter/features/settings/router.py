@@ -16,12 +16,14 @@ def get_settings_service(
 
 
 @router.get("", response_model=AppSettings)
-def get_settings(svc: SettingsApplicationService = Depends(get_settings_service)):
+def get_settings(svc: SettingsApplicationService = Depends(get_settings_service)) -> AppSettings:
     return svc.load_settings()
 
 
 @router.put("", response_model=AppSettings)
 @router.patch("", response_model=AppSettings)
 @router.post("", response_model=AppSettings)
-def update_settings(updates: SettingsUpdate, svc: SettingsApplicationService = Depends(get_settings_service)):
+def update_settings(
+    updates: SettingsUpdate, svc: SettingsApplicationService = Depends(get_settings_service)
+) -> AppSettings:
     return svc.update_settings(updates)

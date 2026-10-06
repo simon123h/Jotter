@@ -1,11 +1,12 @@
 import logging
 import time
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from jotter.config import UserConfig, load_config
@@ -26,6 +27,8 @@ try:
 except ImportError:
     app_version = "3.0.0b1"
 
+__all__ = ["app_version", "create_app"]
+
 logger = logging.getLogger(__name__)
 
 # Requests slower than this are logged, to diagnose environments with slow file access (e.g. antivirus on Windows)
@@ -40,8 +43,8 @@ def create_app(
     cfg = config or load_config()
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        scheduler = None
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        scheduler: VaultSyncScheduler | None = None
         if enable_background_sync:
             scheduler = VaultSyncScheduler(app.state.config.data_dir)
             scheduler.start()
@@ -81,20 +84,22 @@ def create_app(
 
     # Global Domain Exception Handlers
     @app.exception_handler(EntityNotFoundError)
-    async def not_found_handler(request: Request, exc: EntityNotFoundError):
+    async def not_found_handler(request: Request, exc: EntityNotFoundError) -> JSONResponse:
         return JSONResponse(status_code=404, content={"detail": str(exc)})
 
     @app.exception_handler(ValidationError)
-    async def validation_handler(request: Request, exc: ValidationError):
+    async def validation_handler(request: Request, exc: ValidationError) -> JSONResponse:
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
     @app.exception_handler(DomainException)
-    async def domain_exception_handler(request: Request, exc: DomainException):
+    async def domain_exception_handler(request: Request, exc: DomainException) -> JSONResponse:
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
     # Any successful data-changing API call marks the vault dirty, so the next periodic cycle commits it
     @app.middleware("http")
-    async def mark_vault_dirty_on_change(request: Request, call_next):
+    async def mark_vault_dirty_on_change(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         started = time.perf_counter()
         response = await call_next(request)
         elapsed = time.perf_counter() - started
@@ -149,7 +154,7 @@ def create_app(
 
         # SPA fallback route
         @app.get("/{full_path:path}", include_in_schema=False)
-        async def serve_spa(full_path: str):
+        async def serve_spa(full_path: str) -> Response:
             if full_path.startswith("api/"):
                 return JSONResponse(status_code=404, content={"detail": "Not found"})
             file_path = static_dir / full_path

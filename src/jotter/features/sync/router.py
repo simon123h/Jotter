@@ -32,21 +32,21 @@ def get_sync_service(
 
 
 @router.api_route("/sync", methods=["GET", "POST"])
-def trigger_sync(svc: SyncApplicationService = Depends(get_sync_service)):
+def trigger_sync(svc: SyncApplicationService = Depends(get_sync_service)) -> dict[str, Any]:
     """Reconciles Markdown files on disk with the SQLite index."""
     synced_count = svc.sync_db_only(force=True)
     return {"status": "success", "synced": synced_count}
 
 
 @router.post("/git/init")
-def enable_git_versioning(svc: SyncApplicationService = Depends(get_sync_service)):
+def enable_git_versioning(svc: SyncApplicationService = Depends(get_sync_service)) -> dict[str, Any]:
     """Initializes a Git repository in the active vault and records the first commit."""
     created = svc.enable_git_versioning()
     return {"status": "success", "created": created}
 
 
 @router.get("/info")
-def get_system_info(request: Request, data_dir: str = Depends(get_data_dir)):
+def get_system_info(request: Request, data_dir: str = Depends(get_data_dir)) -> dict[str, Any]:
     config = request.app.state.config
     version = getattr(request.app.state, "version", "3.0.0b1")
     git_inst = is_git_installed()
@@ -81,7 +81,7 @@ def restore_project_commit(
     req: RestoreRequest,
     data_dir: str = Depends(get_data_dir),
     svc: SyncApplicationService = Depends(get_sync_service),
-):
+) -> dict[str, Any]:
     if not req.commitHash or not req.commitHash.strip():
         raise HTTPException(status_code=400, detail="commitHash is required")
     proj_dir = str(Path(data_dir) / project_id)
@@ -100,6 +100,6 @@ def restore_default_commit(
     req: RestoreRequest,
     data_dir: str = Depends(get_data_dir),
     svc: SyncApplicationService = Depends(get_sync_service),
-):
+) -> dict[str, Any]:
     target_pid = req.projectId or req.project_id or "default"
     return restore_project_commit(target_pid, req, data_dir, svc)

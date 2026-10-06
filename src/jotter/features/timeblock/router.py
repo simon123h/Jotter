@@ -26,19 +26,23 @@ def list_timeblocks(
     start_date: str | None = None,
     end_date: str | None = None,
     svc: TimeblockApplicationService = Depends(get_timeblock_service),
-):
+) -> list[TimeblockResponse]:
     items = svc.list_timeblocks(start_date, end_date)
     return [TimeblockResponse.from_dict(item) for item in items]
 
 
 @router.get("/{timeblock_id}", response_model=TimeblockResponse)
-def get_timeblock(timeblock_id: str, svc: TimeblockApplicationService = Depends(get_timeblock_service)):
+def get_timeblock(
+    timeblock_id: str, svc: TimeblockApplicationService = Depends(get_timeblock_service)
+) -> TimeblockResponse:
     item = svc.get_timeblock(timeblock_id)
     return TimeblockResponse.from_dict(item)
 
 
 @router.post("", response_model=TimeblockResponse, status_code=201)
-def create_timeblock(req: TimeblockCreate, svc: TimeblockApplicationService = Depends(get_timeblock_service)):
+def create_timeblock(
+    req: TimeblockCreate, svc: TimeblockApplicationService = Depends(get_timeblock_service)
+) -> TimeblockResponse:
     created = svc.create_timeblock(req)
     return TimeblockResponse.from_dict(created)
 
@@ -48,13 +52,13 @@ def update_timeblock(
     timeblock_id: str,
     req: TimeblockUpdate,
     svc: TimeblockApplicationService = Depends(get_timeblock_service),
-):
+) -> TimeblockResponse:
     updated = svc.update_timeblock(timeblock_id, req)
     return TimeblockResponse.from_dict(updated)
 
 
 @router.delete("/{timeblock_id}", status_code=204)
-def delete_timeblock(timeblock_id: str, svc: TimeblockApplicationService = Depends(get_timeblock_service)):
+def delete_timeblock(timeblock_id: str, svc: TimeblockApplicationService = Depends(get_timeblock_service)) -> None:
     svc.delete_timeblock(timeblock_id)
     return None
 
@@ -64,6 +68,6 @@ def allocate_task(
     timeblock_id: str,
     req: TaskAllocationRequest,
     svc: TimeblockApplicationService = Depends(get_timeblock_service),
-):
+) -> TimeblockResponse:
     updated = svc.allocate_task(timeblock_id, req.task_id, req.action)
     return TimeblockResponse.from_dict(updated)

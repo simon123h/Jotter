@@ -24,17 +24,17 @@ def get_vault_service(request: Request) -> VaultApplicationService:
 
 
 @router.get("", response_model=list[VaultResponse])
-def list_vaults(svc: VaultApplicationService = Depends(get_vault_service)):
+def list_vaults(svc: VaultApplicationService = Depends(get_vault_service)) -> list[VaultResponse]:
     return svc.list_vaults()
 
 
 @router.get("/active", response_model=VaultResponse)
-def get_active_vault(svc: VaultApplicationService = Depends(get_vault_service)):
+def get_active_vault(svc: VaultApplicationService = Depends(get_vault_service)) -> VaultResponse:
     return svc.get_active_vault()
 
 
 @router.post("", response_model=VaultResponse, status_code=201)
-def create_vault(req: VaultCreate, svc: VaultApplicationService = Depends(get_vault_service)):
+def create_vault(req: VaultCreate, svc: VaultApplicationService = Depends(get_vault_service)) -> VaultResponse:
     return svc.create_vault(req)
 
 
@@ -43,7 +43,7 @@ def switch_vault(
     req: VaultSwitchRequest,
     request: Request,
     svc: VaultApplicationService = Depends(get_vault_service),
-):
+) -> VaultResponse:
     return svc.switch_vault(req.vault_id, app_state=request.app.state)
 
 
@@ -52,7 +52,7 @@ def rename_vault(
     vault_id: str,
     req: VaultUpdate,
     svc: VaultApplicationService = Depends(get_vault_service),
-):
+) -> VaultResponse:
     return svc.rename_vault(vault_id, req)
 
 
@@ -61,5 +61,5 @@ def delete_vault(
     vault_id: str,
     request: Request,
     svc: VaultApplicationService = Depends(get_vault_service),
-):
+) -> None:
     svc.delete_vault(vault_id, app_state=request.app.state)

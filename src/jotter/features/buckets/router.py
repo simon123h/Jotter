@@ -19,7 +19,7 @@ def get_bucket_service(
 
 
 @router.get("", response_model=list[BucketResponse])
-def list_buckets(project_id: str, svc: BucketApplicationService = Depends(get_bucket_service)):
+def list_buckets(project_id: str, svc: BucketApplicationService = Depends(get_bucket_service)) -> list[BucketResponse]:
     return svc.get_all_buckets(project_id)
 
 
@@ -28,7 +28,7 @@ def create_new_bucket(
     project_id: str,
     req: BucketCreate,
     svc: BucketApplicationService = Depends(get_bucket_service),
-):
+) -> BucketResponse:
     return svc.create_bucket(project_id, req)
 
 
@@ -39,7 +39,7 @@ def update_existing_bucket(
     name: str,
     req: BucketUpdate,
     svc: BucketApplicationService = Depends(get_bucket_service),
-):
+) -> BucketResponse:
     return svc.update_bucket(project_id, name, req)
 
 
@@ -48,5 +48,5 @@ def delete_existing_bucket(
     project_id: str,
     name: str,
     svc: BucketApplicationService = Depends(get_bucket_service),
-):
+) -> None:
     svc.delete_bucket(project_id, name)

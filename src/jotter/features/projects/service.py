@@ -41,7 +41,7 @@ class ProjectApplicationService:
     def create_project(
         self, req: ProjectCreate, default_buckets: list[dict[str, Any]] | None = None
     ) -> ProjectResponse:
-        title = (getattr(req, "title", None) or getattr(req, "name", "")).strip()
+        title = str(getattr(req, "title", None) or getattr(req, "name", "")).strip()
         if not title:
             raise ValidationError("Project title cannot be empty")
 

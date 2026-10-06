@@ -1,6 +1,7 @@
 """Pydantic schemas and DTOs for Tasks."""
 
 from dataclasses import dataclass
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -21,7 +22,7 @@ class TaskCreate(BaseModel):
 
     @field_validator("tags", mode="before")
     @classmethod
-    def validate_tags(cls, v):
+    def validate_tags(cls, v: Any) -> Any:
         if v is None:
             return []
         return v

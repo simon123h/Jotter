@@ -18,6 +18,7 @@
     "test:frontend": "cd frontend && npm run test",
     "test": "npm run test:backend && npm run test:frontend",
     "lint:backend": "ruff check .",
+    "typecheck:backend": "mypy",
     "lint:backend:fix": "ruff check --fix .",
     "lint:frontend": "cd frontend && npm run lint",
     "lint:frontend:fix": "cd frontend && npm run lint:fix",

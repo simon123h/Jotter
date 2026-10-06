@@ -17,7 +17,7 @@ def get_canvas_service(data_dir: str = Depends(get_data_dir)) -> CanvasApplicati
 def list_canvases(
     project_id: str,
     svc: CanvasApplicationService = Depends(get_canvas_service),
-):
+) -> list[CanvasMeta]:
     return svc.list_canvases(project_id)
 
 
@@ -26,7 +26,7 @@ def get_canvas(
     project_id: str,
     canvas_id: str,
     svc: CanvasApplicationService = Depends(get_canvas_service),
-):
+) -> CanvasDocument:
     return svc.get_canvas(project_id, canvas_id)
 
 
@@ -36,7 +36,7 @@ def save_canvas(
     canvas_id: str,
     doc: CanvasDocument,
     svc: CanvasApplicationService = Depends(get_canvas_service),
-):
+) -> CanvasDocument:
     return svc.save_canvas(project_id, canvas_id, doc)
 
 
@@ -45,5 +45,5 @@ def delete_canvas(
     project_id: str,
     canvas_id: str,
     svc: CanvasApplicationService = Depends(get_canvas_service),
-):
+) -> None:
     svc.delete_canvas(project_id, canvas_id)

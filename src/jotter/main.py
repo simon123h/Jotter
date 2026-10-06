@@ -19,8 +19,8 @@ from jotter.logging_setup import configure_logging  # noqa: E402
 from jotter.shared.exceptions import EntityNotFoundError  # noqa: E402
 
 
-def open_browser_delayed(url: str, delay_seconds: float = 0.5):
-    def _open():
+def open_browser_delayed(url: str, delay_seconds: float = 0.5) -> None:
+    def _open() -> None:
         try:
             webbrowser.open(url)
         except Exception:
@@ -29,7 +29,7 @@ def open_browser_delayed(url: str, delay_seconds: float = 0.5):
     threading.Timer(delay_seconds, _open).start()
 
 
-def _run_mcp(argv: list[str]):
+def _run_mcp(argv: list[str]) -> None:
     from jotter.mcp_server import McpUnavailableError, run_mcp_server
 
     parser = argparse.ArgumentParser(prog="jotter mcp", description="Run the Jotter MCP server over stdio")
@@ -51,7 +51,7 @@ def _run_mcp(argv: list[str]):
         sys.exit(1)
 
 
-def main():
+def main() -> None:
     # Direct MCP subcommand fast-path
     if len(sys.argv) > 1 and sys.argv[1] == "mcp":
         _run_mcp(sys.argv[2:])

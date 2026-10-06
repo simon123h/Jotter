@@ -20,17 +20,21 @@ def get_project_service(
 
 
 @router.get("", response_model=list[ProjectResponse])
-def list_projects(svc: ProjectApplicationService = Depends(get_project_service)):
+def list_projects(svc: ProjectApplicationService = Depends(get_project_service)) -> list[ProjectResponse]:
     return svc.get_all_projects()
 
 
 @router.post("", response_model=ProjectResponse, status_code=201)
-def create_new_project(req: ProjectCreate, svc: ProjectApplicationService = Depends(get_project_service)):
+def create_new_project(
+    req: ProjectCreate, svc: ProjectApplicationService = Depends(get_project_service)
+) -> ProjectResponse:
     return svc.create_project(req, DEFAULT_DOMAIN_BUCKETS)
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)
-def get_single_project(project_id: str, svc: ProjectApplicationService = Depends(get_project_service)):
+def get_single_project(
+    project_id: str, svc: ProjectApplicationService = Depends(get_project_service)
+) -> ProjectResponse:
     return svc.get_project(project_id)
 
 
@@ -40,10 +44,10 @@ def update_existing_project(
     project_id: str,
     req: ProjectUpdate,
     svc: ProjectApplicationService = Depends(get_project_service),
-):
+) -> ProjectResponse:
     return svc.update_project(project_id, req)
 
 
 @router.delete("/{project_id}", status_code=204)
-def delete_existing_project(project_id: str, svc: ProjectApplicationService = Depends(get_project_service)):
+def delete_existing_project(project_id: str, svc: ProjectApplicationService = Depends(get_project_service)) -> None:
     svc.delete_project(project_id)

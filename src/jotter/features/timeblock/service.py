@@ -12,7 +12,7 @@ from jotter.shared.ulid import generate_ulid
 def _matches_date(block: dict[str, Any], target_date: datetime.date) -> bool:
     rec = block.get("recurrence")
     if not rec or rec == "none":
-        return block.get("date", "") == target_date.isoformat()
+        return bool(block.get("date", "") == target_date.isoformat())
 
     anchor_str = block.get("date", "")
     if not anchor_str:

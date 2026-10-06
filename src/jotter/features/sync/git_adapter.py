@@ -152,7 +152,7 @@ def summarize_changes(name_status: str) -> str:
         else:
             other += 1
 
-    parts = []
+    parts: list[str] = []
     for verb, count in tasks.items():
         if not count:
             continue

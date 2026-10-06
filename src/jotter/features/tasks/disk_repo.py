@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -11,7 +12,7 @@ from jotter.shared.yaml_io import safe_load
 
 
 class DiskTaskRepository:
-    def __init__(self, data_dir: str):
+    def __init__(self, data_dir: Path | str):
         self.data_dir = Path(data_dir)
 
     def get_project_dir(self, project_id: str) -> Path:
@@ -112,7 +113,7 @@ class DiskTaskRepository:
 
     def parse_task_content(self, content: str, fallback_id: str, default_project_id: str) -> Task:
         """Parses frontmatter and body, returning a domain Task entity."""
-        fm_data: dict[str, object] = {}
+        fm_data: dict[str, Any] = {}
         body = ""
 
         if content.startswith("---"):
