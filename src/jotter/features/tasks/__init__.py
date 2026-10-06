@@ -5,7 +5,6 @@ from jotter.features.tasks.disk_repo import DiskTaskRepository
 from jotter.features.tasks.domain import DueDate, Priority, Tag, Task, TaskId
 from jotter.features.tasks.projector import TaskProjector
 from jotter.features.tasks.query_service import TaskQueryService
-from jotter.features.tasks.router import router
 from jotter.features.tasks.schemas import (
     TaskCreate,
     TaskFrontmatter,
@@ -33,5 +32,4 @@ __all__ = [
     "TaskMove",
     "TaskResponse",
     "TaskFrontmatter",
-    "router",
 ]

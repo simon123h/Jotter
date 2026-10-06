@@ -10,15 +10,15 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from jotter.config import UserConfig, load_config
-from jotter.features.buckets import router as buckets_router
+from jotter.features.buckets.router import router as buckets_router
 from jotter.features.canvas.router import router as canvas_router
-from jotter.features.projects import router as projects_router
-from jotter.features.settings import router as settings_router
+from jotter.features.projects.router import router as projects_router
+from jotter.features.settings.router import router as settings_router
 from jotter.features.sync import SyncApplicationService, VaultSyncScheduler
-from jotter.features.sync import router as system_router
-from jotter.features.tasks import router as tasks_router
+from jotter.features.sync.router import router as system_router
+from jotter.features.tasks.router import router as tasks_router
 from jotter.features.timeblock.router import router as timeblock_router
-from jotter.features.vaults import router as vaults_router
+from jotter.features.vaults.router import router as vaults_router
 from jotter.shared.db import ConnectionPool
 from jotter.shared.exceptions import DomainException, EntityNotFoundError, ValidationError
 

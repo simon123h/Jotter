@@ -10,7 +10,6 @@ from jotter.features.sync.git_adapter import (
     is_git_installed,
     is_git_repo,
 )
-from jotter.features.sync.router import router
 from jotter.features.sync.scheduler import VaultSyncScheduler
 from jotter.features.sync.service import SyncApplicationService
 
@@ -25,5 +24,4 @@ __all__ = [
     "enable_git_versioning",
     "get_git_history",
     "git_restore",
-    "router",
 ]
