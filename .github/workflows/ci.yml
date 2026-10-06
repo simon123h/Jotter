@@ -45,7 +45,9 @@ jobs:
           path: |
             node_modules
             frontend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json') }}
+            mobile/node_modules
+            packages/vault-format/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json', 'mobile/package-lock.json', 'packages/vault-format/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
@@ -89,7 +91,9 @@ jobs:
           path: |
             node_modules
             frontend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json') }}
+            mobile/node_modules
+            packages/vault-format/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json', 'mobile/package-lock.json', 'packages/vault-format/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
@@ -105,6 +109,10 @@ jobs:
       - name: Run Frontend Tests with Coverage
         run: |
           cd frontend && npm run test:coverage
+
+      - name: Run Vault Format and Mobile Tests
+        run: |
+          npm run test:mobile
 
       - name: Upload Backend Coverage to Codecov
         uses: codecov/codecov-action@v7
@@ -145,7 +153,9 @@ jobs:
           path: |
             node_modules
             frontend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json') }}
+            mobile/node_modules
+            packages/vault-format/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json', 'mobile/package-lock.json', 'packages/vault-format/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
