@@ -17,7 +17,7 @@ Meanwhile Jotter's core is small: markdown backed kanban boards in vaults, with 
 
 Build **Jotter Lite**, a separate mobile app that implements only the core, in a new `mobile/` project in this repository.
 
-- **Identity**: app id `io.github.simon123h.jotter-lite`, name "Jotter Lite". It installs next to the existing Android app, so the two can coexist during the transition.
+- **Identity**: app id `io.github.simon123h.jotter_lite`, name "Jotter Lite". It installs next to the existing Android app, so the two can coexist during the transition.
 - **Stack**: Vue 3, Pinia, Tailwind and Capacitor, as in the desktop frontend. Reuse is the point; the UI itself is designed for touch from the start and may look quite different.
 - **Scope (version 1)**:
   - vaults: add, switch, remove

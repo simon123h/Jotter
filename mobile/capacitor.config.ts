@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.github.simon123h.jotter-lite',
+  appId: 'io.github.simon123h.jotter_lite',
   appName: 'Jotter Lite',
   webDir: 'dist',
   server: {
