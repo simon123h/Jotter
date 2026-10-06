@@ -779,6 +779,6 @@ def test_schema_version_follows_the_schema_text_but_not_its_whitespace():
     def version_of(text: str) -> str:
         return hashlib.sha256(" ".join(text.split()).encode()).hexdigest()[:8]
 
-    assert db_module.SCHEMA_VERSION == version_of(db_module._SCHEMA)
+    assert version_of(db_module._SCHEMA) == db_module.SCHEMA_VERSION
     assert version_of(db_module._SCHEMA) == version_of(db_module._SCHEMA.replace("\n    ", "\n\n        "))
     assert version_of(db_module._SCHEMA) != version_of(db_module._SCHEMA.replace("tags TEXT", "tags BLOB", 1))

@@ -245,5 +245,5 @@ def test_mcp_unknown_vault_lists_available(tmp_path):
     from jotter.shared.exceptions import EntityNotFoundError
 
     config, _, _ = _two_vault_config(tmp_path)
-    with pytest.raises(EntityNotFoundError, match="Available vaults: 'Work'.*'Home'"):
+    with pytest.raises(EntityNotFoundError, match=r"Available vaults: 'Work'.*'Home'"):
         create_mcp_server(config, vault="nope")

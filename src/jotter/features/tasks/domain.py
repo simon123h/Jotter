@@ -82,8 +82,8 @@ class DueDate:
         try:
             datetime.strptime(clean, "%Y-%m-%d")
             return cls(value=clean)
-        except ValueError:
-            raise ValidationError(f"Invalid due date format: '{val}' (expected YYYY-MM-DD)")
+        except ValueError as e:
+            raise ValidationError(f"Invalid due date format: '{val}' (expected YYYY-MM-DD)") from e
 
     @property
     def as_date(self) -> date | None:

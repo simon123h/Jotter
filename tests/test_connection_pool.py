@@ -6,9 +6,8 @@ from jotter.shared.db import ConnectionPool
 
 def test_connections_are_reused_and_never_shared(temp_dir):
     pool = ConnectionPool(Path(temp_dir) / "tasks.db")
-    with pool.connection() as first:
-        with pool.connection() as second:
-            assert first is not second
+    with pool.connection() as first, pool.connection() as second:
+        assert first is not second
     with pool.connection() as again:
         assert again in (first, second)
     pool.close()

@@ -7,9 +7,9 @@ from jotter.features.projects.service import ProjectApplicationService
 
 __all__ = [
     "Project",
-    "ProjectRepository",
     "ProjectApplicationService",
     "ProjectCreate",
-    "ProjectUpdate",
+    "ProjectRepository",
     "ProjectResponse",
+    "ProjectUpdate",
 ]

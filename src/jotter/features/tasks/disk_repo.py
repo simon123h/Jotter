@@ -124,7 +124,7 @@ class DiskTaskRepository:
                     if isinstance(loaded, dict):
                         fm_data = loaded
                 except Exception as e:
-                    raise ValidationError(f"Error parsing YAML frontmatter: {e}")
+                    raise ValidationError(f"Error parsing YAML frontmatter: {e}") from e
                 body = parts[2].lstrip("\r\n")
             else:
                 body = content

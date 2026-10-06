@@ -136,7 +136,7 @@ class ProjectRepository:
         return Project(
             id=row["id"],
             name=row["title"],
-            description=row["description"] if "description" in row.keys() and row["description"] is not None else "",
-            done_clean_period=row["done_clean_period"] if "done_clean_period" in row.keys() else None,
+            description=row["description"] if "description" in row.keys() and row["description"] is not None else "",  # noqa: SIM118  sqlite3.Row: `in` tests values, not column names
+            done_clean_period=row["done_clean_period"] if "done_clean_period" in row.keys() else None,  # noqa: SIM118  sqlite3.Row: `in` tests values, not column names
             created_at=row["created_at"],
         )

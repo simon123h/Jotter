@@ -37,18 +37,19 @@ def test_portable_mode_detection(tmp_path):
 
 
 def test_os_specific_data_dir_resolution(tmp_path):
-    with patch("pathlib.Path.cwd", return_value=tmp_path):
-        with patch.dict(os.environ, {"XDG_DATA_HOME": str(tmp_path / "xdg_data")}, clear=True):
-            resolved = get_default_data_dir()
-            assert resolved == str((tmp_path / "xdg_data" / "jotter").resolve())
+    with (
+        patch("pathlib.Path.cwd", return_value=tmp_path),
+        patch.dict(os.environ, {"XDG_DATA_HOME": str(tmp_path / "xdg_data")}, clear=True),
+    ):
+        resolved = get_default_data_dir()
+        assert resolved == str((tmp_path / "xdg_data" / "jotter").resolve())
 
 
 def test_config_paths_discovery(tmp_path):
-    with patch("pathlib.Path.cwd", return_value=tmp_path):
-        with patch("pathlib.Path.home", return_value=tmp_path):
-            paths = get_default_config_paths()
-            assert len(paths) > 0
-            assert any(p.name == "jotter.yaml" for p in paths)
+    with patch("pathlib.Path.cwd", return_value=tmp_path), patch("pathlib.Path.home", return_value=tmp_path):
+        paths = get_default_config_paths()
+        assert len(paths) > 0
+        assert any(p.name == "jotter.yaml" for p in paths)
 
 
 def test_load_config_with_file(tmp_path):

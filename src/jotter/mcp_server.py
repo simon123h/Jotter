@@ -238,7 +238,7 @@ def _create_server(config: UserConfig | None, vault: str | None) -> tuple[MCPSer
         title: str,
         project_id: str = "default",
         bucket: str = "todo",
-        tags: list[str] = [],
+        tags: list[str] | None = None,
         body: str = "",
         priority: str | None = None,
         due_date: str | None = None,
@@ -248,7 +248,7 @@ def _create_server(config: UserConfig | None, vault: str | None) -> tuple[MCPSer
         req = TaskCreate(
             title=title,
             bucket=bucket,
-            tags=tags,
+            tags=tags or [],
             body=body,
             priority=priority,
             due_date=due_date,

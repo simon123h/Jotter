@@ -11,11 +11,11 @@ from jotter.shared.slug import slugify
 from jotter.shared.ulid import generate_ulid
 
 __all__ = [
-    "create_sqlite_connection",
     "DomainException",
     "EntityNotFoundError",
-    "ValidationError",
     "TaskOperationError",
-    "slugify",
+    "ValidationError",
+    "create_sqlite_connection",
     "generate_ulid",
+    "slugify",
 ]

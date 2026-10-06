@@ -136,7 +136,9 @@ def _task_verb(status: str) -> str:
 def _parse_name_status(name_status: str) -> list[tuple[str, str]]:
     """Splits `git diff --name-status -z --no-renames` output into (status, path) pairs."""
     fields = name_status.split("\0")
-    return list(zip(fields[0::2], fields[1::2]))
+    return list(
+        zip(fields[0::2], fields[1::2], strict=False)
+    )  # strict=False: the trailing NUL leaves one unpaired field
 
 
 def summarize_changes(name_status: str) -> str:

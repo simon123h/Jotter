@@ -153,7 +153,7 @@ class BucketRepository:
                 id=row["id"],
                 name=row["title"],
                 description=row["description"]
-                if "description" in row.keys() and row["description"] is not None
+                if "description" in row.keys() and row["description"] is not None  # noqa: SIM118  sqlite3.Row: `in` tests values, not column names
                 else "",
                 done_clean_period=row["done_clean_period"],
                 created_at=row["created_at"],
@@ -218,7 +218,7 @@ class BucketRepository:
                 id=row["id"],
                 name=row["title"],
                 description=row["description"]
-                if "description" in row.keys() and row["description"] is not None
+                if "description" in row.keys() and row["description"] is not None  # noqa: SIM118  sqlite3.Row: `in` tests values, not column names
                 else "",
                 done_clean_period=row["done_clean_period"],
                 created_at=row["created_at"],

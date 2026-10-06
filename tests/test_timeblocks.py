@@ -2,7 +2,7 @@ import datetime
 
 
 def test_timeblock_crud_and_allocation(test_env):
-    client, temp_dir = test_env
+    client, _temp_dir = test_env
     today_str = datetime.date.today().isoformat()
     tomorrow_str = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
 

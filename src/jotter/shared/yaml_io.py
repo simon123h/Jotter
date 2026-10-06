@@ -11,4 +11,4 @@ _SafeLoader: type = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 def safe_load(stream: str) -> Any:
     """Like `yaml.safe_load`, but through the C loader when available."""
-    return yaml.load(stream, Loader=_SafeLoader)  # noqa: S506 - safe loader
+    return yaml.load(stream, Loader=_SafeLoader)

@@ -7,9 +7,9 @@ from jotter.features.vaults.service import VaultApplicationService
 
 __all__ = [
     "Vault",
-    "VaultRegistry",
     "VaultApplicationService",
     "VaultCreate",
+    "VaultRegistry",
     "VaultResponse",
     "VaultSwitchRequest",
 ]

@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import os
 import sys
 import threading
@@ -21,10 +22,8 @@ from jotter.shared.exceptions import EntityNotFoundError  # noqa: E402
 
 def open_browser_delayed(url: str, delay_seconds: float = 0.5) -> None:
     def _open() -> None:
-        try:
+        with contextlib.suppress(Exception):
             webbrowser.open(url)
-        except Exception:
-            pass
 
     threading.Timer(delay_seconds, _open).start()
 

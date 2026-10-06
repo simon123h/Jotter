@@ -5,6 +5,6 @@ from jotter.features.settings.service import SettingsApplicationService
 
 __all__ = [
     "AppSettings",
-    "SettingsUpdate",
     "SettingsApplicationService",
+    "SettingsUpdate",
 ]

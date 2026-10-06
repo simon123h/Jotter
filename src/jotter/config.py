@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 import sys
@@ -115,10 +116,8 @@ def load_config() -> UserConfig:
     if os.environ.get("JOTTER_DATA_DIR"):
         logger.warning("Ignoring JOTTER_DATA_DIR: it is no longer supported. Manage vaults in the app instead.")
     if os.environ.get("JOTTER_PORT"):
-        try:
+        with contextlib.suppress(ValueError):
             config.port = int(os.environ["JOTTER_PORT"])
-        except ValueError:
-            pass
     if os.environ.get("JOTTER_HOST"):
         config.host = os.environ["JOTTER_HOST"]
     if os.environ.get("JOTTER_LOG_DIR"):

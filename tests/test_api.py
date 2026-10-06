@@ -8,7 +8,7 @@ from jotter.config import UserConfig
 
 
 def test_projects_crud(test_env):
-    client, temp_dir = test_env
+    client, _temp_dir = test_env
 
     # 1. List default projects
     res = client.get("/api/projects")

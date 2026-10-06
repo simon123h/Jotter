@@ -114,10 +114,7 @@ def write_project_manifest(
         content = index_file.read_text(encoding="utf-8")
         if content.startswith("---"):
             parts = content.split("---", 2)
-            if len(parts) >= 3:
-                existing_body = parts[2].lstrip("\r\n")
-            else:
-                existing_body = content
+            existing_body = parts[2].lstrip("\r\n") if len(parts) >= 3 else content
         else:
             existing_body = content
 

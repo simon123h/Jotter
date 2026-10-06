@@ -6,11 +6,11 @@ from jotter.features.buckets.schemas import BucketCreate, BucketResponse, Bucket
 from jotter.features.buckets.service import BucketApplicationService
 
 __all__ = [
-    "Bucket",
     "DEFAULT_DOMAIN_BUCKETS",
-    "BucketRepository",
+    "Bucket",
     "BucketApplicationService",
     "BucketCreate",
-    "BucketUpdate",
+    "BucketRepository",
     "BucketResponse",
+    "BucketUpdate",
 ]

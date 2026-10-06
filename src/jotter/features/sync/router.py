@@ -68,10 +68,7 @@ def get_git_history_endpoint(
     data_dir: str = Depends(get_data_dir),
 ) -> list[dict[str, Any]]:
     target_pid = project_id or projectId
-    if target_pid and target_pid != "all":
-        proj_dir = str(Path(data_dir) / target_pid)
-    else:
-        proj_dir = data_dir
+    proj_dir = str(Path(data_dir) / target_pid) if target_pid and target_pid != "all" else data_dir
     return get_git_history(proj_dir)
 
 
@@ -90,9 +87,9 @@ def restore_project_commit(
         svc.sync_db_only(force=True)
         return {"status": "ok", "message": f"Restored to {req.commitHash}"}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/restore")

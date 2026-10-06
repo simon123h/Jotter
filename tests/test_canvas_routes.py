@@ -1,5 +1,5 @@
 def test_canvas_routes(test_env):
-    client, temp_dir = test_env
+    client, _temp_dir = test_env
 
     # 1. Create a project
     res = client.post("/api/projects", json={"title": "Design System"})

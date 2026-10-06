@@ -1,5 +1,6 @@
 """Filesystem utility functions including cross-platform atomic file operations."""
 
+import contextlib
 import logging
 import os
 import shutil
@@ -38,10 +39,8 @@ def atomic_replace(src: Path | str, dst: Path | str, max_retries: int = 6, initi
                 # Last resort fallback: copy over and remove source
                 try:
                     shutil.copy2(src_path, dst_path)
-                    try:
+                    with contextlib.suppress(Exception):
                         src_path.unlink(missing_ok=True)
-                    except Exception:
-                        pass
                     return
                 except Exception:
                     logger.warning(
