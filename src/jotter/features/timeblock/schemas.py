@@ -1,10 +1,29 @@
 """Pydantic schemas for Timeblock feature."""
 
-from typing import Any
+from typing import TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from jotter.features.tasks.domain import Task
 from jotter.features.tasks.schemas import TaskResponse
+
+
+class TimeblockRecord(TypedDict, total=False):
+    """A time block as stored in timeblocks.json, plus the `tasks` the service attaches when reading."""
+
+    id: str
+    title: str
+    date: str
+    start_time: str
+    end_time: str
+    color: str | None
+    task_ids: list[str]
+    recurrence: str | None
+    tasks: list[Task]
+    # Legacy camelCase keys, still accepted when reading old files
+    startTime: str
+    endTime: str
+    taskIds: list[str]
 
 
 class TimeblockBase(BaseModel):
@@ -49,34 +68,27 @@ class TimeblockResponse(BaseModel):
     recurrence: str | None = None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "TimeblockResponse":
-        raw_tasks = data.get("tasks") or []
-        parsed_tasks: list[TaskResponse] = []
-        for t in raw_tasks:
-            if isinstance(t, TaskResponse):
-                parsed_tasks.append(t)
-            elif isinstance(t, dict):
-                parsed_tasks.append(TaskResponse.model_validate(t))
-            elif hasattr(t, "id"):  # Task domain model
-                parsed_tasks.append(
-                    TaskResponse(
-                        id=str(t.id),
-                        project_id=t.project_id,
-                        title=t.title,
-                        bucket=t.bucket,
-                        position=t.position,
-                        tags=[tag.value for tag in t.tags],
-                        attachments=t.attachments,
-                        body=t.body,
-                        due_date=t.due_date.value,
-                        planned_date=t.planned_date.value,
-                        priority=t.priority.value if t.priority.value != "none" else None,
-                        color=t.color,
-                        postponed_until=t.postponed_until.value,
-                        created_at=t.created_at,
-                        updated_at=t.updated_at,
-                    )
-                )
+    def from_dict(cls, data: TimeblockRecord) -> "TimeblockResponse":
+        parsed_tasks = [
+            TaskResponse(
+                id=str(t.id),
+                project_id=t.project_id,
+                title=t.title,
+                bucket=t.bucket,
+                position=t.position,
+                tags=[tag.value for tag in t.tags],
+                attachments=t.attachments,
+                body=t.body,
+                due_date=t.due_date.value,
+                planned_date=t.planned_date.value,
+                priority=t.priority.value if t.priority.value != "none" else None,
+                color=t.color,
+                postponed_until=t.postponed_until.value,
+                created_at=t.created_at,
+                updated_at=t.updated_at,
+            )
+            for t in data.get("tasks") or []
+        ]
 
         return cls(
             id=data["id"],

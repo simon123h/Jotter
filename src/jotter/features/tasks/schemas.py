@@ -1,7 +1,7 @@
 """Pydantic schemas and DTOs for Tasks."""
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -89,6 +89,28 @@ class TaskFrontmatter(BaseModel):
     postponed_until: str | None = None
     created_at: str
     updated_at: str
+
+
+class TaskFilters(TypedDict, total=False):
+    """Optional task filters (everything in TaskFilterParams except the project)."""
+
+    bucket: str | None
+    buckets: list[str] | None
+    tag: str | None
+    tags: list[str] | None
+    tag_mode: str
+    exclude_bucket: str | None
+    exclude_buckets: list[str] | None
+    priorities: list[str] | None
+    search: str | None
+    due_before: str | None
+    due_after: str | None
+    planned_date: str | None
+    has_due_date: bool | None
+    created_before: str | None
+    created_after: str | None
+    updated_before: str | None
+    updated_after: str | None
 
 
 @dataclass

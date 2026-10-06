@@ -1,15 +1,15 @@
 import datetime
 import sqlite3
-from typing import Any
 
+from jotter.features.tasks.domain import Task
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 from jotter.features.timeblock.repo import TimeblockDiskRepo
-from jotter.features.timeblock.schemas import TimeblockCreate, TimeblockUpdate
+from jotter.features.timeblock.schemas import TimeblockCreate, TimeblockRecord, TimeblockUpdate
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
 from jotter.shared.ulid import generate_ulid
 
 
-def _matches_date(block: dict[str, Any], target_date: datetime.date) -> bool:
+def _matches_date(block: TimeblockRecord, target_date: datetime.date) -> bool:
     rec = block.get("recurrence")
     if not rec or rec == "none":
         return bool(block.get("date", "") == target_date.isoformat())
@@ -36,9 +36,8 @@ def _matches_date(block: dict[str, Any], target_date: datetime.date) -> bool:
     return False
 
 
-def _is_task_done(task: Any) -> bool:
-    bucket = getattr(task, "bucket", "") if not isinstance(task, dict) else task.get("bucket", "")
-    return str(bucket).lower() in ("done", "archive", "archived", "completed")
+def _is_task_done(task: Task) -> bool:
+    return str(task.bucket).lower() in ("done", "archive", "archived", "completed")
 
 
 class TimeblockApplicationService:
@@ -50,7 +49,7 @@ class TimeblockApplicationService:
     def from_data_dir(cls, data_dir: str, conn: sqlite3.Connection) -> "TimeblockApplicationService":
         return cls(repo=TimeblockDiskRepo(data_dir), task_repo=SqliteTaskRepository(conn))
 
-    def _populate_tasks(self, item: dict[str, Any]) -> dict[str, Any]:
+    def _populate_tasks(self, item: TimeblockRecord) -> TimeblockRecord:
         if not self.task_repo:
             item["tasks"] = item.get("tasks") or []
             return item
@@ -67,7 +66,7 @@ class TimeblockApplicationService:
             self.repo.save(item)
         return item
 
-    def _populate_tasks_bulk(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _populate_tasks_bulk(self, items: list[TimeblockRecord]) -> list[TimeblockRecord]:
         if not self.task_repo or not items:
             for it in items:
                 it["tasks"] = it.get("tasks") or []
@@ -107,7 +106,7 @@ class TimeblockApplicationService:
         self,
         start_date: str | None = None,
         end_date: str | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[TimeblockRecord]:
         self.purge_past_timeblocks()
         items = self.repo.list_all()
 
@@ -123,7 +122,7 @@ class TimeblockApplicationService:
         except ValueError:
             return []
 
-        matched_results: list[dict[str, Any]] = []
+        matched_results: list[TimeblockRecord] = []
 
         if start_dt and end_dt:
             curr = start_dt
@@ -131,20 +130,20 @@ class TimeblockApplicationService:
                 for tb in items:
                     if _matches_date(tb, curr):
                         # Create occurrence representation for curr date
-                        item_copy = dict(tb)
+                        item_copy = tb.copy()
                         item_copy["date"] = curr.isoformat()
                         matched_results.append(item_copy)
                 curr += datetime.timedelta(days=1)
         elif start_dt:
             for tb in items:
                 if _matches_date(tb, start_dt):
-                    item_copy = dict(tb)
+                    item_copy = tb.copy()
                     item_copy["date"] = start_dt.isoformat()
                     matched_results.append(item_copy)
         elif end_dt:
             for tb in items:
                 if _matches_date(tb, end_dt):
-                    item_copy = dict(tb)
+                    item_copy = tb.copy()
                     item_copy["date"] = end_dt.isoformat()
                     matched_results.append(item_copy)
 
@@ -154,18 +153,18 @@ class TimeblockApplicationService:
         )
         return self._populate_tasks_bulk(sorted_items)
 
-    def get_timeblock(self, timeblock_id: str) -> dict[str, Any]:
+    def get_timeblock(self, timeblock_id: str) -> TimeblockRecord:
         item = self.repo.get_by_id(timeblock_id)
         if not item:
             raise EntityNotFoundError(f"Timeblock '{timeblock_id}' not found")
         return self._populate_tasks(item)
 
-    def create_timeblock(self, data: TimeblockCreate) -> dict[str, Any]:
+    def create_timeblock(self, data: TimeblockCreate) -> TimeblockRecord:
         if data.start_time >= data.end_time:
             raise ValidationError("startTime must be earlier than endTime")
 
         timeblock_id = f"tb_{generate_ulid().lower()}"
-        item: dict[str, Any] = {
+        item: TimeblockRecord = {
             "id": timeblock_id,
             "title": data.title.strip(),
             "date": data.date,
@@ -178,7 +177,7 @@ class TimeblockApplicationService:
         saved = self.repo.save(item)
         return self._populate_tasks(saved)
 
-    def update_timeblock(self, timeblock_id: str, data: TimeblockUpdate) -> dict[str, Any]:
+    def update_timeblock(self, timeblock_id: str, data: TimeblockUpdate) -> TimeblockRecord:
         existing = self.get_timeblock(timeblock_id)
 
         title = data.title.strip() if data.title is not None else existing.get("title", "")
@@ -198,7 +197,7 @@ class TimeblockApplicationService:
         if start_time >= end_time:
             raise ValidationError("startTime must be earlier than endTime")
 
-        updated: dict[str, Any] = {
+        updated: TimeblockRecord = {
             "id": timeblock_id,
             "title": title,
             "date": date,
@@ -216,7 +215,7 @@ class TimeblockApplicationService:
         if not deleted:
             raise EntityNotFoundError(f"Timeblock '{timeblock_id}' not found")
 
-    def allocate_task(self, timeblock_id: str, task_id: str, action: str = "add") -> dict[str, Any]:
+    def allocate_task(self, timeblock_id: str, task_id: str, action: str = "add") -> TimeblockRecord:
         target_tb = self.repo.get_by_id(timeblock_id)
         if not target_tb:
             raise EntityNotFoundError(f"Timeblock '{timeblock_id}' not found")

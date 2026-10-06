@@ -2,7 +2,9 @@
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import cast
+
+from jotter.features.timeblock.schemas import TimeblockRecord
 
 
 class TimeblockDiskRepo:
@@ -10,7 +12,7 @@ class TimeblockDiskRepo:
         self.data_dir = Path(data_dir)
         self.file_path = self.data_dir / "timeblocks.json"
 
-    def _load(self) -> list[dict[str, Any]]:
+    def _load(self) -> list[TimeblockRecord]:
         if not self.file_path.exists():
             return []
         try:
@@ -18,27 +20,27 @@ class TimeblockDiskRepo:
             if not content:
                 return []
             data = json.loads(content)
-            return data if isinstance(data, list) else []
+            return cast(list[TimeblockRecord], data) if isinstance(data, list) else []
         except Exception:
             return []
 
-    def _save(self, items: list[dict[str, Any]]) -> None:
+    def _save(self, items: list[TimeblockRecord]) -> None:
         from jotter.shared.fs import atomic_write
 
         cleaned_items = [{k: v for k, v in it.items() if k != "tasks"} for it in items]
         data_str = json.dumps(cleaned_items, indent=2, ensure_ascii=False)
         atomic_write(self.file_path, data_str, encoding="utf-8", prefix=".timeblocks_", suffix=".tmp")
 
-    def list_all(self) -> list[dict[str, Any]]:
+    def list_all(self) -> list[TimeblockRecord]:
         return self._load()
 
-    def get_by_id(self, timeblock_id: str) -> dict[str, Any] | None:
+    def get_by_id(self, timeblock_id: str) -> TimeblockRecord | None:
         for item in self._load():
             if item.get("id") == timeblock_id:
                 return item
         return None
 
-    def save(self, item: dict[str, Any]) -> dict[str, Any]:
+    def save(self, item: TimeblockRecord) -> TimeblockRecord:
         items = self._load()
         idx = next((i for i, tb in enumerate(items) if tb.get("id") == item.get("id")), None)
         if idx is not None:

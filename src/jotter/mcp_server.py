@@ -7,8 +7,9 @@ create, update, move, and organize tasks and projects directly on the local boar
 import functools
 import importlib
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 
 from jotter.config import UserConfig, load_config
 from jotter.features.buckets.schemas import BucketCreate
@@ -25,6 +26,9 @@ from jotter.features.vaults.registry import VaultRegistry
 from jotter.shared.db import create_sqlite_connection
 
 logger = logging.getLogger(__name__)
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
 def _load_server_class() -> Any:
@@ -92,11 +96,11 @@ def _create_server(config: UserConfig | None, vault: str | None) -> tuple[MCPSer
 
     sync_scheduler = VaultSyncScheduler(cfg.data_dir)
 
-    def commits_changes(fn: Any) -> Any:
+    def commits_changes(fn: Callable[P, R]) -> Callable[P, R]:
         """Marks the vault dirty after a data-changing tool succeeds so the next periodic cycle commits it."""
 
         @functools.wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             result = fn(*args, **kwargs)
             sync_scheduler.mark_dirty()
             return result

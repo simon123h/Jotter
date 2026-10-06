@@ -5,7 +5,7 @@ Delegates to TaskCommandService (writes + projections) and TaskQueryService (rea
 
 import sqlite3
 from pathlib import Path
-from typing import Any, Self
+from typing import Self, Unpack
 
 from jotter.features.buckets.repo import BucketRepository
 from jotter.features.projects.repo import ProjectRepository
@@ -15,6 +15,7 @@ from jotter.features.tasks.projector import TaskProjector
 from jotter.features.tasks.query_service import TaskQueryService
 from jotter.features.tasks.schemas import (
     TaskCreate,
+    TaskFilters,
     TaskMove,
     TaskResponse,
     TaskUpdate,
@@ -62,7 +63,7 @@ class TaskApplicationService:
     def get_task(self, project_id: str, task_id: str) -> TaskResponse:
         return self.queries.get_task(project_id, task_id)
 
-    def get_tasks(self, project_id: str | None = None, **kwargs: Any) -> list[TaskResponse]:
+    def get_tasks(self, project_id: str | None = None, **kwargs: Unpack[TaskFilters]) -> list[TaskResponse]:
         return self.queries.get_tasks(project_id=project_id, **kwargs)
 
     # --- Command Delegations ---
