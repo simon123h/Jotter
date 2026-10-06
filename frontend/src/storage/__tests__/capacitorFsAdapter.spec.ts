@@ -325,6 +325,37 @@ describe('CapacitorFsStorageAdapter', () => {
       const task = await db.tasks.get('task1');
       expect(task?.title).toBe('Synced Task 1');
     });
+
+    it('leaves a task file with invalid YAML untouched and still syncs the others', async () => {
+      (Filesystem.readdir as any).mockImplementation(async ({ path }: { path: string }) => {
+        if (path === 'Jotter') return { files: [{ name: 'demo-proj', type: 'directory' }] };
+        if (path === 'Jotter/demo-proj') {
+          return {
+            files: [
+              { name: 'index.md', type: 'file' },
+              { name: 'broken.md', type: 'file' },
+              { name: 'good.md', type: 'file' },
+            ],
+          };
+        }
+        return { files: [] };
+      });
+      (Filesystem.readFile as any).mockImplementation(async ({ path }: { path: string }) => {
+        if (path === 'Jotter/demo-proj/index.md') return { data: '---\ntitle: Demo\n---\n' };
+        if (path === 'Jotter/demo-proj/broken.md') return { data: '---\ntitle: [unclosed\n---\nPrecious body\n' };
+        if (path === 'Jotter/demo-proj/good.md') return { data: '---\ntitle: Good\n---\n' };
+        return { data: '' };
+      });
+
+      const result = await adapter.syncSystem();
+
+      expect(result.synchronized_tasks).toBe(1);
+      expect(await db.tasks.get('good')).toBeTruthy();
+      // Not cached, so it cannot be edited and rewritten, and nothing was written over it
+      expect(await db.tasks.get('broken')).toBeUndefined();
+      const writtenPaths = (Filesystem.writeFile as any).mock.calls.map((c: any[]) => c[0].path);
+      expect(writtenPaths).not.toContain('Jotter/demo-proj/broken.md');
+    });
   });
 
   describe('Attachments', () => {
