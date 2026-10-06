@@ -4,7 +4,7 @@ import json
 import re
 import sqlite3
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from itertools import batched
 from typing import Any, NamedTuple
 
@@ -140,7 +140,7 @@ class SqliteTaskRepository:
         WHERE 1=1
         """
         args: list[Any] = []
-        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today_str = datetime.now(UTC).strftime("%Y-%m-%d")
 
         if project_id in ("null", "undefined"):
             return []

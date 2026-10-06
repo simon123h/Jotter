@@ -2,7 +2,7 @@ import json
 import logging
 import sqlite3
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Self
 
@@ -57,7 +57,7 @@ def _is_expired(
     try:
         dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
         return (now - dt).total_seconds() / 86400.0 >= clean_period
     except Exception:
         return False
@@ -141,7 +141,7 @@ class SyncApplicationService:
             except Exception:
                 pass
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # 3. Sync all task files for all projects
         total_synced = 0

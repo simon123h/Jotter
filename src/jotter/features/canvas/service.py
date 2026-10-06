@@ -2,7 +2,7 @@
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from jotter.features.canvas.schemas import CanvasDocument, CanvasMeta
@@ -42,8 +42,8 @@ class CanvasApplicationService:
                         id=stem,
                         title=title,
                         filename=file_path.name,
-                        created_at=datetime.fromtimestamp(stats.st_ctime, tz=timezone.utc).isoformat(),
-                        updated_at=datetime.fromtimestamp(stats.st_mtime, tz=timezone.utc).isoformat(),
+                        created_at=datetime.fromtimestamp(stats.st_ctime, tz=UTC).isoformat(),
+                        updated_at=datetime.fromtimestamp(stats.st_mtime, tz=UTC).isoformat(),
                     )
                 )
 

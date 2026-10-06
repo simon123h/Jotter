@@ -1,8 +1,8 @@
 """Task Domain Aggregate Root and Value Objects."""
 
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
-from enum import Enum
+from datetime import UTC, date, datetime
+from enum import StrEnum
 from typing import Self
 
 from jotter.shared.exceptions import ValidationError
@@ -10,15 +10,12 @@ from jotter.shared.ulid import generate_ulid
 from jotter.shared.unset import UNSET, Unset
 
 
-class Priority(str, Enum):
+class Priority(StrEnum):
     NONE = "none"
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     URGENT = "urgent"
-
-    def __str__(self) -> str:
-        return self.value
 
     @classmethod
     def from_str(cls, val: str | None) -> Self:
@@ -101,7 +98,7 @@ class DueDate:
         d = self.as_date
         if not d:
             return False
-        ref = reference_date or datetime.now(timezone.utc).date()
+        ref = reference_date or datetime.now(UTC).date()
         return d < ref
 
     def is_today(self, reference_date: date | None = None) -> bool:
@@ -112,7 +109,7 @@ class DueDate:
         d = self.as_date
         if not d:
             return False
-        ref = reference_date or datetime.now(timezone.utc).date()
+        ref = reference_date or datetime.now(UTC).date()
         return d == ref
 
     def __str__(self) -> str:
@@ -149,8 +146,8 @@ class Task:
     color: str | None = None
     postponed_until: DueDate = field(default_factory=lambda: DueDate(None))
     extra_frontmatter: dict[str, object] = field(default_factory=dict)
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def __post_init__(self) -> None:
         if not self.project_id or not self.project_id.strip():
@@ -183,7 +180,7 @@ class Task:
             raise ValidationError("Task title cannot be empty")
 
         tid = TaskId(task_id.strip()) if task_id else TaskId.generate()
-        now_str = datetime.now(timezone.utc).isoformat()
+        now_str = datetime.now(UTC).isoformat()
 
         clean_tags = [Tag(t) for t in tags] if tags else []
         clean_attachments = [a.strip() for a in attachments if a and a.strip()] if attachments else []
@@ -270,4 +267,4 @@ class Task:
             self.touch()
 
     def touch(self) -> None:
-        self.updated_at = datetime.now(timezone.utc).isoformat()
+        self.updated_at = datetime.now(UTC).isoformat()

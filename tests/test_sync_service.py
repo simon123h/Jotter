@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from jotter.features.buckets.service import BucketApplicationService
@@ -197,7 +197,7 @@ def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
     settings_file.write_text(json.dumps({"doneCleanPeriod": 14}), encoding="utf-8")
 
     # Create old done task in Proj A (10 days old -> pruned because project clean_period is 7)
-    old_date = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+    old_date = (datetime.now(UTC) - timedelta(days=10)).isoformat()
     t_a_old = task_svc.create_task("proj-a", TaskCreate(title="Old Done A", bucket="done"))
     task_file_a_old = Path(temp_dir) / "proj-a" / f"{t_a_old.id}.md"
     task_file_a_old.write_text(
@@ -206,7 +206,7 @@ def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
     )
 
     # Create recent done task in Proj A (2 days old -> kept)
-    recent_date = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+    recent_date = (datetime.now(UTC) - timedelta(days=2)).isoformat()
     t_a_recent = task_svc.create_task("proj-a", TaskCreate(title="Recent Done A", bucket="done"))
     task_file_a_recent = Path(temp_dir) / "proj-a" / f"{t_a_recent.id}.md"
     task_file_a_recent.write_text(
@@ -215,7 +215,7 @@ def test_sync_prunes_expired_done_tasks_project_and_global(temp_dir, test_env):
     )
 
     # Create old done task in Proj B (20 days old -> pruned by global 14)
-    very_old_date = (datetime.now(timezone.utc) - timedelta(days=20)).isoformat()
+    very_old_date = (datetime.now(UTC) - timedelta(days=20)).isoformat()
     t_b_old = task_svc.create_task("proj-b", TaskCreate(title="Old Done B", bucket="done"))
     task_file_b_old = Path(temp_dir) / "proj-b" / f"{t_b_old.id}.md"
     task_file_b_old.write_text(
@@ -485,7 +485,7 @@ def test_sync_still_prunes_unchanged_expired_done_tasks(temp_dir, test_env, monk
     task = task_svc.create_task("proj", TaskCreate(title="Old done", bucket="done"))
     project_dir = Path(temp_dir) / "proj"
     path = project_dir / f"{task.id}.md"
-    old_iso = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+    old_iso = (datetime.now(UTC) - timedelta(days=10)).isoformat()
     path.write_text(path.read_text(encoding="utf-8").replace(task.updated_at, old_iso), encoding="utf-8")
     _age_files(project_dir)
     sync_svc.sync_db_only()  # indexes the task (retention disabled)

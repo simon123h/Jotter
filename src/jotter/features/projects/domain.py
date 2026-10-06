@@ -1,7 +1,7 @@
 """Project Domain Entity."""
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Self
 
 from jotter.shared.exceptions import ValidationError
@@ -15,7 +15,7 @@ class Project:
     name: str  # Display name / title (e.g. "Default", "Work & Office")
     description: str = ""
     done_clean_period: int | None = None
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def __post_init__(self) -> None:
         if not self.id or not self.id.strip():
@@ -45,7 +45,7 @@ class Project:
             name=clean_name,
             description=description.strip() if description else "",
             done_clean_period=done_clean_period,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
 
     def update_details(
