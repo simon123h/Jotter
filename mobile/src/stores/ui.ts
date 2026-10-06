@@ -1,7 +1,13 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 
-export type Sheet = { type: 'task'; id: string } | { type: 'quickadd' } | { type: 'projects' } | { type: 'vaults' } | { type: 'filter' };
+export type Sheet =
+  | { type: 'task'; id: string }
+  | { type: 'quickadd' }
+  | { type: 'projects' }
+  | { type: 'vaults' }
+  | { type: 'filter' }
+  | { type: 'settings' };
 
 /** Which overlay is open. One at a time; the back button closes it. */
 export const useUiStore = defineStore('ui', () => {

@@ -8,6 +8,7 @@ import QuickAddSheet from '@/components/QuickAddSheet.vue';
 import ProjectsSheet from '@/components/ProjectsSheet.vue';
 import VaultsSheet from '@/components/VaultsSheet.vue';
 import FilterSheet from '@/components/FilterSheet.vue';
+import SettingsSheet from '@/components/SettingsSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -70,6 +71,7 @@ watch(
     <ProjectsSheet v-else-if="ui.sheet?.type === 'projects'" />
     <VaultsSheet v-else-if="ui.sheet?.type === 'vaults'" />
     <FilterSheet v-else-if="ui.sheet?.type === 'filter'" />
+    <SettingsSheet v-else-if="ui.sheet?.type === 'settings'" />
   </template>
 
   <div

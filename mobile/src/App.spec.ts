@@ -4,6 +4,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import App from './App.vue';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
+import { useSettingsStore } from '@/stores/settings';
+import { locale } from '@/i18n';
 import { VaultRepository } from '@/data/repository';
 import { VaultRegistry } from '@/data/vaults';
 import { VaultDb } from '@/data/db';
@@ -66,6 +68,9 @@ const desktopVault = (f: MemoryFs) => {
 
 beforeEach(() => {
   vi.spyOn(window, 'confirm').mockReturnValue(true);
+  localStorage.clear();
+  document.documentElement.removeAttribute('data-theme');
+  locale.value = 'en';
 });
 
 describe('first launch', () => {
@@ -293,5 +298,37 @@ describe('projects and vaults', () => {
     await settle();
     expect(app.vault?.path).toBe('Other');
     expect(find('no-projects').exists()).toBe(true);
+  });
+});
+
+describe('settings', () => {
+  it('switches the language and the theme, and remembers both', async () => {
+    await start(desktopVault);
+    const settings = useSettingsStore();
+    expect(find('open-filter').attributes('aria-label')).toBe('Search');
+
+    await find('open-settings').trigger('click');
+    await type('setting-language', 'de', 'change');
+    await type('setting-theme', 'dark', 'change');
+
+    expect(wrapper.text()).toContain('Einstellungen');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(JSON.parse(localStorage.getItem('jotter_lite_settings')!)).toEqual({ theme: 'dark', language: 'de' });
+    expect(find('open-filter').attributes('aria-label')).toBe('Suchen');
+
+    // Back to the system choice: no explicit theme on the page
+    settings.theme = 'system';
+    await settle();
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+  });
+
+  it('shows the version and links to the vaults', async () => {
+    await start(desktopVault);
+    await find('open-settings').trigger('click');
+    expect(wrapper.text()).toContain('Version');
+
+    await find('setting-vaults').trigger('click');
+    await settle();
+    expect(all('vault-row')).toHaveLength(1);
   });
 });

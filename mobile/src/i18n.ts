@@ -62,6 +62,15 @@ const en = {
   'vaults.remove': 'Forget vault',
   'vaults.confirmRemove': 'Forget vault "{name}"? Its folder and files stay on your device.',
   'vaults.add': 'Add vault',
+  'settings.title': 'Settings',
+  'settings.language': 'Language',
+  'settings.theme': 'Theme',
+  'settings.system': 'System',
+  'settings.light': 'Light',
+  'settings.dark': 'Dark',
+  'settings.vaults': 'Manage vaults',
+  'settings.about': 'About',
+  'settings.version': 'Version {version}',
   'error.title': 'Something went wrong',
   'error.storage': 'Jotter Lite needs access to files to read your vault.',
 } as const;
@@ -130,13 +139,24 @@ const de: Record<MessageKey, string> = {
   'vaults.remove': 'Vault vergessen',
   'vaults.confirmRemove': 'Vault „{name}“ vergessen? Ordner und Dateien bleiben auf deinem Gerät.',
   'vaults.add': 'Vault hinzufügen',
+  'settings.title': 'Einstellungen',
+  'settings.language': 'Sprache',
+  'settings.theme': 'Design',
+  'settings.system': 'System',
+  'settings.light': 'Hell',
+  'settings.dark': 'Dunkel',
+  'settings.vaults': 'Vaults verwalten',
+  'settings.about': 'Über',
+  'settings.version': 'Version {version}',
   'error.title': 'Etwas ist schiefgelaufen',
   'error.storage': 'Jotter Lite braucht Zugriff auf Dateien, um deinen Vault zu lesen.',
 };
 
 const messages: Record<string, Record<MessageKey, string>> = { en, de };
 
-export const locale = ref(typeof navigator !== 'undefined' && navigator.language?.toLowerCase().startsWith('de') ? 'de' : 'en');
+export const systemLocale = () => (typeof navigator !== 'undefined' && navigator.language?.toLowerCase().startsWith('de') ? 'de' : 'en');
+
+export const locale = ref(systemLocale());
 
 export function t(key: MessageKey, params: Record<string, string | number> = {}): string {
   const text = (messages[locale.value] ?? en)[key] ?? en[key];

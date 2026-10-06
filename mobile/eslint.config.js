@@ -19,6 +19,7 @@ export default tseslint.config(
         ...globals.browser,
         ...globals.node,
         ...globals.es2021,
+        __APP_VERSION__: 'readonly',
       },
       parserOptions: {
         parser: tseslint.parser,

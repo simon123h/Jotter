@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { Plus, Search, ChevronDown, RefreshCw, TriangleAlert } from '@lucide/vue';
+import { Plus, Search, ChevronDown, RefreshCw, Settings, TriangleAlert } from '@lucide/vue';
 import TaskCard from '@/components/TaskCard.vue';
 import { useCardDrag } from '@/composables/useCardDrag';
 import { t } from '@/i18n';
@@ -99,6 +99,14 @@ async function refresh() {
       </button>
       <button class="rounded-full p-2.5 active:bg-line" :aria-label="t('board.refresh')" data-testid="refresh" @click="refresh">
         <RefreshCw class="h-5 w-5" :class="{ 'animate-spin': refreshing }" />
+      </button>
+      <button
+        class="rounded-full p-2.5 active:bg-line"
+        :aria-label="t('settings.title')"
+        data-testid="open-settings"
+        @click="ui.open({ type: 'settings' })"
+      >
+        <Settings class="h-5 w-5" />
       </button>
     </header>
 
