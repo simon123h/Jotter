@@ -239,6 +239,35 @@ describe('board', () => {
     expect(all('column')[1].text()).toContain('Added by sync');
   });
 
+  it('refreshes when a column is pulled down from the top, and not on a short pull', async () => {
+    await start(desktopVault);
+    fs.put('Jotter/work/e.md', '---\ntitle: Added by sync\nstatus: done\n---\n');
+
+    const column = all('column')[0].element;
+    const touch = (type: string, y: number, x = 100) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.assign(event, { touches: type === 'touchend' ? [] : [{ clientX: x, clientY: y }] });
+      column.dispatchEvent(event);
+    };
+
+    // Too short: nothing happens
+    touch('touchstart', 300);
+    touch('touchmove', 316);
+    touch('touchend', 316);
+    await settle();
+    expect(all('column')[1].text()).not.toContain('Added by sync');
+
+    // A real pull
+    touch('touchstart', 300);
+    touch('touchmove', 440);
+    await settle();
+    expect(find('pull-indicator').exists()).toBe(true);
+    touch('touchend', 440);
+    await settle();
+    expect(all('column')[1].text()).toContain('Added by sync');
+    expect(find('pull-indicator').exists()).toBe(false);
+  });
+
   it('warns about files it could not read', async () => {
     await start(desktopVault);
     fs.put('Jotter/work/broken.md', '---\ntitle: [unclosed\n---\n');

@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { Plus, Search, ChevronDown, RefreshCw, Settings, TriangleAlert } from '@lucide/vue';
 import TaskCard from '@/components/TaskCard.vue';
 import { useCardDrag } from '@/composables/useCardDrag';
+import { usePullToRefresh } from '@/composables/usePullToRefresh';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -16,7 +17,6 @@ const active = computed({
   get: () => ui.activeColumn,
   set: (index: number) => (ui.activeColumn = index),
 });
-const refreshing = ref(false);
 
 const columnTitle = (key: string, title: string) => (key === '__other' ? t('board.other') : title);
 
@@ -61,13 +61,23 @@ watch(
 );
 
 async function refresh() {
-  refreshing.value = true;
   try {
     await app.refresh();
   } catch (err) {
     ui.showToast(err instanceof Error ? err.message : String(err));
+  }
+}
+
+const pullRefresh = usePullToRefresh(scroller, { onRefresh: refresh, disabled: () => !!drag.dragging.value });
+// The header button spins for the same state, so both ways to refresh look alike
+const refreshing = computed(() => pullRefresh.refreshing.value || manualRefreshing.value);
+const manualRefreshing = ref(false);
+async function refreshFromButton() {
+  manualRefreshing.value = true;
+  try {
+    await refresh();
   } finally {
-    refreshing.value = false;
+    manualRefreshing.value = false;
   }
 }
 </script>
@@ -97,7 +107,7 @@ async function refresh() {
           data-testid="filter-active"
         ></span>
       </button>
-      <button class="rounded-full p-2.5 active:bg-line" :aria-label="t('board.refresh')" data-testid="refresh" @click="refresh">
+      <button class="rounded-full p-2.5 active:bg-line" :aria-label="t('board.refresh')" data-testid="refresh" @click="refreshFromButton">
         <RefreshCw class="h-5 w-5" :class="{ 'animate-spin': refreshing }" />
       </button>
       <button
@@ -142,6 +152,21 @@ async function refresh() {
         </button>
       </nav>
 
+      <!-- Pull-to-refresh indicator: grows with the pull and sits above the columns -->
+      <div
+        v-if="pullRefresh.pull.value > 0"
+        class="flex shrink-0 items-center justify-center overflow-hidden text-muted"
+        :style="{ height: `${pullRefresh.pull.value}px` }"
+        :data-refreshing="pullRefresh.refreshing.value"
+        data-testid="pull-indicator"
+      >
+        <RefreshCw
+          class="h-5 w-5"
+          :class="{ 'animate-spin': pullRefresh.refreshing.value }"
+          :style="{ transform: `rotate(${pullRefresh.pull.value * 3}deg)` }"
+        />
+      </div>
+
       <div
         ref="scroller"
         class="flex min-h-0 flex-1 overflow-x-auto"
@@ -152,7 +177,7 @@ async function refresh() {
         <section
           v-for="col in app.columns"
           :key="col.key"
-          class="h-full w-full shrink-0 snap-center overflow-y-auto px-3 pb-24"
+          class="h-full w-full shrink-0 snap-center overflow-y-auto overscroll-y-contain px-3 pb-24"
           :data-column="col.key"
           :data-bucket="col.bucket ?? undefined"
           data-testid="column"
