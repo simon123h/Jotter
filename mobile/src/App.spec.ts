@@ -166,6 +166,30 @@ describe('capturing and editing tasks', () => {
     expect(app.positionsIn('done')).toEqual([1000]);
   });
 
+  it('shows the notes rendered, ticks checklist items in the file, and edits the raw text', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/a.md', '---\ntitle: Write report\nstatus: todo\nposition: 1000\n---\n## Plan\n\n- [ ] draft\n- [x] outline\n');
+    });
+    await find('task-card').trigger('click');
+
+    expect(find('markdown').html()).toContain('<h2>Plan</h2>');
+    expect(find('task-body').exists()).toBe(false);
+
+    await wrapper.findAll('input[type="checkbox"]')[0].trigger('click');
+    await settle();
+    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('- [x] draft');
+    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('- [x] outline');
+
+    await find('notes-edit').trigger('click');
+    expect((find('task-body').element as HTMLTextAreaElement).value).toContain('- [x] draft');
+    await find('task-body').setValue('plain again');
+    await find('notes-done').trigger('click');
+    await settle();
+    expect(find('markdown').text()).toBe('plain again');
+    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('plain again');
+  });
+
   it('adds and removes an attachment', async () => {
     await start(desktopVault);
     await find('task-card').trigger('click');

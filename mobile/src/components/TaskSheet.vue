@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue';
-import { Trash2, Paperclip, X } from '@lucide/vue';
+import { Trash2, Paperclip, Pencil, X } from '@lucide/vue';
+import MarkdownView from './MarkdownView.vue';
+import { toggleChecklistItem } from '@/markdown';
 import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -77,6 +79,19 @@ async function remove() {
     closing = false;
     fail(err);
   }
+}
+
+// Notes are shown rendered; they open in the editor when empty, or when Edit is tapped
+const editingNotes = ref(!initial?.body);
+
+async function finishEditingNotes() {
+  await save();
+  editingNotes.value = false;
+}
+
+async function toggleItem(index: number) {
+  draft.value.body = toggleChecklistItem(draft.value.body, index);
+  await save();
 }
 
 const isImage = (name: string) => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name);
@@ -156,10 +171,37 @@ async function removeAttachment(name: string) {
         />
       </label>
 
-      <label class="block">
-        <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.notes') }}</span>
-        <textarea v-model="draft.body" rows="8" :class="`${field} font-mono text-sm`" data-testid="task-body" @change="saveSoon"></textarea>
-      </label>
+      <div>
+        <div class="mb-1 flex items-center justify-between">
+          <span class="text-xs font-medium text-muted">{{ t('task.notes') }}</span>
+          <button
+            v-if="draft.body && !editingNotes"
+            class="inline-flex items-center gap-1 text-sm font-medium text-accent"
+            data-testid="notes-edit"
+            @click="editingNotes = true"
+          >
+            <Pencil class="h-3.5 w-3.5" />{{ t('common.edit') }}
+          </button>
+          <button v-else-if="draft.body" class="text-sm font-medium text-accent" data-testid="notes-done" @click="finishEditingNotes">
+            {{ t('common.done') }}
+          </button>
+        </div>
+        <MarkdownView
+          v-if="draft.body && !editingNotes"
+          :source="draft.body"
+          class="rounded-xl border border-line bg-surface p-3"
+          @toggle="toggleItem"
+        />
+        <textarea
+          v-else
+          v-model="draft.body"
+          rows="8"
+          :aria-label="t('task.notes')"
+          :class="`${field} font-mono text-sm`"
+          data-testid="task-body"
+          @change="saveSoon"
+        ></textarea>
+      </div>
 
       <div>
         <div class="mb-2 flex items-center justify-between">
