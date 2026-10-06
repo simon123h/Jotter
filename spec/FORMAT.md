@@ -10,7 +10,7 @@ executable form of the rules below: when the two disagree, that is a bug in one 
 explicitly. Where the document is silent, the Python backend (`src/jotter/`) is the reference implementation.
 
 The words MUST, SHOULD and MAY are used as in RFC 2119. Status: version 1 describes the format as it is
-written today. Vaults carry no version marker yet (see [Open questions](#open-questions)).
+written today. Vaults carry no version marker.
 
 ## 1. Vault layout
 
@@ -50,11 +50,14 @@ Body text
 ```
 
 - A file that does not start with `---` has no frontmatter. The whole file is the body.
-- The frontmatter ends at the next `---`. Readers MUST NOT treat later `---` lines (for example a markdown
-  horizontal rule) as delimiters: they belong to the body. See the `body-with-rules` fixture.
+- The frontmatter ends at the first line that is exactly `---` (trailing spaces allowed). Anything else is part
+  of the frontmatter, including `---` inside a value. Later `---` lines, such as a markdown horizontal rule,
+  belong to the body. Frontmatter may be empty. See the `body-with-rules` and `empty-frontmatter` fixtures.
+- If the frontmatter is not valid YAML the file is **unreadable**: a reader MUST report an error and MUST NOT
+  overwrite the file (see the `invalid-yaml` fixture). A frontmatter that is valid YAML but not a mapping is
+  read as empty.
 - The body is everything after the closing line, **without leading blank lines**. Trailing content is kept as
   is.
-- Readers MUST ignore frontmatter that is not a mapping.
 - Key order carries no meaning. Writers SHOULD keep a stable order (the known keys, then unknown keys) so
   that diffs stay small.
 
@@ -67,7 +70,7 @@ Body text
 | `project_id` | string | **the folder name always wins**; frontmatter is only a fallback | always |
 | `title` | string | `Untitled Task` when missing or empty. The body is not consulted. | always |
 | `status` | string | `bucket` (legacy key), then `todo`; empty counts as missing | always |
-| `position` | number | `1000`. A numeric string is accepted. `0` also reads as `1000`. | always |
+| `position` | number | `1000`. A numeric string is accepted. Anything else, and `0`, reads as `1000`. | always |
 | `tags` | list of strings | `[]`. A comma separated string is accepted. | when not empty |
 | `attachments` | list of file names | `[]`. A JSON list inside a string is accepted. | when not empty |
 | `due_date` | `YYYY-MM-DD` | none. A time part is dropped. Unquoted YAML dates are accepted. | when set |
@@ -83,9 +86,15 @@ Further rules:
 - **Aliases.** Readers MUST accept the legacy keys `bucket` (for `status`), `projectId`, `dueDate`,
   `plannedDate`, `postponedUntil`, `createdAt` and `updatedAt`. Writers MUST use the names in the table.
 - **Tags** are lower-cased and lose a leading `#`. A tag may not contain a space.
-- **Planning keyword in `due_date`.** A keyword such as `today` found in `due_date` is read as `planned_date`.
-- **Planning keywords** that are known today: `today`, `tomorrow`, `someday`, `sometime`, `this-week`,
-  `next-week`, `thisweek`, `this-month`, `thismonth`, `this-year`, `thisyear`.
+- **Planning keywords** are `today`, `tomorrow`, `thisWeek`, `nextWeek`, `thisMonth`, `nextMonth`, `thisYear`,
+  `nextYear`, `someday` and `sometime`. Readers compare them ignoring case and hyphens (`this-week`, `thisWeek`
+  and `THISWEEK` are the same keyword). Writers keep the spelling they were given. The apps write the camelCase
+  form.
+- **Keyword in `due_date`.** Any planning keyword found in `due_date` is read as `planned_date`.
+- **Values a reader cannot use are dropped, the task is still read.** This covers an unknown `priority`, a tag
+  with a space, a `planned_date`, `due_date` or `postponed_until` that is neither a keyword (planned only) nor a
+  date, and a `position` that is not a number. See the `invalid-values-dropped` fixture. (A writer that finds
+  such a value in a file it rewrites drops it as well, which is why the first four of these are not preserved.)
 - **Attachments** are bare file names. The files live in `<project>/attachments/<task-id>/`. A name MUST NOT
   contain a path separator.
 - **Body.** Markdown, preserved exactly (apart from the leading blank lines above). Checklists
@@ -129,14 +138,14 @@ These matter most, because several programs edit the same vault.
 
 1. **Unknown frontmatter keys survive.** A task read and written back MUST keep keys it does not know, with
    their values (including nested lists and mappings). See the `unknown-keys` fixture. A project manifest
-   SHOULD do the same, and MUST keep its body.
+   MUST do the same, and MUST keep its body. See the project `unknown-keys` fixture.
 2. **Unknown files survive.** An implementation MUST NOT delete or rewrite files it does not own: other
    folders, `.canvas` files, `timeblocks.json`, `settings.json`, attachments of other tasks, and so on.
 3. **No gratuitous rewrites.** Writers SHOULD NOT rewrite a file whose content would not change, so that sync
    tools and git stay quiet.
 4. **Writes are atomic.** Write to a temporary file in the same folder, then rename.
-5. **Be liberal in what you read.** Prefer reading a file with defaults to refusing it (see the first
-   open question).
+5. **Be liberal in what you read.** Prefer reading a file with defaults and dropping the odd value to refusing
+   it. The only reason to refuse a file is frontmatter that is not valid YAML (section 2).
 
 ## 6. Optional parts
 
@@ -155,22 +164,10 @@ alone (rule 2) and MUST NOT fail because they exist.
 
 ## Open questions
 
-Decisions the fixtures currently record as they are, but that deserve an explicit choice:
-
-1. **Invalid values.** The Python reader raises on a few bad values: an unknown `priority`, a tag with a space,
-   and a planning or date value it does not know (for example `nextWeek` or `sometime-maybe`, the latter of
-   which an earlier version of the user documentation listed). One such value makes the whole task file
-   unreadable. Should readers instead drop the bad value and keep the task? The `Be liberal` rule says yes.
-2. **Planning keyword list.** `disk_repo.py` treats `thisWeek`, `nextWeek`, `thisMonth`, `nextMonth`, `thisYear`
-   and `nextYear` as keywords in `due_date`, but the `DueDate` value object only accepts the list in section 3.
-   So `nextWeek`, `nextMonth` and `nextYear` make the file unreadable. The two lists should become one.
-3. **Title of a file without a title.** Python gives `Untitled Task`, the Android parser takes the first line
-   of the body. A heading is arguably friendlier, but the rule must be one or the other.
-4. **Frontmatter delimiter.** The Python reader splits at the first two `---` anywhere in the text instead of
-   at lines that are exactly `---`. A frontmatter value containing `---` can therefore break parsing.
-5. **Version marker.** A `format_version` (for example in `index.md` or a `.jotter` file at the vault root)
-   would let a newer vault be detected instead of silently misread.
-6. **Whitespace.** Implementations write slightly different whitespace around the body. Fixtures compare
-   parsed values, not bytes. Is a byte-exact canonical form worth defining?
-7. **Unknown keys in `index.md`.** The Android parser keeps them when it rewrites a manifest, the Python backend
-   does not yet. The rule is a SHOULD until Python does, then it can become a MUST with a fixture.
+1. **Title of a file without a title.** The spec says `Untitled Task` (what the Python backend does). The
+   Android parser could take the first heading of the body instead, which is friendlier, but then both
+   implementations and the fixture have to change together.
+2. **Whitespace.** Implementations write slightly different whitespace around the body. Fixtures compare parsed
+   values, not bytes. A byte-exact canonical form is not defined.
+3. **Unreadable manifests.** An `index.md` with invalid YAML is read as an empty manifest, and a later rewrite
+   keeps its text as the body. Refusing to rewrite it, as tasks do, may be better.

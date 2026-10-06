@@ -30,6 +30,7 @@
         "max_tasks": null,
         "is_default": false
       }
-    ]
+    ],
+    "body": "# Full Project\n\nFree text about the project.\n"
   }
 }

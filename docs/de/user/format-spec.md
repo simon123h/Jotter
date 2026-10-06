@@ -28,7 +28,7 @@ tags:
 attachments:
   - design_mockup.png
 due_date: "2026-06-15"
-planned_date: "this-week"
+planned_date: thisWeek
 priority: high
 color: "#3b82f6"
 postponed_until: "2026-07-09"
@@ -64,7 +64,7 @@ Der YAML-Frontmatter-Block unterstützt die folgenden Schlüssel-Wert-Paare. All
 | `tags` | String-Array | Nein | Eine Liste von Begriffen zur Kategorisierung der Aufgabe. Tags werden automatisch kleingeschrieben. |
 | `attachments` | String-Array | Nein | Dateinamen der Dateien, die dieser Aufgabe angehängt sind. Die Dateien liegen in `<Projekt>/attachments/<Aufgaben-ID>/`. |
 | `due_date` | String | Nein | Das Fälligkeitsdatum im ISO-Format `YYYY-MM-DD` (oder `null`, wenn keines vorhanden ist). |
-| `planned_date`| String | Nein | Planungsmarker für die Wochenplanung. Unterstützte Werte: `today`, `tomorrow`, `this-week`, `next-week`, `this-month`, `this-year`, `someday`, `sometime` oder ein Datum `YYYY-MM-DD`. |
+| `planned_date`| String | Nein | Planungsmarker für die Wochenplanung. Unterstützte Werte: `today`, `tomorrow`, `thisWeek`, `nextWeek`, `thisMonth`, `nextMonth`, `thisYear`, `nextYear`, `someday`, `sometime` oder ein Datum `YYYY-MM-DD` (Schreibweisen mit Bindestrich wie `this-week` werden ebenfalls gelesen). |
 | `priority` | String | Nein | Die Priorität der Aufgabe. Unterstützte Werte: `low`, `medium`, `high`, `urgent` oder `null`. |
 | `color` | String | Nein | Ein benutzerdefinierter Hex-Farbcode (z. B. `#ef4444`) zur visuellen Hervorhebung der Aufgabenkarte. |
 | `postponed_until` | String | Nein | Das Datum, bis zu dem die Aufgabe aufgeschoben ist, im ISO-Format `YYYY-MM-DD` (oder `null`, wenn keines vorhanden ist). |

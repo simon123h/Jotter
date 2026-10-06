@@ -6,9 +6,37 @@ from typing import Any
 
 import yaml
 
-from jotter.features.tasks.domain import DueDate, Task
+from jotter.features.tasks.domain import DueDate, Priority, Tag, Task, is_planning_keyword
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
+from jotter.shared.frontmatter import split_frontmatter
 from jotter.shared.yaml_io import safe_load
+
+
+def _is_valid_tag(tag: str) -> bool:
+    try:
+        Tag(tag)
+    except ValidationError:
+        return False
+    return True
+
+
+def _clean_date(raw: object) -> str | None:
+    """A planning keyword or a YYYY-MM-DD date (a time part is dropped); anything else is dropped."""
+    if not raw:
+        return None
+    try:
+        return DueDate.from_str(str(raw)).value
+    except ValidationError:
+        return None
+
+
+def _clean_priority(raw: object) -> str | None:
+    if not raw:
+        return None
+    try:
+        return Priority.from_str(str(raw)).value
+    except ValidationError:
+        return None
 
 
 class DiskTaskRepository:
@@ -114,29 +142,25 @@ class DiskTaskRepository:
     def parse_task_content(self, content: str, fallback_id: str, default_project_id: str) -> Task:
         """Parses frontmatter and body, returning a domain Task entity."""
         fm_data: dict[str, Any] = {}
-        body = ""
 
-        if content.startswith("---"):
-            parts = content.split("---", 2)
-            if len(parts) >= 3:
-                try:
-                    loaded = safe_load(parts[1])
-                    if isinstance(loaded, dict):
-                        fm_data = loaded
-                except Exception as e:
-                    raise ValidationError(f"Error parsing YAML frontmatter: {e}") from e
-                body = parts[2].lstrip("\r\n")
-            else:
-                body = content
-        else:
-            body = content
+        yaml_text, body = split_frontmatter(content)
+        if yaml_text is not None:
+            try:
+                loaded = safe_load(yaml_text)
+            except Exception as e:
+                raise ValidationError(f"Error parsing YAML frontmatter: {e}") from e
+            if isinstance(loaded, dict):
+                fm_data = loaded
 
         tid = str(fm_data.get("id") or fallback_id)
         proj_id = str(default_project_id or fm_data.get("project_id") or fm_data.get("projectId") or "default")
         title = str(fm_data.get("title") or "Untitled Task")
         # Prefer 'status' with backwards-compatible fallback to 'bucket'
         bucket = str(fm_data.get("status") or fm_data.get("bucket") or "todo")
-        pos = float(fm_data.get("position") or 1000.0)
+        try:
+            pos = float(fm_data.get("position") or 1000.0)
+        except (TypeError, ValueError):
+            pos = 1000.0
 
         # Parse tags
         raw_tags = fm_data.get("tags")
@@ -145,6 +169,7 @@ class DiskTaskRepository:
             tags = [str(t) for t in raw_tags if t is not None]
         elif isinstance(raw_tags, str) and raw_tags.strip():
             tags = [t.strip() for t in raw_tags.split(",")]
+        tags = [t for t in tags if _is_valid_tag(t)]
 
         # Parse attachments
         raw_att = fm_data.get("attachments")
@@ -165,43 +190,13 @@ class DiskTaskRepository:
         color = fm_data.get("color")
         postponed_until = fm_data.get("postponed_until") or fm_data.get("postponedUntil")
 
-        # Normalize dates and planned keywords gracefully
-        clean_due: str | None = None
-        clean_planned: str | None = str(planned_date).strip() if planned_date else None
-        if due_date:
-            due_str = str(due_date).strip()
-            if due_str in (
-                "today",
-                "tomorrow",
-                "thisWeek",
-                "nextWeek",
-                "thisMonth",
-                "nextMonth",
-                "thisYear",
-                "nextYear",
-                "someday",
-            ):
-                if not clean_planned:
-                    clean_planned = due_str
-            else:
-                if len(due_str) >= 10 and due_str[4] == "-" and due_str[7] == "-":
-                    clean_due = due_str[:10]
-                else:
-                    try:
-                        clean_due = DueDate.from_str(due_str).value
-                    except Exception:
-                        clean_due = None
-
-        clean_postponed: str | None = None
-        if postponed_until:
-            post_str = str(postponed_until).strip()
-            if len(post_str) >= 10 and post_str[4] == "-" and post_str[7] == "-":
-                clean_postponed = post_str[:10]
-            else:
-                try:
-                    clean_postponed = DueDate.from_str(post_str).value
-                except Exception:
-                    clean_postponed = None
+        # A planning keyword in due_date is a planned date. Values that are neither a keyword nor a date are dropped.
+        clean_due = _clean_date(due_date)
+        clean_planned = _clean_date(planned_date)
+        if due_date and is_planning_keyword(str(due_date)):
+            clean_due = None
+            clean_planned = clean_planned or str(due_date).strip()
+        clean_postponed = _clean_date(postponed_until)
 
         # Collect unknown / extra frontmatter keys
         known_keys = {
@@ -240,7 +235,7 @@ class DiskTaskRepository:
             body=body,
             due_date=clean_due,
             planned_date=clean_planned,
-            priority=str(priority) if priority else None,
+            priority=_clean_priority(priority),
             color=str(color) if color else None,
             postponed_until=clean_postponed,
             task_id=tid,

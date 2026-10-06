@@ -28,7 +28,7 @@ tags:
 attachments:
   - design_mockup.png
 due_date: "2026-06-15"
-planned_date: this-week
+planned_date: thisWeek
 priority: high
 color: "#3b82f6"
 postponed_until: "2026-07-09"
@@ -64,7 +64,7 @@ The YAML frontmatter block supports the following key-value pairs. All key names
 | `tags` | Array of Strings | No | A list of labels categorizing this task. Tags are normalized to lowercase by Jotter's parser. |
 | `attachments` | Array of Strings | No | File names of the files attached to this task. The files are stored in `<project>/attachments/<task id>/`. |
 | `due_date` | String | No | The date the task is due, formatted in ISO standard date format `YYYY-MM-DD` (or `null` if none). |
-| `planned_date`| String | No | A relative scheduling marker used by the planning engine. Supported values: `today`, `tomorrow`, `this-week`, `next-week`, `this-month`, `this-year`, `someday`, `sometime`, or a `YYYY-MM-DD` date. |
+| `planned_date`| String | No | A relative scheduling marker used by the planning engine. Supported values: `today`, `tomorrow`, `thisWeek`, `nextWeek`, `thisMonth`, `nextMonth`, `thisYear`, `nextYear`, `someday`, `sometime`, or a `YYYY-MM-DD` date (hyphenated spellings such as `this-week` are read too). |
 | `priority` | String | No | The task's priority level. Supported values: `low`, `medium`, `high`, `urgent`, or `null`. |
 | `color` | String | No | A custom hex color code (e.g., `#ef4444`) to highlight the task card visually. |
 | `postponed_until` | String | No | The date until which the task is postponed, formatted in ISO standard date format `YYYY-MM-DD` (or `null` if none). |

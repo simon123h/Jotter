@@ -26,20 +26,21 @@ export const DEFAULT_MOBILE_BUCKETS: Bucket[] = [
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
 
-// Planning keywords, compared case-insensitively
+// Planning keywords, compared ignoring case and hyphens (`this-week` is `thisWeek`)
 const PLANNING_KEYWORDS = new Set([
   'today',
   'tomorrow',
   'someday',
   'sometime',
-  'this-week',
-  'next-week',
   'thisweek',
-  'this-month',
+  'nextweek',
   'thismonth',
-  'this-year',
+  'nextmonth',
   'thisyear',
+  'nextyear',
 ]);
+
+const isPlanningKeyword = (text: string) => PLANNING_KEYWORDS.has(text.trim().toLowerCase().replace(/-/g, ''));
 
 const KNOWN_TASK_KEYS = new Set([
   'type',
@@ -89,16 +90,12 @@ interface Frontmatter {
  * so horizontal rules in the body stay in the body. The body loses its leading blank lines.
  */
 function splitFrontmatter(content: string): Frontmatter {
-  const match = /^---[ \t]*\r?\n([\s\S]*?)(?:^|\r?\n)---[ \t]*(?:\r?\n|$)/.exec(content);
+  const match = content.startsWith('---') ? /^---[ \t]*\r?\n([\s\S]*?)^---[ \t]*(?:\r?\n|$)/m.exec(content) : null;
   if (!match) return { data: {}, body: content };
 
-  let data: Record<string, any> = {};
-  try {
-    const parsed = yaml.parse(match[1]);
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) data = parsed;
-  } catch {
-    // Unreadable frontmatter: treat the file as having none
-  }
+  // Invalid YAML throws: the caller must not overwrite a file it could not read
+  const parsed = yaml.parse(match[1]);
+  const data: Record<string, any> = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
   return { data, body: content.slice(match[0].length).replace(/^[\r\n]+/, '') };
 }
 
@@ -113,7 +110,7 @@ function isoDate(value: string): string | null {
 function planningValue(raw: unknown): string | null {
   if (raw === undefined || raw === null || raw === '') return null;
   const text = String(raw).trim();
-  if (PLANNING_KEYWORDS.has(text.toLowerCase())) return text;
+  if (isPlanningKeyword(text)) return text;
   return isoDate(text);
 }
 
@@ -154,7 +151,7 @@ function timestamp(raw: unknown, fallback: string): string {
 }
 
 /**
- * Parses a Task markdown file with YAML frontmatter.
+ * Parses a Task markdown file with YAML frontmatter. Throws when the frontmatter is not valid YAML.
  */
 export function parseTaskMarkdown(content: string, defaultProjectId = 'default', filename = ''): Task {
   const { data: fm, body } = splitFrontmatter(content);
@@ -169,7 +166,7 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
   let dueDate = dateValue(fm.due_date ?? fm.dueDate);
   let plannedDate = planningValue(fm.planned_date ?? fm.plannedDate);
   const rawDue = fm.due_date ?? fm.dueDate;
-  if (rawDue && !dueDate && PLANNING_KEYWORDS.has(String(rawDue).trim().toLowerCase())) {
+  if (rawDue && !dueDate && isPlanningKeyword(String(rawDue))) {
     plannedDate = plannedDate ?? String(rawDue).trim();
     dueDate = null;
   }
@@ -241,7 +238,14 @@ export function dumpTaskMarkdown(task: Task): string {
  * Parses an index.md project manifest.
  */
 export function parseProjectManifest(content: string, fallbackId: string): { project: Project; buckets: Bucket[] } {
-  const { data: fm, body } = splitFrontmatter(content);
+  let parsedFile: Frontmatter;
+  try {
+    parsedFile = splitFrontmatter(content);
+  } catch {
+    // Unreadable manifest: fall back to defaults and keep the text below, so a rewrite does not lose it
+    parsedFile = { data: {}, body: content };
+  }
+  const { data: fm, body } = parsedFile;
 
   const projId = String(fm.id || fallbackId).trim() || fallbackId;
   const title = String(fm.title || fm.name || projId.charAt(0).toUpperCase() + projId.slice(1)).trim();

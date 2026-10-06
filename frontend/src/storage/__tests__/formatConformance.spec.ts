@@ -90,6 +90,10 @@ describe('format conformance: tasks', () => {
   for (const c of loadCases('tasks')) {
     it(`${c.name}: read and round trip`, () => {
       check(`task/${c.name}`, () => {
+        if (c.expected.error) {
+          expect(() => parseTaskMarkdown(c.content, c.context.default_project_id, `${c.context.file_stem}.md`)).toThrow();
+          return;
+        }
         const first = parseTaskMarkdown(c.content, c.context.default_project_id, `${c.context.file_stem}.md`);
         expect(taskView(first, c.expected)).toEqual(c.expected);
         const second = parseTaskMarkdown(dumpTaskMarkdown(first), c.context.default_project_id, `${c.context.file_stem}.md`);
@@ -103,10 +107,14 @@ describe('format conformance: projects', () => {
   for (const c of loadCases('projects')) {
     it(`${c.name}: read and round trip`, () => {
       check(`project/${c.name}`, () => {
+        // `extra` (unknown keys) and `body` describe what must survive a rewrite, they are not part of the parsed project
+        const { extra, body, ...parsedExpected } = c.expected;
         const first = parseProjectManifest(c.content, c.context.dir_name);
-        expect(projectView(first.project, first.buckets, c.expected)).toEqual(c.expected);
+        expect(projectView(first.project, first.buckets, parsedExpected)).toEqual(parsedExpected);
         const second = parseProjectManifest(dumpProjectManifest(first.project, first.buckets), c.context.dir_name);
-        expect(projectView(second.project, second.buckets, c.expected)).toEqual(c.expected);
+        expect(projectView(second.project, second.buckets, parsedExpected)).toEqual(parsedExpected);
+        if (extra !== undefined) expect(second.project.extra_frontmatter).toEqual(extra);
+        if (body !== undefined) expect(second.project.body).toBe(body);
       });
     });
   }

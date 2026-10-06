@@ -1,0 +1,25 @@
+{
+  "description": "Values a reader cannot use are dropped and the task is still read: an unknown priority, a tag with a space, a planning value or date it does not know, a position that is not a number.",
+  "context": {
+    "file_stem": "invalid-values-dropped",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "invalid-values-dropped",
+    "project_id": "proj",
+    "title": "Bad values",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [
+      "fine"
+    ],
+    "attachments": [],
+    "body": "Still readable.\n",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}
