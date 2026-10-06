@@ -2,9 +2,11 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { Plus, Search, ChevronDown, RefreshCw, TriangleAlert } from '@lucide/vue';
 import TaskCard from '@/components/TaskCard.vue';
+import { useCardDrag } from '@/composables/useCardDrag';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
+import type { Task } from '@jotter/vault-format';
 
 const app = useAppStore();
 const ui = useUiStore();
@@ -17,6 +19,25 @@ const active = computed({
 const refreshing = ref(false);
 
 const columnTitle = (key: string, title: string) => (key === '__other' ? t('board.other') : title);
+
+const drag = useCardDrag({
+  scroller,
+  siblings: (bucket, excludeId) => app.positionsIn(bucket, excludeId),
+  move: (id, bucket, position) => app.moveTask(id, bucket, position),
+  onError: (err) => ui.showToast(err instanceof Error ? err.message : String(err)),
+});
+
+/**
+ * The card being dragged is drawn under the finger instead of in the list. Its element must stay in the page,
+ * though: the browser cancels a touch gesture when the element it started on goes away.
+ */
+const isDragged = (task: Task) => task.id === drag.dragging.value?.id;
+const shown = (tasks: Task[]) => tasks.filter((t) => !isDragged(t));
+const dropIndex = (key: string) => (drag.target.value?.columnKey === key ? drag.target.value.index : -1);
+
+function openTask(id: string) {
+  if (!drag.consumeClick()) ui.open({ type: 'task', id });
+}
 
 function onScroll() {
   const el = scroller.value;
@@ -115,7 +136,8 @@ async function refresh() {
 
       <div
         ref="scroller"
-        class="flex min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto"
+        class="flex min-h-0 flex-1 overflow-x-auto"
+        :class="drag.dragging.value ? 'snap-none' : 'snap-x snap-mandatory'"
         data-testid="columns"
         @scroll.passive="onScroll"
       >
@@ -123,17 +145,46 @@ async function refresh() {
           v-for="col in app.columns"
           :key="col.key"
           class="h-full w-full shrink-0 snap-center overflow-y-auto px-3 pb-24"
+          :data-column="col.key"
+          :data-bucket="col.bucket ?? undefined"
           data-testid="column"
         >
           <ul class="space-y-2">
-            <li v-for="task in col.tasks" :key="task.id">
-              <TaskCard :task="task" @open="ui.open({ type: 'task', id: task.id })" />
-            </li>
+            <template v-for="task in col.tasks" :key="task.id">
+              <li
+                v-if="!isDragged(task) && dropIndex(col.key) === shown(col.tasks).indexOf(task)"
+                class="h-1 rounded-full bg-accent"
+                data-testid="drop-line"
+              ></li>
+              <li
+                :data-task-id="task.id"
+                :class="isDragged(task) ? 'pointer-events-none invisible fixed' : ''"
+                @pointerdown="drag.onPointerDown($event, task)"
+                @contextmenu.prevent
+              >
+                <TaskCard :task="task" @open="openTask(task.id)" />
+              </li>
+            </template>
+            <li v-if="dropIndex(col.key) >= shown(col.tasks).length" class="h-1 rounded-full bg-accent" data-testid="drop-line"></li>
           </ul>
           <p v-if="!col.tasks.length" class="pt-10 text-center text-sm text-muted">
             {{ app.isFiltering ? t('board.noMatches') : t('board.emptyBucket') }}
           </p>
         </section>
+      </div>
+
+      <!-- The card being dragged, under the finger -->
+      <div
+        v-if="drag.dragging.value"
+        class="pointer-events-none fixed z-30 rotate-1 scale-105 opacity-95 shadow-2xl"
+        :style="{
+          left: `${drag.ghost.value.x - drag.ghost.value.offsetX}px`,
+          top: `${drag.ghost.value.y - drag.ghost.value.offsetY}px`,
+          width: `${drag.ghost.value.width}px`,
+        }"
+        data-testid="drag-ghost"
+      >
+        <TaskCard :task="drag.dragging.value" />
       </div>
 
       <button

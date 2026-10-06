@@ -148,6 +148,19 @@ describe('capturing and editing tasks', () => {
     expect(all('bucket-tab').map((t) => t.text())).toEqual(['To Do 1', 'Done 2']);
   });
 
+  it('places a moved task at the position it was dropped at', async () => {
+    const { app } = await start(desktopVault);
+
+    // Between the two tasks of To Do, then to the end of Done (which is empty by then)
+    await app.moveTask('c', 'todo', 1500);
+    expect(app.positionsIn('todo')).toEqual([1000, 1500, 2000]);
+    expect(fs.files.get('Jotter/work/c.md')?.data).toContain('status: todo');
+    expect(fs.files.get('Jotter/work/c.md')?.data).toContain('position: 1500');
+
+    await app.moveTask('a', 'done');
+    expect(app.positionsIn('done')).toEqual([1000]);
+  });
+
   it('adds and removes an attachment', async () => {
     await start(desktopVault);
     await find('task-card').trigger('click');

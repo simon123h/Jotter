@@ -19,7 +19,7 @@ const overdue = computed(() => !!props.task.due_date && props.task.due_date < ne
 
 <template>
   <button
-    class="block w-full rounded-xl border border-line bg-card p-3 text-left shadow-sm active:bg-line/50"
+    class="block w-full select-none rounded-xl border border-line bg-card p-3 text-left shadow-sm active:bg-line/50"
     :style="task.color ? { borderLeft: `4px solid ${task.color}` } : undefined"
     data-testid="task-card"
     @click="emit('open')"

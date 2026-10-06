@@ -199,10 +199,11 @@ export const useAppStore = defineStore('app', () => {
     await loadProject();
   }
 
-  async function moveTask(id: string, bucket: string) {
-    const inBucket = allTasks.value.filter((t) => t.bucket === bucket);
-    const position = Math.max(0, ...inBucket.map((t) => t.position)) + 1000;
-    await repository().moveTask(requireProject(), id, bucket, position);
+  /** Moves a task to a bucket, to the end of it unless a position is given. */
+  async function moveTask(id: string, bucket: string, position?: number) {
+    const inBucket = allTasks.value.filter((t) => t.bucket === bucket && t.id !== id);
+    const target = position ?? Math.max(0, ...inBucket.map((t) => t.position)) + 1000;
+    await repository().moveTask(requireProject(), id, bucket, target);
     await loadProject();
   }
 
@@ -223,6 +224,14 @@ export const useAppStore = defineStore('app', () => {
 
   function attachmentUrl(id: string, name: string) {
     return repository().attachmentUrl(requireProject(), id, name);
+  }
+
+  /** Positions of the tasks in a bucket, in order, optionally without one task. */
+  function positionsIn(bucket: string, excludeId?: string): number[] {
+    return allTasks.value
+      .filter((t) => t.bucket === bucket && t.id !== excludeId)
+      .map((t) => t.position)
+      .sort((a, b) => a - b);
   }
 
   function taskById(id: string): Task | undefined {
@@ -266,6 +275,7 @@ export const useAppStore = defineStore('app', () => {
     removeAttachment,
     attachmentUrl,
     taskById,
+    positionsIn,
     resetFilter,
   };
 });
