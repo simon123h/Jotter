@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectManifest } from '../markdownParser';
+import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectManifest } from './markdownParser';
 
 describe('markdownParser', () => {
   it('parses and dumps task markdown roundtrip', () => {

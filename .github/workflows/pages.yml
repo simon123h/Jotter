@@ -39,6 +39,7 @@ jobs:
           path: |
             node_modules
             frontend/node_modules
+            packages/vault-format/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
@@ -47,6 +48,7 @@ jobs:
         shell: bash
         run: |
           npm install
+          (cd packages/vault-format && npm install)
           cd frontend && npm install
 
       - name: Build Docs and Frontend Demo

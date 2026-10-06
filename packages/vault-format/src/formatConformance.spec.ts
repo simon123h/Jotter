@@ -2,10 +2,10 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectManifest } from '../markdownParser';
+import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectManifest } from './markdownParser';
 
 /**
- * Runs the shared vault-format fixtures (spec/fixtures) against the TypeScript parser used by the Android app.
+ * Runs the shared vault-format fixtures (spec/fixtures) against the TypeScript parser shared by the mobile apps.
  * The Python backend runs the same files in tests/test_format_conformance.py; see spec/README.md.
  *
  * KNOWN_DIVERGENCES lists fixtures this implementation does not pass yet. Each one is a bug to fix: remove
@@ -13,8 +13,8 @@ import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectM
  */
 const KNOWN_DIVERGENCES: Record<string, string> = {};
 
-// Vitest runs from frontend/
-const fixturesDir = `${resolve(process.cwd(), '../spec/fixtures')}/`;
+// Vitest runs from packages/vault-format
+const fixturesDir = `${resolve(process.cwd(), '../../spec/fixtures')}/`;
 
 interface Case {
   name: string;

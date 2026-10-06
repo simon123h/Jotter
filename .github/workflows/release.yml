@@ -234,6 +234,7 @@ jobs:
 
       - name: Install Frontend Dependencies
         run: |
+          (cd packages/vault-format && npm install)
           cd frontend
           npm install
 

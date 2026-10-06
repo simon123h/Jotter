@@ -17,7 +17,13 @@ import type {
   Vault,
 } from '@/types';
 import { db } from './dexieDb';
-import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectManifest, DEFAULT_MOBILE_BUCKETS } from './markdownParser';
+import {
+  parseTaskMarkdown,
+  dumpTaskMarkdown,
+  parseProjectManifest,
+  dumpProjectManifest,
+  DEFAULT_MOBILE_BUCKETS,
+} from '@jotter/vault-format';
 import { StoragePermission } from './storagePermission';
 import { appVersion } from '@/platform';
 

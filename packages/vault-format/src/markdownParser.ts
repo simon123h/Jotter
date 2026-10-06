@@ -1,5 +1,5 @@
 import yaml from 'yaml';
-import type { Task, Project, Bucket } from '@/types';
+import type { Task, Project, Bucket } from './types';
 
 /**
  * Reads and writes the vault format defined in spec/FORMAT.md. The Python backend implements the same format;
