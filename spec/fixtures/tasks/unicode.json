@@ -1,0 +1,25 @@
+{
+  "description": "UTF-8 throughout.",
+  "context": {
+    "file_stem": "unicode",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "unicode",
+    "project_id": "proj",
+    "title": "Grüße 🌍 — 日本語",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [
+      "überprüfen"
+    ],
+    "attachments": [],
+    "body": "Ünïcödé body ✓\n",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

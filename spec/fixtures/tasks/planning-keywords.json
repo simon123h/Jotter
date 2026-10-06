@@ -1,0 +1,23 @@
+{
+  "description": "Planning keywords are compared ignoring case and hyphens (next-month, nextMonth, NEXTMONTH are the same keyword). The value is kept as written.",
+  "context": {
+    "file_stem": "planning-keywords",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "planning-keywords",
+    "project_id": "proj",
+    "title": "Keyword spellings",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": "next-month",
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

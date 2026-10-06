@@ -1,0 +1,3 @@
+---
+title: Just a title
+---

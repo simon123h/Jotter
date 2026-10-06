@@ -49,28 +49,37 @@ class TaskId:
         return self.value
 
 
+# Planning keywords, compared case-insensitively and ignoring hyphens (`this-week` is `thisWeek`)
+PLANNING_KEYWORDS = frozenset(
+    {
+        "today",
+        "tomorrow",
+        "someday",
+        "sometime",
+        "thisweek",
+        "nextweek",
+        "thismonth",
+        "nextmonth",
+        "thisyear",
+        "nextyear",
+    }
+)
+
+
+def is_planning_keyword(val: str) -> bool:
+    return val.strip().lower().replace("-", "") in PLANNING_KEYWORDS
+
+
 @dataclass(frozen=True)
 class DueDate:
-    value: str | None  # "YYYY-MM-DD" or natural strings like "today", "someday", etc.
+    value: str | None  # "YYYY-MM-DD" or a planning keyword like "today", "thisWeek", "someday"
 
     @classmethod
     def from_str(cls, val: str | None) -> Self:
         if not val or not str(val).strip():
             return cls(value=None)
         clean = str(val).strip()
-        if clean.lower() in (
-            "today",
-            "tomorrow",
-            "someday",
-            "sometime",
-            "this-week",
-            "next-week",
-            "thisweek",
-            "thismonth",
-            "thisyear",
-            "this-month",
-            "this-year",
-        ):
+        if is_planning_keyword(clean):
             return cls(value=clean)
         if len(clean) >= 10 and clean[4] == "-" and clean[7] == "-":
             clean_date = clean[:10]

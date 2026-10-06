@@ -1,0 +1,24 @@
+{
+  "description": "`name` for `title`, camelCase `doneCleanPeriod`; a bucket without a title uses its name.",
+  "context": {
+    "dir_name": "myproj"
+  },
+  "expected": {
+    "id": "myproj",
+    "title": "Old Name",
+    "description": "",
+    "done_clean_period": 7,
+    "buckets": [
+      {
+        "name": "first",
+        "title": "first",
+        "subtitle": "",
+        "position": 1000.0,
+        "color": null,
+        "layout": "list",
+        "max_tasks": null,
+        "is_default": false
+      }
+    ]
+  }
+}

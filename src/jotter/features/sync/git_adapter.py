@@ -9,6 +9,7 @@ from typing import Any
 import yaml
 
 from jotter.shared.exceptions import ValidationError
+from jotter.shared.frontmatter import split_frontmatter
 from jotter.shared.yaml_io import safe_load
 
 # Local-only runtime files that must never be versioned (SQLite index and its WAL/SHM sidecars)
@@ -168,10 +169,10 @@ def summarize_changes(name_status: str) -> str:
 def _task_title(markdown: str, fallback: str) -> str:
     """Reads the `title` from a task's YAML frontmatter, collapsed to one line."""
     title = None
-    parts = markdown.split("---", 2)
-    if markdown.startswith("---") and len(parts) == 3:
+    yaml_text, _ = split_frontmatter(markdown)
+    if yaml_text is not None:
         try:
-            loaded = safe_load(parts[1])
+            loaded = safe_load(yaml_text)
         except yaml.YAMLError:
             loaded = None
         if isinstance(loaded, dict):

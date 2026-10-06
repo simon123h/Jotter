@@ -1,0 +1,23 @@
+{
+  "description": "Only the first two --- lines delimit the frontmatter. Rules in the body stay in the body.",
+  "context": {
+    "file_stem": "body-with-rules",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "body-with-rules",
+    "project_id": "proj",
+    "title": "Horizontal rules",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "Intro\n\n---\n\nMiddle\n\n---\nEnd\n",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

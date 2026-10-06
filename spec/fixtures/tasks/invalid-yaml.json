@@ -1,0 +1,10 @@
+{
+  "description": "Frontmatter that is not valid YAML makes the file unreadable. A reader MUST report an error and MUST NOT write the file, so the user's content is never replaced by defaults.",
+  "context": {
+    "file_stem": "invalid-yaml",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "error": true
+  }
+}

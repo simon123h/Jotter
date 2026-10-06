@@ -1,0 +1,23 @@
+{
+  "description": "Readers MUST accept `bucket` for `status` and camelCase for the date keys and project id.",
+  "context": {
+    "file_stem": "legacy-keys",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "legacy-keys",
+    "project_id": "proj",
+    "title": "Legacy key names",
+    "bucket": "backlog",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "Old files used `bucket` and camelCase keys.\n",
+    "due_date": "2026-01-02",
+    "planned_date": "today",
+    "priority": "none",
+    "color": null,
+    "postponed_until": "2026-02-03",
+    "extra": {}
+  }
+}

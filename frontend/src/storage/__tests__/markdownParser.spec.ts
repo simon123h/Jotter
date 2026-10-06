@@ -129,3 +129,25 @@ Fix bearer token parsing in middleware.
     expect(task.bucket).toBe('todo');
   });
 });
+
+describe('lossless project manifests', () => {
+  it('keeps the index.md body and unknown keys when the manifest is rewritten', () => {
+    const original = '---\ntitle: Board\nowner: sam\n---\n\n# Board\n\nNotes the user wrote.\n';
+    const { project, buckets } = parseProjectManifest(original, 'board');
+
+    const rewritten = parseProjectManifest(dumpProjectManifest(project, buckets), 'board');
+
+    expect(rewritten.project.body).toBe('# Board\n\nNotes the user wrote.\n');
+    expect(rewritten.project.extra_frontmatter).toEqual({ owner: 'sam' });
+  });
+});
+
+describe('lenient reads', () => {
+  it('drops values it cannot use but keeps the task', () => {
+    const task = parseTaskMarkdown('---\ntitle: T\npriority: bogus\ntags: [ok, two words]\nplanned_date: nextWeekish\n---\n', 'p', 't.md');
+    expect(task.title).toBe('T');
+    expect(task.priority).toBeUndefined();
+    expect(task.tags).toEqual(['ok']);
+    expect(task.planned_date).toBeUndefined();
+  });
+});

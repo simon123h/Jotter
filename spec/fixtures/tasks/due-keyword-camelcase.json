@@ -1,0 +1,23 @@
+{
+  "description": "Any planning keyword in due_date moves to planned_date, in whichever spelling.",
+  "context": {
+    "file_stem": "due-keyword-camelcase",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "due-keyword-camelcase",
+    "project_id": "proj",
+    "title": "Camel case keyword in due_date",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": "thisWeek",
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

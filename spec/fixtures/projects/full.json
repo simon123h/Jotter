@@ -1,0 +1,36 @@
+{
+  "description": "Every known project and bucket field.",
+  "context": {
+    "dir_name": "myproj"
+  },
+  "expected": {
+    "id": "myproj",
+    "title": "Full Project",
+    "description": "A project with everything",
+    "done_clean_period": 14,
+    "created_at": "2026-01-01T00:00:00Z",
+    "buckets": [
+      {
+        "name": "ideas",
+        "title": "Ideas",
+        "subtitle": "Not yet planned",
+        "position": 1000.0,
+        "color": "#ff8800",
+        "layout": "grid-2",
+        "max_tasks": 5,
+        "is_default": true
+      },
+      {
+        "name": "shipped",
+        "title": "Shipped",
+        "subtitle": "",
+        "position": 2000.0,
+        "color": null,
+        "layout": "list",
+        "max_tasks": null,
+        "is_default": false
+      }
+    ],
+    "body": "# Full Project\n\nFree text about the project.\n"
+  }
+}

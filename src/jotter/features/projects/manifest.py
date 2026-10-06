@@ -5,7 +5,38 @@ import yaml
 
 from jotter.features.buckets.domain import DEFAULT_DOMAIN_BUCKETS, Bucket
 from jotter.features.projects.domain import Project
+from jotter.shared.frontmatter import split_frontmatter
 from jotter.shared.yaml_io import safe_load
+
+# Manifest keys this app writes itself; every other key of an existing manifest is carried over on rewrite
+KNOWN_MANIFEST_KEYS = frozenset(
+    {
+        "type",
+        "id",
+        "title",
+        "name",
+        "description",
+        "created_at",
+        "createdAt",
+        "done_clean_period",
+        "doneCleanPeriod",
+        "buckets",
+    }
+)
+
+
+def _read_manifest(index_file: Path) -> tuple[dict[str, Any], str]:
+    """Frontmatter mapping (empty when missing or unreadable) and body of an index.md file."""
+    if not index_file.is_file():
+        return {}, ""
+    yaml_text, body = split_frontmatter(index_file.read_text(encoding="utf-8"))
+    if yaml_text is None:
+        return {}, body
+    try:
+        loaded = safe_load(yaml_text)
+    except Exception:
+        return {}, body
+    return (loaded if isinstance(loaded, dict) else {}), body
 
 
 def get_index_md_path(project_dir: Path) -> Path:
@@ -19,19 +50,7 @@ def read_project_manifest(
     """Reads index.md (falling back to defaults and the directory name) from project directory."""
     index_file = get_index_md_path(project_dir)
 
-    fm_data: dict[str, Any] = {}
-
-    if index_file.is_file():
-        content = index_file.read_text(encoding="utf-8")
-        if content.startswith("---"):
-            parts = content.split("---", 2)
-            if len(parts) >= 3:
-                try:
-                    loaded = safe_load(parts[1])
-                    if isinstance(loaded, dict):
-                        fm_data = loaded
-                except Exception:
-                    pass
+    fm_data, _ = _read_manifest(index_file)
 
     # Resolve project fields (manifest index.md -> defaults)
     proj_id = str(fm_data.get("id") or fallback_id).strip() or fallback_id
@@ -109,15 +128,7 @@ def write_project_manifest(
     project_dir.mkdir(parents=True, exist_ok=True)
     index_file = get_index_md_path(project_dir)
 
-    existing_body = ""
-    if body is None and index_file.is_file():
-        content = index_file.read_text(encoding="utf-8")
-        if content.startswith("---"):
-            parts = content.split("---", 2)
-            existing_body = parts[2].lstrip("\r\n") if len(parts) >= 3 else content
-        else:
-            existing_body = content
-
+    existing_fm, existing_body = _read_manifest(index_file)
     body_to_write = body if body is not None else existing_body
     if not body_to_write:
         body_to_write = f"# {project.name}\n"
@@ -147,6 +158,11 @@ def write_project_manifest(
         }
         for b in buckets
     ]
+
+    # Keys written by other tools stay as they are
+    for key, value in existing_fm.items():
+        if key not in fm_dict and key not in KNOWN_MANIFEST_KEYS:
+            fm_dict[key] = value
 
     yaml_content = yaml.dump(
         fm_dict,

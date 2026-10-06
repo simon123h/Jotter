@@ -1,0 +1,23 @@
+{
+  "description": "Only the title is given. The id comes from the file name, the project from the folder, everything else gets its default.",
+  "context": {
+    "file_stem": "minimal",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "minimal",
+    "project_id": "proj",
+    "title": "Just a title",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

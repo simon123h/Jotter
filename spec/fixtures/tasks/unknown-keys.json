@@ -1,0 +1,33 @@
+{
+  "description": "Unknown frontmatter keys MUST survive a read-write cycle.",
+  "context": {
+    "file_stem": "unknown-keys",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "unknown-keys",
+    "project_id": "proj",
+    "title": "Written by another tool",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "Body\n",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {
+      "assignee": "sam",
+      "estimate": 3,
+      "nested": {
+        "a": 1,
+        "b": [
+          "x",
+          "y"
+        ]
+      }
+    }
+  }
+}

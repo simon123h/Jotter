@@ -1,0 +1,23 @@
+{
+  "description": "A markdown file without frontmatter is still a task: the whole file is the body.",
+  "context": {
+    "file_stem": "no-frontmatter",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "no-frontmatter",
+    "project_id": "proj",
+    "title": "Untitled Task",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "# Just a note\n\nNo frontmatter here.\n",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "description": "Position is a number, a numeric string is accepted.",
+  "context": {
+    "file_stem": "position-string",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "position-string",
+    "project_id": "proj",
+    "title": "Numeric string position",
+    "bucket": "todo",
+    "position": 2048.5,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

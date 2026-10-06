@@ -1,0 +1,27 @@
+{
+  "description": "A comma separated string is accepted where a list is expected.",
+  "context": {
+    "file_stem": "tags-as-string",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "tags-as-string",
+    "project_id": "proj",
+    "title": "Comma separated tags",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [
+      "alpha",
+      "beta",
+      "gamma"
+    ],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}
