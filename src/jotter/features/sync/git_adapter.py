@@ -9,6 +9,7 @@ from typing import Any
 import yaml
 
 from jotter.shared.exceptions import ValidationError
+from jotter.shared.yaml_io import safe_load
 
 # Local-only runtime files that must never be versioned (SQLite index and its WAL/SHM sidecars)
 LOCAL_EXCLUDES = ("tasks.db", "tasks.db-*")
@@ -168,7 +169,7 @@ def _task_title(markdown: str, fallback: str) -> str:
     parts = markdown.split("---", 2)
     if markdown.startswith("---") and len(parts) == 3:
         try:
-            loaded = yaml.safe_load(parts[1])
+            loaded = safe_load(parts[1])
         except yaml.YAMLError:
             loaded = None
         if isinstance(loaded, dict):

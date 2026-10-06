@@ -7,6 +7,7 @@ import yaml
 
 from jotter.features.tasks.domain import DueDate, Task
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
+from jotter.shared.yaml_io import safe_load
 
 
 class DiskTaskRepository:
@@ -118,7 +119,7 @@ class DiskTaskRepository:
             parts = content.split("---", 2)
             if len(parts) >= 3:
                 try:
-                    loaded = yaml.safe_load(parts[1])
+                    loaded = safe_load(parts[1])
                     if isinstance(loaded, dict):
                         fm_data = loaded
                 except Exception as e:

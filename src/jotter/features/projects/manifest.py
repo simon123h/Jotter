@@ -5,6 +5,7 @@ import yaml
 
 from jotter.features.buckets.domain import DEFAULT_DOMAIN_BUCKETS, Bucket
 from jotter.features.projects.domain import Project
+from jotter.shared.yaml_io import safe_load
 
 
 def get_index_md_path(project_dir: Path) -> Path:
@@ -26,7 +27,7 @@ def read_project_manifest(
             parts = content.split("---", 2)
             if len(parts) >= 3:
                 try:
-                    loaded = yaml.safe_load(parts[1])
+                    loaded = safe_load(parts[1])
                     if isinstance(loaded, dict):
                         fm_data = loaded
                 except Exception:
