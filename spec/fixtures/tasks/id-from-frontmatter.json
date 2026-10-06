@@ -1,0 +1,23 @@
+{
+  "description": "The frontmatter id wins over the file name.",
+  "context": {
+    "file_stem": "other-name",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "custom-slug",
+    "project_id": "proj",
+    "title": "Id differs from file name",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

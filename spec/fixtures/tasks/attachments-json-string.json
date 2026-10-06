@@ -1,0 +1,26 @@
+{
+  "description": "Lenient read: a JSON list in a string.",
+  "context": {
+    "file_stem": "attachments-json-string",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "attachments-json-string",
+    "project_id": "proj",
+    "title": "Attachments as JSON string",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [
+      "a.png",
+      "b.pdf"
+    ],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

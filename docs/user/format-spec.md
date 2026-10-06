@@ -1,8 +1,8 @@
 # Markdown File Specification
 
-Jotter is built on the philosophy that plain Markdown files are the single source of truth. Every task is stored as an individual `.md` file inside your workspace's `tasks` subdirectory. You can open, read, edit, and backup these files using any standard text editor, markdown tool, or version control system.
+Jotter is built on the philosophy that plain Markdown files are the single source of truth. Every task is stored as an individual `.md` file inside its project's folder (`<vault>/<project>/<task id>.md`). You can open, read, edit, and backup these files using any standard text editor, markdown tool, or version control system.
 
-This page documents the precise schema and syntax Jotter uses to serialize and parse tasks.
+This page documents the schema and syntax Jotter uses to serialize and parse tasks. The normative definition, which all Jotter apps (desktop and Android) are tested against, lives in the repository at [`spec/FORMAT.md`](https://github.com/simon123h/Jotter/blob/main/spec/FORMAT.md).
 
 ---
 
@@ -26,9 +26,9 @@ tags:
   - frontend
   - documentation
 attachments:
-  - uploads/design_mockup.png
+  - design_mockup.png
 due_date: "2026-06-15"
-planned_date: "this-week"
+planned_date: this-week
 priority: high
 color: "#3b82f6"
 postponed_until: "2026-07-09"
@@ -51,25 +51,25 @@ The hyperlink should point to `https://simon123h.github.io/Jotter/` and use the 
 
 ## Task Frontmatter Schema
 
-The YAML frontmatter block supports the following key-value pairs. All key names are case-sensitive and should be lowercase. Any custom or unknown frontmatter keys added by other PKM tools or AI agents are safely preserved.
+The YAML frontmatter block supports the following key-value pairs. All key names are case-sensitive and should be lowercase. Any custom or unknown frontmatter keys added by other PKM tools or AI agents are preserved when Jotter saves the file.
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `type` | String | No | OKF entity type identifier. Serialized as `task`. |
-| `id` | String | Yes | A unique, URL-safe identifier (ULID or UUID) that uniquely identifies this task across the entire application. |
-| `project_id` | String | Yes | The ID of the project this task belongs to. If not specified, this defaults to `default`. |
-| `title` | String | Yes | The title of the task. Keep this on a single line. |
-| `status` | String | Yes | The slug/name of the column this task belongs to (e.g. `backlog`, `todo`, `in-progress`, `done`). Note: Legacy files using `bucket:` are fully supported for backwards compatibility. |
-| `position` | Float | Yes | A floating-point number used by the drag-and-drop system to maintain sorting order within a column. |
+| `id` | String | No | A unique, URL-safe identifier (ULID or UUID) that uniquely identifies this task across the entire application. Defaults to the file name without `.md`. |
+| `project_id` | String | No | The ID of the project this task belongs to. The folder the file is in always decides, so this is only a fallback. |
+| `title` | String | No | The title of the task. Keep this on a single line. Defaults to `Untitled Task`. |
+| `status` | String | No | The slug/name of the column this task belongs to (e.g. `backlog`, `todo`, `in-progress`, `done`). Defaults to `todo`. Note: Legacy files using `bucket:` are fully supported for backwards compatibility. |
+| `position` | Float | No | A floating-point number used by the drag-and-drop system to maintain sorting order within a column. Defaults to `1000`. |
 | `tags` | Array of Strings | No | A list of labels categorizing this task. Tags are normalized to lowercase by Jotter's parser. |
-| `attachments` | Array of Strings | No | Relative file paths of uploaded files associated with this task, located in the project's attachments folder. |
+| `attachments` | Array of Strings | No | File names of the files attached to this task. The files are stored in `<project>/attachments/<task id>/`. |
 | `due_date` | String | No | The date the task is due, formatted in ISO standard date format `YYYY-MM-DD` (or `null` if none). |
-| `planned_date`| String | No | A relative scheduling marker used by the planning engine. Supported values: `today`, `tomorrow`, `this-week`, `this-month`, `this-year`, `sometime-maybe`, or `null`. |
+| `planned_date`| String | No | A relative scheduling marker used by the planning engine. Supported values: `today`, `tomorrow`, `this-week`, `next-week`, `this-month`, `this-year`, `someday`, `sometime`, or a `YYYY-MM-DD` date. |
 | `priority` | String | No | The task's priority level. Supported values: `low`, `medium`, `high`, `urgent`, or `null`. |
 | `color` | String | No | A custom hex color code (e.g., `#ef4444`) to highlight the task card visually. |
 | `postponed_until` | String | No | The date until which the task is postponed, formatted in ISO standard date format `YYYY-MM-DD` (or `null` if none). |
-| `created_at` | String | Yes | ISO 8601 UTC timestamp of task creation (e.g., `2026-06-07T12:00:00Z`). |
-| `updated_at` | String | Yes | ISO 8601 UTC timestamp of the last modification. |
+| `created_at` | String | No | ISO 8601 UTC timestamp of task creation (e.g., `2026-06-07T12:00:00Z`). |
+| `updated_at` | String | No | ISO 8601 UTC timestamp of the last modification. |
 
 ---
 

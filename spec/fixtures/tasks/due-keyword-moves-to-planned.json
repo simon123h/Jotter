@@ -1,0 +1,23 @@
+{
+  "description": "A planning keyword in due_date is read as planned_date.",
+  "context": {
+    "file_stem": "due-keyword-moves-to-planned",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "due-keyword-moves-to-planned",
+    "project_id": "proj",
+    "title": "Keyword in due date",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": "today",
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

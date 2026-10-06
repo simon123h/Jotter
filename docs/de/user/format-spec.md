@@ -1,8 +1,8 @@
 # Markdown-Spezifikation
 
-Jotter basiert auf der Philosophie, dass einfache Markdown-Dateien die einzige Quelle der Wahrheit darstellen. Jede Aufgabe wird als eigene `.md`-Datei im Unterverzeichnis `tasks` deines Projekts abgelegt. Du kannst diese Dateien mit jedem herkömmlichen Texteditor, Markdown-Programm oder Versionskontrollsystem öffnen, lesen, bearbeiten und sichern.
+Jotter basiert auf der Philosophie, dass einfache Markdown-Dateien die einzige Quelle der Wahrheit darstellen. Jede Aufgabe wird als eigene `.md`-Datei im Ordner ihres Projekts abgelegt (`<Vault>/<Projekt>/<Aufgaben-ID>.md`). Du kannst diese Dateien mit jedem herkömmlichen Texteditor, Markdown-Programm oder Versionskontrollsystem öffnen, lesen, bearbeiten und sichern.
 
-Diese Seite dokumentiert das genaue Schema und die Syntax, die Jotter zum Speichern und Lesen von Aufgaben verwendet.
+Diese Seite dokumentiert das Schema und die Syntax, die Jotter zum Speichern und Lesen von Aufgaben verwendet. Die verbindliche englische Definition, gegen die alle Jotter-Apps (Desktop und Android) getestet werden, liegt im Repository unter [`spec/FORMAT.md`](https://github.com/simon123h/Jotter/blob/main/spec/FORMAT.md).
 
 ---
 
@@ -26,7 +26,7 @@ tags:
   - frontend
   - dokumentation
 attachments:
-  - uploads/design_mockup.png
+  - design_mockup.png
 due_date: "2026-06-15"
 planned_date: "this-week"
 priority: high
@@ -57,19 +57,19 @@ Der YAML-Frontmatter-Block unterstützt die folgenden Schlüssel-Wert-Paare. All
 | :--- | :--- | :--- | :--- |
 | `type` | String | Nein | OKF-Entitätstyp. Wird als `task` serialisiert. |
 | `id` | String | Ja | Eine eindeutige, URL-sichere Kennung (ULID oder UUID), die diese Aufgabe im gesamten System eindeutig identifiziert. |
-| `project_id` | String | Ja | Die ID des Projekts, zu dem diese Aufgabe gehört. Standardwert ist `default`. |
-| `title` | String | Ja | Der Titel der Aufgabe. Sollte einzeilig bleiben. |
-| `status` | String | Ja | Der Slug (Name) der Spalte, in der sich die Aufgabe befindet (z. B. `backlog`, `todo`, `in-progress`, `done`). Hinweis: Das bisherige Feld `bucket:` wird zur Abwärtskompatibilität vollständig unterstützt. |
-| `position` | Float | Ja | Eine Fließkommazahl, die vom Drag-and-Drop-System verwendet wird, um die Sortierreihenfolge innerhalb einer Spalte zu halten. |
+| `project_id` | String | Nein | Die ID des Projekts, zu dem diese Aufgabe gehört. Standardwert ist `default`. |
+| `title` | String | Nein | Der Titel der Aufgabe. Sollte einzeilig bleiben. |
+| `status` | String | Nein | Der Slug (Name) der Spalte, in der sich die Aufgabe befindet (z. B. `backlog`, `todo`, `in-progress`, `done`). Hinweis: Das bisherige Feld `bucket:` wird zur Abwärtskompatibilität vollständig unterstützt. |
+| `position` | Float | Nein | Eine Fließkommazahl, die vom Drag-and-Drop-System verwendet wird, um die Sortierreihenfolge innerhalb einer Spalte zu halten. |
 | `tags` | String-Array | Nein | Eine Liste von Begriffen zur Kategorisierung der Aufgabe. Tags werden automatisch kleingeschrieben. |
-| `attachments` | String-Array | Nein | Relative Dateipfade für hochgeladene Dateien, die mit dieser Aufgabe verknüpft sind (gespeichert im Projektordner). |
+| `attachments` | String-Array | Nein | Dateinamen der Dateien, die dieser Aufgabe angehängt sind. Die Dateien liegen in `<Projekt>/attachments/<Aufgaben-ID>/`. |
 | `due_date` | String | Nein | Das Fälligkeitsdatum im ISO-Format `YYYY-MM-DD` (oder `null`, wenn keines vorhanden ist). |
-| `planned_date`| String | Nein | Planungsmarker für die Wochenplanung. Unterstützte Werte: `today`, `tomorrow`, `this-week`, `this-month`, `this-year`, `sometime-maybe` oder `null`. |
+| `planned_date`| String | Nein | Planungsmarker für die Wochenplanung. Unterstützte Werte: `today`, `tomorrow`, `this-week`, `next-week`, `this-month`, `this-year`, `someday`, `sometime` oder ein Datum `YYYY-MM-DD`. |
 | `priority` | String | Nein | Die Priorität der Aufgabe. Unterstützte Werte: `low`, `medium`, `high`, `urgent` oder `null`. |
 | `color` | String | Nein | Ein benutzerdefinierter Hex-Farbcode (z. B. `#ef4444`) zur visuellen Hervorhebung der Aufgabenkarte. |
 | `postponed_until` | String | Nein | Das Datum, bis zu dem die Aufgabe aufgeschoben ist, im ISO-Format `YYYY-MM-DD` (oder `null`, wenn keines vorhanden ist). |
-| `created_at` | String | Ja | ISO 8601 UTC-Zeitstempel der Erstellung (z. B. `2026-06-07T12:00:00Z`). |
-| `updated_at` | String | Ja | ISO 8601 UTC-Zeitstempel der letzten Änderung. |
+| `created_at` | String | Nein | ISO 8601 UTC-Zeitstempel der Erstellung (z. B. `2026-06-07T12:00:00Z`). |
+| `updated_at` | String | Nein | ISO 8601 UTC-Zeitstempel der letzten Änderung. |
 
 ---
 
@@ -116,7 +116,7 @@ Willkommen in der Dokumentations-Notiz des Projekt-Boards. Du kannst diesen Mark
 | :--- | :--- | :--- | :--- |
 | `type` | String | Nein | OKF-Entitätstyp. Wird als `project` serialisiert. |
 | `id` | String | Ja | Eindeutige Projekt-ID, die mit dem Verzeichnisnamen übereinstimmt. |
-| `title` | String | Ja | Angezeigter Titel des Projekt-Boards. |
+| `title` | String | Nein | Angezeigter Titel des Projekt-Boards. |
 | `description` | String | Nein | Menschenlesbare Beschreibung des Projekts. |
 | `done_clean_period` | Integer | Nein | Richtlinie zum automatischen Aufräumen erledigter Aufgaben in Tagen (z. B. `0` für deaktiviert, `1`, `7`, `30` oder `null` für globalen Standard). |
 | `buckets` | Array von Objekten | Ja | Liste der Spalten (Buckets), sortiert nach `position`. Jedes Objekt enthält `name` (Slug), `title`, `position`, `color`, `layout`, `max_tasks` und `is_default`. |

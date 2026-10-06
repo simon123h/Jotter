@@ -1,0 +1,64 @@
+{
+  "description": "An index.md without frontmatter behaves like a missing manifest: folder name as id, capitalised as title, default buckets.",
+  "context": {
+    "dir_name": "myproj"
+  },
+  "expected": {
+    "id": "myproj",
+    "title": "Myproj",
+    "description": "",
+    "done_clean_period": null,
+    "buckets": [
+      {
+        "name": "backlog",
+        "title": "Backlog",
+        "subtitle": "",
+        "position": 1000.0,
+        "color": null,
+        "layout": "list",
+        "max_tasks": null,
+        "is_default": true
+      },
+      {
+        "name": "todo",
+        "title": "To Do",
+        "subtitle": "",
+        "position": 2000.0,
+        "color": null,
+        "layout": "list",
+        "max_tasks": null,
+        "is_default": false
+      },
+      {
+        "name": "in-progress",
+        "title": "In Progress",
+        "subtitle": "",
+        "position": 3000.0,
+        "color": null,
+        "layout": "list",
+        "max_tasks": null,
+        "is_default": false
+      },
+      {
+        "name": "done",
+        "title": "Done",
+        "subtitle": "",
+        "position": 4000.0,
+        "color": null,
+        "layout": "list",
+        "max_tasks": null,
+        "is_default": false
+      },
+      {
+        "name": "archive",
+        "title": "Archive",
+        "subtitle": "",
+        "position": 5000.0,
+        "color": null,
+        "layout": "list",
+        "max_tasks": null,
+        "is_default": false
+      }
+    ]
+  }
+}

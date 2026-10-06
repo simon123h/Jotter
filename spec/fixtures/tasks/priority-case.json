@@ -1,0 +1,23 @@
+{
+  "description": "Priority is case-insensitive and written lower-case.",
+  "context": {
+    "file_stem": "priority-case",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "priority-case",
+    "project_id": "proj",
+    "title": "Priority case",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "high",
+    "color": null,
+    "postponed_until": null,
+    "extra": {}
+  }
+}

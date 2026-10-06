@@ -1,0 +1,23 @@
+{
+  "description": "Dates are kept as YYYY-MM-DD. A time part is dropped, and an unquoted YAML date is accepted.",
+  "context": {
+    "file_stem": "due-datetime-trimmed",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "due-datetime-trimmed",
+    "project_id": "proj",
+    "title": "Trim time part",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": "2026-06-15",
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": "2026-07-01",
+    "extra": {}
+  }
+}
