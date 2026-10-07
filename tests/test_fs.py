@@ -59,3 +59,25 @@ def test_atomic_replace_fallback_on_persistent_permission_error(tmp_path):
 
     assert dst.read_text(encoding="utf-8") == "fallback content"
     assert not src.exists()
+
+
+def test_slow_write_is_logged_with_its_phases(tmp_path, caplog, monkeypatch):
+    import os
+    import time
+
+    from jotter.shared import fs
+
+    real_fsync = os.fsync
+
+    def slow_fsync(fd):
+        time.sleep(0.05)
+        real_fsync(fd)
+
+    monkeypatch.setattr(fs, "SLOW_WRITE_SECONDS", 0.01)
+    monkeypatch.setattr(os, "fsync", slow_fsync)
+    with caplog.at_level("WARNING", logger="jotter.shared.fs"):
+        atomic_write(tmp_path / "task.md", "content")
+
+    messages = [r.message for r in caplog.records]
+    assert any("Slow write of" in m and "fsync" in m for m in messages)
+    assert (tmp_path / "task.md").read_text(encoding="utf-8") == "content"

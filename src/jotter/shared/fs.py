@@ -10,6 +10,9 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Writes slower than this are logged as warnings (slow disks and antivirus on Windows)
+SLOW_WRITE_SECONDS = 0.2
+
 
 def atomic_replace(src: Path | str, dst: Path | str, max_retries: int = 6, initial_delay: float = 0.02) -> None:
     """Atomically replaces dst with src, handling transient Windows file lock collisions.
@@ -63,12 +66,27 @@ def atomic_write(
     parent_dir = path.parent
     parent_dir.mkdir(parents=True, exist_ok=True)
 
+    started = time.perf_counter()
     with tempfile.NamedTemporaryFile(
         "w", dir=parent_dir, delete=False, encoding=encoding, prefix=prefix, suffix=suffix
     ) as f:
         f.write(content)
         f.flush()
+        flush_started = time.perf_counter()
         os.fsync(f.fileno())
+        fsync_seconds = time.perf_counter() - flush_started
         tmp_name = f.name
+    closed = time.perf_counter()
 
     atomic_replace(Path(tmp_name), path)
+
+    total = time.perf_counter() - started
+    if total > SLOW_WRITE_SECONDS:
+        logger.warning(
+            "Slow write of %s: %.2fs (%.2fs fsync, %.2fs creating and closing the temp file, %.2fs replacing)",
+            path,
+            total,
+            fsync_seconds,
+            closed - started - fsync_seconds,
+            time.perf_counter() - closed,
+        )
