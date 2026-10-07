@@ -91,7 +91,7 @@ def test_flush_commits_pending_changes_only(tmp_path):
     assert h.commits == 1
 
 
-def test_retarget_flushes_old_vault_and_follows_the_new_one(tmp_path):
+def test_retarget_follows_the_new_vault_and_checks_it_for_changes(tmp_path):
     seen = []
     scheduler = VaultSyncScheduler(
         tmp_path / "a",
@@ -101,7 +101,30 @@ def test_retarget_flushes_old_vault_and_follows_the_new_one(tmp_path):
     scheduler.mark_dirty()
     scheduler.retarget(tmp_path / "b")
     scheduler.run_once()
-    assert seen == [("commit", tmp_path / "a"), ("sync", tmp_path / "b")]
+    # The old vault's pending changes are left alone; the new vault gets a commit check in its first cycle
+    assert seen == [("sync", tmp_path / "b"), ("commit", tmp_path / "b")]
+
+
+def test_retarget_does_not_wait_for_a_running_cycle(tmp_path):
+    import threading
+
+    started, release = threading.Event(), threading.Event()
+
+    def slow_sync(_dir):
+        started.set()
+        release.wait(5)
+        return False
+
+    scheduler = VaultSyncScheduler(tmp_path / "a", sync_fn=slow_sync, commit_fn=lambda _dir: True)
+    cycle = threading.Thread(target=scheduler.run_once)
+    cycle.start()
+    assert started.wait(5)
+
+    scheduler.retarget(tmp_path / "b")  # returns although a cycle holds the run lock
+    assert scheduler.data_dir == tmp_path / "b"
+
+    release.set()
+    cycle.join(5)
 
 
 def test_background_thread_runs_cycles_and_flushes_on_stop(tmp_path):

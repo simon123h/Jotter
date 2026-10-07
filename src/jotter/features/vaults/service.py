@@ -1,6 +1,7 @@
 """Application service orchestrating vault operations and switching."""
 
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -93,7 +94,11 @@ class VaultApplicationService:
 
         # Prepare the new vault first: if that fails, the old vault stays active and the error reaches the caller
         if app_state is not None:
+            started = time.perf_counter()
             self._rebind_runtime_state(app_state, vault)
+            elapsed = time.perf_counter() - started
+            if elapsed > 1.0:
+                logger.warning("Vault switch to %s took %.2fs (index sync and rebinding)", vault.path, elapsed)
         self.registry.set_active_id(vault.id)
 
         return VaultResponse(

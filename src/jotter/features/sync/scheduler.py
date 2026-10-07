@@ -144,12 +144,15 @@ class VaultSyncScheduler:
                 self._commit(self.data_dir)
 
     def retarget(self, data_dir: Path | str) -> None:
-        """Commits pending changes of the current vault, then follows a new one."""
-        self.flush()
-        with self._run_lock:
+        """Follows a new vault. Changes still pending in the old one stay uncommitted until it is opened again.
+
+        Committing here would make a vault switch wait for Git (slow under antivirus on Windows) and for a cycle that
+        is already running, which keeps working on the vault it started with. The new vault starts dirty so its first
+        cycle checks Git for changes that arrived while it was inactive (including the old vault's, after a return).
+        """
+        with self._lock:
             self.data_dir = Path(data_dir)
-            with self._lock:
-                self._dirty = False
+            self._dirty = True
             self._cycles = 0
 
     def stop(self) -> None:
