@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sqlite3
 import time
 from datetime import UTC, datetime
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 # A file modified this recently could change again within the same mtime tick, so its stat is not trusted
 RACY_MTIME_NS = 2_000_000_000
+SLOW_SYNC_SECONDS = 1.0
 
 
 def _app_version() -> str:
@@ -34,12 +36,8 @@ def _index_version() -> str:
     return f"{_app_version()}+{SCHEMA_VERSION}"
 
 
-def _file_stat(path: Path) -> tuple[int, int] | None:
+def _file_stat(st: os.stat_result) -> tuple[int, int] | None:
     """Returns (mtime_ns, size) for skipping an unchanged file on a later sync, or None if it cannot be trusted."""
-    try:
-        st = path.stat()
-    except OSError:
-        return None
     if time.time_ns() - st.st_mtime_ns < RACY_MTIME_NS:
         return None
     return st.st_mtime_ns, st.st_size
@@ -100,6 +98,9 @@ class SyncApplicationService:
         """
         self.last_changes = 0
         self.last_io_errors = 0
+        sync_started = time.perf_counter()
+        scan_seconds = 0.0
+        files_seen = 0
         from jotter.features.projects.manifest import read_project_manifest
 
         # 1. Discover all projects on disk
@@ -150,20 +151,23 @@ class SyncApplicationService:
         for project in projects:
             p_id = project.id
             clean_period = project.done_clean_period if project.done_clean_period is not None else global_clean_period
-            task_files = self.disk_task_repo.get_all_task_files(p_id)
+            scan_started = time.perf_counter()
+            task_files = self.disk_task_repo.scan_task_files(p_id)
+            scan_seconds += time.perf_counter() - scan_started
+            files_seen += len(task_files)
             disk_task_ids: set[str] = set()
 
             known_buckets = {b.name: b for b in self.bucket_repo.get_all(p_id)}
 
             indexed = {} if force else self.sqlite_task_repo.get_index_state(p_id)
 
-            for file_path in task_files:
+            for file_path, disk_stat in task_files:
                 # Always track the disk task ID from the filename so transient read errors
                 # (e.g. temporary Windows file locks) do not cause SQLite to purge the task
                 disk_task_ids.add(file_path.stem)
                 try:
-                    # Stat before reading: if the file changes in between, the stale stat just forces a re-read
-                    file_stat = _file_stat(file_path)
+                    # Stat from before reading: if the file changes in between, the stale stat just forces a re-read
+                    file_stat = _file_stat(disk_stat)
 
                     known = indexed.get(file_path.stem)
                     if known is not None and file_stat is not None and known.file_stat == file_stat:
@@ -209,6 +213,17 @@ class SyncApplicationService:
                     self.sqlite_task_repo.delete_task(indexed_id)
                     self.last_changes += 1
 
+        elapsed = time.perf_counter() - sync_started
+        if elapsed > SLOW_SYNC_SECONDS:
+            logger.warning(
+                "Slow index sync: %.2fs for %d files in %d projects (%.2fs listing, %d re-read, %d I/O errors)",
+                elapsed,
+                files_seen,
+                len(projects),
+                scan_seconds,
+                self.last_changes,
+                self.last_io_errors,
+            )
         return total_synced
 
     def sync_on_startup(self) -> int:

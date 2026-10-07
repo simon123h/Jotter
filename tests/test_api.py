@@ -439,7 +439,7 @@ def test_create_task_position_does_not_read_other_task_files(test_env, monkeypat
         raise AssertionError("creating a task must not scan the project's task files")
 
     monkeypatch.setattr(DiskTaskRepository, "read_task_file", fail)
-    monkeypatch.setattr(DiskTaskRepository, "get_all_task_files", fail)
+    monkeypatch.setattr(DiskTaskRepository, "scan_task_files", fail)
 
     second = client.post("/api/projects/default/tasks", json={"title": "B", "bucket": "todo"}).json()
     assert second["position"] == 2000.0

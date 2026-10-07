@@ -52,7 +52,7 @@ def test_sync_removes_deleted_markdown_files_from_index(temp_dir, test_env):
 
 
 def test_sync_does_not_delete_task_created_concurrently_during_sync(temp_dir, test_env, monkeypatch):
-    """Simulates a race condition where a task is created after get_all_task_files snapshot
+    """Simulates a race condition where a task is created after scan_task_files snapshot
 
     was taken, but before the SQLite cleanup step executes.
     """
@@ -63,10 +63,10 @@ def test_sync_does_not_delete_task_created_concurrently_during_sync(temp_dir, te
     # Pre-populate with an existing task
     initial_task = task_svc.create_task("default", TaskCreate(title="Initial Task", bucket="todo"))
 
-    orig_get_all_files = sync_svc.disk_task_repo.get_all_task_files
+    orig_get_all_files = sync_svc.disk_task_repo.scan_task_files
 
-    # When get_all_task_files is called, intercept it and simulate a concurrent task creation
-    # that happens AFTER get_all_task_files returns its snapshot.
+    # When scan_task_files is called, intercept it and simulate a concurrent task creation
+    # that happens AFTER scan_task_files returns its snapshot.
     created_concurrent_task = []
 
     def mock_get_all_files(project_id: str):
@@ -77,7 +77,7 @@ def test_sync_does_not_delete_task_created_concurrently_during_sync(temp_dir, te
         # Return snapshot from BEFORE new_task existed
         return files
 
-    monkeypatch.setattr(sync_svc.disk_task_repo, "get_all_task_files", mock_get_all_files)
+    monkeypatch.setattr(sync_svc.disk_task_repo, "scan_task_files", mock_get_all_files)
 
     # Run sync
     sync_svc.sync_db_only()

@@ -1,6 +1,7 @@
 """Disk repository for reading and writing task Markdown (.md) files."""
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -79,15 +80,30 @@ class DiskTaskRepository:
         if path.is_file():
             path.unlink()
 
-    def get_all_task_files(self, project_id: str) -> list[Path]:
+    def scan_task_files(self, project_id: str) -> list[tuple[Path, os.stat_result]]:
+        """Lists a project's task files with their stat results, from a single directory scan.
+
+        On Windows the scan itself returns size and mtime, so no per-file system call is needed. That matters where
+        antivirus or EDR filter drivers make every call expensive.
+        """
         p = self.get_project_dir(project_id)
-        if not p.is_dir():
+        found: list[tuple[Path, os.stat_result]] = []
+        try:
+            with os.scandir(p) as entries:
+                for entry in entries:
+                    name = entry.name
+                    if name.startswith(".") or name.lower() in ("index.md", "readme.md"):
+                        continue
+                    if not (name.lower().endswith(".md") if os.name == "nt" else name.endswith(".md")):
+                        continue
+                    try:
+                        if entry.is_file():
+                            found.append((Path(entry.path), entry.stat()))
+                    except OSError:
+                        continue  # vanished or locked between listing and stat: the next sync sees it
+        except OSError:
             return []
-        return [
-            f
-            for f in p.glob("*.md")
-            if f.is_file() and not f.name.startswith(".") and f.name.lower() not in ("index.md", "readme.md")
-        ]
+        return found
 
     def serialize_task(self, task: Task) -> str:
         """Dumps frontmatter and body into clean markdown format adhering to OKF standard."""
