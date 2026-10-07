@@ -1,3 +1,30 @@
+import { marked, Renderer } from 'marked';
+
+/** True for http(s) links that leave this Jotter instance. Relative, hash and same-origin links stay in the tab. */
+function isExternalLink(href: string): boolean {
+  try {
+    const url = new URL(href, window.location.href);
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.origin !== window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+/** A marked renderer that opens external links in a new tab and leaves everything else to marked's defaults. */
+export function createMarkdownRenderer(): Renderer {
+  const renderer = new Renderer();
+  renderer.link = function (token) {
+    const html = Renderer.prototype.link.call(this, token);
+    return isExternalLink(token.href) ? html.replace(/^<a /, '<a target="_blank" rel="noopener noreferrer" ') : html;
+  };
+  return renderer;
+}
+
+/** Renders Markdown to HTML, with external links opening in a new tab. */
+export function renderMarkdown(src: string): string {
+  return marked.parse(src, { renderer: createMarkdownRenderer() }) as string;
+}
+
 /**
  * Helper to update/toggle a checklist checkbox's checked state in a Markdown string at a specific index.
  * Matches any standard markdown list item checkboxes like '- [ ]', '* [x]', or '+ [X]'.

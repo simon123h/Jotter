@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { marked } from 'marked';
 import { useI18n } from '@/composables/useI18n';
-import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
+import { createMarkdownRenderer, toggleChecklistItemInMarkdown } from '@/utils/markdown';
 
 const props = defineProps<{
   body: string;
@@ -19,7 +19,7 @@ const parsedMarkdown = computed(() => {
   if (!props.body) return '';
   try {
     let checkboxIndex = 0;
-    const renderer = new marked.Renderer();
+    const renderer = createMarkdownRenderer();
     renderer.checkbox = ({ checked }) => {
       const idx = checkboxIndex++;
       return `<input type="checkbox" data-checkbox-index="${idx}" ${checked ? 'checked' : ''} />`;

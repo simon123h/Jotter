@@ -4,7 +4,7 @@ import { Handle, Position } from '@vue-flow/core';
 import { NodeResizer } from '@vue-flow/node-resizer';
 import '@vue-flow/node-resizer/dist/style.css';
 import { Trash2, Edit3, Check, Palette } from '@lucide/vue';
-import { marked } from 'marked';
+import { renderMarkdown } from '@/utils/markdown';
 import { useCanvasStore } from '@/features/canvas/stores/canvas';
 import { CANVAS_COLORS } from '@/features/canvas/constants/canvasColors';
 
@@ -32,7 +32,7 @@ const cycleColor = () => {
 
 const renderedMarkdown = computed(() => {
   if (!props.data.text) return '<p class="italic opacity-60">Empty note. Double-click or click edit to write...</p>';
-  return marked.parse(props.data.text);
+  return renderMarkdown(props.data.text);
 });
 
 const startEditing = async () => {

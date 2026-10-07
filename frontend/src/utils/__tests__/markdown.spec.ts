@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toggleChecklistItemInMarkdown, extractAllChecklistItems, consolidateTasksIntoChecklist } from '../markdown';
+import { toggleChecklistItemInMarkdown, extractAllChecklistItems, consolidateTasksIntoChecklist, renderMarkdown } from '../markdown';
 
 describe('markdown utilities', () => {
   describe('toggleChecklistItemInMarkdown', () => {
@@ -66,5 +66,27 @@ End of notes.`);
 #### Subtask 1
 Detailed info for subtask 1`);
     });
+  });
+});
+
+describe('renderMarkdown links', () => {
+  it('opens external links in a new tab', () => {
+    const html = renderMarkdown('[docs](https://example.com/a?b=1 "Title")');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain('href="https://example.com/a?b=1"');
+    expect(html).toContain('title="Title"');
+  });
+
+  it('keeps same-origin, relative and hash links in the same tab', () => {
+    const own = `${window.location.origin}/projects/work`;
+    for (const href of [own, '/projects/work', '#section', 'tasks/1']) {
+      expect(renderMarkdown(`[x](${href})`)).not.toContain('target=');
+    }
+  });
+
+  it('leaves mailto links alone and renders link text with formatting', () => {
+    expect(renderMarkdown('[mail](mailto:a@b.c)')).not.toContain('target=');
+    expect(renderMarkdown('[**bold**](https://example.com)')).toContain('<strong>bold</strong></a>');
   });
 });

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { marked } from 'marked';
+import { renderMarkdown } from '@/utils/markdown';
 import { X, Flame, Calendar, Clock, Check, Tag, CheckCircle, FolderInput, Trash2, ChevronLeft, ChevronRight } from '@lucide/vue';
 import type { Task, Bucket } from '@/types';
 import { useI18n } from '@/composables/useI18n';
@@ -62,7 +62,7 @@ watch(
 // Markdown compiler for task description
 const compiledDescription = computed(() => {
   if (!props.task.body) return '';
-  return marked.parse(props.task.body);
+  return renderMarkdown(props.task.body);
 });
 
 // Title edit save
