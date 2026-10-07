@@ -77,3 +77,4 @@ loc_chart.png
 # Android Keystores & Signing Keys
 *.keystore
 *.jks
+uv.lock
