@@ -541,3 +541,81 @@ describe('navigation', () => {
     expect(all('column')[1].text()).toContain('Into done');
   });
 });
+
+describe('finishing and archiving', () => {
+  const file = (name: string) => fs.files.get(`Jotter/work/${name}.md`)!.data;
+  const card = (title: string) => all('task-card').find((c) => c.text().includes(title))!;
+
+  it('marks a task done from its card, to the end of Done, and can undo it', async () => {
+    await start(desktopVault);
+    expect(card('Ship release').find('[data-testid="card-done"]').exists()).toBe(false);
+
+    await card('Write report').find('[data-testid="card-done"]').trigger('click');
+    await settle();
+
+    expect(file('a')).toContain('status: done');
+    expect(file('a')).toMatch(/position: 2000/); // after "Ship release" at 1000
+    expect(find('task-title').exists()).toBe(false); // the tap did not open the card
+    expect(find('toast').text()).toContain('Marked done');
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('a')).toContain('status: todo');
+    expect(file('a')).toContain('position: 1000');
+    expect(find('toast').exists()).toBe(false);
+  });
+
+  it('creates the Done bucket when a project has none', async () => {
+    await start((f) => {
+      f.put('Jotter/work/index.md', '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n---\n');
+      f.put('Jotter/work/a.md', '---\ntitle: Only task\nstatus: todo\n---\n');
+    });
+    await card('Only task').find('[data-testid="card-done"]').trigger('click');
+    await settle();
+
+    expect(fs.files.get('Jotter/work/index.md')?.data).toContain('name: done');
+    expect(file('a')).toContain('status: done');
+    expect(all('bucket-tab').map((t) => t.text())).toEqual(['To Do 0', 'Done 1']);
+  });
+
+  it('offers archiving for done tasks, creates the Archive bucket, and can undo', async () => {
+    await start(desktopVault);
+    await card('Ship release').find('[data-testid="card-archive"]').trigger('click');
+    await settle();
+
+    expect(fs.files.get('Jotter/work/index.md')?.data).toContain('name: archive');
+    expect(file('c')).toContain('status: archive');
+    expect(all('bucket-tab').map((t) => t.text())).toEqual(['To Do 2', 'Done 0', 'Archive 1']);
+    // Archived tasks have nothing left to offer
+    expect(card('Ship release').find('[data-testid="card-done"]').exists()).toBe(false);
+    expect(card('Ship release').find('[data-testid="card-archive"]').exists()).toBe(false);
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('c')).toContain('status: done');
+  });
+
+  it('finishes and archives from the task sheet, keeping what was typed', async () => {
+    await start(desktopVault);
+    await card('Write report').trigger('click');
+    await find('task-title').setValue('Write the final report');
+    await find('task-done').trigger('click');
+    await settle();
+
+    expect(find('task-title').exists()).toBe(false);
+    expect(file('a')).toContain('title: Write the final report');
+    expect(file('a')).toContain('status: done');
+    // The sheet closing must not move the task back to where its draft still said it was
+    expect(file('a')).not.toContain('status: todo');
+
+    await card('Write the final report').trigger('click');
+    expect(find('task-done').exists()).toBe(false);
+    await find('task-archive').trigger('click');
+    await settle();
+    expect(file('a')).toContain('status: archive');
+
+    await card('Write the final report').trigger('click');
+    expect(find('task-done').exists()).toBe(false);
+    expect(find('task-archive').exists()).toBe(false);
+  });
+});

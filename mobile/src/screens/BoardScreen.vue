@@ -6,6 +6,7 @@ import ColumnTabs from '@/components/ColumnTabs.vue';
 import TaskCard from '@/components/TaskCard.vue';
 import { useCardDrag } from '@/composables/useCardDrag';
 import { usePullToRefresh } from '@/composables/usePullToRefresh';
+import { useTaskActions } from '@/composables/useTaskActions';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -19,6 +20,8 @@ const active = computed({
   get: () => ui.activeColumn,
   set: (index: number) => (ui.activeColumn = index),
 });
+
+const actions = useTaskActions();
 
 const drag = useCardDrag({
   scroller,
@@ -148,7 +151,7 @@ const pullRefresh = usePullToRefresh(scroller, { onRefresh: refresh, disabled: (
                 @pointerdown="drag.onPointerDown($event, task)"
                 @contextmenu.prevent
               >
-                <TaskCard :task="task" @open="openTask(task.id)" />
+                <TaskCard :task="task" @open="openTask(task.id)" @done="actions.markDone(task.id)" @archive="actions.archive(task.id)" />
               </li>
             </template>
             <li v-if="dropIndex(col.key) >= shown(col.tasks).length" class="h-1 rounded-full bg-accent" data-testid="drop-line"></li>

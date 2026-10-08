@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Paperclip, CalendarDays, Clock, Hourglass } from '@lucide/vue';
+import { Paperclip, CalendarDays, Clock, Hourglass, Check, Archive } from '@lucide/vue';
 import type { Task } from '@jotter/vault-format';
 import { t, type MessageKey } from '@/i18n';
 import { cardTint } from '@/taskColors';
 import { plannedLabel } from '@/planned';
 
 const props = defineProps<{ task: Task }>();
-const emit = defineEmits<{ (e: 'open'): void }>();
+const emit = defineEmits<{ (e: 'open'): void; (e: 'done'): void; (e: 'archive'): void }>();
+
+// Done tasks offer to be archived, open ones to be finished; archived ones have nothing left to do
+const quickAction = computed(() => (props.task.bucket === 'done' ? 'archive' : props.task.bucket === 'archive' ? null : 'done'));
 
 const priorityClass: Record<string, string> = {
   low: 'bg-sky-500',
@@ -20,11 +23,14 @@ const overdue = computed(() => !!props.task.due_date && props.task.due_date < ne
 </script>
 
 <template>
-  <button
-    class="block w-full select-none rounded-xl border border-line bg-card p-3 text-left shadow-sm active:bg-line/50"
+  <div
+    role="button"
+    tabindex="0"
+    class="block w-full cursor-pointer select-none rounded-xl border border-line bg-card p-3 text-left shadow-sm active:bg-line/50"
     :style="cardTint(task.color)"
     data-testid="task-card"
     @click="emit('open')"
+    @keydown.enter.self="emit('open')"
   >
     <div class="flex items-start gap-2">
       <span
@@ -34,6 +40,19 @@ const overdue = computed(() => !!props.task.due_date && props.task.due_date < ne
         :title="t(`priority.${task.priority}` as MessageKey)"
       ></span>
       <span class="min-w-0 flex-1 break-words text-[15px] leading-snug">{{ task.title }}</span>
+      <!-- Stops the press here, so that it neither opens the card nor starts a drag -->
+      <button
+        v-if="quickAction"
+        type="button"
+        class="-m-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted active:bg-line"
+        :aria-label="quickAction === 'done' ? t('task.markDone') : t('task.archive')"
+        :data-testid="quickAction === 'done' ? 'card-done' : 'card-archive'"
+        @pointerdown.stop
+        @click.stop="quickAction === 'done' ? emit('done') : emit('archive')"
+      >
+        <Check v-if="quickAction === 'done'" class="h-5 w-5" />
+        <Archive v-else class="h-5 w-5" />
+      </button>
     </div>
     <div
       v-if="task.due_date || task.planned_date || task.postponed_until || task.tags.length || task.attachments.length"
@@ -53,5 +72,5 @@ const overdue = computed(() => !!props.task.due_date && props.task.due_date < ne
       >
       <span v-for="tag in task.tags" :key="tag" class="rounded-full bg-line px-2 py-0.5">#{{ tag }}</span>
     </div>
-  </button>
+  </div>
 </template>

@@ -13,7 +13,7 @@ export type Sheet =
 /** Which overlay is open. One at a time; the back button closes it. */
 export const useUiStore = defineStore('ui', () => {
   const sheet = ref<Sheet | null>(null);
-  const toast = ref<string | null>(null);
+  const toast = ref<{ message: string; action?: { label: string; run: () => void } } | null>(null);
   /** The board column in view, so quick add files a task where the user is looking. */
   const activeColumn = ref(0);
   /** The column position while swiping, fractional (1.5 is halfway to the third column): drives the tab indicator. */
@@ -30,11 +30,16 @@ export const useUiStore = defineStore('ui', () => {
   const close = () => {
     sheet.value = null;
   };
-  const showToast = (message: string) => {
-    toast.value = message;
+  /** A short message at the top. With an action (Undo) it stays longer, since it needs a thumb. */
+  const showToast = (message: string, action?: { label: string; run: () => void }) => {
+    toast.value = { message, action };
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => (toast.value = null), 2500);
+    toastTimer = setTimeout(() => (toast.value = null), action ? 6000 : 2500);
+  };
+  const dismissToast = () => {
+    clearTimeout(toastTimer);
+    toast.value = null;
   };
 
-  return { sheet, toast, activeColumn, columnProgress, searching, isOpen, open, close, showToast };
+  return { sheet, toast, dismissToast, activeColumn, columnProgress, searching, isOpen, open, close, showToast };
 });

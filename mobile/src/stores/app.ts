@@ -207,6 +207,36 @@ export const useAppStore = defineStore('app', () => {
     await loadProject();
   }
 
+  /** Where a task was, so that moving it can be undone. */
+  interface Placement {
+    bucket: string;
+    position: number;
+  }
+
+  /**
+   * Moves a task to the end of a bucket the way the desktop does for Done and Archive. A project without that
+   * bucket gets it first, so the task never ends up in a bucket nothing shows.
+   */
+  async function moveToBucket(id: string, bucket: string, title: string): Promise<Placement> {
+    const task = taskById(id);
+    if (!task) throw new Error('Task not found');
+    const before: Placement = { bucket: task.bucket, position: task.position };
+    if (!buckets.value.some((b) => b.name === bucket)) {
+      await repository().createBucket(requireProject(), { title });
+      await loadProject();
+    }
+    await moveTask(id, bucket);
+    return before;
+  }
+
+  const markDone = (id: string) => moveToBucket(id, 'done', 'Done');
+  const archiveTask = (id: string) => moveToBucket(id, 'archive', 'Archive');
+
+  /** Puts a task back where it was. */
+  async function restoreTask(id: string, placement: Placement) {
+    await moveTask(id, placement.bucket, placement.position);
+  }
+
   async function removeTask(id: string) {
     await repository().deleteTask(requireProject(), id);
     await loadProject();
@@ -270,6 +300,9 @@ export const useAppStore = defineStore('app', () => {
     addTask,
     saveTask,
     moveTask,
+    markDone,
+    archiveTask,
+    restoreTask,
     removeTask,
     addAttachment,
     removeAttachment,

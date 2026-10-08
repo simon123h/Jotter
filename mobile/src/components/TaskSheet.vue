@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue';
-import { Trash2, Paperclip, Pencil, X, Slash, Check } from '@lucide/vue';
+import { Trash2, Paperclip, Pencil, X, Slash, Check, Archive } from '@lucide/vue';
 import MarkdownView from './MarkdownView.vue';
 import { toggleChecklistItem } from '@/markdown';
 import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
+import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS, colorHex } from '@/taskColors';
 import { PLANNED_CHOICES, plannedLabel } from '@/planned';
 
@@ -15,6 +16,7 @@ const app = useAppStore();
 const ui = useUiStore();
 
 const task = computed(() => app.taskById(props.id));
+const actions = useTaskActions();
 const priorities = ['low', 'medium', 'high', 'urgent'] as const;
 const field = 'w-full rounded-xl border border-line bg-surface px-3 py-3 text-base outline-none focus:border-accent';
 
@@ -81,6 +83,14 @@ onBeforeUnmount(() => {
   void save();
 });
 
+/** Saves what is typed first, then moves the task: the sheet must not write its old bucket back afterwards. */
+async function finish(kind: 'done' | 'archive') {
+  await save();
+  closing = true;
+  ui.close();
+  await (kind === 'done' ? actions.markDone(props.id) : actions.archive(props.id));
+}
+
 async function remove() {
   if (!window.confirm(t('task.confirmDelete'))) return;
   closing = true;
@@ -131,6 +141,24 @@ async function removeAttachment(name: string) {
 <template>
   <BottomSheet v-if="task" :title="t('task.heading')" full @close="close">
     <template #actions>
+      <button
+        v-if="task.bucket !== 'done' && task.bucket !== 'archive'"
+        class="rounded-full p-2 text-muted active:bg-line"
+        :aria-label="t('task.markDone')"
+        data-testid="task-done"
+        @click="finish('done')"
+      >
+        <Check class="h-5 w-5" />
+      </button>
+      <button
+        v-if="task.bucket !== 'archive'"
+        class="rounded-full p-2 text-muted active:bg-line"
+        :aria-label="t('task.archive')"
+        data-testid="task-archive"
+        @click="finish('archive')"
+      >
+        <Archive class="h-5 w-5" />
+      </button>
       <button
         class="rounded-full p-2 text-danger active:bg-line"
         :aria-label="t('common.delete')"

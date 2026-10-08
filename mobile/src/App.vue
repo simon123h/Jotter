@@ -81,10 +81,19 @@ watch(
 
   <div
     v-if="ui.toast"
-    class="pointer-events-none fixed left-1/2 top-4 z-50 max-w-[85%] -translate-x-1/2 truncate rounded-full bg-ink px-4 py-2 text-sm text-surface shadow-lg"
+    class="fixed left-1/2 top-4 z-50 flex max-w-[92%] -translate-x-1/2 items-center gap-1 rounded-full bg-ink py-2 pl-4 text-sm text-surface shadow-lg"
+    :class="ui.toast.action ? 'pr-1.5' : 'pointer-events-none pr-4'"
     role="status"
     data-testid="toast"
   >
-    {{ ui.toast }}
+    <span class="truncate">{{ ui.toast.message }}</span>
+    <button
+      v-if="ui.toast.action"
+      class="rounded-full px-3 py-1 font-semibold text-accent active:bg-white/10"
+      data-testid="toast-action"
+      @click="ui.toast.action.run()"
+    >
+      {{ ui.toast.action.label }}
+    </button>
   </div>
 </template>
