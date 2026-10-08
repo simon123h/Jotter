@@ -550,7 +550,10 @@ describe('finishing, archiving and moving', () => {
   const row = (title: string) => all('task-row').find((c) => c.text().includes(title))!;
   const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  /** A finger on a row: down, then sideways in two steps, then up. Distances under 40px are slow enough not to count as a fling. */
+  /**
+   * A finger on a row: down, then sideways in two steps, then up. The events arrive in one tick, so anything that
+   * moves 40px or more counts as a fling and triggers; tests that only look at the swipe use shorter pulls.
+   */
   async function swipe(title: string, dx: number, { release = true, dy = 2 } = {}) {
     const content = row(title).find('[data-testid="task-card"]').element;
     content.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 200, clientY: 100 }));
@@ -592,16 +595,38 @@ describe('finishing, archiving and moving', () => {
     expect(find('toast').text()).toContain('Reopened');
   });
 
+  it('puts the message bar at the bottom, and out of the way while a card is dragged', async () => {
+    const { ui } = await start(desktopVault);
+    await row('Write report').find('[data-testid="row-check"]').trigger('click');
+    await settle();
+
+    expect(find('toast').classes().join(' ')).toMatch(/bottom-/);
+    expect(find('toast').classes().join(' ')).not.toMatch(/\btop-/);
+
+    ui.dragging = true;
+    await settle();
+    expect(find('toast').exists()).toBe(false);
+    ui.dragging = false;
+    await settle();
+    expect(find('toast').exists()).toBe(true);
+  });
+
   it('shows what a swipe will do while the finger is down, and nothing for a vertical move', async () => {
     await start(desktopVault);
-    await swipe('Write report', 70, { release: false });
+    await swipe('Write report', 30, { release: false });
     expect(find('swipe-right-bg').text()).toContain('Done');
-    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 270, clientY: 102 }));
+    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 230, clientY: 102 }));
     await wait(50);
 
-    await swipe('Write report', -70, { release: false });
+    await swipe('Write report', -30, { release: false });
     expect(find('swipe-left-bg').text()).toContain('Move');
-    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 130, clientY: 102 }));
+    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 170, clientY: 102 }));
+    await wait(50);
+
+    // A done task offers to be reopened instead
+    await swipe('Ship release', 30, { release: false });
+    expect(find('swipe-right-bg').text()).toContain('Reopen');
+    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 230, clientY: 102 }));
     await wait(50);
 
     // Mostly vertical: that is scrolling
@@ -629,30 +654,68 @@ describe('finishing, archiving and moving', () => {
     expect(find('task-title').exists()).toBe(false);
   });
 
-  it('archives a done task by swiping it to the right, creating the Archive bucket, and can undo', async () => {
+  it('takes a done task back to the inbox by swiping it to the right, and can undo', async () => {
     await start(desktopVault);
     await swipe('Ship release', 150);
 
-    expect(fs.files.get('Jotter/work/index.md')?.data).toContain('name: archive');
-    expect(file('c')).toContain('status: archive');
-    expect(all('bucket-tab').map((t) => t.text())).toEqual(['To Do 2', 'Done 0', 'Archive 1']);
+    expect(file('c')).toContain('status: todo'); // the first open bucket
+    expect(find('toast').text()).toContain('Reopened');
+    expect(all('bucket-tab').map((t) => t.text())).toEqual(['To Do 3', 'Done 0']);
 
     await find('toast-action').trigger('click');
     await settle();
     expect(file('c')).toContain('status: done');
   });
 
-  it('has nothing to offer an archived task on the right', async () => {
+  it('marks an archived task done by swiping it to the right, and can undo', async () => {
     await start((f) => {
       f.put(
         'Jotter/work/index.md',
-        '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: archive\n    title: Archive\n---\n'
+        '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: done\n    title: Done\n  - name: archive\n    title: Archive\n---\n'
       );
       f.put('Jotter/work/a.md', '---\ntitle: Old\nstatus: archive\n---\n');
     });
-    const before = file('a');
     await swipe('Old', 150);
-    expect(file('a')).toBe(before);
+
+    expect(file('a')).toContain('status: done');
+    expect(find('toast').text()).toContain('Marked done');
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('a')).toContain('status: archive');
+  });
+
+  it('shows done as checked and struck through, and archived as open but set aside', async () => {
+    await start((f) => {
+      f.put(
+        'Jotter/work/index.md',
+        '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: done\n    title: Done\n  - name: archive\n    title: Archive\n---\n'
+      );
+      f.put('Jotter/work/a.md', '---\ntitle: Finished\nstatus: done\n---\n');
+      f.put('Jotter/work/b.md', '---\ntitle: Shelved\nstatus: archive\n---\n');
+    });
+    const check = (title: string) => row(title).find('[data-testid="row-check"]');
+    const heading = (title: string) => row(title).find('[data-testid="row-title"]');
+
+    expect(check('Finished').attributes('aria-pressed')).toBe('true');
+    expect(heading('Finished').classes()).toContain('line-through');
+    expect(check('Shelved').attributes('aria-pressed')).toBe('false');
+    expect(heading('Shelved').classes()).not.toContain('line-through');
+
+    // Not done, so the checkbox finishes it
+    await check('Shelved').trigger('click');
+    await settle();
+    expect(file('b')).toContain('status: done');
+  });
+
+  it('keeps archiving to the task sheet and the column picker, not the swipe', async () => {
+    await start(desktopVault);
+    await row('Ship release').find('[data-testid="task-card"]').trigger('click');
+    expect(find('task-archive').exists()).toBe(true);
+    await find('task-archive').trigger('click');
+    await settle();
+    expect(file('c')).toContain('status: archive');
+    expect(find('toast').text()).toContain('Archived');
   });
 
   it('moves a task to a column of its choice by swiping it to the left', async () => {

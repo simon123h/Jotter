@@ -215,3 +215,16 @@ body {
   transform: translateY(100%);
   opacity: 0;
 }
+
+/* The message bar slides up from the bottom edge */
+.snack-enter-active,
+.snack-leave-active {
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+.snack-enter-from,
+.snack-leave-to {
+  transform: translateY(120%);
+  opacity: 0;
+}

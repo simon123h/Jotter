@@ -142,7 +142,6 @@ watch(
                   :task="task"
                   @open="openTask(task.id)"
                   @done="actions.markDone(task.id)"
-                  @archive="actions.archive(task.id)"
                   @reopen="actions.reopen(task.id)"
                   @move="ui.open({ type: 'move', id: task.id })"
                 />

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Archive, ArrowRightLeft, CalendarDays, Check, Clock, Hourglass, Paperclip } from '@lucide/vue';
+import { ArrowRightLeft, CalendarDays, Check, Clock, Hourglass, Paperclip, RotateCcw } from '@lucide/vue';
 import type { Task } from '@jotter/vault-format';
 import { t, type MessageKey } from '@/i18n';
 import { dueInfo } from '@/dates';
@@ -16,25 +16,24 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'open'): void;
   (e: 'done'): void;
-  (e: 'archive'): void;
   (e: 'reopen'): void;
   (e: 'move'): void;
 }>();
 
-const finished = computed(() => props.task.bucket === 'done' || props.task.bucket === 'archive');
+// Done means finished for good. Archived is not done: the task is only off the board, so it stays open.
+const done = computed(() => props.task.bucket === 'done');
+const archived = computed(() => props.task.bucket === 'archive');
 
-/** What a swipe to the right does: finish an open task, archive a done one, nothing for an archived one. */
-const rightAction = computed<'done' | 'archive' | null>(() =>
-  props.task.bucket === 'archive' ? null : props.task.bucket === 'done' ? 'archive' : 'done'
-);
+/** What a swipe to the right does: finish an open or archived task, take a done one back to the inbox. */
+const rightAction = computed<'done' | 'reopen'>(() => (done.value ? 'reopen' : 'done'));
 
 const swipe = useRowSwipe({
-  allowed: (direction: SwipeDirection) => (direction === 'right' ? rightAction.value !== null : true),
+  allowed: () => true,
   exits: (direction: SwipeDirection) => direction === 'right',
   onTrigger: (direction: SwipeDirection) => {
     if (direction === 'left') emit('move');
     else if (rightAction.value === 'done') emit('done');
-    else if (rightAction.value === 'archive') emit('archive');
+    else emit('reopen');
   },
   disabled: () => !!props.inert,
 });
@@ -50,7 +49,7 @@ const bar = computed(() => colorHex(props.task.color));
 // A swipe that starts on the checkbox is a swipe, not a tap on it
 function onCheck() {
   if (swipe.consumeClick()) return;
-  if (finished.value) emit('reopen');
+  if (done.value) emit('reopen');
   else emit('done');
 }
 
@@ -67,16 +66,14 @@ const hasMeta = computed(
   <div class="relative select-none overflow-hidden bg-card" data-testid="task-row">
     <!-- What the swipe will do, behind the row -->
     <div
-      v-if="swipe.dx.value > 0 && rightAction"
+      v-if="swipe.dx.value > 0"
       class="absolute inset-0 flex items-center gap-2 pl-5 text-sm font-semibold text-white"
-      :class="rightAction === 'done' ? 'bg-emerald-500' : 'bg-indigo-500'"
+      :class="rightAction === 'done' ? 'bg-emerald-500' : 'bg-amber-500'"
       data-testid="swipe-right-bg"
     >
       <Check v-if="rightAction === 'done'" class="h-6 w-6" />
-      <Archive v-else class="h-6 w-6" />
-      <span :class="swipe.armed.value ? 'opacity-100' : 'opacity-70'">{{
-        t(rightAction === 'done' ? 'swipe.done' : 'swipe.archive')
-      }}</span>
+      <RotateCcw v-else class="h-6 w-6" />
+      <span :class="swipe.armed.value ? 'opacity-100' : 'opacity-70'">{{ t(rightAction === 'done' ? 'swipe.done' : 'swipe.reopen') }}</span>
     </div>
     <div
       v-if="swipe.dx.value < 0"
@@ -106,21 +103,25 @@ const hasMeta = computed(
       <button
         type="button"
         class="-ml-1 -mr-1 mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center"
-        :aria-label="finished ? t('task.reopen') : t('task.markDone')"
-        :aria-pressed="finished"
+        :aria-label="done ? t('task.reopen') : t('task.markDone')"
+        :aria-pressed="done"
         data-testid="row-check"
         @click.stop="onCheck"
       >
         <span
           class="flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 transition-colors"
-          :style="{ borderColor: ring, backgroundColor: finished ? ring : `color-mix(in srgb, ${ring} 12%, transparent)` }"
+          :style="{ borderColor: ring, backgroundColor: done ? ring : `color-mix(in srgb, ${ring} 12%, transparent)` }"
         >
-          <Check v-if="finished" class="h-3.5 w-3.5 text-white" :stroke-width="3" />
+          <Check v-if="done" class="h-3.5 w-3.5 text-white" :stroke-width="3" />
         </span>
       </button>
 
       <div class="min-w-0 flex-1 border-b border-line py-3 pr-4">
-        <div class="break-words text-[16px] leading-snug" :class="finished ? 'text-muted line-through' : ''" data-testid="row-title">
+        <div
+          class="break-words text-[16px] leading-snug"
+          :class="done ? 'text-muted line-through' : archived ? 'text-muted' : ''"
+          data-testid="row-title"
+        >
           {{ task.title }}
         </div>
         <div v-if="hasMeta" class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">

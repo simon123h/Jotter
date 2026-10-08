@@ -83,21 +83,25 @@ watch(
     <SettingsSheet v-else-if="ui.sheet?.type === 'settings'" />
   </template>
 
-  <div
-    v-if="ui.toast"
-    class="fixed left-1/2 top-4 z-50 flex max-w-[92%] -translate-x-1/2 items-center gap-1 rounded-full bg-ink py-2 pl-4 text-sm text-surface shadow-lg"
-    :class="ui.toast.action ? 'pr-1.5' : 'pointer-events-none pr-4'"
-    role="status"
-    data-testid="toast"
-  >
-    <span class="truncate">{{ ui.toast.message }}</span>
-    <button
-      v-if="ui.toast.action"
-      class="rounded-full px-3 py-1 font-semibold text-accent active:bg-white/10"
-      data-testid="toast-action"
-      @click="ui.toast.action.run()"
+  <!-- The message bar sits at the bottom, left of the add button; it makes room while a card is being dragged -->
+  <Transition name="snack">
+    <div
+      v-if="ui.toast && !ui.dragging"
+      class="fixed bottom-4 left-3 right-[5rem] z-50 flex items-center gap-2 rounded-lg bg-ink py-2.5 pl-4 text-sm text-surface shadow-lg"
+      :class="ui.toast.action ? 'pr-1.5' : 'pointer-events-none pr-4'"
+      style="margin-bottom: env(safe-area-inset-bottom)"
+      role="status"
+      data-testid="toast"
     >
-      {{ ui.toast.action.label }}
-    </button>
-  </div>
+      <span class="min-w-0 flex-1 truncate">{{ ui.toast.message }}</span>
+      <button
+        v-if="ui.toast.action"
+        class="shrink-0 rounded-md px-3 py-1 font-semibold uppercase tracking-wide text-accent active:bg-white/10"
+        data-testid="toast-action"
+        @click="ui.toast.action.run()"
+      >
+        {{ ui.toast.action.label }}
+      </button>
+    </div>
+  </Transition>
 </template>
