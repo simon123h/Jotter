@@ -30,7 +30,7 @@ attachments:
 due_date: "2026-06-15"
 planned_date: thisWeek
 priority: high
-color: "#3b82f6"
+color: blue
 postponed_until: "2026-07-09"
 created_at: "2026-06-07T12:00:00Z"
 updated_at: "2026-06-07T14:30:00Z"
@@ -66,7 +66,7 @@ Der YAML-Frontmatter-Block unterstützt die folgenden Schlüssel-Wert-Paare. All
 | `due_date` | String | Nein | Das Fälligkeitsdatum im ISO-Format `YYYY-MM-DD` (oder `null`, wenn keines vorhanden ist). |
 | `planned_date`| String | Nein | Planungsmarker für die Wochenplanung. Unterstützte Werte: `today`, `tomorrow`, `thisWeek`, `nextWeek`, `thisMonth`, `nextMonth`, `thisYear`, `nextYear`, `someday`, `sometime` oder ein Datum `YYYY-MM-DD` (Schreibweisen mit Bindestrich wie `this-week` werden ebenfalls gelesen). |
 | `priority` | String | Nein | Die Priorität der Aufgabe. Unterstützte Werte: `low`, `medium`, `high`, `urgent` oder `null`. |
-| `color` | String | Nein | Ein benutzerdefinierter Hex-Farbcode (z. B. `#ef4444`) zur visuellen Hervorhebung der Aufgabenkarte. |
+| `color` | String | Nein | Der Name einer Palettenfarbe (`red`, `orange`, `yellow`, `green`, `blue`, `purple` oder `pink`), die die Aufgabenkarte einfärbt. Andere Werte, etwa ein Hex-Code aus einem anderen Werkzeug, bleiben unverändert erhalten. |
 | `postponed_until` | String | Nein | Das Datum, bis zu dem die Aufgabe aufgeschoben ist, im ISO-Format `YYYY-MM-DD` (oder `null`, wenn keines vorhanden ist). |
 | `created_at` | String | Nein | ISO 8601 UTC-Zeitstempel der Erstellung (z. B. `2026-06-07T12:00:00Z`). |
 | `updated_at` | String | Nein | ISO 8601 UTC-Zeitstempel der letzten Änderung. |

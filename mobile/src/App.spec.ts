@@ -196,6 +196,70 @@ describe('capturing and editing tasks', () => {
     expect(fs.files.get('Jotter/work/a.md')?.data).toContain('plain again');
   });
 
+  it('sets the colour and the planned date, and shows them on the card', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+
+    await find('color-blue').trigger('click');
+    await type('task-planned', 'thisWeek', 'change');
+    await settle();
+
+    const file = () => fs.files.get('Jotter/work/a.md')!.data;
+    expect(file()).toContain('color: blue');
+    expect(file()).toContain('planned_date: thisWeek');
+    expect(find('color-blue').attributes('aria-checked')).toBe('true');
+
+    await find('sheet-backdrop').trigger('click');
+    await settle();
+    const card = all('task-card')[0];
+    expect(card.attributes('style')).toContain('color-mix');
+    expect(card.find('[data-testid="card-planned"]').text()).toBe('This week');
+
+    // And back to nothing: both keys leave the file
+    await card.trigger('click');
+    await find('color-none').trigger('click');
+    await type('task-planned', '', 'change');
+    await settle();
+    expect(file()).not.toContain('color:');
+    expect(file()).not.toContain('planned_date');
+  });
+
+  it('keeps a planned date and a colour that another tool wrote outside the menus', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/a.md', '---\ntitle: Odd values\nstatus: todo\nplanned_date: next-week\ncolor: "#12ab34"\n---\n');
+    });
+    await find('task-card').trigger('click');
+
+    expect((find('task-planned').element as HTMLSelectElement).value).toBe('next-week');
+    expect(find('task-planned').text()).toContain('Next week');
+    expect(find('color-custom').exists()).toBe(true);
+
+    // Editing something else must not touch them
+    await find('task-title').setValue('Odd values, renamed');
+    await find('sheet-backdrop').trigger('click');
+    await settle();
+    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('planned_date: next-week');
+    expect(fs.files.get('Jotter/work/a.md')?.data).toMatch(/color: ['"]?#12ab34/);
+  });
+
+  it('shows the postponed date for a task in the postponed bucket', async () => {
+    await start((f) => {
+      f.put(
+        'Jotter/work/index.md',
+        '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: postponed\n    title: Postponed\n---\n'
+      );
+      f.put('Jotter/work/a.md', '---\ntitle: Later\nstatus: postponed\npostponed_until: "2030-01-31"\n---\n');
+    });
+    expect(find('card-postponed').text()).toBe('2030-01-31');
+
+    await find('task-card').trigger('click');
+    expect((find('task-postponed').element as HTMLInputElement).value).toBe('2030-01-31');
+    await type('task-postponed', '2031-02-01', 'change');
+    await settle();
+    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('postponed_until: 2031-02-01');
+  });
+
   it('adds and removes an attachment', async () => {
     await start(desktopVault);
     await find('task-card').trigger('click');

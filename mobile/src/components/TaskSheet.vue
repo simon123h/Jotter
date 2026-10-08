@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue';
-import { Trash2, Paperclip, Pencil, X } from '@lucide/vue';
+import { Trash2, Paperclip, Pencil, X, Slash, Check } from '@lucide/vue';
 import MarkdownView from './MarkdownView.vue';
 import { toggleChecklistItem } from '@/markdown';
 import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
+import { TASK_COLORS, colorHex } from '@/taskColors';
+import { PLANNED_CHOICES, plannedLabel } from '@/planned';
 
 const props = defineProps<{ id: string }>();
 const app = useAppStore();
@@ -29,6 +31,9 @@ const draft = ref({
   bucket: initial?.bucket ?? '',
   priority: initial?.priority ?? '',
   due: initial?.due_date ?? '',
+  planned: initial?.planned_date ?? '',
+  postponed: initial?.postponed_until ?? '',
+  color: initial?.color ?? '',
   tags: (initial?.tags ?? []).join(', '),
   body: initial?.body ?? '',
 });
@@ -45,6 +50,9 @@ async function save() {
   if (d.title.trim() && d.title.trim() !== current.title) changes.title = d.title.trim();
   if ((d.priority || undefined) !== current.priority) changes.priority = d.priority || undefined;
   if ((d.due || undefined) !== current.due_date) changes.due_date = d.due || undefined;
+  if ((d.planned || undefined) !== current.planned_date) changes.planned_date = d.planned || undefined;
+  if ((d.postponed || undefined) !== current.postponed_until) changes.postponed_until = d.postponed || undefined;
+  if ((d.color || null) !== (current.color ?? null)) changes.color = d.color || null;
   if (tags.join(',') !== current.tags.join(',')) changes.tags = tags;
   if (d.body !== current.body) changes.body = d.body;
   try {
@@ -53,6 +61,11 @@ async function save() {
   } catch (err) {
     fail(err);
   }
+}
+
+function pickColor(id: string) {
+  draft.value.color = id;
+  void save();
 }
 
 // Let v-model apply the new value before it is read
@@ -154,9 +167,27 @@ async function removeAttachment(name: string) {
         </label>
       </div>
 
-      <label class="block">
-        <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.due') }}</span>
-        <input v-model="draft.due" type="date" :class="field" data-testid="task-due" @change="saveSoon" />
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.due') }}</span>
+          <input v-model="draft.due" type="date" :class="field" data-testid="task-due" @change="saveSoon" />
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.planned') }}</span>
+          <select v-model="draft.planned" :class="field" data-testid="task-planned" @change="saveSoon">
+            <option value="">{{ t('planned.none') }}</option>
+            <option v-for="p in PLANNED_CHOICES" :key="p" :value="p">{{ plannedLabel(p) }}</option>
+            <!-- A value another tool wrote (next week, a date, ...) stays selectable and is kept -->
+            <option v-if="draft.planned && !PLANNED_CHOICES.some((p) => p === draft.planned)" :value="draft.planned">
+              {{ plannedLabel(draft.planned) }}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <label v-if="draft.bucket === 'postponed' || draft.postponed" class="block">
+        <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.postponed') }}</span>
+        <input v-model="draft.postponed" type="date" :class="field" data-testid="task-postponed" @change="saveSoon" />
       </label>
 
       <label class="block">
@@ -170,6 +201,46 @@ async function removeAttachment(name: string) {
           @change="saveSoon"
         />
       </label>
+
+      <div>
+        <span class="mb-2 block text-xs font-medium text-muted">{{ t('task.color') }}</span>
+        <div class="flex flex-wrap items-center gap-2.5" role="radiogroup" :aria-label="t('task.color')" data-testid="task-colors">
+          <button
+            type="button"
+            role="radio"
+            :aria-checked="!draft.color"
+            :aria-label="t('color.none')"
+            class="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted"
+            :class="!draft.color ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
+            data-testid="color-none"
+            @click="pickColor('')"
+          >
+            <Slash class="h-4 w-4 rotate-90" />
+          </button>
+          <button
+            v-for="c in TASK_COLORS"
+            :key="c.id"
+            type="button"
+            role="radio"
+            :aria-checked="draft.color === c.id"
+            :aria-label="t(`color.${c.id}` as MessageKey)"
+            class="flex h-8 w-8 items-center justify-center rounded-full text-white"
+            :class="draft.color === c.id ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
+            :style="{ backgroundColor: c.hex }"
+            :data-testid="`color-${c.id}`"
+            @click="pickColor(c.id)"
+          >
+            <Check v-if="draft.color === c.id" class="h-4 w-4" />
+          </button>
+          <!-- A colour written by another tool, outside the palette, stays as it is -->
+          <span
+            v-if="draft.color && !TASK_COLORS.some((c) => c.id === draft.color) && colorHex(draft.color)"
+            class="h-8 w-8 rounded-full ring-2 ring-accent ring-offset-2 ring-offset-card"
+            :style="{ backgroundColor: colorHex(draft.color) }"
+            data-testid="color-custom"
+          ></span>
+        </div>
+      </div>
 
       <div>
         <div class="mb-1 flex items-center justify-between">

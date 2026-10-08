@@ -76,7 +76,7 @@ Body text
 | `due_date` | `YYYY-MM-DD` | none. A time part is dropped. Unquoted YAML dates are accepted. | when set |
 | `planned_date` | planning keyword or `YYYY-MM-DD` | none | when set |
 | `priority` | `low` `medium` `high` `urgent` | `none`. Case-insensitive. | when not `none` |
-| `color` | string, usually `#rrggbb` | none | when set |
+| `color` | string: a palette name | none | when set |
 | `postponed_until` | `YYYY-MM-DD` | none | when set |
 | `created_at` | ISO 8601 timestamp | the time the file was read | always |
 | `updated_at` | ISO 8601 timestamp | the time the file was read | always |
@@ -95,6 +95,9 @@ Further rules:
   with a space, a `planned_date`, `due_date` or `postponed_until` that is neither a keyword (planned only) nor a
   date, and a `position` that is not a number. See the `invalid-values-dropped` fixture. (A writer that finds
   such a value in a file it rewrites drops it as well, which is why the first four of these are not preserved.)
+- **Colour.** The apps write the name of a palette colour: `red`, `orange`, `yellow`, `green`, `blue`, `purple`
+  or `pink`. Readers MUST keep any other value as it is (for example `#rrggbb` written by another tool) and
+  SHOULD draw it when they can. See the `color-name` and `color-hex` fixtures.
 - **Attachments** are bare file names. The files live in `<project>/attachments/<task-id>/`. A name MUST NOT
   contain a path separator.
 - **Body.** Markdown, preserved exactly (apart from the leading blank lines above). Checklists

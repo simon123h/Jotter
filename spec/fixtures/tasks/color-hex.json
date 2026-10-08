@@ -1,0 +1,23 @@
+{
+  "description": "A colour another tool wrote as a hex code is kept as it is.",
+  "context": {
+    "file_stem": "color-hex",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "color-hex",
+    "project_id": "proj",
+    "title": "Colour",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": "#12ab34",
+    "postponed_until": null,
+    "extra": {}
+  }
+}
