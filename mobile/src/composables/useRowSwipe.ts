@@ -48,6 +48,14 @@ export function useRowSwipe(options: RowSwipeOptions) {
 
   function onMove(e: PointerEvent) {
     if (e.pointerId !== start.id) return;
+    // A hold fired on this row (it is being selected or dragged): the finger is not swiping any more
+    if (options.disabled()) {
+      if (intent === 'swipe') {
+        settling.value = true;
+        dx.value = 0;
+      }
+      return finish();
+    }
     const moveX = e.clientX - start.x;
     const moveY = e.clientY - start.y;
 

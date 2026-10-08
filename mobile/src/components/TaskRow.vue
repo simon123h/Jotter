@@ -7,11 +7,14 @@ import { dueInfo } from '@/dates';
 import { plannedLabel } from '@/planned';
 import { colorHex } from '@/taskColors';
 import { useRowSwipe, type SwipeDirection } from '@/composables/useRowSwipe';
+import { useUiStore } from '@/stores/ui';
 
 const props = defineProps<{
   task: Task;
-  /** Ticked with the checkbox. */
+  /** Part of the selection (made by a long press). */
   selected?: boolean;
+  /** Held down right now, before it is known whether it will be selected or dragged. */
+  lifted?: boolean;
   /** How many tasks a swipe on this row acts on, when it is one of several selected. */
   bulkCount?: number;
   /** A plain copy without gestures, for the card that floats under the finger while dragging. */
@@ -19,7 +22,6 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   (e: 'tap'): void;
-  (e: 'toggle'): void;
   (e: 'done'): void;
   (e: 'reopen'): void;
   (e: 'move'): void;
@@ -32,6 +34,8 @@ const archived = computed(() => props.task.bucket === 'archive');
 /** What a swipe to the right does: finish an open or archived task, take a done one back to the inbox. */
 const rightAction = computed<'done' | 'reopen'>(() => (done.value ? 'reopen' : 'done'));
 
+const ui = useUiStore();
+
 const swipe = useRowSwipe({
   allowed: () => true,
   exits: (direction: SwipeDirection) => direction === 'right',
@@ -40,7 +44,8 @@ const swipe = useRowSwipe({
     else if (rightAction.value === 'done') emit('done');
     else emit('reopen');
   },
-  disabled: () => !!props.inert,
+  // Not while this or another row is being held or dragged
+  disabled: () => !!props.inert || ui.dragging,
 });
 
 // Priority colours as in Todoist: the ring of the checkbox
@@ -53,7 +58,7 @@ const bar = computed(() => colorHex(props.task.color));
 
 // A swipe that starts on the checkbox is a swipe, not a tap on it
 function onCheck() {
-  if (!swipe.consumeClick()) emit('toggle');
+  // Intentionally nothing yet
 }
 
 function onClick() {
@@ -97,24 +102,30 @@ const hasMeta = computed(
       tabindex="0"
       class="relative flex cursor-pointer touch-pan-y items-start gap-3 bg-card pl-4 active:bg-line/40"
       :style="{
-        backgroundColor: selected ? 'color-mix(in srgb, var(--color-accent) 12%, var(--color-card))' : undefined,
+        backgroundColor: selected
+          ? 'color-mix(in srgb, var(--color-accent) 12%, var(--color-card))'
+          : lifted
+            ? 'color-mix(in srgb, var(--color-accent) 7%, var(--color-card))'
+            : undefined,
         transform: swipe.dx.value ? `translate3d(${swipe.dx.value}px, 0, 0)` : undefined,
         transition: swipe.settling.value ? 'transform 0.16s ease-out' : undefined,
       }"
       data-testid="task-card"
       :data-selected="selected ? 'true' : undefined"
+      :aria-pressed="!!selected"
       @pointerdown="swipe.onPointerDown"
       @click="onClick"
       @keydown.enter.self="emit('tap')"
     >
       <span v-if="bar" class="absolute inset-y-0 left-0 w-1" :style="{ backgroundColor: bar }" data-testid="row-color"></span>
 
-      <!-- The checkbox selects the task; swiping the row is what finishes it -->
-      <button
-        type="button"
+      <!--
+        The checkbox is only a mark for now: a long press selects, a swipe finishes. Taps on it do nothing (they must
+        not open the task either). It may become the way to mark a task done again: emit('done') in onCheck.
+      -->
+      <span
         class="-ml-1 -mr-1 mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center"
-        :aria-label="t('select.task')"
-        :aria-pressed="!!selected"
+        aria-hidden="true"
         data-testid="row-check"
         @click.stop="onCheck"
       >
@@ -127,7 +138,7 @@ const hasMeta = computed(
         >
           <Check v-if="selected" class="h-3.5 w-3.5 text-accent-ink" :stroke-width="3" />
         </span>
-      </button>
+      </span>
 
       <div class="min-w-0 flex-1 border-b border-line py-3 pr-4">
         <div

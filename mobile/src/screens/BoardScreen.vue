@@ -38,6 +38,7 @@ const drag = useCardDrag({
     await app.moveTask(id, bucket, position);
     if (before) actions.announceMove(id, { bucket: before.bucket, position: before.position }, bucket);
   },
+  onHoldRelease: (task) => app.toggleSelected(task.id),
   onError: (err) => ui.showToast(err instanceof Error ? err.message : String(err)),
 });
 
@@ -87,8 +88,8 @@ watch(
 
 // The board must not be rescanned under a dragging finger (see useAutoRefresh)
 watch(
-  () => !!drag.dragging.value,
-  (dragging) => (ui.dragging = dragging)
+  () => drag.busy.value,
+  (busy) => (ui.dragging = busy)
 );
 </script>
 
@@ -153,9 +154,9 @@ watch(
                 <TaskRow
                   :task="task"
                   :selected="app.isSelected(task.id)"
+                  :lifted="drag.holding.value?.id === task.id"
                   :bulk-count="bulkCount(task)"
                   @tap="onTap(task)"
-                  @toggle="app.toggleSelected(task.id)"
                   @done="actions.markDone(targets(task))"
                   @reopen="actions.reopen(targets(task))"
                   @move="ui.open({ type: 'move', ids: targets(task) })"

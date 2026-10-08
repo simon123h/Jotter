@@ -7,6 +7,7 @@ import { useUiStore } from '@/stores/ui';
 import { useSettingsStore } from '@/stores/settings';
 import { locale } from '@/i18n';
 import { autoRefresh } from '@/composables/useAutoRefresh';
+import { holdConfig } from '@/composables/useCardDrag';
 import { VaultRepository } from '@/data/repository';
 import { VaultRegistry } from '@/data/vaults';
 import { VaultDb } from '@/data/db';
@@ -77,10 +78,12 @@ const desktopVault = (f: MemoryFs) => {
 
 afterEach(() => {
   autoRefresh.intervalMs = 60_000;
+  holdConfig.ms = 350;
   Object.defineProperty(document, 'hidden', { value: false, configurable: true });
 });
 
 beforeEach(() => {
+  holdConfig.ms = 30; // a hold is a few milliseconds in tests
   vi.spyOn(window, 'confirm').mockReturnValue(true);
   localStorage.clear();
   document.documentElement.removeAttribute('data-theme');
@@ -549,6 +552,17 @@ const file = (name: string) => fs.files.get(`Jotter/work/${name}.md`)!.data;
 const row = (title: string) => all('task-row').find((c) => c.text().includes(title))!;
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** The list item (the thing that holds the long-press handler) of a task row. */
+const itemOf = (title: string) => row(title).element.closest('[data-task-id]') as HTMLElement;
+
+/** Selects a task the way a user does: press and hold, then let go without moving. */
+async function holdSelect(title: string) {
+  itemOf(title).dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 100 }));
+  await wait(90); // holdConfig.ms is 30 in tests
+  window.dispatchEvent(new MouseEvent('pointerup', { clientX: 50, clientY: 100 }));
+  await settle();
+}
+
 /**
  * A finger on a row: down, then sideways in two steps, then up. The events arrive in one tick, so anything that
  * moves 40px or more counts as a fling and triggers; tests that only look at the swipe use shorter pulls.
@@ -567,19 +581,33 @@ async function swipe(title: string, dx: number, { release = true, dy = 2 } = {})
 }
 
 describe('finishing, archiving and moving', () => {
-  it('selects with the checkbox and does not finish the task', async () => {
+  it('selects a task by pressing and holding it, and the tap that ends the hold does not open it', async () => {
     await start(desktopVault);
     const before = file('a');
-    const check = row('Write report').find('[data-testid="row-check"]');
-    expect(check.attributes('aria-pressed')).toBe('false');
+    expect(row('Write report').find('[data-testid="task-card"]').attributes('data-selected')).toBeUndefined();
 
-    await check.trigger('click');
+    await holdSelect('Write report');
+
+    expect(row('Write report').find('[data-testid="task-card"]').attributes('data-selected')).toBe('true');
+    expect(find('selection-count').text()).toBe('1 selected');
+    expect(find('task-title').exists()).toBe(false);
+    expect(file('a')).toBe(before);
+    // A click arrives right after the finger lifts; it must not open the task
+    await row('Write report').find('[data-testid="task-card"]').trigger('click');
+    await settle();
+    expect(find('task-title').exists()).toBe(false);
+  });
+
+  it('does nothing when the checkbox is tapped, for now', async () => {
+    await start(desktopVault);
+    const before = file('a');
+    await row('Write report').find('[data-testid="row-check"]').trigger('click');
     await settle();
 
-    expect(check.attributes('aria-pressed')).toBe('true');
     expect(file('a')).toBe(before);
-    expect(find('task-title').exists()).toBe(false);
-    expect(find('selection-count').text()).toBe('1 selected');
+    expect(find('selection-count').exists()).toBe(false);
+    expect(find('task-title').exists()).toBe(false); // and it does not open the task either
+    expect(find('toast').exists()).toBe(false);
   });
 
   it('shows what a swipe will do while the finger is down, and nothing for a vertical move', async () => {
@@ -739,9 +767,11 @@ describe('rearranging by drag and drop', () => {
   const pointer = (type: string, x: number, y: number, target: EventTarget = window) =>
     target.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y }));
 
+  /** Press, hold, then move a little: that lifts the row. */
   async function lift(taskId: string, y = 100) {
     pointer('pointerdown', 50, y, wrapper.find(`[data-task-id="${taskId}"]`).element);
-    await new Promise((resolve) => setTimeout(resolve, 400)); // the hold that starts a drag
+    await new Promise((resolve) => setTimeout(resolve, 90)); // holdConfig.ms is 30 in tests
+    pointer('pointermove', 50, y + 10);
     await settle();
   }
 
@@ -782,7 +812,59 @@ describe('rearranging by drag and drop', () => {
     expect(file('a')).toContain('position: 3000'); // but moved to the end of it
   });
 
-  it('has no drop dock and no add button while a row is held', async () => {
+  it('selects instead of dragging when the hold is let go without moving, and a drag does not select', async () => {
+    await start(desktopVault);
+    stubLayout();
+
+    // Hold and move: a drag, nothing selected afterwards
+    await lift('b', 180);
+    pointer('pointermove', 50, 90);
+    pointer('pointerup', 50, 90);
+    await settle();
+    expect(find('selection-count').exists()).toBe(false);
+    expect(file('b')).toContain('position: 0');
+
+    // Hold and let go: a selection, and no row moved
+    const before = file('a');
+    pointer('pointerdown', 50, 100, wrapper.find('[data-task-id="a"]').element);
+    await new Promise((resolve) => setTimeout(resolve, 90));
+    expect(find('drag-ghost').exists()).toBe(false); // armed, not lifted yet
+    pointer('pointerup', 50, 100);
+    await settle();
+    expect(find('selection-count').text()).toBe('1 selected');
+    expect(file('a')).toBe(before);
+  });
+
+  it('is only a scroll or a swipe when the finger moves before the hold is over', async () => {
+    holdConfig.ms = 120;
+    await start(desktopVault);
+    stubLayout();
+    pointer('pointerdown', 50, 100, wrapper.find('[data-task-id="a"]').element);
+    pointer('pointermove', 50, 140); // moves straight away
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    pointer('pointerup', 50, 140);
+    await settle();
+
+    expect(find('selection-count').exists()).toBe(false);
+    expect(find('drag-ghost').exists()).toBe(false);
+  });
+
+  it('does not swipe the row sideways once the hold has fired', async () => {
+    await start(desktopVault);
+    stubLayout();
+    pointer('pointerdown', 50, 100, wrapper.find('[data-task-id="a"]').element);
+    await new Promise((resolve) => setTimeout(resolve, 90));
+    pointer('pointermove', 150, 102); // sideways after the hold
+    pointer('pointermove', 250, 104);
+    await settle();
+
+    expect(find('swipe-right-bg').exists()).toBe(false);
+    expect(find('drag-ghost').exists()).toBe(true); // it is a drag now, not a swipe
+    pointer('pointerup', 250, 104);
+    await settle();
+  });
+
+  it('has no drop dock and no add button while a row is dragged', async () => {
     await start(desktopVault);
     stubLayout();
     await lift('a');
@@ -809,19 +891,22 @@ describe('selecting tasks', () => {
     await start(desktopVault);
     expect(find('selection-count').exists()).toBe(false);
 
-    await row('Write report').find('[data-testid="row-check"]').trigger('click');
-    await row('Book flights').find('[data-testid="row-check"]').trigger('click');
+    await holdSelect('Write report');
+    await holdSelect('Book flights');
     await settle();
     expect(find('selection-count').text()).toBe('2 selected');
     expect(row('Write report').find('[data-testid="task-card"]').attributes('data-selected')).toBe('true');
 
     // While tasks are selected a tap on a row ticks it instead of opening it
+    await wait(450); // the click that ends a hold is ignored for a moment
     await row('Ship release').find('[data-testid="task-card"]').trigger('click');
     await settle();
     expect(find('task-title').exists()).toBe(false);
     expect(find('selection-count').text()).toBe('3 selected');
 
-    await row('Ship release').find('[data-testid="row-check"]').trigger('click');
+    // A tap ticks it off again
+    await row('Ship release').find('[data-testid="task-card"]').trigger('click');
+    await settle();
     expect(find('selection-count').text()).toBe('2 selected');
 
     await find('clear-selection').trigger('click');
@@ -835,7 +920,7 @@ describe('selecting tasks', () => {
 
   it('selects every task of the column in view', async () => {
     await start(desktopVault);
-    await row('Write report').find('[data-testid="row-check"]').trigger('click');
+    await holdSelect('Write report');
     await find('select-all').trigger('click');
     await settle();
     expect(find('selection-count').text()).toBe('2 selected'); // the two in To Do, not the one in Done
@@ -848,7 +933,7 @@ describe('selecting tasks', () => {
     });
     await useAppStore().selectProject('work'); // the first project in alphabetical order, Home, opens otherwise
     await settle();
-    await row('Write report').find('[data-testid="row-check"]').trigger('click');
+    await holdSelect('Write report');
     useUiStore().activeColumn = 1;
     await settle();
     expect(find('selection-count').text()).toBe('1 selected');
@@ -863,7 +948,7 @@ describe('selecting tasks', () => {
     expect(find('fab').exists()).toBe(true);
     expect(find('bulk-fabs').exists()).toBe(false);
 
-    await row('Write report').find('[data-testid="row-check"]').trigger('click');
+    await holdSelect('Write report');
     await settle();
     expect(find('fab').exists()).toBe(false);
     expect(all('bulk-fabs')).toHaveLength(1);
@@ -878,8 +963,7 @@ describe('selecting tasks', () => {
 
 describe('bulk actions on the selection', () => {
   const pick = async (...titles: string[]) => {
-    for (const title of titles) await row(title).find('[data-testid="row-check"]').trigger('click');
-    await settle();
+    for (const title of titles) await holdSelect(title);
   };
 
   it('marks all selected tasks done when one of them is swiped right, and can undo them together', async () => {
