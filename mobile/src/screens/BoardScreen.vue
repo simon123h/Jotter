@@ -3,7 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
 import ColumnTabs from '@/components/ColumnTabs.vue';
-import TaskCard from '@/components/TaskCard.vue';
+import TaskRow from '@/components/TaskRow.vue';
 import { useCardDrag } from '@/composables/useCardDrag';
 import { useTaskActions } from '@/composables/useTaskActions';
 import { t } from '@/i18n';
@@ -31,15 +31,7 @@ const drag = useCardDrag({
   move: async (id, bucket, position) => {
     const before = app.taskById(id);
     await app.moveTask(id, bucket, position);
-    if (!before || before.bucket === bucket) return;
-    const title = app.buckets.find((b) => b.name === bucket)?.title ?? bucket;
-    ui.showToast(t('task.movedTo', { bucket: title }), {
-      label: t('common.undo'),
-      run: () => {
-        ui.dismissToast();
-        app.restoreTask(id, { bucket: before.bucket, position: before.position }).catch(() => {});
-      },
-    });
+    if (before) actions.announceMove(id, { bucket: before.bucket, position: before.position }, bucket);
   },
   onError: (err) => ui.showToast(err instanceof Error ? err.message : String(err)),
 });
@@ -115,7 +107,7 @@ watch(
     </main>
 
     <template v-else>
-      <ColumnTabs @select="goTo" />
+      <ColumnTabs @select="goTo" @step="(delta) => goTo(Math.min(Math.max(active + delta, 0), app.columns.length - 1))" />
 
       <div
         ref="scroller"
@@ -128,16 +120,16 @@ watch(
         <section
           v-for="col in app.columns"
           :key="col.key"
-          class="h-full w-full shrink-0 snap-center snap-always overflow-y-auto overscroll-y-contain px-3 pb-24 pt-3"
+          class="h-full w-full shrink-0 snap-center snap-always overflow-y-auto overscroll-y-contain bg-card pb-24"
           :data-column="col.key"
           :data-bucket="col.bucket ?? undefined"
           data-testid="column"
         >
-          <ul class="space-y-2">
+          <ul>
             <template v-for="task in col.tasks" :key="task.id">
               <li
                 v-if="!isDragged(task) && dropIndex(col.key) === shown(col.tasks).indexOf(task)"
-                class="h-1 rounded-full bg-accent"
+                class="h-0.5 bg-accent"
                 data-testid="drop-line"
               ></li>
               <li
@@ -146,10 +138,17 @@ watch(
                 @pointerdown="drag.onPointerDown($event, task)"
                 @contextmenu.prevent
               >
-                <TaskCard :task="task" @open="openTask(task.id)" @done="actions.markDone(task.id)" @archive="actions.archive(task.id)" />
+                <TaskRow
+                  :task="task"
+                  @open="openTask(task.id)"
+                  @done="actions.markDone(task.id)"
+                  @archive="actions.archive(task.id)"
+                  @reopen="actions.reopen(task.id)"
+                  @move="ui.open({ type: 'move', id: task.id })"
+                />
               </li>
             </template>
-            <li v-if="dropIndex(col.key) >= shown(col.tasks).length" class="h-1 rounded-full bg-accent" data-testid="drop-line"></li>
+            <li v-if="dropIndex(col.key) >= shown(col.tasks).length" class="h-0.5 bg-accent" data-testid="drop-line"></li>
           </ul>
           <p v-if="!col.tasks.length" class="pt-10 text-center text-sm text-muted">
             {{ app.isFiltering ? t('board.noMatches') : t('board.emptyBucket') }}
@@ -169,7 +168,7 @@ watch(
         }"
         data-testid="drag-ghost"
       >
-        <TaskCard :task="drag.dragging.value" />
+        <TaskRow :task="drag.dragging.value" inert />
       </div>
 
       <!-- While a card is dragged: a chip per bucket in the thumb zone. Slide onto one and let go to move the card. -->

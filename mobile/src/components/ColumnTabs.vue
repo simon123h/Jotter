@@ -4,7 +4,7 @@ import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 
-const emit = defineEmits<{ (e: 'select', index: number): void }>();
+const emit = defineEmits<{ (e: 'select', index: number): void; (e: 'step', delta: -1 | 1): void }>();
 
 const app = useAppStore();
 const ui = useUiStore();
@@ -63,6 +63,18 @@ watch(
   { flush: 'post' }
 );
 
+// A sideways swipe on the strip steps to the previous or next column. Rows own horizontal swipes (they act on
+// the task), so this is the place to page with a finger; the strip itself follows the selected tab.
+let swipe: { x: number; y: number } | null = null;
+const onDown = (e: PointerEvent) => (swipe = { x: e.clientX, y: e.clientY });
+const onUp = (e: PointerEvent) => {
+  const from = swipe;
+  swipe = null;
+  if (!from) return;
+  const dx = e.clientX - from.x;
+  if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(e.clientY - from.y) * 1.5) emit('step', dx < 0 ? 1 : -1);
+};
+
 onMounted(() => {
   measure();
   window.addEventListener('resize', measure);
@@ -74,9 +86,13 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
   <div class="relative shrink-0 border-b border-line bg-card" data-testid="column-tabs">
     <nav
       ref="strip"
-      class="relative flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      class="relative flex touch-pan-y overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       role="tablist"
       aria-label="Buckets"
+      data-testid="tab-strip"
+      @pointerdown="onDown"
+      @pointerup="onUp"
+      @pointercancel="swipe = null"
     >
       <button
         v-for="(col, i) in app.columns"

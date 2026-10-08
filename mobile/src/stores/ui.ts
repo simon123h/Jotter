@@ -8,7 +8,8 @@ export type Sheet =
   | { type: 'vaults' }
   | { type: 'filter' }
   | { type: 'settings' }
-  | { type: 'drawer' };
+  | { type: 'drawer' }
+  | { type: 'move'; id: string };
 
 /** Which overlay is open. One at a time; the back button closes it. */
 export const useUiStore = defineStore('ui', () => {

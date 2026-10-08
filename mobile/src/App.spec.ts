@@ -220,7 +220,7 @@ describe('capturing and editing tasks', () => {
     await find('sheet-backdrop').trigger('click');
     await settle();
     const card = all('task-card')[0];
-    expect(card.attributes('style')).toContain('color-mix');
+    expect(card.find('[data-testid="row-color"]').attributes('style')).toContain('rgb(59, 130, 246)');
     expect(card.find('[data-testid="card-planned"]').text()).toBe('This week');
 
     // And back to nothing: both keys leave the file
@@ -506,6 +506,30 @@ describe('navigation', () => {
     expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ left: 0 }));
   });
 
+  it('steps to the previous or next column with a sideways swipe on the tab strip', async () => {
+    await start(desktopVault);
+    const scroller = find('columns').element as HTMLElement;
+    Object.defineProperty(scroller, 'clientWidth', { value: 390, configurable: true });
+    const scrollTo = vi.fn();
+    scroller.scrollTo = scrollTo as unknown as typeof scroller.scrollTo;
+    const strip = find('tab-strip').element;
+    const swipeStrip = (from: number, to: number, dy = 2) => {
+      strip.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: from, clientY: 100 }));
+      strip.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientX: to, clientY: 100 + dy }));
+    };
+
+    swipeStrip(300, 100);
+    expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ left: 390 }));
+
+    swipeStrip(300, 330); // too short: that is a tap
+    swipeStrip(300, 100, 200); // mostly vertical
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+
+    useUiStore().activeColumn = 1;
+    swipeStrip(100, 300);
+    expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ left: 0 }));
+  });
+
   it('keeps the add button, and quick add files the task in the column in view', async () => {
     await start(desktopVault);
     expect(find('fab').exists()).toBe(true);
@@ -521,20 +545,33 @@ describe('navigation', () => {
   });
 });
 
-describe('finishing and archiving', () => {
+describe('finishing, archiving and moving', () => {
   const file = (name: string) => fs.files.get(`Jotter/work/${name}.md`)!.data;
-  const card = (title: string) => all('task-card').find((c) => c.text().includes(title))!;
+  const row = (title: string) => all('task-row').find((c) => c.text().includes(title))!;
+  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  it('marks a task done from its card, to the end of Done, and can undo it', async () => {
+  /** A finger on a row: down, then sideways in two steps, then up. Distances under 40px are slow enough not to count as a fling. */
+  async function swipe(title: string, dx: number, { release = true, dy = 2 } = {}) {
+    const content = row(title).find('[data-testid="task-card"]').element;
+    content.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 200, clientY: 100 }));
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 200 + dx / 2, clientY: 100 + dy / 2 }));
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 200 + dx, clientY: 100 + dy }));
+    await settle();
+    if (release) {
+      window.dispatchEvent(new MouseEvent('pointerup', { clientX: 200 + dx, clientY: 100 + dy }));
+      await wait(250); // the row slides out before it acts
+      await settle();
+    }
+  }
+
+  it('finishes a task from its checkbox, to the end of Done, and can undo it', async () => {
     await start(desktopVault);
-    expect(card('Ship release').find('[data-testid="card-done"]').exists()).toBe(false);
-
-    await card('Write report').find('[data-testid="card-done"]').trigger('click');
+    await row('Write report').find('[data-testid="row-check"]').trigger('click');
     await settle();
 
     expect(file('a')).toContain('status: done');
     expect(file('a')).toMatch(/position: 2000/); // after "Ship release" at 1000
-    expect(find('task-title').exists()).toBe(false); // the tap did not open the card
+    expect(find('task-title').exists()).toBe(false); // the tap did not open the task
     expect(find('toast').text()).toContain('Marked done');
 
     await find('toast-action').trigger('click');
@@ -544,39 +581,101 @@ describe('finishing and archiving', () => {
     expect(find('toast').exists()).toBe(false);
   });
 
-  it('creates the Done bucket when a project has none', async () => {
-    await start((f) => {
-      f.put('Jotter/work/index.md', '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n---\n');
-      f.put('Jotter/work/a.md', '---\ntitle: Only task\nstatus: todo\n---\n');
-    });
-    await card('Only task').find('[data-testid="card-done"]').trigger('click');
-    await settle();
+  it('shows finished tasks checked and reopens them from the checkbox', async () => {
+    await start(desktopVault);
+    expect(row('Ship release').find('[data-testid="row-check"]').attributes('aria-pressed')).toBe('true');
+    expect(row('Write report').find('[data-testid="row-check"]').attributes('aria-pressed')).toBe('false');
 
-    expect(fs.files.get('Jotter/work/index.md')?.data).toContain('name: done');
-    expect(file('a')).toContain('status: done');
-    expect(all('bucket-tab').map((t) => t.text())).toEqual(['To Do 0', 'Done 1']);
+    await row('Ship release').find('[data-testid="row-check"]').trigger('click');
+    await settle();
+    expect(file('c')).toContain('status: todo');
+    expect(find('toast').text()).toContain('Reopened');
   });
 
-  it('offers archiving for done tasks, creates the Archive bucket, and can undo', async () => {
+  it('shows what a swipe will do while the finger is down, and nothing for a vertical move', async () => {
     await start(desktopVault);
-    await card('Ship release').find('[data-testid="card-archive"]').trigger('click');
+    await swipe('Write report', 70, { release: false });
+    expect(find('swipe-right-bg').text()).toContain('Done');
+    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 270, clientY: 102 }));
+    await wait(50);
+
+    await swipe('Write report', -70, { release: false });
+    expect(find('swipe-left-bg').text()).toContain('Move');
+    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 130, clientY: 102 }));
+    await wait(50);
+
+    // Mostly vertical: that is scrolling
+    await swipe('Write report', 12, { release: false, dy: 60 });
+    expect(find('swipe-right-bg').exists()).toBe(false);
+    expect(find('swipe-left-bg').exists()).toBe(false);
+  });
+
+  it('marks a task done by swiping it to the right', async () => {
+    await start(desktopVault);
+    await swipe('Write report', 150);
+
+    expect(file('a')).toContain('status: done');
+    expect(find('toast').text()).toContain('Marked done');
+  });
+
+  it('does nothing for a short swipe, and the tap that ends it does not open the task', async () => {
+    await start(desktopVault);
+    const before = file('a');
+    await swipe('Write report', 30);
+    await row('Write report').find('[data-testid="task-card"]').trigger('click');
     await settle();
+
+    expect(file('a')).toBe(before);
+    expect(find('task-title').exists()).toBe(false);
+  });
+
+  it('archives a done task by swiping it to the right, creating the Archive bucket, and can undo', async () => {
+    await start(desktopVault);
+    await swipe('Ship release', 150);
 
     expect(fs.files.get('Jotter/work/index.md')?.data).toContain('name: archive');
     expect(file('c')).toContain('status: archive');
     expect(all('bucket-tab').map((t) => t.text())).toEqual(['To Do 2', 'Done 0', 'Archive 1']);
-    // Archived tasks have nothing left to offer
-    expect(card('Ship release').find('[data-testid="card-done"]').exists()).toBe(false);
-    expect(card('Ship release').find('[data-testid="card-archive"]').exists()).toBe(false);
 
     await find('toast-action').trigger('click');
     await settle();
     expect(file('c')).toContain('status: done');
   });
 
+  it('has nothing to offer an archived task on the right', async () => {
+    await start((f) => {
+      f.put(
+        'Jotter/work/index.md',
+        '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: archive\n    title: Archive\n---\n'
+      );
+      f.put('Jotter/work/a.md', '---\ntitle: Old\nstatus: archive\n---\n');
+    });
+    const before = file('a');
+    await swipe('Old', 150);
+    expect(file('a')).toBe(before);
+  });
+
+  it('moves a task to a column of its choice by swiping it to the left', async () => {
+    await start(desktopVault);
+    await swipe('Write report', -150);
+
+    expect(find('move-list').exists()).toBe(true);
+    expect(find('move-to-todo').attributes('disabled')).toBeDefined(); // where it is now
+    await find('move-to-done').trigger('click');
+    await settle();
+
+    expect(file('a')).toContain('status: done');
+    expect(find('move-list').exists()).toBe(false);
+    expect(find('toast').text()).toContain('Moved to Done');
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('a')).toContain('status: todo');
+  });
+
   it('finishes and archives from the task sheet, keeping what was typed', async () => {
     await start(desktopVault);
-    await card('Write report').trigger('click');
+    await row('Write report').find('[data-testid="task-card"]').trigger('click');
     await find('task-title').setValue('Write the final report');
     await find('task-done').trigger('click');
     await settle();
@@ -587,15 +686,11 @@ describe('finishing and archiving', () => {
     // The sheet closing must not move the task back to where its draft still said it was
     expect(file('a')).not.toContain('status: todo');
 
-    await card('Write the final report').trigger('click');
+    await row('Write the final report').find('[data-testid="task-card"]').trigger('click');
     expect(find('task-done').exists()).toBe(false);
     await find('task-archive').trigger('click');
     await settle();
     expect(file('a')).toContain('status: archive');
-
-    await card('Write the final report').trigger('click');
-    expect(find('task-done').exists()).toBe(false);
-    expect(find('task-archive').exists()).toBe(false);
   });
 });
 

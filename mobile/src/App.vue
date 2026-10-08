@@ -8,6 +8,7 @@ import QuickAddSheet from '@/components/QuickAddSheet.vue';
 import ProjectsSheet from '@/components/ProjectsSheet.vue';
 import VaultsSheet from '@/components/VaultsSheet.vue';
 import FilterSheet from '@/components/FilterSheet.vue';
+import MoveSheet from '@/components/MoveSheet.vue';
 import NavDrawer from '@/components/NavDrawer.vue';
 import SettingsSheet from '@/components/SettingsSheet.vue';
 import { t } from '@/i18n';
@@ -78,6 +79,7 @@ watch(
     <ProjectsSheet v-else-if="ui.sheet?.type === 'projects'" />
     <VaultsSheet v-else-if="ui.sheet?.type === 'vaults'" />
     <FilterSheet v-else-if="ui.sheet?.type === 'filter'" />
+    <MoveSheet v-else-if="ui.sheet?.type === 'move'" :id="ui.sheet.id" />
     <SettingsSheet v-else-if="ui.sheet?.type === 'settings'" />
   </template>
 
