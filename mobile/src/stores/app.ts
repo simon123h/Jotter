@@ -117,13 +117,25 @@ export const useAppStore = defineStore('app', () => {
   }
 
   /** Picks up changes made outside the app (a sync tool, the desktop app). */
-  async function refresh() {
-    if (status.value !== 'ready') return;
-    const result = await repository().sync();
-    unreadable.value = result.unreadable;
-    projects.value = await repository().listProjects();
-    if (!projects.value.some((p) => p.id === projectId.value)) projectId.value = projects.value[0]?.id ?? null;
-    await loadProject();
+  let scanning = false;
+
+  /**
+   * Picks up changes made outside the app (a sync tool, the desktop app). Scans never overlap. The lists are only
+   * redrawn when the scan found something, unless `force` is set (the Rescan button).
+   */
+  async function refresh(options: { force?: boolean } = {}) {
+    if (status.value !== 'ready' || scanning) return;
+    scanning = true;
+    try {
+      const result = await repository().sync();
+      unreadable.value = result.unreadable;
+      if (!result.changed && !options.force) return;
+      projects.value = await repository().listProjects();
+      if (!projects.value.some((p) => p.id === projectId.value)) projectId.value = projects.value[0]?.id ?? null;
+      await loadProject();
+    } finally {
+      scanning = false;
+    }
   }
 
   // ---------- vaults ----------

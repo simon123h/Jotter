@@ -10,15 +10,42 @@ export interface ColumnBox {
   cards: { id: string; top: number; bottom: number }[];
 }
 
+/** One bucket chip of the drop dock. */
+export interface DockBox {
+  bucket: string;
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
 export interface DropTarget {
   columnKey: string;
   bucket: string;
   /** Index among the column's cards (without the dragged one) the card is inserted at. */
   index: number;
+  /** Dropped on a chip of the dock: the card goes to the end of that bucket. */
+  dock?: boolean;
 }
 
-/** The column under `x` and the index between its cards that `y` points at. Null when nothing accepts a drop. */
-export function computeDropTarget(columns: ColumnBox[], x: number, y: number): DropTarget | null {
+/** The `columnKey` of a dock target: no column shows a drop line for it. */
+export const DOCK_KEY = '__dock';
+
+/**
+ * Where a card dropped at (`x`, `y`) would land. A chip of the dock wins over the columns behind it (the card goes to
+ * the end of that bucket); otherwise the column under `x` and the gap between its cards that `y` points at. Null when
+ * nothing accepts a drop, and for the chip of the bucket the card is already in (nothing to move).
+ */
+export function computeDropTarget(
+  columns: ColumnBox[],
+  x: number,
+  y: number,
+  dock: DockBox[] = [],
+  draggedBucket?: string
+): DropTarget | null {
+  const chip = dock.find((d) => x >= d.left && x < d.right && y >= d.top && y < d.bottom);
+  if (chip)
+    return chip.bucket === draggedBucket ? null : { columnKey: DOCK_KEY, bucket: chip.bucket, index: Number.MAX_SAFE_INTEGER, dock: true };
   const column = columns.find((c) => x >= c.left && x < c.right);
   if (!column || column.bucket === null) return null;
   const index = column.cards.filter((card) => (card.top + card.bottom) / 2 < y).length;

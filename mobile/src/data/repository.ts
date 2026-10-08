@@ -41,6 +41,8 @@ export interface SyncResult {
   read: number;
   /** Task files that could not be read (for example invalid YAML). They are left untouched. */
   unreadable: string[];
+  /** Anything the cache learned from the files: a changed, new or removed task, manifest or project. */
+  changed: boolean;
 }
 
 const slug = (text: string, fallback: string) =>
@@ -152,14 +154,17 @@ export class VaultRepository {
   /** Brings the cache in line with the files. Only files whose size or modification time changed are read. */
   async sync(): Promise<SyncResult> {
     const { db, vault } = this.current();
-    const result: SyncResult = { read: 0, unreadable: [] };
+    const result: SyncResult = { read: 0, unreadable: [], changed: false };
 
     const entries = await this.fs.list(vault.path);
     const projectIds = entries.filter((e) => e.type === 'directory' && !e.name.startsWith('.') && e.name !== 'tasks.db').map((e) => e.name);
     for (const id of projectIds) await this.syncProject(id, result);
 
     for (const cached of await db.projects.toArray()) {
-      if (!projectIds.includes(cached.id)) await this.dropProjectCache(cached.id);
+      if (!projectIds.includes(cached.id)) {
+        await this.dropProjectCache(cached.id);
+        result.changed = true;
+      }
     }
     return result;
   }
@@ -182,6 +187,7 @@ export class VaultRepository {
     const cached = await db.projects.get(id);
     if (!cached || cached.size !== stamp.size || cached.mtime !== stamp.mtime) {
       const { project, buckets } = parseProjectManifest(index ? await this.fs.readText(`${dir}/index.md`) : '', id);
+      result.changed = true;
       await db.projects.put({ ...project, ...stamp });
       await db.buckets.where('project_id').equals(id).delete();
       await db.buckets.bulkPut(buckets.map((b) => ({ ...b, project_id: id })));
@@ -198,17 +204,22 @@ export class VaultRepository {
         if (row && row.id !== task.id) await db.tasks.delete([id, row.id]);
         await db.tasks.put({ ...task, file, size: entry.size, mtime: entry.mtime });
         result.read++;
+        result.changed = true;
       } catch {
         // Unreadable (invalid YAML, say): never cached, so it can never be edited and overwritten
         result.unreadable.push(`${dir}/${entry.name}`);
-        if (row) await db.tasks.delete([id, row.id]);
+        if (row) {
+          await db.tasks.delete([id, row.id]);
+          result.changed = true;
+        }
       }
     }
-    await db.tasks
+    const gone = await db.tasks
       .where('project_id')
       .equals(id)
       .filter((t) => !seen.has(t.file))
       .delete();
+    if (gone > 0) result.changed = true;
   }
 
   // ==========================================

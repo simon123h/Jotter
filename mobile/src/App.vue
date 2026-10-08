@@ -13,10 +13,12 @@ import SettingsSheet from '@/components/SettingsSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
+import { useAutoRefresh } from '@/composables/useAutoRefresh';
 
 const app = useAppStore();
 const ui = useUiStore();
 
+const { scanNow } = useAutoRefresh();
 const listeners: Array<{ remove: () => Promise<void> }> = [];
 
 onMounted(async () => {
@@ -31,7 +33,7 @@ onMounted(async () => {
     // Coming back to the app: pick up changes a sync tool made meanwhile
     listeners.push(
       await CapApp.addListener('appStateChange', ({ isActive }) => {
-        if (isActive) void app.refresh().catch(() => {});
+        if (isActive) void scanNow();
       })
     );
   } catch {

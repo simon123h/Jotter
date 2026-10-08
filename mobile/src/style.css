@@ -202,3 +202,16 @@ body {
 .drawer-leave-to .drawer-panel {
   transform: translateX(-100%);
 }
+
+/* The drop dock slides up from the bottom while a card is dragged */
+.dock-enter-active,
+.dock-leave-active {
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+.dock-enter-from,
+.dock-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeDropTarget, positionBetween, positionForIndex, edgeScrollSpeed, type ColumnBox } from './dragMath';
+import { computeDropTarget, positionBetween, positionForIndex, edgeScrollSpeed, DOCK_KEY, type ColumnBox, type DockBox } from './dragMath';
 
 const columns: ColumnBox[] = [
   {
@@ -30,6 +30,30 @@ describe('computeDropTarget', () => {
   it('accepts no drop outside the columns or into the column of unknown buckets', () => {
     expect(computeDropTarget(columns, 2000, 10)).toBeNull();
     expect(computeDropTarget(columns, 900, 10)).toBeNull();
+  });
+});
+
+describe('computeDropTarget with the dock', () => {
+  const dock: DockBox[] = [
+    { bucket: 'todo', left: 0, right: 130, top: 700, bottom: 760 },
+    { bucket: 'done', left: 130, right: 260, top: 700, bottom: 760 },
+  ];
+
+  it('sends a card dropped on a chip to the end of that bucket, whatever column is behind it', () => {
+    expect(computeDropTarget(columns, 200, 730, dock, 'todo')).toEqual({
+      columnKey: DOCK_KEY,
+      bucket: 'done',
+      index: Number.MAX_SAFE_INTEGER,
+      dock: true,
+    });
+  });
+
+  it('ignores the chip of the bucket the card is already in', () => {
+    expect(computeDropTarget(columns, 50, 730, dock, 'todo')).toBeNull();
+  });
+
+  it('falls back to the columns above the dock', () => {
+    expect(computeDropTarget(columns, 100, 120, dock, 'done')).toEqual({ columnKey: 'todo', bucket: 'todo', index: 1 });
   });
 });
 

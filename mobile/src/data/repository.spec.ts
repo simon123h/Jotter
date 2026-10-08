@@ -92,6 +92,34 @@ describe('scan', () => {
     expect((await repo.getTask('work', 'a')).title).toBe('Alpha 2');
   });
 
+  it('says whether a scan found anything, so that a quiet scan can leave the screen alone', async () => {
+    expect((await repo.sync()).changed).toBe(false);
+
+    fs.put('Jotter/work/a.md', '---\ntitle: Alpha 2\nstatus: todo\n---\n');
+    expect((await repo.sync()).changed).toBe(true);
+    expect((await repo.sync()).changed).toBe(false);
+
+    fs.put('Jotter/work/new.md', '---\ntitle: New\n---\n');
+    expect((await repo.sync()).changed).toBe(true);
+    expect((await repo.sync()).changed).toBe(false);
+
+    fs.put('Jotter/work/index.md', '---\ntitle: Work renamed\n---\n');
+    expect((await repo.sync()).changed).toBe(true);
+
+    fs.files.delete('Jotter/work/b.md');
+    expect((await repo.sync()).changed).toBe(true);
+
+    await fs.removeDir('Jotter/work');
+    expect((await repo.sync()).changed).toBe(true);
+    expect((await repo.sync()).changed).toBe(false);
+  });
+
+  it('does not report its own writes as changes', async () => {
+    await repo.createTask('work', { title: 'Mine', bucket: 'todo' });
+    await repo.updateTask('work', 'a', { title: 'Alpha, edited' });
+    expect((await repo.sync()).changed).toBe(false);
+  });
+
   it('forgets files and projects that disappeared', async () => {
     fs.files.delete('Jotter/work/b.md');
     await repo.sync();

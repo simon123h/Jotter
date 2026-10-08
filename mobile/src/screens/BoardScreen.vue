@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { Plus, RefreshCw, TriangleAlert } from '@lucide/vue';
+import { Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
 import ColumnTabs from '@/components/ColumnTabs.vue';
 import TaskCard from '@/components/TaskCard.vue';
 import { useCardDrag } from '@/composables/useCardDrag';
-import { usePullToRefresh } from '@/composables/usePullToRefresh';
 import { useTaskActions } from '@/composables/useTaskActions';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -23,10 +22,25 @@ const active = computed({
 
 const actions = useTaskActions();
 
+/** The buckets a card can be dropped on; the column of unknown buckets is not one of them. */
+const dockColumns = computed(() => app.columns.filter((c) => c.bucket !== null));
+
 const drag = useCardDrag({
   scroller,
   siblings: (bucket, excludeId) => app.positionsIn(bucket, excludeId),
-  move: (id, bucket, position) => app.moveTask(id, bucket, position),
+  move: async (id, bucket, position) => {
+    const before = app.taskById(id);
+    await app.moveTask(id, bucket, position);
+    if (!before || before.bucket === bucket) return;
+    const title = app.buckets.find((b) => b.name === bucket)?.title ?? bucket;
+    ui.showToast(t('task.movedTo', { bucket: title }), {
+      label: t('common.undo'),
+      run: () => {
+        ui.dismissToast();
+        app.restoreTask(id, { bucket: before.bucket, position: before.position }).catch(() => {});
+      },
+    });
+  },
   onError: (err) => ui.showToast(err instanceof Error ? err.message : String(err)),
 });
 
@@ -67,15 +81,11 @@ watch(
   }
 );
 
-async function refresh() {
-  try {
-    await app.refresh();
-  } catch (err) {
-    ui.showToast(err instanceof Error ? err.message : String(err));
-  }
-}
-
-const pullRefresh = usePullToRefresh(scroller, { onRefresh: refresh, disabled: () => !!drag.dragging.value });
+// The board must not be rescanned under a dragging finger (see useAutoRefresh)
+watch(
+  () => !!drag.dragging.value,
+  (dragging) => (ui.dragging = dragging)
+);
 </script>
 
 <template>
@@ -106,21 +116,6 @@ const pullRefresh = usePullToRefresh(scroller, { onRefresh: refresh, disabled: (
 
     <template v-else>
       <ColumnTabs @select="goTo" />
-
-      <!-- Pull-to-refresh indicator: grows with the pull and sits above the columns -->
-      <div
-        v-if="pullRefresh.pull.value > 0"
-        class="flex shrink-0 items-center justify-center overflow-hidden text-muted"
-        :style="{ height: `${pullRefresh.pull.value}px` }"
-        :data-refreshing="pullRefresh.refreshing.value"
-        data-testid="pull-indicator"
-      >
-        <RefreshCw
-          class="h-5 w-5"
-          :class="{ 'animate-spin': pullRefresh.refreshing.value }"
-          :style="{ transform: `rotate(${pullRefresh.pull.value * 3}deg)` }"
-        />
-      </div>
 
       <div
         ref="scroller"
@@ -165,7 +160,8 @@ const pullRefresh = usePullToRefresh(scroller, { onRefresh: refresh, disabled: (
       <!-- The card being dragged, under the finger -->
       <div
         v-if="drag.dragging.value"
-        class="pointer-events-none fixed z-30 rotate-1 scale-105 opacity-95 shadow-2xl"
+        class="pointer-events-none fixed z-30 shadow-2xl transition-transform duration-150"
+        :class="drag.target.value?.dock ? '-translate-y-[130%] scale-90 opacity-80' : 'rotate-1 scale-105 opacity-95'"
         :style="{
           left: `${drag.ghost.value.x - drag.ghost.value.offsetX}px`,
           top: `${drag.ghost.value.y - drag.ghost.value.offsetY}px`,
@@ -176,7 +172,39 @@ const pullRefresh = usePullToRefresh(scroller, { onRefresh: refresh, disabled: (
         <TaskCard :task="drag.dragging.value" />
       </div>
 
+      <!-- While a card is dragged: a chip per bucket in the thumb zone. Slide onto one and let go to move the card. -->
+      <Transition name="dock">
+        <div
+          v-if="drag.dragging.value && dockColumns.length > 1"
+          class="pointer-events-none fixed inset-x-0 bottom-0 z-20 border-t border-line bg-card/95 shadow-2xl backdrop-blur"
+          style="padding-bottom: env(safe-area-inset-bottom)"
+          data-testid="drop-dock"
+        >
+          <div class="px-4 pt-2 text-xs font-medium text-muted">{{ t('board.moveTo') }}</div>
+          <div class="grid gap-1.5 p-3 pt-2" :style="{ gridTemplateColumns: `repeat(${Math.min(dockColumns.length, 5)}, minmax(0, 1fr))` }">
+            <div
+              v-for="col in dockColumns"
+              :key="col.key"
+              class="flex h-14 flex-col items-center justify-center rounded-xl border px-1 text-center text-xs font-medium leading-tight transition-colors"
+              :class="
+                drag.target.value?.dock && drag.target.value.bucket === col.bucket
+                  ? 'border-accent bg-accent text-accent-ink'
+                  : col.bucket === drag.dragging.value.bucket
+                    ? 'border-line bg-surface text-muted opacity-50'
+                    : 'border-line bg-surface'
+              "
+              :data-dock-bucket="col.bucket"
+              data-testid="dock-chip"
+            >
+              <span class="line-clamp-2 max-w-full break-words">{{ col.title }}</span>
+              <span class="opacity-70">{{ col.tasks.length }}</span>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
       <button
+        v-if="!drag.dragging.value"
         class="fixed bottom-5 right-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-ink shadow-lg shadow-black/25 active:scale-95"
         style="margin-bottom: env(safe-area-inset-bottom)"
         :aria-label="t('task.new')"

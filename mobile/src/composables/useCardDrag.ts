@@ -1,6 +1,6 @@
 import { ref, shallowRef, onMounted, onBeforeUnmount, type Ref } from 'vue';
 import type { Task } from '@jotter/vault-format';
-import { computeDropTarget, edgeScrollSpeed, positionForIndex, type ColumnBox, type DropTarget } from './dragMath';
+import { computeDropTarget, edgeScrollSpeed, positionForIndex, type ColumnBox, type DockBox, type DropTarget } from './dragMath';
 
 const HOLD_MS = 350;
 const MOVE_TOLERANCE = 10;
@@ -53,14 +53,26 @@ export function useCardDrag(deps: DragDeps) {
     });
   }
 
+  /** The chips of the drop dock, if it is on screen. */
+  function readDock(): DockBox[] {
+    return Array.from(document.querySelectorAll<HTMLElement>('[data-dock-bucket]')).map((el) => {
+      const r = el.getBoundingClientRect();
+      return { bucket: el.dataset.dockBucket!, left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+    });
+  }
+
   function updateTarget() {
-    target.value = computeDropTarget(readColumns(), pointer.x, pointer.y);
+    const next = computeDropTarget(readColumns(), pointer.x, pointer.y, readDock(), dragging.value?.bucket);
+    // A short tick when the finger moves onto another chip, so it can be felt without looking
+    if (next?.dock && (!target.value?.dock || target.value.bucket !== next.bucket)) navigator.vibrate?.(8);
+    target.value = next;
   }
 
   function tick() {
     const root = deps.scroller.value;
     if (dragging.value && root) {
-      const speed = edgeScrollSpeed(pointer.x, root.clientWidth);
+      // Over the dock the finger is choosing a bucket, not looking for another column
+      const speed = target.value?.dock ? 0 : edgeScrollSpeed(pointer.x, root.clientWidth);
       if (speed) {
         root.scrollLeft += speed;
         updateTarget();
@@ -117,7 +129,8 @@ export function useCardDrag(deps: DragDeps) {
     if (!task) return;
     suppressClickUntil = Date.now() + 400;
     if (!drop) return;
-    const position = positionForIndex(deps.siblings(drop.bucket, task.id), drop.index);
+    const siblings = deps.siblings(drop.bucket, task.id);
+    const position = positionForIndex(siblings, drop.dock ? siblings.length : drop.index);
     if (drop.bucket === task.bucket && position === task.position) return;
     try {
       await deps.move(task.id, drop.bucket, position);

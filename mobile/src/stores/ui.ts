@@ -20,6 +20,8 @@ export const useUiStore = defineStore('ui', () => {
   const columnProgress = ref(0);
   /** The search field is open in the app bar. */
   const searching = ref(false);
+  /** A card is being dragged: the board must not change under the finger. */
+  const dragging = ref(false);
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
   const isOpen = computed(() => sheet.value !== null);
@@ -41,5 +43,5 @@ export const useUiStore = defineStore('ui', () => {
     toast.value = null;
   };
 
-  return { sheet, toast, dismissToast, activeColumn, columnProgress, searching, isOpen, open, close, showToast };
+  return { sheet, toast, dismissToast, activeColumn, columnProgress, searching, dragging, isOpen, open, close, showToast };
 });

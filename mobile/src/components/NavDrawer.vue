@@ -18,7 +18,7 @@ async function select(id: string) {
 async function rescan() {
   rescanning.value = true;
   try {
-    await app.refresh();
+    await app.refresh({ force: true });
     ui.close();
   } catch (err) {
     ui.showToast(err instanceof Error ? err.message : String(err));

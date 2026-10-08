@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mount, flushPromises, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import App from './App.vue';
@@ -6,6 +6,7 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useSettingsStore } from '@/stores/settings';
 import { locale } from '@/i18n';
+import { autoRefresh } from '@/composables/useAutoRefresh';
 import { VaultRepository } from '@/data/repository';
 import { VaultRegistry } from '@/data/vaults';
 import { VaultDb } from '@/data/db';
@@ -27,7 +28,9 @@ async function start(seed?: (fs: MemoryFs) => void) {
   const pinia = createPinia();
   setActivePinia(pinia);
   await useAppStore().init(repo);
-  wrapper = mount(App, { global: { plugins: [pinia] } });
+  // Attached to the page like the real app: the drag code looks things up through document
+  wrapper?.unmount();
+  wrapper = mount(App, { global: { plugins: [pinia] }, attachTo: document.body });
   await settle();
   return { repo, app: useAppStore(), ui: useUiStore() };
 }
@@ -71,6 +74,11 @@ const desktopVault = (f: MemoryFs) => {
   f.put('Jotter/work/b.md', '---\ntitle: Book flights\nstatus: todo\nposition: 2000\ndue_date: "2020-01-01"\n---\n');
   f.put('Jotter/work/c.md', '---\ntitle: Ship release\nstatus: done\nposition: 1000\n---\n');
 };
+
+afterEach(() => {
+  autoRefresh.intervalMs = 60_000;
+  Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+});
 
 beforeEach(() => {
   vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -339,35 +347,6 @@ describe('board', () => {
     expect(all('column')[1].text()).toContain('Added by sync');
   });
 
-  it('refreshes when a column is pulled down from the top, and not on a short pull', async () => {
-    await start(desktopVault);
-    fs.put('Jotter/work/e.md', '---\ntitle: Added by sync\nstatus: done\n---\n');
-
-    const column = all('column')[0].element;
-    const touch = (type: string, y: number, x = 100) => {
-      const event = new Event(type, { bubbles: true, cancelable: true });
-      Object.assign(event, { touches: type === 'touchend' ? [] : [{ clientX: x, clientY: y }] });
-      column.dispatchEvent(event);
-    };
-
-    // Too short: nothing happens
-    touch('touchstart', 300);
-    touch('touchmove', 316);
-    touch('touchend', 316);
-    await settle();
-    expect(all('column')[1].text()).not.toContain('Added by sync');
-
-    // A real pull
-    touch('touchstart', 300);
-    touch('touchmove', 440);
-    await settle();
-    expect(find('pull-indicator').exists()).toBe(true);
-    touch('touchend', 440);
-    await settle();
-    expect(all('column')[1].text()).toContain('Added by sync');
-    expect(find('pull-indicator').exists()).toBe(false);
-  });
-
   it('warns about files it could not read', async () => {
     await start(desktopVault);
     fs.put('Jotter/work/broken.md', '---\ntitle: [unclosed\n---\n');
@@ -617,5 +596,151 @@ describe('finishing and archiving', () => {
     await card('Write the final report').trigger('click');
     expect(find('task-done').exists()).toBe(false);
     expect(find('task-archive').exists()).toBe(false);
+  });
+});
+
+describe('drop dock', () => {
+  const rect = (left: number, right: number, top: number, bottom: number) =>
+    ({ left, right, top, bottom, width: right - left, height: bottom - top, x: left, y: top, toJSON: () => ({}) }) as DOMRect;
+
+  /** jsdom has no layout: put the columns on the left and the dock chips along the bottom. */
+  function stubLayout() {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      if (this.dataset.dockBucket === 'todo') return rect(0, 195, 700, 760);
+      if (this.dataset.dockBucket === 'done') return rect(195, 390, 700, 760);
+      if (this.dataset.column) return rect(0, 390, 60, 690);
+      if (this.dataset.taskId) return rect(10, 380, 70, 140);
+      return rect(0, 0, 0, 0);
+    });
+  }
+
+  const pointer = (type: string, x: number, y: number, target: EventTarget = window) =>
+    target.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y }));
+
+  async function lift(taskId: string) {
+    pointer('pointerdown', 50, 100, wrapper.find(`[data-task-id="${taskId}"]`).element);
+    await new Promise((resolve) => setTimeout(resolve, 400)); // the hold that starts a drag
+    await settle();
+  }
+
+  it('shows a chip per bucket while a card is held, and moves the card to the one it is dropped on', async () => {
+    await start(desktopVault);
+    stubLayout();
+    expect(find('drop-dock').exists()).toBe(false);
+
+    await lift('a');
+    expect(find('drop-dock').exists()).toBe(true);
+    expect(all('dock-chip').map((c) => c.attributes('data-dock-bucket'))).toEqual(['todo', 'done']);
+    expect(find('fab').exists()).toBe(false);
+
+    pointer('pointermove', 300, 730);
+    await settle();
+    expect(wrapper.find('[data-dock-bucket="done"]').classes()).toContain('bg-accent');
+
+    pointer('pointerup', 300, 730);
+    await settle();
+
+    const file = fs.files.get('Jotter/work/a.md')!.data;
+    expect(file).toContain('status: done');
+    expect(file).toContain('position: 2000'); // the end of Done, after "Ship release"
+    expect(find('drop-dock').exists()).toBe(false);
+    expect(find('toast').text()).toContain('Moved to Done');
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('status: todo');
+  });
+
+  it('does nothing when the card is dropped on the chip of its own bucket', async () => {
+    await start(desktopVault);
+    stubLayout();
+    const before = fs.files.get('Jotter/work/a.md')!.data;
+    fs.writes.length = 0;
+
+    await lift('a');
+    pointer('pointermove', 100, 730);
+    await settle();
+    expect(wrapper.find('[data-dock-bucket="todo"]').classes()).not.toContain('bg-accent');
+    pointer('pointerup', 100, 730);
+    await settle();
+
+    expect(fs.files.get('Jotter/work/a.md')?.data).toBe(before);
+    expect(fs.writes).toEqual([]);
+  });
+
+  it('does not start a drag, or show the dock, for a quick tap', async () => {
+    await start(desktopVault);
+    stubLayout();
+    pointer('pointerdown', 50, 100, wrapper.find('[data-task-id="a"]').element);
+    pointer('pointerup', 50, 100);
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    await settle();
+    expect(find('drop-dock').exists()).toBe(false);
+  });
+});
+
+describe('automatic rescan', () => {
+  const wait = async (ms: number) => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+    await settle();
+  };
+  const external = (name: string, title: string) => fs.put(`Jotter/work/${name}.md`, `---\ntitle: ${title}\nstatus: todo\n---\n`);
+  const titles = () => all('task-card').map((c) => c.text());
+
+  it('picks up changes made by other apps by itself', async () => {
+    autoRefresh.intervalMs = 40;
+    await start(desktopVault);
+    expect(titles().join()).not.toContain('Added by sync');
+
+    external('e', 'Added by sync');
+    await wait(250);
+
+    expect(titles().join()).toContain('Added by sync');
+  });
+
+  it('leaves the screen alone when nothing changed', async () => {
+    autoRefresh.intervalMs = 40;
+    const { repo } = await start(desktopVault);
+    const listTasks = vi.spyOn(repo, 'listTasks');
+
+    await wait(250);
+    expect(listTasks).not.toHaveBeenCalled();
+
+    external('e', 'Added by sync');
+    await wait(250);
+    expect(listTasks).toHaveBeenCalled();
+  });
+
+  it('waits while a task is open or a card is dragged, and catches up afterwards', async () => {
+    autoRefresh.intervalMs = 40;
+    const { ui } = await start(desktopVault);
+
+    await find('task-card').trigger('click');
+    external('e', 'Added while editing');
+    await wait(250);
+    expect(titles().join()).not.toContain('Added while editing');
+
+    await find('sheet-backdrop').trigger('click');
+    ui.dragging = true;
+    await wait(250);
+    expect(titles().join()).not.toContain('Added while editing');
+
+    ui.dragging = false;
+    await wait(250);
+    expect(titles().join()).toContain('Added while editing');
+  });
+
+  it('does not scan while the app is hidden, and scans as soon as it is visible again', async () => {
+    autoRefresh.intervalMs = 40;
+    await start(desktopVault);
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    external('e', 'Added in the background');
+    await wait(250);
+    expect(titles().join()).not.toContain('Added in the background');
+
+    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    await wait(150);
+    expect(titles().join()).toContain('Added in the background');
   });
 });
