@@ -17,33 +17,19 @@ Du kannst anpassen, wie Jotter ausgeführt wird (z. B. den Netzwerk-Port ändern
 
 ---
 
-## Speicherorte (Portabler Modus vs. Standardverzeichnisse)
-
-Jotter ist extrem flexibel und kann entweder als vollständig eigenständige **portable App** oder als global installierte Standardanwendung ausgeführt werden.
-
-### 1. Portabler Modus (Eigenständig)
+## Speicherorte
 
 > **Hinweis:** Vaults verwaltest du in der App (Zahnrad neben der Vault-Auswahl); sie werden in `vaults.json` im Konfigurationsordner gespeichert. Der frühere Konfigurationsschlüssel `data_dir`, die Umgebungsvariable `JOTTER_DATA_DIR` und die Option `--data-dir` werden nicht mehr unterstützt; Schlüssel und Umgebungsvariable werden mit einer Warnung ignoriert.
 
-Wenn sich im aktuellen Arbeitsverzeichnis (CWD), in dem Jotter gestartet wird, ein Ordner namens `tasks/` befindet:
+Eine `./jotter.yaml` (oder `./jotter.yml`/`./jotter.json`) im aktuellen Arbeitsverzeichnis wird vor der globalen Konfigurationsdatei gelesen. Nur der erste Vault wird automatisch angelegt, und zwar im Konfigurationsordner; sein Pfad hängt nie vom Arbeitsverzeichnis ab.
 
-* **Datenverzeichnis** ist standardmäßig `./tasks` (der vorhandene Ordner im aktuellen Verzeichnis).
-* **Konfigurationsdatei** wird standardmäßig im selben Verzeichnis als `./jotter.yaml` (oder `./jotter.yml`/`./jotter.json`) gesucht.
-* **Log-Verzeichnis** weicht standardmäßig auf die Systemspezifischen Standardpfade aus (unten beschrieben), um zu verhindern, dass Logdateien direkt in deine lokalen Notizen geschrieben werden.
-
-Dieser Modus ist ideal, um Jotter von externen USB-Sticks oder direkt in lokalen Projektordnern auszuführen, ohne Spuren auf dem System zu hinterlassen.
-
-### 2. Standard-Modus (Global)
-
-Wenn kein lokaler `tasks`-Ordner im aktuellen Arbeitsverzeichnis gefunden wird, weicht Jotter auf die folgenden betriebssystemspezifischen Standardpfade aus:
-
-| Betriebssystem | Standard-Datenverzeichnis | Standard-Konfigurationsdatei | Standard-Log-Verzeichnis |
+| Betriebssystem | Standard-Vault | Standard-Konfigurationsdatei | Standard-Log-Verzeichnis |
 | :--- | :--- | :--- | :--- |
-| **Linux** | `~/.local/share/jotter` | `~/.config/jotter/jotter.yaml` | `~/.cache/jotter` |
+| **Linux** | `~/.config/jotter/tasks` | `~/.config/jotter/jotter.yaml` | `~/.cache/jotter` |
 | **macOS** | `~/Library/Application Support/jotter/tasks` | `~/Library/Application Support/jotter/jotter.yaml` | `~/Library/Logs/Jotter` |
 | **Windows** | `%APPDATA%\jotter\tasks` | `%APPDATA%\jotter\jotter.yaml` | `%LocalAppData%\Jotter` |
 
-> **Hinweis:** Unter Windows und macOS liegt der Standard-Vault im Konfigurationsordner (`jotter/tasks`), weil diese Systeme nicht zwischen Groß- und Kleinschreibung unterscheiden und ein Datenordner `Jotter` derselbe Ordner wie `jotter` wäre. Installationen mit vorhandener `vaults.json` behalten den dort gespeicherten Vault-Pfad.
+> **Hinweis:** Installationen mit vorhandener `vaults.json` behalten die dort gespeicherten Vault-Pfade. Lässt sich die `vaults.json` nicht lesen, bricht Jotter mit einer Fehlermeldung ab und lässt die Datei unverändert, statt einen neuen Standard-Vault anzulegen.
 
 ---
 
@@ -60,7 +46,7 @@ Um lokalen Speicherplatz zu sparen, begrenzt Jotter die Größe der Datei `jotte
 
 ## Automatische Erstellung der Konfiguration
 
-Um die Ersteinrichtung so mühelos wie möglich zu machen, **erstellt Jotter automatisch eine vorkonfigurierte Standarddatei**, falls am Zielort keine Konfigurationsdatei existiert (entweder am Pfad für die `Standard-Konfigurationsdatei` oben oder lokal unter `./jotter.yaml` im portablen Modus).
+Um die Ersteinrichtung so mühelos wie möglich zu machen, **erstellt Jotter automatisch eine vorkonfigurierte Standarddatei**, falls am Zielort keine Konfigurationsdatei existiert (entweder am Pfad für die `Standard-Konfigurationsdatei` oben).
 
 Die erstellte Datei enthält die Parameter als auskommentierte Vorlagen, die sofort angepasst werden können:
 
@@ -81,7 +67,7 @@ Jotter wertet die Einstellungen in folgender Reihenfolge aus (höhere Priorität
 1. **Kommandozeilenparameter** (z. B. `--port 9000`)
 2. **Umgebungsvariablen** (z. B. `JOTTER_PORT`)
 3. **Geladene Konfigurationsdatei** (`jotter.yaml`/`jotter.yml`/`jotter.json`)
-4. **Standardpfade** (Portabler Fallback bei existierendem `tasks`-Ordner, andernfalls Systemspezifische Pfade)
+4. **Standardpfade** (Systemspezifische Standardverzeichnisse)
 
 ---
 

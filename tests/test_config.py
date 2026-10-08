@@ -27,22 +27,11 @@ def test_log_level_normalization():
     assert normalize_log_level(None) == "INFO"
 
 
-def test_portable_mode_detection(tmp_path):
-    tasks_dir = tmp_path / "tasks"
-    tasks_dir.mkdir()
+def test_default_data_dir_ignores_a_tasks_folder_in_the_working_directory(tmp_path):
+    (tmp_path / "tasks").mkdir()
 
     with patch("pathlib.Path.cwd", return_value=tmp_path):
-        resolved = get_default_data_dir()
-        assert resolved == str(tasks_dir.resolve())
-
-
-def test_os_specific_data_dir_resolution(tmp_path):
-    with (
-        patch("pathlib.Path.cwd", return_value=tmp_path),
-        patch.dict(os.environ, {"XDG_DATA_HOME": str(tmp_path / "xdg_data")}, clear=True),
-    ):
-        resolved = get_default_data_dir()
-        assert resolved == str((tmp_path / "xdg_data" / "jotter").resolve())
+        assert get_default_data_dir() == str((get_config_dir() / "tasks").resolve())
 
 
 def test_config_paths_discovery(tmp_path):

@@ -58,20 +58,12 @@ def get_config_dir() -> Path:
 
 
 def get_default_data_dir() -> str:
-    # 1. Portable Mode: check if "tasks" directory exists in current working directory
-    cwd = Path.cwd()
-    local_tasks = cwd / "tasks"
-    if local_tasks.is_dir():
-        return str(local_tasks.resolve())
+    """The default vault folder, inside the config folder.
 
-    # 2. Global / Installed Mode based on OS
-    if sys.platform.startswith("linux"):
-        xdg_data = os.environ.get("XDG_DATA_HOME")
-        if xdg_data:
-            return str((Path(xdg_data) / "jotter").resolve())
-        return str((Path.home() / ".local" / "share" / "jotter").resolve())
-    # Windows and macOS ignore letter case, so the data folder cannot be a sibling named "Jotter" of the config
-    # folder "jotter": it would be the same folder, and vaults.json would end up inside the vault. It lives in it.
+    It deliberately does not depend on the working directory: a program started from C:/Windows/System32 would
+    otherwise pick up the system's own "Tasks" folder. It lives in the config folder because Windows and macOS
+    ignore letter case, so a sibling named "Jotter" of the folder "jotter" would be the same folder.
+    """
     return str((get_config_dir() / "tasks").resolve())
 
 

@@ -17,33 +17,19 @@ You can customize how Jotter operates (such as altering the network port or chan
 
 ---
 
-## Storage Locations (Portable Mode vs. Standard Directories)
-
-Jotter is extremely flexible and can be run as a completely self-contained **Portable App** or installed globally as a standard system application.
-
-### 1. Portable Mode (Self-Contained)
+## Storage Locations
 
 > **Note:** Vaults are managed in the app (gear icon next to the vault switcher) and stored in `vaults.json` in the config folder. The former `data_dir` config key, `JOTTER_DATA_DIR` environment variable and `--data-dir` option are no longer supported; the config key and environment variable are ignored with a warning.
 
-If a folder named `tasks/` is present in the Current Working Directory (CWD) where Jotter is started:
+A `./jotter.yaml` (or `./jotter.yml`/`./jotter.json`) in the Current Working Directory is read before the global configuration file. Only the first vault is created automatically, inside the config folder, and it never depends on the working directory.
 
-- **Data Directory** defaults to `./tasks` (the existing folder in the CWD).
-- **Configuration File** search defaults to `./jotter.yaml` (or `./jotter.yml`/`./jotter.json`) in the CWD.
-- **Log Directory** defaults to the standard OS cache/logs path (described below) to prevent writing log files directly into your local notes folder.
-
-This is ideal for running Jotter from external flash drives or local project folders without leaving traces elsewhere on the system.
-
-### 2. Standard Global Mode
-
-If no local `tasks` directory is found in the CWD, Jotter defaults to OS-specific standard paths:
-
-| Operating System | Default Data Directory                 | Default Configuration File                         | Default Log Directory   |
-| :--------------- | :------------------------------------- | :------------------------------------------------- | :---------------------- |
-| **Linux**        | `~/.local/share/jotter`                | `~/.config/jotter/jotter.yaml`                     | `~/.cache/jotter`       |
+| Operating System | Default Vault                                | Default Configuration File                         | Default Log Directory   |
+| :--------------- | :------------------------------------------- | :------------------------------------------------- | :---------------------- |
+| **Linux**        | `~/.config/jotter/tasks`                     | `~/.config/jotter/jotter.yaml`                     | `~/.cache/jotter`       |
 | **macOS**        | `~/Library/Application Support/jotter/tasks` | `~/Library/Application Support/jotter/jotter.yaml` | `~/Library/Logs/Jotter` |
 | **Windows**      | `%APPDATA%\jotter\tasks`                     | `%APPDATA%\jotter\jotter.yaml`                     | `%LocalAppData%\Jotter` |
 
-> **Note:** On Windows and macOS the default vault lives inside the configuration folder (`jotter/tasks`), because those systems ignore letter case and a data folder named `Jotter` would be the same folder as `jotter`. Installs that already have a `vaults.json` keep the vault path stored in it.
+> **Note:** Installs that already have a `vaults.json` keep the vault paths stored in it. If `vaults.json` cannot be read, Jotter stops with an error and leaves the file untouched instead of creating a new default vault.
 
 ---
 
@@ -61,7 +47,7 @@ To protect local disk space, Jotter automatically limits the size of the `jotter
 
 ## Automatic Configuration Creation
 
-To make initial setups completely effortless, **if no configuration file exists at all**, Jotter will automatically create a default, annotated configuration file in its default location (the `Default Configuration File` path above, or local `./jotter.yaml` if in Portable Mode).
+To make initial setups completely effortless, **if no configuration file exists at all**, Jotter will automatically create a default, annotated configuration file in its default location (the `Default Configuration File` path above).
 
 The created file contains template parameters that are commented out, serving as a ready-to-use template for your customizations:
 
@@ -82,7 +68,7 @@ Jotter resolves settings using the following priority (highest overrides lowest)
 1. **Command Line Arguments** (e.g. `--port 9000`)
 2. **Environment Variables** (e.g. `JOTTER_PORT`)
 3. **Loaded Configuration File** (`jotter.yaml`/`jotter.yml`/`jotter.json`)
-4. **Default Paths** (Portable fallback if local `tasks` exists, otherwise OS standard directories)
+4. **Default Paths** (OS standard directories)
 
 ---
 

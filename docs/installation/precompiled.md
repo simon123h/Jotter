@@ -83,10 +83,9 @@ uvx --from 'jotter-app[mcp]' jotter mcp
 
 ## Configuration Modes
 
-Jotter automatically handles both portable and global storage locations:
+Jotter stores its configuration and default vault as follows:
 
-- **Portable Mode (Self-Contained)**: If a `tasks/` directory exists in the folder you execute Jotter from, tasks will default to `./tasks` and configurations to `./jotter.yaml` in that folder.
-- **Global / Installed Mode**: Otherwise, Jotter uses standard OS-specific directories for both data and settings storage (XDG standard paths on Linux, AppData on Windows, and Application Support on macOS).
+- **Config and default vault**: Jotter uses standard OS-specific directories (XDG standard paths on Linux, AppData on Windows, Application Support on macOS). A `./jotter.yaml` in the folder you start Jotter from takes precedence over the global one.
 - **Auto-Config Generation**: If no configuration file exists at all on startup, Jotter will automatically create a default, annotated `jotter.yaml` template file for you at the default location.
 
 For complete configuration options, see the [Configuration Guide](/user/configuration).

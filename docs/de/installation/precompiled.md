@@ -85,10 +85,8 @@ uvx --from 'jotter-app[mcp]' jotter mcp
 
 ## Konfigurationsmodi
 
-Jotter unterstützt sowohl portable als auch globale Speicherorte:
+Jotter nutzt die Standard-Verzeichnisse des Betriebssystems (XDG-Pfade unter Linux, AppData unter Windows, Application Support unter macOS) für Konfiguration und Standard-Vault. Eine `./jotter.yaml` im Startverzeichnis hat Vorrang vor der globalen.
 
-- **Portabler Modus**: Wenn im aktuellen Verzeichnis ein Ordner `tasks/` existiert, werden Aufgaben standardmäßig in `./tasks` und die Konfiguration in `./jotter.yaml` abgelegt.
-- **Globaler Modus**: Andernfalls nutzt Jotter die Standard-Verzeichnisse des Betriebssystems (XDG-Pfade unter Linux, AppData unter Windows, Application Support unter macOS).
 - **Automatische Vorlagenerstellung**: Falls beim Start keine Konfigurationsdatei vorhanden ist, wird automatisch eine kommentierte Vorlage `jotter.yaml` am Standardspeicherort erstellt.
 
 Weitere Details findest du im [Konfigurationshandbuch](/de/user/configuration).
