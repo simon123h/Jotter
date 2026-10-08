@@ -126,10 +126,11 @@ const pullRefresh = usePullToRefresh(scroller, { onRefresh: refresh, disabled: (
         data-testid="columns"
         @scroll.passive="onScroll"
       >
+        <!-- snap-always: a hard flick stops at the next column instead of flying past several -->
         <section
           v-for="col in app.columns"
           :key="col.key"
-          class="h-full w-full shrink-0 snap-center overflow-y-auto overscroll-y-contain px-3 pb-24 pt-3"
+          class="h-full w-full shrink-0 snap-center snap-always overflow-y-auto overscroll-y-contain px-3 pb-24 pt-3"
           :data-column="col.key"
           :data-bucket="col.bucket ?? undefined"
           data-testid="column"
