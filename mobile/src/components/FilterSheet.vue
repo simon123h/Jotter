@@ -11,9 +11,8 @@ const field = 'w-full rounded-xl border border-line bg-surface px-3 py-3 text-ba
 </script>
 
 <template>
-  <BottomSheet :title="t('common.search')" @close="ui.close()">
+  <BottomSheet :title="t('search.filters')" @close="ui.close()">
     <div class="space-y-3 pb-2">
-      <input v-model="app.filter.search" type="search" :placeholder="t('filter.search')" :class="field" data-testid="filter-search" />
       <label class="block">
         <span class="mb-1 block text-xs font-medium text-muted">{{ t('filter.priority') }}</span>
         <select v-model="app.filter.priority" :class="field" data-testid="filter-priority">

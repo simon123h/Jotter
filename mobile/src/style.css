@@ -73,12 +73,15 @@ body {
   flex-direction: column;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
+/* In the base layer: unlayered rules would beat every Tailwind colour utility on these elements */
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
 }
 
 /* Rendered notes */
@@ -180,4 +183,22 @@ textarea {
 .md td {
   border: 1px solid var(--color-line);
   padding: 0.3rem 0.6rem;
+}
+
+/* Navigation drawer: the panel slides in from the left while the scrim fades */
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: opacity 0.2s ease;
+}
+.drawer-enter-active .drawer-panel,
+.drawer-leave-active .drawer-panel {
+  transition: transform 0.2s ease;
+}
+.drawer-enter-from,
+.drawer-leave-to {
+  opacity: 0;
+}
+.drawer-enter-from .drawer-panel,
+.drawer-leave-to .drawer-panel {
+  transform: translateX(-100%);
 }

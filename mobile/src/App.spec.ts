@@ -49,6 +49,12 @@ async function submit(id: string) {
   await settle();
 }
 
+/** Opens the navigation drawer from the app bar. */
+async function openDrawer() {
+  await find('open-menu').trigger('click');
+  await settle();
+}
+
 async function type(id: string, value: string, event = 'input') {
   const el = find(id);
   await el.setValue(value);
@@ -107,7 +113,7 @@ describe('capturing and editing tasks', () => {
     await find('no-projects').find('button').trigger('click');
     await type('new-project-input', 'Home');
     await submit('new-project-submit');
-    expect(find('open-projects').text()).toContain('Home');
+    expect(find('app-bar-title').text()).toBe('Home');
     expect(all('bucket-tab').map((t) => t.text())[0]).toContain('Backlog');
 
     // Quick add
@@ -212,7 +218,7 @@ describe('board', () => {
   it('shows the buckets of a desktop vault with their tasks and counts', async () => {
     await start(desktopVault);
 
-    expect(find('open-projects').text()).toContain('Work');
+    expect(find('app-bar-title').text()).toBe('Work');
     expect(all('bucket-tab').map((t) => t.text())).toEqual(['To Do 2', 'Done 1']);
     const columns = all('column');
     expect(columns[0].text()).toContain('Write report');
@@ -220,28 +226,33 @@ describe('board', () => {
     expect(columns[1].text()).toContain('Ship release');
   });
 
-  it('filters by text, priority and tag, and clears the filters', async () => {
+  it('searches in the app bar and filters by priority and tag, and clears everything on closing the search', async () => {
     await start(desktopVault);
 
-    await find('open-filter').trigger('click');
-    await type('filter-search', 'flights');
-    await find('sheet-backdrop').trigger('click');
-    await settle();
+    await find('open-search').trigger('click');
+    await type('search-input', 'flights');
     expect(all('task-card').map((c) => c.text())).toEqual([expect.stringContaining('Book flights')]);
-    expect(find('filter-active').exists()).toBe(true);
+
+    await find('clear-search').trigger('click');
+    await settle();
+    expect(all('task-card')).toHaveLength(3);
 
     await find('open-filter').trigger('click');
-    await find('filter-clear').trigger('click');
     await type('filter-priority', 'high', 'change');
-    await settle();
     expect(all('task-card').map((c) => c.text())).toEqual([expect.stringContaining('Write report')]);
+    expect(find('filter-active').exists()).toBe(true);
 
     await type('filter-priority', '', 'change');
     await type('filter-tag', 'office', 'change');
     expect(all('task-card')).toHaveLength(1);
-    await find('filter-clear').trigger('click');
+    await find('sheet-backdrop').trigger('click');
+
+    // The back arrow drops the search and every filter
+    await find('close-search').trigger('click');
     await settle();
     expect(all('task-card')).toHaveLength(3);
+    expect(find('search-input').exists()).toBe(false);
+    expect(find('filter-active').exists()).toBe(false);
   });
 
   it('puts tasks whose bucket the project does not define into an extra column', async () => {
@@ -257,7 +268,8 @@ describe('board', () => {
     await start(desktopVault);
     fs.put('Jotter/work/e.md', '---\ntitle: Added by sync\nstatus: done\n---\n');
 
-    await find('refresh').trigger('click');
+    await openDrawer();
+    await find('drawer-rescan').trigger('click');
     await settle();
 
     expect(all('column')[1].text()).toContain('Added by sync');
@@ -295,7 +307,8 @@ describe('board', () => {
   it('warns about files it could not read', async () => {
     await start(desktopVault);
     fs.put('Jotter/work/broken.md', '---\ntitle: [unclosed\n---\n');
-    await find('refresh').trigger('click');
+    await openDrawer();
+    await find('drawer-rescan').trigger('click');
     await settle();
     expect(find('unreadable-banner').exists()).toBe(true);
   });
@@ -308,16 +321,14 @@ describe('projects and vaults', () => {
       f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
       f.put('Jotter/home/x.md', '---\ntitle: Water plants\n---\n');
     });
-    await find('open-projects').trigger('click');
-    const rows = all('project-row');
+    await openDrawer();
+    const rows = all('drawer-project');
     expect(rows.map((r) => r.text())).toEqual(expect.arrayContaining([expect.stringContaining('Work'), expect.stringContaining('Home')]));
-    await rows
-      .find((r) => r.text().includes('Work'))!
-      .find('button')
-      .trigger('click');
+    await rows.find((r) => r.text().includes('Work'))!.trigger('click');
     await settle();
+    expect(find('drawer').exists()).toBe(false);
 
-    expect(find('open-projects').text()).toContain('Work');
+    expect(find('app-bar-title').text()).toBe('Work');
     // All columns are in the page: two tasks in To Do, one in Done
     expect(all('task-card')).toHaveLength(3);
   });
@@ -326,22 +337,16 @@ describe('projects and vaults', () => {
     const { app } = await start(desktopVault);
     fs.mkdir('Other');
 
-    await find('open-projects').trigger('click');
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text().includes('Vaults'))!
-      .trigger('click');
+    await openDrawer();
+    await find('drawer-vault').trigger('click');
     await settle();
     await find('mode-open').trigger('click');
     await type('vault-path', 'Other');
     await submit('vault-submit');
     expect(app.vaults).toHaveLength(2);
     // Adding closes the sheet; open it again to switch
-    await find('open-projects').trigger('click');
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text().includes('Vaults'))!
-      .trigger('click');
+    await openDrawer();
+    await find('drawer-vault').trigger('click');
     await settle();
 
     await all('vault-row')[1]
@@ -358,16 +363,18 @@ describe('settings', () => {
   it('switches the language and the theme, and remembers both', async () => {
     await start(desktopVault);
     const settings = useSettingsStore();
-    expect(find('open-filter').attributes('aria-label')).toBe('Search');
+    expect(find('open-search').attributes('aria-label')).toBe('Search');
 
-    await find('open-settings').trigger('click');
+    await openDrawer();
+    await find('drawer-settings').trigger('click');
+    await settle();
     await type('setting-language', 'de', 'change');
     await type('setting-theme', 'dark', 'change');
 
     expect(wrapper.text()).toContain('Einstellungen');
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
     expect(JSON.parse(localStorage.getItem('jotter_lite_settings')!)).toEqual({ theme: 'dark', language: 'de' });
-    expect(find('open-filter').attributes('aria-label')).toBe('Suchen');
+    expect(find('open-search').attributes('aria-label')).toBe('Suchen');
 
     // Back to the system choice: no explicit theme on the page
     settings.theme = 'system';
@@ -377,11 +384,96 @@ describe('settings', () => {
 
   it('shows the version and links to the vaults', async () => {
     await start(desktopVault);
-    await find('open-settings').trigger('click');
+    await openDrawer();
+    await find('drawer-settings').trigger('click');
+    await settle();
     expect(wrapper.text()).toContain('Version');
 
     await find('setting-vaults').trigger('click');
     await settle();
     expect(all('vault-row')).toHaveLength(1);
+  });
+});
+
+describe('navigation', () => {
+  it('opens the drawer with the vault, the projects, settings and rescan, and closes it again', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+    });
+    expect(find('drawer').exists()).toBe(false);
+
+    await openDrawer();
+    expect(find('drawer').exists()).toBe(true);
+    expect(find('drawer-vault').text()).toContain('Jotter');
+    expect(all('drawer-project').map((r) => r.text())).toEqual(['Home', 'Work']);
+    // The first project in alphabetical order is the one that opens
+    const current = (title: string) =>
+      all('drawer-project')
+        .find((r) => r.text() === title)!
+        .attributes('aria-current');
+    expect(current('Home')).toBe('page');
+    expect(current('Work')).toBeUndefined();
+    expect(find('drawer-settings').exists()).toBe(true);
+    expect(find('drawer-rescan').exists()).toBe(true);
+
+    await find('drawer-scrim').trigger('click');
+    await settle();
+    expect(find('drawer').exists()).toBe(false);
+  });
+
+  it('opens settings and the vault list from the drawer', async () => {
+    await start(desktopVault);
+    await openDrawer();
+    await find('drawer-settings').trigger('click');
+    await settle();
+    expect(find('setting-theme').exists()).toBe(true);
+    expect(find('drawer').exists()).toBe(false);
+  });
+
+  it('manages projects from the drawer', async () => {
+    await start(desktopVault);
+    await openDrawer();
+    await find('drawer-manage-projects').trigger('click');
+    await settle();
+    expect(all('project-row')).toHaveLength(1);
+
+    await type('new-project-input', 'Errands');
+    await submit('new-project-submit');
+    expect(find('app-bar-title').text()).toBe('Errands');
+  });
+
+  it('marks the tab of the column in view while swiping, and scrolls to a column when its tab is tapped', async () => {
+    await start(desktopVault);
+    const scroller = find('columns').element as HTMLElement;
+    Object.defineProperty(scroller, 'clientWidth', { value: 390, configurable: true });
+    const scrollTo = vi.fn();
+    scroller.scrollTo = scrollTo as unknown as typeof scroller.scrollTo;
+
+    const selected = () => all('bucket-tab').map((t) => t.attributes('aria-selected'));
+    expect(selected()).toEqual(['true', 'false']);
+
+    // Swiped most of the way to the second column
+    Object.defineProperty(scroller, 'scrollLeft', { value: 300, configurable: true });
+    await find('columns').trigger('scroll');
+    expect(selected()).toEqual(['false', 'true']);
+    expect(find('tab-indicator').exists()).toBe(true);
+
+    await all('bucket-tab')[0].trigger('click');
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ left: 0 }));
+  });
+
+  it('keeps the add button, and quick add files the task in the column in view', async () => {
+    await start(desktopVault);
+    expect(find('fab').exists()).toBe(true);
+    useUiStore().activeColumn = 1;
+
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'Into done');
+    await submit('quick-add-input');
+    await find('sheet-backdrop').trigger('click');
+    await settle();
+
+    expect(all('column')[1].text()).toContain('Into done');
   });
 });

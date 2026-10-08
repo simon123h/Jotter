@@ -8,6 +8,7 @@ import QuickAddSheet from '@/components/QuickAddSheet.vue';
 import ProjectsSheet from '@/components/ProjectsSheet.vue';
 import VaultsSheet from '@/components/VaultsSheet.vue';
 import FilterSheet from '@/components/FilterSheet.vue';
+import NavDrawer from '@/components/NavDrawer.vue';
 import SettingsSheet from '@/components/SettingsSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -45,6 +46,7 @@ watch(
   () => app.projectId,
   () => {
     if (ui.sheet?.type === 'task') ui.close();
+    ui.searching = false;
   }
 );
 </script>
@@ -66,6 +68,9 @@ watch(
 
   <template v-else>
     <BoardScreen />
+    <Transition name="drawer" :duration="200">
+      <NavDrawer v-if="ui.sheet?.type === 'drawer'" />
+    </Transition>
     <TaskSheet v-if="ui.sheet?.type === 'task'" :id="ui.sheet.id" :key="ui.sheet.id" />
     <QuickAddSheet v-else-if="ui.sheet?.type === 'quickadd'" :bucket="app.columns[ui.activeColumn]?.bucket ?? null" />
     <ProjectsSheet v-else-if="ui.sheet?.type === 'projects'" />

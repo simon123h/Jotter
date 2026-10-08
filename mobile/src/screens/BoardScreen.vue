@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { Plus, Search, ChevronDown, RefreshCw, Settings, TriangleAlert } from '@lucide/vue';
+import { Plus, RefreshCw, TriangleAlert } from '@lucide/vue';
+import AppBar from '@/components/AppBar.vue';
+import ColumnTabs from '@/components/ColumnTabs.vue';
 import TaskCard from '@/components/TaskCard.vue';
 import { useCardDrag } from '@/composables/useCardDrag';
 import { usePullToRefresh } from '@/composables/usePullToRefresh';
@@ -17,8 +19,6 @@ const active = computed({
   get: () => ui.activeColumn,
   set: (index: number) => (ui.activeColumn = index),
 });
-
-const columnTitle = (key: string, title: string) => (key === '__other' ? t('board.other') : title);
 
 const drag = useCardDrag({
   scroller,
@@ -41,7 +41,10 @@ function openTask(id: string) {
 
 function onScroll() {
   const el = scroller.value;
-  if (el && el.clientWidth) active.value = Math.round(el.scrollLeft / el.clientWidth);
+  if (!el || !el.clientWidth) return;
+  const position = el.scrollLeft / el.clientWidth;
+  ui.columnProgress = position;
+  active.value = Math.round(position);
 }
 
 function goTo(index: number) {
@@ -55,6 +58,7 @@ watch(
   () => app.projectId,
   async () => {
     active.value = 0;
+    ui.columnProgress = 0;
     await nextTick();
     scroller.value?.scrollTo({ left: 0 });
   }
@@ -69,56 +73,11 @@ async function refresh() {
 }
 
 const pullRefresh = usePullToRefresh(scroller, { onRefresh: refresh, disabled: () => !!drag.dragging.value });
-// The header button spins for the same state, so both ways to refresh look alike
-const refreshing = computed(() => pullRefresh.refreshing.value || manualRefreshing.value);
-const manualRefreshing = ref(false);
-async function refreshFromButton() {
-  manualRefreshing.value = true;
-  try {
-    await refresh();
-  } finally {
-    manualRefreshing.value = false;
-  }
-}
 </script>
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col" data-testid="board">
-    <header class="flex shrink-0 items-center gap-1 px-3 py-2">
-      <button
-        class="flex min-w-0 items-center gap-1 rounded-lg px-2 py-1.5 text-left active:bg-line"
-        data-testid="open-projects"
-        @click="ui.open({ type: 'projects' })"
-      >
-        <span class="truncate text-lg font-semibold">{{ app.project?.title ?? t('projects.title') }}</span>
-        <ChevronDown class="h-5 w-5 shrink-0 text-muted" />
-      </button>
-      <span class="flex-1"></span>
-      <button
-        class="relative rounded-full p-2.5 active:bg-line"
-        :aria-label="t('common.search')"
-        data-testid="open-filter"
-        @click="ui.open({ type: 'filter' })"
-      >
-        <Search class="h-5 w-5" />
-        <span
-          v-if="app.isFiltering"
-          class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-accent"
-          data-testid="filter-active"
-        ></span>
-      </button>
-      <button class="rounded-full p-2.5 active:bg-line" :aria-label="t('board.refresh')" data-testid="refresh" @click="refreshFromButton">
-        <RefreshCw class="h-5 w-5" :class="{ 'animate-spin': refreshing }" />
-      </button>
-      <button
-        class="rounded-full p-2.5 active:bg-line"
-        :aria-label="t('settings.title')"
-        data-testid="open-settings"
-        @click="ui.open({ type: 'settings' })"
-      >
-        <Settings class="h-5 w-5" />
-      </button>
-    </header>
+    <AppBar />
 
     <div
       v-if="app.unreadable.length"
@@ -133,24 +92,17 @@ async function refreshFromButton() {
     <main v-if="!app.project" class="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center" data-testid="no-projects">
       <h2 class="text-lg font-semibold">{{ t('board.noProjects') }}</h2>
       <p class="text-sm text-muted">{{ t('board.noProjectsHint') }}</p>
-      <button class="rounded-xl bg-accent px-5 py-3 font-semibold text-accent-ink" @click="ui.open({ type: 'projects' })">
+      <button
+        class="rounded-xl bg-accent px-5 py-3 font-semibold text-accent-ink"
+        data-testid="create-first-project"
+        @click="ui.open({ type: 'projects' })"
+      >
         {{ t('board.createProject') }}
       </button>
     </main>
 
     <template v-else>
-      <nav class="flex shrink-0 gap-2 overflow-x-auto px-3 pb-2" aria-label="Buckets">
-        <button
-          v-for="(col, i) in app.columns"
-          :key="col.key"
-          class="shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium"
-          :class="i === active ? 'bg-accent text-accent-ink' : 'bg-line/70 text-muted'"
-          data-testid="bucket-tab"
-          @click="goTo(i)"
-        >
-          {{ columnTitle(col.key, col.title) }} <span class="opacity-70">{{ col.tasks.length }}</span>
-        </button>
-      </nav>
+      <ColumnTabs @select="goTo" />
 
       <!-- Pull-to-refresh indicator: grows with the pull and sits above the columns -->
       <div
@@ -177,7 +129,7 @@ async function refreshFromButton() {
         <section
           v-for="col in app.columns"
           :key="col.key"
-          class="h-full w-full shrink-0 snap-center overflow-y-auto overscroll-y-contain px-3 pb-24"
+          class="h-full w-full shrink-0 snap-center overflow-y-auto overscroll-y-contain px-3 pb-24 pt-3"
           :data-column="col.key"
           :data-bucket="col.bucket ?? undefined"
           data-testid="column"
@@ -221,7 +173,7 @@ async function refreshFromButton() {
       </div>
 
       <button
-        class="fixed bottom-5 right-5 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-ink shadow-lg active:scale-95"
+        class="fixed bottom-5 right-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-ink shadow-lg shadow-black/25 active:scale-95"
         style="margin-bottom: env(safe-area-inset-bottom)"
         :aria-label="t('task.new')"
         data-testid="fab"
