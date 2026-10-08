@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from jotter.features.vaults.domain import Vault
-from jotter.features.vaults.registry import VaultRegistry
+from jotter.features.vaults.registry import VaultRegistry, VaultRegistryError
 from jotter.features.vaults.schemas import VaultCreate, VaultUpdate
 from jotter.features.vaults.service import VaultApplicationService
 from jotter.shared.db import ConnectionPool
@@ -191,3 +191,17 @@ def test_a_failed_vault_switch_leaves_the_previous_vault_active(temp_dir, monkey
     assert not old_pool._closed
     assert state.config.data_dir == previous_dir
     assert svc.get_active_vault().id == previous
+
+
+@pytest.mark.parametrize("content", ["", '{"active_vault": "work", "vaults": [{"id": "wo', "[]"])
+def test_an_unreadable_vaults_file_is_never_overwritten_with_a_default_vault(temp_dir, content):
+    config_file = Path(temp_dir) / "vaults.json"
+    config_file.write_text(content, encoding="utf-8")
+    registry = VaultRegistry(config_file=config_file, default_data_dir=temp_dir)
+
+    with pytest.raises(VaultRegistryError):
+        registry.get_active()
+    with pytest.raises(VaultRegistryError):
+        registry.save(Vault.create(name="X", path=temp_dir, vault_id="x"))
+
+    assert config_file.read_text(encoding="utf-8") == content

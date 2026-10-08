@@ -19,6 +19,10 @@ def get_default_vaults_config_path() -> Path:
     return base / "vaults.json"
 
 
+class VaultRegistryError(Exception):
+    """vaults.json exists but cannot be read. It is left untouched so the user's vaults are not lost."""
+
+
 class VaultRegistry:
     """Manages persistence of known vaults and tracks active vault."""
 
@@ -27,16 +31,22 @@ class VaultRegistry:
         self.default_data_dir = default_data_dir
 
     def _load_data(self) -> dict[str, Any]:
-        if not self.config_file.is_file():
-            return {"active_vault": None, "vaults": []}
+        """Returns the stored registry; only a missing file counts as empty. Never falls back on a read error."""
         try:
             with open(self.config_file, encoding="utf-8") as f:
                 data = json.load(f)
-                if isinstance(data, dict):
-                    return data
-        except Exception as e:
-            logger.warning("Failed to load vaults configuration from %s: %s", self.config_file, e)
-        return {"active_vault": None, "vaults": []}
+        except FileNotFoundError:
+            return {"active_vault": None, "vaults": []}
+        except (OSError, ValueError) as e:
+            raise VaultRegistryError(
+                f"Cannot read the vaults configuration {self.config_file}: {e}. "
+                "The file was left unchanged; fix or delete it and restart."
+            ) from e
+        if not isinstance(data, dict):
+            raise VaultRegistryError(
+                f"The vaults configuration {self.config_file} is not a JSON object. The file was left unchanged."
+            )
+        return data
 
     def _save_data(self, data: dict[str, Any]) -> None:
         self.config_file.parent.mkdir(parents=True, exist_ok=True)
