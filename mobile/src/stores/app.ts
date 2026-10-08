@@ -46,6 +46,8 @@ export const useAppStore = defineStore('app', () => {
   const allTasks = ref<Task[]>([]);
   const filter = ref<{ search: string; priority: string; tag: string }>({ search: '', priority: '', tag: '' });
   const unreadable = ref<string[]>([]);
+  /** The tasks ticked with their checkboxes. Bulk actions and swipes act on these. */
+  const selection = ref<string[]>([]);
 
   const project = computed(() => projects.value.find((p) => p.id === projectId.value) ?? null);
 
@@ -85,6 +87,9 @@ export const useAppStore = defineStore('app', () => {
       return;
     }
     [buckets.value, allTasks.value] = await Promise.all([r.listBuckets(projectId.value), r.listTasks(projectId.value)]);
+    // Tasks that are gone (deleted, moved away, removed by a sync tool) cannot stay selected
+    const existing = new Set(allTasks.value.map((t) => t.id));
+    if (selection.value.some((id) => !existing.has(id))) selection.value = selection.value.filter((id) => existing.has(id));
   }
 
   async function afterOpen(opened: Vault | null) {
@@ -152,6 +157,7 @@ export const useAppStore = defineStore('app', () => {
   async function switchVault(id: string) {
     const opened = await repository().switchVault(id);
     resetFilter();
+    selection.value = [];
     await afterOpen(opened);
   }
 
@@ -172,6 +178,7 @@ export const useAppStore = defineStore('app', () => {
     projectId.value = id;
     if (vault.value) remember(vault.value.id, id);
     resetFilter();
+    selection.value = [];
     await loadProject();
   }
 
@@ -221,32 +228,92 @@ export const useAppStore = defineStore('app', () => {
 
   /** Where a task was, so that moving it can be undone. */
   interface Placement {
+    id: string;
     bucket: string;
     position: number;
   }
 
   /**
-   * Moves a task to the end of a bucket the way the desktop does for Done and Archive. A project without that
-   * bucket gets it first, so the task never ends up in a bucket nothing shows.
+   * Moves tasks to the end of a bucket, keeping their order, the way the desktop does for Done and Archive. With a
+   * `title`, a project without that bucket gets it first, so a task never ends up in a bucket nothing shows. Tasks
+   * already there stay put. Returns where the moved tasks were, for an undo.
    */
-  async function moveToBucket(id: string, bucket: string, title: string): Promise<Placement> {
-    const task = taskById(id);
-    if (!task) throw new Error('Task not found');
-    const before: Placement = { bucket: task.bucket, position: task.position };
-    if (!buckets.value.some((b) => b.name === bucket)) {
-      await repository().createBucket(requireProject(), { title });
+  async function moveManyToBucket(ids: string[], bucket: string, title?: string): Promise<Placement[]> {
+    const r = repository();
+    const project = requireProject();
+    if (title && !buckets.value.some((b) => b.name === bucket)) {
+      await r.createBucket(project, { title });
       await loadProject();
     }
-    await moveTask(id, bucket);
+    const moving = ids
+      .map(taskById)
+      .filter((t): t is Task => !!t && t.bucket !== bucket)
+      .sort((a, b) => a.position - b.position);
+    let next = Math.max(0, ...allTasks.value.filter((t) => t.bucket === bucket).map((t) => t.position)) + 1000;
+    const before: Placement[] = [];
+    for (const task of moving) {
+      before.push({ id: task.id, bucket: task.bucket, position: task.position });
+      await r.moveTask(project, task.id, bucket, next);
+      next += 1000;
+    }
+    await loadProject();
     return before;
   }
 
-  const markDone = (id: string) => moveToBucket(id, 'done', 'Done');
-  const archiveTask = (id: string) => moveToBucket(id, 'archive', 'Archive');
+  /** Puts tasks back where they were. */
+  async function restoreMany(placements: Placement[]) {
+    for (const p of placements) await repository().moveTask(requireProject(), p.id, p.bucket, p.position);
+    await loadProject();
+  }
 
-  /** Puts a task back where it was. */
-  async function restoreTask(id: string, placement: Placement) {
-    await moveTask(id, placement.bucket, placement.position);
+  /**
+   * Changes fields of several tasks and redraws once. Returns the old values of the fields that changed, to undo
+   * it with `restoreFields`.
+   */
+  async function editMany(ids: string[], changes: (task: Task) => Partial<Task>): Promise<Array<{ id: string; previous: Partial<Task> }>> {
+    const before: Array<{ id: string; previous: Partial<Task> }> = [];
+    for (const id of ids) {
+      const task = taskById(id);
+      if (!task) continue;
+      const updates = changes(task);
+      before.push({ id, previous: Object.fromEntries(Object.keys(updates).map((key) => [key, task[key as keyof Task]])) as Partial<Task> });
+      await repository().updateTask(requireProject(), id, updates);
+    }
+    await loadProject();
+    return before;
+  }
+
+  async function restoreFields(before: Array<{ id: string; previous: Partial<Task> }>) {
+    for (const { id, previous } of before) await repository().updateTask(requireProject(), id, previous);
+    await loadProject();
+  }
+
+  async function moveManyToProject(ids: string[], targetProjectId: string) {
+    for (const id of ids) await repository().moveToProject(requireProject(), id, targetProjectId);
+    await loadProject();
+  }
+
+  async function removeMany(ids: string[]) {
+    for (const id of ids) await repository().deleteTask(requireProject(), id);
+    await loadProject();
+  }
+
+  // ---------- selection ----------
+
+  const selectedCount = computed(() => selection.value.length);
+  const isSelected = (id: string) => selection.value.includes(id);
+  function toggleSelected(id: string) {
+    selection.value = isSelected(id) ? selection.value.filter((s) => s !== id) : [...selection.value, id];
+  }
+  function selectOnly(ids: string[]) {
+    selection.value = [...new Set(ids)];
+  }
+  function clearSelection() {
+    selection.value = [];
+  }
+  /** Unticks tasks an action has dealt with; the others stay selected. */
+  function deselect(ids: string[]) {
+    selection.value = selection.value.filter((id) => !ids.includes(id));
   }
 
   async function removeTask(id: string) {
@@ -312,9 +379,19 @@ export const useAppStore = defineStore('app', () => {
     addTask,
     saveTask,
     moveTask,
-    markDone,
-    archiveTask,
-    restoreTask,
+    moveManyToBucket,
+    restoreMany,
+    editMany,
+    restoreFields,
+    moveManyToProject,
+    removeMany,
+    selection,
+    selectedCount,
+    isSelected,
+    toggleSelected,
+    selectOnly,
+    clearSelection,
+    deselect,
     removeTask,
     addAttachment,
     removeAttachment,

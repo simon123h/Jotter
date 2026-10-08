@@ -1,6 +1,6 @@
 import { ref, shallowRef, onMounted, onBeforeUnmount, type Ref } from 'vue';
 import type { Task } from '@jotter/vault-format';
-import { computeDropTarget, edgeScrollSpeed, positionForIndex, type ColumnBox, type DockBox, type DropTarget } from './dragMath';
+import { computeDropTarget, positionForIndex, type ColumnBox, type DropTarget } from './dragMath';
 
 const HOLD_MS = 350;
 const MOVE_TOLERANCE = 10;
@@ -15,8 +15,9 @@ export interface DragDeps {
 }
 
 /**
- * Long-press a card, then drag it: up and down to reorder, to the screen edge to reach another bucket.
- * A short press still opens the card and a swipe still scrolls, because the drag only starts after the hold.
+ * Long-press a row, then drag it up or down to put it somewhere else in its own list. Moving a task to another
+ * column is a swipe and a picker, not a drag. A short press still opens the row and a swipe still acts on it,
+ * because the drag only starts after the hold.
  */
 export function useCardDrag(deps: DragDeps) {
   const dragging = shallowRef<Task | null>(null);
@@ -24,7 +25,6 @@ export function useCardDrag(deps: DragDeps) {
   const target = shallowRef<DropTarget | null>(null);
 
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let frame = 0;
   let pointer = { id: -1, x: 0, y: 0, startX: 0, startY: 0 };
   let pending: { task: Task; el: HTMLElement } | null = null;
   let suppressClickUntil = 0;
@@ -36,49 +36,27 @@ export function useCardDrag(deps: DragDeps) {
   function readColumns(): ColumnBox[] {
     const root = deps.scroller.value;
     if (!root) return [];
-    return Array.from(root.querySelectorAll<HTMLElement>('[data-column]')).map((el) => {
-      const rect = el.getBoundingClientRect();
-      return {
-        key: el.dataset.column!,
-        bucket: el.dataset.bucket ?? null,
-        left: rect.left,
-        right: rect.right,
-        cards: Array.from(el.querySelectorAll<HTMLElement>('[data-task-id]'))
-          .filter((card) => card.dataset.taskId !== dragging.value?.id)
-          .map((card) => {
-            const r = card.getBoundingClientRect();
-            return { id: card.dataset.taskId!, top: r.top, bottom: r.bottom };
-          }),
-      };
-    });
-  }
-
-  /** The chips of the drop dock, if it is on screen. */
-  function readDock(): DockBox[] {
-    return Array.from(document.querySelectorAll<HTMLElement>('[data-dock-bucket]')).map((el) => {
-      const r = el.getBoundingClientRect();
-      return { bucket: el.dataset.dockBucket!, left: r.left, right: r.right, top: r.top, bottom: r.bottom };
-    });
+    return Array.from(root.querySelectorAll<HTMLElement>('[data-column]'))
+      .filter((el) => el.dataset.bucket !== undefined && el.dataset.bucket === dragging.value?.bucket)
+      .map((el) => {
+        const rect = el.getBoundingClientRect();
+        return {
+          key: el.dataset.column!,
+          bucket: el.dataset.bucket ?? null,
+          left: rect.left,
+          right: rect.right,
+          cards: Array.from(el.querySelectorAll<HTMLElement>('[data-task-id]'))
+            .filter((card) => card.dataset.taskId !== dragging.value?.id)
+            .map((card) => {
+              const r = card.getBoundingClientRect();
+              return { id: card.dataset.taskId!, top: r.top, bottom: r.bottom };
+            }),
+        };
+      });
   }
 
   function updateTarget() {
-    const next = computeDropTarget(readColumns(), pointer.x, pointer.y, readDock(), dragging.value?.bucket);
-    // A short tick when the finger moves onto another chip, so it can be felt without looking
-    if (next?.dock && (!target.value?.dock || target.value.bucket !== next.bucket)) navigator.vibrate?.(8);
-    target.value = next;
-  }
-
-  function tick() {
-    const root = deps.scroller.value;
-    if (dragging.value && root) {
-      // Over the dock the finger is choosing a bucket, not looking for another column
-      const speed = target.value?.dock ? 0 : edgeScrollSpeed(pointer.x, root.clientWidth);
-      if (speed) {
-        root.scrollLeft += speed;
-        updateTarget();
-      }
-      frame = requestAnimationFrame(tick);
-    }
+    target.value = computeDropTarget(readColumns(), pointer.x, pointer.y);
   }
 
   function begin() {
@@ -94,12 +72,10 @@ export function useCardDrag(deps: DragDeps) {
     dragging.value = pending.task;
     navigator.vibrate?.(15);
     updateTarget();
-    frame = requestAnimationFrame(tick);
   }
 
   function cleanup() {
     clearTimeout(timer);
-    cancelAnimationFrame(frame);
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('pointerup', onUp);
     window.removeEventListener('pointercancel', onCancel);
@@ -129,8 +105,7 @@ export function useCardDrag(deps: DragDeps) {
     if (!task) return;
     suppressClickUntil = Date.now() + 400;
     if (!drop) return;
-    const siblings = deps.siblings(drop.bucket, task.id);
-    const position = positionForIndex(siblings, drop.dock ? siblings.length : drop.index);
+    const position = positionForIndex(deps.siblings(drop.bucket, task.id), drop.index);
     if (drop.bucket === task.bucket && position === task.position) return;
     try {
       await deps.move(task.id, drop.bucket, position);

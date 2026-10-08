@@ -545,70 +545,41 @@ describe('navigation', () => {
   });
 });
 
-describe('finishing, archiving and moving', () => {
-  const file = (name: string) => fs.files.get(`Jotter/work/${name}.md`)!.data;
-  const row = (title: string) => all('task-row').find((c) => c.text().includes(title))!;
-  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const file = (name: string) => fs.files.get(`Jotter/work/${name}.md`)!.data;
+const row = (title: string) => all('task-row').find((c) => c.text().includes(title))!;
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  /**
-   * A finger on a row: down, then sideways in two steps, then up. The events arrive in one tick, so anything that
-   * moves 40px or more counts as a fling and triggers; tests that only look at the swipe use shorter pulls.
-   */
-  async function swipe(title: string, dx: number, { release = true, dy = 2 } = {}) {
-    const content = row(title).find('[data-testid="task-card"]').element;
-    content.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 200, clientY: 100 }));
-    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 200 + dx / 2, clientY: 100 + dy / 2 }));
-    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 200 + dx, clientY: 100 + dy }));
+/**
+ * A finger on a row: down, then sideways in two steps, then up. The events arrive in one tick, so anything that
+ * moves 40px or more counts as a fling and triggers; tests that only look at the swipe use shorter pulls.
+ */
+async function swipe(title: string, dx: number, { release = true, dy = 2 } = {}) {
+  const content = row(title).find('[data-testid="task-card"]').element;
+  content.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 200, clientY: 100 }));
+  window.dispatchEvent(new MouseEvent('pointermove', { clientX: 200 + dx / 2, clientY: 100 + dy / 2 }));
+  window.dispatchEvent(new MouseEvent('pointermove', { clientX: 200 + dx, clientY: 100 + dy }));
+  await settle();
+  if (release) {
+    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 200 + dx, clientY: 100 + dy }));
+    await wait(250); // the row slides out before it acts
     await settle();
-    if (release) {
-      window.dispatchEvent(new MouseEvent('pointerup', { clientX: 200 + dx, clientY: 100 + dy }));
-      await wait(250); // the row slides out before it acts
-      await settle();
-    }
   }
+}
 
-  it('finishes a task from its checkbox, to the end of Done, and can undo it', async () => {
+describe('finishing, archiving and moving', () => {
+  it('selects with the checkbox and does not finish the task', async () => {
     await start(desktopVault);
-    await row('Write report').find('[data-testid="row-check"]').trigger('click');
+    const before = file('a');
+    const check = row('Write report').find('[data-testid="row-check"]');
+    expect(check.attributes('aria-pressed')).toBe('false');
+
+    await check.trigger('click');
     await settle();
 
-    expect(file('a')).toContain('status: done');
-    expect(file('a')).toMatch(/position: 2000/); // after "Ship release" at 1000
-    expect(find('task-title').exists()).toBe(false); // the tap did not open the task
-    expect(find('toast').text()).toContain('Marked done');
-
-    await find('toast-action').trigger('click');
-    await settle();
-    expect(file('a')).toContain('status: todo');
-    expect(file('a')).toContain('position: 1000');
-    expect(find('toast').exists()).toBe(false);
-  });
-
-  it('shows finished tasks checked and reopens them from the checkbox', async () => {
-    await start(desktopVault);
-    expect(row('Ship release').find('[data-testid="row-check"]').attributes('aria-pressed')).toBe('true');
-    expect(row('Write report').find('[data-testid="row-check"]').attributes('aria-pressed')).toBe('false');
-
-    await row('Ship release').find('[data-testid="row-check"]').trigger('click');
-    await settle();
-    expect(file('c')).toContain('status: todo');
-    expect(find('toast').text()).toContain('Reopened');
-  });
-
-  it('puts the message bar at the bottom, and out of the way while a card is dragged', async () => {
-    const { ui } = await start(desktopVault);
-    await row('Write report').find('[data-testid="row-check"]').trigger('click');
-    await settle();
-
-    expect(find('toast').classes().join(' ')).toMatch(/bottom-/);
-    expect(find('toast').classes().join(' ')).not.toMatch(/\btop-/);
-
-    ui.dragging = true;
-    await settle();
-    expect(find('toast').exists()).toBe(false);
-    ui.dragging = false;
-    await settle();
-    expect(find('toast').exists()).toBe(true);
+    expect(check.attributes('aria-pressed')).toBe('true');
+    expect(file('a')).toBe(before);
+    expect(find('task-title').exists()).toBe(false);
+    expect(find('selection-count').text()).toBe('1 selected');
   });
 
   it('shows what a swipe will do while the finger is down, and nothing for a vertical move', async () => {
@@ -685,7 +656,7 @@ describe('finishing, archiving and moving', () => {
     expect(file('a')).toContain('status: archive');
   });
 
-  it('shows done as checked and struck through, and archived as open but set aside', async () => {
+  it('shows done as struck through and archived as muted but open', async () => {
     await start((f) => {
       f.put(
         'Jotter/work/index.md',
@@ -694,18 +665,11 @@ describe('finishing, archiving and moving', () => {
       f.put('Jotter/work/a.md', '---\ntitle: Finished\nstatus: done\n---\n');
       f.put('Jotter/work/b.md', '---\ntitle: Shelved\nstatus: archive\n---\n');
     });
-    const check = (title: string) => row(title).find('[data-testid="row-check"]');
     const heading = (title: string) => row(title).find('[data-testid="row-title"]');
 
-    expect(check('Finished').attributes('aria-pressed')).toBe('true');
     expect(heading('Finished').classes()).toContain('line-through');
-    expect(check('Shelved').attributes('aria-pressed')).toBe('false');
     expect(heading('Shelved').classes()).not.toContain('line-through');
-
-    // Not done, so the checkbox finishes it
-    await check('Shelved').trigger('click');
-    await settle();
-    expect(file('b')).toContain('status: done');
+    expect(heading('Shelved').classes()).toContain('text-muted');
   });
 
   it('keeps archiving to the task sheet and the column picker, not the swipe', async () => {
@@ -757,17 +721,17 @@ describe('finishing, archiving and moving', () => {
   });
 });
 
-describe('drop dock', () => {
+describe('rearranging by drag and drop', () => {
   const rect = (left: number, right: number, top: number, bottom: number) =>
     ({ left, right, top, bottom, width: right - left, height: bottom - top, x: left, y: top, toJSON: () => ({}) }) as DOMRect;
 
-  /** jsdom has no layout: put the columns on the left and the dock chips along the bottom. */
+  /** jsdom has no layout: two rows in the To Do column (a on top, b below) and the Done column to its right. */
   function stubLayout() {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-      if (this.dataset.dockBucket === 'todo') return rect(0, 195, 700, 760);
-      if (this.dataset.dockBucket === 'done') return rect(195, 390, 700, 760);
-      if (this.dataset.column) return rect(0, 390, 60, 690);
-      if (this.dataset.taskId) return rect(10, 380, 70, 140);
+      if (this.dataset.column === 'todo') return rect(0, 390, 60, 690);
+      if (this.dataset.column === 'done') return rect(390, 780, 60, 690);
+      if (this.dataset.taskId === 'a') return rect(10, 380, 70, 140);
+      if (this.dataset.taskId === 'b') return rect(10, 380, 150, 220);
       return rect(0, 0, 0, 0);
     });
   }
@@ -775,65 +739,316 @@ describe('drop dock', () => {
   const pointer = (type: string, x: number, y: number, target: EventTarget = window) =>
     target.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y }));
 
-  async function lift(taskId: string) {
-    pointer('pointerdown', 50, 100, wrapper.find(`[data-task-id="${taskId}"]`).element);
+  async function lift(taskId: string, y = 100) {
+    pointer('pointerdown', 50, y, wrapper.find(`[data-task-id="${taskId}"]`).element);
     await new Promise((resolve) => setTimeout(resolve, 400)); // the hold that starts a drag
     await settle();
   }
 
-  it('shows a chip per bucket while a card is held, and moves the card to the one it is dropped on', async () => {
+  it('puts a row above another by dragging it there, and writes only that task', async () => {
     await start(desktopVault);
     stubLayout();
-    expect(find('drop-dock').exists()).toBe(false);
-
-    await lift('a');
-    expect(find('drop-dock').exists()).toBe(true);
-    expect(all('dock-chip').map((c) => c.attributes('data-dock-bucket'))).toEqual(['todo', 'done']);
-    expect(find('fab').exists()).toBe(false);
-
-    pointer('pointermove', 300, 730);
-    await settle();
-    expect(wrapper.find('[data-dock-bucket="done"]').classes()).toContain('bg-accent');
-
-    pointer('pointerup', 300, 730);
-    await settle();
-
-    const file = fs.files.get('Jotter/work/a.md')!.data;
-    expect(file).toContain('status: done');
-    expect(file).toContain('position: 2000'); // the end of Done, after "Ship release"
-    expect(find('drop-dock').exists()).toBe(false);
-    expect(find('toast').text()).toContain('Moved to Done');
-
-    await find('toast-action').trigger('click');
-    await settle();
-    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('status: todo');
-  });
-
-  it('does nothing when the card is dropped on the chip of its own bucket', async () => {
-    await start(desktopVault);
-    stubLayout();
-    const before = fs.files.get('Jotter/work/a.md')!.data;
     fs.writes.length = 0;
 
-    await lift('a');
-    pointer('pointermove', 100, 730);
+    await lift('b', 180);
+    expect(find('drag-ghost').exists()).toBe(true);
+    pointer('pointermove', 50, 90); // above the middle of "a"
     await settle();
-    expect(wrapper.find('[data-dock-bucket="todo"]').classes()).not.toContain('bg-accent');
-    pointer('pointerup', 100, 730);
+    expect(find('drop-line').exists()).toBe(true);
+    pointer('pointerup', 50, 90);
     await settle();
 
-    expect(fs.files.get('Jotter/work/a.md')?.data).toBe(before);
-    expect(fs.writes).toEqual([]);
+    expect(fs.writes).toEqual(['Jotter/work/b.md']);
+    expect(file('b')).toContain('position: 0');
+    expect(file('b')).toContain('status: todo');
+    expect(
+      all('task-row')
+        .map((r) => r.find('[data-testid="row-title"]').text())
+        .slice(0, 2)
+    ).toEqual(['Book flights', 'Write report']);
   });
 
-  it('does not start a drag, or show the dock, for a quick tap', async () => {
+  it('never changes the column of a row, even when it is dragged far to the side', async () => {
+    await start(desktopVault);
+    stubLayout();
+
+    await lift('a');
+    pointer('pointermove', 600, 650); // over the Done column, below everything
+    await settle();
+    pointer('pointerup', 600, 650);
+    await settle();
+
+    expect(file('a')).toContain('status: todo'); // still in To Do
+    expect(file('a')).toContain('position: 3000'); // but moved to the end of it
+  });
+
+  it('has no drop dock and no add button while a row is held', async () => {
+    await start(desktopVault);
+    stubLayout();
+    await lift('a');
+
+    expect(find('drop-dock').exists()).toBe(false);
+    expect(find('fab').exists()).toBe(false);
+  });
+
+  it('does not start a drag, or show the ghost, for a quick tap', async () => {
     await start(desktopVault);
     stubLayout();
     pointer('pointerdown', 50, 100, wrapper.find('[data-task-id="a"]').element);
     pointer('pointerup', 50, 100);
     await new Promise((resolve) => setTimeout(resolve, 450));
     await settle();
-    expect(find('drop-dock').exists()).toBe(false);
+    expect(find('drag-ghost').exists()).toBe(false);
+  });
+});
+
+describe('selecting tasks', () => {
+  const selectedIds = () => useAppStore().selection;
+
+  it('ticks and unticks tasks, shows how many in the bar, and a tap on a row ticks while selecting', async () => {
+    await start(desktopVault);
+    expect(find('selection-count').exists()).toBe(false);
+
+    await row('Write report').find('[data-testid="row-check"]').trigger('click');
+    await row('Book flights').find('[data-testid="row-check"]').trigger('click');
+    await settle();
+    expect(find('selection-count').text()).toBe('2 selected');
+    expect(row('Write report').find('[data-testid="task-card"]').attributes('data-selected')).toBe('true');
+
+    // While tasks are selected a tap on a row ticks it instead of opening it
+    await row('Ship release').find('[data-testid="task-card"]').trigger('click');
+    await settle();
+    expect(find('task-title').exists()).toBe(false);
+    expect(find('selection-count').text()).toBe('3 selected');
+
+    await row('Ship release').find('[data-testid="row-check"]').trigger('click');
+    expect(find('selection-count').text()).toBe('2 selected');
+
+    await find('clear-selection').trigger('click');
+    await settle();
+    expect(find('selection-count').exists()).toBe(false);
+    expect(selectedIds()).toEqual([]);
+    // Nothing selected: a tap opens a task again
+    await row('Write report').find('[data-testid="task-card"]').trigger('click');
+    expect(find('task-title').exists()).toBe(true);
+  });
+
+  it('selects every task of the column in view', async () => {
+    await start(desktopVault);
+    await row('Write report').find('[data-testid="row-check"]').trigger('click');
+    await find('select-all').trigger('click');
+    await settle();
+    expect(find('selection-count').text()).toBe('2 selected'); // the two in To Do, not the one in Done
+  });
+
+  it('keeps the selection across columns, and drops it on another project', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+    });
+    await useAppStore().selectProject('work'); // the first project in alphabetical order, Home, opens otherwise
+    await settle();
+    await row('Write report').find('[data-testid="row-check"]').trigger('click');
+    useUiStore().activeColumn = 1;
+    await settle();
+    expect(find('selection-count').text()).toBe('1 selected');
+
+    await useAppStore().selectProject('home');
+    await settle();
+    expect(find('selection-count').exists()).toBe(false);
+  });
+
+  it('swaps the add button for a stack of bulk buttons while tasks are selected', async () => {
+    await start(desktopVault);
+    expect(find('fab').exists()).toBe(true);
+    expect(find('bulk-fabs').exists()).toBe(false);
+
+    await row('Write report').find('[data-testid="row-check"]').trigger('click');
+    await settle();
+    expect(find('fab').exists()).toBe(false);
+    expect(all('bulk-fabs')).toHaveLength(1);
+    expect(['bulk-tag', 'bulk-priority', 'bulk-project', 'bulk-more'].every((id) => find(id).exists())).toBe(true);
+
+    await find('clear-selection').trigger('click');
+    await settle();
+    expect(find('fab').exists()).toBe(true);
+    expect(find('bulk-fabs').exists()).toBe(false);
+  });
+});
+
+describe('bulk actions on the selection', () => {
+  const pick = async (...titles: string[]) => {
+    for (const title of titles) await row(title).find('[data-testid="row-check"]').trigger('click');
+    await settle();
+  };
+
+  it('marks all selected tasks done when one of them is swiped right, and can undo them together', async () => {
+    await start(desktopVault);
+    await pick('Write report', 'Book flights');
+    await swipe('Write report', 150);
+
+    expect(file('a')).toContain('status: done');
+    expect(file('b')).toContain('status: done');
+    expect(find('toast').text()).toContain('2 tasks marked done');
+    expect(find('selection-count').exists()).toBe(false); // the selection ends with the action
+    expect(all('bucket-tab').map((t) => t.text())).toEqual(['To Do 0', 'Done 3']);
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('a')).toContain('status: todo');
+    expect(file('b')).toContain('status: todo');
+  });
+
+  it('shows the count on the swipe background of a selected row', async () => {
+    await start(desktopVault);
+    await pick('Write report', 'Book flights');
+    await swipe('Write report', 30, { release: false });
+    expect(find('swipe-right-bg').text()).toContain('2');
+    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 230, clientY: 102 }));
+    await wait(50);
+  });
+
+  it('moves all selected tasks to the column chosen in the picker when one is swiped left', async () => {
+    await start(desktopVault);
+    await pick('Write report', 'Book flights');
+    await swipe('Book flights', -150);
+
+    expect(find('move-list').exists()).toBe(true);
+    await find('move-to-done').trigger('click');
+    await settle();
+
+    expect(file('a')).toContain('status: done');
+    expect(file('b')).toContain('status: done');
+    expect(find('toast').text()).toContain('2 tasks moved to Done');
+  });
+
+  it('acts on just the swiped task when it is not one of the selected ones', async () => {
+    await start(desktopVault);
+    await pick('Write report', 'Book flights');
+    await swipe('Ship release', 150); // done -> reopen, alone
+
+    expect(file('c')).toContain('status: todo');
+    expect(file('a')).toContain('status: todo');
+    expect(file('b')).toContain('status: todo');
+    expect(find('selection-count').text()).toBe('2 selected');
+  });
+
+  it('sets the priority of all selected tasks, and can undo it', async () => {
+    await start(desktopVault);
+    await pick('Write report', 'Book flights');
+    await find('bulk-priority').trigger('click');
+    await settle();
+    await find('priority-urgent').trigger('click');
+    await settle();
+
+    expect(file('a')).toContain('priority: urgent');
+    expect(file('b')).toContain('priority: urgent');
+    expect(find('toast').text()).toContain('Priority set for 2 tasks');
+    expect(find('selection-count').text()).toBe('2 selected'); // edits keep the selection
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('a')).toContain('priority: high'); // what it was before
+    expect(file('b')).not.toContain('priority:');
+  });
+
+  it('adds a tag to all selected tasks and removes it again', async () => {
+    await start(desktopVault);
+    await pick('Write report', 'Book flights');
+    await find('bulk-tag').trigger('click');
+    await settle();
+
+    await type('tags-input', '#Urgent, errands');
+    await submit('tags-add');
+    expect(file('a')).toContain('urgent');
+    expect(file('b')).toContain('errands');
+    // Tags that were already there stay
+    expect(file('a')).toContain('office');
+    expect(find('tags-on-tasks').text()).toContain('#urgent');
+
+    await find('tag-remove-urgent').trigger('click');
+    await settle();
+    expect(file('a')).not.toContain('urgent');
+    expect(file('b')).toContain('errands');
+  });
+
+  it('moves the selected tasks into another project, with their attachments', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\nbuckets:\n  - name: todo\n    title: To Do\n---\n');
+    });
+    await useAppStore().selectProject('work');
+    await settle();
+    await row('Write report').find('[data-testid="task-card"]').trigger('click');
+    const input = find('task-attach').element as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: [new File(['hello'], 'note.txt')], configurable: true });
+    await find('task-attach').trigger('change');
+    await settle();
+    await find('sheet-backdrop').trigger('click');
+    await settle();
+
+    await pick('Write report', 'Book flights');
+    await find('bulk-project').trigger('click');
+    await settle();
+    expect(all('project-list')).toHaveLength(1);
+    await find('project-home').trigger('click');
+    await settle();
+
+    expect(fs.files.has('Jotter/work/a.md')).toBe(false);
+    expect(fs.files.get('Jotter/home/a.md')?.data).toContain('project_id: home');
+    expect(fs.files.get('Jotter/home/attachments/a/note.txt')?.data).toBe(btoa('hello'));
+    expect(fs.files.has('Jotter/home/b.md')).toBe(true);
+    expect(find('toast').text()).toContain('2 tasks moved to Home');
+    expect(find('selection-count').exists()).toBe(false);
+  });
+
+  it('offers more bulk actions: archive, due date, planned date, colour, delete, select all', async () => {
+    await start(desktopVault);
+    await pick('Write report', 'Book flights');
+
+    await find('bulk-more').trigger('click');
+    await settle();
+    await find('more-due').trigger('click');
+    await type('more-due-input', '2031-05-06', 'input');
+    await find('more-due-apply').trigger('click');
+    await settle();
+    expect(file('a')).toMatch(/due_date: ['"]?2031-05-06/);
+    expect(file('b')).toMatch(/due_date: ['"]?2031-05-06/);
+
+    await find('bulk-more').trigger('click');
+    await settle();
+    await find('more-color').trigger('click');
+    await find('more-color-green').trigger('click');
+    await settle();
+    expect(file('a')).toContain('color: green');
+    expect(file('b')).toContain('color: green');
+
+    await find('bulk-more').trigger('click');
+    await settle();
+    await find('more-archive').trigger('click');
+    await settle();
+    expect(file('a')).toContain('status: archive');
+    expect(file('b')).toContain('status: archive');
+    expect(find('selection-count').exists()).toBe(false);
+  });
+
+  it('deletes the selected tasks after asking', async () => {
+    await start(desktopVault);
+    await pick('Write report', 'Book flights');
+    await find('bulk-more').trigger('click');
+    await settle();
+
+    vi.mocked(window.confirm).mockReturnValueOnce(false);
+    await find('more-delete').trigger('click');
+    await settle();
+    expect(fs.files.has('Jotter/work/a.md')).toBe(true);
+
+    await find('more-delete').trigger('click');
+    await settle();
+    expect(fs.files.has('Jotter/work/a.md')).toBe(false);
+    expect(fs.files.has('Jotter/work/b.md')).toBe(false);
+    expect(fs.files.has('Jotter/work/c.md')).toBe(true);
+    expect(find('toast').text()).toContain('2 tasks deleted');
   });
 });
 

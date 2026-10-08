@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { Plus, TriangleAlert } from '@lucide/vue';
+import { Plus, TriangleAlert, Tag, Flag, FolderInput, Ellipsis } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
 import ColumnTabs from '@/components/ColumnTabs.vue';
 import TaskRow from '@/components/TaskRow.vue';
@@ -22,8 +22,13 @@ const active = computed({
 
 const actions = useTaskActions();
 
-/** The buckets a card can be dropped on; the column of unknown buckets is not one of them. */
-const dockColumns = computed(() => app.columns.filter((c) => c.bucket !== null));
+/** The bulk edits, from the thumb upwards: more, project, priority, tag. */
+const bulkFabs = [
+  { id: 'more', icon: Ellipsis, label: 'bulk.more', sheet: 'bulk-more' },
+  { id: 'project', icon: FolderInput, label: 'bulk.project', sheet: 'bulk-project' },
+  { id: 'priority', icon: Flag, label: 'bulk.priority', sheet: 'bulk-priority' },
+  { id: 'tag', icon: Tag, label: 'bulk.tag', sheet: 'bulk-tags' },
+] as const;
 
 const drag = useCardDrag({
   scroller,
@@ -44,8 +49,15 @@ const isDragged = (task: Task) => task.id === drag.dragging.value?.id;
 const shown = (tasks: Task[]) => tasks.filter((t) => !isDragged(t));
 const dropIndex = (key: string) => (drag.target.value?.columnKey === key ? drag.target.value.index : -1);
 
-function openTask(id: string) {
-  if (!drag.consumeClick()) ui.open({ type: 'task', id });
+/** The tasks a swipe on `task` acts on: all selected ones when it is one of several, otherwise just itself. */
+const targets = (task: Task) => (app.isSelected(task.id) && app.selectedCount > 1 ? [...app.selection] : [task.id]);
+const bulkCount = (task: Task) => (app.isSelected(task.id) ? app.selectedCount : 0);
+
+/** A tap opens a task, or ticks it while others are selected. */
+function onTap(task: Task) {
+  if (drag.consumeClick()) return;
+  if (app.selectedCount > 0) app.toggleSelected(task.id);
+  else ui.open({ type: 'task', id: task.id });
 }
 
 function onScroll() {
@@ -140,10 +152,13 @@ watch(
               >
                 <TaskRow
                   :task="task"
-                  @open="openTask(task.id)"
-                  @done="actions.markDone(task.id)"
-                  @reopen="actions.reopen(task.id)"
-                  @move="ui.open({ type: 'move', id: task.id })"
+                  :selected="app.isSelected(task.id)"
+                  :bulk-count="bulkCount(task)"
+                  @tap="onTap(task)"
+                  @toggle="app.toggleSelected(task.id)"
+                  @done="actions.markDone(targets(task))"
+                  @reopen="actions.reopen(targets(task))"
+                  @move="ui.open({ type: 'move', ids: targets(task) })"
                 />
               </li>
             </template>
@@ -159,7 +174,7 @@ watch(
       <div
         v-if="drag.dragging.value"
         class="pointer-events-none fixed z-30 shadow-2xl transition-transform duration-150"
-        :class="drag.target.value?.dock ? '-translate-y-[130%] scale-90 opacity-80' : 'rotate-1 scale-105 opacity-95'"
+        :class="'rotate-1 scale-105 opacity-95'"
         :style="{
           left: `${drag.ghost.value.x - drag.ghost.value.offsetX}px`,
           top: `${drag.ghost.value.y - drag.ghost.value.offsetY}px`,
@@ -170,39 +185,27 @@ watch(
         <TaskRow :task="drag.dragging.value" inert />
       </div>
 
-      <!-- While a card is dragged: a chip per bucket in the thumb zone. Slide onto one and let go to move the card. -->
-      <Transition name="dock">
-        <div
-          v-if="drag.dragging.value && dockColumns.length > 1"
-          class="pointer-events-none fixed inset-x-0 bottom-0 z-20 border-t border-line bg-card/95 shadow-2xl backdrop-blur"
-          style="padding-bottom: env(safe-area-inset-bottom)"
-          data-testid="drop-dock"
+      <!-- Nothing selected: the add button. With a selection it turns into a stack of small buttons for bulk edits. -->
+      <div
+        v-if="!drag.dragging.value && app.selectedCount > 0"
+        class="fixed bottom-5 right-5 flex flex-col-reverse items-center gap-3"
+        style="margin-bottom: env(safe-area-inset-bottom)"
+        data-testid="bulk-fabs"
+      >
+        <button
+          v-for="fab in bulkFabs"
+          :key="fab.id"
+          class="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-accent-ink shadow-lg shadow-black/25 active:scale-95"
+          :aria-label="t(fab.label)"
+          :title="t(fab.label)"
+          :data-testid="`bulk-${fab.id}`"
+          @click="ui.open({ type: fab.sheet })"
         >
-          <div class="px-4 pt-2 text-xs font-medium text-muted">{{ t('board.moveTo') }}</div>
-          <div class="grid gap-1.5 p-3 pt-2" :style="{ gridTemplateColumns: `repeat(${Math.min(dockColumns.length, 5)}, minmax(0, 1fr))` }">
-            <div
-              v-for="col in dockColumns"
-              :key="col.key"
-              class="flex h-14 flex-col items-center justify-center rounded-xl border px-1 text-center text-xs font-medium leading-tight transition-colors"
-              :class="
-                drag.target.value?.dock && drag.target.value.bucket === col.bucket
-                  ? 'border-accent bg-accent text-accent-ink'
-                  : col.bucket === drag.dragging.value.bucket
-                    ? 'border-line bg-surface text-muted opacity-50'
-                    : 'border-line bg-surface'
-              "
-              :data-dock-bucket="col.bucket"
-              data-testid="dock-chip"
-            >
-              <span class="line-clamp-2 max-w-full break-words">{{ col.title }}</span>
-              <span class="opacity-70">{{ col.tasks.length }}</span>
-            </div>
-          </div>
-        </div>
-      </Transition>
-
+          <component :is="fab.icon" class="h-5 w-5" />
+        </button>
+      </div>
       <button
-        v-if="!drag.dragging.value"
+        v-else-if="!drag.dragging.value"
         class="fixed bottom-5 right-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-ink shadow-lg shadow-black/25 active:scale-95"
         style="margin-bottom: env(safe-area-inset-bottom)"
         :aria-label="t('task.new')"

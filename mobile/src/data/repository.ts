@@ -412,6 +412,48 @@ export class VaultRepository {
     await this.current().db.tasks.delete([projectId, id]);
   }
 
+  /**
+   * Moves a task, with its attachments, into another project. It keeps its bucket when the target has one of that
+   * name, otherwise it goes to the target's default bucket, and lands at the end of it. The new file is written
+   * first and the old one removed last, so a failure in between leaves a copy, never a loss.
+   */
+  async moveToProject(projectId: string, id: string, targetProjectId: string): Promise<Task> {
+    const { db } = this.current();
+    const row = await this.row(projectId, id);
+    if (projectId === targetProjectId) return toTask(row);
+    if (!(await db.projects.get(targetProjectId))) throw new Error(`Project ${targetProjectId} not found`);
+
+    const buckets = await this.listBuckets(targetProjectId);
+    const bucket = buckets.some((b) => b.name === row.bucket)
+      ? row.bucket
+      : ((buckets.find((b) => b.is_default) ?? buckets[0])?.name ?? row.bucket);
+    const inBucket = await db.tasks
+      .where('project_id')
+      .equals(targetProjectId)
+      .filter((t) => t.bucket === bucket)
+      .toArray();
+    const newPath = `${this.projectDir(targetProjectId)}/${row.file}.md`;
+    if (await this.fs.exists(newPath)) throw new Error('A task with the same id is already in that project');
+
+    const task: Task = {
+      ...toTask(row),
+      project_id: targetProjectId,
+      bucket,
+      position: Math.max(0, ...inBucket.map((t) => t.position)) + 1000,
+      updated_at: new Date().toISOString(),
+    };
+    await this.fs.writeText(newPath, dumpTaskMarkdown(task));
+
+    const oldAttachments = `${this.projectDir(projectId)}/attachments/${id}`;
+    if (await this.fs.exists(oldAttachments)) await this.fs.rename(oldAttachments, `${this.projectDir(targetProjectId)}/attachments/${id}`);
+
+    await this.fs.remove(`${this.projectDir(projectId)}/${row.file}.md`);
+    await db.tasks.delete([projectId, id]);
+    const stat = await this.fs.stat(newPath);
+    await db.tasks.put({ ...task, file: row.file, size: stat.size, mtime: stat.mtime });
+    return task;
+  }
+
   private async writeTask(task: Task, file: string) {
     const { db } = this.current();
     const path = `${this.projectDir(task.project_id)}/${file}.md`;

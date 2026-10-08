@@ -9,6 +9,10 @@ import ProjectsSheet from '@/components/ProjectsSheet.vue';
 import VaultsSheet from '@/components/VaultsSheet.vue';
 import FilterSheet from '@/components/FilterSheet.vue';
 import MoveSheet from '@/components/MoveSheet.vue';
+import PrioritySheet from '@/components/PrioritySheet.vue';
+import TagsSheet from '@/components/TagsSheet.vue';
+import ProjectPickerSheet from '@/components/ProjectPickerSheet.vue';
+import BulkMoreSheet from '@/components/BulkMoreSheet.vue';
 import NavDrawer from '@/components/NavDrawer.vue';
 import SettingsSheet from '@/components/SettingsSheet.vue';
 import { t } from '@/i18n';
@@ -28,6 +32,7 @@ onMounted(async () => {
     listeners.push(
       await CapApp.addListener('backButton', ({ canGoBack }) => {
         if (ui.isOpen) ui.close();
+        else if (app.selectedCount > 0) app.clearSelection();
         else if (!canGoBack) void CapApp.exitApp();
       })
     );
@@ -79,7 +84,11 @@ watch(
     <ProjectsSheet v-else-if="ui.sheet?.type === 'projects'" />
     <VaultsSheet v-else-if="ui.sheet?.type === 'vaults'" />
     <FilterSheet v-else-if="ui.sheet?.type === 'filter'" />
-    <MoveSheet v-else-if="ui.sheet?.type === 'move'" :id="ui.sheet.id" />
+    <MoveSheet v-else-if="ui.sheet?.type === 'move'" :ids="ui.sheet.ids" />
+    <PrioritySheet v-else-if="ui.sheet?.type === 'bulk-priority'" />
+    <TagsSheet v-else-if="ui.sheet?.type === 'bulk-tags'" />
+    <ProjectPickerSheet v-else-if="ui.sheet?.type === 'bulk-project'" />
+    <BulkMoreSheet v-else-if="ui.sheet?.type === 'bulk-more'" />
     <SettingsSheet v-else-if="ui.sheet?.type === 'settings'" />
   </template>
 

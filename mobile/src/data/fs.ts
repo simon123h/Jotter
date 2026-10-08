@@ -24,6 +24,8 @@ export interface FsPort {
   writeText(path: string, data: string): Promise<void>;
   /** Same as writeText for binary data given as base64. */
   writeBase64(path: string, data: string): Promise<void>;
+  /** Moves a file or a folder. Missing parent folders of the target are created. */
+  rename(from: string, to: string): Promise<void>;
   /** Deletes a file. A missing file is not an error. */
   remove(path: string): Promise<void>;
   /** Deletes a folder with its content. A missing folder is not an error. */
@@ -83,6 +85,11 @@ export class CapacitorFs implements FsPort {
       await Filesystem.writeFile({ path, directory: ROOT, recursive: true, ...content });
       await this.remove(tmp);
     }
+  }
+
+  async rename(from: string, to: string): Promise<void> {
+    await this.mkdir(to.slice(0, to.lastIndexOf('/')));
+    await Filesystem.rename({ from, to, directory: ROOT, toDirectory: ROOT });
   }
 
   async remove(path: string): Promise<void> {

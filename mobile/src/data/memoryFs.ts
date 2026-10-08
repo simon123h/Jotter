@@ -63,6 +63,23 @@ export class MemoryFs implements FsPort {
     await this.writeText(path, data);
   }
 
+  async rename(from: string, to: string) {
+    this.ensureDirs(to);
+    for (const [file, entry] of [...this.files]) {
+      if (file === from || file.startsWith(`${from}/`)) {
+        this.files.delete(file);
+        this.files.set(to + file.slice(from.length), { ...entry, mtime: this.tick() });
+      }
+    }
+    for (const dir of [...this.dirs]) {
+      if (dir === from || dir.startsWith(`${from}/`)) {
+        this.dirs.delete(dir);
+        this.dirs.add(to + dir.slice(from.length));
+      }
+    }
+    this.writes.push(to);
+  }
+
   async remove(path: string) {
     this.files.delete(path);
   }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeDropTarget, positionBetween, positionForIndex, edgeScrollSpeed, DOCK_KEY, type ColumnBox, type DockBox } from './dragMath';
+import { computeDropTarget, positionBetween, positionForIndex, type ColumnBox } from './dragMath';
 
 const columns: ColumnBox[] = [
   {
@@ -23,6 +23,10 @@ describe('computeDropTarget', () => {
     expect(computeDropTarget(columns, 100, 400)).toEqual({ columnKey: 'todo', bucket: 'todo', index: 2 });
   });
 
+  it('uses the only column it is given, wherever sideways the finger is', () => {
+    expect(computeDropTarget([columns[0]], 700, 120)).toEqual({ columnKey: 'todo', bucket: 'todo', index: 1 });
+  });
+
   it('drops into an empty column at index 0', () => {
     expect(computeDropTarget(columns, 500, 300)).toEqual({ columnKey: 'done', bucket: 'done', index: 0 });
   });
@@ -30,30 +34,6 @@ describe('computeDropTarget', () => {
   it('accepts no drop outside the columns or into the column of unknown buckets', () => {
     expect(computeDropTarget(columns, 2000, 10)).toBeNull();
     expect(computeDropTarget(columns, 900, 10)).toBeNull();
-  });
-});
-
-describe('computeDropTarget with the dock', () => {
-  const dock: DockBox[] = [
-    { bucket: 'todo', left: 0, right: 130, top: 700, bottom: 760 },
-    { bucket: 'done', left: 130, right: 260, top: 700, bottom: 760 },
-  ];
-
-  it('sends a card dropped on a chip to the end of that bucket, whatever column is behind it', () => {
-    expect(computeDropTarget(columns, 200, 730, dock, 'todo')).toEqual({
-      columnKey: DOCK_KEY,
-      bucket: 'done',
-      index: Number.MAX_SAFE_INTEGER,
-      dock: true,
-    });
-  });
-
-  it('ignores the chip of the bucket the card is already in', () => {
-    expect(computeDropTarget(columns, 50, 730, dock, 'todo')).toBeNull();
-  });
-
-  it('falls back to the columns above the dock', () => {
-    expect(computeDropTarget(columns, 100, 120, dock, 'done')).toEqual({ columnKey: 'todo', bucket: 'todo', index: 1 });
   });
 });
 
@@ -75,14 +55,5 @@ describe('positions', () => {
     expect(positionForIndex(siblings, 1)).toBe(1500);
     expect(positionForIndex(siblings, 3)).toBe(4000);
     expect(positionForIndex([], 0)).toBe(1000);
-  });
-});
-
-describe('edgeScrollSpeed', () => {
-  it('is zero in the middle and grows towards the edges', () => {
-    expect(edgeScrollSpeed(195, 390)).toBe(0);
-    expect(edgeScrollSpeed(28, 390)).toBe(-5);
-    expect(edgeScrollSpeed(0, 390)).toBe(-10);
-    expect(edgeScrollSpeed(390, 390)).toBe(10);
   });
 });

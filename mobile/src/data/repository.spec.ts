@@ -209,6 +209,52 @@ describe('tasks', () => {
   });
 });
 
+describe('moving tasks to another project', () => {
+  beforeEach(async () => {
+    seedDesktopVault(fs);
+    fs.put(
+      'Jotter/home/index.md',
+      '---\ntitle: Home\nbuckets:\n  - name: backlog\n    title: Backlog\n    is_default: true\n  - name: done\n    title: Done\n---\n'
+    );
+    fs.put('Jotter/home/x.md', '---\ntitle: Existing\nstatus: done\nposition: 5000\n---\n');
+    await repo.addVault({ name: 'Jotter', path: 'Jotter' });
+  });
+
+  it('moves the file, keeps unknown keys, and lands at the end of the same bucket when the target has it', async () => {
+    const moved = await repo.moveToProject('work', 'b', 'home'); // b is in "done"
+
+    expect(moved).toMatchObject({ project_id: 'home', bucket: 'done', position: 6000 });
+    expect(fs.files.has('Jotter/work/b.md')).toBe(false);
+    expect(fs.files.get('Jotter/home/b.md')?.data).toContain('project_id: home');
+    expect(await repo.listTasks('work')).toHaveLength(1);
+    expect((await repo.listTasks('home')).map((t) => t.id)).toEqual(['x', 'b']);
+    expect((await repo.sync()).changed).toBe(false);
+  });
+
+  it('puts a task into the default bucket of the target when it has no bucket of that name', async () => {
+    const moved = await repo.moveToProject('work', 'a', 'home'); // a is in "todo", Home has none
+    expect(moved.bucket).toBe('backlog');
+    expect(fs.files.get('Jotter/home/a.md')?.data).toContain('assignee: sam');
+  });
+
+  it('takes the attachments along', async () => {
+    await repo.addAttachment('work', 'a', new File(['hello'], 'note.txt'));
+    await repo.moveToProject('work', 'a', 'home');
+
+    expect(fs.files.has('Jotter/work/attachments/a/note.txt')).toBe(false);
+    expect(fs.files.get('Jotter/home/attachments/a/note.txt')?.data).toBe(btoa('hello'));
+    expect(repo.attachmentUrl('home', 'a', 'note.txt')).toContain('Jotter/home/attachments/a/note.txt');
+  });
+
+  it('refuses an unknown project and a clashing id, and changes nothing', async () => {
+    await expect(repo.moveToProject('work', 'a', 'nowhere')).rejects.toThrow('not found');
+    fs.put('Jotter/home/a.md', '---\ntitle: Same id\n---\n');
+    await repo.sync();
+    await expect(repo.moveToProject('work', 'a', 'home')).rejects.toThrow('same id');
+    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('Alpha');
+  });
+});
+
 describe('projects and buckets', () => {
   beforeEach(async () => {
     seedDesktopVault(fs);

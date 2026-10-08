@@ -9,7 +9,11 @@ export type Sheet =
   | { type: 'filter' }
   | { type: 'settings' }
   | { type: 'drawer' }
-  | { type: 'move'; id: string };
+  | { type: 'move'; ids: string[] }
+  | { type: 'bulk-tags' }
+  | { type: 'bulk-priority' }
+  | { type: 'bulk-project' }
+  | { type: 'bulk-more' };
 
 /** Which overlay is open. One at a time; the back button closes it. */
 export const useUiStore = defineStore('ui', () => {

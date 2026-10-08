@@ -10,11 +10,16 @@ import { useRowSwipe, type SwipeDirection } from '@/composables/useRowSwipe';
 
 const props = defineProps<{
   task: Task;
+  /** Ticked with the checkbox. */
+  selected?: boolean;
+  /** How many tasks a swipe on this row acts on, when it is one of several selected. */
+  bulkCount?: number;
   /** A plain copy without gestures, for the card that floats under the finger while dragging. */
   inert?: boolean;
 }>();
 const emit = defineEmits<{
-  (e: 'open'): void;
+  (e: 'tap'): void;
+  (e: 'toggle'): void;
   (e: 'done'): void;
   (e: 'reopen'): void;
   (e: 'move'): void;
@@ -48,13 +53,11 @@ const bar = computed(() => colorHex(props.task.color));
 
 // A swipe that starts on the checkbox is a swipe, not a tap on it
 function onCheck() {
-  if (swipe.consumeClick()) return;
-  if (done.value) emit('reopen');
-  else emit('done');
+  if (!swipe.consumeClick()) emit('toggle');
 }
 
 function onClick() {
-  if (!swipe.consumeClick()) emit('open');
+  if (!swipe.consumeClick()) emit('tap');
 }
 
 const hasMeta = computed(
@@ -73,14 +76,19 @@ const hasMeta = computed(
     >
       <Check v-if="rightAction === 'done'" class="h-6 w-6" />
       <RotateCcw v-else class="h-6 w-6" />
-      <span :class="swipe.armed.value ? 'opacity-100' : 'opacity-70'">{{ t(rightAction === 'done' ? 'swipe.done' : 'swipe.reopen') }}</span>
+      <span :class="swipe.armed.value ? 'opacity-100' : 'opacity-70'"
+        >{{ t(rightAction === 'done' ? 'swipe.done' : 'swipe.reopen')
+        }}<template v-if="bulkCount && bulkCount > 1"> · {{ bulkCount }}</template></span
+      >
     </div>
     <div
       v-if="swipe.dx.value < 0"
       class="absolute inset-0 flex items-center justify-end gap-2 bg-accent pr-5 text-sm font-semibold text-accent-ink"
       data-testid="swipe-left-bg"
     >
-      <span :class="swipe.armed.value ? 'opacity-100' : 'opacity-70'">{{ t('swipe.move') }}</span>
+      <span :class="swipe.armed.value ? 'opacity-100' : 'opacity-70'"
+        >{{ t('swipe.move') }}<template v-if="bulkCount && bulkCount > 1"> · {{ bulkCount }}</template></span
+      >
       <ArrowRightLeft class="h-6 w-6" />
     </div>
 
@@ -89,30 +97,35 @@ const hasMeta = computed(
       tabindex="0"
       class="relative flex cursor-pointer touch-pan-y items-start gap-3 bg-card pl-4 active:bg-line/40"
       :style="{
+        backgroundColor: selected ? 'color-mix(in srgb, var(--color-accent) 12%, var(--color-card))' : undefined,
         transform: swipe.dx.value ? `translate3d(${swipe.dx.value}px, 0, 0)` : undefined,
         transition: swipe.settling.value ? 'transform 0.16s ease-out' : undefined,
       }"
       data-testid="task-card"
+      :data-selected="selected ? 'true' : undefined"
       @pointerdown="swipe.onPointerDown"
       @click="onClick"
-      @keydown.enter.self="emit('open')"
+      @keydown.enter.self="emit('tap')"
     >
       <span v-if="bar" class="absolute inset-y-0 left-0 w-1" :style="{ backgroundColor: bar }" data-testid="row-color"></span>
 
-      <!-- The checkbox: finishes an open task, reopens a finished one -->
+      <!-- The checkbox selects the task; swiping the row is what finishes it -->
       <button
         type="button"
         class="-ml-1 -mr-1 mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center"
-        :aria-label="done ? t('task.reopen') : t('task.markDone')"
-        :aria-pressed="done"
+        :aria-label="t('select.task')"
+        :aria-pressed="!!selected"
         data-testid="row-check"
         @click.stop="onCheck"
       >
         <span
           class="flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 transition-colors"
-          :style="{ borderColor: ring, backgroundColor: done ? ring : `color-mix(in srgb, ${ring} 12%, transparent)` }"
+          :style="{
+            borderColor: selected ? 'var(--color-accent)' : ring,
+            backgroundColor: selected ? 'var(--color-accent)' : `color-mix(in srgb, ${ring} 12%, transparent)`,
+          }"
         >
-          <Check v-if="done" class="h-3.5 w-3.5 text-white" :stroke-width="3" />
+          <Check v-if="selected" class="h-3.5 w-3.5 text-accent-ink" :stroke-width="3" />
         </span>
       </button>
 
