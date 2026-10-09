@@ -86,7 +86,7 @@ beforeEach(() => {
   holdConfig.ms = 30; // a hold is a few milliseconds in tests
   vi.spyOn(window, 'confirm').mockReturnValue(true);
   localStorage.clear();
-  document.documentElement.removeAttribute('data-theme');
+  document.documentElement.className = '';
   locale.value = 'en';
 });
 
@@ -498,17 +498,19 @@ describe('settings', () => {
     await find('drawer-settings').trigger('click');
     await settle();
     await type('setting-language', 'de', 'change');
-    await type('setting-theme', 'dark', 'change');
+    await type('setting-theme', 'midnight', 'change');
 
     expect(wrapper.text()).toContain('Einstellungen');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    expect(JSON.parse(localStorage.getItem('jotter_lite_settings')!)).toEqual({ theme: 'dark', language: 'de' });
+    expect(document.documentElement.classList.contains('theme-midnight')).toBe(true);
+    expect(JSON.parse(localStorage.getItem('jotter_lite_settings')!)).toEqual({ theme: 'midnight', language: 'de' });
     expect(find('open-search').attributes('aria-label')).toBe('Suchen');
 
-    // Back to the system choice: no explicit theme on the page
+    // Another theme replaces it; the default theme has no class, and so does the system choice on a light device
+    await type('setting-theme', 'sakura', 'change');
+    expect([...document.documentElement.classList].filter((c) => c.startsWith('theme-'))).toEqual(['theme-sakura']);
     settings.theme = 'system';
     await settle();
-    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+    expect([...document.documentElement.classList].filter((c) => c.startsWith('theme-'))).toEqual([]);
   });
 
   it('shows the version and links to the vaults', async () => {

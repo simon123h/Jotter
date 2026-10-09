@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Database } from '@lucide/vue';
+import { THEMES } from '@jotter/themes';
 import BottomSheet from './BottomSheet.vue';
-import { t } from '@/i18n';
+import { t, type MessageKey } from '@/i18n';
 import { useSettingsStore } from '@/stores/settings';
 import { useUiStore } from '@/stores/ui';
 
@@ -26,8 +27,7 @@ const version = __APP_VERSION__;
         <span class="mb-1 block text-xs font-medium text-muted">{{ t('settings.theme') }}</span>
         <select v-model="settings.theme" :class="field" data-testid="setting-theme">
           <option value="system">{{ t('settings.system') }}</option>
-          <option value="light">{{ t('settings.light') }}</option>
-          <option value="dark">{{ t('settings.dark') }}</option>
+          <option v-for="theme in THEMES" :key="theme.id" :value="theme.id">{{ t(`theme.${theme.id}` as MessageKey) }}</option>
         </select>
       </label>
       <button

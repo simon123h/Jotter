@@ -15,19 +15,21 @@ function appVersion(): string {
 }
 
 const vaultFormat = fileURLToPath(new URL('../packages/vault-format', import.meta.url));
+const themes = fileURLToPath(new URL('../packages/themes', import.meta.url));
 
 export default defineConfig({
   base: './',
   define: { __APP_VERSION__: JSON.stringify(appVersion()) },
   plugins: [vue(), tailwindcss()],
   server: {
-    // The shared parser lives outside this project. Builds and tests read it freely, but the dev server only
+    // The shared parser and themes live outside this project. Builds and tests read it freely, but the dev server only
     // serves files under the project root unless they are listed here.
-    fs: { allow: ['.', vaultFormat] },
+    fs: { allow: ['.', vaultFormat, themes] },
   },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@jotter/themes': fileURLToPath(new URL('../packages/themes/index.ts', import.meta.url)),
       '@jotter/vault-format': fileURLToPath(new URL('../packages/vault-format/src/index.ts', import.meta.url)),
     },
   },

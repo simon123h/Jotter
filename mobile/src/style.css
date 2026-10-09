@@ -1,48 +1,32 @@
 @import 'tailwindcss';
+@import '../../packages/themes/themes.css';
 
+/* The app's tokens, taken from the theme variables it shares with the desktop app */
 @theme {
-  --color-surface: #f7f7f5;
-  --color-card: #ffffff;
-  --color-ink: #1c1c1a;
-  --color-muted: #6b6b66;
-  --color-line: #e3e3de;
-  --color-accent: #3b6fd4;
-  --color-accent-ink: #ffffff;
-  --color-danger: #c0392b;
+  --color-surface: var(--theme-bg-base);
+  --color-card: var(--theme-bg-card);
+  --color-ink: var(--theme-text-main);
+  --color-muted: var(--theme-text-muted);
+  --color-line: var(--theme-border);
+  --color-accent: var(--theme-accent);
+  --color-accent-ink: var(--app-accent-ink);
+  --color-danger: var(--app-danger);
 }
 
-/* Dark follows the system unless the user chose a theme in the settings (data-theme on <html>) */
+/* What the shared themes do not define: the text on an accent surface and the error colour. Light themes first. */
 :root {
-  color-scheme: light dark;
-}
-
-:root[data-theme='light'] {
+  --app-accent-ink: #ffffff;
+  --app-danger: #c0392b;
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --color-surface: #131416;
-    --color-card: #1d1f23;
-    --color-ink: #ececea;
-    --color-muted: #9a9a95;
-    --color-line: #2c2f35;
-    --color-accent: #6c97ec;
-    --color-accent-ink: #0b1220;
-    --color-danger: #e5766a;
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme='dark'] {
-  --color-surface: #131416;
-  --color-card: #1d1f23;
-  --color-ink: #ececea;
-  --color-muted: #9a9a95;
-  --color-line: #2c2f35;
-  --color-accent: #6c97ec;
-  --color-accent-ink: #0b1220;
-  --color-danger: #e5766a;
+.theme-frost,
+.theme-cyberpunk,
+.theme-midnight,
+.theme-forest,
+.theme-sakura {
+  --app-accent-ink: var(--theme-bg-base);
+  --app-danger: #e5766a;
   color-scheme: dark;
 }
 
