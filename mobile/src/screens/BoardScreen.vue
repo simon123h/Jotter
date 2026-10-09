@@ -2,6 +2,7 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
+import BulkToolbar from '@/components/BulkToolbar.vue';
 import ColumnTabs from '@/components/ColumnTabs.vue';
 import TaskRow from '@/components/TaskRow.vue';
 import { useCardDrag } from '@/composables/useCardDrag';
@@ -178,7 +179,8 @@ watch(
         <TaskRow :task="drag.dragging.value" inert />
       </div>
 
-      <!-- The add button; while tasks are selected the bulk edits are in the app bar instead -->
+      <!-- The add button; while tasks are selected the bulk edits are in the toolbar instead -->
+      <BulkToolbar v-if="!drag.dragging.value && app.selectedCount > 0" />
       <button
         v-if="!drag.dragging.value && app.selectedCount === 0"
         class="fixed bottom-5 right-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-ink shadow-lg shadow-black/25 active:scale-95"

@@ -94,12 +94,15 @@ watch(
     <SettingsSheet v-else-if="ui.sheet?.type === 'settings'" />
   </template>
 
-  <!-- The message bar sits at the bottom, left of the add button; it makes room while a card is being dragged -->
+  <!-- The message bar sits at the bottom, left of the add button, or above the toolbar while tasks are selected; it makes room while a card is being dragged -->
   <Transition name="snack">
     <div
       v-if="ui.toast && !ui.dragging"
-      class="fixed bottom-4 left-3 right-[5rem] z-50 flex items-center gap-2 rounded-lg bg-ink py-2.5 pl-4 text-sm text-surface shadow-lg"
-      :class="ui.toast.action ? 'pr-1.5' : 'pointer-events-none pr-4'"
+      class="fixed left-3 z-50 flex items-center gap-2 rounded-lg bg-ink py-2.5 pl-4 text-sm text-surface shadow-lg"
+      :class="[
+        ui.toast.action ? 'pr-1.5' : 'pointer-events-none pr-4',
+        app.selectedCount > 0 ? 'bottom-[5.5rem] right-3' : 'bottom-4 right-[5rem]',
+      ]"
       style="margin-bottom: env(safe-area-inset-bottom)"
       role="status"
       data-testid="toast"

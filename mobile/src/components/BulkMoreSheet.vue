@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Archive, CalendarDays, Check, Clock, ListChecks, Palette, Slash, Trash2 } from '@lucide/vue';
+import { Archive, CalendarDays, Check, Clock, Palette, Slash, Trash2 } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -25,12 +25,6 @@ const toggle = (section: Section) => (open.value = open.value === section ? null
 async function finish(run: () => Promise<void>) {
   ui.close();
   await run();
-}
-
-function selectAllHere() {
-  const column = app.columns[ui.activeColumn];
-  app.selectOnly(column ? column.tasks.map((task) => task.id) : []);
-  ui.close();
 }
 
 async function remove() {
@@ -109,9 +103,6 @@ async function remove() {
         ></button>
       </div>
 
-      <button :class="row" data-testid="more-select-all" @click="selectAllHere">
-        <ListChecks class="h-5 w-5 shrink-0 text-muted" />{{ t('select.all') }}
-      </button>
       <button :class="`${row} text-danger`" data-testid="more-delete" @click="remove">
         <Trash2 class="h-5 w-5 shrink-0" />{{ t('bulk.delete') }}
       </button>
