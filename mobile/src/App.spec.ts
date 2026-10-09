@@ -1295,7 +1295,7 @@ describe('tag and planning views', () => {
     await start(viewsVault);
     await switchTo('tags');
 
-    expect(find('app-bar-title').text()).toBe('Work · Tags');
+    expect(find('app-bar-title').text()).toBe('Work');
     expect(tabs().map((t) => t.replace(/\d+$/, '').trim())).toEqual(['#office', '#travel', 'Untagged']);
     expect(column(0)).toContain('Write report');
     expect(column(0)).toContain('Book flights');
