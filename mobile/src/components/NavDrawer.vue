@@ -42,7 +42,7 @@ const row = 'flex h-14 w-full items-center gap-4 rounded-full px-4 text-left tex
   <div class="fixed inset-0 z-40" role="dialog" aria-modal="true" :aria-label="t('nav.menu')" data-testid="drawer">
     <div class="drawer-scrim absolute inset-0 bg-black/40" data-testid="drawer-scrim" @click="ui.close()"></div>
     <aside
-      class="drawer-panel absolute inset-y-0 left-0 flex w-[min(85%,20rem)] flex-col rounded-r-3xl bg-card shadow-2xl"
+      class="drawer-panel absolute inset-y-0 left-0 flex w-[min(85%,20rem)] flex-col bg-card shadow-2xl"
       style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom)"
       @touchstart.passive="onTouchStart"
       @touchend.passive="onTouchEnd"
