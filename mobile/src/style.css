@@ -199,3 +199,10 @@ body {
   transform: translateY(120%);
   opacity: 0;
 }
+
+/* The pressed tint of a row sits on top of its opaque background. A translucent background colour would let the
+   colour of the swipe action behind the row shine through while the finger is down. */
+.row-pressable:active {
+  --tint: color-mix(in srgb, var(--color-line) 40%, transparent);
+  background-image: linear-gradient(var(--tint), var(--tint));
+}

@@ -116,7 +116,7 @@ const hasMeta = computed(
     <div
       role="button"
       tabindex="0"
-      class="relative flex cursor-pointer touch-pan-y items-start gap-3 bg-card pl-4 active:bg-line/40"
+      class="relative flex cursor-pointer touch-pan-y items-start gap-3 bg-card pl-4 row-pressable"
       :style="{
         backgroundColor: selected
           ? 'color-mix(in srgb, var(--color-accent) 12%, var(--color-card))'
