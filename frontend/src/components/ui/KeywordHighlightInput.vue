@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Mic, MicOff } from '@lucide/vue';
-import { getKeywordMatches } from '@/utils/titleParser';
+import { getKeywordMatches } from '@jotter/title-parser';
 import { useI18n } from '@/composables/useI18n';
 import { useSpeechRecognition } from '@/composables/useSpeechRecognition';
 

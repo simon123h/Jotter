@@ -5,7 +5,7 @@ import {
   extractBucketFromTitle,
   parseTitleState,
   getPlanningDateForDueDate,
-} from '@/utils/titleParser';
+} from '@jotter/title-parser';
 
 describe('titleParser', () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import { ref, reactive, watch, computed, nextTick, provide, inject, type Ref, type InjectionKey } from 'vue';
 import type { Task, Bucket } from '@/types';
-import { parseTitleState, getKeywordMatches } from '@/utils/titleParser';
+import { parseTitleState, getKeywordMatches } from '@jotter/title-parser';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import { sanitizeTags } from '@/utils/tagUtils';
 
