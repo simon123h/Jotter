@@ -1464,3 +1464,70 @@ describe('bottom navigation bar', () => {
     expect(navHidden()).toBe(false);
   });
 });
+
+describe('smart title input', () => {
+  const created = (title: string) => [...fs.files.entries()].find(([, f]) => f.data.includes(`title: ${title}`))?.[1].data ?? '';
+
+  it('reads date, priority, tag and column out of a new title, and shows what it found', async () => {
+    await start(desktopVault);
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'Call mom tomorrow p1 #family /done');
+
+    expect(all('title-hint').map((h) => h.text())).toEqual(['Tomorrow', 'Urgent', 'Done', '#family']);
+
+    await submit('quick-add-input');
+    const data = created('Call mom');
+    expect(data).toContain('planned_date: tomorrow');
+    expect(data).toContain('priority: urgent');
+    expect(data).toContain('status: done');
+    expect(data).toContain('family');
+    expect(find('quick-add-added').text()).toContain('Call mom');
+    expect(find('quick-add-input').element).toHaveProperty('value', '');
+  });
+
+  it('takes an explicit date as the due date', async () => {
+    await start(desktopVault);
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'File taxes 1.1.2040');
+    await submit('quick-add-input');
+    expect(created('File taxes')).toMatch(/due_date: ['"]?2040-01-01/);
+  });
+
+  it('keeps words as plain text when their chip is dismissed', async () => {
+    await start(desktopVault);
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'Plan the trip for tomorrow');
+    await find('title-hint-ignore').trigger('click');
+    expect(all('title-hint')).toHaveLength(0);
+
+    await submit('quick-add-input');
+    const data = created('Plan the trip for tomorrow');
+    expect(data).not.toContain('planned_date');
+  });
+
+  it('does not add a task that is nothing but keywords', async () => {
+    await start(desktopVault);
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'tomorrow p1');
+    expect((find('quick-add-submit').element as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('applies the keywords typed into the title of an existing task when the field is left', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    // Typing fires input events; the change event comes when the field is left
+    (find('task-title').element as HTMLTextAreaElement).value = 'Write the report p2 #urgent-ish today';
+    await find('task-title').trigger('input');
+    await settle();
+    expect(all('title-hint')).toHaveLength(3);
+
+    await find('task-title').trigger('change');
+    await settle();
+    const data = file('a');
+    expect(data).toContain('title: Write the report');
+    expect(data).toContain('priority: high');
+    expect(data).toContain('planned_date: today');
+    expect(data).toContain('urgent-ish');
+    expect(all('title-hint')).toHaveLength(0);
+  });
+});

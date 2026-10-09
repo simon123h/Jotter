@@ -10,6 +10,8 @@ import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS, colorHex } from '@/taskColors';
 import { PLANNED_CHOICES, plannedLabel } from '@/planned';
+import TitleHints from './TitleHints.vue';
+import { useSmartTitle } from '@/composables/useSmartTitle';
 
 const props = defineProps<{ id: string }>();
 const app = useAppStore();
@@ -39,6 +41,31 @@ const draft = ref({
   tags: (initial?.tags ?? []).join(', '),
   body: initial?.body ?? '',
 });
+
+// What the title says (a date, p1, #tag, /column) is read while it is typed and applied when the field is left
+const smart = useSmartTitle(
+  computed(() => draft.value.title),
+  () => app.buckets
+);
+const titleEdited = ref(false);
+
+function commitTitle() {
+  const found = smart.resolve();
+  if (titleEdited.value && found.found && found.title) {
+    const d = draft.value;
+    d.title = found.title;
+    if (found.bucket) d.bucket = found.bucket;
+    if (found.priority) d.priority = found.priority;
+    if (found.due_date !== null || found.planned_date !== null) {
+      d.due = found.due_date ?? '';
+      d.planned = found.planned_date ?? '';
+    }
+    if (found.tags.length) d.tags = [...new Set([...parseTags(d.tags), ...found.tags])].join(', ');
+  }
+  titleEdited.value = false;
+  smart.reset();
+  saveSoon();
+}
 
 const fail = (err: unknown) => ui.showToast(err instanceof Error ? err.message : String(err));
 let closing = false;
@@ -184,8 +211,10 @@ async function removeAttachment(name: string) {
         rows="1"
         class="field-sizing-content block w-full resize-none rounded-xl border border-line bg-surface px-3 py-3 text-lg font-medium leading-snug outline-none focus:border-accent"
         data-testid="task-title"
-        @change="saveSoon"
+        @input="titleEdited = true"
+        @change="commitTitle"
       ></textarea>
+      <TitleHints v-if="titleEdited" :hints="smart.hints.value" class="-mt-2" @ignore="smart.ignore" />
 
       <div>
         <div class="mb-1 flex items-center justify-between">
