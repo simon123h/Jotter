@@ -1149,7 +1149,7 @@ describe('bulk actions on the selection', () => {
     expect(find('selection-count').exists()).toBe(false);
   });
 
-  it('offers more bulk actions: archive, due date, planned date, colour, delete, select all', async () => {
+  it('offers more bulk actions: archive, due date, planned date, colour, delete', async () => {
     await start(desktopVault);
     await pick('Write report', 'Book flights');
 

@@ -1,16 +1,9 @@
 <script setup lang="ts">
-import { Tag, Flag, FolderInput, EllipsisVertical, ListChecks } from '@lucide/vue';
+import { Tag, Flag, FolderInput, EllipsisVertical } from '@lucide/vue';
 import { t } from '@/i18n';
-import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 
-const app = useAppStore();
 const ui = useUiStore();
-
-function selectAllHere() {
-  const column = app.columns[ui.activeColumn];
-  if (column) app.selectOnly(column.tasks.map((task) => task.id));
-}
 
 /** The bulk edits of a selection, in the order they sit in the toolbar. */
 const actions = [
@@ -31,9 +24,6 @@ const button = 'flex h-12 w-12 items-center justify-center rounded-full text-ink
     role="toolbar"
     data-testid="bulk-toolbar"
   >
-    <button :class="button" :aria-label="t('select.all')" data-testid="select-all" @click="selectAllHere">
-      <ListChecks class="h-6 w-6" />
-    </button>
     <button
       v-for="action in actions"
       :key="action.id"

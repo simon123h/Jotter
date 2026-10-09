@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import { Menu, Search, ArrowLeft, X, SlidersHorizontal } from '@lucide/vue';
+import { Menu, Search, ArrowLeft, X, SlidersHorizontal, ListChecks } from '@lucide/vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -28,6 +28,11 @@ function closeSearch() {
   ui.searching = false;
 }
 
+function selectAllHere() {
+  const column = app.columns[ui.activeColumn];
+  if (column) app.selectOnly(column.tasks.map((task) => task.id));
+}
+
 const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-ink active:bg-line';
 </script>
 
@@ -45,6 +50,9 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
       <h1 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-none" data-testid="selection-count">
         {{ t('select.count', { count: app.selectedCount }) }}
       </h1>
+      <button :class="iconButton" :aria-label="t('select.all')" data-testid="select-all" @click="selectAllHere">
+        <ListChecks class="h-6 w-6" />
+      </button>
     </template>
 
     <template v-else-if="!ui.searching">
