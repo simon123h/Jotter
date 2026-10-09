@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { Plus, TriangleAlert, Tag, Flag, FolderInput, Ellipsis } from '@lucide/vue';
+import { Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
 import ColumnTabs from '@/components/ColumnTabs.vue';
 import TaskRow from '@/components/TaskRow.vue';
@@ -21,14 +21,6 @@ const active = computed({
 });
 
 const actions = useTaskActions();
-
-/** The bulk edits, from the thumb upwards: more, project, priority, tag. */
-const bulkFabs = [
-  { id: 'more', icon: Ellipsis, label: 'bulk.more', sheet: 'bulk-more' },
-  { id: 'project', icon: FolderInput, label: 'bulk.project', sheet: 'bulk-project' },
-  { id: 'priority', icon: Flag, label: 'bulk.priority', sheet: 'bulk-priority' },
-  { id: 'tag', icon: Tag, label: 'bulk.tag', sheet: 'bulk-tags' },
-] as const;
 
 const drag = useCardDrag({
   scroller,
@@ -186,27 +178,9 @@ watch(
         <TaskRow :task="drag.dragging.value" inert />
       </div>
 
-      <!-- Nothing selected: the add button. With a selection it turns into a stack of small buttons for bulk edits. -->
-      <div
-        v-if="!drag.dragging.value && app.selectedCount > 0"
-        class="fixed bottom-5 right-5 flex flex-col-reverse items-center gap-3"
-        style="margin-bottom: env(safe-area-inset-bottom)"
-        data-testid="bulk-fabs"
-      >
-        <button
-          v-for="fab in bulkFabs"
-          :key="fab.id"
-          class="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-accent-ink shadow-lg shadow-black/25 active:scale-95"
-          :aria-label="t(fab.label)"
-          :title="t(fab.label)"
-          :data-testid="`bulk-${fab.id}`"
-          @click="ui.open({ type: fab.sheet })"
-        >
-          <component :is="fab.icon" class="h-5 w-5" />
-        </button>
-      </div>
+      <!-- The add button; while tasks are selected the bulk edits are in the app bar instead -->
       <button
-        v-else-if="!drag.dragging.value"
+        v-if="!drag.dragging.value && app.selectedCount === 0"
         class="fixed bottom-5 right-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-ink shadow-lg shadow-black/25 active:scale-95"
         style="margin-bottom: env(safe-area-inset-bottom)"
         :aria-label="t('task.new')"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import { Menu, Search, ArrowLeft, X, SlidersHorizontal, ListChecks } from '@lucide/vue';
+import { Menu, Search, ArrowLeft, X, SlidersHorizontal, Tag, Flag, FolderInput, EllipsisVertical } from '@lucide/vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -28,10 +28,13 @@ function closeSearch() {
   ui.searching = false;
 }
 
-function selectAllHere() {
-  const column = app.columns[ui.activeColumn];
-  if (column) app.selectOnly(column.tasks.map((task) => task.id));
-}
+/** The bulk edits of a selection, shown as icons in the contextual bar. */
+const bulkActions = [
+  { id: 'tag', icon: Tag, label: 'bulk.tag', sheet: 'bulk-tags' },
+  { id: 'priority', icon: Flag, label: 'bulk.priority', sheet: 'bulk-priority' },
+  { id: 'project', icon: FolderInput, label: 'bulk.project', sheet: 'bulk-project' },
+  { id: 'more', icon: EllipsisVertical, label: 'bulk.more', sheet: 'bulk-more' },
+] as const;
 
 const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-ink active:bg-line';
 </script>
@@ -50,8 +53,15 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
       <h1 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-none" data-testid="selection-count">
         {{ t('select.count', { count: app.selectedCount }) }}
       </h1>
-      <button :class="iconButton" :aria-label="t('select.all')" data-testid="select-all" @click="selectAllHere">
-        <ListChecks class="h-6 w-6" />
+      <button
+        v-for="action in bulkActions"
+        :key="action.id"
+        :class="iconButton"
+        :aria-label="t(action.label)"
+        :data-testid="`bulk-${action.id}`"
+        @click="ui.open({ type: action.sheet })"
+      >
+        <component :is="action.icon" class="h-6 w-6" />
       </button>
     </template>
 

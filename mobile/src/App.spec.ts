@@ -921,7 +921,8 @@ describe('selecting tasks', () => {
   it('selects every task of the column in view', async () => {
     await start(desktopVault);
     await holdSelect('Write report');
-    await find('select-all').trigger('click');
+    await find('bulk-more').trigger('click');
+    await find('more-select-all').trigger('click');
     await settle();
     expect(find('selection-count').text()).toBe('2 selected'); // the two in To Do, not the one in Done
   });
@@ -943,21 +944,20 @@ describe('selecting tasks', () => {
     expect(find('selection-count').exists()).toBe(false);
   });
 
-  it('swaps the add button for a stack of bulk buttons while tasks are selected', async () => {
+  it('hides the add button and shows the bulk actions in the app bar while tasks are selected', async () => {
     await start(desktopVault);
     expect(find('fab').exists()).toBe(true);
-    expect(find('bulk-fabs').exists()).toBe(false);
+    expect(find('bulk-tag').exists()).toBe(false);
 
     await holdSelect('Write report');
     await settle();
     expect(find('fab').exists()).toBe(false);
-    expect(all('bulk-fabs')).toHaveLength(1);
     expect(['bulk-tag', 'bulk-priority', 'bulk-project', 'bulk-more'].every((id) => find(id).exists())).toBe(true);
 
     await find('clear-selection').trigger('click');
     await settle();
     expect(find('fab').exists()).toBe(true);
-    expect(find('bulk-fabs').exists()).toBe(false);
+    expect(find('bulk-tag').exists()).toBe(false);
   });
 });
 
