@@ -69,7 +69,7 @@ const arrow = 'rounded-full p-2 text-muted active:bg-line disabled:opacity-30';
             data-testid="column-up"
             @click="attempt(() => app.moveColumn(b.name, -1))"
           >
-            <ChevronUp class="h-4 w-4 -rotate-90" />
+            <ChevronUp class="h-4 w-4" />
           </button>
           <button
             :class="arrow"
@@ -78,7 +78,7 @@ const arrow = 'rounded-full p-2 text-muted active:bg-line disabled:opacity-30';
             data-testid="column-down"
             @click="attempt(() => app.moveColumn(b.name, 1))"
           >
-            <ChevronDown class="h-4 w-4 -rotate-90" />
+            <ChevronDown class="h-4 w-4" />
           </button>
           <button :class="arrow" :aria-label="t('columns.rename')" data-testid="column-rename" @click="startRename(b.name, b.title)">
             <Pencil class="h-4 w-4" />
