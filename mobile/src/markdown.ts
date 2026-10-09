@@ -42,6 +42,29 @@ export function toggleChecklistItem(source: string, index: number): string {
   );
 }
 
+/** The ticked and total checklist items of a body, or null when there are none (what the checkboxes in the notes show). */
+export function checklistProgress(source: string): { checked: number; total: number } | null {
+  let total = 0;
+  let checked = 0;
+  mapOutsideFences(source, (line) => {
+    const mark = CHECKLIST.exec(line)?.[2];
+    if (mark === undefined) return line;
+    total++;
+    if (mark !== ' ') checked++;
+    return line;
+  });
+  return total ? { checked, total } : null;
+}
+
+/** Adds an unchecked item at the end of the body, right after the last checklist line when that is where the body ends. */
+export function appendChecklistItem(source: string, label: string): string {
+  const item = `- [ ] ${label.trim().replace(/\s+/g, ' ')}`;
+  const body = source.replace(/\s+$/, '');
+  if (!body) return `${item}\n`;
+  const lastLine = body.slice(body.lastIndexOf('\n') + 1);
+  return `${body}${CHECKLIST.test(lastLine) ? '\n' : '\n\n'}${item}\n`;
+}
+
 // Links open outside the app; checkboxes stay, every other form control goes
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
   if (node.tagName === 'A') {

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ArrowRightLeft, CalendarDays, Check, Clock, Hourglass, Paperclip, RotateCcw, Tag } from '@lucide/vue';
+import { ArrowRightLeft, CalendarDays, Check, Clock, ListChecks, Hourglass, Paperclip, RotateCcw, Tag } from '@lucide/vue';
 import type { Task } from '@jotter/vault-format';
 import { t, type MessageKey } from '@/i18n';
 import { dueInfo } from '@/dates';
+import { checklistProgress } from '@/markdown';
 import { plannedLabel } from '@/planned';
 import { colorHex } from '@/taskColors';
 import { useRowSwipe, type SwipeDirection } from '@/composables/useRowSwipe';
@@ -72,8 +73,16 @@ function onClick() {
   if (!swipe.consumeClick()) emit('tap');
 }
 
+const progress = computed(() => checklistProgress(props.task.body));
+
 const hasMeta = computed(
-  () => due.value || props.task.planned_date || props.task.postponed_until || props.task.tags.length || props.task.attachments.length
+  () =>
+    due.value ||
+    progress.value ||
+    props.task.planned_date ||
+    props.task.postponed_until ||
+    props.task.tags.length ||
+    props.task.attachments.length
 );
 </script>
 
@@ -164,6 +173,14 @@ const hasMeta = computed(
           </span>
           <span v-if="task.postponed_until" class="inline-flex items-center gap-1 text-amber-600" data-testid="card-postponed">
             <Hourglass class="h-3.5 w-3.5" />{{ task.postponed_until }}
+          </span>
+          <span
+            v-if="progress"
+            class="inline-flex items-center gap-1"
+            :class="progress.checked === progress.total ? 'text-emerald-600' : ''"
+            data-testid="row-checklist"
+          >
+            <ListChecks class="h-3.5 w-3.5" />{{ progress.checked }}/{{ progress.total }}
           </span>
           <span v-if="task.attachments.length" class="inline-flex items-center gap-1">
             <Paperclip class="h-3.5 w-3.5" />{{ task.attachments.length }}

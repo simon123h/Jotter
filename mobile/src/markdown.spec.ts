@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderMarkdown, toggleChecklistItem, countChecklistItems } from './markdown';
+import { renderMarkdown, toggleChecklistItem, countChecklistItems, checklistProgress, appendChecklistItem } from './markdown';
 
 describe('renderMarkdown', () => {
   it('renders common markdown and checklists', () => {
@@ -51,5 +51,18 @@ describe('checklist toggling', () => {
 
   it('does nothing for an index that does not exist', () => {
     expect(toggleChecklistItem(source, 9)).toBe(source);
+  });
+});
+
+describe('checklist progress and adding items', () => {
+  it('counts ticked and total items, ignoring code blocks', () => {
+    expect(checklistProgress('Text only')).toBeNull();
+    expect(checklistProgress('- [x] one\n- [ ] two\n  - [X] nested\n```\n- [ ] in code\n```\n')).toEqual({ checked: 2, total: 3 });
+  });
+
+  it('appends an item, next to the list it ends with', () => {
+    expect(appendChecklistItem('', 'first')).toBe('- [ ] first\n');
+    expect(appendChecklistItem('- [x] a\n', ' b  c ')).toBe('- [x] a\n- [ ] b c\n');
+    expect(appendChecklistItem('Some notes\n', 'a')).toBe('Some notes\n\n- [ ] a\n');
   });
 });

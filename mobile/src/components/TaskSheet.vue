@@ -2,7 +2,7 @@
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue';
 import { Trash2, Paperclip, Pencil, X, Slash, Check, Archive } from '@lucide/vue';
 import MarkdownView from './MarkdownView.vue';
-import { toggleChecklistItem } from '@/markdown';
+import { appendChecklistItem, toggleChecklistItem } from '@/markdown';
 import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -114,6 +114,15 @@ async function finishEditingNotes() {
 
 async function toggleItem(index: number) {
   draft.value.body = toggleChecklistItem(draft.value.body, index);
+  await save();
+}
+
+const newItem = ref('');
+
+async function addItem() {
+  if (!newItem.value.trim()) return;
+  draft.value.body = appendChecklistItem(draft.value.body, newItem.value);
+  newItem.value = '';
   await save();
 }
 
@@ -300,6 +309,23 @@ async function removeAttachment(name: string) {
           data-testid="task-body"
           @change="saveSoon"
         ></textarea>
+        <form class="mt-2 flex gap-2" @submit.prevent="addItem">
+          <input
+            v-model="newItem"
+            :placeholder="t('task.addItem')"
+            :class="`${field} min-w-0 flex-1 py-2`"
+            enterkeyhint="done"
+            data-testid="checklist-add-input"
+          />
+          <button
+            type="submit"
+            class="rounded-xl border border-line px-3 text-sm font-medium text-accent disabled:opacity-40"
+            :disabled="!newItem.trim()"
+            data-testid="checklist-add"
+          >
+            {{ t('task.add') }}
+          </button>
+        </form>
       </div>
 
       <div>

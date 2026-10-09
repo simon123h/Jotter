@@ -183,6 +183,25 @@ describe('capturing and editing tasks', () => {
     expect(app.positionsIn('done')).toEqual([1000]);
   });
 
+  it('shows the checklist progress on the row and adds an item from the sheet', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/a.md', '---\ntitle: Write report\nstatus: todo\nposition: 1000\n---\n- [ ] draft\n- [x] outline\n');
+    });
+    expect(row('Write report').find('[data-testid="row-checklist"]').text()).toBe('1/2');
+    expect(row('Book flights').find('[data-testid="row-checklist"]').exists()).toBe(false);
+
+    await find('task-card').trigger('click');
+    await type('checklist-add-input', 'send it');
+    await submit('checklist-add');
+    await settle();
+
+    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('- [x] outline\n- [ ] send it');
+    await find('sheet-backdrop').trigger('click');
+    await settle();
+    expect(row('Write report').find('[data-testid="row-checklist"]').text()).toBe('1/3');
+  });
+
   it('shows the notes rendered, ticks checklist items in the file, and edits the raw text', async () => {
     await start((f) => {
       desktopVault(f);
