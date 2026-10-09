@@ -77,9 +77,35 @@ function onListScroll(e: Event) {
   else if (delta > 6) ui.navHidden = true;
 }
 
+/**
+ * A hard flick must move one column, not several. `snap-always` asks the browser for that, but a WebView's momentum
+ * can still carry past it, so a swipe also holds the scroll within one column of where the finger went down.
+ */
+let swipeFrom: number | null = null;
+let swipeIdle: ReturnType<typeof setTimeout> | undefined;
+
+function onTouchStart() {
+  const el = scroller.value;
+  if (!el?.clientWidth || ui.dragging) return;
+  clearTimeout(swipeIdle);
+  swipeFrom = Math.round(el.scrollLeft / el.clientWidth);
+}
+
+function holdWithinOneColumn(el: HTMLElement) {
+  if (swipeFrom === null || ui.dragging) return;
+  const lowest = Math.max(swipeFrom - 1, 0) * el.clientWidth;
+  const highest = Math.min(swipeFrom + 1, Math.max(app.columns.length - 1, 0)) * el.clientWidth;
+  if (el.scrollLeft < lowest) el.scrollLeft = lowest;
+  else if (el.scrollLeft > highest) el.scrollLeft = highest;
+  // The swipe is over once the column has stopped moving
+  clearTimeout(swipeIdle);
+  swipeIdle = setTimeout(() => (swipeFrom = null), 200);
+}
+
 function onScroll() {
   const el = scroller.value;
   if (!el || !el.clientWidth) return;
+  holdWithinOneColumn(el);
   const position = el.scrollLeft / el.clientWidth;
   ui.columnProgress = position;
   active.value = Math.round(position);
@@ -144,6 +170,7 @@ watch(
         class="flex min-h-0 flex-1 overflow-x-auto"
         :class="drag.dragging.value ? 'snap-none' : 'snap-x snap-mandatory'"
         data-testid="columns"
+        @touchstart.passive="onTouchStart"
         @scroll.passive="onScroll"
       >
         <!-- snap-always: a hard flick stops at the next column instead of flying past several -->

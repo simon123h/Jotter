@@ -1425,6 +1425,44 @@ describe('tag and planning views', () => {
   });
 });
 
+describe('swiping between columns', () => {
+  it('moves one column per swipe, however hard the flick', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put(
+        'Jotter/work/index.md',
+        '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: doing\n    title: Doing\n  - name: review\n    title: Review\n  - name: done\n    title: Done\n---\n'
+      );
+    });
+    const scroller = find('columns').element as HTMLElement;
+    Object.defineProperty(scroller, 'clientWidth', { value: 400, configurable: true });
+    const scrollTo = async (left: number) => {
+      scroller.scrollLeft = left;
+      scroller.dispatchEvent(new Event('scroll'));
+      await settle();
+    };
+
+    // Finger down on the first column, then momentum carries the page towards the fourth
+    scroller.dispatchEvent(new Event('touchstart'));
+    await scrollTo(300);
+    expect(scroller.scrollLeft).toBe(300);
+    await scrollTo(1100);
+    expect(scroller.scrollLeft).toBe(400);
+
+    // The next swipe starts from where the page rests and may move one more column
+    await wait(300);
+    scroller.dispatchEvent(new Event('touchstart'));
+    await scrollTo(1300);
+    expect(scroller.scrollLeft).toBe(800);
+
+    // Not past the last column or before the first
+    await wait(300);
+    scroller.dispatchEvent(new Event('touchstart'));
+    await scrollTo(2000);
+    expect(scroller.scrollLeft).toBe(1200);
+  });
+});
+
 describe('bottom navigation bar', () => {
   const navHidden = () => find('bottom-nav').element.hasAttribute('inert');
 
