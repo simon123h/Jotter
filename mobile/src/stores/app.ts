@@ -4,6 +4,7 @@ import type { Task, Project, Bucket } from '@jotter/vault-format';
 import { getRepository, applyTaskFilter, type VaultRepository, type Vault, type NewTask, type TaskFilter } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { t } from '@/i18n';
+import { useUiStore } from '@/stores/ui';
 import { PLANNED_CHOICES, plannedKey, plannedLabel } from '@/planned';
 
 export type Status = 'loading' | 'onboarding' | 'ready' | 'error';
@@ -75,6 +76,10 @@ export const useAppStore = defineStore('app', () => {
   const unreadable = ref<string[]>([]);
   /** The tasks ticked with their checkboxes. Bulk actions and swipes act on these. */
   const selection = ref<string[]>([]);
+
+  const ui = useUiStore();
+  /** The bottom navigation bar is out of the way while tasks are selected (the toolbar takes its place) or after scrolling down. */
+  const navVisible = computed(() => selection.value.length === 0 && !ui.navHidden);
 
   const project = computed(() => projects.value.find((p) => p.id === projectId.value) ?? null);
 
@@ -477,6 +482,7 @@ export const useAppStore = defineStore('app', () => {
     projectId,
     view,
     setView,
+    navVisible,
     project,
     buckets,
     allTasks,

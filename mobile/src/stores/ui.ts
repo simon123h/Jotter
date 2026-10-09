@@ -25,6 +25,8 @@ export const useUiStore = defineStore('ui', () => {
   const activeColumn = ref(0);
   /** The column position while swiping, fractional (1.5 is halfway to the third column): drives the tab indicator. */
   const columnProgress = ref(0);
+  /** The list was scrolled down: the navigation bar steps out of the way until it is scrolled up again. */
+  const navHidden = ref(false);
   /** The search field is open in the app bar. */
   const searching = ref(false);
   /** A card is being dragged: the board must not change under the finger. */
@@ -50,5 +52,5 @@ export const useUiStore = defineStore('ui', () => {
     toast.value = null;
   };
 
-  return { sheet, toast, dismissToast, activeColumn, columnProgress, searching, dragging, isOpen, open, close, showToast };
+  return { sheet, toast, dismissToast, activeColumn, columnProgress, navHidden, searching, dragging, isOpen, open, close, showToast };
 });

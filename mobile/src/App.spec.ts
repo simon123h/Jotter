@@ -1286,7 +1286,6 @@ describe('tag and planning views', () => {
   };
   const tabs = () => all('bucket-tab').map((t) => t.text());
   const switchTo = async (view: 'board' | 'tags' | 'planning') => {
-    await openDrawer();
     await find(`view-${view}`).trigger('click');
     await settle();
   };

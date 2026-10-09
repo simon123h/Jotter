@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Database, ChevronsUpDown, Folder, Pencil, Plus, Columns3, Settings, RefreshCw, Tag, CalendarClock } from '@lucide/vue';
-import type { View } from '@/stores/app';
+import { Database, ChevronsUpDown, Folder, Pencil, Plus, Columns3, Settings, RefreshCw } from '@lucide/vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -13,17 +12,6 @@ const rescanning = ref(false);
 
 async function select(id: string) {
   await app.selectProject(id);
-  ui.close();
-}
-
-const views = [
-  { id: 'board', icon: Columns3, label: 'view.board' },
-  { id: 'tags', icon: Tag, label: 'view.tags' },
-  { id: 'planning', icon: CalendarClock, label: 'view.planning' },
-] as const;
-
-function pickView(id: View) {
-  app.setView(id);
   ui.close();
 }
 
@@ -74,19 +62,6 @@ const row = 'flex h-14 w-full items-center gap-4 rounded-full px-4 text-left tex
             <span class="block truncate text-xs font-normal text-muted">{{ app.vault?.path }}</span>
           </span>
           <ChevronsUpDown class="h-5 w-5 shrink-0 text-muted" />
-        </button>
-      </div>
-
-      <div v-if="app.project" class="shrink-0 px-3 pt-2" role="group" :aria-label="t('nav.view')">
-        <button
-          v-for="v in views"
-          :key="v.id"
-          :class="[row, app.view === v.id ? 'bg-accent/15 text-accent' : '']"
-          :aria-current="app.view === v.id ? 'true' : undefined"
-          :data-testid="`view-${v.id}`"
-          @click="pickView(v.id)"
-        >
-          <component :is="v.icon" class="h-5 w-5 shrink-0" />{{ t(v.label) }}
         </button>
       </div>
 

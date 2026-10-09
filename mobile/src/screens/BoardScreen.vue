@@ -2,6 +2,7 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
+import BottomNav from '@/components/BottomNav.vue';
 import BulkToolbar from '@/components/BulkToolbar.vue';
 import ColumnTabs from '@/components/ColumnTabs.vue';
 import TaskRow from '@/components/TaskRow.vue';
@@ -65,6 +66,17 @@ function onTap(task: Task) {
   else ui.open({ type: 'task', id: task.id });
 }
 
+/** Scrolling down clears the navigation bar away, scrolling up (or reaching the top) brings it back. */
+const lastTop = new WeakMap<Element, number>();
+function onListScroll(e: Event) {
+  const el = e.currentTarget as HTMLElement;
+  const top = el.scrollTop;
+  const delta = top - (lastTop.get(el) ?? 0);
+  lastTop.set(el, top);
+  if (top <= 0 || delta < -6) ui.navHidden = false;
+  else if (delta > 6) ui.navHidden = true;
+}
+
 function onScroll() {
   const el = scroller.value;
   if (!el || !el.clientWidth) return;
@@ -85,6 +97,7 @@ watch(
   async () => {
     active.value = 0;
     ui.columnProgress = 0;
+    ui.navHidden = false;
     await nextTick();
     scroller.value?.scrollTo({ left: 0 });
   }
@@ -141,6 +154,7 @@ watch(
           :data-column="col.key"
           :data-bucket="col.bucket ?? undefined"
           data-testid="column"
+          @scroll.passive="onListScroll"
         >
           <ul>
             <template v-for="task in col.tasks" :key="task.id">
@@ -191,12 +205,13 @@ watch(
         <TaskRow :task="drag.dragging.value" inert />
       </div>
 
-      <!-- The add button; while tasks are selected the bulk edits are in the toolbar instead -->
+      <BottomNav />
+      <!-- The add button, above the navigation bar; while tasks are selected the bulk edits are in the toolbar instead -->
       <BulkToolbar v-if="!drag.dragging.value && app.selectedCount > 0" />
       <button
         v-if="!drag.dragging.value && app.selectedCount === 0"
-        class="fixed bottom-5 right-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-ink shadow-lg shadow-black/25 active:scale-95"
-        style="margin-bottom: env(safe-area-inset-bottom)"
+        class="fixed right-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-ink shadow-lg shadow-black/25 transition-[bottom] duration-200 active:scale-95"
+        :style="{ bottom: app.navVisible ? '5rem' : '1.25rem', marginBottom: 'env(safe-area-inset-bottom)' }"
         :aria-label="t('task.new')"
         data-testid="fab"
         @click="ui.open({ type: 'quickadd' })"

@@ -103,7 +103,7 @@ watch(
       class="fixed left-3 z-50 flex items-center gap-2 rounded-lg bg-ink py-2.5 pl-4 text-sm text-surface shadow-lg"
       :class="[
         ui.toast.action ? 'pr-1.5' : 'pointer-events-none pr-4',
-        app.selectedCount > 0 ? 'bottom-[5.5rem] right-3' : 'bottom-4 right-[5rem]',
+        app.selectedCount > 0 ? 'bottom-[5.5rem] right-3' : app.navVisible ? 'bottom-20 right-[5rem]' : 'bottom-4 right-[5rem]',
       ]"
       style="margin-bottom: env(safe-area-inset-bottom)"
       role="status"
