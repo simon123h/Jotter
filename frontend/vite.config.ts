@@ -21,6 +21,9 @@ function getAppVersion(): string {
 
 const appVersion = getAppVersion();
 
+// The colour themes are shared with the mobile app and live outside this project (packages/themes)
+const sharedThemes = fileURLToPath(new URL('../packages/themes', import.meta.url));
+
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
@@ -32,6 +35,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    fs: { allow: ['.', sharedThemes] },
     proxy: {
       '/api': `http://localhost:${process.env.JOTTER_PORT || '58271'}`,
     },
