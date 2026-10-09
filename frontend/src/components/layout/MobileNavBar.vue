@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getCapabilities } from '@/capabilities';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { LayoutGrid, Layers, Plus, Box, Folder, List, Grid2X2, Tag, Clock, CheckCircle2, X, ChevronRight } from '@lucide/vue';
@@ -8,7 +7,6 @@ import { useSettingsStore } from '@/stores/settings';
 import { useUiStore } from '@/stores/ui';
 import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
-import { triggerLightHaptic, triggerMediumHaptic } from '@/utils/haptics';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -38,29 +36,24 @@ const isProjectsActive = computed(() => Boolean(settingsStore.isSidebarOpen));
 const isTimeblockActive = computed(() => Boolean(settingsStore.isTimeblockSidebarOpen));
 
 const toggleViewsSheet = () => {
-  triggerLightHaptic();
   uiStore.isMobileViewsSheetOpen = !uiStore.isMobileViewsSheetOpen;
 };
 
 const navigateTo = (viewName: string) => {
-  triggerLightHaptic();
   uiStore.isMobileViewsSheetOpen = false;
   const pid = activeProjectId.value;
   router.push({ name: viewName, params: { projectId: pid }, query: route.query });
 };
 
 const handleQuickAdd = () => {
-  triggerMediumHaptic();
   modalStore.openTaskCreate('todo');
 };
 
 const handleToggleProjects = () => {
-  triggerLightHaptic();
   settingsStore.toggleSidebar();
 };
 
 const handleToggleTimeblock = () => {
-  triggerLightHaptic();
   settingsStore.toggleTimeblockSidebar();
 };
 
@@ -96,8 +89,6 @@ const viewOptions = computed(() => [
     icon: CheckCircle2,
   },
 ]);
-
-const capabilities = getCapabilities();
 </script>
 
 <template>
@@ -153,7 +144,6 @@ const capabilities = getCapabilities();
 
       <!-- 5. Time Blocking Panel Toggle -->
       <button
-        v-if="capabilities.timeblocks"
         @click="handleToggleTimeblock"
         class="flex flex-col items-center justify-center p-1.5 rounded-lg transition-colors flex-1"
         :class="isTimeblockActive ? 'text-theme-accent font-bold' : 'text-theme-text-muted hover:text-theme-text-main'"

@@ -84,16 +84,16 @@ cd frontend && npx playwright test
 
 ## Android Mobile Development & Local Preview
 
-Jotter's mobile version is built with **Capacitor** and runs in-process with a client-side storage engine (IndexedDB cache via Dexie.js + raw `.md` filesystem access).
+The mobile app, **Jotter Lite** (`mobile/`), is built with **Capacitor** and runs in-process with a client-side storage engine (IndexedDB cache via Dexie.js + raw `.md` filesystem access). It reads and writes vaults through the shared `packages/vault-format` parser. See [ADR 0017](../developer/adr/0017-jotter-lite-mobile-app.md).
 
 ### 1. Building the Android Project
 
 ```bash
-# Build frontend web bundle and sync native Capacitor Android project
-npm run cap:sync
+# Build the web bundle and sync the native Capacitor Android project
+cd mobile && npm run cap:sync
 
-# (Optional) Build release APK locally via Gradle
-cd frontend/android && ./gradlew assembleRelease
+# (Optional) Build the release APK locally via Gradle (or from the repository root: npm run build:apk)
+cd android && ./gradlew assembleRelease
 ```
 
 ### 2. Previewing the Mobile App on Linux / Desktop
@@ -101,9 +101,9 @@ cd frontend/android && ./gradlew assembleRelease
 You can test and preview the mobile application locally without flashing an APK to a physical phone using three methods:
 
 #### Option A: Browser Mobile DevTools (Instant, Zero Setup)
-1. Start the frontend: `cd frontend && npm run dev`
+1. Start the app: `cd mobile && npm run dev`
 2. Open DevTools in Chrome/Firefox (`F12`), press `Ctrl + Shift + M` to toggle the **Device Toolbar / Mobile View** (e.g., Pixel 7).
-3. The responsive layout will automatically switch to the mobile layout (bottom bar, compact columns, touch delays).
+3. In the browser the app keeps its vault in the browser's storage instead of the phone's Documents folder, which is enough to try the screens and gestures.
 
 #### Option B: Waydroid (Native Linux Container – Fastest & Direct APK execution)
 If you are running Linux on Wayland, **Waydroid** runs Android inside an LXC container directly with GPU acceleration:
@@ -112,12 +112,12 @@ If you are running Linux on Wayland, **Waydroid** runs Android inside an LXC con
 waydroid session start
 
 # Install the built APK
-waydroid app install frontend/android/app/build/outputs/apk/release/app-release-unsigned.apk
+waydroid app install mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk
 ```
 
 #### Option C: Android Studio & Emulator
 ```bash
 # Open the Android workspace in Android Studio
-cd frontend && npx cap open android
+cd mobile && npx cap open android
 ```
 From Android Studio, click **Run** (▶) or launch an Android Virtual Device (AVD) from the Device Manager. Drag & drop the `.apk` directly onto the emulator window to install and test.

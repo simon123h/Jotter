@@ -1,0 +1,208 @@
+@import 'tailwindcss';
+@import '../../packages/themes/themes.css';
+
+/* The app's tokens, taken from the theme variables it shares with the desktop app */
+@theme {
+  --color-surface: var(--theme-bg-base);
+  --color-card: var(--theme-bg-card);
+  --color-ink: var(--theme-text-main);
+  --color-muted: var(--theme-text-muted);
+  --color-line: var(--theme-border);
+  --color-accent: var(--theme-accent);
+  --color-accent-ink: var(--app-accent-ink);
+  --color-danger: var(--app-danger);
+}
+
+/* What the shared themes do not define: the text on an accent surface and the error colour. Light themes first. */
+:root {
+  --app-accent-ink: #ffffff;
+  --app-danger: #c0392b;
+  color-scheme: light;
+}
+
+.theme-frost,
+.theme-cyberpunk,
+.theme-midnight,
+.theme-forest,
+.theme-sakura {
+  --app-accent-ink: var(--theme-bg-base);
+  --app-danger: #e5766a;
+  color-scheme: dark;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#app {
+  /* Keep content out of the notch and the gesture bar */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  display: flex;
+  flex-direction: column;
+}
+
+/* In the base layer: unlayered rules would beat every Tailwind colour utility on these elements */
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+/* Rendered notes */
+.md {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.md > :first-child {
+  margin-top: 0;
+}
+.md > :last-child {
+  margin-bottom: 0;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 1em 0 0.4em;
+}
+.md h1 {
+  font-size: 1.3rem;
+}
+.md h2 {
+  font-size: 1.15rem;
+}
+.md h3,
+.md h4 {
+  font-size: 1.02rem;
+}
+.md p,
+.md ul,
+.md ol,
+.md pre,
+.md blockquote,
+.md table {
+  margin: 0.6em 0;
+}
+.md ul,
+.md ol {
+  padding-left: 1.4em;
+}
+.md ul {
+  list-style: disc;
+}
+.md ol {
+  list-style: decimal;
+}
+.md li:has(> input[type='checkbox']) {
+  list-style: none;
+  margin-left: -1.4em;
+}
+.md input[type='checkbox'] {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-right: 0.5rem;
+  vertical-align: -0.2rem;
+  accent-color: var(--color-accent);
+}
+.md a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+.md code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: var(--color-line);
+  border-radius: 0.3rem;
+  padding: 0.1em 0.3em;
+}
+.md pre {
+  overflow-x: auto;
+  background: var(--color-line);
+  border-radius: 0.6rem;
+  padding: 0.7rem;
+}
+.md pre code {
+  background: none;
+  padding: 0;
+}
+.md blockquote {
+  border-left: 3px solid var(--color-line);
+  padding-left: 0.8rem;
+  color: var(--color-muted);
+}
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  margin: 1em 0;
+}
+.md table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.md th,
+.md td {
+  border: 1px solid var(--color-line);
+  padding: 0.3rem 0.6rem;
+}
+
+/* Navigation drawer: the panel slides in from the left while the scrim fades */
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: opacity 0.2s ease;
+}
+.drawer-enter-active .drawer-panel,
+.drawer-leave-active .drawer-panel {
+  transition: transform 0.2s ease;
+}
+.drawer-enter-from,
+.drawer-leave-to {
+  opacity: 0;
+}
+.drawer-enter-from .drawer-panel,
+.drawer-leave-to .drawer-panel {
+  transform: translateX(-100%);
+}
+
+/* The message bar slides up from the bottom edge */
+.snack-enter-active,
+.snack-leave-active {
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+.snack-enter-from,
+.snack-leave-to {
+  transform: translateY(120%);
+  opacity: 0;
+}
+
+/* The pressed tint of a row sits on top of its opaque background. A translucent background colour would let the
+   colour of the swipe action behind the row shine through while the finger is down. */
+.row-pressable:active {
+  --tint: color-mix(in srgb, var(--color-line) 40%, transparent);
+  background-image: linear-gradient(var(--tint), var(--tint));
+}

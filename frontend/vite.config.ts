@@ -21,6 +21,9 @@ function getAppVersion(): string {
 
 const appVersion = getAppVersion();
 
+// The colour themes and the title parser are shared with the mobile app and live outside this project (packages/)
+const sharedPackages = fileURLToPath(new URL('../packages', import.meta.url));
+
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
@@ -32,13 +35,15 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    fs: { allow: ['.', sharedPackages] },
     proxy: {
       '/api': `http://localhost:${process.env.JOTTER_PORT || '58271'}`,
     },
   },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@jotter/title-parser': fileURLToPath(new URL('../packages/title-parser/index.ts', import.meta.url)),
     }
   },
   test: {

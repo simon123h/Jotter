@@ -1,7 +1,7 @@
 # Jotter Vault Format, version 1
 
 This is the contract between everything that reads or writes Jotter data: the desktop backend (Python), the
-Android app (TypeScript), and any other tool or experiment. A **vault** is a folder of plain markdown files.
+Jotter Lite mobile app (TypeScript), and any other tool or experiment. A **vault** is a folder of plain markdown files.
 Anything that follows this document can open a vault that another implementation wrote, and edit it without
 destroying the other's data.
 
@@ -76,7 +76,7 @@ Body text
 | `due_date` | `YYYY-MM-DD` | none. A time part is dropped. Unquoted YAML dates are accepted. | when set |
 | `planned_date` | planning keyword or `YYYY-MM-DD` | none | when set |
 | `priority` | `low` `medium` `high` `urgent` | `none`. Case-insensitive. | when not `none` |
-| `color` | string, usually `#rrggbb` | none | when set |
+| `color` | string: a palette name | none | when set |
 | `postponed_until` | `YYYY-MM-DD` | none | when set |
 | `created_at` | ISO 8601 timestamp | the time the file was read | always |
 | `updated_at` | ISO 8601 timestamp | the time the file was read | always |
@@ -95,6 +95,9 @@ Further rules:
   with a space, a `planned_date`, `due_date` or `postponed_until` that is neither a keyword (planned only) nor a
   date, and a `position` that is not a number. See the `invalid-values-dropped` fixture. (A writer that finds
   such a value in a file it rewrites drops it as well, which is why the first four of these are not preserved.)
+- **Colour.** The apps write the name of a palette colour: `red`, `orange`, `yellow`, `green`, `blue`, `purple`
+  or `pink`. Readers MUST keep any other value as it is (for example `#rrggbb` written by another tool) and
+  SHOULD draw it when they can. See the `color-name` and `color-hex` fixtures.
 - **Attachments** are bare file names. The files live in `<project>/attachments/<task-id>/`. A name MUST NOT
   contain a path separator.
 - **Body.** Markdown, preserved exactly (apart from the leading blank lines above). Checklists
@@ -165,7 +168,7 @@ alone (rule 2) and MUST NOT fail because they exist.
 ## Open questions
 
 1. **Title of a file without a title.** The spec says `Untitled Task` (what the Python backend does). The
-   Android parser could take the first heading of the body instead, which is friendlier, but then both
+   mobile parser could take the first heading of the body instead, which is friendlier, but then both
    implementations and the fixture have to change together.
 2. **Whitespace.** Implementations write slightly different whitespace around the body. Fixtures compare parsed
    values, not bytes. A byte-exact canonical form is not defined.

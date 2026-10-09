@@ -1,0 +1,20 @@
+{
+  "name": "@jotter/vault-format",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Reads and writes the Jotter vault format (spec/FORMAT.md). Shared by the mobile apps.",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.0"
+  }
+}

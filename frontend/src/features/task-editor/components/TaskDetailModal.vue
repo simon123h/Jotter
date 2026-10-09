@@ -9,7 +9,7 @@ import { useFileDrop } from '@/composables/useFileDrop';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useProjectStore } from '@/stores/project';
 import { X } from '@lucide/vue';
-import { parseTitleState } from '@/utils/titleParser';
+import { parseTitleState } from '@jotter/title-parser';
 
 // Modular sub-components and composables
 import { useTaskEditor, provideTaskEditor } from '@/features/task-editor/composables/useTaskEditor';

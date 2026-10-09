@@ -11,26 +11,31 @@
     "docs:preview": "vitepress preview docs",
     "dev": "concurrently --kill-others-on-fail --names \"Backend,Frontend\" --prefix-colors \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "cd frontend && npm run build",
-    "build:apk": "cd frontend && npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "build:apk": "cd mobile && npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
     "build:package": "npm run build:frontend && rm -rf src/jotter/dist build && cp -r frontend/dist src/jotter/dist && pyproject-build",
     "build": "npm run build:package",
     "test:backend": "python3 -m pytest tests/",
     "test:frontend": "cd frontend && npm run test",
-    "test": "npm run test:backend && npm run test:frontend",
+    "test:mobile": "cd packages/vault-format && npm test && cd ../../mobile && npm test",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:mobile",
     "lint:backend": "ruff check .",
     "typecheck:backend": "mypy",
     "lint:backend:fix": "ruff check --fix .",
     "lint:frontend": "cd frontend && npm run lint",
     "lint:frontend:fix": "cd frontend && npm run lint:fix",
-    "lint": "npm run lint:backend && npm run lint:frontend",
-    "lint:fix": "npm run lint:backend:fix && npm run lint:frontend:fix",
+    "lint:mobile": "cd mobile && npm run lint",
+    "lint:mobile:fix": "cd mobile && npm run lint:fix",
+    "lint": "npm run lint:backend && npm run lint:frontend && npm run lint:mobile",
+    "lint:fix": "npm run lint:backend:fix && npm run lint:frontend:fix && npm run lint:mobile:fix",
     "format:backend": "ruff format .",
     "format:backend:check": "ruff format --check .",
     "format:frontend": "cd frontend && npm run format",
     "format:frontend:check": "cd frontend && npm run format:check",
-    "format": "npm run format:backend && npm run format:frontend",
-    "format:check": "npm run format:backend:check && npm run format:frontend:check",
-    "install:all": "npm install && cd frontend && npm install && cd .. && pip install -e .[dev]",
+    "format:mobile": "cd mobile && npm run format",
+    "format:mobile:check": "cd mobile && npm run format:check",
+    "format": "npm run format:backend && npm run format:frontend && npm run format:mobile",
+    "format:check": "npm run format:backend:check && npm run format:frontend:check && npm run format:mobile:check",
+    "install:all": "npm install && cd frontend && npm install && cd ../packages/vault-format && npm install && cd ../../mobile && npm install && cd .. && pip install -e .[dev]",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -47,6 +52,10 @@
     "frontend/src/**/*.{js,ts,vue,css}": [
       "npm --prefix frontend run format",
       "npm --prefix frontend run lint:fix"
+    ],
+    "mobile/src/**/*.{js,ts,vue,css}": [
+      "npm --prefix mobile run format",
+      "npm --prefix mobile run lint:fix"
     ]
   },
   "overrides": {

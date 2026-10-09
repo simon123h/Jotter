@@ -1,13 +1,10 @@
 import type { StorageAdapter } from './types';
 import { HttpStorageAdapter } from './httpAdapter';
-import { CapacitorFsStorageAdapter } from './capacitorFsAdapter';
 import { DemoStorageAdapter } from './demoAdapter';
-import { isDemoMode, isNativeMobile } from '@/platform';
+import { isDemoMode } from '@/platform';
 
 export function createStorageAdapter(): StorageAdapter {
-  if (isDemoMode) return new DemoStorageAdapter();
-  if (isNativeMobile) return new CapacitorFsStorageAdapter();
-  return new HttpStorageAdapter();
+  return isDemoMode ? new DemoStorageAdapter() : new HttpStorageAdapter();
 }
 
 let instance: StorageAdapter | null = null;

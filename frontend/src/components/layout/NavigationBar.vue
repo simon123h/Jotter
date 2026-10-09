@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getCapabilities } from '@/capabilities';
 import { ref } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import { useRoute } from 'vue-router';
@@ -74,8 +73,6 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
   showOverflowMenu.value = false;
   emit('export-tasks', format);
 };
-
-const capabilities = getCapabilities();
 </script>
 
 <template>
@@ -222,7 +219,6 @@ const capabilities = getCapabilities();
           <span class="hidden sm:inline">{{ t('views.review') || 'Review' }}</span>
         </router-link>
         <router-link
-          v-if="capabilities.canvas"
           :to="{ name: 'canvas', params: { projectId: activeProjectId }, query: $route.query }"
           class="hidden lg:flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded transition-all cursor-pointer"
           :class="
@@ -239,7 +235,6 @@ const capabilities = getCapabilities();
 
       <!-- Timeblock Sidebar Toggle Button -->
       <button
-        v-if="capabilities.timeblocks"
         @click="emit('toggle-timeblock-sidebar')"
         class="timeblock-toggle-btn hidden md:flex items-center p-1.5 rounded transition-all cursor-pointer shrink-0 border"
         :class="

@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useI18n } from '@/composables/useI18n';
-import { isDemoMode, isNativeMobile } from '@/platform';
+import { isDemoMode } from '@/platform';
 
 const { t } = useI18n();
 const { hideAddTaskButton, doneCleanPeriod, autoCommit } = storeToRefs(useSettingsStore());
@@ -27,7 +27,7 @@ const { hideAddTaskButton, doneCleanPeriod, autoCommit } = storeToRefs(useSettin
       </label>
 
       <label
-        v-if="!isNativeMobile && !isDemoMode"
+        v-if="!isDemoMode"
         class="flex items-start gap-3 p-4 bg-theme-card/60 border border-theme-border/60 rounded-xl cursor-pointer hover:bg-theme-column/30 transition-all select-none"
       >
         <input

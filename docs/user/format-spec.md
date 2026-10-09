@@ -2,7 +2,7 @@
 
 Jotter is built on the philosophy that plain Markdown files are the single source of truth. Every task is stored as an individual `.md` file inside its project's folder (`<vault>/<project>/<task id>.md`). You can open, read, edit, and backup these files using any standard text editor, markdown tool, or version control system.
 
-This page documents the schema and syntax Jotter uses to serialize and parse tasks. The normative definition, which all Jotter apps (desktop and Android) are tested against, lives in the repository at [`spec/FORMAT.md`](https://github.com/simon123h/Jotter/blob/main/spec/FORMAT.md).
+This page documents the schema and syntax Jotter uses to serialize and parse tasks. The normative definition, which all Jotter apps (desktop and mobile) are tested against, lives in the repository at [`spec/FORMAT.md`](https://github.com/simon123h/Jotter/blob/main/spec/FORMAT.md).
 
 ---
 
@@ -30,7 +30,7 @@ attachments:
 due_date: "2026-06-15"
 planned_date: thisWeek
 priority: high
-color: "#3b82f6"
+color: blue
 postponed_until: "2026-07-09"
 created_at: "2026-06-07T12:00:00Z"
 updated_at: "2026-06-07T14:30:00Z"
@@ -66,7 +66,7 @@ The YAML frontmatter block supports the following key-value pairs. All key names
 | `due_date` | String | No | The date the task is due, formatted in ISO standard date format `YYYY-MM-DD` (or `null` if none). |
 | `planned_date`| String | No | A relative scheduling marker used by the planning engine. Supported values: `today`, `tomorrow`, `thisWeek`, `nextWeek`, `thisMonth`, `nextMonth`, `thisYear`, `nextYear`, `someday`, `sometime`, or a `YYYY-MM-DD` date (hyphenated spellings such as `this-week` are read too). |
 | `priority` | String | No | The task's priority level. Supported values: `low`, `medium`, `high`, `urgent`, or `null`. |
-| `color` | String | No | A custom hex color code (e.g., `#ef4444`) to highlight the task card visually. |
+| `color` | String | No | The name of a palette color (`red`, `orange`, `yellow`, `green`, `blue`, `purple` or `pink`) that tints the task card. Other values, such as a hex code written by another tool, are kept as they are. |
 | `postponed_until` | String | No | The date until which the task is postponed, formatted in ISO standard date format `YYYY-MM-DD` (or `null` if none). |
 | `created_at` | String | No | ISO 8601 UTC timestamp of task creation (e.g., `2026-06-07T12:00:00Z`). |
 | `updated_at` | String | No | ISO 8601 UTC timestamp of the last modification. |

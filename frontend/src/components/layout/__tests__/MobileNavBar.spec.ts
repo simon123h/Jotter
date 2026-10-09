@@ -24,12 +24,6 @@ vi.mock('vue-router', () => ({
   }),
 }));
 
-vi.mock('@/utils/haptics', () => ({
-  triggerLightHaptic: vi.fn(),
-  triggerMediumHaptic: vi.fn(),
-  triggerSuccessHaptic: vi.fn(),
-}));
-
 let pinia: any;
 
 beforeAll(() => {

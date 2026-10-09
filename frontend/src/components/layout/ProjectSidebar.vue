@@ -24,7 +24,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { useModalStore } from '@/stores/modal';
 import { useProjectStore } from '@/stores/project';
 import { useVaultStore } from '@/stores/vault';
-import { getCapabilities } from '@/capabilities';
+import { isDemoMode } from '@/platform';
 import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
@@ -233,8 +233,6 @@ const onVaultSelected = async (event: Event) => {
     await vaultStore.selectVault(target.value);
   }
 };
-
-const capabilities = getCapabilities();
 </script>
 
 <template>
@@ -453,7 +451,7 @@ const capabilities = getCapabilities();
 
       <!-- Enable Git versioning for non-Git vaults -->
       <button
-        v-else-if="activeVault && capabilities.git"
+        v-else-if="activeVault && !isDemoMode"
         @click="emit('enable-git')"
         :disabled="!gitInstalled || syncLoading"
         :title="gitInstalled ? t('commit.enableTooltip') : t('commit.gitMissing')"

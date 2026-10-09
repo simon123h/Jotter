@@ -70,12 +70,7 @@ flowchart LR
         Store <--> Proxy[Storage Facade / api.ts]
         Proxy <--> Adapter{Runtime Platform?}
         Adapter -->|Desktop / Web| HttpAdapter[HttpStorageAdapter]
-        Adapter -->|Native Android| CapAdapter[CapacitorFsStorageAdapter]
-    end
-
-    subgraph NativeMobile [Android In-Process Engine]
-        CapAdapter <--> DexieDB[(Dexie.js IndexedDB Cache)]
-        CapAdapter <--> CapFS[(Capacitor Filesystem / Documents)]
+        Adapter -->|GitHub Pages demo| DemoAdapter[DemoStorageAdapter]
     end
 
     subgraph DesktopBackend [Desktop Backend Server - FastAPI / Python]
@@ -88,13 +83,15 @@ flowchart LR
     HttpAdapter <-->|REST API / CORS| Router
 ```
 
-### 5.1 Frontend (Vue 3 Single Page Application & Mobile App)
+### 5.1 Frontend (Vue 3 Single Page Application)
 
-- **Kanban UI Components**: Vue 3 Composition API components (`<script setup lang="ts">`) styled with Tailwind CSS, responsive mobile navigation bar, and haptic feedback.
+- **Kanban UI Components**: Vue 3 Composition API components (`<script setup lang="ts">`) styled with Tailwind CSS, and a responsive navigation bar for small screens.
 - **Pinia Stores**: Manages client-side settings, current project, active filters, and selection states.
 - **Storage Layer Abstraction (`StorageAdapter`)**:
   - `HttpStorageAdapter`: Handles communication with the FastAPI desktop backend.
-  - `CapacitorFsStorageAdapter`: In-process TypeScript storage engine for Android that reads/writes raw `.md` markdown files directly on Android documents storage while maintaining an IndexedDB cache via Dexie.js for millisecond search/filter queries.
+  - `DemoStorageAdapter`: Keeps everything in the browser's `localStorage` for the static demo on GitHub Pages.
+
+The Android app is a separate project, **Jotter Lite** (`mobile/`, [ADR 0017](./adr/0017-jotter-lite-mobile-app.md)). It has no backend: it reads and writes the same vault files through the shared `packages/vault-format` parser and keeps an IndexedDB cache.
 
 ### 5.2 Backend (FastAPI Python Application)
 
@@ -286,6 +283,7 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0014: A Periodic Scan Instead of a Filesystem Watcher](./adr/0014-periodic-scan-instead-of-watcher.md)
 - [ADR 0015: The SQLite Index Is a Disposable Cache, Kept Valid by File Stats](./adr/0015-index-as-disposable-cache.md)
 - [ADR 0016: Rewrite the Backend from Go to Python](./adr/0016-rewrite-backend-from-go-to-python.md)
+- [ADR 0017: Jotter Lite, a Separate Mobile App with a Core Feature Set](./adr/0017-jotter-lite-mobile-app.md)
 
 
 

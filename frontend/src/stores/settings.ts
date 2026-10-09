@@ -3,21 +3,6 @@ import { defineStore } from 'pinia';
 import { useDebounceFn } from '@vueuse/core';
 import { getSettings, saveSettings } from '@/api';
 import type { AppSettings } from '@/types';
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { isNativeMobile } from '@/platform';
-import { StoragePermission } from '@/storage/storagePermission';
-import { persistentStorage } from '@/storage/preferencesStorage';
-
-const THEME_STATUS_BAR_MAP: Record<string, { bg: string; style: Style }> = {
-  'nordic-light': { bg: '#ffffff', style: Style.Light },
-  'desert-light': { bg: '#fdfbf7', style: Style.Light },
-  'earth-light': { bg: '#f6f1e7', style: Style.Light },
-  midnight: { bg: '#1e293b', style: Style.Dark },
-  forest: { bg: '#064e3b', style: Style.Dark },
-  frost: { bg: '#1c2541', style: Style.Dark },
-  cyberpunk: { bg: '#18181b', style: Style.Dark },
-  sakura: { bg: '#4c0519', style: Style.Dark },
-};
 
 export type SortBy = 'alpha' | 'manual';
 
@@ -25,7 +10,7 @@ const TIMEBLOCK_SIDEBAR_STORAGE_KEY = 'jotter-timeblock-sidebar-open';
 const SIDEBAR_STORAGE_KEY = 'jotter-sidebar-open';
 
 const getStoredBool = (key: string, defaultVal: boolean): boolean => {
-  const val = persistentStorage.getItem(key);
+  const val = localStorage.getItem(key);
   if (val === null) return defaultVal;
   return val === 'true';
 };
@@ -78,8 +63,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
       const sidebarOpen = state.isTimeblockSidebarOpen ?? false;
       state.isTimeblockSidebarOpen = sidebarOpen;
-      persistentStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(sidebarOpen));
-      persistentStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
+      localStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(sidebarOpen));
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
 
       applyThemeToDocument(state.currentTheme);
 
@@ -121,22 +106,6 @@ export const useSettingsStore = defineStore('settings', () => {
     } catch {
       // Ignore errors in non-browser environments
     }
-
-    // Sync mobile Android status bar color and icon style
-    if (isNativeMobile) {
-      try {
-        const config = THEME_STATUS_BAR_MAP[theme] || THEME_STATUS_BAR_MAP['nordic-light'];
-        StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
-        StatusBar.setStyle({ style: config.style }).catch(() => {});
-        StatusBar.setBackgroundColor({ color: config.bg }).catch(() => {});
-        StoragePermission.setStatusBarColor({
-          color: config.bg,
-          darkIcons: config.style === Style.Light,
-        }).catch(() => {});
-      } catch {
-        // Ignore errors in non-native environments
-      }
-    }
   };
 
   watch(
@@ -160,8 +129,8 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(
     state,
     () => {
-      persistentStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(state.isTimeblockSidebarOpen));
-      persistentStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
+      localStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(state.isTimeblockSidebarOpen));
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
       debouncedSave();
     },
     { deep: true }
@@ -174,12 +143,12 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const toggleSidebar = () => {
     state.isSidebarOpen = !state.isSidebarOpen;
-    persistentStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
   };
 
   const toggleTimeblockSidebar = (forceState?: boolean) => {
     state.isTimeblockSidebarOpen = forceState !== undefined ? forceState : !state.isTimeblockSidebarOpen;
-    persistentStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(state.isTimeblockSidebarOpen));
+    localStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(state.isTimeblockSidebarOpen));
   };
 
   const setTheme = (theme: string) => {

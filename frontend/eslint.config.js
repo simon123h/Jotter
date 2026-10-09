@@ -7,7 +7,7 @@ import globals from 'globals';
 export default tseslint.config(
   // Global ignores
   {
-    ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'android/**', '.gradle/**'],
+    ignores: ['dist/**', 'coverage/**', 'node_modules/**', '.gradle/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
