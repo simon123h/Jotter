@@ -47,7 +47,7 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
       <button :class="iconButton" :aria-label="t('select.clear')" data-testid="clear-selection" @click="app.clearSelection()">
         <X class="h-6 w-6" />
       </button>
-      <h1 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-none" data-testid="selection-count">
+      <h1 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-7" data-testid="selection-count">
         {{ t('select.count', { count: app.selectedCount }) }}
       </h1>
       <button :class="iconButton" :aria-label="t('select.all')" data-testid="select-all" @click="selectAllHere">
@@ -59,7 +59,7 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
       <button :class="iconButton" :aria-label="t('nav.menu')" data-testid="open-menu" @click="ui.open({ type: 'drawer' })">
         <Menu class="h-6 w-6" />
       </button>
-      <h1 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-none" data-testid="app-bar-title">{{ title }}</h1>
+      <h1 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-7" data-testid="app-bar-title">{{ title }}</h1>
       <button :class="iconButton" :aria-label="t('common.search')" data-testid="open-search" @click="ui.searching = true">
         <Search class="h-6 w-6" />
         <span
