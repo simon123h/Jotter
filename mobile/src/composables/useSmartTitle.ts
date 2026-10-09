@@ -67,10 +67,24 @@ export function useSmartTitle(title: Ref<string>, buckets: () => Array<{ name: s
     };
   }
 
+  /**
+   * Backspace right after a recognised keyword takes back the recognition instead of deleting a letter, as on the
+   * desktop. It listens to `beforeinput`, which soft keyboards send reliably where `keydown` often says "Unidentified".
+   */
+  function onBeforeInput(event: InputEvent) {
+    const field = event.target as HTMLInputElement | HTMLTextAreaElement | null;
+    if (event.inputType !== 'deleteContentBackward' || !field || field.selectionStart !== field.selectionEnd) return;
+    const caret = field.selectionStart;
+    const match = getKeywordMatches(title.value, locale.value, names(), new Set(ignored.value)).find((m) => m.end === caret);
+    if (!match) return;
+    event.preventDefault();
+    ignore(match.keyword);
+  }
+
   const ignore = (keyword: string) => {
     if (!ignored.value.includes(keyword)) ignored.value = [...ignored.value, keyword];
   };
   const reset = () => (ignored.value = []);
 
-  return { hints, resolve, ignore, reset };
+  return { hints, resolve, ignore, reset, onBeforeInput };
 }

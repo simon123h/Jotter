@@ -212,6 +212,7 @@ async function removeAttachment(name: string) {
         class="field-sizing-content block w-full resize-none rounded-xl border border-line bg-surface px-3 py-3 text-lg font-medium leading-snug outline-none focus:border-accent"
         data-testid="task-title"
         @input="titleEdited = true"
+        @beforeinput="titleEdited && smart.onBeforeInput($event)"
         @change="commitTitle"
       ></textarea>
       <TitleHints v-if="titleEdited" :hints="smart.hints.value" class="-mt-2" @ignore="smart.ignore" />

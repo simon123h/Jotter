@@ -1505,6 +1505,28 @@ describe('smart title input', () => {
     expect(data).not.toContain('planned_date');
   });
 
+  it('takes back a recognised keyword with backspace right after it, instead of deleting a letter', async () => {
+    await start(desktopVault);
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'Call mom tomorrow');
+    expect(all('title-hint')).toHaveLength(1);
+
+    const field = find('quick-add-input').element as HTMLInputElement;
+    field.setSelectionRange(field.value.length, field.value.length);
+    const backspace = new InputEvent('beforeinput', { inputType: 'deleteContentBackward', cancelable: true, bubbles: true });
+    field.dispatchEvent(backspace);
+    await settle();
+
+    expect(backspace.defaultPrevented).toBe(true);
+    expect(field.value).toBe('Call mom tomorrow');
+    expect(all('title-hint')).toHaveLength(0);
+
+    // Now it is plain text: the next backspace deletes a letter as usual
+    const again = new InputEvent('beforeinput', { inputType: 'deleteContentBackward', cancelable: true, bubbles: true });
+    field.dispatchEvent(again);
+    expect(again.defaultPrevented).toBe(false);
+  });
+
   it('does not add a task that is nothing but keywords', async () => {
     await start(desktopVault);
     await find('fab').trigger('click');

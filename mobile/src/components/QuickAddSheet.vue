@@ -58,6 +58,8 @@ async function submit() {
 
 <template>
   <BottomSheet :title="t('task.new')" @close="ui.close()">
+    <!-- Above the field: the sheet grows upwards, so the field stays where the thumb is -->
+    <TitleHints :hints="smart.hints.value" class="pb-3" @ignore="smart.ignore" />
     <form class="flex gap-2 pb-2" @submit.prevent="submit">
       <input
         ref="input"
@@ -66,6 +68,7 @@ async function submit() {
         class="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 py-3 text-base outline-none focus:border-accent"
         enterkeyhint="done"
         data-testid="quick-add-input"
+        @beforeinput="smart.onBeforeInput"
       />
       <button
         type="submit"
@@ -76,7 +79,6 @@ async function submit() {
         {{ t('task.add') }}
       </button>
     </form>
-    <TitleHints :hints="smart.hints.value" class="pb-3" @ignore="smart.ignore" />
     <ul v-if="added.length" class="space-y-1 pb-2" data-testid="quick-add-added">
       <li v-for="(item, i) in added" :key="i" class="flex items-center gap-2 text-sm text-muted">
         <Check class="h-4 w-4 shrink-0 text-accent" /><span class="truncate">{{ item }}</span>
