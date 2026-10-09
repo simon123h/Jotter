@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Tag, Flag, FolderInput, EllipsisVertical } from '@lucide/vue';
+import { Tag, Flag, Clock, FolderInput, EllipsisVertical } from '@lucide/vue';
 import { t } from '@/i18n';
 import { useUiStore } from '@/stores/ui';
 
@@ -9,6 +9,7 @@ const ui = useUiStore();
 const actions = [
   { id: 'tag', icon: Tag, label: 'bulk.tag', sheet: 'bulk-tags' },
   { id: 'priority', icon: Flag, label: 'bulk.priority', sheet: 'bulk-priority' },
+  { id: 'planned', icon: Clock, label: 'bulk.setPlanned', sheet: 'bulk-planned' },
   { id: 'project', icon: FolderInput, label: 'bulk.project', sheet: 'bulk-project' },
   { id: 'more', icon: EllipsisVertical, label: 'bulk.more', sheet: 'bulk-more' },
 ] as const;

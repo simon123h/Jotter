@@ -10,6 +10,7 @@ import ColumnsSheet from '@/components/ColumnsSheet.vue';
 import VaultsSheet from '@/components/VaultsSheet.vue';
 import FilterSheet from '@/components/FilterSheet.vue';
 import MoveSheet from '@/components/MoveSheet.vue';
+import PlannedSheet from '@/components/PlannedSheet.vue';
 import PrioritySheet from '@/components/PrioritySheet.vue';
 import TagsSheet from '@/components/TagsSheet.vue';
 import ProjectPickerSheet from '@/components/ProjectPickerSheet.vue';
@@ -88,6 +89,7 @@ watch(
     <FilterSheet v-else-if="ui.sheet?.type === 'filter'" />
     <MoveSheet v-else-if="ui.sheet?.type === 'move'" :ids="ui.sheet.ids" />
     <PrioritySheet v-else-if="ui.sheet?.type === 'bulk-priority'" />
+    <PlannedSheet v-else-if="ui.sheet?.type === 'bulk-planned'" />
     <TagsSheet v-else-if="ui.sheet?.type === 'bulk-tags'" />
     <ProjectPickerSheet v-else-if="ui.sheet?.type === 'bulk-project'" />
     <BulkMoreSheet v-else-if="ui.sheet?.type === 'bulk-more'" />

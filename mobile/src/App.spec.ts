@@ -1015,7 +1015,7 @@ describe('selecting tasks', () => {
     await holdSelect('Write report');
     await settle();
     expect(find('fab').exists()).toBe(false);
-    expect(['bulk-tag', 'bulk-priority', 'bulk-project', 'bulk-more'].every((id) => find(id).exists())).toBe(true);
+    expect(['bulk-tag', 'bulk-priority', 'bulk-planned', 'bulk-project', 'bulk-more'].every((id) => find(id).exists())).toBe(true);
 
     await find('clear-selection').trigger('click');
     await settle();
@@ -1149,7 +1149,18 @@ describe('bulk actions on the selection', () => {
     expect(find('selection-count').exists()).toBe(false);
   });
 
-  it('offers more bulk actions: archive, due date, planned date, colour, delete', async () => {
+  it('sets the planned date of the selection from the toolbar', async () => {
+    await start(desktopVault);
+    await pick('Write report', 'Book flights');
+    await find('bulk-planned').trigger('click');
+    await settle();
+    await find('planned-thisWeek').trigger('click');
+    await settle();
+    expect(file('a')).toContain('planned_date: thisWeek');
+    expect(file('b')).toContain('planned_date: thisWeek');
+  });
+
+  it('offers more bulk actions: archive, due date, colour, delete', async () => {
     await start(desktopVault);
     await pick('Write report', 'Book flights');
 

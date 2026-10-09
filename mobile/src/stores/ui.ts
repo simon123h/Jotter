@@ -13,6 +13,7 @@ export type Sheet =
   | { type: 'move'; ids: string[] }
   | { type: 'bulk-tags' }
   | { type: 'bulk-priority' }
+  | { type: 'bulk-planned' }
   | { type: 'bulk-project' }
   | { type: 'bulk-more' };
 

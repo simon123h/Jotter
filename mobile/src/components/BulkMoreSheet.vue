@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Archive, CalendarDays, Check, Clock, Palette, Slash, Trash2 } from '@lucide/vue';
+import { Archive, CalendarDays, Check, Palette, Slash, Trash2 } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS } from '@/taskColors';
-import { PLANNED_CHOICES, plannedLabel } from '@/planned';
 
 const app = useAppStore();
 const ui = useUiStore();
 const actions = useTaskActions();
 
-type Section = 'due' | 'planned' | 'color';
+type Section = 'due' | 'color';
 const open = ref<Section | null>(null);
 const due = ref('');
 const row = 'flex h-14 w-full items-center gap-4 px-6 text-left text-base active:bg-line';
@@ -63,21 +62,6 @@ async function remove() {
         >
           {{ t('bulk.clearDate') }}
         </button>
-      </div>
-
-      <button :class="row" data-testid="more-planned" @click="toggle('planned')">
-        <Clock class="h-5 w-5 shrink-0 text-muted" />{{ t('bulk.setPlanned') }}
-      </button>
-      <div v-if="open === 'planned'" class="px-6 pb-3">
-        <select
-          :class="field"
-          data-testid="more-planned-select"
-          @change="finish(() => actions.setPlanned(ids(), ($event.target as HTMLSelectElement).value))"
-        >
-          <option value="" disabled selected>{{ t('bulk.setPlanned') }}</option>
-          <option value="">{{ t('planned.none') }}</option>
-          <option v-for="p in PLANNED_CHOICES" :key="p" :value="p">{{ plannedLabel(p) }}</option>
-        </select>
       </div>
 
       <button :class="row" data-testid="more-color" @click="toggle('color')">
