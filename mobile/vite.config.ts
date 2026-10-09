@@ -14,10 +14,17 @@ function appVersion(): string {
   }
 }
 
+const vaultFormat = fileURLToPath(new URL('../packages/vault-format', import.meta.url));
+
 export default defineConfig({
   base: './',
   define: { __APP_VERSION__: JSON.stringify(appVersion()) },
   plugins: [vue(), tailwindcss()],
+  server: {
+    // The shared parser lives outside this project. Builds and tests read it freely, but the dev server only
+    // serves files under the project root unless they are listed here.
+    fs: { allow: ['.', vaultFormat] },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
