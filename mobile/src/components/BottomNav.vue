@@ -25,7 +25,7 @@ function pick(id: View) {
     class="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-card transition-transform duration-200"
     :class="app.navVisible ? '' : 'translate-y-full'"
     style="padding-bottom: env(safe-area-inset-bottom)"
-    :inert="!app.navVisible"
+    :inert="app.navVisible ? undefined : true"
     :aria-label="t('nav.view')"
     data-testid="bottom-nav"
   >

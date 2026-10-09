@@ -1399,3 +1399,44 @@ describe('tag and planning views', () => {
     expect([...fs.files.entries()].find(([, f]) => f.data.includes('Call back'))![1].data).toContain('planned_date: tomorrow');
   });
 });
+
+describe('bottom navigation bar', () => {
+  const navHidden = () => find('bottom-nav').element.hasAttribute('inert');
+
+  it('switches the view and marks the current one', async () => {
+    await start(desktopVault);
+    expect(find('view-board').attributes('aria-current')).toBe('page');
+    await find('view-planning').trigger('click');
+    await settle();
+    expect(find('view-planning').attributes('aria-current')).toBe('page');
+    expect(find('view-board').attributes('aria-current')).toBeUndefined();
+  });
+
+  it('steps out of the way while tasks are selected', async () => {
+    await start(desktopVault);
+    expect(navHidden()).toBe(false);
+    await holdSelect('Write report');
+    expect(navHidden()).toBe(true);
+    await find('clear-selection').trigger('click');
+    await settle();
+    expect(navHidden()).toBe(false);
+  });
+
+  it('hides when a list is scrolled down and returns when it is scrolled up', async () => {
+    await start(desktopVault);
+    const list = find('column').element as HTMLElement;
+    const scrollTo = async (top: number) => {
+      list.scrollTop = top;
+      list.dispatchEvent(new Event('scroll'));
+      await settle();
+    };
+    await scrollTo(80);
+    expect(navHidden()).toBe(true);
+    await scrollTo(40);
+    expect(navHidden()).toBe(false);
+    await scrollTo(120);
+    expect(navHidden()).toBe(true);
+    await scrollTo(0);
+    expect(navHidden()).toBe(false);
+  });
+});
