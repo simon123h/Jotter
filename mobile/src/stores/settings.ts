@@ -2,6 +2,7 @@ import { ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { THEMES, DEFAULT_THEME, type ThemeId } from '@jotter/themes';
+import { capacitorKeyValue as preferences } from '@/data/keyValue';
 import { locale, systemLocale } from '@/i18n';
 
 /** One of the themes of the desktop app, or the one that matches the system's light or dark setting. */
@@ -21,9 +22,10 @@ const isTheme = (v: unknown): v is ThemeChoice => v === 'system' || THEMES.some(
 const toTheme = (v: unknown): ThemeChoice => (isTheme(v) ? v : (LEGACY[v as string] ?? 'system'));
 const isLanguage = (v: unknown): v is LanguageChoice => v === 'system' || v === 'en' || v === 'de';
 
-function load(): Stored {
+/** Reads the saved settings from the device's preferences (not web storage, which Android may clear). */
+async function load(): Promise<Stored> {
   try {
-    const parsed = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+    const parsed = JSON.parse((await preferences.get(KEY)) ?? '{}');
     return { theme: toTheme(parsed.theme), language: isLanguage(parsed.language) ? parsed.language : 'system' };
   } catch {
     return { theme: 'system', language: 'system' };
@@ -41,9 +43,19 @@ async function styleStatusBar(dark: boolean, color: string) {
 }
 
 export const useSettingsStore = defineStore('settings', () => {
-  const initial = load();
-  const theme = ref<ThemeChoice>(initial.theme);
-  const language = ref<LanguageChoice>(initial.language);
+  const theme = ref<ThemeChoice>('system');
+  const language = ref<LanguageChoice>('system');
+  /** The saved settings have been read. Until then nothing is written, or the defaults would replace them. */
+  let loaded = false;
+
+  /** Applies the saved settings. Call it once at start, before the first screen is shown. */
+  async function restore() {
+    const saved = await load();
+    theme.value = saved.theme;
+    language.value = saved.language;
+    loaded = true;
+    apply();
+  }
 
   const prefersDark = () => !!window.matchMedia?.('(prefers-color-scheme: dark)').matches;
 
@@ -65,14 +77,11 @@ export const useSettingsStore = defineStore('settings', () => {
     [theme, language],
     () => {
       apply();
-      try {
-        localStorage.setItem(KEY, JSON.stringify({ theme: theme.value, language: language.value }));
-      } catch {
-        // Not persisted; the choice lasts until the app is closed
-      }
+      // Not persisted when the preferences cannot be written; the choice lasts until the app is closed
+      if (loaded) void preferences.set(KEY, JSON.stringify({ theme: theme.value, language: language.value })).catch(() => undefined);
     },
     { immediate: true }
   );
 
-  return { theme, language };
+  return { theme, language, restore };
 });

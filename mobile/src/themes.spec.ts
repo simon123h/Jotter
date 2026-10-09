@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createPinia, setActivePinia } from 'pinia';
 import { describe, it, expect } from 'vitest';
 import { THEMES, DEFAULT_THEME } from '@jotter/themes';
+import { capacitorKeyValue } from '@/data/keyValue';
 import { useSettingsStore } from '@/stores/settings';
 
 // Read as text: the bundler would turn the stylesheets into something else
@@ -38,9 +39,11 @@ describe('shared themes', () => {
     );
   });
 
-  it('reads the earlier light and dark choices as themes', () => {
+  it('reads the earlier light and dark choices as themes', async () => {
     setActivePinia(createPinia());
-    localStorage.setItem('jotter_lite_settings', JSON.stringify({ theme: 'dark', language: 'en' }));
-    expect(useSettingsStore().theme).toBe('midnight');
+    await capacitorKeyValue.set('jotter_lite_settings', JSON.stringify({ theme: 'dark', language: 'en' }));
+    const settings = useSettingsStore();
+    await settings.restore();
+    expect(settings.theme).toBe('midnight');
   });
 });

@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import type { Task, Project, Bucket } from '@jotter/vault-format';
 import { getRepository, applyTaskFilter, type VaultRepository, type Vault, type NewTask, type TaskFilter } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
+import { capacitorKeyValue as preferences } from '@/data/keyValue';
 import { t } from '@/i18n';
 import { useUiStore } from '@/stores/ui';
 import { PLANNED_CHOICES, plannedKey, plannedLabel } from '@/planned';
@@ -26,9 +27,10 @@ export interface Column {
 const LAST_PROJECT_KEY = 'jotter_lite_last_project';
 const VIEW_KEY = 'jotter_lite_view';
 
-const recallView = (vaultId: string): View => {
+/** What the user last looked at is kept in the device's preferences (not in web storage, which Android may clear). */
+const recallView = async (vaultId: string): Promise<View> => {
   try {
-    const stored = localStorage.getItem(`${VIEW_KEY}:${vaultId}`);
+    const stored = await preferences.get(`${VIEW_KEY}:${vaultId}`);
     return VIEWS.find((v) => v === stored) ?? 'board';
   } catch {
     return 'board';
@@ -44,15 +46,12 @@ const byUrgency = (a: Task, b: Task) =>
   a.position - b.position;
 
 const remember = (vaultId: string, projectId: string | null) => {
-  try {
-    if (projectId) localStorage.setItem(`${LAST_PROJECT_KEY}:${vaultId}`, projectId);
-  } catch {
-    // Storage may be unavailable; the first project is opened next time
-  }
+  // Not remembered when the preferences cannot be written; the first project is opened next time
+  if (projectId) void preferences.set(`${LAST_PROJECT_KEY}:${vaultId}`, projectId).catch(() => undefined);
 };
-const recall = (vaultId: string) => {
+const recall = async (vaultId: string) => {
   try {
-    return localStorage.getItem(`${LAST_PROJECT_KEY}:${vaultId}`);
+    return await preferences.get(`${LAST_PROJECT_KEY}:${vaultId}`);
   } catch {
     return null;
   }
@@ -179,9 +178,9 @@ export const useAppStore = defineStore('app', () => {
       return;
     }
     projects.value = await r.listProjects();
-    const remembered = recall(opened.id);
+    const remembered = await recall(opened.id);
     projectId.value = projects.value.find((p) => p.id === remembered)?.id ?? projects.value[0]?.id ?? null;
-    view.value = recallView(opened.id);
+    view.value = await recallView(opened.id);
     await loadProject();
     status.value = 'ready';
   }
@@ -256,11 +255,8 @@ export const useAppStore = defineStore('app', () => {
   function setView(next: View) {
     view.value = next;
     selection.value = [];
-    try {
-      if (vault.value) localStorage.setItem(`${VIEW_KEY}:${vault.value.id}`, next);
-    } catch {
-      // Not remembered; the board opens next time
-    }
+    // Not remembered when the preferences cannot be written; the board opens next time
+    if (vault.value) void preferences.set(`${VIEW_KEY}:${vault.value.id}`, next).catch(() => undefined);
   }
 
   async function selectProject(id: string) {

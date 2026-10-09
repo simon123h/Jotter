@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import App from './App.vue';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
+import { capacitorKeyValue } from '@/data/keyValue';
 import { useSettingsStore } from '@/stores/settings';
 import { locale } from '@/i18n';
 import { autoRefresh } from '@/composables/useAutoRefresh';
@@ -492,6 +493,7 @@ describe('settings', () => {
   it('switches the language and the theme, and remembers both', async () => {
     await start(desktopVault);
     const settings = useSettingsStore();
+    await settings.restore(); // as at start: settings are read first, then saved on every change
     expect(find('open-search').attributes('aria-label')).toBe('Search');
 
     await openDrawer();
@@ -502,7 +504,8 @@ describe('settings', () => {
 
     expect(wrapper.text()).toContain('Einstellungen');
     expect(document.documentElement.classList.contains('theme-midnight')).toBe(true);
-    expect(JSON.parse(localStorage.getItem('jotter_lite_settings')!)).toEqual({ theme: 'midnight', language: 'de' });
+    await settle();
+    expect(JSON.parse((await capacitorKeyValue.get('jotter_lite_settings'))!)).toEqual({ theme: 'midnight', language: 'de' });
     expect(find('open-search').attributes('aria-label')).toBe('Suchen');
 
     // Another theme replaces it; the default theme has no class, and so does the system choice on a light device

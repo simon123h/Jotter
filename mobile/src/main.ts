@@ -6,8 +6,13 @@ import { useSettingsStore } from './stores/settings';
 import './style.css';
 
 const pinia = createPinia();
-// Theme and language first, so the first frame is already right
-useSettingsStore(pinia);
-// Start opening the vault right away; the app shows a loading state until it is ready
-void useAppStore(pinia).init();
-createApp(App).use(pinia).mount('#app');
+
+async function start() {
+  // Theme and language first, so the first frame is already right
+  await useSettingsStore(pinia).restore();
+  // Start opening the vault right away; the app shows a loading state until it is ready
+  void useAppStore(pinia).init();
+  createApp(App).use(pinia).mount('#app');
+}
+
+void start();
