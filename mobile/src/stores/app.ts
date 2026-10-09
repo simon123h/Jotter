@@ -260,6 +260,39 @@ export const useAppStore = defineStore('app', () => {
     return before;
   }
 
+  /** Adds a column at the end of the board. */
+  async function addColumn(title: string) {
+    await repository().createBucket(requireProject(), { title });
+    await loadProject();
+  }
+
+  /** Changes only the title: tasks refer to a column by its name, which stays. */
+  async function renameColumn(name: string, title: string) {
+    if (!title.trim()) return;
+    await repository().updateBucket(requireProject(), name, { title: title.trim() });
+    await loadProject();
+  }
+
+  /** Swaps a column with its neighbour. */
+  async function moveColumn(name: string, direction: -1 | 1) {
+    const list = buckets.value;
+    const i = list.findIndex((b) => b.name === name);
+    const other = list[i + direction];
+    if (i < 0 || !other) return;
+    const r = repository();
+    const project = requireProject();
+    await r.updateBucket(project, name, { position: other.position });
+    await r.updateBucket(project, other.name, { position: list[i]!.position });
+    await loadProject();
+  }
+
+  /** Refused while tasks are in the column, and for the default column, where new and reopened tasks go. */
+  async function removeColumn(name: string) {
+    if (buckets.value.find((b) => b.name === name)?.is_default) throw new Error('The default column cannot be deleted');
+    await repository().deleteBucket(requireProject(), name);
+    await loadProject();
+  }
+
   /** Puts tasks back where they were. */
   async function restoreMany(placements: Placement[]) {
     for (const p of placements) await repository().moveTask(requireProject(), p.id, p.bucket, p.position);
@@ -380,6 +413,10 @@ export const useAppStore = defineStore('app', () => {
     saveTask,
     moveTask,
     moveManyToBucket,
+    addColumn,
+    renameColumn,
+    moveColumn,
+    removeColumn,
     restoreMany,
     editMany,
     restoreFields,

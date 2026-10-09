@@ -405,6 +405,70 @@ describe('projects and vaults', () => {
   });
 });
 
+describe('managing columns', () => {
+  const openColumns = async () => {
+    await openDrawer();
+    await find('drawer-manage-columns').trigger('click');
+    await settle();
+  };
+  const tabs = () => all('bucket-tab').map((t) => t.text());
+
+  it('renames a column, and tasks stay in it', async () => {
+    await start(desktopVault);
+    await openColumns();
+    await find('column-rename').trigger('click');
+    await type('column-edit', 'Next up');
+    await find('column-edit').element.closest('form')!.dispatchEvent(new Event('submit'));
+    await settle();
+
+    expect(tabs()[0]).toContain('Next up');
+    expect(fs.files.get('Jotter/work/index.md')?.data).toContain('Next up');
+    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('status: todo');
+  });
+
+  it('reorders the columns', async () => {
+    await start(desktopVault);
+    await openColumns();
+    await all('column-down')[0]!.trigger('click');
+    await settle();
+
+    expect(tabs()[0]).toContain('Done');
+    expect(tabs()[1]).toContain('To Do');
+    const manifest = fs.files.get('Jotter/work/index.md')?.data ?? '';
+    expect(manifest.indexOf('name: done')).toBeLessThan(manifest.indexOf('name: todo'));
+  });
+
+  it('adds a column at the end', async () => {
+    await start(desktopVault);
+    await openColumns();
+    await type('new-column-input', 'Waiting');
+    await submit('new-column-submit');
+    await settle();
+
+    expect(tabs()).toHaveLength(3);
+    expect(tabs()[2]).toContain('Waiting');
+  });
+
+  it('refuses to delete a column that still has tasks, and deletes an empty one', async () => {
+    await start(desktopVault);
+    await openColumns();
+    await type('new-column-input', 'Waiting');
+    await submit('new-column-submit');
+    await settle();
+
+    // Done holds a task
+    expect(all('column-delete')).toHaveLength(3);
+    await all('column-delete')[1]!.trigger('click');
+    await settle();
+    expect(tabs()).toHaveLength(3);
+    expect(find('toast').exists()).toBe(true);
+
+    await all('column-delete')[2]!.trigger('click');
+    await settle();
+    expect(tabs()).toHaveLength(2);
+  });
+});
+
 describe('settings', () => {
   it('switches the language and the theme, and remembers both', async () => {
     await start(desktopVault);
