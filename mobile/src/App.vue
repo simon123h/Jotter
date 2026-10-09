@@ -21,6 +21,7 @@ import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useAutoRefresh } from '@/composables/useAutoRefresh';
+import { runShortcut } from '@/shortcuts';
 
 const app = useAppStore();
 const ui = useUiStore();
@@ -44,6 +45,10 @@ onMounted(async () => {
         if (isActive) void scanNow();
       })
     );
+    // Launcher shortcuts: a link while the app runs, or the one that started it
+    listeners.push(await CapApp.addListener('appUrlOpen', ({ url }) => void runShortcut(url)));
+    const launch = await CapApp.getLaunchUrl();
+    if (launch?.url) void runShortcut(launch.url);
   } catch {
     // Not running inside Capacitor (browser, tests)
   }

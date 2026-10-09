@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="shortcut_new_task">Neue Aufgabe</string>
+    <string name="shortcut_new_task_long">Neue Aufgabe anlegen</string>
+    <string name="shortcut_search">Suchen</string>
+    <string name="shortcut_search_long">Aufgaben suchen</string>
+    <string name="shortcut_planning">Planung</string>
+    <string name="shortcut_planning_long">Planungsansicht öffnen</string>
+</resources>

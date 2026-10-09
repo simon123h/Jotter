@@ -4,4 +4,10 @@
     <string name="title_activity_main">Jotter Lite</string>
     <string name="package_name">io.github.simon123h.jotter_lite</string>
     <string name="custom_url_scheme">io.github.simon123h.jotter_lite</string>
+    <string name="shortcut_new_task">New task</string>
+    <string name="shortcut_new_task_long">Add a new task</string>
+    <string name="shortcut_search">Search</string>
+    <string name="shortcut_search_long">Search tasks</string>
+    <string name="shortcut_planning">Planning</string>
+    <string name="shortcut_planning_long">Open the planning view</string>
 </resources>

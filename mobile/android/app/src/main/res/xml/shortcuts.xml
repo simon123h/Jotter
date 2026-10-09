@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the launcher icon: the links are handled by src/shortcuts.ts -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="new_task"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutShortLabel="@string/shortcut_new_task"
+        android:shortcutLongLabel="@string/shortcut_new_task_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="jotterlite://new-task"
+            android:targetPackage="io.github.simon123h.jotter_lite"
+            android:targetClass="io.github.simon123h.jotter_lite.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="search"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_search"
+        android:shortcutShortLabel="@string/shortcut_search"
+        android:shortcutLongLabel="@string/shortcut_search_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="jotterlite://search"
+            android:targetPackage="io.github.simon123h.jotter_lite"
+            android:targetClass="io.github.simon123h.jotter_lite.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="planning"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_planning"
+        android:shortcutShortLabel="@string/shortcut_planning"
+        android:shortcutLongLabel="@string/shortcut_planning_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="jotterlite://planning"
+            android:targetPackage="io.github.simon123h.jotter_lite"
+            android:targetClass="io.github.simon123h.jotter_lite.MainActivity" />
+    </shortcut>
+</shortcuts>

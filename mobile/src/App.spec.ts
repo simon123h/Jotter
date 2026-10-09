@@ -5,6 +5,7 @@ import App from './App.vue';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { capacitorKeyValue } from '@/data/keyValue';
+import { runShortcut, shortcutAction } from '@/shortcuts';
 import { useSettingsStore } from '@/stores/settings';
 import { locale } from '@/i18n';
 import { autoRefresh } from '@/composables/useAutoRefresh';
@@ -1551,5 +1552,50 @@ describe('smart title input', () => {
     expect(data).toContain('planned_date: today');
     expect(data).toContain('urgent-ish');
     expect(all('title-hint')).toHaveLength(0);
+  });
+});
+
+describe('launcher shortcuts', () => {
+  it('knows its links', () => {
+    expect(shortcutAction('jotterlite://new-task')).toBe('new-task');
+    expect(shortcutAction('jotterlite://search/')).toBe('search');
+    expect(shortcutAction('jotterlite://planning?x=1')).toBe('planning');
+    expect(shortcutAction('jotterlite://other')).toBeNull();
+    expect(shortcutAction('https://example.com/new-task')).toBeNull();
+  });
+
+  it('opens quick add, the search and the planning view', async () => {
+    await start(desktopVault);
+    await runShortcut('jotterlite://new-task');
+    await settle();
+    expect(find('quick-add-input').exists()).toBe(true);
+
+    await runShortcut('jotterlite://search');
+    await settle();
+    expect(find('search-input').exists()).toBe(true);
+    expect(find('quick-add-input').exists()).toBe(false);
+
+    await runShortcut('jotterlite://planning');
+    await settle();
+    expect(find('view-planning').attributes('aria-current')).toBe('page');
+  });
+
+  it('waits for the vault when it starts the app, and ignores other links', async () => {
+    await start(desktopVault);
+    useAppStore().status = 'loading';
+    const done = runShortcut('jotterlite://new-task');
+    await settle();
+    expect(find('quick-add-input').exists()).toBe(false);
+
+    useAppStore().status = 'ready';
+    await done;
+    await settle();
+    expect(find('quick-add-input').exists()).toBe(true);
+
+    useUiStore().close();
+    await settle();
+    await runShortcut('https://example.com');
+    await settle();
+    expect(find('quick-add-input').exists()).toBe(false);
   });
 });
