@@ -9,7 +9,10 @@ const app = useAppStore();
 const ui = useUiStore();
 
 const input = ref<HTMLInputElement | null>(null);
-const title = computed(() => app.project?.title ?? t('app.name'));
+const title = computed(() => {
+  const name = app.project?.title ?? t('app.name');
+  return app.project && app.view !== 'board' ? `${name} · ${t(`view.${app.view}`)}` : name;
+});
 const hasExtraFilters = computed(() => !!(app.filter.priority || app.filter.tag));
 
 // The search field takes the place of the title; focus it as soon as it is there

@@ -33,6 +33,8 @@ const drag = useCardDrag({
   },
   onHoldRelease: (task) => app.toggleSelected(task.id),
   onError: (err) => ui.showToast(err instanceof Error ? err.message : String(err)),
+  // The order of tasks belongs to the board's columns
+  canReorder: () => app.view === 'board',
 });
 
 /**
@@ -46,6 +48,15 @@ const dropIndex = (key: string) => (drag.target.value?.columnKey === key ? drag.
 /** The tasks a swipe on `task` acts on: all selected ones when it is one of several, otherwise just itself. */
 const targets = (task: Task) => (app.isSelected(task.id) && app.selectedCount > 1 ? [...app.selection] : [task.id]);
 const bulkCount = (task: Task) => (app.isSelected(task.id) ? app.selectedCount : 0);
+
+/** Where a swipe to the left leads: the column picker on the board, the planned dates or the tags in the other views. */
+const leftAction = computed(() => (app.view === 'planning' ? 'planned' : app.view === 'tags' ? 'tags' : 'move'));
+function onSwipeLeft(task: Task) {
+  const ids = targets(task);
+  if (leftAction.value === 'planned') ui.open({ type: 'bulk-planned', ids });
+  else if (leftAction.value === 'tags') ui.open({ type: 'bulk-tags', ids });
+  else ui.open({ type: 'move', ids });
+}
 
 /** A tap opens a task, or ticks it while others are selected. */
 function onTap(task: Task) {
@@ -68,9 +79,9 @@ function goTo(index: number) {
   if (el) el.scrollTo({ left: index * el.clientWidth, behavior: 'smooth' });
 }
 
-// A different project starts at its first bucket
+// A different project or view starts at its first tab
 watch(
-  () => app.projectId,
+  () => [app.projectId, app.view],
   async () => {
     active.value = 0;
     ui.columnProgress = 0;
@@ -152,7 +163,8 @@ watch(
                   @tap="onTap(task)"
                   @done="actions.markDone(targets(task))"
                   @reopen="actions.reopen(targets(task))"
-                  @move="ui.open({ type: 'move', ids: targets(task) })"
+                  :left-action="leftAction"
+                  @move="onSwipeLeft(task)"
                 />
               </li>
             </template>

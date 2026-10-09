@@ -5,8 +5,10 @@ import BottomSheet from './BottomSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
+import type { Column } from '@/stores/app';
 
-const props = defineProps<{ bucket: string | null }>();
+/** The tab in view: a new task is filed where the user is looking (its column, tag or planned date). */
+const props = defineProps<{ column: Column | null }>();
 const app = useAppStore();
 const ui = useUiStore();
 
@@ -23,7 +25,13 @@ async function submit() {
   if (!clean || busy.value) return;
   busy.value = true;
   try {
-    await app.addTask({ title: clean, bucket: props.bucket ?? undefined });
+    const column = props.column;
+    await app.addTask({
+      title: clean,
+      bucket: column?.bucket ?? undefined,
+      tags: app.view === 'tags' && column?.value ? [column.value] : undefined,
+      planned_date: app.view === 'planning' && column?.value ? column.value : undefined,
+    });
     title.value = '';
     added.value.unshift(clean);
     // Stay open for the next one: quick capture is the point of this sheet

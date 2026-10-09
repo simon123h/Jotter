@@ -18,6 +18,8 @@ export interface DragDeps {
   /** The row was held and let go without moving it. */
   onHoldRelease: (task: Task) => void;
   onError: (err: unknown) => void;
+  /** Whether a held row can be dragged to a new place. Without it the hold only ends in `onHoldRelease`. */
+  canReorder?: () => boolean;
 }
 
 /**
@@ -116,7 +118,7 @@ export function useCardDrag(deps: DragDeps) {
       ghost.value = { ...ghost.value, x: pointer.x, y: pointer.y };
       updateTarget();
     } else if (holding.value) {
-      if (moved > DRAG_SLOP) startDrag();
+      if (moved > DRAG_SLOP && (deps.canReorder?.() ?? true)) startDrag();
     } else if (moved > MOVE_TOLERANCE) {
       // Moved before the hold finished: the user is scrolling or swiping, not holding
       cleanup();

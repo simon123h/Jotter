@@ -7,13 +7,14 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
 
+const props = defineProps<{ ids: string[] }>();
 const app = useAppStore();
 const ui = useUiStore();
 const actions = useTaskActions();
 
 const text = ref('');
 
-const selectedTasks = computed(() => app.selection.map((id) => app.taskById(id)).filter((task) => !!task));
+const selectedTasks = computed(() => props.ids.map((id) => app.taskById(id)).filter((task) => !!task));
 /** The tags on the selected tasks, with how many of them carry each. */
 const onTasks = computed(() => {
   const counts = new Map<string, number>();
@@ -36,13 +37,13 @@ const parse = (value: string) => [
 
 async function add(tags: string[]) {
   if (!tags.length) return;
-  await actions.addTags([...app.selection], tags);
+  await actions.addTags(props.ids, tags);
   text.value = '';
 }
 </script>
 
 <template>
-  <BottomSheet :title="`${t('bulk.tag')} · ${app.selectedCount}`" @close="ui.close()">
+  <BottomSheet :title="`${t('bulk.tag')} · ${props.ids.length}`" @close="ui.close()">
     <form class="flex gap-2 pb-3" @submit.prevent="add(parse(text))">
       <input
         v-model="text"
@@ -70,7 +71,7 @@ async function add(tags: string[]) {
             class="flex h-6 w-6 items-center justify-center rounded-full text-muted active:bg-black/10"
             :aria-label="t('bulk.removeTag')"
             :data-testid="`tag-remove-${tag}`"
-            @click="actions.removeTag([...app.selection], tag)"
+            @click="actions.removeTag(props.ids, tag)"
           >
             <X class="h-3.5 w-3.5" />
           </button>

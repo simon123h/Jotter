@@ -8,24 +8,25 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
 
+const props = defineProps<{ ids: string[] }>();
 const app = useAppStore();
 const ui = useUiStore();
 const actions = useTaskActions();
 
 /** The planned date every selected task has, when they agree. */
 const shared = computed(() => {
-  const values = new Set(app.selection.map((id) => app.taskById(id)?.planned_date ?? ''));
+  const values = new Set(props.ids.map((id) => app.taskById(id)?.planned_date ?? ''));
   return values.size === 1 ? [...values][0] : null;
 });
 
 async function pick(planned: string) {
   ui.close();
-  await actions.setPlanned([...app.selection], planned);
+  await actions.setPlanned(props.ids, planned);
 }
 </script>
 
 <template>
-  <BottomSheet :title="`${t('bulk.setPlanned')} · ${app.selectedCount}`" @close="ui.close()">
+  <BottomSheet :title="`${t('bulk.setPlanned')} · ${props.ids.length}`" @close="ui.close()">
     <ul class="-mx-4 pb-2" data-testid="planned-list">
       <li v-for="choice in ['', ...PLANNED_CHOICES]" :key="choice">
         <button

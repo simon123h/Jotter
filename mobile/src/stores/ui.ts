@@ -11,9 +11,9 @@ export type Sheet =
   | { type: 'settings' }
   | { type: 'drawer' }
   | { type: 'move'; ids: string[] }
-  | { type: 'bulk-tags' }
+  | { type: 'bulk-tags'; ids?: string[] }
   | { type: 'bulk-priority' }
-  | { type: 'bulk-planned' }
+  | { type: 'bulk-planned'; ids?: string[] }
   | { type: 'bulk-project' }
   | { type: 'bulk-more' };
 

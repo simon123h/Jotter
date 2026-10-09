@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ArrowRightLeft, CalendarDays, Check, Clock, Hourglass, Paperclip, RotateCcw } from '@lucide/vue';
+import { ArrowRightLeft, CalendarDays, Check, Clock, Hourglass, Paperclip, RotateCcw, Tag } from '@lucide/vue';
 import type { Task } from '@jotter/vault-format';
 import { t, type MessageKey } from '@/i18n';
 import { dueInfo } from '@/dates';
@@ -17,6 +17,8 @@ const props = defineProps<{
   lifted?: boolean;
   /** How many tasks a swipe on this row acts on, when it is one of several selected. */
   bulkCount?: number;
+  /** What a swipe to the left offers: another column (board), a planned date or tags. */
+  leftAction?: 'move' | 'planned' | 'tags';
   /** A plain copy without gestures, for the card that floats under the finger while dragging. */
   inert?: boolean;
 }>();
@@ -35,6 +37,11 @@ const archived = computed(() => props.task.bucket === 'archive');
 const rightAction = computed<'done' | 'reopen'>(() => (done.value ? 'reopen' : 'done'));
 
 const ui = useUiStore();
+
+const leftLabel = computed<MessageKey>(() =>
+  props.leftAction === 'planned' ? 'swipe.planned' : props.leftAction === 'tags' ? 'swipe.tags' : 'swipe.move'
+);
+const leftIcon = computed(() => (props.leftAction === 'planned' ? Clock : props.leftAction === 'tags' ? Tag : ArrowRightLeft));
 
 const swipe = useRowSwipe({
   allowed: () => true,
@@ -92,9 +99,9 @@ const hasMeta = computed(
       data-testid="swipe-left-bg"
     >
       <span :class="swipe.armed.value ? 'opacity-100' : 'opacity-70'"
-        >{{ t('swipe.move') }}<template v-if="bulkCount && bulkCount > 1"> · {{ bulkCount }}</template></span
+        >{{ t(leftLabel) }}<template v-if="bulkCount && bulkCount > 1"> · {{ bulkCount }}</template></span
       >
-      <ArrowRightLeft class="h-6 w-6" />
+      <component :is="leftIcon" class="h-6 w-6" />
     </div>
 
     <div

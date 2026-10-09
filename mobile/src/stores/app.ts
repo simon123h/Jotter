@@ -3,18 +3,44 @@ import { defineStore } from 'pinia';
 import type { Task, Project, Bucket } from '@jotter/vault-format';
 import { getRepository, applyTaskFilter, type VaultRepository, type Vault, type NewTask, type TaskFilter } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
+import { t } from '@/i18n';
+import { PLANNED_CHOICES, plannedKey, plannedLabel } from '@/planned';
 
 export type Status = 'loading' | 'onboarding' | 'ready' | 'error';
+
+/** How the tabs group the tasks: by column of the board, by tag, or by planned date. */
+export type View = 'board' | 'tags' | 'planning';
+const VIEWS: View[] = ['board', 'tags', 'planning'];
 
 export interface Column {
   key: string;
   title: string;
-  /** The bucket name, or null for tasks whose bucket the project does not define. */
+  /** The bucket name, or null for tasks whose bucket the project does not define (and in the other views). */
   bucket: string | null;
+  /** The tag or the planned date the tab stands for ('' for Untagged and Unplanned). */
+  value?: string;
   tasks: Task[];
 }
 
 const LAST_PROJECT_KEY = 'jotter_lite_last_project';
+const VIEW_KEY = 'jotter_lite_view';
+
+const recallView = (vaultId: string): View => {
+  try {
+    const stored = localStorage.getItem(`${VIEW_KEY}:${vaultId}`);
+    return VIEWS.find((v) => v === stored) ?? 'board';
+  } catch {
+    return 'board';
+  }
+};
+
+const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+
+/** The order in the tag and planning tabs: priority first, then the nearest due date, then the board position. */
+const byUrgency = (a: Task, b: Task) =>
+  (PRIORITY_RANK[a.priority ?? ''] ?? 4) - (PRIORITY_RANK[b.priority ?? ''] ?? 4) ||
+  (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999') ||
+  a.position - b.position;
 
 const remember = (vaultId: string, projectId: string | null) => {
   try {
@@ -42,6 +68,7 @@ export const useAppStore = defineStore('app', () => {
   const vaults = ref<Vault[]>([]);
   const projects = ref<Project[]>([]);
   const projectId = ref<string | null>(null);
+  const view = ref<View>('board');
   const buckets = ref<Bucket[]>([]);
   const allTasks = ref<Task[]>([]);
   const filter = ref<{ search: string; priority: string; tag: string }>({ search: '', priority: '', tag: '' });
@@ -60,19 +87,65 @@ export const useAppStore = defineStore('app', () => {
   const visibleTasks = computed(() => applyTaskFilter(allTasks.value, taskFilter.value));
   const allTags = computed(() => [...new Set(allTasks.value.flatMap((t) => t.tags))].sort());
 
+  /** Tasks the tag and planning views list: the ones still to do. Done and archived tasks stay on the board. */
+  const openTasks = computed(() =>
+    visibleTasks.value.filter((task) => task.bucket !== 'done' && task.bucket !== 'archive').sort(byUrgency)
+  );
+
   /** One column per bucket, plus one for tasks that name a bucket the project does not have. */
-  const columns = computed<Column[]>(() => {
+  const boardColumns = computed<Column[]>(() => {
     const known = new Set(buckets.value.map((b) => b.name));
     const cols: Column[] = buckets.value.map((b) => ({
       key: b.name,
       title: b.title,
       bucket: b.name,
-      tasks: visibleTasks.value.filter((t) => t.bucket === b.name),
+      tasks: visibleTasks.value.filter((task) => task.bucket === b.name),
     }));
-    const orphans = visibleTasks.value.filter((t) => !known.has(t.bucket));
+    const orphans = visibleTasks.value.filter((task) => !known.has(task.bucket));
     if (orphans.length) cols.push({ key: '__other', title: '', bucket: null, tasks: orphans });
     return cols;
   });
+
+  /** One column per tag (a task with two tags is in both), then the tasks without tags. */
+  const tagColumns = computed<Column[]>(() => {
+    const tags = [...new Set(openTasks.value.flatMap((task) => task.tags))].sort();
+    return [
+      ...tags.map((tag) => ({
+        key: `tag:${tag}`,
+        title: `#${tag}`,
+        bucket: null,
+        value: tag,
+        tasks: openTasks.value.filter((task) => task.tags.includes(tag)),
+      })),
+      { key: 'tag:', title: t('tags.untagged'), bucket: null, value: '', tasks: openTasks.value.filter((task) => !task.tags.length) },
+    ];
+  });
+
+  /** One column per planned date the menu offers, the dates tasks carry besides those, then the unplanned tasks. */
+  const planningColumns = computed<Column[]>(() => {
+    const used = [...new Set(openTasks.value.map((task) => plannedKey(task.planned_date)).filter(Boolean))];
+    const extra = used.filter((key) => !(PLANNED_CHOICES as readonly string[]).includes(key)).sort();
+    return [
+      ...[...PLANNED_CHOICES, ...extra].map((key) => ({
+        key: `planned:${key}`,
+        title: plannedLabel(key),
+        bucket: null,
+        value: key,
+        tasks: openTasks.value.filter((task) => plannedKey(task.planned_date) === key),
+      })),
+      {
+        key: 'planned:',
+        title: t('planned.none'),
+        bucket: null,
+        value: '',
+        tasks: openTasks.value.filter((task) => !task.planned_date?.trim()),
+      },
+    ];
+  });
+
+  const columns = computed<Column[]>(() =>
+    view.value === 'tags' ? tagColumns.value : view.value === 'planning' ? planningColumns.value : boardColumns.value
+  );
 
   function repository(): VaultRepository {
     if (!repo.value) throw new Error('Not initialised');
@@ -103,6 +176,7 @@ export const useAppStore = defineStore('app', () => {
     projects.value = await r.listProjects();
     const remembered = recall(opened.id);
     projectId.value = projects.value.find((p) => p.id === remembered)?.id ?? projects.value[0]?.id ?? null;
+    view.value = recallView(opened.id);
     await loadProject();
     status.value = 'ready';
   }
@@ -173,6 +247,16 @@ export const useAppStore = defineStore('app', () => {
   }
 
   // ---------- projects ----------
+
+  function setView(next: View) {
+    view.value = next;
+    selection.value = [];
+    try {
+      if (vault.value) localStorage.setItem(`${VIEW_KEY}:${vault.value.id}`, next);
+    } catch {
+      // Not remembered; the board opens next time
+    }
+  }
 
   async function selectProject(id: string) {
     projectId.value = id;
@@ -391,6 +475,8 @@ export const useAppStore = defineStore('app', () => {
     vaults,
     projects,
     projectId,
+    view,
+    setView,
     project,
     buckets,
     allTasks,

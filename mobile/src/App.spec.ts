@@ -1275,3 +1275,128 @@ describe('automatic rescan', () => {
     expect(titles().join()).toContain('Added in the background');
   });
 });
+
+describe('tag and planning views', () => {
+  const viewsVault = (f: MemoryFs) => {
+    f.put('Jotter/work/index.md', '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: done\n    title: Done\n---\n');
+    f.put('Jotter/work/a.md', '---\ntitle: Write report\nstatus: todo\nposition: 1000\ntags: [office, travel]\nplanned_date: today\n---\n');
+    f.put('Jotter/work/b.md', '---\ntitle: Book flights\nstatus: todo\nposition: 2000\ntags: [office]\nplanned_date: this-week\n---\n');
+    f.put('Jotter/work/c.md', '---\ntitle: Ship release\nstatus: done\nposition: 1000\ntags: [office]\nplanned_date: today\n---\n');
+    f.put('Jotter/work/d.md', '---\ntitle: Loose end\nstatus: todo\nposition: 3000\n---\n');
+  };
+  const tabs = () => all('bucket-tab').map((t) => t.text());
+  const switchTo = async (view: 'board' | 'tags' | 'planning') => {
+    await openDrawer();
+    await find(`view-${view}`).trigger('click');
+    await settle();
+  };
+  const column = (index: number) => all('column')[index]!.text();
+
+  it('groups the open tasks by tag, a task with two tags in both, and leaves done ones out', async () => {
+    await start(viewsVault);
+    await switchTo('tags');
+
+    expect(find('app-bar-title').text()).toBe('Work · Tags');
+    expect(tabs().map((t) => t.replace(/\d+$/, '').trim())).toEqual(['#office', '#travel', 'Untagged']);
+    expect(column(0)).toContain('Write report');
+    expect(column(0)).toContain('Book flights');
+    expect(column(0)).not.toContain('Ship release');
+    expect(column(1)).toContain('Write report');
+    expect(column(2)).toContain('Loose end');
+  });
+
+  it('groups the open tasks by planned date, whatever the spelling in the file', async () => {
+    await start(viewsVault);
+    await switchTo('planning');
+
+    expect(tabs().map((t) => t.replace(/\d+$/, '').trim())).toEqual([
+      'Today',
+      'Tomorrow',
+      'This week',
+      'This month',
+      'This year',
+      'Sometime maybe',
+      'Not planned',
+    ]);
+    expect(column(0)).toContain('Write report');
+    expect(column(0)).not.toContain('Ship release');
+    expect(column(2)).toContain('Book flights');
+    expect(column(6)).toContain('Loose end');
+  });
+
+  it('remembers the view and goes back to the board', async () => {
+    await start(viewsVault);
+    await switchTo('tags');
+    expect(useAppStore().view).toBe('tags');
+    await switchTo('board');
+    expect(tabs().map((t) => t.replace(/\d+$/, '').trim())).toEqual(['To Do', 'Done']);
+  });
+
+  it('swipes left to set the planned date in the planning view', async () => {
+    await start(viewsVault);
+    await switchTo('planning');
+    await swipe('Loose end', -150);
+    await settle();
+
+    await find('planned-tomorrow').trigger('click');
+    await settle();
+    expect(file('d')).toContain('planned_date: tomorrow');
+  });
+
+  it('swipes left to set a tag in the tag view, with the tags sheet', async () => {
+    await start(viewsVault);
+    await switchTo('tags');
+    useUiStore().activeColumn = 2;
+    await swipe('Loose end', -150);
+    await settle();
+
+    await type('tags-input', 'errand');
+    await submit('tags-add');
+    await settle();
+    expect(file('d')).toContain('errand');
+  });
+
+  it('offers moving to a column in the overflow menu of the other views only', async () => {
+    await start(viewsVault);
+    await holdSelect('Loose end');
+    await find('bulk-more').trigger('click');
+    await settle();
+    expect(find('more-move').exists()).toBe(false);
+    await find('sheet-backdrop').trigger('click');
+    await find('clear-selection').trigger('click');
+    await settle();
+
+    await switchTo('tags');
+    useUiStore().activeColumn = 2;
+    await holdSelect('Loose end');
+    await find('bulk-more').trigger('click');
+    await settle();
+    await find('more-move').trigger('click');
+    await settle();
+    await find('move-to-done').trigger('click');
+    await settle();
+    expect(file('d')).toContain('status: done');
+  });
+
+  it('files a new task with the tag or the planned date of the tab in view', async () => {
+    await start(viewsVault);
+    await switchTo('tags');
+    useUiStore().activeColumn = 1;
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'Pack bags');
+    await submit('quick-add-input');
+    await find('sheet-backdrop').trigger('click');
+    await settle();
+    const created = () => [...fs.files.entries()].find(([, f]) => f.data.includes('Pack bags'))![1].data;
+    expect(created()).toContain('travel');
+
+    await switchTo('planning');
+    useUiStore().activeColumn = 1;
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'Call back');
+    await submit('quick-add-input');
+    await find('sheet-backdrop').trigger('click');
+    await settle();
+    expect([...fs.files.entries()].find(([, f]) => f.data.includes('Call back'))![1].data).toContain('planned_date: tomorrow');
+  });
+});
