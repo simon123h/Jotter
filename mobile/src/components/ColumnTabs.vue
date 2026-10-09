@@ -100,7 +100,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
         :ref="(el) => setTab(i, el as HTMLElement | null)"
         role="tab"
         :aria-selected="i === ui.activeColumn"
-        class="flex h-12 min-w-[5.5rem] flex-1 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-4 text-sm font-medium transition-colors active:bg-line/60"
+        class="flex h-12 min-w-[5.5rem] flex-[1_0_auto] items-center justify-center gap-1.5 whitespace-nowrap px-4 text-sm font-medium transition-colors active:bg-line/60"
         :class="i === ui.activeColumn ? 'text-accent' : 'text-muted'"
         data-testid="bucket-tab"
         @click="emit('select', i)"
