@@ -68,6 +68,12 @@ async function type(id: string, value: string, event = 'input') {
   await settle();
 }
 
+/** Closes the open sheet the way a user does: the arrow of the task page, or a tap on the dimmed area of a bottom sheet. */
+async function closeSheet() {
+  if (wrapper.find('[data-testid="task-back"]').exists()) await find('task-back').trigger('click');
+  else await find('sheet-backdrop').trigger('click');
+}
+
 const desktopVault = (f: MemoryFs) => {
   f.put('Jotter/work/index.md', '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: done\n    title: Done\n---\n');
   f.put(
@@ -134,7 +140,7 @@ describe('capturing and editing tasks', () => {
     await type('quick-add-input', 'Buy milk');
     await submit('quick-add-input');
     expect(find('quick-add-added').text()).toContain('Buy milk');
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await settle();
     expect(all('task-card')).toHaveLength(1);
     expect(fs.files.get([...fs.files.keys()].find((k) => k.startsWith('Jotter/home/') && !k.endsWith('index.md'))!)?.data).toContain(
@@ -146,7 +152,7 @@ describe('capturing and editing tasks', () => {
     expect((find('task-title').element as HTMLTextAreaElement).value).toBe('Buy milk');
     await find('task-title').setValue('Buy oat milk');
     await find('task-body').setValue('2 litres');
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await settle();
     expect(find('task-card').text()).toContain('Buy oat milk');
     const file = [...fs.files.entries()].find(([k]) => k.startsWith('Jotter/home/') && !k.endsWith('index.md'))!;
@@ -155,6 +161,7 @@ describe('capturing and editing tasks', () => {
 
     // Delete
     await find('task-card').trigger('click');
+    await find('task-menu').trigger('click');
     await find('task-delete').trigger('click');
     await settle();
     expect(all('task-card')).toHaveLength(0);
@@ -165,7 +172,7 @@ describe('capturing and editing tasks', () => {
     await start(desktopVault);
     await find('task-card').trigger('click');
     await type('task-bucket', 'done', 'change');
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await settle();
 
     expect(fs.files.get('Jotter/work/a.md')?.data).toContain('status: done');
@@ -199,7 +206,7 @@ describe('capturing and editing tasks', () => {
     await settle();
 
     expect(fs.files.get('Jotter/work/a.md')?.data).toContain('- [x] outline\n- [ ] send it');
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await settle();
     expect(row('Write report').find('[data-testid="row-checklist"]').text()).toBe('1/3');
   });
@@ -241,7 +248,7 @@ describe('capturing and editing tasks', () => {
     expect(file()).toContain('planned_date: thisWeek');
     expect(find('color-blue').attributes('aria-checked')).toBe('true');
 
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await settle();
     const card = all('task-card')[0];
     expect(card.find('[data-testid="row-color"]').attributes('style')).toContain('rgb(59, 130, 246)');
@@ -269,7 +276,7 @@ describe('capturing and editing tasks', () => {
 
     // Editing something else must not touch them
     await find('task-title').setValue('Odd values, renamed');
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await settle();
     expect(fs.files.get('Jotter/work/a.md')?.data).toContain('planned_date: next-week');
     expect(fs.files.get('Jotter/work/a.md')?.data).toMatch(/color: ['"]?#12ab34/);
@@ -341,7 +348,7 @@ describe('board', () => {
     await type('filter-priority', '', 'change');
     await type('filter-tag', 'office', 'change');
     expect(all('task-card')).toHaveLength(1);
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
 
     // The back arrow drops the search and every filter
     await find('close-search').trigger('click');
@@ -630,7 +637,7 @@ describe('navigation', () => {
     await find('fab').trigger('click');
     await type('quick-add-input', 'Into done');
     await submit('quick-add-input');
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await settle();
 
     expect(all('column')[1].text()).toContain('Into done');
@@ -792,6 +799,9 @@ describe('finishing, archiving and moving', () => {
   it('keeps archiving to the task sheet and the column picker, not the swipe', async () => {
     await start(desktopVault);
     await row('Ship release').find('[data-testid="task-card"]').trigger('click');
+    // The actions that change the task are behind the menu, away from the arrow that leaves the page
+    expect(find('task-archive').exists()).toBe(false);
+    await find('task-menu').trigger('click');
     expect(find('task-archive').exists()).toBe(true);
     await find('task-archive').trigger('click');
     await settle();
@@ -821,6 +831,7 @@ describe('finishing, archiving and moving', () => {
     await start(desktopVault);
     await row('Write report').find('[data-testid="task-card"]').trigger('click');
     await find('task-title').setValue('Write the final report');
+    await find('task-menu').trigger('click');
     await find('task-done').trigger('click');
     await settle();
 
@@ -831,7 +842,8 @@ describe('finishing, archiving and moving', () => {
     expect(file('a')).not.toContain('status: todo');
 
     await row('Write the final report').find('[data-testid="task-card"]').trigger('click');
-    expect(find('task-done').exists()).toBe(false);
+    await find('task-menu').trigger('click');
+    expect(find('task-done').exists()).toBe(false); // already done: only archive and delete are offered
     await find('task-archive').trigger('click');
     await settle();
     expect(file('a')).toContain('status: archive');
@@ -1156,7 +1168,7 @@ describe('bulk actions on the selection', () => {
     Object.defineProperty(input, 'files', { value: [new File(['hello'], 'note.txt')], configurable: true });
     await find('task-attach').trigger('change');
     await settle();
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await settle();
 
     await pick('Write report', 'Book flights');
@@ -1276,7 +1288,7 @@ describe('automatic rescan', () => {
     await wait(250);
     expect(titles().join()).not.toContain('Added while editing');
 
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     ui.dragging = true;
     await wait(250);
     expect(titles().join()).not.toContain('Added while editing');
@@ -1386,7 +1398,7 @@ describe('tag and planning views', () => {
     await find('bulk-more').trigger('click');
     await settle();
     expect(find('more-move').exists()).toBe(false);
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await find('clear-selection').trigger('click');
     await settle();
 
@@ -1409,7 +1421,7 @@ describe('tag and planning views', () => {
     await find('fab').trigger('click');
     await type('quick-add-input', 'Pack bags');
     await submit('quick-add-input');
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await settle();
     const created = () => [...fs.files.entries()].find(([, f]) => f.data.includes('Pack bags'))![1].data;
     expect(created()).toContain('travel');
@@ -1419,9 +1431,31 @@ describe('tag and planning views', () => {
     await find('fab').trigger('click');
     await type('quick-add-input', 'Call back');
     await submit('quick-add-input');
-    await find('sheet-backdrop').trigger('click');
+    await closeSheet();
     await settle();
     expect([...fs.files.entries()].find(([, f]) => f.data.includes('Call back'))![1].data).toContain('planned_date: tomorrow');
+  });
+});
+
+describe('task page', () => {
+  it('leaves with the arrow, saving what was typed, and closes the menu with a tap outside it', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    expect(find('task-page').exists()).toBe(true);
+    expect(find('sheet-backdrop').exists()).toBe(false);
+
+    await find('task-menu').trigger('click');
+    expect(find('task-menu-list').exists()).toBe(true);
+    await find('task-menu-scrim').trigger('click');
+    expect(find('task-menu-list').exists()).toBe(false);
+    expect(file('a')).toContain('status: todo');
+
+    (find('task-title').element as HTMLTextAreaElement).value = 'Write the final report';
+    await find('task-title').trigger('input');
+    await find('task-back').trigger('click');
+    await settle();
+    expect(find('task-page').exists()).toBe(false);
+    expect(file('a')).toContain('title: Write the final report');
   });
 });
 

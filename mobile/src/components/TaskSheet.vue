@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue';
-import { Trash2, Paperclip, Pencil, X, Slash, Check, Archive } from '@lucide/vue';
+import { ArrowLeft, EllipsisVertical, Trash2, Paperclip, Pencil, X, Slash, Check, Archive } from '@lucide/vue';
 import MarkdownView from './MarkdownView.vue';
 import { appendChecklistItem, toggleChecklistItem } from '@/markdown';
-import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -66,6 +65,9 @@ function commitTitle() {
   smart.reset();
   saveSoon();
 }
+
+const menuOpen = ref(false);
+const menuItem = 'flex h-12 w-full items-center gap-3 px-4 text-left text-base active:bg-line';
 
 const fail = (err: unknown) => ui.showToast(err instanceof Error ? err.message : String(err));
 let closing = false;
@@ -175,220 +177,249 @@ async function removeAttachment(name: string) {
 </script>
 
 <template>
-  <BottomSheet v-if="task" :title="t('task.heading')" full @close="close">
-    <template #actions>
+  <!-- A page of its own, not a sheet: the arrow leaves it (everything is saved as it is edited), the menu holds what changes the task -->
+  <div
+    v-if="task"
+    class="fixed inset-0 z-40 flex flex-col bg-card"
+    style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom)"
+    role="dialog"
+    aria-modal="true"
+    :aria-label="t('task.heading')"
+    data-testid="task-page"
+  >
+    <header class="relative flex h-14 shrink-0 items-center gap-1 border-b border-line px-1">
       <button
-        v-if="task.bucket !== 'done' && task.bucket !== 'archive'"
-        class="rounded-full p-2 text-muted active:bg-line"
-        :aria-label="t('task.markDone')"
-        data-testid="task-done"
-        @click="finish('done')"
+        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full active:bg-line"
+        :aria-label="t('common.back')"
+        data-testid="task-back"
+        @click="close"
       >
-        <Check class="h-5 w-5" />
+        <ArrowLeft class="h-6 w-6" />
       </button>
+      <h2 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-7">{{ t('task.heading') }}</h2>
       <button
-        v-if="task.bucket !== 'archive'"
-        class="rounded-full p-2 text-muted active:bg-line"
-        :aria-label="t('task.archive')"
-        data-testid="task-archive"
-        @click="finish('archive')"
+        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full active:bg-line"
+        :aria-label="t('common.moreActions')"
+        aria-haspopup="menu"
+        :aria-expanded="menuOpen"
+        data-testid="task-menu"
+        @click="menuOpen = !menuOpen"
       >
-        <Archive class="h-5 w-5" />
+        <EllipsisVertical class="h-6 w-6" />
       </button>
-      <button
-        class="rounded-full p-2 text-danger active:bg-line"
-        :aria-label="t('common.delete')"
-        data-testid="task-delete"
-        @click="remove"
-      >
-        <Trash2 class="h-5 w-5" />
-      </button>
-    </template>
 
-    <div class="space-y-4 pb-6">
-      <textarea
-        v-model="draft.title"
-        rows="1"
-        class="field-sizing-content block w-full resize-none rounded-xl border border-line bg-surface px-3 py-3 text-lg font-medium leading-snug outline-none focus:border-accent"
-        data-testid="task-title"
-        @input="titleEdited = true"
-        @beforeinput="titleEdited && smart.onBeforeInput($event)"
-        @change="commitTitle"
-      ></textarea>
-      <TitleHints v-if="titleEdited" :hints="smart.hints.value" class="-mt-2" @ignore="smart.ignore" />
-
-      <div>
-        <div class="mb-1 flex items-center justify-between">
-          <span class="text-xs font-medium text-muted">{{ t('task.notes') }}</span>
+      <template v-if="menuOpen">
+        <div class="fixed inset-0 z-10" data-testid="task-menu-scrim" @click="menuOpen = false"></div>
+        <div
+          class="absolute right-2 top-12 z-20 w-56 overflow-hidden rounded-xl border border-line bg-card py-1 shadow-xl"
+          role="menu"
+          data-testid="task-menu-list"
+        >
           <button
-            v-if="draft.body && !editingNotes"
-            class="inline-flex items-center gap-1 text-sm font-medium text-accent"
-            data-testid="notes-edit"
-            @click="editingNotes = true"
+            v-if="task.bucket !== 'done' && task.bucket !== 'archive'"
+            :class="menuItem"
+            role="menuitem"
+            data-testid="task-done"
+            @click="finish('done')"
           >
-            <Pencil class="h-3.5 w-3.5" />{{ t('common.edit') }}
+            <Check class="h-5 w-5 text-muted" />{{ t('task.markDone') }}
           </button>
-          <button v-else-if="draft.body" class="text-sm font-medium text-accent" data-testid="notes-done" @click="finishEditingNotes">
-            {{ t('common.done') }}
+          <button v-if="task.bucket !== 'archive'" :class="menuItem" role="menuitem" data-testid="task-archive" @click="finish('archive')">
+            <Archive class="h-5 w-5 text-muted" />{{ t('task.archive') }}
+          </button>
+          <button :class="`${menuItem} text-danger`" role="menuitem" data-testid="task-delete" @click="remove">
+            <Trash2 class="h-5 w-5" />{{ t('common.delete') }}
           </button>
         </div>
-        <MarkdownView
-          v-if="draft.body && !editingNotes"
-          :source="draft.body"
-          class="rounded-xl border border-line bg-surface p-3"
-          @toggle="toggleItem"
-        />
+      </template>
+    </header>
+
+    <div class="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-4">
+      <div class="space-y-4 pb-6">
         <textarea
-          v-else
-          v-model="draft.body"
-          rows="8"
-          :aria-label="t('task.notes')"
-          :class="`${field} font-mono text-sm`"
-          data-testid="task-body"
-          @change="saveSoon"
+          v-model="draft.title"
+          rows="1"
+          class="field-sizing-content block w-full resize-none rounded-xl border border-line bg-surface px-3 py-3 text-lg font-medium leading-snug outline-none focus:border-accent"
+          data-testid="task-title"
+          @input="titleEdited = true"
+          @beforeinput="titleEdited && smart.onBeforeInput($event)"
+          @change="commitTitle"
         ></textarea>
-        <form class="mt-2 flex gap-2" @submit.prevent="addItem">
-          <input
-            v-model="newItem"
-            :placeholder="t('task.addItem')"
-            :class="`${field} min-w-0 flex-1 py-2`"
-            enterkeyhint="done"
-            data-testid="checklist-add-input"
-          />
-          <button
-            type="submit"
-            class="rounded-xl border border-line px-3 text-sm font-medium text-accent disabled:opacity-40"
-            :disabled="!newItem.trim()"
-            data-testid="checklist-add"
-          >
-            {{ t('task.add') }}
-          </button>
-        </form>
-      </div>
-
-      <div>
-        <div class="mb-2 flex items-center justify-between">
-          <span class="text-xs font-medium text-muted">{{ t('task.attachments') }}</span>
-          <label class="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-accent">
-            <Paperclip class="h-4 w-4" />{{ t('task.addAttachment') }}
-            <input type="file" multiple class="hidden" data-testid="task-attach" @change="addFiles" />
-          </label>
-        </div>
-        <ul class="space-y-2">
-          <li
-            v-for="name in task.attachments"
-            :key="name"
-            class="flex items-center gap-3 rounded-xl border border-line p-2"
-            data-testid="attachment-row"
-          >
-            <img v-if="isImage(name)" :src="app.attachmentUrl(id, name)" :alt="name" class="h-12 w-12 shrink-0 rounded-lg object-cover" />
-            <a :href="app.attachmentUrl(id, name)" target="_blank" rel="noopener" class="min-w-0 flex-1 truncate text-sm text-accent">{{
-              name
-            }}</a>
-            <button
-              class="rounded-full p-2 text-muted active:bg-line"
-              :aria-label="t('task.removeAttachment')"
-              @click="removeAttachment(name)"
-            >
-              <X class="h-4 w-4" />
-            </button>
-          </li>
-        </ul>
-      </div>
-      <!-- The fields come last: opening a task is mostly about reading and ticking its notes -->
-      <div class="space-y-4 border-t border-line pt-4">
-        <div class="grid grid-cols-2 gap-3">
-          <label class="block">
-            <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.bucket') }}</span>
-            <select v-model="draft.bucket" :class="field" data-testid="task-bucket" @change="saveSoon">
-              <option v-for="b in app.buckets" :key="b.name" :value="b.name">{{ b.title }}</option>
-              <option v-if="!app.buckets.some((b) => b.name === draft.bucket)" :value="draft.bucket">{{ draft.bucket }}</option>
-            </select>
-          </label>
-          <label class="block">
-            <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.priority') }}</span>
-            <select v-model="draft.priority" :class="field" data-testid="task-priority" @change="saveSoon">
-              <option value="">{{ t('priority.none') }}</option>
-              <option v-for="p in priorities" :key="p" :value="p">{{ t(`priority.${p}` as MessageKey) }}</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <label class="block">
-            <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.due') }}</span>
-            <input v-model="draft.due" type="date" :class="field" data-testid="task-due" @change="saveSoon" />
-          </label>
-          <label class="block">
-            <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.planned') }}</span>
-            <select v-model="draft.planned" :class="field" data-testid="task-planned" @change="saveSoon">
-              <option value="">{{ t('planned.none') }}</option>
-              <option v-for="p in PLANNED_CHOICES" :key="p" :value="p">{{ plannedLabel(p) }}</option>
-              <!-- A value another tool wrote (next week, a date, ...) stays selectable and is kept -->
-              <option v-if="draft.planned && !PLANNED_CHOICES.some((p) => p === draft.planned)" :value="draft.planned">
-                {{ plannedLabel(draft.planned) }}
-              </option>
-            </select>
-          </label>
-        </div>
-
-        <label v-if="draft.bucket === 'postponed' || draft.postponed" class="block">
-          <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.postponed') }}</span>
-          <input v-model="draft.postponed" type="date" :class="field" data-testid="task-postponed" @change="saveSoon" />
-        </label>
-
-        <label class="block">
-          <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.tags') }}</span>
-          <input
-            v-model="draft.tags"
-            :placeholder="t('task.tagsHint')"
-            :class="field"
-            autocapitalize="off"
-            data-testid="task-tags"
-            @change="saveSoon"
-          />
-        </label>
+        <TitleHints v-if="titleEdited" :hints="smart.hints.value" class="-mt-2" @ignore="smart.ignore" />
 
         <div>
-          <span class="mb-2 block text-xs font-medium text-muted">{{ t('task.color') }}</span>
-          <div class="flex flex-wrap items-center gap-2.5" role="radiogroup" :aria-label="t('task.color')" data-testid="task-colors">
+          <div class="mb-1 flex items-center justify-between">
+            <span class="text-xs font-medium text-muted">{{ t('task.notes') }}</span>
             <button
-              type="button"
-              role="radio"
-              :aria-checked="!draft.color"
-              :aria-label="t('color.none')"
-              class="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted"
-              :class="!draft.color ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
-              data-testid="color-none"
-              @click="pickColor('')"
+              v-if="draft.body && !editingNotes"
+              class="inline-flex items-center gap-1 text-sm font-medium text-accent"
+              data-testid="notes-edit"
+              @click="editingNotes = true"
             >
-              <Slash class="h-4 w-4 rotate-90" />
+              <Pencil class="h-3.5 w-3.5" />{{ t('common.edit') }}
             </button>
+            <button v-else-if="draft.body" class="text-sm font-medium text-accent" data-testid="notes-done" @click="finishEditingNotes">
+              {{ t('common.done') }}
+            </button>
+          </div>
+          <MarkdownView
+            v-if="draft.body && !editingNotes"
+            :source="draft.body"
+            class="rounded-xl border border-line bg-surface p-3"
+            @toggle="toggleItem"
+          />
+          <textarea
+            v-else
+            v-model="draft.body"
+            rows="8"
+            :aria-label="t('task.notes')"
+            :class="`${field} font-mono text-sm`"
+            data-testid="task-body"
+            @change="saveSoon"
+          ></textarea>
+          <form class="mt-2 flex gap-2" @submit.prevent="addItem">
+            <input
+              v-model="newItem"
+              :placeholder="t('task.addItem')"
+              :class="`${field} min-w-0 flex-1 py-2`"
+              enterkeyhint="done"
+              data-testid="checklist-add-input"
+            />
             <button
-              v-for="c in TASK_COLORS"
-              :key="c.id"
-              type="button"
-              role="radio"
-              :aria-checked="draft.color === c.id"
-              :aria-label="t(`color.${c.id}` as MessageKey)"
-              class="flex h-8 w-8 items-center justify-center rounded-full text-white"
-              :class="draft.color === c.id ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
-              :style="{ backgroundColor: c.hex }"
-              :data-testid="`color-${c.id}`"
-              @click="pickColor(c.id)"
+              type="submit"
+              class="rounded-xl border border-line px-3 text-sm font-medium text-accent disabled:opacity-40"
+              :disabled="!newItem.trim()"
+              data-testid="checklist-add"
             >
-              <Check v-if="draft.color === c.id" class="h-4 w-4" />
+              {{ t('task.add') }}
             </button>
-            <!-- A colour written by another tool, outside the palette, stays as it is -->
-            <span
-              v-if="draft.color && !TASK_COLORS.some((c) => c.id === draft.color) && colorHex(draft.color)"
-              class="h-8 w-8 rounded-full ring-2 ring-accent ring-offset-2 ring-offset-card"
-              :style="{ backgroundColor: colorHex(draft.color) }"
-              data-testid="color-custom"
-            ></span>
+          </form>
+        </div>
+
+        <div>
+          <div class="mb-2 flex items-center justify-between">
+            <span class="text-xs font-medium text-muted">{{ t('task.attachments') }}</span>
+            <label class="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-accent">
+              <Paperclip class="h-4 w-4" />{{ t('task.addAttachment') }}
+              <input type="file" multiple class="hidden" data-testid="task-attach" @change="addFiles" />
+            </label>
+          </div>
+          <ul class="space-y-2">
+            <li
+              v-for="name in task.attachments"
+              :key="name"
+              class="flex items-center gap-3 rounded-xl border border-line p-2"
+              data-testid="attachment-row"
+            >
+              <img v-if="isImage(name)" :src="app.attachmentUrl(id, name)" :alt="name" class="h-12 w-12 shrink-0 rounded-lg object-cover" />
+              <a :href="app.attachmentUrl(id, name)" target="_blank" rel="noopener" class="min-w-0 flex-1 truncate text-sm text-accent">{{
+                name
+              }}</a>
+              <button
+                class="rounded-full p-2 text-muted active:bg-line"
+                :aria-label="t('task.removeAttachment')"
+                @click="removeAttachment(name)"
+              >
+                <X class="h-4 w-4" />
+              </button>
+            </li>
+          </ul>
+        </div>
+        <!-- The fields come last: opening a task is mostly about reading and ticking its notes -->
+        <div class="space-y-4 border-t border-line pt-4">
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.bucket') }}</span>
+              <select v-model="draft.bucket" :class="field" data-testid="task-bucket" @change="saveSoon">
+                <option v-for="b in app.buckets" :key="b.name" :value="b.name">{{ b.title }}</option>
+                <option v-if="!app.buckets.some((b) => b.name === draft.bucket)" :value="draft.bucket">{{ draft.bucket }}</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.priority') }}</span>
+              <select v-model="draft.priority" :class="field" data-testid="task-priority" @change="saveSoon">
+                <option value="">{{ t('priority.none') }}</option>
+                <option v-for="p in priorities" :key="p" :value="p">{{ t(`priority.${p}` as MessageKey) }}</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.due') }}</span>
+              <input v-model="draft.due" type="date" :class="field" data-testid="task-due" @change="saveSoon" />
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.planned') }}</span>
+              <select v-model="draft.planned" :class="field" data-testid="task-planned" @change="saveSoon">
+                <option value="">{{ t('planned.none') }}</option>
+                <option v-for="p in PLANNED_CHOICES" :key="p" :value="p">{{ plannedLabel(p) }}</option>
+                <!-- A value another tool wrote (next week, a date, ...) stays selectable and is kept -->
+                <option v-if="draft.planned && !PLANNED_CHOICES.some((p) => p === draft.planned)" :value="draft.planned">
+                  {{ plannedLabel(draft.planned) }}
+                </option>
+              </select>
+            </label>
+          </div>
+
+          <label v-if="draft.bucket === 'postponed' || draft.postponed" class="block">
+            <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.postponed') }}</span>
+            <input v-model="draft.postponed" type="date" :class="field" data-testid="task-postponed" @change="saveSoon" />
+          </label>
+
+          <label class="block">
+            <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.tags') }}</span>
+            <input
+              v-model="draft.tags"
+              :placeholder="t('task.tagsHint')"
+              :class="field"
+              autocapitalize="off"
+              data-testid="task-tags"
+              @change="saveSoon"
+            />
+          </label>
+
+          <div>
+            <span class="mb-2 block text-xs font-medium text-muted">{{ t('task.color') }}</span>
+            <div class="flex flex-wrap items-center gap-2.5" role="radiogroup" :aria-label="t('task.color')" data-testid="task-colors">
+              <button
+                type="button"
+                role="radio"
+                :aria-checked="!draft.color"
+                :aria-label="t('color.none')"
+                class="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted"
+                :class="!draft.color ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
+                data-testid="color-none"
+                @click="pickColor('')"
+              >
+                <Slash class="h-4 w-4 rotate-90" />
+              </button>
+              <button
+                v-for="c in TASK_COLORS"
+                :key="c.id"
+                type="button"
+                role="radio"
+                :aria-checked="draft.color === c.id"
+                :aria-label="t(`color.${c.id}` as MessageKey)"
+                class="flex h-8 w-8 items-center justify-center rounded-full text-white"
+                :class="draft.color === c.id ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
+                :style="{ backgroundColor: c.hex }"
+                :data-testid="`color-${c.id}`"
+                @click="pickColor(c.id)"
+              >
+                <Check v-if="draft.color === c.id" class="h-4 w-4" />
+              </button>
+              <!-- A colour written by another tool, outside the palette, stays as it is -->
+              <span
+                v-if="draft.color && !TASK_COLORS.some((c) => c.id === draft.color) && colorHex(draft.color)"
+                class="h-8 w-8 rounded-full ring-2 ring-accent ring-offset-2 ring-offset-card"
+                :style="{ backgroundColor: colorHex(draft.color) }"
+                data-testid="color-custom"
+              ></span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </BottomSheet>
+  </div>
 </template>
