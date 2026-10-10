@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-The frontend (`frontend/src`) grew organically and ended up with two conflicting layouts:
+The frontend (`web/src`) grew organically and ended up with two conflicting layouts:
 
 1. **Layer-based**: `components/ui`, `components/views`, `components/modals`, `components/layout`, `composables/`, `stores/`.
 2. **Feature-sliced**: `features/task-import`, `features/task-editor` and `features/task-triage`.
@@ -24,7 +24,7 @@ Separately, a handful of components had grown past 600 lines (`BulkActionBar`, `
 A feature owns everything specific to one domain, in one folder:
 
 ```text
-frontend/src/features/<feature>/
+web/src/features/<feature>/
   components/        Vue components, including the routed view and modals of that domain
     __tests__/       component tests next to the code they test
   composables/       logic that is specific to the feature

@@ -136,9 +136,9 @@ def create_app(
     app.include_router(canvas_router)
     app.include_router(vaults_router)
 
-    # Locate static frontend distribution (bundled package dist or local dev frontend/dist)
+    # Locate static frontend distribution (bundled package dist or local dev web/dist)
     pkg_dist = Path(__file__).resolve().parent / "dist"
-    dev_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+    dev_dist = Path(__file__).resolve().parent.parent.parent / "web" / "dist"
 
     static_dir: Path | None = None
     for candidate in [pkg_dist, dev_dist]:

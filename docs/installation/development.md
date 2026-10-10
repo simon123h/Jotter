@@ -35,7 +35,7 @@ pip install -e .[dev]
 
 # Frontend dependencies
 npm install
-cd frontend && npm install && cd ..
+cd web && npm install && cd ..
 ```
 
 ---
@@ -56,8 +56,8 @@ npm run dev:backend
 # or: python3 run.py
 
 # Terminal 2: Vue 3 Frontend
-npm run dev:frontend
-# or: cd frontend && npm run dev
+npm run dev:web
+# or: cd web && npm run dev
 ```
 
 The frontend will run at `http://localhost:5173` (proxying `/api` requests to the Python server at `http://localhost:58271`).
@@ -74,10 +74,10 @@ npm run test
 npm run test:backend
 
 # Run frontend tests only
-npm run test:frontend
+npm run test:web
 
 # Run Playwright full-stack browser E2E tests
-cd frontend && npx playwright test
+cd web && npx playwright test
 ```
 
 ---

@@ -12,7 +12,7 @@ A local-first Markdown Kanban board application built with Vue 3 and TypeScript,
 
 1. Install dependencies:
    ```bash
-   cd frontend
+   cd web
    npm install
    ```
 

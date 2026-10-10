@@ -212,7 +212,7 @@ jobs:
           print-hash: true
 
   build-android-apk:
-    # Jotter, the mobile app (mobile/). It replaces the APK that used to be built from frontend/.
+    # Jotter, the mobile app (mobile/). It replaces the APK that used to be built from web/.
     needs: [tag-release, build-and-publish-pypi]
     runs-on: ubuntu-latest
     steps:

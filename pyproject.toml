@@ -74,7 +74,7 @@ exclude = [
     ".venv",
     "venv",
     "node_modules",
-    "frontend",
+    "web",
     "docs",
     "backend/_version.py",
 ]

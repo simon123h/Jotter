@@ -10,8 +10,8 @@ coverage:
   range: "50...75"
 
 ignore:
-  - "frontend/wailsjs/**/*"
-  - "frontend/dist/**/*"
+  - "web/wailsjs/**/*"
+  - "web/dist/**/*"
   - "main_desktop.go"
   - "main_server.go"
   - "shared_assets.go"

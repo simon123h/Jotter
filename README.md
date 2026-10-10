@@ -96,7 +96,7 @@ npm run dev
 npm run test
 
 # Run frontend E2E browser tests (Playwright)
-cd frontend && npx playwright test
+cd web && npx playwright test
 ```
 
 ---

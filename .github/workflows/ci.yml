@@ -44,10 +44,10 @@ jobs:
         with:
           path: |
             node_modules
-            frontend/node_modules
+            web/node_modules
             mobile/node_modules
             packages/vault-format/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json', 'mobile/package-lock.json', 'packages/vault-format/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'web/package-lock.json', 'mobile/package-lock.json', 'packages/vault-format/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
@@ -90,10 +90,10 @@ jobs:
         with:
           path: |
             node_modules
-            frontend/node_modules
+            web/node_modules
             mobile/node_modules
             packages/vault-format/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json', 'mobile/package-lock.json', 'packages/vault-format/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'web/package-lock.json', 'mobile/package-lock.json', 'packages/vault-format/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
@@ -108,7 +108,7 @@ jobs:
 
       - name: Run Frontend Tests with Coverage
         run: |
-          cd frontend && npm run test:coverage
+          cd web && npm run test:coverage
 
       - name: Run Vault Format and Mobile Tests
         run: |
@@ -126,7 +126,7 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: frontend/coverage/lcov.info
+          files: web/coverage/lcov.info
           flags: frontend
           fail_ci_if_error: false
 
@@ -152,10 +152,10 @@ jobs:
         with:
           path: |
             node_modules
-            frontend/node_modules
+            web/node_modules
             mobile/node_modules
             packages/vault-format/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'frontend/package-lock.json', 'mobile/package-lock.json', 'packages/vault-format/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'web/package-lock.json', 'mobile/package-lock.json', 'packages/vault-format/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
@@ -168,16 +168,16 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('web/package-lock.json') }}
 
       - name: Install Playwright Browsers & OS Dependencies
         run: |
-          cd frontend
+          cd web
           npx playwright install --with-deps chromium
 
       - name: Run Playwright E2E Tests
         run: |
-          cd frontend
+          cd web
           npx playwright test
 
       - name: Upload Playwright Report on Failure
@@ -185,7 +185,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
-          path: frontend/playwright-report/
+          path: web/playwright-report/
           retention-days: 2
 
   build-checks:
@@ -214,7 +214,7 @@ jobs:
 
       - name: Build Frontend & Python Distribution
         run: |
-          npm run build:frontend
+          npm run build:web
           python3 -m build
 
       - name: Build Jotter Web Assets

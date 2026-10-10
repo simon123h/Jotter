@@ -147,7 +147,7 @@ Requests borrow SQLite connections from a small pool (`ConnectionPool`, `get_db_
 Jotter is deployed as a lightweight client-server web application:
 
 1. **Backend**: Python 3 (FastAPI + Uvicorn) serving REST endpoints and static files.
-2. **Frontend**: Built Single Page Application (Vue 3 + Vite + Tailwind CSS) served directly from `frontend/dist/`.
+2. **Frontend**: Built Single Page Application (Vue 3 + Vite + Tailwind CSS) served directly from `web/dist/`.
 
 Running Jotter:
 ```bash

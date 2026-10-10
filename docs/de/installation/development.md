@@ -36,7 +36,7 @@ Oder manuell:
 ```bash
 pip install -e .[dev]
 npm install
-cd frontend && npm install && cd ..
+cd web && npm install && cd ..
 ```
 
 ---
@@ -57,8 +57,8 @@ npm run dev:backend
 # oder: python3 run.py
 
 # Terminal 2: Frontend
-npm run dev:frontend
-# oder: cd frontend && npm run dev
+npm run dev:web
+# oder: cd web && npm run dev
 ```
 
 Das Frontend ist unter `http://localhost:5173` erreichbar (leitet `/api` an das Python-Backend auf Port `58271` weiter).
@@ -75,10 +75,10 @@ npm run test
 npm run test:backend
 
 # Nur Frontend-Tests (Vitest)
-npm run test:frontend
+npm run test:web
 
 # Playwright E2E-Tests
-cd frontend && npx playwright test
+cd web && npx playwright test
 ```
 
 ---

@@ -42,7 +42,7 @@ try {
   }
 
   // Read Frontend Coverage
-  const frontendCovPath = path.join(__dirname, '../frontend/coverage/coverage-summary.json');
+  const frontendCovPath = path.join(__dirname, '../web/coverage/coverage-summary.json');
   let frontendTotal = 0;
   let frontendCovered = 0;
   let frontendPct = 0;

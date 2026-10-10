@@ -4,7 +4,7 @@
 - **Date**: 2026-09-08
 - **Author**: Antigravity (AI Coding Assistant) & User
 
-> **Update 2026-10-06.** The `CapacitorFsStorageAdapter`, the Android project and the `isNativeMobile` and capability branches described below were removed from `frontend/`. Android is now served by the mobile app (`mobile/`), a separate app ([ADR 0017](./0017-mobile-app.md)). The desktop frontend has two runtimes left, HTTP and the demo, behind the same `StorageAdapter`. The text below records the original decision.
+> **Update 2026-10-06.** The `CapacitorFsStorageAdapter`, the Android project and the `isNativeMobile` and capability branches described below were removed from `web/`. Android is now served by the mobile app (`mobile/`), a separate app ([ADR 0017](./0017-mobile-app.md)). The desktop frontend has two runtimes left, HTTP and the demo, behind the same `StorageAdapter`. The text below records the original decision.
 
 ## Context
 
@@ -54,11 +54,11 @@ flowchart TD
 
 Specifically:
 
-1. **`StorageAdapter` abstraction** (`frontend/src/storage/types.ts`):
+1. **`StorageAdapter` abstraction** (`web/src/storage/types.ts`):
    - A single asynchronous contract covering projects, buckets, tasks, canvases, timeblocks, settings and system information. Capabilities that not every runtime has (attachments, changing the data directory) are optional methods.
    - All three adapters `implement` the interface, so the compiler enforces that a new operation is added everywhere.
-2. **Platform detection** (`frontend/src/platform.ts`) is the single place that answers "where are we running?": `isNativeMobile` (Capacitor), `isDemoMode` (`VITE_DEMO_MODE=true`, or a `github.io` / `githubpreview.dev` host) and `appVersion` (the version Vite injects from the git tag).
-3. **Adapter selection** (`frontend/src/storage/index.ts`):
+2. **Platform detection** (`web/src/platform.ts`) is the single place that answers "where are we running?": `isNativeMobile` (Capacitor), `isDemoMode` (`VITE_DEMO_MODE=true`, or a `github.io` / `githubpreview.dev` host) and `appVersion` (the version Vite injects from the git tag).
+3. **Adapter selection** (`web/src/storage/index.ts`):
    - `createStorageAdapter()` picks the demo adapter first, then the Capacitor adapter on native mobile, and otherwise the HTTP adapter.
    - `getStorageAdapter()` creates the adapter lazily on first use and memoises it. Nothing is constructed at import time. `setStorageAdapter()` replaces it, which is intended for tests.
 4. **`api.ts` is a thin layer over whichever adapter is active.** It owns only what is independent of the runtime: rejecting blank project ids, broadcasting cross-tab change events ([ADR 11](./0011-cross-tab-broadcast-sync.md)) and raising a clear error when an adapter lacks an optional method. It contains no per-runtime branching.
@@ -87,7 +87,7 @@ Specifically:
 
 - Business logic relating to task frontmatter serialization, parsing and query indexing must be maintained in two places:
   - Python on the backend (`src/jotter/features/tasks/...`)
-  - TypeScript on mobile (`frontend/src/storage/capacitorFsAdapter.ts`).
+  - TypeScript on mobile (`web/src/storage/capacitorFsAdapter.ts`).
 - The demo adapter is a third implementation of the data layer. It is small because it stores plain objects and does no Markdown parsing, but any new `StorageAdapter` method needs a (possibly trivial) demo implementation.
 - Any schema additions or new frontmatter properties must be verified in both Python unit tests (`pytest`) and TypeScript frontend tests (`vitest`).
 - Vault management is part of the adapter interface as optional methods. The HTTP adapter forwards to `/api/vaults`; the Android adapter keeps a vault registry in Capacitor Preferences (folders below `Documents`, one rebuilt index and one settings/timeblock snapshot per vault); the demo exposes a single built-in vault. Enabling Git versioning and manual commits still bypass the adapter and are HTTP-only, since Android has no Git.

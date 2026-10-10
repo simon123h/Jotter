@@ -31,7 +31,7 @@ Build a separate mobile app that implements only the core, in a new `mobile/` pr
 
 ### Transition
 
-The old Android build was removed from `frontend/` on 2026-10-06, once Lite covered the core scope (the release job now builds Lite): the Android project, the Capacitor storage adapter, the `isNativeMobile` and capability branches, haptics, the Android back button handling and the mobile only settings. That removal is the payoff of the split.
+The old Android build was removed from `web/` on 2026-10-06, once Lite covered the core scope (the release job now builds Lite): the Android project, the Capacitor storage adapter, the `isNativeMobile` and capability branches, haptics, the Android back button handling and the mobile only settings. That removal is the payoff of the split.
 
 ## Rationale
 
