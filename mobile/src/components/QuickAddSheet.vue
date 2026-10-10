@@ -58,22 +58,26 @@ async function submit() {
 
 <template>
   <BottomSheet :title="t('task.new')" @close="ui.close()">
-    <!-- Above the field: the sheet grows upwards, so the field stays where the thumb is -->
-    <TitleHints :hints="smart.hints.value" class="pb-3" @ignore="smart.ignore" />
+    <!-- Above the field, in a slot kept free for one row of chips so the sheet does not jump as keywords come and go -->
+    <div class="min-h-8 pb-3">
+      <TitleHints :hints="smart.hints.value" @ignore="smart.ignore" />
+    </div>
     <form class="flex gap-2 pb-2" @submit.prevent="submit">
       <input
         ref="input"
         v-model="title"
         :placeholder="t('task.titlePlaceholder')"
         class="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 py-3 text-base outline-none focus:border-accent"
-        enterkeyhint="done"
+        enterkeyhint="send"
         data-testid="quick-add-input"
         @beforeinput="smart.onBeforeInput"
+        @keydown.enter.prevent="submit"
       />
       <button
         type="submit"
         class="rounded-xl bg-accent px-4 text-sm font-semibold text-accent-ink disabled:opacity-40"
         :disabled="!finalTitle || busy"
+        @pointerdown.prevent
         data-testid="quick-add-submit"
       >
         {{ t('task.add') }}

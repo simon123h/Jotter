@@ -1506,6 +1506,25 @@ describe('bottom navigation bar', () => {
   });
 });
 
+describe('quick add keyboard', () => {
+  it('adds on the Enter key without the form submitting (which would close the soft keyboard), and keeps the field focused', async () => {
+    await start(desktopVault);
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'Buy milk');
+    await find('quick-add-input').trigger('keydown', { key: 'Enter' });
+    await settle();
+
+    expect(find('quick-add-added').text()).toContain('Buy milk');
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('');
+  });
+
+  it('keeps a slot for the keyword chips, so the sheet does not change height when they come and go', async () => {
+    await start(desktopVault);
+    await find('fab').trigger('click');
+    expect(find('quick-add-input').element.closest('[role="dialog"]')!.querySelector('.min-h-8')).not.toBeNull();
+  });
+});
+
 describe('smart title input', () => {
   const created = (title: string) => [...fs.files.entries()].find(([, f]) => f.data.includes(`title: ${title}`))?.[1].data ?? '';
 
