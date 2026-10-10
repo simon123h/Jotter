@@ -8,9 +8,9 @@ const emit = defineEmits<{ (e: 'close'): void }>();
 
 <template>
   <div class="fixed inset-0 z-40 flex flex-col justify-end" role="dialog" aria-modal="true" :aria-label="title">
-    <div class="absolute inset-0 bg-black/40" data-testid="sheet-backdrop" @click="emit('close')"></div>
+    <div class="sheet-backdrop absolute inset-0 bg-black/40" data-testid="sheet-backdrop" @click="emit('close')"></div>
     <section
-      class="relative flex flex-col rounded-t-2xl border-t border-line bg-card shadow-xl"
+      class="sheet-panel relative flex flex-col rounded-t-2xl border-t border-line bg-card shadow-xl"
       :class="full ? 'h-[94%]' : 'max-h-[85%]'"
       style="padding-bottom: env(safe-area-inset-bottom)"
     >
