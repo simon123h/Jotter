@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Plus, Pencil, Trash2, Database } from '@lucide/vue';
+import { Plus, Pencil, Pin, Trash2, Database } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -61,7 +61,7 @@ async function remove(id: string, title: string) {
 <template>
   <BottomSheet :title="t('projects.title')" @close="ui.close()">
     <ul class="space-y-1">
-      <li v-for="p in app.projects" :key="p.id" class="flex items-center gap-1" data-testid="project-row">
+      <li v-for="p in app.orderedProjects" :key="p.id" class="flex items-center gap-1" data-testid="project-row">
         <form v-if="editing === p.id" class="flex flex-1 gap-2" @submit.prevent="saveRename">
           <input v-model="editTitle" class="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2" autofocus />
           <button type="submit" class="rounded-lg bg-accent px-3 text-sm font-semibold text-accent-ink">{{ t('common.save') }}</button>
@@ -73,6 +73,16 @@ async function remove(id: string, title: string) {
             @click="select(p.id)"
           >
             {{ p.title }}
+          </button>
+          <button
+            class="rounded-full p-2 active:bg-line"
+            :class="app.pinned.includes(p.id) ? 'text-accent' : 'text-muted'"
+            :aria-label="t(app.pinned.includes(p.id) ? 'projects.unpin' : 'projects.pin')"
+            :aria-pressed="app.pinned.includes(p.id)"
+            data-testid="project-pin"
+            @click="app.togglePinned(p.id)"
+          >
+            <Pin class="h-4 w-4" :class="app.pinned.includes(p.id) ? 'fill-current' : ''" />
           </button>
           <button class="rounded-full p-2 text-muted active:bg-line" :aria-label="t('projects.rename')" @click="startRename(p.id, p.title)">
             <Pencil class="h-4 w-4" />

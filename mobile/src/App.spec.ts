@@ -407,6 +407,33 @@ describe('projects and vaults', () => {
     expect(all('task-card')).toHaveLength(3);
   });
 
+  it('pins a project to the top of the lists, and remembers it', async () => {
+    const vault = (f: MemoryFs) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+    };
+    await start(vault);
+    const names = () => all('drawer-project').map((r) => r.text().trim());
+    await openDrawer();
+    expect(names()).toEqual(['Home', 'Work']);
+    expect(find('drawer-pinned').exists()).toBe(false);
+
+    await find('drawer-manage-projects').trigger('click');
+    await settle();
+    const work = all('project-row').find((r) => r.text().includes('Work'))!;
+    await work.find('[data-testid="project-pin"]').trigger('click');
+    expect(all('project-row')[0]!.text()).toContain('Work');
+    expect(work.find('[data-testid="project-pin"]').attributes('aria-pressed')).toBe('true');
+    await closeSheet();
+    await openDrawer();
+    expect(names()).toEqual(['Work', 'Home']);
+    expect(all('drawer-pinned')).toHaveLength(1);
+
+    await start(vault);
+    await openDrawer();
+    expect(names()).toEqual(['Work', 'Home']);
+  });
+
   it('adds a second vault and switches to it', async () => {
     const { app } = await start(desktopVault);
     fs.mkdir('Other');

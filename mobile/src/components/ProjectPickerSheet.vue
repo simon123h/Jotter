@@ -11,7 +11,7 @@ const app = useAppStore();
 const ui = useUiStore();
 const actions = useTaskActions();
 
-const others = computed(() => app.projects.filter((p) => p.id !== app.projectId));
+const others = computed(() => app.orderedProjects.filter((p) => p.id !== app.projectId));
 
 async function pick(projectId: string) {
   ui.close();

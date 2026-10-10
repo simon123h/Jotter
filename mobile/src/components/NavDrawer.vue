@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Database, ChevronsUpDown, Folder, Pencil, Plus, Columns3, Settings, RefreshCw } from '@lucide/vue';
+import { Database, ChevronsUpDown, Folder, Pin, Pencil, Plus, Columns3, Settings, RefreshCw } from '@lucide/vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -79,7 +79,7 @@ const row = 'flex h-14 w-full items-center gap-4 rounded-full px-4 text-left tex
 
       <nav class="min-h-0 flex-1 overflow-y-auto px-3" aria-label="Projects">
         <button
-          v-for="p in app.projects"
+          v-for="p in app.orderedProjects"
           :key="p.id"
           :class="[row, p.id === app.projectId ? 'bg-accent/15 text-accent' : '']"
           :aria-current="p.id === app.projectId ? 'page' : undefined"
@@ -88,6 +88,7 @@ const row = 'flex h-14 w-full items-center gap-4 rounded-full px-4 text-left tex
         >
           <Folder class="h-5 w-5 shrink-0" />
           <span class="min-w-0 flex-1 truncate">{{ p.title }}</span>
+          <Pin v-if="app.pinned.includes(p.id)" class="h-4 w-4 shrink-0 fill-current opacity-60" data-testid="drawer-pinned" />
         </button>
         <button :class="`${row} text-muted`" data-testid="drawer-new-project" @click="ui.open({ type: 'projects' })">
           <Plus class="h-5 w-5 shrink-0" />{{ t('nav.newProject') }}

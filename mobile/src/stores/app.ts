@@ -27,6 +27,7 @@ export interface Column {
 const LAST_PROJECT_KEY = 'jotter_lite_last_project';
 const VIEW_KEY = 'jotter_lite_view';
 const HIDDEN_KEY = 'jotter_lite_hidden';
+const PINNED_KEY = 'jotter_lite_pinned';
 
 /** Which finished tasks a view leaves out. The tag and planning views list what is still to do, the board everything. */
 export type Hidden = { done: boolean; archive: boolean };
@@ -57,6 +58,15 @@ const recallView = async (vaultId: string): Promise<View> => {
     return VIEWS.find((v) => v === stored) ?? 'board';
   } catch {
     return 'board';
+  }
+};
+
+const recallPinned = async (vaultId: string): Promise<string[]> => {
+  try {
+    const stored = JSON.parse((await preferences.get(`${PINNED_KEY}:${vaultId}`)) ?? '[]');
+    return Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
   }
 };
 
@@ -91,6 +101,8 @@ export const useAppStore = defineStore('app', () => {
   const vaults = ref<Vault[]>([]);
   const projects = ref<Project[]>([]);
   const projectId = ref<string | null>(null);
+  /** The projects the user pinned to the top of the lists, kept on the device per vault. */
+  const pinned = ref<string[]>([]);
   const view = ref<View>('board');
   const hidden = ref<Record<View, Hidden>>(defaultHidden());
   const buckets = ref<Bucket[]>([]);
@@ -105,6 +117,11 @@ export const useAppStore = defineStore('app', () => {
   const navVisible = computed(() => selection.value.length === 0 && !ui.navHidden);
 
   const project = computed(() => projects.value.find((p) => p.id === projectId.value) ?? null);
+  /** The projects as the lists show them: the pinned ones first, each group in its own order. */
+  const orderedProjects = computed(() => [
+    ...projects.value.filter((p) => pinned.value.includes(p.id)),
+    ...projects.value.filter((p) => !pinned.value.includes(p.id)),
+  ]);
 
   const taskFilter = computed<TaskFilter>(() => ({
     search: filter.value.search,
@@ -212,6 +229,7 @@ export const useAppStore = defineStore('app', () => {
     projectId.value = projects.value.find((p) => p.id === remembered)?.id ?? projects.value[0]?.id ?? null;
     view.value = await recallView(opened.id);
     hidden.value = await recallHidden(opened.id);
+    pinned.value = await recallPinned(opened.id);
     await loadProject();
     status.value = 'ready';
   }
@@ -297,6 +315,13 @@ export const useAppStore = defineStore('app', () => {
     selection.value = [];
     if (vault.value) {
       void preferences.set(`${HIDDEN_KEY}:${vault.value.id}`, JSON.stringify(hidden.value)).catch(() => undefined);
+    }
+  }
+
+  function togglePinned(id: string) {
+    pinned.value = pinned.value.includes(id) ? pinned.value.filter((p) => p !== id) : [...pinned.value, id];
+    if (vault.value) {
+      void preferences.set(`${PINNED_KEY}:${vault.value.id}`, JSON.stringify(pinned.value)).catch(() => undefined);
     }
   }
 
@@ -516,6 +541,9 @@ export const useAppStore = defineStore('app', () => {
     vault,
     vaults,
     projects,
+    pinned,
+    orderedProjects,
+    togglePinned,
     projectId,
     view,
     hidden,
