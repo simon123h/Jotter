@@ -1518,10 +1518,18 @@ describe('quick add keyboard', () => {
     expect((find('quick-add-input').element as HTMLInputElement).value).toBe('');
   });
 
-  it('keeps a slot for the keyword chips, so the sheet does not change height when they come and go', async () => {
+  it('opens and closes the row of keyword chips instead of leaving a gap, and keeps its buttons out of reach while closed', async () => {
     await start(desktopVault);
     await find('fab').trigger('click');
-    expect(find('quick-add-input').element.closest('[role="dialog"]')!.querySelector('.min-h-8')).not.toBeNull();
+    expect(find('title-hints-slot').attributes('inert')).toBeDefined();
+    expect(find('title-hints-slot').classes()).toContain('grid-rows-[0fr]');
+
+    const input = find('quick-add-input');
+    (input.element as HTMLInputElement).value = 'Call mum tomorrow';
+    await input.trigger('input');
+    await settle();
+    expect(find('title-hints-slot').attributes('inert')).toBeUndefined();
+    expect(find('title-hints-slot').classes()).toContain('grid-rows-[1fr]');
   });
 });
 
@@ -1558,6 +1566,7 @@ describe('smart title input', () => {
     await find('fab').trigger('click');
     await type('quick-add-input', 'Plan the trip for tomorrow');
     await find('title-hint-ignore').trigger('click');
+    await wait(260); // the chips stay drawn while the row closes
     expect(all('title-hint')).toHaveLength(0);
 
     await submit('quick-add-input');
@@ -1579,6 +1588,7 @@ describe('smart title input', () => {
 
     expect(backspace.defaultPrevented).toBe(true);
     expect(field.value).toBe('Call mom tomorrow');
+    await wait(260);
     expect(all('title-hint')).toHaveLength(0);
 
     // Now it is plain text: the next backspace deletes a letter as usual

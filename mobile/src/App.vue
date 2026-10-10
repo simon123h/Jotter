@@ -86,19 +86,22 @@ watch(
     <Transition name="drawer" :duration="200">
       <NavDrawer v-if="ui.sheet?.type === 'drawer'" />
     </Transition>
-    <TaskSheet v-if="ui.sheet?.type === 'task'" :id="ui.sheet.id" :key="ui.sheet.id" />
-    <QuickAddSheet v-else-if="ui.sheet?.type === 'quickadd'" :column="app.columns[ui.activeColumn] ?? null" />
-    <ProjectsSheet v-else-if="ui.sheet?.type === 'projects'" />
-    <ColumnsSheet v-else-if="ui.sheet?.type === 'columns'" />
-    <VaultsSheet v-else-if="ui.sheet?.type === 'vaults'" />
-    <FilterSheet v-else-if="ui.sheet?.type === 'filter'" />
-    <MoveSheet v-else-if="ui.sheet?.type === 'move'" :ids="ui.sheet.ids" />
-    <PrioritySheet v-else-if="ui.sheet?.type === 'bulk-priority'" />
-    <PlannedSheet v-else-if="ui.sheet?.type === 'bulk-planned'" :ids="ui.sheet.ids ?? [...app.selection]" />
-    <TagsSheet v-else-if="ui.sheet?.type === 'bulk-tags'" :ids="ui.sheet.ids ?? [...app.selection]" />
-    <ProjectPickerSheet v-else-if="ui.sheet?.type === 'bulk-project'" />
-    <BulkMoreSheet v-else-if="ui.sheet?.type === 'bulk-more'" />
-    <SettingsSheet v-else-if="ui.sheet?.type === 'settings'" />
+    <!-- A sheet slides out as well as in; the page of a task has no transition of its own and just goes -->
+    <Transition name="sheet" :duration="250">
+      <TaskSheet v-if="ui.sheet?.type === 'task'" :id="ui.sheet.id" :key="ui.sheet.id" />
+      <QuickAddSheet v-else-if="ui.sheet?.type === 'quickadd'" :column="app.columns[ui.activeColumn] ?? null" />
+      <ProjectsSheet v-else-if="ui.sheet?.type === 'projects'" />
+      <ColumnsSheet v-else-if="ui.sheet?.type === 'columns'" />
+      <VaultsSheet v-else-if="ui.sheet?.type === 'vaults'" />
+      <FilterSheet v-else-if="ui.sheet?.type === 'filter'" />
+      <MoveSheet v-else-if="ui.sheet?.type === 'move'" :ids="ui.sheet.ids" />
+      <PrioritySheet v-else-if="ui.sheet?.type === 'bulk-priority'" />
+      <PlannedSheet v-else-if="ui.sheet?.type === 'bulk-planned'" :ids="ui.sheet.ids ?? [...app.selection]" />
+      <TagsSheet v-else-if="ui.sheet?.type === 'bulk-tags'" :ids="ui.sheet.ids ?? [...app.selection]" />
+      <ProjectPickerSheet v-else-if="ui.sheet?.type === 'bulk-project'" />
+      <BulkMoreSheet v-else-if="ui.sheet?.type === 'bulk-more'" />
+      <SettingsSheet v-else-if="ui.sheet?.type === 'settings'" />
+    </Transition>
   </template>
 
   <!-- The message bar sits at the bottom, left of the add button, or above the toolbar while tasks are selected; it makes room while a card is being dragged -->

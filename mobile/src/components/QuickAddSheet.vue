@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { Check } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t } from '@/i18n';
@@ -7,7 +7,7 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import type { Column } from '@/stores/app';
 import TitleHints from './TitleHints.vue';
-import { useSmartTitle } from '@/composables/useSmartTitle';
+import { useSmartTitle, type Hint } from '@/composables/useSmartTitle';
 
 /** The tab in view: a new task is filed where the user is looking (its column, tag or planned date). */
 const props = defineProps<{ column: Column | null }>();
@@ -24,6 +24,23 @@ const busy = ref(false);
 const added = ref<string[]>([]);
 
 onMounted(() => input.value?.focus());
+
+/**
+ * The chips slide open and shut instead of making the sheet jump. They stay drawn while they close, so the row
+ * does not empty before it has shrunk.
+ */
+const shownHints = ref<Hint[]>([]);
+let clearTimer: ReturnType<typeof setTimeout> | undefined;
+watch(
+  () => smart.hints.value,
+  (hints) => {
+    clearTimeout(clearTimer);
+    if (hints.length) shownHints.value = hints;
+    else clearTimer = setTimeout(() => (shownHints.value = []), 220);
+  },
+  { immediate: true }
+);
+onBeforeUnmount(() => clearTimeout(clearTimer));
 
 async function submit() {
   const found = smart.resolve();
@@ -58,9 +75,16 @@ async function submit() {
 
 <template>
   <BottomSheet :title="t('task.new')" @close="ui.close()">
-    <!-- Above the field, in a slot kept free for one row of chips so the sheet does not jump as keywords come and go -->
-    <div class="min-h-8 pb-3">
-      <TitleHints :hints="smart.hints.value" @ignore="smart.ignore" />
+    <!-- Above the field: the sheet grows upwards, so the field stays where the thumb is -->
+    <div
+      class="grid transition-[grid-template-rows,opacity] duration-200 ease-out"
+      :class="smart.hints.value.length ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+      :inert="smart.hints.value.length ? undefined : true"
+      data-testid="title-hints-slot"
+    >
+      <div class="min-h-0 overflow-hidden">
+        <TitleHints :hints="shownHints" class="pb-3" @ignore="smart.ignore" />
+      </div>
     </div>
     <form class="flex gap-2 pb-2" @submit.prevent="submit">
       <input
