@@ -78,3 +78,8 @@ loc_chart.png
 *.keystore
 *.jks
 uv.lock
+
+# Android build output
+android/.gradle/
+android/build/
+android/app/build/
