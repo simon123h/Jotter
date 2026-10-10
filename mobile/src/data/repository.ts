@@ -117,7 +117,7 @@ export class VaultRepository {
   async open(): Promise<Vault | null> {
     const vault = await this.registry.active();
     this.vault = vault;
-    this.db = vault ? this.openDb(`jotter-lite:${vault.id}`) : null;
+    this.db = vault ? this.openDb(`jotter:${vault.id}`) : null;
     if (vault) await this.sync();
     return vault;
   }
@@ -143,7 +143,7 @@ export class VaultRepository {
   async removeVault(id: string): Promise<void> {
     const wasOpen = this.vault?.id === id;
     await this.registry.remove(id);
-    await this.openDb(`jotter-lite:${id}`).delete();
+    await this.openDb(`jotter:${id}`).delete();
     if (wasOpen) await this.open();
   }
 

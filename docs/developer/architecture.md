@@ -91,7 +91,7 @@ flowchart LR
   - `HttpStorageAdapter`: Handles communication with the FastAPI desktop backend.
   - `DemoStorageAdapter`: Keeps everything in the browser's `localStorage` for the static demo on GitHub Pages.
 
-The Android app is a separate project, **Jotter Lite** (`mobile/`, [ADR 0017](./adr/0017-jotter-lite-mobile-app.md)). It has no backend: it reads and writes the same vault files through the shared `packages/vault-format` parser and keeps an IndexedDB cache.
+The Android app is a separate project (`mobile/`, [ADR 0017](./adr/0017-mobile-app.md)). It has no backend: it reads and writes the same vault files through the shared `packages/vault-format` parser and keeps an IndexedDB cache.
 
 ### 5.2 Backend (FastAPI Python Application)
 
@@ -283,7 +283,7 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0014: A Periodic Scan Instead of a Filesystem Watcher](./adr/0014-periodic-scan-instead-of-watcher.md)
 - [ADR 0015: The SQLite Index Is a Disposable Cache, Kept Valid by File Stats](./adr/0015-index-as-disposable-cache.md)
 - [ADR 0016: Rewrite the Backend from Go to Python](./adr/0016-rewrite-backend-from-go-to-python.md)
-- [ADR 0017: Jotter Lite, a Separate Mobile App with a Core Feature Set](./adr/0017-jotter-lite-mobile-app.md)
+- [ADR 0017: A Separate Mobile App with a Core Feature Set](./adr/0017-mobile-app.md)
 
 
 

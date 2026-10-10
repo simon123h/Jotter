@@ -25,11 +25,11 @@ jotter
 
 ---
 
-## Option 2: Android Mobile App (Jotter Lite, .apk)
+## Option 2: Android Mobile App (.apk)
 
-Jotter Lite is a standalone, offline Android app with Jotter's core features (it does not include time blocking, the canvas or Git history):
+The app is a standalone, offline Android app with Jotter's core features (it does not include time blocking, the canvas or Git history):
 
-1. Download `jotter-lite-*-android.apk` from the latest [GitHub Releases](https://github.com/simon123h/jotter/releases).
+1. Download `jotter-*-android.apk` from the latest [GitHub Releases](https://github.com/simon123h/jotter/releases).
 2. Open the file on your Android device to install it.
 3. On first launch you pick or create a vault folder inside `Documents` (for example `Jotter`). It contains standard `.md` files, the same format the desktop app uses, so you can open an existing synced vault. You can synchronize this directory across your devices using **Syncthing**, **Git**, or your preferred cloud folder sync tool.
 

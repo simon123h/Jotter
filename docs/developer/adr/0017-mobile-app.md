@@ -1,4 +1,4 @@
-# ADR 0017: Jotter Lite, a Separate Mobile App with a Core Feature Set
+# ADR 0017: A Separate Mobile App with a Core Feature Set
 
 - **Status**: Accepted
 - **Date**: 2026-10-06
@@ -15,9 +15,9 @@ Meanwhile Jotter's core is small: markdown backed kanban boards in vaults, with 
 
 ## Decision
 
-Build **Jotter Lite**, a separate mobile app that implements only the core, in a new `mobile/` project in this repository.
+Build a separate mobile app that implements only the core, in a new `mobile/` project in this repository.
 
-- **Identity**: app id `io.github.simon123h.jotter_lite`, name "Jotter Lite". It installs next to the existing Android app, so the two can coexist during the transition.
+- **Identity**: app id `io.github.simon123h.jotter_lite`, name "Jotter". It installs next to the existing Android app, so the two can coexist during the transition.
 - **Stack**: Vue 3, Pinia, Tailwind and Capacitor, as in the desktop frontend. Reuse is the point; the UI itself is designed for touch from the start and may look quite different.
 - **Scope (version 1)**:
   - vaults: add, switch, remove
@@ -27,7 +27,7 @@ Build **Jotter Lite**, a separate mobile app that implements only the core, in a
   - themes and translations
 - **Out of scope**: list view and the other views, canvas, time blocking, Git and the Time Machine, the MCP server, iOS, and a browser build. Anything not listed needs an explicit decision before it is added.
 - **The vault format is the contract.** Lite and the desktop app agree on the files, not on code. Lite MUST keep what it does not understand: unknown frontmatter keys, unknown files and attachments (`spec/FORMAT.md`, section 5).
-- **The parser is its own package.** The TypeScript implementation of the format lives in `packages/vault-format` and is used by Jotter Lite. It is covered by the shared fixtures that the Python backend also passes. The desktop frontend does not use it: it talks to the Python backend, so nothing is shared between the two apps except the format itself.
+- **The parser is its own package.** The TypeScript implementation of the format lives in `packages/vault-format` and is used by the mobile app. It is covered by the shared fixtures that the Python backend also passes. The desktop frontend does not use it: it talks to the Python backend, so nothing is shared between the two apps except the format itself.
 
 ### Transition
 
@@ -44,7 +44,7 @@ The old Android build was removed from `frontend/` on 2026-10-06, once Lite cove
 
 - Two frontends to maintain. Features that exist in both (translations, task rules) are implemented twice until something is proven common and extracted.
 - A change to the format must update `spec/FORMAT.md` and the fixtures, and pass in the Python backend and `packages/vault-format`. That is the intended friction.
-- The Android release artifact is now Jotter Lite (`jotter-lite-<tag>-android.apk`); CI builds and tests `mobile/` separately.
+- The Android release artifact is now the mobile app (`jotter-<tag>-android.apk`); CI builds and tests `mobile/` separately.
 
 ## Alternatives Considered
 

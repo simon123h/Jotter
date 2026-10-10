@@ -3,7 +3,7 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 
 /** The scheme of the launcher shortcuts (android/app/src/main/res/xml/shortcuts.xml). */
-export const SHORTCUT_SCHEME = 'jotterlite://';
+export const SHORTCUT_SCHEME = 'jotter://';
 
 export type ShortcutAction = 'new-task' | 'search' | 'planning';
 

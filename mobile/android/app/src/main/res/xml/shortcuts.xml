@@ -9,7 +9,7 @@
         android:shortcutLongLabel="@string/shortcut_new_task_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:data="jotterlite://new-task"
+            android:data="jotter://new-task"
             android:targetPackage="io.github.simon123h.jotter_lite"
             android:targetClass="io.github.simon123h.jotter_lite.MainActivity" />
     </shortcut>
@@ -21,7 +21,7 @@
         android:shortcutLongLabel="@string/shortcut_search_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:data="jotterlite://search"
+            android:data="jotter://search"
             android:targetPackage="io.github.simon123h.jotter_lite"
             android:targetClass="io.github.simon123h.jotter_lite.MainActivity" />
     </shortcut>
@@ -33,7 +33,7 @@
         android:shortcutLongLabel="@string/shortcut_planning_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:data="jotterlite://planning"
+            android:data="jotter://planning"
             android:targetPackage="io.github.simon123h.jotter_lite"
             android:targetClass="io.github.simon123h.jotter_lite.MainActivity" />
     </shortcut>

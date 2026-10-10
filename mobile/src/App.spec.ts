@@ -1629,25 +1629,25 @@ describe('smart title input', () => {
 
 describe('launcher shortcuts', () => {
   it('knows its links', () => {
-    expect(shortcutAction('jotterlite://new-task')).toBe('new-task');
-    expect(shortcutAction('jotterlite://search/')).toBe('search');
-    expect(shortcutAction('jotterlite://planning?x=1')).toBe('planning');
-    expect(shortcutAction('jotterlite://other')).toBeNull();
+    expect(shortcutAction('jotter://new-task')).toBe('new-task');
+    expect(shortcutAction('jotter://search/')).toBe('search');
+    expect(shortcutAction('jotter://planning?x=1')).toBe('planning');
+    expect(shortcutAction('jotter://other')).toBeNull();
     expect(shortcutAction('https://example.com/new-task')).toBeNull();
   });
 
   it('opens quick add, the search and the planning view', async () => {
     await start(desktopVault);
-    await runShortcut('jotterlite://new-task');
+    await runShortcut('jotter://new-task');
     await settle();
     expect(find('quick-add-input').exists()).toBe(true);
 
-    await runShortcut('jotterlite://search');
+    await runShortcut('jotter://search');
     await settle();
     expect(find('search-input').exists()).toBe(true);
     expect(find('quick-add-input').exists()).toBe(false);
 
-    await runShortcut('jotterlite://planning');
+    await runShortcut('jotter://planning');
     await settle();
     expect(find('view-planning').attributes('aria-current')).toBe('page');
   });
@@ -1655,7 +1655,7 @@ describe('launcher shortcuts', () => {
   it('waits for the vault when it starts the app, and ignores other links', async () => {
     await start(desktopVault);
     useAppStore().status = 'loading';
-    const done = runShortcut('jotterlite://new-task');
+    const done = runShortcut('jotter://new-task');
     await settle();
     expect(find('quick-add-input').exists()).toBe(false);
 

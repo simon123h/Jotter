@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 
 const en = {
-  'app.name': 'Jotter Lite',
+  'app.name': 'Jotter',
   'common.cancel': 'Cancel',
   'common.save': 'Save',
   'common.delete': 'Delete',
@@ -71,7 +71,7 @@ const en = {
   'search.clear': 'Clear',
   'search.filters': 'Filters',
   'common.rename': 'Rename',
-  'onboarding.title': 'Welcome to Jotter Lite',
+  'onboarding.title': 'Welcome to Jotter',
   'onboarding.intro': 'Your tasks are plain markdown files in a folder you choose. Pick or create that folder to start.',
   'onboarding.create': 'Create a new vault',
   'onboarding.open': 'Open an existing folder',
@@ -182,13 +182,13 @@ const en = {
   'settings.about': 'About',
   'settings.version': 'Version {version}',
   'error.title': 'Something went wrong',
-  'error.storage': 'Jotter Lite needs access to files to read your vault.',
+  'error.storage': 'Jotter needs access to files to read your vault.',
 } as const;
 
 export type MessageKey = keyof typeof en;
 
 const de: Record<MessageKey, string> = {
-  'app.name': 'Jotter Lite',
+  'app.name': 'Jotter',
   'common.cancel': 'Abbrechen',
   'common.save': 'Speichern',
   'common.delete': 'Löschen',
@@ -258,7 +258,7 @@ const de: Record<MessageKey, string> = {
   'search.clear': 'Leeren',
   'search.filters': 'Filter',
   'common.rename': 'Umbenennen',
-  'onboarding.title': 'Willkommen bei Jotter Lite',
+  'onboarding.title': 'Willkommen bei Jotter',
   'onboarding.intro': 'Deine Aufgaben sind einfache Markdown-Dateien in einem Ordner deiner Wahl. Wähle oder erstelle diesen Ordner.',
   'onboarding.create': 'Neuen Vault erstellen',
   'onboarding.open': 'Vorhandenen Ordner öffnen',
@@ -369,7 +369,7 @@ const de: Record<MessageKey, string> = {
   'settings.about': 'Über',
   'settings.version': 'Version {version}',
   'error.title': 'Etwas ist schiefgelaufen',
-  'error.storage': 'Jotter Lite braucht Zugriff auf Dateien, um deinen Vault zu lesen.',
+  'error.storage': 'Jotter braucht Zugriff auf Dateien, um deinen Vault zu lesen.',
 };
 
 const messages: Record<string, Record<MessageKey, string>> = { en, de };

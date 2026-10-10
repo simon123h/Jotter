@@ -1,7 +1,7 @@
 # Jotter Vault Format, version 1
 
 This is the contract between everything that reads or writes Jotter data: the desktop backend (Python), the
-Jotter Lite mobile app (TypeScript), and any other tool or experiment. A **vault** is a folder of plain markdown files.
+mobile app (TypeScript), and any other tool or experiment. A **vault** is a folder of plain markdown files.
 Anything that follows this document can open a vault that another implementation wrote, and edit it without
 destroying the other's data.
 

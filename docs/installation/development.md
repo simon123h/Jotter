@@ -84,7 +84,7 @@ cd frontend && npx playwright test
 
 ## Android Mobile Development & Local Preview
 
-The mobile app, **Jotter Lite** (`mobile/`), is built with **Capacitor** and runs in-process with a client-side storage engine (IndexedDB cache via Dexie.js + raw `.md` filesystem access). It reads and writes vaults through the shared `packages/vault-format` parser. See [ADR 0017](../developer/adr/0017-jotter-lite-mobile-app.md).
+The mobile app (`mobile/`), is built with **Capacitor** and runs in-process with a client-side storage engine (IndexedDB cache via Dexie.js + raw `.md` filesystem access). It reads and writes vaults through the shared `packages/vault-format` parser. See [ADR 0017](../developer/adr/0017-mobile-app.md).
 
 ### 1. Building the Android Project
 

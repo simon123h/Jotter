@@ -85,7 +85,7 @@ cd frontend && npx playwright test
 
 ## Android App Entwicklung & Lokale Vorschau
 
-Die mobile App **Jotter Lite** (`mobile/`) basiert auf **Capacitor** und nutzt eine lokale Storage-Engine (Dexie.js IndexedDB-Cache + direkter `.md`-Dateizugriff).
+Die mobile App (`mobile/`) basiert auf **Capacitor** und nutzt eine lokale Storage-Engine (Dexie.js IndexedDB-Cache + direkter `.md`-Dateizugriff).
 
 ### 1. Android-Projekt bauen
 

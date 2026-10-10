@@ -31,7 +31,7 @@ Jotter is a **local-first, privacy-focused task management web application** des
 - **Model Context Protocol (MCP) Support**: Connect AI assistants directly to your local Kanban board via `jotter mcp` (optional: install with `pipx install 'jotter-app[mcp]'`).
 - **Excel & CSV Import & Export**: Seamlessly import tasks, checklists, priorities, and custom columns from any standard Excel or CSV spreadsheet with support for sheet auto-detection, interactive previews, and custom mappings. Export all tasks from your current filtered view as `.xlsx` or `.csv` client-side.
 - **Obsidian & PKM Native**: Project directories include an `index.md` manifest compatible with Obsidian Folder Notes and PKM namespaces, allowing task boards to live directly within your personal knowledge vault.
-- **Android App (Jotter Lite)**: Carry your tasks in your pocket with a lean, touch-first Android app. It covers the core (vaults, projects, a flat list per column with swipe actions and bulk edits, search, attachments, markdown notes), operates 100% offline on local Markdown files, and syncs with your desktop via Syncthing, Git, or cloud drives.
+- **Android App**: Carry your tasks in your pocket with a lean, touch-first Android app. It covers the core (vaults, projects, a flat list per column with swipe actions and bulk edits, search, attachments, markdown notes), operates 100% offline on local Markdown files, and syncs with your desktop via Syncthing, Git, or cloud drives.
 
 ---
 
@@ -51,9 +51,9 @@ pipx install jotter-app
 jotter
 ```
 
-### Option 2: Android Mobile App (Jotter Lite, .apk)
+### Option 2: Android Mobile App (.apk)
 
-Download the signed `jotter-lite-*-android.apk` from [GitHub Releases](https://github.com/simon123h/jotter/releases) and install it on your Android phone. No server or internet connection required. Point it to your synced Markdown folder (via Syncthing, Git, etc.) for cross-device synchronization.
+Download the signed `jotter-*-android.apk` from [GitHub Releases](https://github.com/simon123h/jotter/releases) and install it on your Android phone. No server or internet connection required. Point it to your synced Markdown folder (via Syncthing, Git, etc.) for cross-device synchronization.
 
 ### Option 3: Run from Source
 

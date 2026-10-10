@@ -1,5 +1,5 @@
 /*
- * The colour themes of Jotter, shared by the desktop app (frontend/) and Jotter Lite (mobile/).
+ * The colour themes of Jotter, shared by the desktop app (frontend/) and the mobile app (mobile/).
  * Each theme sets the --theme-* variables; the apps map them to their own tokens. The default theme (Nordic Light)
  * is :root, every other one is a class on <html> named .theme-<id>. Keep packages/themes/index.ts in step.
  */

@@ -1,7 +1,7 @@
-# Jotter Lite
+# Jotter (mobile)
 
 The mobile app with Jotter's core feature set: vaults, projects, buckets and tasks, attachments, a board with
-search and filters. See [ADR 0017](../docs/developer/adr/0017-jotter-lite-mobile-app.md) for scope and decisions.
+search and filters. See [ADR 0017](../docs/developer/adr/0017-mobile-app.md) for scope and decisions.
 
 App id `io.github.simon123h.jotter_lite`. It reads and writes vaults through
 [`@jotter/vault-format`](../packages/vault-format) and keeps what it does not understand (spec/FORMAT.md).

@@ -1,12 +1,12 @@
 # Jotter: notes for agents
 
-Local-first kanban-inspired task manager. A vault is a folder of Markdown task files (one per task, grouped in project folders), optionally a Git repo. A Python/FastAPI backend serves a Vue frontend; SQLite (`tasks.db`) is only a disposable index of the files. The frontend runs against the backend or as a static demo, through a storage adapter. The Android app is a separate project, Jotter Lite (`mobile/`, ADR 0017), with no backend: it reads and writes the vault files itself.
+Local-first kanban-inspired task manager. A vault is a folder of Markdown task files (one per task, grouped in project folders), optionally a Git repo. A Python/FastAPI backend serves a Vue frontend; SQLite (`tasks.db`) is only a disposable index of the files. The frontend runs against the backend or as a static demo, through a storage adapter. The Android app is a separate project (`mobile/`, ADR 0017), with no backend: it reads and writes the vault files itself.
 
 ## Where things are
 
 - `src/jotter/features/<name>/`: backend feature slices (tasks, projects, buckets, sync, vaults, canvas, settings, timeblock). `shared/` holds the DB, atomic file writes and frontmatter helpers.
 - `frontend/src/`: Vue app in feature slices; `storage/` has the adapters (`httpAdapter`, `demoAdapter`).
-- `mobile/`: Jotter Lite, the Android app (Vue, Capacitor). `src/data/` is its vault repository, `src/screens/` and `src/components/` the touch UI.
+- `mobile/`: the Android app (Vue, Capacitor). `src/data/` is its vault repository, `src/screens/` and `src/components/` the touch UI.
 - `packages/vault-format/`: the TypeScript parser for the vault format, used by `mobile/`.
 - `packages/themes/` (colour themes) and `packages/title-parser/` (the smart title input): shared by `frontend/` and `mobile/`. Each app has an alias for them (`@jotter/themes`, `@jotter/title-parser`).
 - `spec/FORMAT.md` and `spec/fixtures/`: the vault format and conformance fixtures. The Python reader and the TypeScript reader (`packages/vault-format`) must both follow them. Change the spec first, then both readers.

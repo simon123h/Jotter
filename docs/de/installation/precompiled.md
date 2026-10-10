@@ -27,11 +27,11 @@ jotter
 
 ---
 
-## Option 2: Android App (Jotter Lite, .apk)
+## Option 2: Android App (.apk)
 
-Jotter Lite ist eine eigenständige, offline-fähige Android-App mit den Kernfunktionen von Jotter (ohne Zeitblöcke, Canvas und Git-Verlauf):
+Die App ist eine eigenständige, offline-fähige Android-App mit den Kernfunktionen von Jotter (ohne Zeitblöcke, Canvas und Git-Verlauf):
 
-1. Lade `jotter-lite-*-android.apk` von den [GitHub Releases](https://github.com/simon123h/jotter/releases) herunter.
+1. Lade `jotter-*-android.apk` von den [GitHub Releases](https://github.com/simon123h/jotter/releases) herunter.
 2. Öffne die APK-Datei auf deinem Android-Smartphone zur Installation.
 3. Die App speichert alle Aufgaben lokal unter `Documents/Jotter` als reine `.md`-Dateien. Dieser Ordner kann über **Syncthing**, **Git** oder Cloud-Sync nahtlos mit deinem Desktop synchronisiert werden.
 

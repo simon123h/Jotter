@@ -212,7 +212,7 @@ jobs:
           print-hash: true
 
   build-android-apk:
-    # Jotter Lite, the mobile app (mobile/). It replaces the APK that used to be built from frontend/.
+    # Jotter, the mobile app (mobile/). It replaces the APK that used to be built from frontend/.
     needs: [tag-release, build-and-publish-pypi]
     runs-on: ubuntu-latest
     steps:
@@ -233,7 +233,7 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install Jotter Lite Dependencies
+      - name: Install Jotter Dependencies
         run: |
           (cd packages/vault-format && npm install)
           cd mobile
@@ -269,11 +269,11 @@ jobs:
           else
             echo "::warning::ANDROID_RELEASE_KEYSTORE_BASE64 secret is not set. Generating temporary keystore for this build..."
             keytool -genkeypair -v -keystore release.keystore -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" -dname "CN=Jotter Lite, OU=Mobile, O=Jotter, L=Local, ST=Local, C=DE"
+              -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" -dname "CN=Jotter, OU=Mobile, O=Jotter, L=Local, ST=Local, C=DE"
           fi
           
           APK_RAW=$(find mobile/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
-          SIGNED_APK="jotter-lite-${TAG}-android.apk"
+          SIGNED_APK="jotter-${TAG}-android.apk"
           
           # Align & Sign APK using Android Build-Tools apksigner
           BUILD_TOOLS_BIN=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)

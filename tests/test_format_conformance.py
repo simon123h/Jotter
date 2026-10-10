@@ -1,6 +1,6 @@
 """Runs the shared vault-format fixtures (spec/fixtures) against the Python implementation.
 
-Other implementations (the TypeScript parser used by Jotter Lite, experiments) run the same fixtures; see spec/README.md.
+Other implementations (the TypeScript parser used by the mobile app, experiments) run the same fixtures; see spec/README.md.
 """
 
 import json
