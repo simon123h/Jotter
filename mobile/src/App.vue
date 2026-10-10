@@ -6,6 +6,7 @@ import BoardScreen from '@/screens/BoardScreen.vue';
 import TaskSheet from '@/components/TaskSheet.vue';
 import QuickAddSheet from '@/components/QuickAddSheet.vue';
 import ProjectsSheet from '@/components/ProjectsSheet.vue';
+import ProjectSwitchSheet from '@/components/ProjectSwitchSheet.vue';
 import ColumnsSheet from '@/components/ColumnsSheet.vue';
 import VaultsSheet from '@/components/VaultsSheet.vue';
 import FilterSheet from '@/components/FilterSheet.vue';
@@ -91,6 +92,7 @@ watch(
       <TaskSheet v-if="ui.sheet?.type === 'task'" :id="ui.sheet.id" :key="ui.sheet.id" />
       <QuickAddSheet v-else-if="ui.sheet?.type === 'quickadd'" :column="app.columns[ui.activeColumn] ?? null" />
       <ProjectsSheet v-else-if="ui.sheet?.type === 'projects'" />
+      <ProjectSwitchSheet v-else-if="ui.sheet?.type === 'project-switch'" />
       <ColumnsSheet v-else-if="ui.sheet?.type === 'columns'" />
       <VaultsSheet v-else-if="ui.sheet?.type === 'vaults'" />
       <FilterSheet v-else-if="ui.sheet?.type === 'filter'" />

@@ -450,6 +450,33 @@ describe('projects and vaults', () => {
     expect(all('task-card')).toHaveLength(3);
   });
 
+  it('switches the project from the title in the app bar', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+      f.put('Jotter/home/x.md', '---\ntitle: Water plants\n---\n');
+    });
+    expect(find('app-bar-title').text()).toBe('Home');
+    await find('open-projects').trigger('click');
+    await settle();
+    const rows = all('project-switch-row');
+    expect(rows.map((r) => r.text())).toEqual(['Home', 'Work']);
+    expect(rows[0]!.attributes('aria-current')).toBe('true');
+
+    await rows[1]!.trigger('click');
+    await settle();
+    expect(find('project-switch-list').exists()).toBe(false);
+    expect(find('app-bar-title').text()).toBe('Work');
+    expect(find('board').text()).toContain('Write report');
+
+    // Managing leads to the full list
+    await find('open-projects').trigger('click');
+    await settle();
+    await find('project-switch-manage').trigger('click');
+    await settle();
+    expect(all('project-row').length).toBe(2);
+  });
+
   it('pins a project to the top of the lists, and remembers it', async () => {
     const vault = (f: MemoryFs) => {
       desktopVault(f);

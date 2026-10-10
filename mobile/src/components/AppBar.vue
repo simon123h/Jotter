@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import { Menu, Search, ArrowLeft, X, SlidersHorizontal, ListChecks, EllipsisVertical, Check } from '@lucide/vue';
+import { Menu, Search, ArrowLeft, X, SlidersHorizontal, ListChecks, EllipsisVertical, Check, ChevronDown } from '@lucide/vue';
 import { isEmptyFilter } from '@jotter/task-filter';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -75,7 +75,19 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
       <button :class="iconButton" :aria-label="t('nav.menu')" data-testid="open-menu" @click="ui.open({ type: 'drawer' })">
         <Menu class="h-6 w-6" />
       </button>
-      <h1 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-7" data-testid="app-bar-title">{{ title }}</h1>
+      <!-- The title is the project switcher: it opens the list of projects -->
+      <h1 class="min-w-0 flex-1 text-[1.35rem] font-normal leading-7" data-testid="app-bar-title">
+        <button
+          class="flex h-12 max-w-full items-center gap-1 rounded-full px-2 active:bg-line"
+          :aria-label="t('projects.switch')"
+          aria-haspopup="dialog"
+          data-testid="open-projects"
+          @click="ui.open({ type: 'project-switch' })"
+        >
+          <span class="truncate">{{ title }}</span>
+          <ChevronDown class="h-5 w-5 shrink-0 text-muted" />
+        </button>
+      </h1>
       <button :class="iconButton" :aria-label="t('common.search')" data-testid="open-search" @click="ui.searching = true">
         <Search class="h-6 w-6" />
         <span

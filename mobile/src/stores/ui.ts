@@ -5,6 +5,7 @@ export type Sheet =
   | { type: 'task'; id: string }
   | { type: 'quickadd' }
   | { type: 'projects' }
+  | { type: 'project-switch' }
   | { type: 'columns' }
   | { type: 'vaults' }
   | { type: 'filter' }
