@@ -1,17 +1,15 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import { filterTasks, parseQuery, stringifyQuery, isEmptyFilter, type TaskFilter } from '@jotter/task-filter';
 
 // The same cases run against the Python backend (tests/test_search_conformance.py)
-const here = dirname(fileURLToPath(import.meta.url));
-const fixture = (name: string) => JSON.parse(readFileSync(join(here, '../../../../spec/fixtures/search', name), 'utf8'));
-const { tasks, cases } = fixture('match.json') as {
+import matchFixture from '../../../../spec/fixtures/search/match.json';
+import parseFixture from '../../../../spec/fixtures/search/parse.json';
+
+const { tasks, cases } = matchFixture as {
   tasks: Array<{ id: string; title: string; bucket: string; tags: string[] }>;
   cases: Array<{ name: string; filter: TaskFilter; ids: string[] }>;
 };
-const parseCases = (fixture('parse.json') as { cases: Array<{ query: string; filter: TaskFilter }> }).cases;
+const parseCases = (parseFixture as { cases: Array<{ query: string; filter: TaskFilter }> }).cases;
 
 describe('task filter conformance', () => {
   for (const c of cases) {

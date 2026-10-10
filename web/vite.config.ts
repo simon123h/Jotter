@@ -23,6 +23,7 @@ const appVersion = getAppVersion();
 
 // The colour themes and the title parser are shared with the mobile app and live outside this project (packages/)
 const sharedPackages = fileURLToPath(new URL('../packages', import.meta.url));
+const sharedSpec = fileURLToPath(new URL('../spec', import.meta.url));
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -35,7 +36,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
-    fs: { allow: ['.', sharedPackages] },
+    fs: { allow: ['.', sharedPackages, sharedSpec] },
     proxy: {
       '/api': `http://localhost:${process.env.JOTTER_PORT || '58271'}`,
     },
