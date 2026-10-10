@@ -8,6 +8,7 @@ import { useUiStore } from '@/stores/ui';
 import type { Column } from '@/stores/app';
 import TitleHints from './TitleHints.vue';
 import { useSmartTitle, type Hint } from '@/composables/useSmartTitle';
+import { isoDay } from '@/dates';
 
 /** The tab in view: a new task is filed where the user is looking (its column, tag or planned date). */
 const props = defineProps<{ column: Column | null }>();
@@ -52,9 +53,12 @@ async function submit() {
     // Where the user is looking sets the defaults; what the title says wins
     const viewTag = app.view === 'tags' && column?.value ? [column.value] : [];
     const viewPlanned = app.view === 'planning' && column?.value ? column.value : undefined;
+    // The virtual Postponed column files a task in the default column, postponed to tomorrow
+    const virtual = column?.key === 'postponed' && !app.buckets.some((b) => b.name === 'postponed');
     await app.addTask({
       title: clean,
-      bucket: found.bucket ?? column?.bucket ?? undefined,
+      bucket: found.bucket ?? (virtual ? undefined : (column?.bucket ?? undefined)),
+      postponed_until: virtual ? isoDay(1) : undefined,
       tags: [...new Set([...viewTag, ...found.tags])],
       due_date: found.due_date ?? undefined,
       planned_date: found.planned_date ?? viewPlanned,

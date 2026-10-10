@@ -30,6 +30,7 @@ export interface NewTask {
   tags?: string[];
   due_date?: string;
   planned_date?: string;
+  postponed_until?: string;
   priority?: string;
   color?: string | null;
 }
@@ -383,6 +384,7 @@ export class VaultRepository {
       body: input.body ?? '',
       due_date: input.due_date,
       planned_date: input.planned_date,
+      postponed_until: input.postponed_until,
       priority: input.priority,
       color: input.color ?? undefined,
       created_at: now,

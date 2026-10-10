@@ -30,7 +30,9 @@ const drag = useCardDrag({
   move: async (id, bucket, position) => {
     const before = app.taskById(id);
     await app.moveTask(id, bucket, position);
-    if (before) actions.announceMove(id, { bucket: before.bucket, position: before.position }, bucket);
+    // The postponed date goes along, so that an undo can put it back
+    if (before)
+      actions.announceMove(id, { bucket: before.bucket, position: before.position, postponed: before.postponed_until ?? '' }, bucket);
   },
   onHoldRelease: (task) => app.toggleSelected(task.id),
   onError: (err) => ui.showToast(err instanceof Error ? err.message : String(err)),

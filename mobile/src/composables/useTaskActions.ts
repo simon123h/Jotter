@@ -6,6 +6,7 @@ import { useUiStore } from '@/stores/ui';
 interface Placement {
   bucket: string;
   position: number;
+  postponed?: string;
 }
 
 const list = (ids: string | string[]) => (Array.isArray(ids) ? ids : [ids]);
@@ -65,8 +66,8 @@ export function useTaskActions() {
 
   /** Tells the user a dragged or single task changed bucket, if it did, and lets them undo it. */
   function announceMove(id: string, before: Placement, bucket: string) {
-    if (before.bucket === bucket) return;
-    const title = app.buckets.find((b) => b.name === bucket)?.title ?? bucket;
+    if (before.bucket === bucket && before.postponed === undefined) return;
+    const title = app.buckets.find((b) => b.name === bucket)?.title ?? (bucket === 'postponed' ? t('postponed.title') : bucket);
     offerUndo(t('task.movedTo', { bucket: title }), () => app.restoreMany([{ id, ...before }]));
   }
 
@@ -87,6 +88,8 @@ export function useTaskActions() {
   const setDue = (ids: string[], date: string) => edit(ids, () => ({ due_date: date || undefined }), 'task.edited', 'tasks.dueChanged');
   const setPlanned = (ids: string[], planned: string) =>
     edit(ids, () => ({ planned_date: planned || undefined }), 'task.edited', 'tasks.plannedChanged');
+  const setPostponed = (ids: string[], date: string) =>
+    edit(ids, () => ({ postponed_until: date || undefined }), 'task.edited', 'tasks.postponedChanged');
   const addTags = (ids: string[], tags: string[]) =>
     edit(ids, (task) => ({ tags: [...new Set([...task.tags, ...tags])] }), 'task.edited', 'tasks.tagAdded');
   const removeTag = (ids: string[], tag: string) =>
@@ -123,6 +126,7 @@ export function useTaskActions() {
     setColor,
     setDue,
     setPlanned,
+    setPostponed,
     addTags,
     removeTag,
     moveToProject,

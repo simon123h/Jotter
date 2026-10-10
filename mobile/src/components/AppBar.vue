@@ -39,9 +39,10 @@ const menuItem = 'flex h-12 w-full items-center gap-3 px-4 text-left text-base a
 const viewOptions = computed(() => [
   { id: 'done' as const, label: t('view.hideDone'), on: app.hidden[app.view].done },
   { id: 'archive' as const, label: t('view.hideArchived'), on: app.hidden[app.view].archive },
+  { id: 'postponed' as const, label: t('view.hidePostponed'), on: app.hidden[app.view].postponed },
 ]);
 
-function toggleOption(id: 'done' | 'archive') {
+function toggleOption(id: 'done' | 'archive' | 'postponed') {
   menuOpen.value = false;
   app.toggleHidden(id);
 }

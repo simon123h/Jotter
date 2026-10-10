@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import App from './App.vue';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
+import { isoDay } from '@/dates';
 import { capacitorKeyValue } from '@/data/keyValue';
 import { runShortcut, shortcutAction } from '@/shortcuts';
 import { useSettingsStore } from '@/stores/settings';
@@ -290,6 +291,10 @@ describe('capturing and editing tasks', () => {
       );
       f.put('Jotter/work/a.md', '---\ntitle: Later\nstatus: postponed\npostponed_until: "2030-01-31"\n---\n');
     });
+    // The column of postponed tasks is hidden until it is switched on
+    await find('view-menu').trigger('click');
+    await find('hide-postponed').trigger('click');
+    await settle();
     expect(find('card-postponed').text()).toBe('2030-01-31');
 
     await find('task-card').trigger('click');
@@ -1429,6 +1434,114 @@ describe('view options in the app bar', () => {
     await toggle('hide-archive');
     await start(vault);
     expect(tabs()).toHaveLength(2);
+  });
+});
+
+describe('postponing tasks', () => {
+  const tomorrow = () => isoDay(1);
+  const vault = (f: MemoryFs) => {
+    desktopVault(f);
+    f.put('Jotter/work/d.md', '---\ntitle: Later task\nstatus: todo\nposition: 3000\npostponed_until: "2999-01-01"\n---\n');
+    f.put('Jotter/work/e.md', '---\ntitle: Back again\nstatus: todo\nposition: 4000\npostponed_until: "2020-01-01"\n---\n');
+  };
+  const tabs = () => all('bucket-tab').map((t) => t.text().replace(/\d+$/, '').trim());
+  const showPostponed = async () => {
+    await find('view-menu').trigger('click');
+    await find('hide-postponed').trigger('click');
+    await settle();
+  };
+
+  it('keeps tasks postponed to a later day out of their column, and brings back those whose day has come', async () => {
+    await start(vault);
+    expect(tabs()).toEqual(['To Do', 'Done']);
+    expect(find('board').text()).not.toContain('Later task');
+    expect(find('board').text()).toContain('Back again');
+
+    await showPostponed();
+    expect(tabs()).toEqual(['To Do', 'Postponed', 'Done']);
+    all('bucket-tab')[1]!.element.dispatchEvent(new Event('click'));
+    expect(find('board').text()).toContain('Later task');
+  });
+
+  it('leaves postponed tasks out of the tag and planning views until they are shown', async () => {
+    await start(vault);
+    await find('view-tags').trigger('click');
+    await settle();
+    expect(find('board').text()).not.toContain('Later task');
+    await showPostponed();
+    expect(find('board').text()).toContain('Later task');
+  });
+
+  it('postpones the selected tasks from the overflow menu, and can undo it', async () => {
+    await start(desktopVault);
+    await holdSelect('Write report');
+    await find('bulk-more').trigger('click');
+    await settle();
+    await find('more-postpone').trigger('click');
+    await find('more-postpone-tomorrow').trigger('click');
+    await settle();
+
+    expect(file('a')).toContain(`postponed_until: ${tomorrow()}`);
+    expect(file('a')).toContain('status: todo');
+    expect(find('board').text()).not.toContain('Write report');
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('a')).not.toContain('postponed_until');
+  });
+
+  it('clears the postponement from the overflow menu', async () => {
+    await start(vault);
+    await showPostponed();
+    await holdSelect('Later task');
+    await find('bulk-more').trigger('click');
+    await settle();
+    await find('more-postpone').trigger('click');
+    await find('more-postpone-clear').trigger('click');
+    await settle();
+    expect(file('d')).not.toContain('postponed_until');
+  });
+
+  it('moves a task into the Postponed column by postponing it to tomorrow, and out of it by moving it elsewhere', async () => {
+    await start(vault);
+    const app = useAppStore();
+    await app.moveTask('a', 'postponed');
+    await settle();
+    expect(file('a')).toContain(`postponed_until: ${tomorrow()}`);
+    expect(file('a')).toContain('status: todo');
+
+    await showPostponed();
+    await holdSelect('Later task');
+    await find('bulk-move').trigger('click');
+    await settle();
+    await find('move-to-todo').trigger('click');
+    await settle();
+    expect(file('d')).not.toContain('postponed_until');
+    expect(file('d')).toContain('status: todo');
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('d')).toContain('postponed_until: 2999-01-01');
+  });
+
+  it('adds a task in the Postponed column postponed to tomorrow', async () => {
+    await start(vault);
+    await showPostponed();
+    useUiStore().activeColumn = 1;
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'Think about it');
+    await submit('quick-add-input');
+    const data = [...fs.files.entries()].find(([, f]) => f.data.includes('title: Think about it'))?.[1].data ?? '';
+    expect(data).toContain(`postponed_until: ${tomorrow()}`);
+    expect(data).toContain('status: todo');
+  });
+
+  it('sets the postponed date on the task page, for any task', async () => {
+    await start(desktopVault);
+    await row('Write report').find('[data-testid="task-card"]').trigger('click');
+    await type('task-postponed', '2999-05-05', 'change');
+    await settle();
+    expect(file('a')).toContain('postponed_until: 2999-05-05');
   });
 });
 

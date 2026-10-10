@@ -2,6 +2,7 @@
 import { Check } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t } from '@/i18n';
+import { isPostponed } from '@/dates';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
@@ -11,8 +12,12 @@ const app = useAppStore();
 const ui = useUiStore();
 const actions = useTaskActions();
 
-/** Every task is in that bucket already, so there is nothing to move. */
-const allIn = (bucket: string) => props.ids.every((id) => app.taskById(id)?.bucket === bucket);
+/** Every task is in that bucket already, so there is nothing to move. A postponed task is not: moving it brings it back. */
+const allIn = (bucket: string) =>
+  props.ids.every((id) => {
+    const task = app.taskById(id);
+    return task?.bucket === bucket && !isPostponed(task);
+  });
 
 async function pick(bucket: string) {
   ui.close();

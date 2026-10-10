@@ -1,5 +1,16 @@
 import { locale, t } from '@/i18n';
 
+/** A day as YYYY-MM-DD in the local calendar, `offset` days from today. */
+export function isoDay(offset = 0, now: Date = new Date()): string {
+  const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+}
+
+/** Postponed to a day after today: the task is out of the way until then. */
+export const isPostponed = (task: { postponed_until?: string | null }, now: Date = new Date()) =>
+  !!task.postponed_until && task.postponed_until > isoDay(0, now);
+
 export type DueTone = 'overdue' | 'today' | 'tomorrow' | 'later';
 
 /** A due date as Todoist shows it: Today, Tomorrow, Yesterday, or a short date; with a tone for the colour. */

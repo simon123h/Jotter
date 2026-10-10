@@ -362,7 +362,7 @@ async function removeAttachment(name: string) {
             </label>
           </div>
 
-          <label v-if="draft.bucket === 'postponed' || draft.postponed" class="block">
+          <label class="block">
             <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.postponed') }}</span>
             <input v-model="draft.postponed" type="date" :class="field" data-testid="task-postponed" @change="saveSoon" />
           </label>

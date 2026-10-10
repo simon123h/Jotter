@@ -1,21 +1,24 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Archive, CalendarDays, Check, FolderInput, Palette, Slash, Trash2 } from '@lucide/vue';
+import { Archive, CalendarDays, Check, FolderInput, Hourglass, Palette, Slash, Trash2 } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS } from '@/taskColors';
+import { isoDay } from '@/dates';
 
 const app = useAppStore();
 const ui = useUiStore();
 const actions = useTaskActions();
 
-type Section = 'due' | 'color';
+type Section = 'due' | 'postpone' | 'color';
 const open = ref<Section | null>(null);
 const due = ref('');
+const postponeTo = ref('');
 const row = 'flex h-14 w-full items-center gap-4 px-6 text-left text-base active:bg-line';
+const chip = 'rounded-full border border-line px-3 py-1.5 text-sm active:bg-line';
 const field = 'w-full rounded-xl border border-line bg-surface px-3 py-3 text-base outline-none focus:border-accent';
 
 const ids = () => [...app.selection];
@@ -66,6 +69,34 @@ async function remove() {
         >
           {{ t('bulk.clearDate') }}
         </button>
+      </div>
+
+      <button :class="row" data-testid="more-postpone" @click="toggle('postpone')">
+        <Hourglass class="h-5 w-5 shrink-0 text-muted" />{{ t('bulk.postpone') }}
+      </button>
+      <div v-if="open === 'postpone'" class="px-6 pb-3">
+        <div class="flex flex-wrap gap-2 pb-2">
+          <button :class="chip" data-testid="more-postpone-tomorrow" @click="finish(() => actions.setPostponed(ids(), isoDay(1)))">
+            {{ t('date.tomorrow') }}
+          </button>
+          <button :class="chip" data-testid="more-postpone-week" @click="finish(() => actions.setPostponed(ids(), isoDay(7)))">
+            {{ t('postpone.nextWeek') }}
+          </button>
+          <button :class="chip" data-testid="more-postpone-clear" @click="finish(() => actions.setPostponed(ids(), ''))">
+            {{ t('postpone.clear') }}
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <input v-model="postponeTo" type="date" :class="field" data-testid="more-postpone-input" />
+          <button
+            class="rounded-xl bg-accent px-4 text-sm font-semibold text-accent-ink disabled:opacity-40"
+            :disabled="!postponeTo"
+            data-testid="more-postpone-apply"
+            @click="finish(() => actions.setPostponed(ids(), postponeTo))"
+          >
+            {{ t('bulk.apply') }}
+          </button>
+        </div>
       </div>
 
       <button :class="row" data-testid="more-color" @click="toggle('color')">
