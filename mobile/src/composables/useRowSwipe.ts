@@ -1,11 +1,12 @@
 import { ref, onBeforeUnmount } from 'vue';
 
 /** How far a row has to be pulled before letting go triggers its action. */
-export const SWIPE_TRIGGER = 96;
-const MAX_PULL = 160;
+export const SWIPE_TRIGGER = 120;
+const MAX_PULL = 180;
 const INTENT_SLOP = 8;
-const FLING_SPEED = 0.6; // px per ms
-const FLING_MIN = 40;
+// A flick must be fast and long: a short quick one is how columns are paged
+const FLING_SPEED = 0.9; // px per ms
+const FLING_MIN = 80;
 
 export type SwipeDirection = 'right' | 'left';
 

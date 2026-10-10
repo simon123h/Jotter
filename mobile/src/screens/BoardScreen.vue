@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
 import BottomNav from '@/components/BottomNav.vue';
@@ -102,9 +102,20 @@ function holdWithinOneColumn(el: HTMLElement) {
   swipeIdle = setTimeout(() => (swipeFrom = null), 200);
 }
 
+let pagingIdle: ReturnType<typeof setTimeout> | undefined;
+
+onBeforeUnmount(() => {
+  clearTimeout(pagingIdle);
+  ui.paging = false;
+});
+
 function onScroll() {
   const el = scroller.value;
   if (!el || !el.clientWidth) return;
+  // The next touch may still be a flick across columns: rows ignore swipes until the columns have rested for a moment
+  ui.paging = true;
+  clearTimeout(pagingIdle);
+  pagingIdle = setTimeout(() => (ui.paging = false), 300);
   holdWithinOneColumn(el);
   const position = el.scrollLeft / el.clientWidth;
   ui.columnProgress = position;

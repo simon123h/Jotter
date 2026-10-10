@@ -29,6 +29,8 @@ export const useUiStore = defineStore('ui', () => {
   const navHidden = ref(false);
   /** The search field is open in the app bar. */
   const searching = ref(false);
+  /** The columns are sliding sideways (or just stopped): a row must not take the next touch for a swipe. */
+  const paging = ref(false);
   /** A card is being dragged: the board must not change under the finger. */
   const dragging = ref(false);
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -52,5 +54,19 @@ export const useUiStore = defineStore('ui', () => {
     toast.value = null;
   };
 
-  return { sheet, toast, dismissToast, activeColumn, columnProgress, navHidden, searching, dragging, isOpen, open, close, showToast };
+  return {
+    sheet,
+    toast,
+    dismissToast,
+    activeColumn,
+    columnProgress,
+    navHidden,
+    searching,
+    paging,
+    dragging,
+    isOpen,
+    open,
+    close,
+    showToast,
+  };
 });

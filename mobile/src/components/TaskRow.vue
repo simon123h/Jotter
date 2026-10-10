@@ -52,8 +52,8 @@ const swipe = useRowSwipe({
     else if (rightAction.value === 'done') emit('done');
     else emit('reopen');
   },
-  // Not while this or another row is being held or dragged
-  disabled: () => !!props.inert || ui.dragging,
+  // Not while this or another row is being held or dragged, nor while the columns are still sliding in
+  disabled: () => !!props.inert || ui.dragging || ui.paging,
 });
 
 // Priority colours as in Todoist: the ring of the checkbox

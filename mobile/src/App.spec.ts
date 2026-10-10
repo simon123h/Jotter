@@ -1517,6 +1517,21 @@ describe('task page', () => {
 });
 
 describe('swiping between columns', () => {
+  it('does not take a swipe on a row for a task action while the columns are still sliding', async () => {
+    await start(desktopVault);
+    const scroller = find('columns').element as HTMLElement;
+    Object.defineProperty(scroller, 'clientWidth', { value: 400, configurable: true });
+    scroller.dispatchEvent(new Event('scroll'));
+    await settle();
+
+    await swipe('Write report', 150);
+    expect(file('a')).not.toContain('status: done');
+
+    await wait(350);
+    await swipe('Write report', 150);
+    expect(file('a')).toContain('status: done');
+  });
+
   it('moves one column per swipe, however hard the flick', async () => {
     await start((f) => {
       desktopVault(f);
