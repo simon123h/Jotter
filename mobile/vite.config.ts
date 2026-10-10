@@ -24,6 +24,8 @@ export default defineConfig({
     // The shared packages live outside this project. Builds and tests read it freely, but the dev server only
     // serves files under the project root unless they are listed here.
     fs: { allow: ['.', packages] },
+    // Gradle writes reports and build output under android/ all the time; none of it is part of the web app
+    watch: { ignored: ['**/android/**'] },
   },
   resolve: {
     alias: {
