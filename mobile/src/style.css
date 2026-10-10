@@ -190,13 +190,13 @@ body {
 /* Bottom sheets slide up from the bottom edge and back down, while the backdrop fades */
 .sheet-enter-active .sheet-backdrop,
 .sheet-leave-active .sheet-backdrop {
-  transition: opacity 0.25s ease;
+  transition: opacity 0.16s ease;
 }
 .sheet-enter-active .sheet-panel {
-  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1);
 }
 .sheet-leave-active .sheet-panel {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 1, 1);
+  transition: transform 0.14s cubic-bezier(0.4, 0, 1, 1);
 }
 .sheet-leave-active {
   pointer-events: none;
