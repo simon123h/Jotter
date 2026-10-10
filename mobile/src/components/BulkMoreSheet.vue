@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ArrowRightLeft, Archive, CalendarDays, Check, Palette, Slash, Trash2 } from '@lucide/vue';
+import { Archive, CalendarDays, Check, FolderInput, Palette, Slash, Trash2 } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -38,12 +38,12 @@ async function remove() {
       <button :class="row" data-testid="more-done" @click="finish(() => actions.markDone(ids()))">
         <Check class="h-5 w-5 shrink-0 text-muted" />{{ t('task.markDone') }}
       </button>
-      <!-- The board moves tasks by swipe; the other views have no columns to swipe between -->
-      <button v-if="app.view !== 'board'" :class="row" data-testid="more-move" @click="ui.open({ type: 'move', ids: ids() })">
-        <ArrowRightLeft class="h-5 w-5 shrink-0 text-muted" />{{ t('move.title') }}
-      </button>
       <button :class="row" data-testid="more-archive" @click="finish(() => actions.archive(ids()))">
         <Archive class="h-5 w-5 shrink-0 text-muted" />{{ t('task.archive') }}
+      </button>
+
+      <button :class="row" data-testid="more-project" @click="ui.open({ type: 'bulk-project' })">
+        <FolderInput class="h-5 w-5 shrink-0 text-muted" />{{ t('bulk.project') }}
       </button>
 
       <button :class="row" data-testid="more-due" @click="toggle('due')">

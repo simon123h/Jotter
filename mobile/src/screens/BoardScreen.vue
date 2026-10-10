@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
 import BottomNav from '@/components/BottomNav.vue';
@@ -46,19 +46,6 @@ const isDragged = (task: Task) => task.id === drag.dragging.value?.id;
 const shown = (tasks: Task[]) => tasks.filter((t) => !isDragged(t));
 const dropIndex = (key: string) => (drag.target.value?.columnKey === key ? drag.target.value.index : -1);
 
-/** The tasks a swipe on `task` acts on: all selected ones when it is one of several, otherwise just itself. */
-const targets = (task: Task) => (app.isSelected(task.id) && app.selectedCount > 1 ? [...app.selection] : [task.id]);
-const bulkCount = (task: Task) => (app.isSelected(task.id) ? app.selectedCount : 0);
-
-/** Where a swipe to the left leads: the column picker on the board, the planned dates or the tags in the other views. */
-const leftAction = computed(() => (app.view === 'planning' ? 'planned' : app.view === 'tags' ? 'tags' : 'move'));
-function onSwipeLeft(task: Task) {
-  const ids = targets(task);
-  if (leftAction.value === 'planned') ui.open({ type: 'bulk-planned', ids });
-  else if (leftAction.value === 'tags') ui.open({ type: 'bulk-tags', ids });
-  else ui.open({ type: 'move', ids });
-}
-
 /** A tap opens a task, or ticks it while others are selected. */
 function onTap(task: Task) {
   if (drag.consumeClick()) return;
@@ -102,20 +89,9 @@ function holdWithinOneColumn(el: HTMLElement) {
   swipeIdle = setTimeout(() => (swipeFrom = null), 200);
 }
 
-let pagingIdle: ReturnType<typeof setTimeout> | undefined;
-
-onBeforeUnmount(() => {
-  clearTimeout(pagingIdle);
-  ui.paging = false;
-});
-
 function onScroll() {
   const el = scroller.value;
   if (!el || !el.clientWidth) return;
-  // The next touch may still be a flick across columns: rows ignore swipes until the columns have rested for a moment
-  ui.paging = true;
-  clearTimeout(pagingIdle);
-  pagingIdle = setTimeout(() => (ui.paging = false), 300);
   holdWithinOneColumn(el);
   const position = el.scrollLeft / el.clientWidth;
   ui.columnProgress = position;
@@ -219,12 +195,10 @@ watch(
                   :task="task"
                   :selected="app.isSelected(task.id)"
                   :lifted="drag.holding.value?.id === task.id"
-                  :bulk-count="bulkCount(task)"
+                  :selecting="app.selectedCount > 0"
                   @tap="onTap(task)"
-                  @done="actions.markDone(targets(task))"
-                  @reopen="actions.reopen(targets(task))"
-                  :left-action="leftAction"
-                  @move="onSwipeLeft(task)"
+                  @done="actions.markDone([task.id])"
+                  @reopen="actions.reopen([task.id])"
                 />
               </li>
             </template>

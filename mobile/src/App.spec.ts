@@ -659,21 +659,10 @@ async function holdSelect(title: string) {
   await settle();
 }
 
-/**
- * A finger on a row: down, then sideways in two steps, then up. The events arrive in one tick, so anything that
- * moves 40px or more counts as a fling and triggers; tests that only look at the swipe use shorter pulls.
- */
-async function swipe(title: string, dx: number, { release = true, dy = 2 } = {}) {
-  const content = row(title).find('[data-testid="task-card"]').element;
-  content.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 200, clientY: 100 }));
-  window.dispatchEvent(new MouseEvent('pointermove', { clientX: 200 + dx / 2, clientY: 100 + dy / 2 }));
-  window.dispatchEvent(new MouseEvent('pointermove', { clientX: 200 + dx, clientY: 100 + dy }));
+/** A tap on the circle in front of a task. */
+async function check(title: string) {
+  await row(title).find('[data-testid="row-check"]').trigger('click');
   await settle();
-  if (release) {
-    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 200 + dx, clientY: 100 + dy }));
-    await wait(250); // the row slides out before it acts
-    await settle();
-  }
 }
 
 describe('finishing, archiving and moving', () => {
@@ -694,64 +683,22 @@ describe('finishing, archiving and moving', () => {
     expect(find('task-title').exists()).toBe(false);
   });
 
-  it('does nothing when the checkbox is tapped, for now', async () => {
+  it('marks a task done with the circle in front of it, without opening it, and can undo', async () => {
     await start(desktopVault);
-    const before = file('a');
-    await row('Write report').find('[data-testid="row-check"]').trigger('click');
-    await settle();
-
-    expect(file('a')).toBe(before);
-    expect(find('selection-count').exists()).toBe(false);
-    expect(find('task-title').exists()).toBe(false); // and it does not open the task either
-    expect(find('toast').exists()).toBe(false);
-  });
-
-  it('shows what a swipe will do while the finger is down, and nothing for a vertical move', async () => {
-    await start(desktopVault);
-    await swipe('Write report', 30, { release: false });
-    expect(find('swipe-right-bg').text()).toContain('Done');
-    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 230, clientY: 102 }));
-    await wait(50);
-
-    await swipe('Write report', -30, { release: false });
-    expect(find('swipe-left-bg').text()).toContain('Move');
-    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 170, clientY: 102 }));
-    await wait(50);
-
-    // A done task offers to be reopened instead
-    await swipe('Ship release', 30, { release: false });
-    expect(find('swipe-right-bg').text()).toContain('Reopen');
-    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 230, clientY: 102 }));
-    await wait(50);
-
-    // Mostly vertical: that is scrolling
-    await swipe('Write report', 12, { release: false, dy: 60 });
-    expect(find('swipe-right-bg').exists()).toBe(false);
-    expect(find('swipe-left-bg').exists()).toBe(false);
-  });
-
-  it('marks a task done by swiping it to the right', async () => {
-    await start(desktopVault);
-    await swipe('Write report', 150);
+    await check('Write report');
 
     expect(file('a')).toContain('status: done');
     expect(find('toast').text()).toContain('Marked done');
-  });
-
-  it('does nothing for a short swipe, and the tap that ends it does not open the task', async () => {
-    await start(desktopVault);
-    const before = file('a');
-    await swipe('Write report', 30);
-    await row('Write report').find('[data-testid="task-card"]').trigger('click');
-    await settle();
-
-    expect(file('a')).toBe(before);
     expect(find('task-title').exists()).toBe(false);
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('a')).toContain('status: todo');
   });
 
-  it('takes a done task back to the inbox by swiping it to the right, and can undo', async () => {
+  it('takes a done task back to the inbox with its circle, and can undo', async () => {
     await start(desktopVault);
-    await swipe('Ship release', 150);
+    await check('Ship release');
 
     expect(file('c')).toContain('status: todo'); // the first open bucket
     expect(find('toast').text()).toContain('Reopened');
@@ -762,7 +709,7 @@ describe('finishing, archiving and moving', () => {
     expect(file('c')).toContain('status: done');
   });
 
-  it('marks an archived task done by swiping it to the right, and can undo', async () => {
+  it('marks an archived task done with its circle, and can undo', async () => {
     await start((f) => {
       f.put(
         'Jotter/work/index.md',
@@ -770,7 +717,7 @@ describe('finishing, archiving and moving', () => {
       );
       f.put('Jotter/work/a.md', '---\ntitle: Old\nstatus: archive\n---\n');
     });
-    await swipe('Old', 150);
+    await check('Old');
 
     expect(file('a')).toContain('status: done');
     expect(find('toast').text()).toContain('Marked done');
@@ -796,7 +743,7 @@ describe('finishing, archiving and moving', () => {
     expect(heading('Shelved').classes()).toContain('text-muted');
   });
 
-  it('keeps archiving to the task sheet and the column picker, not the swipe', async () => {
+  it('keeps archiving to the task sheet and the column picker', async () => {
     await start(desktopVault);
     await row('Ship release').find('[data-testid="task-card"]').trigger('click');
     // The actions that change the task are behind the menu, away from the arrow that leaves the page
@@ -809,9 +756,11 @@ describe('finishing, archiving and moving', () => {
     expect(find('toast').text()).toContain('Archived');
   });
 
-  it('moves a task to a column of its choice by swiping it to the left', async () => {
+  it('moves a task to a column of its choice with the toolbar', async () => {
     await start(desktopVault);
-    await swipe('Write report', -150);
+    await holdSelect('Write report');
+    await find('bulk-move').trigger('click');
+    await settle();
 
     expect(find('move-list').exists()).toBe(true);
     expect(find('move-to-todo').attributes('disabled')).toBeDefined(); // where it is now
@@ -950,7 +899,7 @@ describe('rearranging by drag and drop', () => {
     expect(find('drag-ghost').exists()).toBe(false);
   });
 
-  it('does not swipe the row sideways once the hold has fired', async () => {
+  it('drags the row instead once the hold has fired', async () => {
     await start(desktopVault);
     stubLayout();
     pointer('pointerdown', 50, 100, wrapper.find('[data-task-id="a"]').element);
@@ -959,8 +908,7 @@ describe('rearranging by drag and drop', () => {
     pointer('pointermove', 250, 104);
     await settle();
 
-    expect(find('swipe-right-bg').exists()).toBe(false);
-    expect(find('drag-ghost').exists()).toBe(true); // it is a drag now, not a swipe
+    expect(find('drag-ghost').exists()).toBe(true);
     pointer('pointerup', 250, 104);
     await settle();
   });
@@ -1052,7 +1000,7 @@ describe('selecting tasks', () => {
     await holdSelect('Write report');
     await settle();
     expect(find('fab').exists()).toBe(false);
-    expect(['bulk-tag', 'bulk-priority', 'bulk-planned', 'bulk-project', 'bulk-more'].every((id) => find(id).exists())).toBe(true);
+    expect(['bulk-move', 'bulk-tag', 'bulk-priority', 'bulk-planned', 'bulk-more'].every((id) => find(id).exists())).toBe(true);
 
     await find('clear-selection').trigger('click');
     await settle();
@@ -1066,10 +1014,13 @@ describe('bulk actions on the selection', () => {
     for (const title of titles) await holdSelect(title);
   };
 
-  it('marks all selected tasks done when one of them is swiped right, and can undo them together', async () => {
+  it('marks all selected tasks done from the overflow menu, and can undo them together', async () => {
     await start(desktopVault);
     await pick('Write report', 'Book flights');
-    await swipe('Write report', 150);
+    await find('bulk-more').trigger('click');
+    await settle();
+    await find('more-done').trigger('click');
+    await settle();
 
     expect(file('a')).toContain('status: done');
     expect(file('b')).toContain('status: done');
@@ -1083,19 +1034,11 @@ describe('bulk actions on the selection', () => {
     expect(file('b')).toContain('status: todo');
   });
 
-  it('shows the count on the swipe background of a selected row', async () => {
+  it('moves all selected tasks to the column chosen in the picker', async () => {
     await start(desktopVault);
     await pick('Write report', 'Book flights');
-    await swipe('Write report', 30, { release: false });
-    expect(find('swipe-right-bg').text()).toContain('2');
-    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 230, clientY: 102 }));
-    await wait(50);
-  });
-
-  it('moves all selected tasks to the column chosen in the picker when one is swiped left', async () => {
-    await start(desktopVault);
-    await pick('Write report', 'Book flights');
-    await swipe('Book flights', -150);
+    await find('bulk-move').trigger('click');
+    await settle();
 
     expect(find('move-list').exists()).toBe(true);
     await find('move-to-done').trigger('click');
@@ -1106,12 +1049,12 @@ describe('bulk actions on the selection', () => {
     expect(find('toast').text()).toContain('2 tasks moved to Done');
   });
 
-  it('acts on just the swiped task when it is not one of the selected ones', async () => {
+  it('selects instead of finishing when the circle is tapped during a selection', async () => {
     await start(desktopVault);
-    await pick('Write report', 'Book flights');
-    await swipe('Ship release', 150); // done -> reopen, alone
+    await pick('Write report');
+    await wait(450); // the click that ends the long press is over
+    await check('Book flights');
 
-    expect(file('c')).toContain('status: todo');
     expect(file('a')).toContain('status: todo');
     expect(file('b')).toContain('status: todo');
     expect(find('selection-count').text()).toBe('2 selected');
@@ -1172,7 +1115,9 @@ describe('bulk actions on the selection', () => {
     await settle();
 
     await pick('Write report', 'Book flights');
-    await find('bulk-project').trigger('click');
+    await find('bulk-more').trigger('click');
+    await settle();
+    await find('more-project').trigger('click');
     await settle();
     expect(all('project-list')).toHaveLength(1);
     await find('project-home').trigger('click');
@@ -1368,46 +1313,12 @@ describe('tag and planning views', () => {
     expect(tabs().map((t) => t.replace(/\d+$/, '').trim())).toEqual(['To Do', 'Done']);
   });
 
-  it('swipes left to set the planned date in the planning view', async () => {
-    await start(viewsVault);
-    await switchTo('planning');
-    await swipe('Loose end', -150);
-    await settle();
-
-    await find('planned-tomorrow').trigger('click');
-    await settle();
-    expect(file('d')).toContain('planned_date: tomorrow');
-  });
-
-  it('swipes left to set a tag in the tag view, with the tags sheet', async () => {
+  it('moves to a column from the toolbar in the other views too', async () => {
     await start(viewsVault);
     await switchTo('tags');
     useUiStore().activeColumn = 2;
-    await swipe('Loose end', -150);
-    await settle();
-
-    await type('tags-input', 'errand');
-    await submit('tags-add');
-    await settle();
-    expect(file('d')).toContain('errand');
-  });
-
-  it('offers moving to a column in the overflow menu of the other views only', async () => {
-    await start(viewsVault);
     await holdSelect('Loose end');
-    await find('bulk-more').trigger('click');
-    await settle();
-    expect(find('more-move').exists()).toBe(false);
-    await closeSheet();
-    await find('clear-selection').trigger('click');
-    await settle();
-
-    await switchTo('tags');
-    useUiStore().activeColumn = 2;
-    await holdSelect('Loose end');
-    await find('bulk-more').trigger('click');
-    await settle();
-    await find('more-move').trigger('click');
+    await find('bulk-move').trigger('click');
     await settle();
     await find('move-to-done').trigger('click');
     await settle();
@@ -1517,21 +1428,6 @@ describe('task page', () => {
 });
 
 describe('swiping between columns', () => {
-  it('does not take a swipe on a row for a task action while the columns are still sliding', async () => {
-    await start(desktopVault);
-    const scroller = find('columns').element as HTMLElement;
-    Object.defineProperty(scroller, 'clientWidth', { value: 400, configurable: true });
-    scroller.dispatchEvent(new Event('scroll'));
-    await settle();
-
-    await swipe('Write report', 150);
-    expect(file('a')).not.toContain('status: done');
-
-    await wait(350);
-    await swipe('Write report', 150);
-    expect(file('a')).toContain('status: done');
-  });
-
   it('moves one column per swipe, however hard the flick', async () => {
     await start((f) => {
       desktopVault(f);
