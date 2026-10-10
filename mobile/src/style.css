@@ -24,7 +24,8 @@
 .theme-cyberpunk,
 .theme-midnight,
 .theme-forest,
-.theme-sakura {
+.theme-sakura,
+.theme-true-black {
   --app-accent-ink: var(--theme-bg-base);
   --app-danger: #e5766a;
   color-scheme: dark;

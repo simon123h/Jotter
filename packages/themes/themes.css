@@ -124,6 +124,26 @@
   --theme-text-input: #fff1f2;
 }
 
+/* Theme: True Black (Dark): a pure black background, for OLED screens */
+.theme-true-black {
+  --theme-bg-base: #000000;
+  --theme-bg-column: rgba(255, 255, 255, 0.04);
+  --theme-bg-card: #111111;
+  --theme-border: rgba(255, 255, 255, 0.14);
+  --theme-primary: #2563eb; /* blue-600 */
+  --theme-primary-hover: #3b82f6; /* blue-500 */
+  --theme-accent: #60a5fa; /* blue-400 */
+  --theme-accent-hover: #93c5fd;
+  --theme-grad-from: #60a5fa;
+  --theme-grad-to: #a78bfa; /* violet-400 */
+  --theme-ring: rgba(96, 165, 250, 0.3);
+
+  --theme-text-main: #f5f5f5;
+  --theme-text-card: #f5f5f5;
+  --theme-text-muted: #a3a3a3; /* neutral-400 */
+  --theme-text-input: #f5f5f5;
+}
+
 /* Theme: Nordic Light (Light) */
 .theme-nordic-light {
   --theme-bg-base: #f8fafc; /* slate-50 */

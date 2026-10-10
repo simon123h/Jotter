@@ -30,6 +30,7 @@ export const de = {
     frost: 'Nordic Frost',
     cyberpunk: 'Cyberpunk Neon',
     sakura: 'Sakura Rose',
+    'true-black': 'True Black',
     'nordic-light': 'Nordic Light',
     'desert-light': 'Desert Amber',
     'earth-light': 'Erde & Moos',
