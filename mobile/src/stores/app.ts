@@ -1,7 +1,8 @@
 import { ref, shallowRef, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { Task, Project, Bucket } from '@jotter/vault-format';
-import { getRepository, applyTaskFilter, type VaultRepository, type Vault, type NewTask, type TaskFilter } from '@/data';
+import { filterTasks, isEmptyFilter, parseQuery } from '@jotter/task-filter';
+import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { capacitorKeyValue as preferences } from '@/data/keyValue';
 import { t } from '@/i18n';
@@ -109,7 +110,6 @@ export const useAppStore = defineStore('app', () => {
   const hidden = ref<Record<View, Hidden>>(defaultHidden());
   const buckets = ref<Bucket[]>([]);
   const allTasks = ref<Task[]>([]);
-  const filter = ref<{ search: string; priority: string; tag: string }>({ search: '', priority: '', tag: '' });
   const unreadable = ref<string[]>([]);
   /** The tasks ticked with their checkboxes. Bulk actions and swipes act on these. */
   const selection = ref<string[]>([]);
@@ -125,13 +125,11 @@ export const useAppStore = defineStore('app', () => {
     ...projects.value.filter((p) => !pinned.value.includes(p.id)),
   ]);
 
-  const taskFilter = computed<TaskFilter>(() => ({
-    search: filter.value.search,
-    priority: filter.value.priority || undefined,
-    tags: filter.value.tag ? [filter.value.tag] : undefined,
-  }));
-  const isFiltering = computed(() => !!(filter.value.search || filter.value.priority || filter.value.tag));
-  const visibleTasks = computed(() => applyTaskFilter(allTasks.value, taskFilter.value));
+  /** The search field's text, in the query language of packages/task-filter. */
+  const query = ref('');
+  const parsedFilter = computed(() => parseQuery(query.value));
+  const isFiltering = computed(() => !isEmptyFilter(parsedFilter.value));
+  const visibleTasks = computed(() => filterTasks(allTasks.value, parsedFilter.value));
   const allTags = computed(() => [...new Set(allTasks.value.flatMap((t) => t.tags))].sort());
 
   /** The Postponed column is virtual when the project has no column of that name. */
@@ -572,7 +570,7 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function resetFilter() {
-    filter.value = { search: '', priority: '', tag: '' };
+    query.value = '';
   }
 
   return {
@@ -593,7 +591,8 @@ export const useAppStore = defineStore('app', () => {
     project,
     buckets,
     allTasks,
-    filter,
+    query,
+    parsedFilter,
     isFiltering,
     allTags,
     columns,

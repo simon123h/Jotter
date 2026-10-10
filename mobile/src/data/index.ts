@@ -4,8 +4,8 @@ import { VaultRegistry } from './vaults';
 import { VaultRepository } from './repository';
 
 export type { Vault } from './vaults';
-export type { TaskFilter, NewTask, TaskUpdate, SyncResult } from './repository';
-export { VaultRepository, applyTaskFilter } from './repository';
+export type { NewTask, TaskUpdate, SyncResult } from './repository';
+export { VaultRepository } from './repository';
 
 let repository: VaultRepository | null = null;
 

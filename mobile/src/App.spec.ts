@@ -363,6 +363,44 @@ describe('board', () => {
     expect(find('filter-active').exists()).toBe(false);
   });
 
+  it('understands the query language of the desktop search in the search field', async () => {
+    await start(desktopVault);
+    const titles = () => all('task-card').map((c) => c.text());
+    await find('open-search').trigger('click');
+
+    await type('search-input', 'tag:office prio:high');
+    expect(titles()).toEqual([expect.stringContaining('Write report')]);
+
+    await type('search-input', 'due:none');
+    expect(titles()).toEqual([expect.stringContaining('Write report'), expect.stringContaining('Ship release')]);
+
+    await type('search-input', 'due:before:2020-12-31 bucket:todo');
+    expect(titles()).toEqual([expect.stringContaining('Book flights')]);
+
+    // A word typed so far finds the words that start with it, in the notes too
+    await type('search-input', 'quart');
+    expect(titles()).toEqual([expect.stringContaining('Write report')]);
+    await type('search-input', 'port');
+    expect(titles()).toEqual([]);
+    expect(find('filter-active').exists()).toBe(false); // plain words are no extra filter
+  });
+
+  it('keeps the filter sheet and the search field in step', async () => {
+    await start(desktopVault);
+    await find('open-search').trigger('click');
+    await type('search-input', 'flights prio:high');
+    await find('open-filter').trigger('click');
+    expect((find('filter-priority').element as HTMLSelectElement).value).toBe('high');
+
+    await type('filter-due', 'none', 'change');
+    expect((find('search-input').element as HTMLInputElement).value).toBe('priority:high due:none flights');
+
+    await type('filter-priority', '', 'change');
+    expect((find('search-input').element as HTMLInputElement).value).toBe('due:none flights');
+    await find('filter-clear').trigger('click');
+    expect((find('search-input').element as HTMLInputElement).value).toBe('');
+  });
+
   it('puts tasks whose bucket the project does not define into an extra column', async () => {
     await start((f) => {
       desktopVault(f);

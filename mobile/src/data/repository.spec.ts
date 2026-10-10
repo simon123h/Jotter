@@ -202,9 +202,9 @@ describe('tasks', () => {
 
   it('filters by bucket, tags, priority and text, sorted by position', async () => {
     expect((await repo.listTasks('work', { bucket: 'done' })).map((t) => t.id)).toEqual(['b']);
-    expect((await repo.listTasks('work', { tags: ['x', 'y'] })).map((t) => t.id)).toEqual(['a']);
-    expect((await repo.listTasks('work', { tags: ['x', 'nope'] })).length).toBe(0);
-    expect((await repo.listTasks('work', { priority: 'high' })).map((t) => t.id)).toEqual(['b']);
+    expect((await repo.listTasks('work', { tags: 'x,y', tag_mode: 'all' })).map((t) => t.id)).toEqual(['a']);
+    expect((await repo.listTasks('work', { tags: 'x,nope', tag_mode: 'all' })).length).toBe(0);
+    expect((await repo.listTasks('work', { priorities: 'high' })).map((t) => t.id)).toEqual(['b']);
     expect((await repo.listTasks(null, { search: 'BETA body' })).map((t) => t.id)).toEqual(['b']);
   });
 });

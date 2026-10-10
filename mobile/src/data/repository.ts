@@ -8,19 +8,11 @@ import {
   type Project,
   type Bucket,
 } from '@jotter/vault-format';
+import { filterTasks, type TaskFilter } from '@jotter/task-filter';
 import { VaultDb, type CachedTask } from './db';
 import type { FsPort } from './fs';
 import { ulid } from './ulid';
 import { VaultRegistry, type Vault } from './vaults';
-
-export interface TaskFilter {
-  bucket?: string;
-  /** Every listed tag must be on the task. */
-  tags?: string[];
-  priority?: string;
-  /** Case-insensitive text in the title, body or tags. */
-  search?: string;
-}
 
 export interface NewTask {
   title: string;
@@ -58,17 +50,6 @@ const isTaskFile = (entry: { name: string; type: string }) => {
   const lower = entry.name.toLowerCase();
   return entry.type === 'file' && lower.endsWith('.md') && !entry.name.startsWith('.') && lower !== 'index.md' && lower !== 'readme.md';
 };
-
-/** Keeps the tasks matching the filter, sorted by position. */
-export function applyTaskFilter<T extends Task>(tasks: T[], filter: TaskFilter): T[] {
-  const search = filter.search?.trim().toLowerCase();
-  return tasks
-    .filter((t) => !filter.bucket || t.bucket === filter.bucket)
-    .filter((t) => !filter.priority || t.priority === filter.priority)
-    .filter((t) => !filter.tags?.length || filter.tags.every((tag) => t.tags.includes(tag)))
-    .filter((t) => !search || `${t.title}\n${t.body}\n${t.tags.join(' ')}`.toLowerCase().includes(search))
-    .sort((a, b) => a.position - b.position);
-}
 
 function toTask(row: CachedTask): Task {
   const { file, size, mtime, ...task } = row;
@@ -344,7 +325,9 @@ export class VaultRepository {
   async listTasks(projectId: string | null, filter: TaskFilter = {}): Promise<Task[]> {
     const { db } = this.current();
     const rows = projectId === null ? await db.tasks.toArray() : await db.tasks.where('project_id').equals(projectId).toArray();
-    return applyTaskFilter(rows, filter).map(toTask);
+    return filterTasks(rows, filter)
+      .sort((a, b) => a.position - b.position)
+      .map(toTask);
   }
 
   async getTask(projectId: string, id: string): Promise<Task> {

@@ -95,6 +95,11 @@ const en = {
   'board.refresh': 'Refresh',
   'filter.search': 'Search tasks',
   'filter.priority': 'Priority',
+  'filter.anyDue': 'Any due date',
+  'filter.hasDue': 'Has a due date',
+  'filter.noDue': 'No due date',
+  'filter.syntax':
+    'You can also type it in the search field: tag:ui+bug  prio:high,urgent  bucket:todo  due:none  due:before:2026-12-31  planned:today  created:after:2026-01-01.',
   'filter.anyPriority': 'Any priority',
   'filter.tag': 'Tag',
   'filter.anyTag': 'Any tag',
@@ -291,6 +296,11 @@ const de: Record<MessageKey, string> = {
   'board.refresh': 'Aktualisieren',
   'filter.search': 'Aufgaben durchsuchen',
   'filter.priority': 'Priorität',
+  'filter.anyDue': 'Beliebige Fälligkeit',
+  'filter.hasDue': 'Mit Fälligkeit',
+  'filter.noDue': 'Ohne Fälligkeit',
+  'filter.syntax':
+    'Du kannst es auch ins Suchfeld tippen: tag:ui+bug  prio:high,urgent  bucket:todo  due:none  due:before:2026-12-31  planned:today  created:after:2026-01-01.',
   'filter.anyPriority': 'Jede Priorität',
   'filter.tag': 'Tag',
   'filter.anyTag': 'Jeder Tag',

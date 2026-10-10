@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import { Menu, Search, ArrowLeft, X, SlidersHorizontal, ListChecks, EllipsisVertical, Check } from '@lucide/vue';
+import { isEmptyFilter } from '@jotter/task-filter';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -10,7 +11,8 @@ const ui = useUiStore();
 
 const input = ref<HTMLInputElement | null>(null);
 const title = computed(() => app.project?.title ?? t('app.name'));
-const hasExtraFilters = computed(() => !!(app.filter.priority || app.filter.tag));
+/** The query asks for more than words: the filter button shows a dot. */
+const hasExtraFilters = computed(() => !isEmptyFilter({ ...app.parsedFilter, search: undefined }));
 
 // The search field takes the place of the title; focus it as soon as it is there
 watch(
@@ -120,20 +122,14 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
       </button>
       <input
         ref="input"
-        v-model="app.filter.search"
+        v-model="app.query"
         type="search"
         :placeholder="t('filter.search')"
         class="min-w-0 flex-1 bg-transparent px-1 text-lg outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
         enterkeyhint="search"
         data-testid="search-input"
       />
-      <button
-        v-if="app.filter.search"
-        :class="iconButton"
-        :aria-label="t('search.clear')"
-        data-testid="clear-search"
-        @click="app.filter.search = ''"
-      >
+      <button v-if="app.query" :class="iconButton" :aria-label="t('search.clear')" data-testid="clear-search" @click="app.query = ''">
         <X class="h-5 w-5" />
       </button>
       <button :class="iconButton" :aria-label="t('search.filters')" data-testid="open-filter" @click="ui.open({ type: 'filter' })">
