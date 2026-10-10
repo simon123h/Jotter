@@ -31,6 +31,7 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@jotter/title-parser': fileURLToPath(new URL('../packages/title-parser/index.ts', import.meta.url)),
+      '@jotter/task-filter': fileURLToPath(new URL('../packages/task-filter/index.ts', import.meta.url)),
       '@jotter/themes': fileURLToPath(new URL('../packages/themes/index.ts', import.meta.url)),
       '@jotter/vault-format': fileURLToPath(new URL('../packages/vault-format/src/index.ts', import.meta.url)),
     },

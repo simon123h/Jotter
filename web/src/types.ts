@@ -45,28 +45,8 @@ export interface Bucket {
   is_default?: boolean;
 }
 
-export interface TaskFilterParams {
-  bucket?: string;
-  buckets?: string; // Comma-separated list of bucket names
-  tag?: string;
-  tags?: string; // Comma-separated list of tags
-  tag_mode?: 'any' | 'all';
-  exclude_bucket?: string;
-  exclude_buckets?: string; // Comma-separated list of excluded bucket names
-  show_done?: boolean;
-  show_archived?: boolean;
-  priorities?: string; // Comma-separated list of priorities (low, medium, high, urgent, none)
-  search?: string;
-  due_before?: string; // YYYY-MM-DD
-  due_after?: string; // YYYY-MM-DD
-  planned_date?: string;
-  has_due_date?: boolean | null;
-  created_before?: string; // YYYY-MM-DD
-  created_after?: string; // YYYY-MM-DD
-  updated_before?: string; // YYYY-MM-DD
-  updated_after?: string; // YYYY-MM-DD
-  project?: string; // Project ID or Title query
-}
+/** What a search query asks for; defined with the query language in packages/task-filter. */
+export type { TaskFilter as TaskFilterParams } from '@jotter/task-filter';
 
 export interface TaskQuery {
   projectId?: string;

@@ -1,0 +1,418 @@
+{
+  "tasks": [
+    {
+      "id": "a",
+      "title": "Write report",
+      "body": "Quarterly numbers",
+      "bucket": "todo",
+      "tags": [
+        "office",
+        "q4"
+      ],
+      "priority": "high",
+      "due_date": "2026-03-10",
+      "planned_date": "today",
+      "postponed_until": null,
+      "created_at": "2026-01-05T09:00:00+00:00",
+      "updated_at": "2026-01-06T10:00:00+00:00"
+    },
+    {
+      "id": "b",
+      "title": "Book flights",
+      "body": "",
+      "bucket": "todo",
+      "tags": [
+        "travel"
+      ],
+      "priority": null,
+      "due_date": null,
+      "planned_date": null,
+      "postponed_until": null,
+      "created_at": "2026-01-10T09:00:00+00:00",
+      "updated_at": "2026-01-11T10:00:00+00:00"
+    },
+    {
+      "id": "c",
+      "title": "Ship release",
+      "body": "",
+      "bucket": "done",
+      "tags": [
+        "office"
+      ],
+      "priority": "urgent",
+      "due_date": "2026-05-01",
+      "planned_date": null,
+      "postponed_until": null,
+      "created_at": "2026-02-01T09:00:00+00:00",
+      "updated_at": "2026-02-02T10:00:00+00:00"
+    },
+    {
+      "id": "d",
+      "title": "Later task",
+      "body": "",
+      "bucket": "todo",
+      "tags": [],
+      "priority": null,
+      "due_date": null,
+      "planned_date": null,
+      "postponed_until": "2999-01-01",
+      "created_at": "2026-02-15T09:00:00+00:00",
+      "updated_at": "2026-02-16T10:00:00+00:00"
+    },
+    {
+      "id": "e",
+      "title": "Back again",
+      "body": "",
+      "bucket": "todo",
+      "tags": [
+        "office",
+        "travel"
+      ],
+      "priority": "medium",
+      "due_date": null,
+      "planned_date": null,
+      "postponed_until": "2020-01-01",
+      "created_at": "2026-03-01T09:00:00+00:00",
+      "updated_at": "2026-03-02T10:00:00+00:00"
+    },
+    {
+      "id": "f",
+      "title": "Cafe menu",
+      "body": "Reorganise the saturation of colours",
+      "bucket": "review",
+      "tags": [
+        "food"
+      ],
+      "priority": "low",
+      "due_date": null,
+      "planned_date": null,
+      "postponed_until": null,
+      "created_at": "2026-03-20T09:00:00+00:00",
+      "updated_at": "2026-03-21T10:00:00+00:00"
+    }
+  ],
+  "cases": [
+    {
+      "name": "everything",
+      "filter": {},
+      "ids": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "a bucket leaves out tasks postponed to a later day",
+      "filter": {
+        "bucket": "todo"
+      },
+      "ids": [
+        "a",
+        "b",
+        "e"
+      ]
+    },
+    {
+      "name": "the postponed bucket",
+      "filter": {
+        "bucket": "postponed"
+      },
+      "ids": [
+        "d"
+      ]
+    },
+    {
+      "name": "several buckets",
+      "filter": {
+        "buckets": "done,review"
+      },
+      "ids": [
+        "c",
+        "f"
+      ]
+    },
+    {
+      "name": "several buckets with the postponed one",
+      "filter": {
+        "buckets": "todo,postponed"
+      },
+      "ids": [
+        "a",
+        "b",
+        "d",
+        "e"
+      ]
+    },
+    {
+      "name": "excluding a bucket",
+      "filter": {
+        "exclude_bucket": "done"
+      },
+      "ids": [
+        "a",
+        "b",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "excluding the postponed bucket",
+      "filter": {
+        "exclude_bucket": "postponed"
+      },
+      "ids": [
+        "a",
+        "b",
+        "c",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "excluding several buckets",
+      "filter": {
+        "exclude_buckets": "done,postponed"
+      },
+      "ids": [
+        "a",
+        "b",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "tags, any of them",
+      "filter": {
+        "tags": "office,travel",
+        "tag_mode": "any"
+      },
+      "ids": [
+        "a",
+        "b",
+        "c",
+        "e"
+      ]
+    },
+    {
+      "name": "tags, all of them",
+      "filter": {
+        "tags": "office,travel",
+        "tag_mode": "all"
+      },
+      "ids": [
+        "e"
+      ]
+    },
+    {
+      "name": "one tag",
+      "filter": {
+        "tag": "food"
+      },
+      "ids": [
+        "f"
+      ]
+    },
+    {
+      "name": "priorities",
+      "filter": {
+        "priorities": "high,urgent"
+      },
+      "ids": [
+        "a",
+        "c"
+      ]
+    },
+    {
+      "name": "no priority",
+      "filter": {
+        "priorities": "none"
+      },
+      "ids": [
+        "b",
+        "d"
+      ]
+    },
+    {
+      "name": "a priority or none",
+      "filter": {
+        "priorities": "low,none"
+      },
+      "ids": [
+        "b",
+        "d",
+        "f"
+      ]
+    },
+    {
+      "name": "a word at the start of a word of the title",
+      "filter": {
+        "search": "rep"
+      },
+      "ids": [
+        "a"
+      ]
+    },
+    {
+      "name": "a word typed so far",
+      "filter": {
+        "search": "sat"
+      },
+      "ids": [
+        "f"
+      ]
+    },
+    {
+      "name": "words of the body, all of them",
+      "filter": {
+        "search": "quarterly numbers"
+      },
+      "ids": [
+        "a"
+      ]
+    },
+    {
+      "name": "a tag found by text",
+      "filter": {
+        "search": "office"
+      },
+      "ids": [
+        "a",
+        "c",
+        "e"
+      ]
+    },
+    {
+      "name": "words in different places",
+      "filter": {
+        "search": "sat col"
+      },
+      "ids": [
+        "f"
+      ]
+    },
+    {
+      "name": "a word that is not there",
+      "filter": {
+        "search": "xyz"
+      },
+      "ids": []
+    },
+    {
+      "name": "a word is not found in the middle of another",
+      "filter": {
+        "search": "port"
+      },
+      "ids": []
+    },
+    {
+      "name": "due before is inclusive",
+      "filter": {
+        "due_before": "2026-03-10"
+      },
+      "ids": [
+        "a"
+      ]
+    },
+    {
+      "name": "due after is inclusive",
+      "filter": {
+        "due_after": "2026-03-10"
+      },
+      "ids": [
+        "a",
+        "c"
+      ]
+    },
+    {
+      "name": "has a due date",
+      "filter": {
+        "has_due_date": true
+      },
+      "ids": [
+        "a",
+        "c"
+      ]
+    },
+    {
+      "name": "has no due date",
+      "filter": {
+        "has_due_date": false
+      },
+      "ids": [
+        "b",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "planned date",
+      "filter": {
+        "planned_date": "today"
+      },
+      "ids": [
+        "a"
+      ]
+    },
+    {
+      "name": "created before covers the whole day",
+      "filter": {
+        "created_before": "2026-01-10"
+      },
+      "ids": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "name": "created after",
+      "filter": {
+        "created_after": "2026-02-15"
+      },
+      "ids": [
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "updated before covers the whole day",
+      "filter": {
+        "updated_before": "2026-02-02"
+      },
+      "ids": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    {
+      "name": "updated after",
+      "filter": {
+        "updated_after": "2026-02-16"
+      },
+      "ids": [
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "everything together",
+      "filter": {
+        "tags": "office",
+        "tag_mode": "any",
+        "priorities": "high,urgent",
+        "due_before": "2026-12-31"
+      },
+      "ids": [
+        "a",
+        "c"
+      ]
+    }
+  ]
+}

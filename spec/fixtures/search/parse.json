@@ -1,0 +1,112 @@
+{
+  "cases": [
+    {
+      "query": "auth login",
+      "filter": {
+        "search": "auth login"
+      }
+    },
+    {
+      "query": "\"fix memory leak\"",
+      "filter": {
+        "search": "fix memory leak"
+      }
+    },
+    {
+      "query": "tag:ui,bug",
+      "filter": {
+        "tags": "ui,bug",
+        "tag_mode": "any"
+      }
+    },
+    {
+      "query": "tags:ui+bug",
+      "filter": {
+        "tags": "ui,bug",
+        "tag_mode": "all"
+      }
+    },
+    {
+      "query": "bucket:todo",
+      "filter": {
+        "buckets": "todo"
+      }
+    },
+    {
+      "query": "bucket:\"in progress\"",
+      "filter": {
+        "buckets": "in progress"
+      }
+    },
+    {
+      "query": "buckets:todo,review",
+      "filter": {
+        "buckets": "todo,review"
+      }
+    },
+    {
+      "query": "prio:high,urgent",
+      "filter": {
+        "priorities": "high,urgent"
+      }
+    },
+    {
+      "query": "proj:marketing",
+      "filter": {
+        "project": "marketing"
+      }
+    },
+    {
+      "query": "planned:today",
+      "filter": {
+        "planned_date": "today"
+      }
+    },
+    {
+      "query": "due:has",
+      "filter": {
+        "has_due_date": true
+      }
+    },
+    {
+      "query": "due:none",
+      "filter": {
+        "has_due_date": false
+      }
+    },
+    {
+      "query": "due:before:2026-12-31 due:after:2026-06-01",
+      "filter": {
+        "due_before": "2026-12-31",
+        "due_after": "2026-06-01"
+      }
+    },
+    {
+      "query": "created:before:2026-01-01 created:after:2025-01-01",
+      "filter": {
+        "created_before": "2026-01-01",
+        "created_after": "2025-01-01"
+      }
+    },
+    {
+      "query": "updated:after:2026-02-02",
+      "filter": {
+        "updated_after": "2026-02-02"
+      }
+    },
+    {
+      "query": "tag:bug priority:high bucket:todo crash",
+      "filter": {
+        "tags": "bug",
+        "tag_mode": "any",
+        "priorities": "high",
+        "buckets": "todo",
+        "search": "crash"
+      }
+    },
+    {
+      "query": "",
+      "filter": {}
+    }
+  ]
+}

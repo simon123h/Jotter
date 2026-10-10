@@ -1,3 +1,4 @@
+import { filterTasks } from '@jotter/task-filter';
 import type {
   Task,
   Bucket,
@@ -276,105 +277,7 @@ async function getTasks(projectId: string, filters?: TaskFilterParams): Promise<
   pruneDemoTasks(projectId);
   let list = getDemoTasksMap()[projectId] || [];
 
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  if (filters) {
-    if (filters.bucket) {
-      if (filters.bucket === 'postponed') {
-        list = list.filter((t) => !!t.postponed_until && t.postponed_until > todayStr);
-      } else {
-        list = list.filter((t) => t.bucket === filters.bucket && (!t.postponed_until || todayStr >= t.postponed_until));
-      }
-    } else {
-      let excludePostponed = false;
-      if (filters.exclude_bucket === 'postponed') {
-        excludePostponed = true;
-      }
-      if (filters.exclude_buckets) {
-        const bucketList = filters.exclude_buckets
-          .split(',')
-          .map((b) => b.trim().toLowerCase())
-          .filter(Boolean);
-        if (bucketList.includes('postponed')) {
-          excludePostponed = true;
-        }
-      }
-      if (excludePostponed) {
-        list = list.filter((t) => !t.postponed_until || todayStr >= t.postponed_until);
-      }
-    }
-    if (filters.buckets) {
-      const bucketList = filters.buckets
-        .split(',')
-        .map((b) => b.trim().toLowerCase())
-        .filter(Boolean);
-      if (bucketList.length) {
-        list = list.filter((t) => {
-          const mappedBucket = t.postponed_until && t.postponed_until > todayStr ? 'postponed' : t.bucket;
-          return bucketList.includes(mappedBucket.toLowerCase());
-        });
-      }
-    }
-    if (filters.exclude_bucket && filters.exclude_bucket !== 'postponed') {
-      list = list.filter((t) => t.bucket !== filters.exclude_bucket);
-    }
-    if (filters.exclude_buckets) {
-      const bucketList = filters.exclude_buckets
-        .split(',')
-        .map((b) => b.trim().toLowerCase())
-        .filter(Boolean);
-      const regularBuckets = bucketList.filter((b) => b !== 'postponed');
-      if (regularBuckets.length) {
-        list = list.filter((t) => !regularBuckets.includes(t.bucket.toLowerCase()));
-      }
-    }
-    if (filters.tag) {
-      list = list.filter((t) => t.tags.some((tg) => tg.toLowerCase() === filters.tag!.toLowerCase()));
-    }
-    if (filters.tags) {
-      const tagList = filters.tags
-        .split(',')
-        .map((tg) => tg.trim().toLowerCase())
-        .filter(Boolean);
-      if (tagList.length) {
-        const mode = filters.tag_mode || 'any';
-        if (mode === 'all') {
-          list = list.filter((t) => tagList.every((ft) => t.tags.some((tg) => tg.toLowerCase() === ft)));
-        } else {
-          list = list.filter((t) => tagList.some((ft) => t.tags.some((tg) => tg.toLowerCase() === ft)));
-        }
-      }
-    }
-    if (filters.priorities) {
-      const priorityList = filters.priorities
-        .split(',')
-        .map((p) => p.trim().toLowerCase())
-        .filter(Boolean);
-      if (priorityList.length) {
-        list = list.filter((t) => {
-          const priority = (t.priority || 'none').toLowerCase();
-          return priorityList.includes(priority);
-        });
-      }
-    }
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      list = list.filter((t) => t.title.toLowerCase().includes(searchLower) || (t.body && t.body.toLowerCase().includes(searchLower)));
-    }
-    if (filters.has_due_date !== undefined && filters.has_due_date !== null) {
-      if (filters.has_due_date) {
-        list = list.filter((t) => !!t.due_date);
-      } else {
-        list = list.filter((t) => !t.due_date);
-      }
-    }
-    if (filters.due_before) {
-      list = list.filter((t) => !!t.due_date && t.due_date <= filters.due_before!);
-    }
-    if (filters.due_after) {
-      list = list.filter((t) => !!t.due_date && t.due_date >= filters.due_after!);
-    }
-  }
+  if (filters) list = filterTasks(list, filters);
 
   return [...list].sort((a, b) => a.position - b.position);
 }

@@ -23,6 +23,7 @@ A search query is composed of standalone full-text search phrases and optional c
 | **Columns/Buckets** | `bucket:todo` <br> *or* `buckets:todo,progress` | Tasks residing in the specified bucket(s) |
 | **Priorities** | `priority:high` <br> *or* `prio:high,urgent` | Tasks with the specified priority levels |
 | **Projects** | `project:marketing` <br> *or* `proj:frontend` | Tasks belonging to a project by ID or **Project Title** |
+| **Planned Date** | `planned:today` | Tasks planned for that date or keyword |
 | **Presence of Due Date** | `due:has` <br> *or* `due:none` | Tasks that have *any* due date, or *no* due date |
 | **Due Date Boundaries** | `due:before:2026-12-31` <br> `due:after:2026-06-01` | Tasks with due dates within the specified date boundaries |
 

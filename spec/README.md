@@ -38,3 +38,14 @@ A new implementation only needs a small runner that loads these files and compar
    `FORMAT.md` instead. If the spec is silent, decide, and add the rule to `FORMAT.md` in the same change.
 3. Run all runners. A failure in one implementation is a bug to fix, or an entry in that runner's
    `KNOWN_DIVERGENCES` with a reason until it is fixed.
+
+## Search fixtures
+
+`fixtures/search/` holds the cases of the task search: `parse.json` (a query and the filter it gives) and `match.json` (tasks,
+and for each filter the ids it must find). The query language and the matching live in `packages/task-filter`; the
+Python backend answers the same filters from SQLite.
+
+| Implementation | Runner |
+| :-- | :-- |
+| Python backend | `tests/test_search_conformance.py` |
+| TypeScript (`packages/task-filter`) | `web/src/utils/__tests__/taskFilter.spec.ts` |
