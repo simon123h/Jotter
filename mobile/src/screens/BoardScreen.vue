@@ -129,6 +129,14 @@ watch(
   }
 );
 
+// Hiding the done or archived columns can leave the tab in view without a column
+watch(
+  () => app.columns.length,
+  (count) => {
+    if (active.value >= count) goTo(Math.max(count - 1, 0));
+  }
+);
+
 // The board must not be rescanned under a dragging finger (see useAutoRefresh)
 watch(
   () => drag.busy.value,

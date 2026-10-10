@@ -26,6 +26,29 @@ export interface Column {
 
 const LAST_PROJECT_KEY = 'jotter_lite_last_project';
 const VIEW_KEY = 'jotter_lite_view';
+const HIDDEN_KEY = 'jotter_lite_hidden';
+
+/** Which finished tasks a view leaves out. The tag and planning views list what is still to do, the board everything. */
+export type Hidden = { done: boolean; archive: boolean };
+const defaultHidden = (): Record<View, Hidden> => ({
+  board: { done: false, archive: false },
+  tags: { done: true, archive: true },
+  planning: { done: true, archive: true },
+});
+
+const recallHidden = async (vaultId: string): Promise<Record<View, Hidden>> => {
+  const hidden = defaultHidden();
+  try {
+    const stored = JSON.parse((await preferences.get(`${HIDDEN_KEY}:${vaultId}`)) ?? '{}');
+    for (const v of VIEWS) {
+      if (typeof stored?.[v]?.done === 'boolean') hidden[v].done = stored[v].done;
+      if (typeof stored?.[v]?.archive === 'boolean') hidden[v].archive = stored[v].archive;
+    }
+  } catch {
+    // Unreadable: the defaults apply
+  }
+  return hidden;
+};
 
 /** What the user last looked at is kept in the device's preferences (not in web storage, which Android may clear). */
 const recallView = async (vaultId: string): Promise<View> => {
@@ -69,6 +92,7 @@ export const useAppStore = defineStore('app', () => {
   const projects = ref<Project[]>([]);
   const projectId = ref<string | null>(null);
   const view = ref<View>('board');
+  const hidden = ref<Record<View, Hidden>>(defaultHidden());
   const buckets = ref<Bucket[]>([]);
   const allTasks = ref<Task[]>([]);
   const filter = ref<{ search: string; priority: string; tag: string }>({ search: '', priority: '', tag: '' });
@@ -91,20 +115,26 @@ export const useAppStore = defineStore('app', () => {
   const visibleTasks = computed(() => applyTaskFilter(allTasks.value, taskFilter.value));
   const allTags = computed(() => [...new Set(allTasks.value.flatMap((t) => t.tags))].sort());
 
-  /** Tasks the tag and planning views list: the ones still to do. Done and archived tasks stay on the board. */
-  const openTasks = computed(() =>
-    visibleTasks.value.filter((task) => task.bucket !== 'done' && task.bucket !== 'archive').sort(byUrgency)
-  );
+  const isHidden = (task: Task, v: View) =>
+    (task.bucket === 'done' && hidden.value[v].done) || (task.bucket === 'archive' && hidden.value[v].archive);
+
+  /** Tasks the tag and planning views list, most urgent first. */
+  const openTasks = computed(() => {
+    const v = view.value;
+    return visibleTasks.value.filter((task) => !isHidden(task, v)).sort(byUrgency);
+  });
 
   /** One column per bucket, plus one for tasks that name a bucket the project does not have. */
   const boardColumns = computed<Column[]>(() => {
     const known = new Set(buckets.value.map((b) => b.name));
-    const cols: Column[] = buckets.value.map((b) => ({
-      key: b.name,
-      title: b.title,
-      bucket: b.name,
-      tasks: visibleTasks.value.filter((task) => task.bucket === b.name),
-    }));
+    const cols: Column[] = buckets.value
+      .filter((b) => !((b.name === 'done' && hidden.value.board.done) || (b.name === 'archive' && hidden.value.board.archive)))
+      .map((b) => ({
+        key: b.name,
+        title: b.title,
+        bucket: b.name,
+        tasks: visibleTasks.value.filter((task) => task.bucket === b.name),
+      }));
     const orphans = visibleTasks.value.filter((task) => !known.has(task.bucket));
     if (orphans.length) cols.push({ key: '__other', title: '', bucket: null, tasks: orphans });
     return cols;
@@ -181,6 +211,7 @@ export const useAppStore = defineStore('app', () => {
     const remembered = await recall(opened.id);
     projectId.value = projects.value.find((p) => p.id === remembered)?.id ?? projects.value[0]?.id ?? null;
     view.value = await recallView(opened.id);
+    hidden.value = await recallHidden(opened.id);
     await loadProject();
     status.value = 'ready';
   }
@@ -257,6 +288,16 @@ export const useAppStore = defineStore('app', () => {
     selection.value = [];
     // Not remembered when the preferences cannot be written; the board opens next time
     if (vault.value) void preferences.set(`${VIEW_KEY}:${vault.value.id}`, next).catch(() => undefined);
+  }
+
+  /** Shows or hides the done or the archived tasks of the current view (on the board, their columns too). */
+  function toggleHidden(which: keyof Hidden) {
+    const current = hidden.value[view.value];
+    current[which] = !current[which];
+    selection.value = [];
+    if (vault.value) {
+      void preferences.set(`${HIDDEN_KEY}:${vault.value.id}`, JSON.stringify(hidden.value)).catch(() => undefined);
+    }
   }
 
   async function selectProject(id: string) {
@@ -477,6 +518,8 @@ export const useAppStore = defineStore('app', () => {
     projects,
     projectId,
     view,
+    hidden,
+    toggleHidden,
     setView,
     navVisible,
     project,

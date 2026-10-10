@@ -1437,6 +1437,63 @@ describe('tag and planning views', () => {
   });
 });
 
+describe('view options in the app bar', () => {
+  const vault = (f: MemoryFs) => {
+    f.put(
+      'Jotter/work/index.md',
+      '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: done\n    title: Done\n  - name: archive\n    title: Archive\n---\n'
+    );
+    f.put('Jotter/work/a.md', '---\ntitle: Open task\nstatus: todo\nposition: 1000\n---\n');
+    f.put('Jotter/work/b.md', '---\ntitle: Finished task\nstatus: done\nposition: 1000\n---\n');
+    f.put('Jotter/work/c.md', '---\ntitle: Old task\nstatus: archive\nposition: 1000\n---\n');
+  };
+  const tabs = () => all('bucket-tab').map((t) => t.text());
+  const toggle = async (id: 'hide-done' | 'hide-archive') => {
+    await find('view-menu').trigger('click');
+    await find(id).trigger('click');
+    await settle();
+  };
+
+  it('hides the done and archive columns of the board, and shows them again', async () => {
+    await start(vault);
+    expect(tabs()).toHaveLength(3);
+
+    await toggle('hide-done');
+    expect(tabs()).toHaveLength(2);
+    await toggle('hide-archive');
+    expect(tabs()).toHaveLength(1);
+    expect(find('board').text()).not.toContain('Finished task');
+
+    await find('view-menu').trigger('click');
+    expect(find('hide-done').attributes('aria-checked')).toBe('true');
+    await find('hide-done').trigger('click');
+    await settle();
+    expect(tabs()).toHaveLength(2);
+  });
+
+  it('keeps the choice per view and offers it in the tag view, where finished tasks are hidden at first', async () => {
+    await start(vault);
+    await find('view-tags').trigger('click');
+    await settle();
+    expect(find('board').text()).not.toContain('Finished task');
+
+    await toggle('hide-done');
+    expect(find('board').text()).toContain('Finished task');
+    expect(find('board').text()).not.toContain('Old task');
+
+    await find('view-board').trigger('click');
+    await settle();
+    expect(tabs()).toHaveLength(3);
+  });
+
+  it('remembers the choice', async () => {
+    await start(vault);
+    await toggle('hide-archive');
+    await start(vault);
+    expect(tabs()).toHaveLength(2);
+  });
+});
+
 describe('task page', () => {
   it('leaves with the arrow, saving what was typed, and closes the menu with a tap outside it', async () => {
     await start(desktopVault);

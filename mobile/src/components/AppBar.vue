@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import { Menu, Search, ArrowLeft, X, SlidersHorizontal, ListChecks } from '@lucide/vue';
+import { Menu, Search, ArrowLeft, X, SlidersHorizontal, ListChecks, EllipsisVertical, Check } from '@lucide/vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -33,12 +33,25 @@ function selectAllHere() {
   if (column) app.selectOnly(column.tasks.map((task) => task.id));
 }
 
+const menuOpen = ref(false);
+const menuItem = 'flex h-12 w-full items-center gap-3 px-4 text-left text-base active:bg-line';
+
+const viewOptions = computed(() => [
+  { id: 'done' as const, label: t('view.hideDone'), on: app.hidden[app.view].done },
+  { id: 'archive' as const, label: t('view.hideArchived'), on: app.hidden[app.view].archive },
+]);
+
+function toggleOption(id: 'done' | 'archive') {
+  menuOpen.value = false;
+  app.toggleHidden(id);
+}
+
 const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-ink active:bg-line';
 </script>
 
 <template>
   <header
-    class="flex h-14 shrink-0 items-center gap-1 px-1"
+    class="relative flex h-14 shrink-0 items-center gap-1 px-1"
     :class="app.selectedCount > 0 ? 'bg-accent/15 text-accent' : 'bg-card'"
     data-testid="app-bar"
   >
@@ -68,6 +81,36 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
           data-testid="filter-active"
         ></span>
       </button>
+      <button
+        :class="iconButton"
+        :aria-label="t('common.moreActions')"
+        aria-haspopup="menu"
+        :aria-expanded="menuOpen"
+        data-testid="view-menu"
+        @click="menuOpen = !menuOpen"
+      >
+        <EllipsisVertical class="h-6 w-6" />
+      </button>
+      <template v-if="menuOpen">
+        <div class="fixed inset-0 z-10" data-testid="view-menu-scrim" @click="menuOpen = false"></div>
+        <div
+          class="absolute right-2 top-12 z-20 w-64 overflow-hidden rounded-xl border border-line bg-card py-1 shadow-xl"
+          role="menu"
+          data-testid="view-menu-list"
+        >
+          <button
+            v-for="option in viewOptions"
+            :key="option.id"
+            :class="menuItem"
+            role="menuitemcheckbox"
+            :aria-checked="option.on"
+            :data-testid="`hide-${option.id}`"
+            @click="toggleOption(option.id)"
+          >
+            <Check class="h-5 w-5 shrink-0" :class="option.on ? 'text-accent' : 'text-transparent'" />{{ option.label }}
+          </button>
+        </div>
+      </template>
     </template>
 
     <template v-else>
