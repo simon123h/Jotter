@@ -15,7 +15,10 @@ const props = defineProps<{ column: Column | null }>();
 const app = useAppStore();
 const ui = useUiStore();
 
-const title = ref('');
+// Text shared from another app arrives as a draft: the title to edit and the notes it brings along
+const draft = ui.sheet?.type === 'quickadd' ? ui.sheet.draft : undefined;
+const title = ref(draft?.title ?? '');
+let draftBody = draft?.body;
 const input = ref<HTMLInputElement | null>(null);
 const smart = useSmartTitle(title, () => app.buckets);
 /** What is left of the title once dates, priority, tags and column are taken out. */
@@ -63,7 +66,9 @@ async function submit() {
       due_date: found.due_date ?? undefined,
       planned_date: found.planned_date ?? viewPlanned,
       priority: found.priority ?? undefined,
+      body: draftBody,
     });
+    draftBody = undefined;
     title.value = '';
     smart.reset();
     added.value.unshift(clean);

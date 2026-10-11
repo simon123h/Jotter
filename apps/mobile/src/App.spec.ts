@@ -6,7 +6,7 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { isoDay } from '@/dates';
 import { capacitorKeyValue } from '@/data/keyValue';
-import { runShortcut, shortcutAction } from '@/shortcuts';
+import { runShortcut, shortcutAction, sharedDraft } from '@/shortcuts';
 import { useSettingsStore } from '@/stores/settings';
 import { locale } from '@/i18n';
 import { autoRefresh } from '@/composables/useAutoRefresh';
@@ -1911,5 +1911,51 @@ describe('launcher shortcuts', () => {
     await runShortcut('https://example.com');
     await settle();
     expect(find('quick-add-input').exists()).toBe(false);
+  });
+});
+
+describe('text shared from other apps', () => {
+  const link = (params: Record<string, string>) => `jotter://share?${new URLSearchParams(params)}`;
+
+  it('turns a subject into the title and the text into the notes, or the first line of the text into the title', () => {
+    expect(sharedDraft(link({ title: 'A page', text: 'https://example.com' }))).toEqual({ title: 'A page', body: 'https://example.com' });
+    expect(sharedDraft(link({ text: 'Buy milk' }))).toEqual({ title: 'Buy milk', body: undefined });
+    expect(sharedDraft(link({ text: 'Plan trip\n\nBook trains\nand hotels' }))).toEqual({
+      title: 'Plan trip',
+      body: 'Book trains\nand hotels',
+    });
+    expect(sharedDraft('jotter://share')).toBeNull();
+    expect(sharedDraft(link({ text: '  ' }))).toBeNull();
+  });
+
+  it('opens quick add with the shared text, and files it with the notes', async () => {
+    const { app } = await start(desktopVault);
+    await runShortcut(link({ title: 'Read this #later', text: 'https://example.com/article' }));
+    await settle();
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('Read this #later');
+    // The smart title reads the shared text like typed text
+    expect(find('title-hints-slot').text()).toContain('later');
+
+    await submit('quick-add-input');
+    const task = app.allTasks.find((t) => t.title === 'Read this')!;
+    expect(task.tags).toEqual(['later']);
+    expect(task.body).toContain('https://example.com/article');
+  });
+
+  it('starts over with new shared text while quick add is open', async () => {
+    await start(desktopVault);
+    await runShortcut(link({ text: 'First' }));
+    await settle();
+    await runShortcut(link({ text: 'Second' }));
+    await settle();
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('Second');
+  });
+
+  it('says so when there is no project to save it in', async () => {
+    await start();
+    await runShortcut(link({ text: 'Lost?' }));
+    await settle();
+    expect(find('quick-add-input').exists()).toBe(false);
+    expect(useUiStore().toast?.message).toContain('vault');
   });
 });

@@ -34,6 +34,7 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Git versioning and Time Machine | yes | no | ~1.3k | Optional | git part of `features/sync`, `TimeMachineModal`; ADR 0012 |
 | MCP server (AI assistants) | yes | no | ~0.7k | Optional | `mcp_server.py`, optional package extra |
 | Voice dictation | yes | no | ~0.2k | Optional | `useSpeechRecognition`, browser API |
+| Share target: text shared from other Android apps becomes a task | no | yes | ~0.2k | Core | `MainActivity.java` (turns it into a `jotter://share` link), `src/shortcuts.ts`, quick add |
 | List view | yes | no | ~0.3k | Optional | `ListView` |
 | Home / project overview | yes | no | ~0.2k | Optional | `HomeView` |
 | Task review session (triage cards) | yes | no | ~1.9k | Parked | `features/task-triage`, `ReviewView` |

@@ -60,6 +60,8 @@ Eine Aufgabe, die auf einen späteren Tag zurückgestellt ist, verlässt ihre Sp
 
 Design (auch *True Black* für OLED-Bildschirme, oder dem System folgen), Sprache und die Vaults findest du im Seitenmenü. Ein langer Druck auf das App-Symbol bietet Kürzel für eine neue Aufgabe, die Suche und die Planungsansicht.
 
+Um etwas aus einer anderen App zu speichern (eine Webseite, eine Nachricht), nutze deren *Teilen*-Schaltfläche und wähle Jotter. Das Schnellerfassen öffnet sich mit dem geteilten Text: Der Seitentitel oder die erste Zeile wird zum Titel der Aufgabe, der Rest zu den Notizen. Tags, Datumsangaben und Priorität im Text werden wie gewohnt erkannt.
+
 ## Synchron bleiben
 
 Die App durchsucht den Vault regelmäßig und wenn du zu ihr zurückkehrst, Änderungen deines Sync-Werkzeugs erscheinen also von selbst. *Vault neu einlesen* im Seitenmenü tut das sofort. Die App behält, was sie nicht versteht: unbekannte Eigenschaften und Dateien werden nie entfernt.

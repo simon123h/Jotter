@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 
 export type Sheet =
   | { type: 'task'; id: string }
-  | { type: 'quickadd' }
+  | { type: 'quickadd'; draft?: { title: string; body?: string } }
   | { type: 'projects' }
   | { type: 'project-switch' }
   | { type: 'columns' }

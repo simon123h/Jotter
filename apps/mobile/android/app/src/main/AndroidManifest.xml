@@ -24,6 +24,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Text shared from other apps becomes a new task (MainActivity turns it into a jotter://share link) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
             <!-- The shortcuts of a long press on the launcher icon -->
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
 
