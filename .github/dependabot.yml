@@ -36,6 +36,10 @@ updates:
     labels:
       - "dependencies"
       - "npm"
+    ignore:
+      # TypeScript 7 waits for ESLint (typescript-eslint) to support it; remove this when it does
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       # The tooling every app and package shares moves together, majors included: one PR across the directories
       # instead of one per app (a TypeScript major was three PRs). This group is listed first, so it wins for these.
