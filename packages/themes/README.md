@@ -1,6 +1,6 @@
 # themes
 
-The colour themes of Jotter, shared by the desktop app (`web/`) and the mobile app (`mobile/`).
+The colour themes of Jotter, shared by the desktop app (`apps/web/`) and the mobile app (`apps/mobile/`).
 
 - `themes.css` defines each theme as `--theme-*` variables: the default (Nordic Light) on `:root`, every other theme
   as a class `.theme-<id>` on `<html>`. Both apps import it.

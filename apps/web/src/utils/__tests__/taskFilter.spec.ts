@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { filterTasks, parseQuery, stringifyQuery, isEmptyFilter, type TaskFilter } from '@jotter/task-filter';
 
 // The same cases run against the Python backend (tests/test_search_conformance.py)
-import matchFixture from '../../../../spec/fixtures/search/match.json';
-import parseFixture from '../../../../spec/fixtures/search/parse.json';
+import matchFixture from '../../../../../spec/fixtures/search/match.json';
+import parseFixture from '../../../../../spec/fixtures/search/parse.json';
 
 const { tasks, cases } = matchFixture as {
   tasks: Array<{ id: string; title: string; bucket: string; tags: string[] }>;

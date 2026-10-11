@@ -15,7 +15,7 @@ Meanwhile Jotter's core is small: markdown backed kanban boards in vaults, with 
 
 ## Decision
 
-Build a separate mobile app that implements only the core, in a new `mobile/` project in this repository.
+Build a separate mobile app that implements only the core, in a new `apps/mobile/` project in this repository.
 
 - **Identity**: app id `io.github.simon123h.jotter_lite`, name "Jotter". It installs next to the existing Android app, so the two can coexist during the transition.
 - **Stack**: Vue 3, Pinia, Tailwind and Capacitor, as in the desktop frontend. Reuse is the point; the UI itself is designed for touch from the start and may look quite different.
@@ -31,7 +31,7 @@ Build a separate mobile app that implements only the core, in a new `mobile/` pr
 
 ### Transition
 
-The old Android build was removed from `web/` on 2026-10-06, once Lite covered the core scope (the release job now builds Lite): the Android project, the Capacitor storage adapter, the `isNativeMobile` and capability branches, haptics, the Android back button handling and the mobile only settings. That removal is the payoff of the split.
+The old Android build was removed from `apps/web/` on 2026-10-06, once Lite covered the core scope (the release job now builds Lite): the Android project, the Capacitor storage adapter, the `isNativeMobile` and capability branches, haptics, the Android back button handling and the mobile only settings. That removal is the payoff of the split.
 
 ## Rationale
 
@@ -44,7 +44,7 @@ The old Android build was removed from `web/` on 2026-10-06, once Lite covered t
 
 - Two frontends to maintain. Features that exist in both (translations, task rules) are implemented twice until something is proven common and extracted.
 - A change to the format must update `spec/FORMAT.md` and the fixtures, and pass in the Python backend and `packages/vault-format`. That is the intended friction.
-- The Android release artifact is now the mobile app (`jotter-<tag>-android.apk`); CI builds and tests `mobile/` separately.
+- The Android release artifact is now the mobile app (`jotter-<tag>-android.apk`); CI builds and tests `apps/mobile/` separately.
 
 ## Alternatives Considered
 

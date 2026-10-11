@@ -86,17 +86,17 @@ For advanced customization and full directory details, please see [the user conf
 ## 🛠️ Development & Testing
 
 ```bash
-# Install frontend and backend dependencies
+# Install the dependencies of the backend, the apps and the shared packages
 npm run install:all
 
-# Run backend and frontend dev servers concurrently
+# Run the backend and the web dev servers concurrently
 npm run dev
 
 # Run all test suites (Pytest + Vitest)
 npm run test
 
-# Run frontend E2E browser tests (Playwright)
-cd web && npx playwright test
+# Run the web app's E2E browser tests (Playwright)
+cd apps/web && npx playwright test
 ```
 
 ---

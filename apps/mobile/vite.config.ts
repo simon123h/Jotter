@@ -14,7 +14,7 @@ function appVersion(): string {
   }
 }
 
-const packages = fileURLToPath(new URL('../packages', import.meta.url));
+const packages = fileURLToPath(new URL('../../packages', import.meta.url));
 
 export default defineConfig({
   base: './',
@@ -30,10 +30,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '@jotter/title-parser': fileURLToPath(new URL('../packages/title-parser/index.ts', import.meta.url)),
-      '@jotter/task-filter': fileURLToPath(new URL('../packages/task-filter/index.ts', import.meta.url)),
-      '@jotter/themes': fileURLToPath(new URL('../packages/themes/index.ts', import.meta.url)),
-      '@jotter/vault-format': fileURLToPath(new URL('../packages/vault-format/src/index.ts', import.meta.url)),
+      '@jotter/title-parser': fileURLToPath(new URL('../../packages/title-parser/index.ts', import.meta.url)),
+      '@jotter/task-filter': fileURLToPath(new URL('../../packages/task-filter/index.ts', import.meta.url)),
+      '@jotter/themes': fileURLToPath(new URL('../../packages/themes/index.ts', import.meta.url)),
+      '@jotter/vault-format': fileURLToPath(new URL('../../packages/vault-format/src/index.ts', import.meta.url)),
     },
   },
   test: {
@@ -41,5 +41,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test-setup.ts'],
     exclude: ['node_modules', 'dist', '.git'],
+    coverage: {
+      reporter: ['text-summary', 'lcov'],
+      // The shared packages count too, as far as the app's tests use them
+      allowExternal: true,
+      include: ['src/**', '**/packages/*/src/**', '**/packages/*/index.ts'],
+      exclude: ['**/*.spec.ts', 'src/test-setup.ts', '**/node_modules/**'],
+    },
   },
 });

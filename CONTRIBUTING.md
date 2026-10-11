@@ -61,11 +61,11 @@ npm run lint
 ```
 
 - **Python Backend**: Uses **Ruff** for linting and formatting, and **mypy** (strict) for type checking (`npm run typecheck:backend`).
-- **Frontend UI**: Uses **ESLint** and **Prettier** for code formatting and TypeScript linting.
+- **Web and mobile apps, shared packages**: Use **ESLint** and **Prettier** for code formatting and TypeScript linting, and `vue-tsc` for type checking (`npm run typecheck`).
 
 ### Testing
 
-We require all tests to pass before merging. You can run all backend (Pytest) and frontend (Vitest) tests using:
+We require all tests to pass before merging. You can run all backend (Pytest) and web, mobile and package (Vitest) tests using:
 
 ```bash
 npm run test

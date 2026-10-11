@@ -8,7 +8,7 @@ import { useSettingsStore } from '@/stores/settings';
 
 // Read as text: the bundler would turn the stylesheets into something else
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
-const themesCss = read('../../packages/themes/themes.css');
+const themesCss = read('../../../packages/themes/themes.css');
 const styleCss = read('./style.css');
 
 const VARIABLES = ['bg-base', 'bg-card', 'border', 'accent', 'text-main', 'text-muted'];

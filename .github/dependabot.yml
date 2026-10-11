@@ -20,9 +20,13 @@ updates:
           - "minor"
           - "patch"
 
-  # Maintain npm dependencies at the root level
+  # Maintain npm dependencies of the root, every app and every shared package. The globs pick up a new app or package
+  # (each has its own package.json) without this file having to change.
   - package-ecosystem: "npm"
-    directory: "/"
+    directories:
+      - "/"
+      - "/apps/*"
+      - "/packages/*"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -33,28 +37,7 @@ updates:
       - "dependencies"
       - "npm"
     groups:
-      npm-root-minor-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-
-  # Maintain npm dependencies in the frontend directory
-  - package-ecosystem: "npm"
-    directory: "/web"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "08:00"
-      timezone: "Europe/Zurich"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "npm"
-      - "frontend"
-    groups:
-      npm-frontend-minor-patch:
+      npm-minor-patch:
         patterns:
           - "*"
         update-types:

@@ -36,7 +36,7 @@ Oder manuell:
 ```bash
 pip install -e .[dev]
 npm install
-cd web && npm install && cd ..
+cd apps/web && npm install && cd ../..
 ```
 
 ---
@@ -58,7 +58,7 @@ npm run dev:backend
 
 # Terminal 2: Frontend
 npm run dev:web
-# oder: cd web && npm run dev
+# oder: cd apps/web && npm run dev
 ```
 
 Das Frontend ist unter `http://localhost:5173` erreichbar (leitet `/api` an das Python-Backend auf Port `58271` weiter).
@@ -78,20 +78,20 @@ npm run test:backend
 npm run test:web
 
 # Playwright E2E-Tests
-cd web && npx playwright test
+cd apps/web && npx playwright test
 ```
 
 ---
 
 ## Android App Entwicklung & Lokale Vorschau
 
-Die mobile App (`mobile/`) basiert auf **Capacitor** und nutzt eine lokale Storage-Engine (Dexie.js IndexedDB-Cache + direkter `.md`-Dateizugriff).
+Die mobile App (`apps/mobile/`) basiert auf **Capacitor** und nutzt eine lokale Storage-Engine (Dexie.js IndexedDB-Cache + direkter `.md`-Dateizugriff).
 
 ### 1. Android-Projekt bauen
 
 ```bash
 # Web-Bundle bauen und mit dem nativen Capacitor-Projekt synchronisieren
-cd mobile && npm run cap:sync
+cd apps/mobile && npm run cap:sync
 
 # (Optional) Release-APK lokal via Gradle kompilieren (oder im Repository-Root: npm run build:apk)
 cd android && ./gradlew assembleRelease
@@ -102,7 +102,7 @@ cd android && ./gradlew assembleRelease
 Die Android-App kann ohne echtes Smartphone auf drei Wegen lokal getestet und vorgeschaut werden:
 
 #### Option A: Browser Mobile DevTools (Sofort, ohne Installation)
-1. App starten: `cd mobile && npm run dev`
+1. App starten: `cd apps/mobile && npm run dev`
 2. Entwicklertools in Chrome/Firefox öffnen (`F12`), `Strg + Umschalt + M` drücken, um die **Geräteleiste / Mobile Ansicht** zu aktivieren (z. B. Pixel 7).
 3. Im Browser liegt der Vault im Browser-Speicher statt im Dokumente-Ordner des Telefons. Das genügt, um Bildschirme und Gesten auszuprobieren.
 
@@ -113,12 +113,12 @@ Unter Linux mit Wayland führt **Waydroid** Android in einem LXC-Container mit v
 waydroid session start
 
 # Gebautes APK installieren
-waydroid app install mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk
+waydroid app install apps/mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk
 ```
 
 #### Option C: Android Studio & Emulator
 ```bash
 # Projekt in Android Studio öffnen
-cd mobile && npx cap open android
+cd apps/mobile && npx cap open android
 ```
 In Android Studio auf **Run** (▶) klicken oder ein Virtual Device (AVD) starten. Das `.apk` kann auch per Drag & Drop direkt auf das Emulator-Fenster gezogen werden.
