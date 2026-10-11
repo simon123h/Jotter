@@ -55,7 +55,10 @@ export default defineConfig({
     exclude: ['node_modules', 'dist', '.git', '.cache', 'tests/e2e/**'],
     coverage: {
       reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
-      exclude: ['src/storage/demoAdapter.ts'],
+      // The shared packages count too, as far as the app's tests use them
+      allowExternal: true,
+      include: ['src/**', '**/packages/*/src/**', '**/packages/*/index.ts'],
+      exclude: ['src/storage/demoAdapter.ts', '**/*.spec.ts', 'src/test-setup.ts', '**/node_modules/**'],
     },
   },
 })

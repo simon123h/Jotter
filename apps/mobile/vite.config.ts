@@ -41,5 +41,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test-setup.ts'],
     exclude: ['node_modules', 'dist', '.git'],
+    coverage: {
+      reporter: ['text-summary', 'lcov'],
+      // The shared packages count too, as far as the app's tests use them
+      allowExternal: true,
+      include: ['src/**', '**/packages/*/src/**', '**/packages/*/index.ts'],
+      exclude: ['**/*.spec.ts', 'src/test-setup.ts', '**/node_modules/**'],
+    },
   },
 });

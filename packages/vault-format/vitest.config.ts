@@ -1,5 +1,9 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  test: { environment: 'node', include: ['src/**/*.spec.ts'] },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.spec.ts'],
+    coverage: { reporter: ['text-summary', 'lcov'], include: ['src/**'], exclude: ['src/**/*.spec.ts'] },
+  },
 });

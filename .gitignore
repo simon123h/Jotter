@@ -26,7 +26,7 @@ src/jotter/_version.py
 .coverage.*
 coverage.json
 coverage.xml
-coverage.out
+coverage/
 htmlcov/
 .tox/
 .nox/

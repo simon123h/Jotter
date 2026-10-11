@@ -64,9 +64,9 @@ jobs:
         run: |
           npm run lint
 
-      - name: Type Check Backend
+      - name: Type Check
         run: |
-          npm run typecheck:backend
+          npm run typecheck
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -106,13 +106,23 @@ jobs:
         run: |
           python3 -m pytest --cov=src/jotter --cov-report=xml --cov-report=term tests/
 
-      - name: Run Frontend Tests with Coverage
+      - name: Run Web Tests with Coverage
         run: |
           cd apps/web && npm run test:coverage
 
-      - name: Run Vault Format and Mobile Tests
+      - name: Run Mobile Tests with Coverage
         run: |
-          npm run test:mobile
+          cd apps/mobile && npm run test:coverage
+
+      - name: Run Shared Package Tests with Coverage
+        run: |
+          cd packages/vault-format && npm run test:coverage
+
+      - name: Make Coverage Paths Relative to the Repository
+        run: |
+          node scripts/lcov-paths.mjs apps/web apps/web/coverage/lcov.info
+          node scripts/lcov-paths.mjs apps/mobile apps/mobile/coverage/lcov.info
+          node scripts/lcov-paths.mjs packages/vault-format packages/vault-format/coverage/lcov.info
 
       - name: Upload Backend Coverage to Codecov
         uses: codecov/codecov-action@v7
@@ -122,12 +132,28 @@ jobs:
           flags: backend
           fail_ci_if_error: false
 
-      - name: Upload Frontend Coverage to Codecov
+      - name: Upload Web Coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/web/coverage/lcov.info
-          flags: frontend
+          flags: web
+          fail_ci_if_error: false
+
+      - name: Upload Mobile Coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/mobile/coverage/lcov.info
+          flags: mobile
+          fail_ci_if_error: false
+
+      - name: Upload Shared Package Coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/vault-format/coverage/lcov.info
+          flags: packages
           fail_ci_if_error: false
 
   e2e-tests:

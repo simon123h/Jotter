@@ -9,9 +9,27 @@ coverage:
         informational: true
   range: "50...75"
 
+# Coverage comes from four uploads: the Python backend (flag backend), the web app (web), the mobile app (mobile) and
+# the shared packages (packages). The shared packages are also covered by the tests of the two apps.
+flags:
+  backend:
+    paths:
+      - src/
+  web:
+    paths:
+      - apps/web/
+  mobile:
+    paths:
+      - apps/mobile/
+  packages:
+    paths:
+      - packages/
+
 ignore:
-  - "apps/web/wailsjs/**/*"
-  - "apps/web/dist/**/*"
-  - "main_desktop.go"
-  - "main_server.go"
-  - "shared_assets.go"
+  - "apps/*/dist/**/*"
+  - "apps/mobile/android/**/*"
+  - "**/*.spec.ts"
+  - "**/test-setup.ts"
+  - "tests/**/*"
+  - "scripts/**/*"
+  - "docs/**/*"
