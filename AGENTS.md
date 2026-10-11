@@ -18,7 +18,6 @@ Local-first kanban-inspired task manager. A vault is a folder of Markdown task f
 - `npm run test` runs pytest and vitest (frontend, the parser package and `apps/mobile/`). Mobile alone: `npm run test:mobile`. Backend alone: `uv run pytest -q`; frontend alone: `cd apps/web && npx vitest run`.
 - `npm run lint`, `npm run format`, `npm run typecheck` (mypy for the backend, `vue-tsc -b` for both apps, `tsc` for the packages; a plain `vue-tsc --noEmit` checks nothing).
 - `npm run dev` starts both dev servers.
-- mypy currently reports errors that predate your change. Compare the count before and after (`git stash`) rather than expecting zero.
 
 ## Conventions
 

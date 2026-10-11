@@ -42,7 +42,8 @@ def _load_server_class() -> Any:
 
 
 if TYPE_CHECKING:
-    from mcp.server.mcpserver import MCPServer
+    # The class moved between mcp releases and the package is optional: without it (or with an older release) this is Any
+    from mcp.server.mcpserver import MCPServer  # type: ignore[import-not-found, unused-ignore]
 else:
     # None when the optional 'mcp' package is missing; create_mcp_server then raises McpUnavailableError
     MCPServer = _load_server_class()
