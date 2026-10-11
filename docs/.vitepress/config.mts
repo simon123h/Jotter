@@ -75,7 +75,8 @@ export default defineConfig({
 							text: 'Developer Reference',
 							items: [
 								{ text: 'Architecture (arc42)', link: '/developer/architecture' },
-								{ text: 'REST API & OpenAPI', link: '/developer/api' }
+								{ text: 'REST API & OpenAPI', link: '/developer/api' },
+								{ text: 'Feature Budget', link: '/developer/features' }
 							]
 						}
 					]
@@ -125,7 +126,8 @@ export default defineConfig({
 							text: 'Entwickler-Referenz (EN)',
 							items: [
 								{ text: 'Architecture (arc42)', link: '/developer/architecture' },
-								{ text: 'REST API & OpenAPI', link: '/developer/api' }
+								{ text: 'REST API & OpenAPI', link: '/developer/api' },
+								{ text: 'Feature Budget', link: '/developer/features' }
 							]
 						}
 					],
@@ -159,7 +161,8 @@ export default defineConfig({
 							text: 'Entwickler-Referenz (EN)',
 							items: [
 								{ text: 'Architecture (arc42)', link: '/developer/architecture' },
-								{ text: 'REST API & OpenAPI', link: '/developer/api' }
+								{ text: 'REST API & OpenAPI', link: '/developer/api' },
+								{ text: 'Feature Budget', link: '/developer/features' }
 							]
 						}
 					]
