@@ -28,6 +28,7 @@ export default defineConfig({
 							text: 'User Guide',
 							items: [
 								{ text: 'Configuration', link: '/user/configuration' },
+								{ text: 'The Android App', link: '/user/mobile' },
 								{ text: 'Search & Filtering DSL', link: '/user/searching-filtering' },
 								{ text: 'Spreadsheet Import & Export', link: '/user/import-export' },
 								{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' },
@@ -54,6 +55,7 @@ export default defineConfig({
 							text: 'User Guide',
 							items: [
 								{ text: 'Configuration', link: '/user/configuration' },
+								{ text: 'The Android App', link: '/user/mobile' },
 								{ text: 'Search & Filtering DSL', link: '/user/searching-filtering' },
 								{ text: 'Spreadsheet Import & Export', link: '/user/import-export' },
 								{ text: 'Keyboard Shortcuts', link: '/user/shortcuts' },
@@ -105,6 +107,7 @@ export default defineConfig({
 							text: 'Benutzerhandbuch',
 							items: [
 								{ text: 'Konfiguration', link: '/de/user/configuration' },
+								{ text: 'Die Android-App', link: '/de/user/mobile' },
 								{ text: 'Suche & DSL-Filter', link: '/de/user/searching-filtering' },
 								{ text: 'Tabellen-Import & -Export', link: '/de/user/import-export' },
 								{ text: 'Tastaturkurzbefehle', link: '/de/user/shortcuts' },
@@ -138,6 +141,7 @@ export default defineConfig({
 							text: 'Benutzerhandbuch',
 							items: [
 								{ text: 'Konfiguration', link: '/de/user/configuration' },
+								{ text: 'Die Android-App', link: '/de/user/mobile' },
 								{ text: 'Suche & DSL-Filter', link: '/de/user/searching-filtering' },
 								{ text: 'Tabellen-Import & -Export', link: '/de/user/import-export' },
 								{ text: 'Tastaturkurzbefehle', link: '/de/user/shortcuts' },
