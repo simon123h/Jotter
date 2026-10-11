@@ -1,15 +1,29 @@
 #!/usr/bin/env python3
-"""Calculates lines of code (LOC) across repository commit history without git checkout."""
+"""Counts lines of code (LOC) per area across the commit history, without checking anything out.
+
+    python3 scripts/loc_history.py            # writes loc_history.txt, one row per commit
+    python3 scripts/loc_history.py --current  # prints the table for the latest commit only
+
+An area is a part of the repository: the backend, the web app, the mobile app, the shared packages. Code and test
+lines are counted apart. The areas follow the paths of today and of the earlier layouts (frontend/, web/, mobile/).
+Plot the result with scripts/plot_loc.py.
+"""
 
 import re
 import subprocess
+import sys
 import time
+from collections.abc import Callable
+
+AREAS = ("backend", "web", "mobile", "packages", "other")
 
 EXCLUDED_PATHS = (
     "node_modules/",
     "/node_modules/",
     "dist/",
     "/dist/",
+    "coverage/",
+    "/coverage/",
     "venv/",
     "/venv/",
     ".git/",
@@ -27,6 +41,24 @@ TEST_PATH_PATTERN = re.compile(
     r"|\.(spec|test)\.(ts|vue)$"  # frontend test files
 )
 
+# The first matching prefix decides, so that the layouts of every period of the history are covered
+AREA_PREFIXES = (
+    ("apps/web/", "web"),
+    ("web/", "web"),
+    ("frontend/", "web"),
+    ("apps/mobile/", "mobile"),
+    ("mobile/", "mobile"),
+    ("packages/", "packages"),
+    ("src/", "backend"),
+    ("tests/", "backend"),
+    ("backend/", "backend"),
+    ("cmd/", "backend"),
+    ("internal/", "backend"),
+    ("pkg/", "backend"),
+    ("scripts/", "other"),
+    ("docs/", "other"),
+)
+
 
 def is_excluded(path: str) -> bool:
     if path.endswith(".d.ts"):
@@ -38,102 +70,128 @@ def is_test(path: str) -> bool:
     return TEST_PATH_PATTERN.search(path) is not None
 
 
+def area_of(path: str) -> str:
+    for prefix, area in AREA_PREFIXES:
+        if path.startswith(prefix):
+            return area
+    # Loose files at the root (main.go, run.py) belong to the backend
+    return "backend" if "/" not in path and path.endswith((".go", ".py")) else "other"
+
+
+Counts = dict[tuple[str, str], int]
+
+
+def count_tree(tree_output: str, blob_lines: Callable[[str], int]) -> Counts:
+    """Lines per (area, "code" or "test") for the output of `git ls-tree -r`."""
+    counts: Counts = {(area, kind): 0 for area in AREAS for kind in ("code", "test")}
+    for entry in tree_output.split("\n"):
+        if not entry or "\t" not in entry:
+            continue
+        meta, path = entry.split("\t", 1)
+        if is_excluded(path) or not path.endswith(SOURCE_EXTENSIONS):
+            continue
+        parts = meta.split()
+        if len(parts) < 3:
+            continue
+        counts[(area_of(path), "test" if is_test(path) else "code")] += blob_lines(parts[2])
+    return counts
+
+
+def header() -> str:
+    columns = ["Date", "Commit", "Code_LOC", "Test_LOC", "Total_LOC"]
+    columns += [f"{area}_{kind}" for area in AREAS for kind in ("code", "test")]
+    return ",".join(columns)
+
+
+def row(date: str, commit: str, counts: Counts) -> str:
+    code = sum(v for (_, kind), v in counts.items() if kind == "code")
+    test = sum(v for (_, kind), v in counts.items() if kind == "test")
+    values = [date, commit, code, test, code + test]
+    values += [counts[(area, kind)] for area in AREAS for kind in ("code", "test")]
+    return ",".join(str(v) for v in values)
+
+
+def print_table(counts: Counts) -> None:
+    print(f"{'area':<10}{'code':>9}{'tests':>9}{'total':>9}")
+    for area in AREAS:
+        code, test = counts[(area, "code")], counts[(area, "test")]
+        print(f"{area:<10}{code:>9}{test:>9}{code + test:>9}")
+    code = sum(v for (_, kind), v in counts.items() if kind == "code")
+    test = sum(v for (_, kind), v in counts.items() if kind == "test")
+    print(f"{'all':<10}{code:>9}{test:>9}{code + test:>9}")
+
+
+class BlobReader:
+    """Line counts of git blobs through one `git cat-file --batch` process, cached by blob id."""
+
+    def __init__(self) -> None:
+        self.cache: dict[str, int] = {}
+        self.proc = subprocess.Popen(["git", "cat-file", "--batch"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    def lines(self, sha: str) -> int:
+        if sha in self.cache:
+            return self.cache[sha]
+        assert self.proc.stdin is not None
+        assert self.proc.stdout is not None
+        self.proc.stdin.write(f"{sha}\n".encode())
+        self.proc.stdin.flush()
+        parts = self.proc.stdout.readline().decode().split()
+        if len(parts) < 3 or parts[1] != "blob":
+            self.cache[sha] = 0
+            return 0
+        content = self.proc.stdout.read(int(parts[2]))
+        self.proc.stdout.read(1)  # Trailing newline after a batch item
+        lines = content.count(b"\n") + (1 if content and not content.endswith(b"\n") else 0)
+        self.cache[sha] = lines
+        return lines
+
+    def close(self) -> None:
+        self.proc.terminate()
+
+
+def ls_tree(commit: str) -> str:
+    return subprocess.check_output(["git", "ls-tree", "-r", commit], text=True).strip()
+
+
+def count_current() -> None:
+    reader = BlobReader()
+    try:
+        print_table(count_tree(ls_tree("HEAD"), reader.lines))
+    finally:
+        reader.close()
+
+
 def count_loc_history(output_file: str = "loc_history.txt") -> None:
     start_time = time.time()
-    print("Calculating LOC history (in-memory git tree traversal)...")
+    print("Calculating LOC history per area (in-memory git tree traversal)...")
 
-    # Get all commits in chronological order by committer date
+    # All commits in chronological order by committer date
     commits_raw = subprocess.check_output(
-        ["git", "log", "--reverse", "--pretty=format:%H|%cd", "--date=short"],
-        text=True,
+        ["git", "log", "--reverse", "--pretty=format:%H|%cd", "--date=short"], text=True
     ).strip()
-
     if not commits_raw:
         print("No commits found.")
         return
-
     commits = [line.split("|", 1) for line in commits_raw.split("\n") if "|" in line]
-    total_commits = len(commits)
 
-    # Blob SHA -> line count cache (deduplicates identical file contents across commits)
-    blob_cache: dict[str, int] = {}
-
-    cat_proc = subprocess.Popen(
-        ["git", "cat-file", "--batch"],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        text=False,
-    )
-
-    def get_blob_lines(sha: str) -> int:
-        if sha in blob_cache:
-            return blob_cache[sha]
-        assert cat_proc.stdin is not None
-        assert cat_proc.stdout is not None
-        cat_proc.stdin.write(f"{sha}\n".encode())
-        cat_proc.stdin.flush()
-        header = cat_proc.stdout.readline().decode()
-        parts = header.split()
-        if len(parts) < 3 or parts[1] != "blob":
-            blob_cache[sha] = 0
-            return 0
-        size = int(parts[2])
-        content = cat_proc.stdout.read(size)
-        cat_proc.stdout.read(1)  # Trailing newline after batch item
-        lines = content.count(b"\n")
-        if content and not content.endswith(b"\n"):
-            lines += 1
-        blob_cache[sha] = lines
-        return lines
-
-    results = []
-
+    reader = BlobReader()
+    rows = []
     try:
         for idx, (commit_hash, commit_date) in enumerate(commits, 1):
-            if idx % 50 == 0 or idx == total_commits:
-                print(f"[{idx}/{total_commits}] Processing commit {commit_hash[:7]} ({commit_date})...")
-
-            tree_output = subprocess.check_output(
-                ["git", "ls-tree", "-r", commit_hash],
-                text=True,
-            ).strip()
-
-            code_loc = 0
-            test_loc = 0
-
-            if tree_output:
-                for entry in tree_output.split("\n"):
-                    if not entry:
-                        continue
-                    meta, path = entry.split("\t", 1)
-                    if is_excluded(path):
-                        continue
-
-                    parts = meta.split()
-                    if len(parts) < 3:
-                        continue
-                    sha = parts[2]
-
-                    if not path.endswith(SOURCE_EXTENSIONS):
-                        continue
-                    if is_test(path):
-                        test_loc += get_blob_lines(sha)
-                    else:
-                        code_loc += get_blob_lines(sha)
-
-            total_loc = code_loc + test_loc
-            results.append(f"{commit_date},{commit_hash[:7]},{code_loc},{test_loc},{total_loc}")
-
+            if idx % 50 == 0 or idx == len(commits):
+                print(f"[{idx}/{len(commits)}] Processing commit {commit_hash[:7]} ({commit_date})...")
+            rows.append(row(commit_date, commit_hash[:7], count_tree(ls_tree(commit_hash), reader.lines)))
     finally:
-        cat_proc.terminate()
+        reader.close()
 
     with open(output_file, "w", encoding="utf-8") as f:
-        f.write("Date,Commit,Code_LOC,Test_LOC,Total_LOC\n")
-        f.write("\n".join(results) + "\n")
-
-    elapsed = time.time() - start_time
-    print(f"Done in {elapsed:.2f}s! LOC history written to {output_file}")
+        f.write(header() + "\n")
+        f.write("\n".join(rows) + "\n")
+    print(f"Done in {time.time() - start_time:.2f}s! LOC history written to {output_file}")
 
 
 if __name__ == "__main__":
-    count_loc_history()
+    if "--current" in sys.argv[1:]:
+        count_current()
+    else:
+        count_loc_history()
