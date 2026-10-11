@@ -48,4 +48,4 @@ Python backend answers the same filters from SQLite.
 | Implementation | Runner |
 | :-- | :-- |
 | Python backend | `tests/test_search_conformance.py` |
-| TypeScript (`packages/task-filter`) | `web/src/utils/__tests__/taskFilter.spec.ts` |
+| TypeScript (`packages/task-filter`) | `apps/web/src/utils/__tests__/taskFilter.spec.ts` |

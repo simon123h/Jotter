@@ -37,7 +37,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'python3 ../run.py',
+      command: 'python3 ../../run.py',
       port: 58273,
       reuseExistingServer: !process.env.CI,
       env: {

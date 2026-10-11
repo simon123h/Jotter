@@ -22,8 +22,8 @@ function getAppVersion(): string {
 const appVersion = getAppVersion();
 
 // The colour themes and the title parser are shared with the mobile app and live outside this project (packages/)
-const sharedPackages = fileURLToPath(new URL('../packages', import.meta.url));
-const sharedSpec = fileURLToPath(new URL('../spec', import.meta.url));
+const sharedPackages = fileURLToPath(new URL('../../packages', import.meta.url));
+const sharedSpec = fileURLToPath(new URL('../../spec', import.meta.url));
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -44,8 +44,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '@jotter/title-parser': fileURLToPath(new URL('../packages/title-parser/index.ts', import.meta.url)),
-      '@jotter/task-filter': fileURLToPath(new URL('../packages/task-filter/index.ts', import.meta.url)),
+      '@jotter/title-parser': fileURLToPath(new URL('../../packages/title-parser/index.ts', import.meta.url)),
+      '@jotter/task-filter': fileURLToPath(new URL('../../packages/task-filter/index.ts', import.meta.url)),
     }
   },
   test: {

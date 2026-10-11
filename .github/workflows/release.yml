@@ -212,7 +212,7 @@ jobs:
           print-hash: true
 
   build-android-apk:
-    # Jotter, the mobile app (mobile/). It replaces the APK that used to be built from web/.
+    # Jotter, the mobile app (apps/mobile/). It replaces the APK that used to be built from apps/web/.
     needs: [tag-release, build-and-publish-pypi]
     runs-on: ubuntu-latest
     steps:
@@ -236,12 +236,12 @@ jobs:
       - name: Install Jotter Dependencies
         run: |
           (cd packages/vault-format && npm install)
-          cd mobile
+          cd apps/mobile
           npm install
 
       - name: Build Web Assets & Sync Capacitor
         run: |
-          cd mobile
+          cd apps/mobile
           npm run build
           npx cap sync android
 
@@ -250,7 +250,7 @@ jobs:
 
       - name: Build Android Release APK
         run: |
-          cd mobile/android
+          cd apps/mobile/android
           chmod +x gradlew
           ./gradlew assembleRelease
 
@@ -272,7 +272,7 @@ jobs:
               -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" -dname "CN=Jotter, OU=Mobile, O=Jotter, L=Local, ST=Local, C=DE"
           fi
           
-          APK_RAW=$(find mobile/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          APK_RAW=$(find apps/mobile/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           SIGNED_APK="jotter-${TAG}-android.apk"
           
           # Align & Sign APK using Android Build-Tools apksigner

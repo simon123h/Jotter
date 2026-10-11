@@ -47,7 +47,7 @@ htmlcov/
 
 # Node & Frontend
 node_modules/
-web/dist/
+apps/web/dist/
 dist-pages/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
@@ -64,7 +64,7 @@ jotter.json
 .DS_Store
 
 # Temporary Test Data
-web/tests/e2e/temp_data/
+apps/web/tests/e2e/temp_data/
 *.tmp
 
 # Antigravity CLI / Tooling

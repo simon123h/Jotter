@@ -5,37 +5,37 @@
   "description": "Jotter - Local-First Markdown Kanban Board",
   "scripts": {
     "dev:backend": "python3 run.py --reload --no-browser",
-    "dev:web": "cd web && npm run dev",
+    "dev:web": "cd apps/web && npm run dev",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "dev": "concurrently --kill-others-on-fail --names \"Backend,Frontend\" --prefix-colors \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:web\"",
-    "build:web": "cd web && npm run build",
-    "build:apk": "cd mobile && npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
-    "build:package": "npm run build:web && rm -rf src/jotter/dist build && cp -r web/dist src/jotter/dist && pyproject-build",
+    "build:web": "cd apps/web && npm run build",
+    "build:apk": "cd apps/mobile && npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "build:package": "npm run build:web && rm -rf src/jotter/dist build && cp -r apps/web/dist src/jotter/dist && pyproject-build",
     "build": "npm run build:package",
     "test:backend": "python3 -m pytest tests/",
-    "test:web": "cd web && npm run test",
-    "test:mobile": "cd packages/vault-format && npm test && cd ../../mobile && npm test",
+    "test:web": "cd apps/web && npm run test",
+    "test:mobile": "cd packages/vault-format && npm test && cd ../../apps/mobile && npm test",
     "test": "npm run test:backend && npm run test:web && npm run test:mobile",
     "lint:backend": "ruff check .",
     "typecheck:backend": "mypy",
     "lint:backend:fix": "ruff check --fix .",
-    "lint:web": "cd web && npm run lint",
-    "lint:web:fix": "cd web && npm run lint:fix",
-    "lint:mobile": "cd mobile && npm run lint",
-    "lint:mobile:fix": "cd mobile && npm run lint:fix",
+    "lint:web": "cd apps/web && npm run lint",
+    "lint:web:fix": "cd apps/web && npm run lint:fix",
+    "lint:mobile": "cd apps/mobile && npm run lint",
+    "lint:mobile:fix": "cd apps/mobile && npm run lint:fix",
     "lint": "npm run lint:backend && npm run lint:web && npm run lint:mobile",
     "lint:fix": "npm run lint:backend:fix && npm run lint:web:fix && npm run lint:mobile:fix",
     "format:backend": "ruff format .",
     "format:backend:check": "ruff format --check .",
-    "format:web": "cd web && npm run format",
-    "format:web:check": "cd web && npm run format:check",
-    "format:mobile": "cd mobile && npm run format",
-    "format:mobile:check": "cd mobile && npm run format:check",
+    "format:web": "cd apps/web && npm run format",
+    "format:web:check": "cd apps/web && npm run format:check",
+    "format:mobile": "cd apps/mobile && npm run format",
+    "format:mobile:check": "cd apps/mobile && npm run format:check",
     "format": "npm run format:backend && npm run format:web && npm run format:mobile",
     "format:check": "npm run format:backend:check && npm run format:web:check && npm run format:mobile:check",
-    "install:all": "npm install && cd web && npm install && cd ../packages/vault-format && npm install && cd ../../mobile && npm install && cd .. && pip install -e .[dev]",
+    "install:all": "npm install && cd apps/web && npm install && cd ../../packages/vault-format && npm install && cd ../../apps/mobile && npm install && cd ../.. && pip install -e .[dev]",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -49,13 +49,13 @@
       "ruff check --fix",
       "ruff format"
     ],
-    "web/src/**/*.{js,ts,vue,css}": [
-      "npm --prefix web run format",
-      "npm --prefix web run lint:fix"
+    "apps/web/src/**/*.{js,ts,vue,css}": [
+      "npm --prefix apps/web run format",
+      "npm --prefix apps/web run lint:fix"
     ],
-    "mobile/src/**/*.{js,ts,vue,css}": [
-      "npm --prefix mobile run format",
-      "npm --prefix mobile run lint:fix"
+    "apps/mobile/src/**/*.{js,ts,vue,css}": [
+      "npm --prefix apps/mobile run format",
+      "npm --prefix apps/mobile run lint:fix"
     ]
   },
   "overrides": {

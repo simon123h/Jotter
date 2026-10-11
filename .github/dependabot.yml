@@ -40,9 +40,9 @@ updates:
           - "minor"
           - "patch"
 
-  # Maintain npm dependencies in the frontend directory
+  # Maintain npm dependencies in apps/web
   - package-ecosystem: "npm"
-    directory: "/web"
+    directory: "/apps/web"
     schedule:
       interval: "weekly"
       day: "monday"

@@ -32,7 +32,7 @@ describe('dev server', () => {
   });
 
   it('serves the shared parser package, and everything the parser imports', async () => {
-    const parser = `/@fs${resolve(process.cwd(), '../packages/vault-format/src/markdownParser.ts')}`;
+    const parser = `/@fs${resolve(process.cwd(), '../../packages/vault-format/src/markdownParser.ts')}`;
     const response = await fetch(`${base}${parser}`);
     expect(response.status).toBe(200);
 
@@ -44,7 +44,7 @@ describe('dev server', () => {
   });
 
   it('still refuses files outside the project and the shared package', async () => {
-    const outside = `/@fs${resolve(process.cwd(), '../pyproject.toml')}`;
+    const outside = `/@fs${resolve(process.cwd(), '../../pyproject.toml')}`;
     expect((await fetch(`${base}${outside}`)).status).toBe(403);
   });
 });

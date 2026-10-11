@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import '../../packages/themes/themes.css';
+@import '../../../packages/themes/themes.css';
 
 /* The app's tokens, taken from the theme variables it shares with the desktop app */
 @theme {

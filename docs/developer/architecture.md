@@ -91,7 +91,7 @@ flowchart LR
   - `HttpStorageAdapter`: Handles communication with the FastAPI desktop backend.
   - `DemoStorageAdapter`: Keeps everything in the browser's `localStorage` for the static demo on GitHub Pages.
 
-The Android app is a separate project (`mobile/`, [ADR 0017](./adr/0017-mobile-app.md)). It has no backend: it reads and writes the same vault files through the shared `packages/vault-format` parser and keeps an IndexedDB cache.
+The Android app is a separate project (`apps/mobile/`, [ADR 0017](./adr/0017-mobile-app.md)). It has no backend: it reads and writes the same vault files through the shared `packages/vault-format` parser and keeps an IndexedDB cache.
 
 ### 5.2 Backend (FastAPI Python Application)
 
@@ -147,7 +147,7 @@ Requests borrow SQLite connections from a small pool (`ConnectionPool`, `get_db_
 Jotter is deployed as a lightweight client-server web application:
 
 1. **Backend**: Python 3 (FastAPI + Uvicorn) serving REST endpoints and static files.
-2. **Frontend**: Built Single Page Application (Vue 3 + Vite + Tailwind CSS) served directly from `web/dist/`.
+2. **Frontend**: Built Single Page Application (Vue 3 + Vite + Tailwind CSS) served directly from `apps/web/dist/`.
 
 Running Jotter:
 ```bash

@@ -35,7 +35,7 @@ pip install -e .[dev]
 
 # Frontend dependencies
 npm install
-cd web && npm install && cd ..
+cd apps/web && npm install && cd ../..
 ```
 
 ---
@@ -57,7 +57,7 @@ npm run dev:backend
 
 # Terminal 2: Vue 3 Frontend
 npm run dev:web
-# or: cd web && npm run dev
+# or: cd apps/web && npm run dev
 ```
 
 The frontend will run at `http://localhost:5173` (proxying `/api` requests to the Python server at `http://localhost:58271`).
@@ -77,20 +77,20 @@ npm run test:backend
 npm run test:web
 
 # Run Playwright full-stack browser E2E tests
-cd web && npx playwright test
+cd apps/web && npx playwright test
 ```
 
 ---
 
 ## Android Mobile Development & Local Preview
 
-The mobile app (`mobile/`), is built with **Capacitor** and runs in-process with a client-side storage engine (IndexedDB cache via Dexie.js + raw `.md` filesystem access). It reads and writes vaults through the shared `packages/vault-format` parser. See [ADR 0017](../developer/adr/0017-mobile-app.md).
+The mobile app (`apps/mobile/`), is built with **Capacitor** and runs in-process with a client-side storage engine (IndexedDB cache via Dexie.js + raw `.md` filesystem access). It reads and writes vaults through the shared `packages/vault-format` parser. See [ADR 0017](../developer/adr/0017-mobile-app.md).
 
 ### 1. Building the Android Project
 
 ```bash
 # Build the web bundle and sync the native Capacitor Android project
-cd mobile && npm run cap:sync
+cd apps/mobile && npm run cap:sync
 
 # (Optional) Build the release APK locally via Gradle (or from the repository root: npm run build:apk)
 cd android && ./gradlew assembleRelease
@@ -101,7 +101,7 @@ cd android && ./gradlew assembleRelease
 You can test and preview the mobile application locally without flashing an APK to a physical phone using three methods:
 
 #### Option A: Browser Mobile DevTools (Instant, Zero Setup)
-1. Start the app: `cd mobile && npm run dev`
+1. Start the app: `cd apps/mobile && npm run dev`
 2. Open DevTools in Chrome/Firefox (`F12`), press `Ctrl + Shift + M` to toggle the **Device Toolbar / Mobile View** (e.g., Pixel 7).
 3. In the browser the app keeps its vault in the browser's storage instead of the phone's Documents folder, which is enough to try the screens and gestures.
 
@@ -112,12 +112,12 @@ If you are running Linux on Wayland, **Waydroid** runs Android inside an LXC con
 waydroid session start
 
 # Install the built APK
-waydroid app install mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk
+waydroid app install apps/mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk
 ```
 
 #### Option C: Android Studio & Emulator
 ```bash
 # Open the Android workspace in Android Studio
-cd mobile && npx cap open android
+cd apps/mobile && npx cap open android
 ```
 From Android Studio, click **Run** (▶) or launch an Android Virtual Device (AVD) from the Device Manager. Drag & drop the `.apk` directly onto the emulator window to install and test.
