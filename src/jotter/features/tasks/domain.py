@@ -22,10 +22,10 @@ class Priority(StrEnum):
         if not val:
             return cls.NONE
         clean = str(val).strip().lower()
-        for p in cls:
-            if p.value == clean:
-                return p
-        raise ValidationError(f"Invalid priority: '{val}'")
+        try:
+            return cls(clean)
+        except ValueError:
+            raise ValidationError(f"Invalid priority: '{val}'") from None
 
 
 @dataclass(frozen=True)
