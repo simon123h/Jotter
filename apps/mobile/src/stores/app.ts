@@ -4,94 +4,24 @@ import type { Task, Project, Bucket } from '@jotter/vault-format';
 import { filterTasks, isEmptyFilter, parseQuery } from '@jotter/task-filter';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
-import { capacitorKeyValue as preferences } from '@/data/keyValue';
-import { t } from '@/i18n';
 import { isoDay, isPostponed } from '@/dates';
 import { useUiStore } from '@/stores/ui';
-import { PLANNED_CHOICES, plannedKey, plannedLabel } from '@/planned';
+import { columnsFor, type Hidden, type View } from '@/stores/columns';
+import {
+  defaultHidden,
+  recallHidden,
+  recallPinned,
+  recallProject,
+  recallView,
+  rememberHidden,
+  rememberPinned,
+  rememberProject,
+  rememberView,
+} from '@/stores/preferences';
 
 export type Status = 'loading' | 'onboarding' | 'ready' | 'error';
 
-/** How the tabs group the tasks: by column of the board, by tag, or by planned date. */
-export type View = 'board' | 'tags' | 'planning';
-const VIEWS: View[] = ['board', 'tags', 'planning'];
-
-export interface Column {
-  key: string;
-  title: string;
-  /** The bucket name, or null for tasks whose bucket the project does not define (and in the other views). */
-  bucket: string | null;
-  /** The tag or the planned date the tab stands for ('' for Untagged and Unplanned). */
-  value?: string;
-  tasks: Task[];
-}
-
-const LAST_PROJECT_KEY = 'jotter_lite_last_project';
-const VIEW_KEY = 'jotter_lite_view';
-const HIDDEN_KEY = 'jotter_lite_hidden';
-const PINNED_KEY = 'jotter_lite_pinned';
-
-/** Which finished tasks a view leaves out. The tag and planning views list what is still to do, the board everything. */
-export type Hidden = { done: boolean; archive: boolean; postponed: boolean };
-const defaultHidden = (): Record<View, Hidden> => ({
-  board: { done: false, archive: false, postponed: true },
-  tags: { done: true, archive: true, postponed: true },
-  planning: { done: true, archive: true, postponed: true },
-});
-
-const recallHidden = async (vaultId: string): Promise<Record<View, Hidden>> => {
-  const hidden = defaultHidden();
-  try {
-    const stored = JSON.parse((await preferences.get(`${HIDDEN_KEY}:${vaultId}`)) ?? '{}');
-    for (const v of VIEWS) {
-      if (typeof stored?.[v]?.done === 'boolean') hidden[v].done = stored[v].done;
-      if (typeof stored?.[v]?.archive === 'boolean') hidden[v].archive = stored[v].archive;
-      if (typeof stored?.[v]?.postponed === 'boolean') hidden[v].postponed = stored[v].postponed;
-    }
-  } catch {
-    // Unreadable: the defaults apply
-  }
-  return hidden;
-};
-
-/** What the user last looked at is kept in the device's preferences (not in web storage, which Android may clear). */
-const recallView = async (vaultId: string): Promise<View> => {
-  try {
-    const stored = await preferences.get(`${VIEW_KEY}:${vaultId}`);
-    return VIEWS.find((v) => v === stored) ?? 'board';
-  } catch {
-    return 'board';
-  }
-};
-
-const recallPinned = async (vaultId: string): Promise<string[]> => {
-  try {
-    const stored = JSON.parse((await preferences.get(`${PINNED_KEY}:${vaultId}`)) ?? '[]');
-    return Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
-};
-
-const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
-
-/** The order in the tag and planning tabs: priority first, then the nearest due date, then the board position. */
-const byUrgency = (a: Task, b: Task) =>
-  (PRIORITY_RANK[a.priority ?? ''] ?? 4) - (PRIORITY_RANK[b.priority ?? ''] ?? 4) ||
-  (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999') ||
-  a.position - b.position;
-
-const remember = (vaultId: string, projectId: string | null) => {
-  // Not remembered when the preferences cannot be written; the first project is opened next time
-  if (projectId) void preferences.set(`${LAST_PROJECT_KEY}:${vaultId}`, projectId).catch(() => undefined);
-};
-const recall = async (vaultId: string) => {
-  try {
-    return await preferences.get(`${LAST_PROJECT_KEY}:${vaultId}`);
-  } catch {
-    return null;
-  }
-};
+export type { View, Hidden, Column } from '@/stores/columns';
 
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
@@ -135,76 +65,8 @@ export const useAppStore = defineStore('app', () => {
   /** The Postponed column is virtual when the project has no column of that name. */
   const isVirtualPostponed = (bucket: string) => bucket === 'postponed' && !buckets.value.some((b) => b.name === 'postponed');
 
-  /** Where a task is shown: a task postponed to a later day is in the Postponed column, whatever its own column. */
-  const shownBucket = (task: Task) => (isPostponed(task) ? 'postponed' : task.bucket);
-
-  const isHidden = (task: Task, v: View) =>
-    (task.bucket === 'done' && hidden.value[v].done) ||
-    (task.bucket === 'archive' && hidden.value[v].archive) ||
-    (shownBucket(task) === 'postponed' && hidden.value[v].postponed);
-
-  /** Tasks the tag and planning views list, most urgent first. */
-  const openTasks = computed(() => {
-    const v = view.value;
-    return visibleTasks.value.filter((task) => !isHidden(task, v)).sort(byUrgency);
-  });
-
-  /** One column per bucket, plus one for tasks that name a bucket the project does not have. */
-  const boardColumns = computed<Column[]>(() => {
-    const known = new Set([...buckets.value.map((b) => b.name), 'postponed']);
-    const all: Column[] = buckets.value.map((b) => ({ key: b.name, title: b.title, bucket: b.name, tasks: [] as Task[] }));
-    // Postponed tasks have a column even when the project defines none, just before Done
-    if (!all.some((c) => c.key === 'postponed')) {
-      const at = all.findIndex((c) => c.key === 'done');
-      all.splice(at < 0 ? all.length : at, 0, { key: 'postponed', title: t('postponed.title'), bucket: 'postponed', tasks: [] });
-    }
-    for (const col of all) col.tasks = visibleTasks.value.filter((task) => shownBucket(task) === col.key);
-    const cols = all.filter((c) => !hidden.value.board[c.key as keyof Hidden]);
-    const orphans = visibleTasks.value.filter((task) => !known.has(shownBucket(task)));
-    if (orphans.length) cols.push({ key: '__other', title: '', bucket: null, tasks: orphans });
-    return cols;
-  });
-
-  /** One column per tag (a task with two tags is in both), then the tasks without tags. */
-  const tagColumns = computed<Column[]>(() => {
-    const tags = [...new Set(openTasks.value.flatMap((task) => task.tags))].sort();
-    return [
-      ...tags.map((tag) => ({
-        key: `tag:${tag}`,
-        title: `#${tag}`,
-        bucket: null,
-        value: tag,
-        tasks: openTasks.value.filter((task) => task.tags.includes(tag)),
-      })),
-      { key: 'tag:', title: t('tags.untagged'), bucket: null, value: '', tasks: openTasks.value.filter((task) => !task.tags.length) },
-    ];
-  });
-
-  /** One column per planned date the menu offers, the dates tasks carry besides those, then the unplanned tasks. */
-  const planningColumns = computed<Column[]>(() => {
-    const used = [...new Set(openTasks.value.map((task) => plannedKey(task.planned_date)).filter(Boolean))];
-    const extra = used.filter((key) => !(PLANNED_CHOICES as readonly string[]).includes(key)).sort();
-    return [
-      ...[...PLANNED_CHOICES, ...extra].map((key) => ({
-        key: `planned:${key}`,
-        title: plannedLabel(key),
-        bucket: null,
-        value: key,
-        tasks: openTasks.value.filter((task) => plannedKey(task.planned_date) === key),
-      })),
-      {
-        key: 'planned:',
-        title: t('planned.none'),
-        bucket: null,
-        value: '',
-        tasks: openTasks.value.filter((task) => !task.planned_date?.trim()),
-      },
-    ];
-  });
-
-  const columns = computed<Column[]>(() =>
-    view.value === 'tags' ? tagColumns.value : view.value === 'planning' ? planningColumns.value : boardColumns.value
-  );
+  /** The columns of the current view. */
+  const columns = computed(() => columnsFor(view.value, buckets.value, visibleTasks.value, hidden.value));
 
   function repository(): VaultRepository {
     if (!repo.value) throw new Error('Not initialised');
@@ -233,7 +95,7 @@ export const useAppStore = defineStore('app', () => {
       return;
     }
     projects.value = await r.listProjects();
-    const remembered = await recall(opened.id);
+    const remembered = await recallProject(opened.id);
     projectId.value = projects.value.find((p) => p.id === remembered)?.id ?? projects.value[0]?.id ?? null;
     view.value = await recallView(opened.id);
     hidden.value = await recallHidden(opened.id);
@@ -312,8 +174,7 @@ export const useAppStore = defineStore('app', () => {
   function setView(next: View) {
     view.value = next;
     selection.value = [];
-    // Not remembered when the preferences cannot be written; the board opens next time
-    if (vault.value) void preferences.set(`${VIEW_KEY}:${vault.value.id}`, next).catch(() => undefined);
+    if (vault.value) rememberView(vault.value.id, next);
   }
 
   /** Shows or hides the done or the archived tasks of the current view (on the board, their columns too). */
@@ -321,21 +182,17 @@ export const useAppStore = defineStore('app', () => {
     const current = hidden.value[view.value];
     current[which] = !current[which];
     selection.value = [];
-    if (vault.value) {
-      void preferences.set(`${HIDDEN_KEY}:${vault.value.id}`, JSON.stringify(hidden.value)).catch(() => undefined);
-    }
+    if (vault.value) rememberHidden(vault.value.id, hidden.value);
   }
 
   function togglePinned(id: string) {
     pinned.value = pinned.value.includes(id) ? pinned.value.filter((p) => p !== id) : [...pinned.value, id];
-    if (vault.value) {
-      void preferences.set(`${PINNED_KEY}:${vault.value.id}`, JSON.stringify(pinned.value)).catch(() => undefined);
-    }
+    if (vault.value) rememberPinned(vault.value.id, pinned.value);
   }
 
   async function selectProject(id: string) {
     projectId.value = id;
-    if (vault.value) remember(vault.value.id, id);
+    if (vault.value) rememberProject(vault.value.id, id);
     resetFilter();
     selection.value = [];
     await loadProject();
