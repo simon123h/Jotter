@@ -63,6 +63,16 @@ flowchart TD
 
 ## 5. Building Block View
 
+The repository ([ADR 0018](./adr/0018-repository-layout.md)):
+
+| Folder | Contents |
+| :-- | :-- |
+| `src/jotter/`, `tests/` | The Python backend (FastAPI), at the repository root |
+| `apps/web/` | The web client, served by the backend and built as a static demo |
+| `apps/mobile/` | The Android app ([ADR 0017](./adr/0017-mobile-app.md)), without a backend |
+| `packages/` | TypeScript shared by the apps: `vault-format`, `themes`, `title-parser`, `task-filter` |
+| `spec/` | The vault format and the fixtures every implementation runs |
+
 ```mermaid
 flowchart LR
     subgraph Frontend [Frontend - Vue 3 Composition API]
@@ -284,6 +294,7 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0015: The SQLite Index Is a Disposable Cache, Kept Valid by File Stats](./adr/0015-index-as-disposable-cache.md)
 - [ADR 0016: Rewrite the Backend from Go to Python](./adr/0016-rewrite-backend-from-go-to-python.md)
 - [ADR 0017: A Separate Mobile App with a Core Feature Set](./adr/0017-mobile-app.md)
+- [ADR 0018: Repository Layout: Apps, Shared Packages and the Spec](./adr/0018-repository-layout.md)
 
 
 
