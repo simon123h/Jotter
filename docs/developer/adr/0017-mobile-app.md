@@ -17,7 +17,7 @@ Meanwhile Jotter's core is small: markdown backed kanban boards in vaults, with 
 
 Build a separate mobile app that implements only the core, in a new `apps/mobile/` project in this repository.
 
-- **Identity**: app id `io.github.simon123h.jotter_lite`, name "Jotter". It installs next to the existing Android app, so the two can coexist during the transition.
+- **Identity**: app id `io.github.simon123h.jotter_lite`, name "Jotter". It installed next to the old Android app while that existed, so the two could coexist during the transition.
 - **Stack**: Vue 3, Pinia, Tailwind and Capacitor, as in the desktop frontend. Reuse is the point; the UI itself is designed for touch from the start and may look quite different.
 - **Scope (version 1)**:
   - vaults: add, switch, remove
@@ -25,7 +25,7 @@ Build a separate mobile app that implements only the core, in a new `apps/mobile
   - attachments
   - a board view, search and filters, quick add
   - themes and translations
-- **Out of scope**: list view and the other views, canvas, time blocking, Git and the Time Machine, the MCP server, iOS, and a browser build. Anything not listed needs an explicit decision before it is added.
+- **Out of scope** at the start (see *Later changes* for what moved in): list view and the other views, canvas, time blocking, Git and the Time Machine, the MCP server, iOS, and a browser build. Anything not listed needs an explicit decision before it is added.
 - **The vault format is the contract.** Lite and the desktop app agree on the files, not on code. Lite MUST keep what it does not understand: unknown frontmatter keys, unknown files and attachments (`spec/FORMAT.md`, section 5).
 - **The parser is its own package.** The TypeScript implementation of the format lives in `packages/vault-format` and is used by the mobile app. It is covered by the shared fixtures that the Python backend also passes. The desktop frontend does not use it: it talks to the Python backend, so nothing is shared between the two apps except the format itself.
 
@@ -53,3 +53,11 @@ The old Android build was removed from `apps/web/` on 2026-10-06, once Lite cove
 - **A native Android app or Flutter.** More native feel, but a new language, no reuse, and a third implementation of everything. It can be revisited if the Capacitor app cannot reach the quality wanted.
 - **Split desktop into core and extra backends.** Does not help mobile, which has no Python backend.
 - **A web build of Lite.** A browser has no direct file access outside Chromium. Left as a separate experiment; the storage layer stays behind an interface so it can be added.
+
+## Later changes
+
+The scope above was the first version. Added since, each as a decision of its own, without changing the principles (a small app, the vault format as the contract, shared packages only where behaviour is pure):
+
+- **2026-10-11**: the tag and planning views next to the board, bulk actions in a floating toolbar, a full-screen task page, pinned projects, postponing with a virtual Postponed column, a project switcher in the top bar, all desktop colour themes (plus True Black), launcher shortcuts, and the desktop's search query language. The themes, the smart title parser and the search (`packages/themes`, `title-parser`, `task-filter`) are shared with the web app, and the search is checked against the Python backend with fixtures; see [ADR 0018](./0018-repository-layout.md).
+- The row swipe gestures were dropped again: the circle finishes a task, and moving a task goes through the toolbar, because a sideways swipe on a row conflicted with swiping between columns.
+- **Still out of scope**: the list view, canvas, time blocking, Git and the Time Machine, the MCP server, iOS and a browser build.
