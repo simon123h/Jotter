@@ -499,9 +499,49 @@ describe('projects and vaults', () => {
     expect(names()).toEqual(['Work', 'Home']);
     expect(all('drawer-pinned')).toHaveLength(1);
 
-    await start(vault);
+    // The pin is in the vault's settings.json, next to what the desktop keeps there
+    expect(JSON.parse(await fs.readText('Jotter/settings.json'))).toMatchObject({ pinnedProjectIds: ['work'] });
+  });
+
+  it('shows the pins and the project order the desktop app saved, and keeps its other settings', async () => {
+    const { app } = await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+      f.put('Jotter/lab/index.md', '---\ntitle: Lab\n---\n');
+      f.put(
+        'Jotter/settings.json',
+        JSON.stringify({ pinnedProjectIds: ['lab'], sortBy: 'manual', projectOrder: ['work', 'home', 'lab'], currentTheme: 'nordic-dark' })
+      );
+    });
+    expect(app.orderedProjects.map((p) => p.id)).toEqual(['lab', 'work', 'home']);
+
     await openDrawer();
-    expect(names()).toEqual(['Work', 'Home']);
+    await find('drawer-manage-projects').trigger('click');
+    await settle();
+    await all('project-down')[1]!.trigger('click');
+    await settle();
+    expect(app.orderedProjects.map((p) => p.id)).toEqual(['lab', 'home', 'work']);
+    // A pinned project does not move out of the pinned group
+    await all('project-up')[0]!.trigger('click');
+    expect(app.orderedProjects.map((p) => p.id)).toEqual(['lab', 'home', 'work']);
+
+    expect(JSON.parse(await fs.readText('Jotter/settings.json'))).toEqual({
+      pinnedProjectIds: ['lab'],
+      sortBy: 'manual',
+      projectOrder: ['lab', 'home', 'work'],
+      currentTheme: 'nordic-dark',
+    });
+  });
+
+  it('moves pins kept on the device by an older version into the vault', async () => {
+    await capacitorKeyValue.set('jotter_lite_pinned:jotter', JSON.stringify(['work']));
+    const { app } = await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+    });
+    await settle();
+    expect(app.pinned).toEqual(['work']);
+    expect(JSON.parse(await fs.readText('Jotter/settings.json'))).toEqual({ pinnedProjectIds: ['work'] });
   });
 
   it('adds a second vault and switches to it', async () => {

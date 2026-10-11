@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Plus, Pencil, Pin, Trash2, Database } from '@lucide/vue';
+import { Plus, Pencil, Pin, Trash2, Database, ChevronUp, ChevronDown, ArrowDownAZ, ListOrdered } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -60,6 +60,14 @@ async function remove(id: string, title: string) {
 
 <template>
   <BottomSheet :title="t('projects.title')" @close="ui.close()">
+    <button
+      class="mb-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted active:bg-line"
+      data-testid="project-sort"
+      @click="app.setSortBy(app.sortBy === 'manual' ? 'alpha' : 'manual')"
+    >
+      <component :is="app.sortBy === 'manual' ? ListOrdered : ArrowDownAZ" class="h-4 w-4" />
+      {{ t(app.sortBy === 'manual' ? 'projects.sortManual' : 'projects.sortAlpha') }}
+    </button>
     <ul class="space-y-1">
       <li v-for="p in app.orderedProjects" :key="p.id" class="flex items-center gap-1" data-testid="project-row">
         <form v-if="editing === p.id" class="flex flex-1 gap-2" @submit.prevent="saveRename">
@@ -73,6 +81,24 @@ async function remove(id: string, title: string) {
             @click="select(p.id)"
           >
             {{ p.title }}
+          </button>
+          <button
+            v-if="app.sortBy === 'manual'"
+            class="rounded-full p-2 text-muted active:bg-line"
+            :aria-label="t('projects.moveUp')"
+            data-testid="project-up"
+            @click="app.moveProject(p.id, -1)"
+          >
+            <ChevronUp class="h-4 w-4" />
+          </button>
+          <button
+            v-if="app.sortBy === 'manual'"
+            class="rounded-full p-2 text-muted active:bg-line"
+            :aria-label="t('projects.moveDown')"
+            data-testid="project-down"
+            @click="app.moveProject(p.id, 1)"
+          >
+            <ChevronDown class="h-4 w-4" />
           </button>
           <button
             class="rounded-full p-2 active:bg-line"

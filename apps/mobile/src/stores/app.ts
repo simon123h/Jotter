@@ -14,7 +14,6 @@ import {
   recallProject,
   recallView,
   rememberHidden,
-  rememberPinned,
   rememberProject,
   rememberView,
 } from '@/stores/preferences';
@@ -34,8 +33,10 @@ export const useAppStore = defineStore('app', () => {
   const vaults = ref<Vault[]>([]);
   const projects = ref<Project[]>([]);
   const projectId = ref<string | null>(null);
-  /** The projects the user pinned to the top of the lists, kept on the device per vault. */
+  /** The projects pinned to the top of the lists, the order of the others and how they are sorted. These are the vault's settings.json, as on the desktop. */
   const pinned = ref<string[]>([]);
+  const projectOrder = ref<string[]>([]);
+  const sortBy = ref<'alpha' | 'manual'>('alpha');
   const view = ref<View>('board');
   const hidden = ref<Record<View, Hidden>>(defaultHidden());
   const buckets = ref<Bucket[]>([]);
@@ -49,11 +50,18 @@ export const useAppStore = defineStore('app', () => {
   const navVisible = computed(() => selection.value.length === 0 && !ui.navHidden);
 
   const project = computed(() => projects.value.find((p) => p.id === projectId.value) ?? null);
-  /** The projects as the lists show them: the pinned ones first, each group in its own order. */
-  const orderedProjects = computed(() => [
-    ...projects.value.filter((p) => pinned.value.includes(p.id)),
-    ...projects.value.filter((p) => !pinned.value.includes(p.id)),
-  ]);
+  /** The projects as the lists show them: the pinned ones first, each group in the chosen order. */
+  const orderedProjects = computed(() => {
+    const index = (id: string) => projectOrder.value.indexOf(id);
+    const inOrder = (a: Project, b: Project) => {
+      if (sortBy.value === 'manual' && (index(a.id) >= 0 || index(b.id) >= 0)) {
+        return (index(a.id) < 0 ? Infinity : index(a.id)) - (index(b.id) < 0 ? Infinity : index(b.id));
+      }
+      return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+    };
+    const sorted = [...projects.value].sort(inOrder);
+    return [...sorted.filter((p) => pinned.value.includes(p.id)), ...sorted.filter((p) => !pinned.value.includes(p.id))];
+  });
 
   /** The search field's text, in the query language of packages/task-filter. */
   const query = ref('');
@@ -86,6 +94,33 @@ export const useAppStore = defineStore('app', () => {
     if (selection.value.some((id) => !existing.has(id))) selection.value = selection.value.filter((id) => existing.has(id));
   }
 
+  const idList = (value: unknown) => (Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : []);
+
+  /** Reads the pins and the project order from the vault. Pins kept on the device by an older version are moved over once. */
+  async function loadSettings(migrate = false) {
+    const settings = await repository().readSettings();
+    const next = {
+      pinned: idList(settings.pinnedProjectIds),
+      order: idList(settings.projectOrder),
+      sort: settings.sortBy === 'manual' ? ('manual' as const) : ('alpha' as const),
+    };
+    if (migrate && vault.value && !('pinnedProjectIds' in settings)) {
+      next.pinned = await recallPinned(vault.value.id);
+      if (next.pinned.length) saveSettings({ pinnedProjectIds: next.pinned });
+    }
+    // Only assigned when different: the periodic scan must not redraw the lists for nothing
+    if (JSON.stringify(next.pinned) !== JSON.stringify(pinned.value)) pinned.value = next.pinned;
+    if (JSON.stringify(next.order) !== JSON.stringify(projectOrder.value)) projectOrder.value = next.order;
+    sortBy.value = next.sort;
+  }
+
+  /** Not kept when the file cannot be written; the lists look right until the next scan. */
+  function saveSettings(patch: Record<string, unknown>) {
+    void repository()
+      .updateSettings(patch)
+      .catch(() => undefined);
+  }
+
   async function afterOpen(opened: Vault | null) {
     const r = repository();
     vault.value = opened;
@@ -99,7 +134,7 @@ export const useAppStore = defineStore('app', () => {
     projectId.value = projects.value.find((p) => p.id === remembered)?.id ?? projects.value[0]?.id ?? null;
     view.value = await recallView(opened.id);
     hidden.value = await recallHidden(opened.id);
-    pinned.value = await recallPinned(opened.id);
+    await loadSettings(true);
     await loadProject();
     status.value = 'ready';
   }
@@ -131,6 +166,7 @@ export const useAppStore = defineStore('app', () => {
     try {
       const result = await repository().sync();
       unreadable.value = result.unreadable;
+      await loadSettings();
       if (!result.changed && !options.force) return;
       projects.value = await repository().listProjects();
       if (!projects.value.some((p) => p.id === projectId.value)) projectId.value = projects.value[0]?.id ?? null;
@@ -187,7 +223,25 @@ export const useAppStore = defineStore('app', () => {
 
   function togglePinned(id: string) {
     pinned.value = pinned.value.includes(id) ? pinned.value.filter((p) => p !== id) : [...pinned.value, id];
-    if (vault.value) rememberPinned(vault.value.id, pinned.value);
+    saveSettings({ pinnedProjectIds: pinned.value });
+  }
+
+  /** Moves a project one place up or down within its group (pinned or not), and keeps that order. */
+  function moveProject(id: string, direction: -1 | 1) {
+    const list = orderedProjects.value;
+    const i = list.findIndex((p) => p.id === id);
+    const other = list[i + direction];
+    if (i < 0 || !other || pinned.value.includes(id) !== pinned.value.includes(other.id)) return;
+    const ids = list.map((p) => p.id);
+    [ids[i], ids[i + direction]] = [ids[i + direction]!, ids[i]!];
+    projectOrder.value = ids;
+    sortBy.value = 'manual';
+    saveSettings({ projectOrder: ids, sortBy: 'manual' });
+  }
+
+  function setSortBy(sort: 'alpha' | 'manual') {
+    sortBy.value = sort;
+    saveSettings({ sortBy: sort });
   }
 
   async function selectProject(id: string) {
@@ -439,6 +493,10 @@ export const useAppStore = defineStore('app', () => {
     pinned,
     orderedProjects,
     togglePinned,
+    projectOrder,
+    sortBy,
+    moveProject,
+    setSortBy,
     projectId,
     view,
     hidden,

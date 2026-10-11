@@ -130,6 +130,41 @@ export class VaultRepository {
   }
 
   // ==========================================
+  // SETTINGS (settings.json in the vault, shared with the desktop app)
+  // ==========================================
+
+  private settingsWrites: Promise<unknown> = Promise.resolve();
+
+  private async readSettingsFile(path: string): Promise<Record<string, unknown>> {
+    if (!(await this.fs.exists(path))) return {};
+    const parsed: unknown = JSON.parse(await this.fs.readText(path));
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+  }
+
+  /** The vault's settings.json as an object. A missing or unreadable file reads as empty. */
+  async readSettings(): Promise<Record<string, unknown>> {
+    try {
+      return await this.readSettingsFile(`${this.current().vault.path}/settings.json`);
+    } catch {
+      return {};
+    }
+  }
+
+  /**
+   * Changes some keys of settings.json and keeps all others (the desktop app has many more). A file that cannot be
+   * read is not overwritten. Writes run one after the other, so two quick changes do not lose each other.
+   */
+  updateSettings(patch: Record<string, unknown>): Promise<void> {
+    const path = `${this.current().vault.path}/settings.json`;
+    const write = this.settingsWrites.then(async () => {
+      const current = await this.readSettingsFile(path);
+      await this.fs.writeText(path, `${JSON.stringify({ ...current, ...patch }, null, 2)}\n`);
+    });
+    this.settingsWrites = write.catch(() => undefined);
+    return write;
+  }
+
+  // ==========================================
   // SCAN: files -> cache
   // ==========================================
 

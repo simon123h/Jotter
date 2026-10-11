@@ -45,6 +45,7 @@ export const recallView = async (vaultId: string): Promise<View> => {
 };
 export const rememberView = (vaultId: string, view: View) => save(`${VIEW_KEY}:${vaultId}`, view);
 
+/** Pins used to live here; they are in the vault's settings.json now. Read once to move them over. */
 export const recallPinned = async (vaultId: string): Promise<string[]> => {
   try {
     const stored = JSON.parse((await preferences.get(`${PINNED_KEY}:${vaultId}`)) ?? '[]');
@@ -53,7 +54,6 @@ export const recallPinned = async (vaultId: string): Promise<string[]> => {
     return [];
   }
 };
-export const rememberPinned = (vaultId: string, pinned: string[]) => save(`${PINNED_KEY}:${vaultId}`, JSON.stringify(pinned));
 
 export const recallProject = async (vaultId: string): Promise<string | null> => {
   try {
