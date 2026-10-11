@@ -37,6 +37,20 @@ updates:
       - "dependencies"
       - "npm"
     groups:
+      # The tooling every app and package shares moves together, majors included: one PR across the directories
+      # instead of one per app (a TypeScript major was three PRs). This group is listed first, so it wins for these.
+      npm-shared-tooling:
+        patterns:
+          - "typescript"
+          - "vue-tsc"
+          - "@vue/tsconfig"
+          - "vitest"
+          - "@vitest/*"
+          - "eslint"
+          - "@eslint/*"
+          - "typescript-eslint"
+          - "prettier"
+          - "@types/node"
       npm-minor-patch:
         patterns:
           - "*"
