@@ -174,6 +174,8 @@ export const useAppStore = defineStore('app', () => {
    */
   async function refresh(options: { force?: boolean } = {}) {
     if (status.value !== 'ready' || scanning) return;
+    // Also when nothing changed: arming that failed or was cut short is repeated here
+    armRemindersSoon();
     scanning = true;
     try {
       const result = await repository().sync();

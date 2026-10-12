@@ -140,12 +140,21 @@ export async function ensureReminderPermission(): Promise<boolean> {
 export const armDelay = { ms: 800 };
 
 let armedPlan = '';
+let arming: Promise<void> = Promise.resolve();
 
 /**
  * Arms the reminders that are still to come. Nothing happens without permission, and nothing is rearmed when the
  * plan has not changed since the last time. Failures are swallowed: a missed arming is repeated at the next scan.
+ * One arming runs at a time: the system may keep the first waiting (for the exact alarm setting, for example), and a
+ * second one started meanwhile would be rejected.
  */
-export async function armReminders(upcoming: () => Promise<UpcomingReminder[]>): Promise<void> {
+export function armReminders(upcoming: () => Promise<UpcomingReminder[]>): Promise<void> {
+  const run = arming.then(() => armNow(upcoming));
+  arming = run.catch(() => undefined);
+  return run;
+}
+
+async function armNow(upcoming: () => Promise<UpcomingReminder[]>): Promise<void> {
   const { port } = notifications;
   try {
     if ((await port.permission()) !== 'granted') {

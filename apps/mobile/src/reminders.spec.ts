@@ -76,6 +76,26 @@ describe('arming reminders', () => {
     expect(port.armed.map((r) => r.at)).toEqual(['2030-05-03T09:00']);
   });
 
+  it('arms one plan at a time, so a second arming waits for a first the system keeps waiting', async () => {
+    port.state = 'granted';
+    let release: () => void = () => undefined;
+    const events: string[] = [];
+    port.replaceAll = async (items) => {
+      events.push(`start ${items[0]!.at}`);
+      if (items[0]!.at === '2030-05-01T09:00') await new Promise<void>((resolve) => (release = resolve));
+      events.push(`end ${items[0]!.at}`);
+    };
+
+    const first = armReminders(async () => [reminder('a', '2030-05-01T09:00')]);
+    const second = armReminders(async () => [reminder('a', '2030-05-01T09:20')]);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(events).toEqual(['start 2030-05-01T09:00']);
+
+    release();
+    await Promise.all([first, second]);
+    expect(events).toEqual(['start 2030-05-01T09:00', 'end 2030-05-01T09:00', 'start 2030-05-01T09:20', 'end 2030-05-01T09:20']);
+  });
+
   it('never gives two reminders the same id', async () => {
     port.state = 'granted';
     // The same reminder twice hashes to the same id
