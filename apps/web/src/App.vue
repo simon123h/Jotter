@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import GlobalDialog from '@/components/ui/GlobalDialog.vue';
 import ToastContainer from '@/components/ui/ToastContainer.vue';
+import { useReminderNotifications } from '@/composables/useReminderNotifications';
+
+useReminderNotifications();
 </script>
 
 <template>

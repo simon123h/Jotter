@@ -1,4 +1,15 @@
-import type { Task, Bucket, Project, TaskFilterParams, AppSettings, SystemInfo, GitCommit, Timeblock, Vault } from '@/types';
+import type {
+  Task,
+  Bucket,
+  Project,
+  TaskFilterParams,
+  AppSettings,
+  SystemInfo,
+  GitCommit,
+  Timeblock,
+  Vault,
+  UpcomingReminder,
+} from '@/types';
 
 export interface StorageAdapter {
   // Connection / status
@@ -14,6 +25,8 @@ export interface StorageAdapter {
   getAllTasks(filters?: TaskFilterParams): Promise<Task[]>;
   getTasks(projectId: string, filters?: TaskFilterParams): Promise<Task[]>;
   getTask(projectId: string, id: string): Promise<Task>;
+  /** Reminders of open tasks in all projects at `after` (a local `YYYY-MM-DDTHH:mm`) or later, the nearest first. */
+  getUpcomingReminders(after: string): Promise<UpcomingReminder[]>;
   createTask(
     projectId: string,
     task: {

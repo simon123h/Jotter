@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Self
 
 from jotter.features.tasks.domain import Priority, Task
-from jotter.features.tasks.schemas import TaskResponse, to_repeat_schema
+from jotter.features.tasks.schemas import ReminderResponse, TaskResponse, to_repeat_schema
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 
 
@@ -25,6 +25,9 @@ class TaskQueryService:
     @classmethod
     def from_data_dir(cls, _data_dir: Path | str, conn: sqlite3.Connection) -> Self:
         return cls(sqlite_repo=SqliteTaskRepository(conn))
+
+    def upcoming_reminders(self, after: str, limit: int = 100) -> list[ReminderResponse]:
+        return [ReminderResponse(**r) for r in self.sqlite_repo.upcoming_reminders(after, limit)]
 
     def get_task(self, project_id: str, task_id: str) -> TaskResponse:
         task = self.sqlite_repo.get_by_id(project_id, task_id)

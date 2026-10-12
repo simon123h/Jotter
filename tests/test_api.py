@@ -518,3 +518,27 @@ def test_recurring_task_and_reminders_through_the_api(test_env):
     assert res.json()["repeat"] is None and res.json()["reminders"] == []
     res = client.put(f"/api/projects/default/tasks/{task['id']}", json={"repeat": {"every": 0, "unit": "week"}})
     assert res.status_code == 422
+
+
+def test_upcoming_reminders_of_open_tasks_in_all_projects(test_env):
+    client, _temp_dir = test_env
+    client.post("/api/projects", json={"title": "Home"})
+    for project, title, bucket, reminders in [
+        ("default", "Soon", "todo", ["2030-05-01T09:00", "2020-01-01T09:00"]),
+        ("default", "Finished", "done", ["2030-05-01T08:00"]),
+        ("home", "Later", "backlog", ["2030-04-30T18:00"]),
+    ]:
+        res = client.post(
+            f"/api/projects/{project}/tasks", json={"title": title, "bucket": bucket, "reminders": reminders}
+        )
+        assert res.status_code == 201
+
+    res = client.get("/api/reminders", params={"after": "2025-01-01T00:00"})
+
+    assert res.status_code == 200
+    assert [(r["title"], r["project_title"], r["at"]) for r in res.json()] == [
+        ("Later", "Home", "2030-04-30T18:00"),
+        ("Soon", "Default", "2030-05-01T09:00"),
+    ]
+    assert len(client.get("/api/reminders", params={"after": "2025-01-01T00:00", "limit": 1}).json()) == 1
+    assert client.get("/api/reminders", params={"after": "tomorrow"}).status_code == 422

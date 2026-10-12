@@ -1,5 +1,6 @@
 import type { StorageAdapter } from './types';
 import type {
+  UpcomingReminder,
   Task,
   Bucket,
   Project,
@@ -122,6 +123,14 @@ export class HttpStorageAdapter implements StorageAdapter {
     this.appendTaskFilterParams(url, filters);
     const res = await this.customFetch(url.toString());
     if (!res.ok) await this.handleResponseError(res, 'Failed to fetch all tasks');
+    return res.json();
+  }
+
+  async getUpcomingReminders(after: string): Promise<UpcomingReminder[]> {
+    const url = new URL(`${API_BASE}/reminders`, window.location.origin);
+    url.searchParams.set('after', after);
+    const res = await this.customFetch(url.toString());
+    if (!res.ok) await this.handleResponseError(res, 'Failed to fetch reminders');
     return res.json();
   }
 

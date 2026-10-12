@@ -96,6 +96,8 @@ export const de = {
     remindersLabel: 'Erinnerungen',
     addReminder: 'Erinnerung hinzufügen',
     removeReminder: 'Erinnerung entfernen',
+    remindersDenied:
+      'Benachrichtigungen sind für Jotter in diesem Browser blockiert, Erinnerungen werden also nicht angezeigt. Erlaube sie in den Website-Einstellungen.',
     attachmentsLabel: 'Anhänge',
     addAttachment: 'Datei hinzufügen',
     uploading: 'Lade hoch...',

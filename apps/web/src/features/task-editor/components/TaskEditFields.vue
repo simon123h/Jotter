@@ -3,6 +3,8 @@ import { ref, defineAsyncComponent } from 'vue';
 import { Slash, ClipboardList, Plus, X } from '@lucide/vue';
 import { REPEAT_UNITS } from '@/utils/repeat';
 import { useI18n } from '@/composables/useI18n';
+import { useToast } from '@/composables/useToast';
+import { ensureNotificationPermission } from '@/composables/useReminderNotifications';
 import type { Bucket } from '@/types';
 import { useTaskEditorContext } from '../composables/useTaskEditor';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
@@ -23,6 +25,13 @@ const emit = defineEmits<{
 }>();
 
 const editor = useTaskEditorContext();
+const toast = useToast();
+
+/** Adds a reminder. The first one asks the browser for permission to notify, and says so when it is refused. */
+const addReminder = async () => {
+  editor.addReminder();
+  if (!(await ensureNotificationPermission())) toast.warning(t('form.remindersDenied'));
+};
 
 const titleInputRef = ref<any>(null);
 const markdownEditorRef = ref<any>(null);
@@ -215,7 +224,7 @@ defineExpose({
             type="button"
             class="inline-flex items-center gap-1 text-xs font-semibold text-theme-primary"
             data-testid="reminder-add"
-            @click="editor.addReminder"
+            @click="addReminder"
           >
             <Plus class="w-3.5 h-3.5" />{{ t('form.addReminder') }}
           </button>

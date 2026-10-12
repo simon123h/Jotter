@@ -24,6 +24,16 @@ def to_repeat_schema(rule: RepeatRule | None) -> RepeatRuleSchema | None:
     )
 
 
+class ReminderResponse(BaseModel):
+    """A reminder that has not come yet, with what a notification shows."""
+
+    project_id: str
+    project_title: str
+    task_id: str
+    title: str
+    at: str  # local date-time, YYYY-MM-DDTHH:mm
+
+
 class TaskCreate(BaseModel):
     model_config = ConfigDict(extra="ignore")
 

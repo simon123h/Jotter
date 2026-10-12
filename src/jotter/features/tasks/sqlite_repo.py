@@ -54,6 +54,32 @@ class SqliteTaskRepository:
         """Deletes a task from SQLite via TaskProjector."""
         self._projector.project_task_delete(task_id)
 
+    def upcoming_reminders(self, after: str, limit: int) -> list[dict[str, str]]:
+        """Reminders of open tasks at `after` (a local `YYYY-MM-DDTHH:mm`) or later, the nearest first."""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            SELECT t.id, t.project_id, p.title AS project_title, t.title, t.reminders
+            FROM tasks t JOIN projects p ON p.id = t.project_id
+            WHERE t.reminders != '[]' AND t.bucket NOT IN ('done', 'archive')
+            """
+        )
+        found: list[dict[str, str]] = []
+        for row in cursor.fetchall():
+            for at in clean_reminders(_json_or_none(row["reminders"])):
+                if at >= after:
+                    found.append(
+                        {
+                            "project_id": row["project_id"],
+                            "project_title": row["project_title"],
+                            "task_id": row["id"],
+                            "title": row["title"],
+                            "at": at,
+                        }
+                    )
+        found.sort(key=lambda r: (r["at"], r["task_id"]))
+        return found[:limit]
+
     def get_by_id(self, project_id: str, task_id: str) -> Task:
         if (
             not project_id

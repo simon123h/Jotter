@@ -95,6 +95,7 @@ export const en = {
     remindersLabel: 'Reminders',
     addReminder: 'Add a reminder',
     removeReminder: 'Remove reminder',
+    remindersDenied: 'Notifications are blocked for Jotter in this browser, so reminders will not show. Allow them in the site settings.',
     attachmentsLabel: 'Attachments',
     addAttachment: 'Add File',
     uploading: 'Uploading...',
