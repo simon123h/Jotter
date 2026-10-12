@@ -1153,6 +1153,7 @@ describe('rearranging by drag and drop', () => {
 
     expect(file('a')).toContain('status: todo'); // still in To Do
     expect(file('a')).toContain('position: 3000'); // but moved to the end of it
+    expect(find('toast').exists()).toBe(false); // a new place in the same column is nothing to announce
   });
 
   it('selects instead of dragging when the hold is let go without moving, and a drag does not select', async () => {
