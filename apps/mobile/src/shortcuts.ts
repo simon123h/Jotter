@@ -45,6 +45,19 @@ function whenReady(app: ReturnType<typeof useAppStore>): Promise<boolean> {
   });
 }
 
+/** Opens the task a reminder's notification stands for, in its project. A task that is gone opens nothing. */
+export async function openReminder(ref: { projectId: string; taskId: string }): Promise<void> {
+  const app = useAppStore();
+  const ui = useUiStore();
+  if (!(await whenReady(app))) return;
+  if (app.projectId !== ref.projectId) await app.selectProject(ref.projectId);
+  if (!app.taskById(ref.taskId)) return;
+  ui.close();
+  app.clearSelection();
+  await nextTick();
+  ui.open({ type: 'task', id: ref.taskId });
+}
+
 /** Does what a launcher shortcut asks for. Links that are not shortcuts, and shortcuts without a project, do nothing. */
 export async function runShortcut(url: string): Promise<void> {
   const action = shortcutAction(url);

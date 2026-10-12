@@ -19,6 +19,8 @@ export function createMockTask(overrides: Partial<Task> = {}): Task {
     priority: overrides.priority,
     color: overrides.color,
     postponed_until: overrides.postponed_until,
+    repeat: overrides.repeat,
+    reminders: overrides.reminders,
     created_at: overrides.created_at ?? new Date().toISOString(),
     updated_at: overrides.updated_at ?? new Date().toISOString(),
   };

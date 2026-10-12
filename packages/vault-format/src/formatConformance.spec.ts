@@ -51,6 +51,9 @@ function taskView(task: any, expected: Record<string, any>) {
     postponed_until: task.postponed_until ?? null,
     extra: task.extra_frontmatter ?? {},
   };
+  // Fields that older fixtures leave out, and timestamps (which default to "now"), are only compared when the fixture states them
+  if ('repeat' in expected) view.repeat = task.repeat ?? null;
+  if ('reminders' in expected) view.reminders = task.reminders ?? [];
   for (const key of ['created_at', 'updated_at']) {
     if (key in expected) view[key] = task[key];
   }

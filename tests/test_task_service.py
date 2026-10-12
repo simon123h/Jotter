@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from pathlib import Path
 
 from jotter.features.projects.domain import Project
@@ -391,3 +392,56 @@ Fix bearer token parsing in middleware.
     # 5. Delete the task
     task_svc.delete_task("arb", "fix-auth-header")
     assert not custom_file.exists()
+
+
+def test_editing_and_moving_a_recurring_task_keeps_repeat_and_reminders(temp_dir, test_env):
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    disk_repo = DiskTaskRepository(temp_dir)
+    markdown = 'title: Water plants\nrepeat:\n  every: 2\n  unit: week\nreminders:\n  - "2026-10-14T09:00"\n'
+    disk_repo.save(disk_repo.parse_task_content(f"---\n{markdown}---\n", "water", "default"))
+
+    task_svc.update_task("default", "water", TaskUpdate(title="Water the plants"))
+    task_svc.move_task("default", "water", TaskMove(bucket="in-progress", position=500.0))
+
+    written = (Path(temp_dir) / "default" / "water.md").read_text(encoding="utf-8")
+    assert "title: Water the plants" in written
+    assert "every: 2" in written and "unit: week" in written and "from: completion" in written
+    assert "2026-10-14T09:00" in written
+
+
+def _recurring_task_service(temp_dir):
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    disk_repo = DiskTaskRepository(temp_dir)
+    markdown = "title: Water plants\nstatus: in-progress\nrepeat:\n  every: 1\n  unit: day\n---\n- [x] fill can\n"
+    disk_repo.save(disk_repo.parse_task_content(f"---\n{markdown}", "water", "default"))
+    return task_svc
+
+
+def test_moving_a_recurring_task_to_done_rolls_it_over(temp_dir, test_env):
+    task_svc = _recurring_task_service(temp_dir)
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+
+    moved = task_svc.move_task("default", "water", TaskMove(bucket="done"))
+
+    assert moved.bucket == "in-progress"
+    assert moved.postponed_until == tomorrow
+    assert "- [ ] fill can" in moved.body
+    assert task_svc.get_task("default", "water").postponed_until == tomorrow
+
+
+def test_updating_a_recurring_task_into_done_rolls_it_over_and_keeps_the_other_changes(temp_dir, test_env):
+    task_svc = _recurring_task_service(temp_dir)
+
+    updated = task_svc.update_task("default", "water", TaskUpdate(title="Water the plants", bucket="done"))
+
+    assert (updated.title, updated.bucket) == ("Water the plants", "in-progress")
+    assert updated.postponed_until == (date.today() + timedelta(days=1)).isoformat()
+
+
+def test_only_the_move_into_done_rolls_a_recurring_task_over(temp_dir, test_env):
+    task_svc = _recurring_task_service(temp_dir)
+
+    assert task_svc.move_task("default", "water", TaskMove(bucket="todo")).bucket == "todo"
+    assert task_svc.move_task("default", "water", TaskMove(bucket="todo")).postponed_until is None

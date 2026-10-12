@@ -1,5 +1,5 @@
 import { ref, reactive, watch, computed, nextTick, provide, inject, type Ref, type InjectionKey } from 'vue';
-import type { Task, Bucket } from '@/types';
+import type { Task, Bucket, RepeatRule } from '@/types';
 import { parseTitleState, getKeywordMatches } from '@jotter/title-parser';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import { sanitizeTags } from '@/utils/tagUtils';
@@ -15,6 +15,18 @@ export interface TaskEditorForm {
   priority: string;
   color: string | null;
   postponedUntil: string;
+  /** '' for never, a unit for daily, weekly, ..., or 'custom' (then `repeatEvery` and `repeatUnit` apply). */
+  repeatKind: string;
+  repeatUnit: string;
+  repeatEvery: number;
+  repeatFrom: string;
+  reminders: string[];
+}
+
+/** The rule the repeat fields describe, none when no unit is chosen or the number is not a whole number above zero. */
+function repeatOf(form: TaskEditorForm): RepeatRule | null {
+  if (!form.repeatKind || !form.repeatUnit || !Number.isInteger(form.repeatEvery) || form.repeatEvery < 1) return null;
+  return { every: form.repeatEvery, unit: form.repeatUnit as RepeatRule['unit'], from: form.repeatFrom as RepeatRule['from'] };
 }
 
 export interface UseTaskEditorOptions {
@@ -39,6 +51,11 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
     priority: '',
     color: null,
     postponedUntil: '',
+    repeatKind: '',
+    repeatUnit: '',
+    repeatEvery: 1,
+    repeatFrom: 'completion',
+    reminders: [],
   });
 
   const lastMatchedKeyword = ref<string | null>(null);
@@ -69,6 +86,11 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       form.priority = taskVal.priority || '';
       form.color = taskVal.color || null;
       form.postponedUntil = taskVal.postponed_until || '';
+      form.repeatKind = taskVal.repeat ? (taskVal.repeat.every === 1 ? taskVal.repeat.unit : 'custom') : '';
+      form.repeatUnit = taskVal.repeat?.unit ?? '';
+      form.repeatEvery = taskVal.repeat?.every ?? 1;
+      form.repeatFrom = taskVal.repeat?.from ?? 'completion';
+      form.reminders = [...(taskVal.reminders ?? [])];
     } else {
       form.title = '';
       form.ignoredKeywords = new Set();
@@ -80,6 +102,11 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       form.priority = '';
       form.color = null;
       form.postponedUntil = '';
+      form.repeatKind = '';
+      form.repeatUnit = '';
+      form.repeatEvery = 1;
+      form.repeatFrom = 'completion';
+      form.reminders = [];
     }
     lastMatchedKeyword.value = null;
     lastMatchedPriority.value = null;
@@ -183,6 +210,27 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
     autocompleteIndex.value = 0;
   };
 
+  /** A preset (daily, weekly, ...) is every one unit; Custom opens the number and the unit. */
+  const pickRepeat = () => {
+    if (form.repeatKind === 'custom') {
+      form.repeatUnit = form.repeatUnit || 'week';
+      form.repeatEvery = form.repeatEvery > 1 ? form.repeatEvery : 2;
+    } else {
+      form.repeatUnit = form.repeatKind;
+      form.repeatEvery = 1;
+    }
+  };
+
+  const addReminder = () => {
+    // The day it is due, or tomorrow, at nine
+    const day = form.dueDate || new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    form.reminders.push(`${day}T09:00`);
+  };
+
+  const removeReminder = (index: number) => {
+    form.reminders.splice(index, 1);
+  };
+
   const handleSave = async (onSuccess?: (updated: Task) => void, onError?: (err: any) => void) => {
     if (!task.value) return;
 
@@ -209,7 +257,15 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
         planned_date: form.plannedDate,
         priority: form.priority,
         color: form.color,
-        postponed_until: form.bucket === 'postponed' ? form.postponedUntil : '',
+        // The Postponed column has a date to edit here, and picking another column ends the postponement. A save that
+        // leaves the column alone keeps it, which a recurring task that is waiting for its next day depends on.
+        ...(form.bucket === 'postponed'
+          ? { postponed_until: form.postponedUntil }
+          : form.bucket !== task.value.bucket
+            ? { postponed_until: '' }
+            : {}),
+        repeat: repeatOf(form),
+        reminders: [...new Set(form.reminders.filter(Boolean))].sort(),
       });
 
       isEditing.value = false;
@@ -265,6 +321,9 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
     initEditState,
     cancelEdit,
     handleSave,
+    pickRepeat,
+    addReminder,
+    removeReminder,
     addChecklistItem,
     hasChecklist,
   };

@@ -38,6 +38,8 @@ class TaskProjector:
         """
         tags_json = json.dumps([t.value for t in task.tags])
         attachments_json = json.dumps(task.attachments)
+        repeat_json = json.dumps(task.repeat.to_dict()) if task.repeat else None
+        reminders_json = json.dumps(task.reminders)
         filename = f"{task.id}.md"
 
         with _sqlite_write_lock:
@@ -46,9 +48,9 @@ class TaskProjector:
                 """
                 INSERT INTO tasks (
                     id, project_id, title, bucket, position, tags, attachments, filename, body,
-                    due_date, planned_date, priority, color, postponed_until, created_at, updated_at,
+                    due_date, planned_date, priority, color, postponed_until, repeat, reminders, created_at, updated_at,
                     file_mtime_ns, file_size
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     project_id = excluded.project_id,
                     title = excluded.title,
@@ -63,19 +65,21 @@ class TaskProjector:
                     priority = excluded.priority,
                     color = excluded.color,
                     postponed_until = excluded.postponed_until,
+                    repeat = excluded.repeat,
+                    reminders = excluded.reminders,
                     updated_at = excluded.updated_at,
                     file_mtime_ns = excluded.file_mtime_ns,
                     file_size = excluded.file_size
                 WHERE (
                     tasks.project_id, tasks.title, tasks.bucket, tasks.position, tasks.tags, tasks.attachments,
                     tasks.filename, tasks.body, tasks.due_date, tasks.planned_date, tasks.priority, tasks.color,
-                    tasks.postponed_until, tasks.updated_at,
+                    tasks.postponed_until, tasks.repeat, tasks.reminders, tasks.updated_at,
                     tasks.file_mtime_ns, tasks.file_size
                 ) IS NOT (
                     excluded.project_id, excluded.title, excluded.bucket, excluded.position, excluded.tags,
                     excluded.attachments, excluded.filename, excluded.body, excluded.due_date,
                     excluded.planned_date, excluded.priority, excluded.color, excluded.postponed_until,
-                    excluded.updated_at, excluded.file_mtime_ns, excluded.file_size
+                    excluded.repeat, excluded.reminders, excluded.updated_at, excluded.file_mtime_ns, excluded.file_size
                 )
                 """,
                 (
@@ -93,6 +97,8 @@ class TaskProjector:
                     task.priority.value if task.priority != Priority.NONE else None,
                     task.color,
                     task.postponed_until.value,
+                    repeat_json,
+                    reminders_json,
                     task.created_at,
                     task.updated_at,
                     file_stat[0] if file_stat else None,

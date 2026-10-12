@@ -1,6 +1,6 @@
 # ADR 2: Postponed Implementation of Recurrent Tasks
 
-- **Status**: Rejected (Declined for Implementation)
+- **Status**: Superseded by [ADR 0019](./0019-time-model-recurrence-reminders.md) (was: Rejected, declined for implementation)
 - **Date**: 2026-07-08
 - **Author**: Antigravity (AI Coding Assistant) & User
 

@@ -1,5 +1,5 @@
 import yaml from 'yaml';
-import type { Task, Project, Bucket } from './types';
+import type { Task, Project, Bucket, RepeatRule } from './types';
 
 /**
  * Reads and writes the vault format defined in spec/FORMAT.md. The Python backend implements the same format;
@@ -61,6 +61,8 @@ const KNOWN_TASK_KEYS = new Set([
   'color',
   'postponed_until',
   'postponedUntil',
+  'repeat',
+  'reminders',
   'created_at',
   'createdAt',
   'updated_at',
@@ -117,6 +119,40 @@ function planningValue(raw: unknown): string | null {
 function dateValue(raw: unknown): string | null {
   if (raw === undefined || raw === null || raw === '') return null;
   return isoDate(String(raw).trim());
+}
+
+const REPEAT_UNITS = ['day', 'week', 'month', 'year'] as const;
+const REPEAT_FROM = ['completion', 'due'] as const;
+
+/** A repeat rule as the spec allows it. A rule it does not allow is dropped. */
+function parseRepeat(raw: unknown): RepeatRule | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const rule = raw as Record<string, unknown>;
+  const every = typeof rule.every === 'string' && /^\s*\d+\s*$/.test(rule.every) ? Number(rule.every) : rule.every;
+  if (typeof every !== 'number' || !Number.isInteger(every) || every < 1) return undefined;
+  const unit = String(rule.unit ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/s$/, '');
+  const from = rule.from === undefined || rule.from === null ? 'completion' : String(rule.from).trim().toLowerCase();
+  if (!(REPEAT_UNITS as readonly string[]).includes(unit) || !(REPEAT_FROM as readonly string[]).includes(from)) return undefined;
+  return { every, unit: unit as RepeatRule['unit'], from: from as RepeatRule['from'] };
+}
+
+const LOCAL_DATETIME = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(:\d{2}(\.\d+)?)?$/;
+
+/** Reminders as `YYYY-MM-DDTHH:mm`, sorted and without duplicates. Values that are no local date-time are dropped. */
+function parseReminders(raw: unknown): string[] {
+  if (raw === undefined || raw === null || raw === '') return [];
+  const found = new Set<string>();
+  for (const item of Array.isArray(raw) ? raw : [raw]) {
+    const match = typeof item === 'string' ? LOCAL_DATETIME.exec(item.trim()) : null;
+    if (!match || !isoDate(match[1])) continue;
+    const [hours, minutes] = match[2].split(':').map(Number);
+    if (hours > 23 || minutes > 59) continue;
+    found.add(`${match[1]}T${match[2]}`);
+  }
+  return [...found].sort();
 }
 
 function normalizeTag(tag: unknown): string {
@@ -191,6 +227,8 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
     priority: PRIORITIES.includes(priority) ? priority : undefined,
     color: fm.color ? String(fm.color).trim() : undefined,
     postponed_until: dateValue(fm.postponed_until ?? fm.postponedUntil) ?? undefined,
+    repeat: parseRepeat(fm.repeat),
+    reminders: parseReminders(fm.reminders),
     created_at: timestamp(fm.created_at ?? fm.createdAt, nowIso),
     updated_at: timestamp(fm.updated_at ?? fm.updatedAt, nowIso),
     extra_frontmatter: extra,
@@ -225,6 +263,8 @@ export function dumpTaskMarkdown(task: Task): string {
   if (task.priority && task.priority !== 'none') fmDict.priority = task.priority;
   if (task.color) fmDict.color = task.color;
   if (task.postponed_until) fmDict.postponed_until = task.postponed_until;
+  if (task.repeat) fmDict.repeat = { every: task.repeat.every, unit: task.repeat.unit, from: task.repeat.from };
+  if (task.reminders && task.reminders.length > 0) fmDict.reminders = task.reminders;
 
   // Keys written by other tools stay as they are
   for (const [key, value] of Object.entries(task.extra_frontmatter ?? {})) {

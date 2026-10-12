@@ -7,7 +7,7 @@ from typing import Any
 
 import yaml
 
-from jotter.features.tasks.domain import DueDate, Priority, Tag, Task, is_planning_keyword
+from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Task, clean_reminders, is_planning_keyword
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
 from jotter.shared.frontmatter import split_frontmatter
 from jotter.shared.yaml_io import safe_load
@@ -131,6 +131,10 @@ class DiskTaskRepository:
             fm_dict["color"] = task.color
         if task.postponed_until.value:
             fm_dict["postponed_until"] = task.postponed_until.value
+        if task.repeat:
+            fm_dict["repeat"] = task.repeat.to_dict()
+        if task.reminders:
+            fm_dict["reminders"] = list(task.reminders)
 
         # Preserve unknown / extra frontmatter keys
         if task.extra_frontmatter:
@@ -234,6 +238,8 @@ class DiskTaskRepository:
             "color",
             "postponed_until",
             "postponedUntil",
+            "repeat",
+            "reminders",
             "created_at",
             "createdAt",
             "updated_at",
@@ -254,6 +260,8 @@ class DiskTaskRepository:
             priority=_clean_priority(priority),
             color=str(color) if color else None,
             postponed_until=clean_postponed,
+            repeat=RepeatRule.from_raw(fm_data.get("repeat")),
+            reminders=clean_reminders(fm_data.get("reminders")),
             task_id=tid,
             extra_frontmatter=extra_fm,
         )

@@ -8,10 +8,17 @@ from datetime import UTC, datetime
 from itertools import batched
 from typing import Any, NamedTuple
 
-from jotter.features.tasks.domain import DueDate, Priority, Tag, Task, TaskId
+from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Task, TaskId, clean_reminders
 from jotter.shared.exceptions import EntityNotFoundError
 
 _sqlite_write_lock = threading.Lock()
+
+
+def _json_or_none(raw: str | None) -> Any:
+    try:
+        return json.loads(raw) if raw else None
+    except ValueError:
+        return None
 
 
 def _format_fts5_query(search: str) -> str | None:
@@ -59,7 +66,7 @@ class SqliteTaskRepository:
         cursor.execute(
             """
             SELECT id, project_id, title, bucket, position, tags, attachments, body,
-                   due_date, planned_date, priority, color, postponed_until, created_at, updated_at
+                   due_date, planned_date, priority, color, postponed_until, repeat, reminders, created_at, updated_at
             FROM tasks
             WHERE project_id = ? AND id = ?
             """,
@@ -80,7 +87,7 @@ class SqliteTaskRepository:
             cursor.execute(
                 f"""
                 SELECT id, project_id, title, bucket, position, tags, attachments, body,
-                       due_date, planned_date, priority, color, postponed_until, created_at, updated_at
+                       due_date, planned_date, priority, color, postponed_until, repeat, reminders, created_at, updated_at
                 FROM tasks
                 WHERE id IN ({placeholders})
                 """,
@@ -135,7 +142,7 @@ class SqliteTaskRepository:
         cursor = self.conn.cursor()
         query = """
         SELECT id, project_id, title, bucket, position, tags, attachments, body,
-               due_date, planned_date, priority, color, postponed_until, created_at, updated_at
+               due_date, planned_date, priority, color, postponed_until, repeat, reminders, created_at, updated_at
         FROM tasks
         WHERE 1=1
         """
@@ -322,6 +329,8 @@ class SqliteTaskRepository:
             priority=Priority.from_str(row["priority"]),
             color=row["color"],
             postponed_until=DueDate(row["postponed_until"]),
+            repeat=RepeatRule.from_raw(_json_or_none(row["repeat"])),
+            reminders=clean_reminders(_json_or_none(row["reminders"])),
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )

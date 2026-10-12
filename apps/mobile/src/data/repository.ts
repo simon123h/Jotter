@@ -3,6 +3,7 @@ import {
   dumpTaskMarkdown,
   parseProjectManifest,
   dumpProjectManifest,
+  rollOver,
   DEFAULT_MOBILE_BUCKETS,
   type Task,
   type Project,
@@ -11,6 +12,7 @@ import {
 import { filterTasks, type TaskFilter } from '@jotter/task-filter';
 import { VaultDb, type CachedTask } from './db';
 import type { FsPort } from './fs';
+import { isoDay } from '@/dates';
 import { ulid } from './ulid';
 import { VaultRegistry, type Vault } from './vaults';
 
@@ -50,6 +52,16 @@ const isTaskFile = (entry: { name: string; type: string }) => {
   const lower = entry.name.toLowerCase();
   return entry.type === 'file' && lower.endsWith('.md') && !entry.name.startsWith('.') && lower !== 'index.md' && lower !== 'readme.md';
 };
+
+/** A reminder that has not come yet, with what a notification shows. */
+export interface UpcomingReminder {
+  projectId: string;
+  projectTitle: string;
+  taskId: string;
+  title: string;
+  /** Local date-time, `YYYY-MM-DDTHH:mm`. */
+  at: string;
+}
 
 function toTask(row: CachedTask): Task {
   const { file, size, mtime, ...task } = row;
@@ -365,6 +377,29 @@ export class VaultRepository {
       .map(toTask);
   }
 
+  /**
+   * The reminders of open tasks in all projects that are due at `from` (`YYYY-MM-DDTHH:mm`, local time) or later,
+   * the nearest first. Done and archived tasks do not remind.
+   */
+  async upcomingReminders(from: string, limit = 100): Promise<UpcomingReminder[]> {
+    const projects = new Map((await this.listProjects()).map((p) => [p.id, p.title]));
+    const found: UpcomingReminder[] = [];
+    for (const task of await this.listTasks(null)) {
+      if (task.bucket === 'done' || task.bucket === 'archive') continue;
+      for (const at of task.reminders ?? []) {
+        if (at >= from)
+          found.push({
+            projectId: task.project_id,
+            projectTitle: projects.get(task.project_id) ?? task.project_id,
+            taskId: task.id,
+            title: task.title,
+            at,
+          });
+      }
+    }
+    return found.sort((a, b) => a.at.localeCompare(b.at) || a.taskId.localeCompare(b.taskId)).slice(0, limit);
+  }
+
   async getTask(projectId: string, id: string): Promise<Task> {
     return toTask(await this.row(projectId, id));
   }
@@ -416,7 +451,13 @@ export class VaultRepository {
   async updateTask(projectId: string, id: string, updates: TaskUpdate): Promise<Task> {
     const row = await this.row(projectId, id);
     if (updates.title !== undefined && !updates.title.trim()) throw new Error('Task title cannot be empty');
-    const task: Task = { ...toTask(row), ...updates, updated_at: new Date().toISOString() };
+    const current = toTask(row);
+    const edited: Task = { ...current, ...updates, updated_at: new Date().toISOString() };
+    // Moving a recurring task into Done rolls it over instead: it stays where it is and comes back on its next day
+    const completes = !!current.repeat && updates.bucket === 'done' && current.bucket !== 'done';
+    const task = completes
+      ? rollOver({ ...edited, bucket: current.bucket, position: current.position }, isoDay(), current.bucket, current.bucket)
+      : edited;
     await this.writeTask(task, row.file);
     return task;
   }

@@ -1,0 +1,32 @@
+{
+  "description": "A recurring task with reminders, as the apps write them.",
+  "context": {
+    "file_stem": "repeat-and-reminders",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "repeat-and-reminders",
+    "project_id": "proj",
+    "title": "T",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": "2026-10-12",
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {},
+    "repeat": {
+      "every": 2,
+      "unit": "week",
+      "from": "due"
+    },
+    "reminders": [
+      "2026-10-11T18:00",
+      "2026-10-12T09:00"
+    ]
+  }
+}

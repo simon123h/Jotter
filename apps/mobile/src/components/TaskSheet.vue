@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue';
-import { ArrowLeft, EllipsisVertical, Trash2, Paperclip, Pencil, X, Slash, Check, Archive } from '@lucide/vue';
+import { ArrowLeft, EllipsisVertical, Trash2, Paperclip, Pencil, X, Slash, Check, Archive, Plus } from '@lucide/vue';
 import MarkdownView from './MarkdownView.vue';
 import { appendChecklistItem, toggleChecklistItem } from '@/markdown';
 import { t, type MessageKey } from '@/i18n';
@@ -9,6 +9,10 @@ import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS, colorHex } from '@/taskColors';
 import { PLANNED_CHOICES, plannedLabel } from '@/planned';
+import { REPEAT_UNITS } from '@/repeat';
+import { ensureReminderPermission } from '@/reminders';
+import { isoDay } from '@/dates';
+import type { RepeatRule } from '@jotter/vault-format';
 import TitleHints from './TitleHints.vue';
 import { useSmartTitle } from '@/composables/useSmartTitle';
 
@@ -36,6 +40,11 @@ const draft = ref({
   due: initial?.due_date ?? '',
   planned: initial?.planned_date ?? '',
   postponed: initial?.postponed_until ?? '',
+  repeatKind: initial?.repeat ? (initial.repeat.every === 1 ? initial.repeat.unit : 'custom') : '',
+  repeatUnit: initial?.repeat?.unit ?? '',
+  repeatEvery: initial?.repeat?.every ?? 1,
+  repeatFrom: initial?.repeat?.from ?? 'completion',
+  reminders: [...(initial?.reminders ?? [])],
   color: initial?.color ?? '',
   tags: (initial?.tags ?? []).join(', '),
   body: initial?.body ?? '',
@@ -72,6 +81,39 @@ const menuItem = 'flex h-12 w-full items-center gap-3 px-4 text-left text-base a
 const fail = (err: unknown) => ui.showToast(err instanceof Error ? err.message : String(err));
 let closing = false;
 
+/** The rule the repeat fields describe, none when no unit is chosen or the number is not a whole number above zero. */
+function repeatOf(d: typeof draft.value): RepeatRule | undefined {
+  const every = Number(d.repeatEvery);
+  if (!d.repeatUnit || !Number.isInteger(every) || every < 1) return undefined;
+  return { every, unit: d.repeatUnit as RepeatRule['unit'], from: d.repeatFrom as RepeatRule['from'] };
+}
+
+/** A preset (daily, weekly, ...) is every one unit; Custom opens the number and the unit. */
+function pickRepeat() {
+  const d = draft.value;
+  if (d.repeatKind === 'custom') {
+    d.repeatUnit = d.repeatUnit || 'week';
+    d.repeatEvery = d.repeatEvery > 1 ? d.repeatEvery : 2;
+  } else {
+    d.repeatUnit = d.repeatKind;
+    d.repeatEvery = 1;
+  }
+  saveSoon();
+}
+
+async function addReminder() {
+  // Asked when the first reminder is added, not when the app starts
+  if (!(await ensureReminderPermission())) ui.showToast(t('reminders.denied'));
+  // The day it is due, or tomorrow, at nine
+  draft.value.reminders.push(`${draft.value.due || isoDay(1)}T09:00`);
+  saveSoon();
+}
+
+function removeReminder(index: number) {
+  draft.value.reminders.splice(index, 1);
+  saveSoon();
+}
+
 async function save() {
   const current = task.value;
   if (!current || closing) return;
@@ -83,6 +125,10 @@ async function save() {
   if ((d.due || undefined) !== current.due_date) changes.due_date = d.due || undefined;
   if ((d.planned || undefined) !== current.planned_date) changes.planned_date = d.planned || undefined;
   if ((d.postponed || undefined) !== current.postponed_until) changes.postponed_until = d.postponed || undefined;
+  const repeat = repeatOf(d);
+  if (JSON.stringify(repeat ?? null) !== JSON.stringify(current.repeat ?? null)) changes.repeat = repeat;
+  const reminders = [...new Set(d.reminders.filter(Boolean))].sort();
+  if (reminders.join(',') !== (current.reminders ?? []).join(',')) changes.reminders = reminders;
   if ((d.color || null) !== (current.color ?? null)) changes.color = d.color || null;
   if (tags.join(',') !== current.tags.join(',')) changes.tags = tags;
   if (d.body !== current.body) changes.body = d.body;
@@ -366,6 +412,72 @@ async function removeAttachment(name: string) {
             <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.postponed') }}</span>
             <input v-model="draft.postponed" type="date" :class="field" data-testid="task-postponed" @change="saveSoon" />
           </label>
+
+          <div>
+            <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.repeat') }}</span>
+            <select v-model="draft.repeatKind" :class="field" :aria-label="t('task.repeat')" data-testid="task-repeat" @change="pickRepeat">
+              <option value="">{{ t('repeat.never') }}</option>
+              <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t(`repeat.once.${u}` as MessageKey) }}</option>
+              <option value="custom">{{ t('repeat.custom') }}</option>
+            </select>
+            <div v-if="draft.repeatKind === 'custom'" class="mt-2 flex items-center gap-3">
+              <span class="text-sm text-muted">{{ t('repeat.every') }}</span>
+              <input
+                v-model.number="draft.repeatEvery"
+                type="number"
+                min="1"
+                inputmode="numeric"
+                :class="`${field} w-24`"
+                data-testid="task-repeat-every"
+                @change="saveSoon"
+              />
+              <select v-model="draft.repeatUnit" :class="`${field} min-w-0 flex-1`" data-testid="task-repeat-unit" @change="saveSoon">
+                <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t(`repeat.unit.${u}` as MessageKey) }}</option>
+              </select>
+            </div>
+            <template v-if="draft.repeatKind">
+              <label class="mt-2 block">
+                <span class="mb-1 block text-xs font-medium text-muted">{{ t('repeat.counted') }}</span>
+                <select v-model="draft.repeatFrom" :class="field" data-testid="task-repeat-from" @change="saveSoon">
+                  <option value="completion">{{ t('repeat.fromCompletion') }}</option>
+                  <option value="due">{{ t('repeat.fromDue') }}</option>
+                </select>
+              </label>
+            </template>
+          </div>
+
+          <div>
+            <div class="mb-1 flex items-center justify-between">
+              <span class="text-xs font-medium text-muted">{{ t('task.reminders') }}</span>
+              <button
+                class="inline-flex items-center gap-1 text-sm font-medium text-accent"
+                data-testid="reminder-add"
+                @click="addReminder"
+              >
+                <Plus class="h-4 w-4" />{{ t('task.addReminder') }}
+              </button>
+            </div>
+            <ul class="space-y-2">
+              <li v-for="(_, i) in draft.reminders" :key="i" class="flex items-center gap-2">
+                <input
+                  v-model="draft.reminders[i]"
+                  type="datetime-local"
+                  :class="`${field} min-w-0 flex-1`"
+                  :aria-label="t('task.reminders')"
+                  data-testid="reminder-input"
+                  @change="saveSoon"
+                />
+                <button
+                  class="rounded-full p-2 text-muted active:bg-line"
+                  :aria-label="t('task.removeReminder')"
+                  data-testid="reminder-remove"
+                  @click="removeReminder(i)"
+                >
+                  <X class="h-4 w-4" />
+                </button>
+              </li>
+            </ul>
+          </div>
 
           <label class="block">
             <span class="mb-1 block text-xs font-medium text-muted">{{ t('task.tags') }}</span>

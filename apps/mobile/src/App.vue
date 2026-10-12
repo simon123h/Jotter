@@ -22,7 +22,8 @@ import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useAutoRefresh } from '@/composables/useAutoRefresh';
-import { runShortcut } from '@/shortcuts';
+import { runShortcut, openReminder } from '@/shortcuts';
+import { notifications } from '@/reminders';
 
 const app = useAppStore();
 const ui = useUiStore();
@@ -52,6 +53,13 @@ onMounted(async () => {
     if (launch?.url) void runShortcut(launch.url);
   } catch {
     // Not running inside Capacitor (browser, tests)
+  }
+  // A tap on a reminder's notification opens its task
+  try {
+    const stop = await notifications.port.onTap((ref) => void openReminder(ref));
+    listeners.push({ remove: async () => stop() });
+  } catch {
+    // No notifications here
   }
 });
 

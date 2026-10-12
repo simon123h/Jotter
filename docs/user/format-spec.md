@@ -68,6 +68,8 @@ The YAML frontmatter block supports the following key-value pairs. All key names
 | `priority` | String | No | The task's priority level. Supported values: `low`, `medium`, `high`, `urgent`, or `null`. |
 | `color` | String | No | The name of a palette color (`red`, `orange`, `yellow`, `green`, `blue`, `purple` or `pink`) that tints the task card. Other values, such as a hex code written by another tool, are kept as they are. |
 | `postponed_until` | String | No | The date until which the task is postponed, formatted in ISO standard date format `YYYY-MM-DD` (or `null` if none). |
+| `repeat` | Mapping | No | How the task comes back when it is completed: `every` (a whole number, at least 1), `unit` (`day`, `week`, `month` or `year`) and `from` (`completion`, the default, or `due`). See [Recurring Tasks and Reminders](./recurring-and-reminders). |
+| `reminders` | List of strings | No | Local date-times `YYYY-MM-DDTHH:mm` (no time zone) at which the app reminds you. |
 | `created_at` | String | No | ISO 8601 UTC timestamp of task creation (e.g., `2026-06-07T12:00:00Z`). |
 | `updated_at` | String | No | ISO 8601 UTC timestamp of the last modification. |
 

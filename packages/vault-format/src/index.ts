@@ -1,2 +1,3 @@
 export * from './markdownParser';
-export type { Task, Project, Bucket, BucketName } from './types';
+export * from './recurrence';
+export type { RepeatRule, Task, Project, Bucket, BucketName } from './types';

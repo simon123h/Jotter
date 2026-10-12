@@ -11,6 +11,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { locale } from '@/i18n';
 import { autoRefresh } from '@/composables/useAutoRefresh';
 import { holdConfig } from '@/composables/useCardDrag';
+import { MemoryNotifications, armDelay, forgetArmedReminders, localDateTime, notifications } from '@/reminders';
 import { VaultRepository } from '@/data/repository';
 import { VaultRegistry } from '@/data/vaults';
 import { VaultDb } from '@/data/db';
@@ -20,6 +21,8 @@ import { MemoryKeyValue } from '@/data/keyValue';
 let counter = 0;
 let fs: MemoryFs;
 let wrapper: VueWrapper;
+let memoryNotifications: MemoryNotifications;
+const realNotifications = notifications.port;
 
 /** `seed` fills the storage as another app would; with it the vault in `Jotter` is already registered. */
 async function start(seed?: (fs: MemoryFs) => void) {
@@ -86,12 +89,18 @@ const desktopVault = (f: MemoryFs) => {
 };
 
 afterEach(() => {
+  notifications.port = realNotifications;
+  armDelay.ms = 800;
   autoRefresh.intervalMs = 60_000;
   holdConfig.ms = 350;
   Object.defineProperty(document, 'hidden', { value: false, configurable: true });
 });
 
 beforeEach(() => {
+  memoryNotifications = new MemoryNotifications();
+  notifications.port = memoryNotifications;
+  armDelay.ms = 0;
+  forgetArmedReminders();
   holdConfig.ms = 30; // a hold is a few milliseconds in tests
   vi.spyOn(window, 'confirm').mockReturnValue(true);
   localStorage.clear();
@@ -262,6 +271,133 @@ describe('capturing and editing tasks', () => {
     await settle();
     expect(file()).not.toContain('color:');
     expect(file()).not.toContain('planned_date');
+  });
+
+  it('sets a repeat rule and reminders, shows them on the card, and clears them again', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    const file = () => fs.files.get('Jotter/work/a.md')!.data;
+
+    await type('task-repeat', 'week', 'change');
+    await settle();
+    expect(file()).toMatch(/repeat:\n\s+every: 1\n\s+unit: week\n\s+from: completion/);
+
+    await type('task-repeat', 'custom', 'change');
+    await type('task-repeat-every', '3', 'change');
+    await type('task-repeat-unit', 'month', 'change');
+    await type('task-repeat-from', 'due', 'change');
+    await settle();
+    expect(file()).toMatch(/every: 3\n\s+unit: month\n\s+from: due/);
+
+    await find('reminder-add').trigger('click');
+    await settle();
+    await type('reminder-input', '2030-05-01T08:30', 'change');
+    await settle();
+    expect(file()).toContain('2030-05-01T08:30');
+
+    await closeSheet();
+    await settle();
+    const card = all('task-card')[0];
+    expect(card.find('[data-testid="card-repeat"]').text()).toBe('Every 3 months');
+    expect(card.find('[data-testid="card-reminders"]').exists()).toBe(true);
+
+    await card.trigger('click');
+    await type('task-repeat', '', 'change');
+    await find('reminder-remove').trigger('click');
+    await settle();
+    expect(file()).not.toContain('repeat');
+    expect(file()).not.toContain('reminders');
+  });
+
+  it('asks to notify when the first reminder is added, and arms the reminders of the vault', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    expect(memoryNotifications.asked).toBe(0);
+
+    await find('reminder-add').trigger('click');
+    await settle();
+    expect(memoryNotifications.asked).toBe(1);
+    expect(memoryNotifications.armed).toMatchObject([{ taskId: 'a', at: `${isoDay(1)}T09:00` }]); // tomorrow at nine
+
+    await type('reminder-input', '2030-05-01T08:30', 'change');
+    await settle();
+    expect(memoryNotifications.armed).toMatchObject([
+      { projectId: 'work', taskId: 'a', title: 'Write report', projectTitle: 'Work', at: '2030-05-01T08:30' },
+    ]);
+
+    // Asked once, not for every reminder
+    await find('reminder-add').trigger('click');
+    await settle();
+    expect(memoryNotifications.asked).toBe(1);
+
+    // Done tasks do not remind
+    await find('task-menu').trigger('click');
+    await find('task-done').trigger('click');
+    await settle();
+    expect(memoryNotifications.armed).toEqual([]);
+  });
+
+  it('says so when notifications are off, and keeps the reminder', async () => {
+    memoryNotifications.answer = 'denied';
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+
+    await find('reminder-add').trigger('click');
+    await settle();
+
+    expect(find('toast').text()).toContain('Notifications are off');
+    expect(find('reminder-input').exists()).toBe(true);
+    expect(memoryNotifications.armed).toEqual([]);
+  });
+
+  it('opens the task of a reminder when its notification is tapped, also in another project', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+      f.put('Jotter/home/z.md', '---\ntitle: Pay rent\nstatus: todo\nreminders: ["2030-05-01T09:00"]\n---\n');
+    });
+    expect(find('task-title').exists()).toBe(false);
+
+    memoryNotifications.tap('home', 'z');
+    await settle();
+
+    expect(useAppStore().projectId).toBe('home');
+    expect((find('task-title').element as HTMLTextAreaElement).value).toBe('Pay rent');
+
+    // A task that is gone opens nothing
+    useUiStore().close();
+    memoryNotifications.tap('home', 'gone');
+    await settle();
+    expect(find('task-title').exists()).toBe(false);
+  });
+
+  it('keeps the next postponement of a postponed recurring task that is completed in bulk, and undo restores it', async () => {
+    const { app } = await start((f) => {
+      desktopVault(f);
+      f.put(
+        'Jotter/work/a.md',
+        `---\ntitle: Write report\nstatus: todo\nposition: 1000\npostponed_until: "${isoDay(2)}"\nrepeat:\n  every: 1\n  unit: week\n---\n`
+      );
+    });
+
+    const before = await app.moveManyToBucket(['a'], 'done');
+    await settle();
+    expect(file('a')).toContain('status: todo');
+    expect(file('a')).toContain(`postponed_until: ${isoDay(7)}`);
+
+    await app.restoreMany(before);
+    await settle();
+    expect(file('a')).toContain(`postponed_until: ${isoDay(2)}`);
+  });
+
+  it('does not arm a reminder of the current minute, which is already past', async () => {
+    memoryNotifications.state = 'granted';
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/a.md', `---\ntitle: Write report\nstatus: todo\nreminders: ["${localDateTime()}", "2999-01-01T09:00"]\n---\n`);
+    });
+
+    expect(memoryNotifications.armed.map((r) => r.at)).toEqual(['2999-01-01T09:00']);
   });
 
   it('keeps a planned date and a colour that another tool wrote outside the menus', async () => {
@@ -831,6 +967,26 @@ describe('finishing, archiving and moving', () => {
     await find('toast-action').trigger('click');
     await settle();
     expect(file('a')).toContain('status: todo');
+  });
+
+  it('rolls a recurring task over when its circle is ticked, and undo puts its dates back', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put(
+        'Jotter/work/a.md',
+        '---\ntitle: Write report\nstatus: todo\nposition: 1000\ndue_date: "2030-01-01"\nrepeat:\n  every: 1\n  unit: week\n  from: due\n---\n'
+      );
+    });
+    await check('Write report');
+
+    expect(file('a')).toContain('status: todo');
+    expect(file('a')).toContain('due_date: 2030-01-08');
+    expect(file('a')).toContain('postponed_until: 2030-01-08');
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('a')).toContain('due_date: 2030-01-01');
+    expect(file('a')).not.toContain('postponed_until');
   });
 
   it('takes a done task back to the inbox with its circle, and can undo', async () => {

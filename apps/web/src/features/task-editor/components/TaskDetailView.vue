@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { ClipboardList, Split } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Task } from '@/types';
+import { repeatLabel } from '@/utils/repeat';
 import TaskChecklist from './TaskChecklist.vue';
 import TaskAttachments from './TaskAttachments.vue';
 
@@ -73,7 +74,10 @@ defineExpose({
       </div>
 
       <!-- Due Date, Planned Date & Priority Info -->
-      <div v-if="task.due_date || task.planned_date || task.priority" class="flex flex-wrap gap-3.5 mt-3 items-center">
+      <div
+        v-if="task.due_date || task.planned_date || task.priority || task.repeat || task.reminders?.length"
+        class="flex flex-wrap gap-3.5 mt-3 items-center"
+      >
         <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
           <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.dueLabel') }}</span>
           <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
@@ -90,6 +94,22 @@ defineExpose({
           <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.postponedUntilLabel') }}</span>
           <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
             {{ new Date(task.postponed_until).toLocaleDateString() }}
+          </span>
+        </div>
+        <div v-if="task.repeat" class="flex items-center gap-1.5 text-xs" data-testid="detail-repeat">
+          <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.repeatLabel') }}</span>
+          <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
+            {{ repeatLabel(task.repeat, t) }}
+          </span>
+        </div>
+        <div v-if="task.reminders?.length" class="flex items-center gap-1.5 text-xs" data-testid="detail-reminders">
+          <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.remindersLabel') }}</span>
+          <span
+            v-for="r in task.reminders"
+            :key="r"
+            class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card"
+          >
+            {{ new Date(r).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) }}
           </span>
         </div>
         <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">

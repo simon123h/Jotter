@@ -29,6 +29,8 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Themes and languages (English, German) | yes | yes | ~1.7k | Core | `packages/themes` (shared), `locales` |
 | Indexing and periodic scan | yes | own | ~1.8k | Core | `features/sync` (SQLite index, ADR 0014/0015); mobile scans through its repository |
 | Postponing tasks | yes | yes | ~0.3k | Core | virtual Postponed column |
+| Recurring tasks: `repeat` rule, rolled over in place on completion | yes | yes | ~0.8k | Core | `spec/FORMAT.md` (*Recurring tasks*), ADR 0019; reuses `postponed_until` |
+| Reminders: notifications at a floating local time | edit only | yes | ~0.8k | Optional | `spec/FORMAT.md` (*Reminders*), ADR 0019; mobile arms Android notifications (`src/reminders.ts`); the desktop sets and shows them but does not notify (browser notifications only work while the page is open: branch `feat/desktop-reminder-notifications`) |
 | Tag view and planning view | yes | yes | ~0.5k | Optional | `TagView`, `TimeView`; mobile has them as tabbed views |
 | Spreadsheet import and export | yes | no | ~1.6k | Optional | `features/task-import`, `useTaskExport`; isolated |
 | Git versioning and Time Machine | yes | no | ~1.3k | Optional | git part of `features/sync`, `TimeMachineModal`; ADR 0012 |
@@ -41,7 +43,7 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Time blocking | yes | no | ~3.1k | Parked | `features/timeblock` (+ backend `features/timeblock`) |
 | 2D infinite canvas | yes | no | ~2.5k | Parked | `features/canvas` (+ backend `features/canvas`), ADR 0010 |
 | Eisenhower matrix view | yes | no | ~0.5k | Parked | `MatrixView` |
-| Static demo on GitHub Pages | yes | n/a | ~0.7k | Parked | `storage/demoAdapter.ts`, a second backend written in TypeScript |
+| Static demo on GitHub Pages | yes | n/a | ~0.7k | Parked | `storage/demoAdapter.ts`, a second backend written in TypeScript. It stores `repeat` and `reminders` but does not roll recurring tasks over, so the demo differs from the backend and the mobile app there |
 
 The parked rows add up to about **9k lines (17 % of the code base)**, which no other feature depends on.
 

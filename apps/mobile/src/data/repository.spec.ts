@@ -4,6 +4,7 @@ import { VaultRegistry } from './vaults';
 import { VaultDb } from './db';
 import { MemoryFs } from './memoryFs';
 import { MemoryKeyValue } from './keyValue';
+import { isoDay } from '@/dates';
 
 let counter = 0;
 let fs: MemoryFs;
@@ -170,6 +171,53 @@ describe('tasks', () => {
     expect(first.position).toBeGreaterThan(1000);
     expect(fs.files.get(`Jotter/work/${first.id}.md`)?.data).toContain('title: New one');
     expect((await repo.getTask('work', first.id)).tags).toEqual(['t']);
+  });
+
+  it('keeps the repeat rule and the reminders of a task when it is edited and moved', async () => {
+    fs.put(
+      'Jotter/work/r.md',
+      '---\ntitle: Water\nstatus: todo\nrepeat:\n  every: 2\n  unit: week\nreminders:\n  - "2026-10-14T09:00"\n---\n'
+    );
+    await repo.sync();
+
+    await repo.updateTask('work', 'r', { title: 'Water the plants' });
+    await repo.moveTask('work', 'r', 'todo', 500);
+
+    const written = fs.files.get('Jotter/work/r.md')?.data;
+    expect(written).toContain('title: Water the plants');
+    expect(written).toMatch(/repeat:\n\s+every: 2\n\s+unit: week\n\s+from: completion/);
+    expect(written).toContain('2026-10-14T09:00');
+    expect(await repo.getTask('work', 'r')).toMatchObject({
+      repeat: { every: 2, unit: 'week', from: 'completion' },
+      reminders: ['2026-10-14T09:00'],
+    });
+  });
+
+  it('rolls a recurring task over instead of moving it to Done, and moves other tasks normally', async () => {
+    fs.put('Jotter/work/r.md', '---\ntitle: Water\nstatus: todo\nposition: 1000\nrepeat:\n  every: 1\n  unit: day\n---\n- [x] fill can\n');
+    await repo.sync();
+
+    const rolled = await repo.moveTask('work', 'r', 'done', 9000);
+
+    expect(rolled).toMatchObject({ bucket: 'todo', position: 1000, body: '- [ ] fill can\n' });
+    expect(rolled.postponed_until).toBe(isoDay(1));
+    expect(fs.files.get('Jotter/work/r.md')?.data).toContain(`postponed_until: ${isoDay(1)}`);
+    expect((await repo.moveTask('work', 'a', 'done', 9000)).bucket).toBe('done');
+  });
+
+  it('lists the reminders still to come in all projects, the nearest first, without done and archived tasks', async () => {
+    fs.put('Jotter/work/r1.md', '---\ntitle: Soon\nstatus: todo\nreminders: ["2030-05-01T09:00", "2020-01-01T09:00"]\n---\n');
+    fs.put('Jotter/work/r2.md', '---\ntitle: Finished\nstatus: done\nreminders: ["2030-05-01T08:00"]\n---\n');
+    fs.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+    fs.put('Jotter/home/r3.md', '---\ntitle: Later\nstatus: backlog\nreminders: ["2030-04-30T18:00"]\n---\n');
+    await repo.sync();
+
+    expect(await repo.upcomingReminders('2025-01-01T00:00')).toEqual([
+      { projectId: 'home', projectTitle: 'Home', taskId: 'r3', title: 'Later', at: '2030-04-30T18:00' },
+      { projectId: 'work', projectTitle: 'Work', taskId: 'r1', title: 'Soon', at: '2030-05-01T09:00' },
+    ]);
+    expect(await repo.upcomingReminders('2030-05-01T09:00', 1)).toHaveLength(1);
+    expect(await repo.upcomingReminders('2031-01-01T00:00')).toEqual([]);
   });
 
   it('uses the default bucket and refuses empty titles and unknown projects', async () => {

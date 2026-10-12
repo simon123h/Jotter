@@ -5,6 +5,7 @@ import { filterTasks, isEmptyFilter, parseQuery } from '@jotter/task-filter';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { isoDay, isPostponed } from '@/dates';
+import { armDelay, armReminders, localDateTime } from '@/reminders';
 import { useUiStore } from '@/stores/ui';
 import { columnsFor, type Hidden, type View } from '@/stores/columns';
 import {
@@ -81,8 +82,19 @@ export const useAppStore = defineStore('app', () => {
     return repo.value;
   }
 
+  /** Arms the reminders that are still to come, a moment after the vault was last read. */
+  let armTimer: ReturnType<typeof setTimeout> | undefined;
+  function armRemindersSoon() {
+    clearTimeout(armTimer);
+    armTimer = setTimeout(
+      () => void armReminders(() => repository().upcomingReminders(localDateTime(new Date(Date.now() + 60_000)))),
+      armDelay.ms
+    );
+  }
+
   async function loadProject() {
     const r = repository();
+    armRemindersSoon();
     if (!projectId.value) {
       buckets.value = [];
       allTasks.value = [];
@@ -311,6 +323,8 @@ export const useAppStore = defineStore('app', () => {
     position: number;
     /** The postponed date to put back ('' for none), when the move changed it. */
     postponed?: string;
+    /** The fields a recurring task's roll-over changed, when completing it did that. */
+    rolled?: Partial<Task>;
   }
 
   /**
@@ -343,9 +357,28 @@ export const useAppStore = defineStore('app', () => {
     const before: Placement[] = [];
     for (const task of moving) {
       const postponed = isPostponed(task);
-      before.push({ id: task.id, bucket: task.bucket, position: task.position, ...(postponed ? { postponed: task.postponed_until } : {}) });
-      await r.moveTask(project, task.id, bucket, next);
+      const rolled = task.repeat && bucket === 'done' && task.bucket !== 'done';
+      before.push({
+        id: task.id,
+        bucket: task.bucket,
+        position: task.position,
+        ...(postponed ? { postponed: task.postponed_until } : {}),
+        ...(rolled
+          ? {
+              rolled: {
+                due_date: task.due_date,
+                planned_date: task.planned_date,
+                postponed_until: task.postponed_until,
+                // A plain copy: the task is a reactive object, which IndexedDB cannot store
+                reminders: task.reminders ? [...task.reminders] : undefined,
+                body: task.body,
+              },
+            }
+          : {}),
+      });
+      // Cleared first: completing a recurring task sets its next postponement, which must stay
       if (postponed) await r.updateTask(project, task.id, { postponed_until: undefined });
+      await r.moveTask(project, task.id, bucket, next);
       next += 1000;
     }
     await loadProject();
@@ -389,6 +422,10 @@ export const useAppStore = defineStore('app', () => {
   async function restoreMany(placements: Placement[]) {
     for (const p of placements) {
       const task = taskById(p.id);
+      if (p.rolled) {
+        await repository().updateTask(requireProject(), p.id, p.rolled);
+        continue;
+      }
       if (task && (task.bucket !== p.bucket || task.position !== p.position)) {
         await repository().moveTask(requireProject(), p.id, p.bucket, p.position);
       }

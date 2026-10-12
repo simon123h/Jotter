@@ -2,6 +2,7 @@
 
 import shutil
 import sqlite3
+from datetime import date
 from pathlib import Path
 from typing import Self
 
@@ -9,16 +10,23 @@ from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository
 from jotter.features.projects.repo import ProjectRepository
 from jotter.features.tasks.disk_repo import DiskTaskRepository
-from jotter.features.tasks.domain import Priority, Task
+from jotter.features.tasks.domain import Priority, RepeatRule, Task, clean_reminders
 from jotter.features.tasks.projector import TaskProjector
+from jotter.features.tasks.recurrence import roll_over
 from jotter.features.tasks.schemas import (
+    RepeatRuleSchema,
     TaskCreate,
     TaskMove,
     TaskResponse,
     TaskUpdate,
+    to_repeat_schema,
 )
 from jotter.shared.exceptions import EntityNotFoundError
 from jotter.shared.unset import UNSET
+
+
+def _rule_of(rule: RepeatRuleSchema | None) -> RepeatRule | None:
+    return RepeatRule(every=rule.every, unit=rule.unit, from_=rule.from_) if rule else None
 
 
 class TaskCommandService:
@@ -89,6 +97,8 @@ class TaskCommandService:
             priority=req.priority,
             color=req.color,
             postponed_until=req.postponed_until,
+            repeat=_rule_of(req.repeat),
+            reminders=clean_reminders(req.reminders),
         )
 
         # 1. Authoritative write to Markdown file on disk (SSoT)
@@ -121,12 +131,16 @@ class TaskCommandService:
             planned_date=req.planned_date if "planned_date" in fields_set else UNSET,
             color=req.color if "color" in fields_set else UNSET,
             postponed_until=req.postponed_until if "postponed_until" in fields_set else UNSET,
+            repeat=_rule_of(req.repeat) if "repeat" in fields_set else UNSET,
+            reminders=req.reminders if "reminders" in fields_set else None,
             tags=req.tags if "tags" in fields_set else None,
         )
         if "attachments" in fields_set and req.attachments is not None:
             task.attachments = req.attachments
 
-        if "bucket" in fields_set and req.bucket and req.bucket != task.bucket:
+        if "bucket" in fields_set and req.bucket and self._completes_recurring(task, req.bucket):
+            roll_over(task, date.today(), task.bucket, task.bucket)
+        elif "bucket" in fields_set and req.bucket and req.bucket != task.bucket:
             task.move(req.bucket, req.position if req.position is not None else task.position)
         elif "position" in fields_set and req.position is not None:
             task.move(task.bucket, req.position)
@@ -173,7 +187,10 @@ class TaskCommandService:
             new_b = Bucket.create(title=target_bucket.capitalize(), name=target_bucket)
             self.bucket_repo.save(project_id, new_b)
 
-        task.move(target_bucket, target_pos)
+        if self._completes_recurring(task, target_bucket):
+            roll_over(task, date.today(), task.bucket, task.bucket)
+        else:
+            task.move(target_bucket, target_pos)
 
         # 1. Authoritative persist on disk
         self.disk_repo.save(task)
@@ -182,6 +199,11 @@ class TaskCommandService:
         self.projector.project_task_upsert(task)
 
         return self._to_response(task)
+
+    @staticmethod
+    def _completes_recurring(task: Task, target_bucket: str) -> bool:
+        """Moving a recurring task into Done rolls it over instead (spec/FORMAT.md, "Recurring tasks")."""
+        return task.repeat is not None and target_bucket == "done" and task.bucket != "done"
 
     def delete_task(self, project_id: str, task_id: str) -> None:
         self.disk_repo.delete(project_id, task_id)
@@ -232,6 +254,8 @@ class TaskCommandService:
             priority=task.priority.value if task.priority != Priority.NONE else None,
             color=task.color,
             postponed_until=task.postponed_until.value,
+            repeat=to_repeat_schema(task.repeat),
+            reminders=list(task.reminders),
             created_at=task.created_at,
             updated_at=task.updated_at,
         )

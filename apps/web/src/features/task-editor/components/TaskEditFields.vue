@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, defineAsyncComponent } from 'vue';
-import { Slash, ClipboardList } from '@lucide/vue';
+import { Slash, ClipboardList, Plus, X } from '@lucide/vue';
+import { REPEAT_UNITS } from '@/utils/repeat';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket } from '@/types';
 import { useTaskEditorContext } from '../composables/useTaskEditor';
@@ -161,6 +162,83 @@ defineExpose({
           <option value="high">{{ t('priorityOptions.high') }}</option>
           <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
         </select>
+      </div>
+    </div>
+
+    <!-- Repeat & Reminders -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.repeatLabel') }}</label>
+        <select
+          v-model="editor.form.repeatKind"
+          class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+          data-testid="task-repeat"
+          @change="editor.pickRepeat"
+        >
+          <option value="">{{ t('form.repeatNever') }}</option>
+          <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t('repeat.once.' + u) }}</option>
+          <option value="custom">{{ t('form.repeatCustom') }}</option>
+        </select>
+        <div v-if="editor.form.repeatKind === 'custom'" class="mt-2 flex items-center gap-2">
+          <span class="text-sm text-theme-text-muted">{{ t('form.repeatEvery') }}</span>
+          <input
+            v-model.number="editor.form.repeatEvery"
+            type="number"
+            min="1"
+            class="w-20 bg-theme-base/60 border border-theme-border rounded px-2 py-1.5 text-sm text-theme-text-input"
+            data-testid="task-repeat-every"
+          />
+          <select
+            v-model="editor.form.repeatUnit"
+            class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+            data-testid="task-repeat-unit"
+          >
+            <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t('repeat.units.' + u) }}</option>
+          </select>
+        </div>
+        <div v-if="editor.form.repeatKind" class="mt-2">
+          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.repeatCounted') }}</label>
+          <select
+            v-model="editor.form.repeatFrom"
+            class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+            data-testid="task-repeat-from"
+          >
+            <option value="completion">{{ t('form.repeatFromCompletion') }}</option>
+            <option value="due">{{ t('form.repeatFromDue') }}</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('form.remindersLabel') }}</label>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 text-xs font-semibold text-theme-primary"
+            data-testid="reminder-add"
+            @click="editor.addReminder"
+          >
+            <Plus class="w-3.5 h-3.5" />{{ t('form.addReminder') }}
+          </button>
+        </div>
+        <ul class="space-y-2">
+          <li v-for="(_, i) in editor.form.reminders" :key="i" class="flex items-center gap-2">
+            <input
+              v-model="editor.form.reminders[i]"
+              type="datetime-local"
+              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              data-testid="reminder-input"
+            />
+            <button
+              type="button"
+              class="p-1.5 text-theme-text-muted hover:text-theme-text-main"
+              :title="t('form.removeReminder')"
+              data-testid="reminder-remove"
+              @click="editor.removeReminder(i)"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </li>
+        </ul>
       </div>
     </div>
 

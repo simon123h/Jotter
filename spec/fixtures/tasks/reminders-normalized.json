@@ -1,0 +1,28 @@
+{
+  "description": "Reminders are read sorted and without duplicates. A space and seconds are accepted. A value with a time zone, without a time, or that is no date is dropped.",
+  "context": {
+    "file_stem": "reminders-normalized",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "reminders-normalized",
+    "project_id": "proj",
+    "title": "T",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {},
+    "repeat": null,
+    "reminders": [
+      "2026-10-13T08:00",
+      "2026-10-14T09:30"
+    ]
+  }
+}

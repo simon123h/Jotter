@@ -487,3 +487,34 @@ def test_wal_files_stay_between_requests(test_env):
     client, data_dir = test_env
     assert client.get("/api/projects/default/tasks").status_code == 200
     assert (Path(data_dir) / "tasks.db-wal").exists()
+
+
+def test_recurring_task_and_reminders_through_the_api(test_env):
+    client, temp_dir = test_env
+    rule = {"every": 2, "unit": "week", "from": "due"}
+
+    res = client.post(
+        "/api/projects/default/tasks",
+        json={"title": "Water plants", "bucket": "todo", "repeat": rule, "reminders": ["2026-10-14T09:00", "bogus"]},
+    )
+    assert res.status_code == 201
+    task = res.json()
+    assert task["repeat"] == rule
+    assert task["reminders"] == ["2026-10-14T09:00"]
+    assert "unit: week" in (Path(temp_dir) / "default" / f"{task['id']}.md").read_text(encoding="utf-8")
+
+    # The index returns them too, and an update that leaves them out keeps them
+    assert client.get(f"/api/projects/default/tasks/{task['id']}").json()["repeat"] == rule
+    res = client.put(f"/api/projects/default/tasks/{task['id']}", json={"title": "Water the plants"})
+    assert res.json()["repeat"] == rule
+
+    # Moving it to Done rolls it over: it stays in its column and is postponed
+    res = client.patch(f"/api/projects/default/tasks/{task['id']}/move", json={"bucket": "done"})
+    assert res.json()["bucket"] == "todo"
+    assert res.json()["postponed_until"]
+
+    # Null removes the rule, an empty list removes the reminders; a rule the format does not allow is refused
+    res = client.put(f"/api/projects/default/tasks/{task['id']}", json={"repeat": None, "reminders": []})
+    assert res.json()["repeat"] is None and res.json()["reminders"] == []
+    res = client.put(f"/api/projects/default/tasks/{task['id']}", json={"repeat": {"every": 0, "unit": "week"}})
+    assert res.status_code == 422

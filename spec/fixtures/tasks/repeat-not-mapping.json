@@ -1,0 +1,25 @@
+{
+  "description": "A repeat that is not a mapping is dropped.",
+  "context": {
+    "file_stem": "repeat-not-mapping",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "repeat-not-mapping",
+    "project_id": "proj",
+    "title": "T",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {},
+    "repeat": null,
+    "reminders": []
+  }
+}

@@ -20,6 +20,14 @@ FIXTURES = Path(__file__).resolve().parent.parent / "spec" / "fixtures"
 TASK_CASES = sorted((FIXTURES / "tasks").glob("*.json"))
 PROJECT_CASES = sorted((FIXTURES / "projects").glob("*.json"))
 
+# Fixtures this implementation does not pass yet. Each one is a bug to fix: remove its entry once fixed (a fixed case
+# fails the suite until you do, so the list cannot rot).
+KNOWN_DIVERGENCES: dict[str, str] = {}
+
+
+def _known_divergence(case: Path) -> bool:
+    return case.stem in KNOWN_DIVERGENCES
+
 
 def _task_view(task: Any, expected: dict[str, Any]) -> dict[str, Any]:
     view: dict[str, Any] = {
@@ -38,6 +46,11 @@ def _task_view(task: Any, expected: dict[str, Any]) -> dict[str, Any]:
         "postponed_until": task.postponed_until.value,
         "extra": dict(task.extra_frontmatter),
     }
+    # Fields that older fixtures leave out are only compared when the fixture states them
+    if "repeat" in expected:
+        view["repeat"] = task.repeat.to_dict() if task.repeat else None
+    if "reminders" in expected:
+        view["reminders"] = list(task.reminders)
     # Timestamps default to "now" when absent, so only compare them when the fixture states them
     for key in ("created_at", "updated_at"):
         if key in expected:
@@ -46,7 +59,9 @@ def _task_view(task: Any, expected: dict[str, Any]) -> dict[str, Any]:
 
 
 @pytest.mark.parametrize("case", TASK_CASES, ids=lambda p: p.stem)
-def test_task_read(case: Path) -> None:
+def test_task_read(case: Path, request: pytest.FixtureRequest) -> None:
+    if _known_divergence(case):
+        request.applymarker(pytest.mark.xfail(strict=True, reason=KNOWN_DIVERGENCES[case.stem]))
     spec = json.loads(case.read_text(encoding="utf-8"))
     ctx, expected = spec["context"], spec["expected"]
     repo = DiskTaskRepository(tempfile.gettempdir())
@@ -62,8 +77,10 @@ def test_task_read(case: Path) -> None:
 
 
 @pytest.mark.parametrize("case", TASK_CASES, ids=lambda p: p.stem)
-def test_task_round_trip(case: Path) -> None:
+def test_task_round_trip(case: Path, request: pytest.FixtureRequest) -> None:
     """Writing a task and reading it back must not change anything, unknown frontmatter included."""
+    if _known_divergence(case):
+        request.applymarker(pytest.mark.xfail(strict=True, reason=KNOWN_DIVERGENCES[case.stem]))
     spec = json.loads(case.read_text(encoding="utf-8"))
     ctx, expected = spec["context"], spec["expected"]
     if expected.get("error"):
