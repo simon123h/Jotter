@@ -2,6 +2,7 @@
 
 import shutil
 import sqlite3
+from datetime import date
 from pathlib import Path
 from typing import Self
 
@@ -11,6 +12,7 @@ from jotter.features.projects.repo import ProjectRepository
 from jotter.features.tasks.disk_repo import DiskTaskRepository
 from jotter.features.tasks.domain import Priority, Task
 from jotter.features.tasks.projector import TaskProjector
+from jotter.features.tasks.recurrence import roll_over
 from jotter.features.tasks.schemas import (
     TaskCreate,
     TaskMove,
@@ -126,7 +128,9 @@ class TaskCommandService:
         if "attachments" in fields_set and req.attachments is not None:
             task.attachments = req.attachments
 
-        if "bucket" in fields_set and req.bucket and req.bucket != task.bucket:
+        if "bucket" in fields_set and req.bucket and self._completes_recurring(task, req.bucket):
+            roll_over(task, date.today(), task.bucket, task.bucket)
+        elif "bucket" in fields_set and req.bucket and req.bucket != task.bucket:
             task.move(req.bucket, req.position if req.position is not None else task.position)
         elif "position" in fields_set and req.position is not None:
             task.move(task.bucket, req.position)
@@ -173,7 +177,10 @@ class TaskCommandService:
             new_b = Bucket.create(title=target_bucket.capitalize(), name=target_bucket)
             self.bucket_repo.save(project_id, new_b)
 
-        task.move(target_bucket, target_pos)
+        if self._completes_recurring(task, target_bucket):
+            roll_over(task, date.today(), task.bucket, task.bucket)
+        else:
+            task.move(target_bucket, target_pos)
 
         # 1. Authoritative persist on disk
         self.disk_repo.save(task)
@@ -182,6 +189,11 @@ class TaskCommandService:
         self.projector.project_task_upsert(task)
 
         return self._to_response(task)
+
+    @staticmethod
+    def _completes_recurring(task: Task, target_bucket: str) -> bool:
+        """Moving a recurring task into Done rolls it over instead (spec/FORMAT.md, "Recurring tasks")."""
+        return task.repeat is not None and target_bucket == "done" and task.bucket != "done"
 
     def delete_task(self, project_id: str, task_id: str) -> None:
         self.disk_repo.delete(project_id, task_id)

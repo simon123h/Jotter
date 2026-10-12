@@ -3,6 +3,7 @@ import {
   dumpTaskMarkdown,
   parseProjectManifest,
   dumpProjectManifest,
+  rollOver,
   DEFAULT_MOBILE_BUCKETS,
   type Task,
   type Project,
@@ -11,6 +12,7 @@ import {
 import { filterTasks, type TaskFilter } from '@jotter/task-filter';
 import { VaultDb, type CachedTask } from './db';
 import type { FsPort } from './fs';
+import { isoDay } from '@/dates';
 import { ulid } from './ulid';
 import { VaultRegistry, type Vault } from './vaults';
 
@@ -416,7 +418,13 @@ export class VaultRepository {
   async updateTask(projectId: string, id: string, updates: TaskUpdate): Promise<Task> {
     const row = await this.row(projectId, id);
     if (updates.title !== undefined && !updates.title.trim()) throw new Error('Task title cannot be empty');
-    const task: Task = { ...toTask(row), ...updates, updated_at: new Date().toISOString() };
+    const current = toTask(row);
+    const edited: Task = { ...current, ...updates, updated_at: new Date().toISOString() };
+    // Moving a recurring task into Done rolls it over instead: it stays where it is and comes back on its next day
+    const completes = !!current.repeat && updates.bucket === 'done' && current.bucket !== 'done';
+    const task = completes
+      ? rollOver({ ...edited, bucket: current.bucket, position: current.position }, isoDay(), current.bucket, current.bucket)
+      : edited;
     await this.writeTask(task, row.file);
     return task;
   }

@@ -311,6 +311,8 @@ export const useAppStore = defineStore('app', () => {
     position: number;
     /** The postponed date to put back ('' for none), when the move changed it. */
     postponed?: string;
+    /** The fields a recurring task's roll-over changed, when completing it did that. */
+    rolled?: Partial<Task>;
   }
 
   /**
@@ -343,7 +345,24 @@ export const useAppStore = defineStore('app', () => {
     const before: Placement[] = [];
     for (const task of moving) {
       const postponed = isPostponed(task);
-      before.push({ id: task.id, bucket: task.bucket, position: task.position, ...(postponed ? { postponed: task.postponed_until } : {}) });
+      const rolled = task.repeat && bucket === 'done' && task.bucket !== 'done';
+      before.push({
+        id: task.id,
+        bucket: task.bucket,
+        position: task.position,
+        ...(postponed ? { postponed: task.postponed_until } : {}),
+        ...(rolled
+          ? {
+              rolled: {
+                due_date: task.due_date,
+                planned_date: task.planned_date,
+                postponed_until: task.postponed_until,
+                reminders: task.reminders,
+                body: task.body,
+              },
+            }
+          : {}),
+      });
       await r.moveTask(project, task.id, bucket, next);
       if (postponed) await r.updateTask(project, task.id, { postponed_until: undefined });
       next += 1000;
@@ -389,6 +408,10 @@ export const useAppStore = defineStore('app', () => {
   async function restoreMany(placements: Placement[]) {
     for (const p of placements) {
       const task = taskById(p.id);
+      if (p.rolled) {
+        await repository().updateTask(requireProject(), p.id, p.rolled);
+        continue;
+      }
       if (task && (task.bucket !== p.bucket || task.position !== p.position)) {
         await repository().moveTask(requireProject(), p.id, p.bucket, p.position);
       }

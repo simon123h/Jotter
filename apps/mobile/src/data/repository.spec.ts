@@ -4,6 +4,7 @@ import { VaultRegistry } from './vaults';
 import { VaultDb } from './db';
 import { MemoryFs } from './memoryFs';
 import { MemoryKeyValue } from './keyValue';
+import { isoDay } from '@/dates';
 
 let counter = 0;
 let fs: MemoryFs;
@@ -180,7 +181,7 @@ describe('tasks', () => {
     await repo.sync();
 
     await repo.updateTask('work', 'r', { title: 'Water the plants' });
-    await repo.moveTask('work', 'r', 'done', 500);
+    await repo.moveTask('work', 'r', 'todo', 500);
 
     const written = fs.files.get('Jotter/work/r.md')?.data;
     expect(written).toContain('title: Water the plants');
@@ -190,6 +191,18 @@ describe('tasks', () => {
       repeat: { every: 2, unit: 'week', from: 'completion' },
       reminders: ['2026-10-14T09:00'],
     });
+  });
+
+  it('rolls a recurring task over instead of moving it to Done, and moves other tasks normally', async () => {
+    fs.put('Jotter/work/r.md', '---\ntitle: Water\nstatus: todo\nposition: 1000\nrepeat:\n  every: 1\n  unit: day\n---\n- [x] fill can\n');
+    await repo.sync();
+
+    const rolled = await repo.moveTask('work', 'r', 'done', 9000);
+
+    expect(rolled).toMatchObject({ bucket: 'todo', position: 1000, body: '- [ ] fill can\n' });
+    expect(rolled.postponed_until).toBe(isoDay(1));
+    expect(fs.files.get('Jotter/work/r.md')?.data).toContain(`postponed_until: ${isoDay(1)}`);
+    expect((await repo.moveTask('work', 'a', 'done', 9000)).bucket).toBe('done');
   });
 
   it('uses the default bucket and refuses empty titles and unknown projects', async () => {

@@ -833,6 +833,26 @@ describe('finishing, archiving and moving', () => {
     expect(file('a')).toContain('status: todo');
   });
 
+  it('rolls a recurring task over when its circle is ticked, and undo puts its dates back', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put(
+        'Jotter/work/a.md',
+        '---\ntitle: Write report\nstatus: todo\nposition: 1000\ndue_date: "2030-01-01"\nrepeat:\n  every: 1\n  unit: week\n  from: due\n---\n'
+      );
+    });
+    await check('Write report');
+
+    expect(file('a')).toContain('status: todo');
+    expect(file('a')).toContain('due_date: 2030-01-08');
+    expect(file('a')).toContain('postponed_until: 2030-01-08');
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(file('a')).toContain('due_date: 2030-01-01');
+    expect(file('a')).not.toContain('postponed_until');
+  });
+
   it('takes a done task back to the inbox with its circle, and can undo', async () => {
     await start(desktopVault);
     await check('Ship release');

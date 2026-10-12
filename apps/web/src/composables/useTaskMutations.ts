@@ -140,7 +140,11 @@ export function useTaskMutations(
     });
 
     try {
-      await Promise.all(newPositions.map(({ task, position }) => moveTask(activeProjectId.value, task.id, toBucket, position)));
+      const moved = await Promise.all(
+        newPositions.map(({ task, position }) => moveTask(activeProjectId.value, task.id, toBucket, position))
+      );
+      // A recurring task moved to Done comes back as itself: it stays where it was and gets its next dates
+      if (moved.some((task) => task.bucket !== toBucket)) await fetchAllTasks();
     } catch {
       // Revert if API call fails
       originalStates.forEach(({ task, bucket, position }) => {
