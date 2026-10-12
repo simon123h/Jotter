@@ -66,6 +66,15 @@ describe('useTaskEditor: repeat rules and reminders', () => {
     expect(editor.form.reminders).toEqual([]);
   });
 
+  it('ends the postponement when another column is picked', async () => {
+    const { editor, patchTask } = setup(createMockTask({ title: 'Water plants', bucket: 'todo', postponed_until: '2030-05-08' }));
+
+    editor.form.bucket = 'in-progress';
+    await editor.handleSave();
+
+    expect(patchTask.mock.calls[0][1]).toMatchObject({ bucket: 'in-progress', postponed_until: '' });
+  });
+
   it('leaves the postponement alone when the task is saved outside the Postponed column', async () => {
     const { editor, patchTask } = setup(createMockTask({ title: 'Water plants', postponed_until: '2030-05-08' }));
 

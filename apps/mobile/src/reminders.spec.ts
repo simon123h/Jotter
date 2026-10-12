@@ -76,6 +76,14 @@ describe('arming reminders', () => {
     expect(port.armed.map((r) => r.at)).toEqual(['2030-05-03T09:00']);
   });
 
+  it('never gives two reminders the same id', async () => {
+    port.state = 'granted';
+    // The same reminder twice hashes to the same id
+    await armReminders(async () => [reminder('a', '2030-05-01T09:00'), reminder('a', '2030-05-01T09:00')]);
+
+    expect(new Set(port.armed.map((r) => r.id)).size).toBe(2);
+  });
+
   it('survives a notification system that fails, and tries again next time', async () => {
     port.state = 'granted';
     port.replaceAll = async () => {

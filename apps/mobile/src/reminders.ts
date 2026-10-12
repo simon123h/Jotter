@@ -152,7 +152,14 @@ export async function armReminders(upcoming: () => Promise<UpcomingReminder[]>):
       armedPlan = '';
       return;
     }
-    const plan = (await upcoming()).map((r) => ({ ...r, id: reminderId(r) }));
+    const taken = new Set<number>();
+    const plan = (await upcoming()).map((r) => {
+      // Two reminders sharing an id would replace each other: the later one takes the next free number
+      let id = reminderId(r);
+      while (taken.has(id)) id = (id % 2_147_483_646) + 1;
+      taken.add(id);
+      return { ...r, id };
+    });
     const key = JSON.stringify(plan);
     if (key === armedPlan) return;
     await port.replaceAll(plan);

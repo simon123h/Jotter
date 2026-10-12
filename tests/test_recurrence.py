@@ -48,3 +48,8 @@ def test_a_task_without_a_rule_is_left_alone() -> None:
     task = Task.create(project_id="proj", title="T", due_date="2026-10-12")
     assert not roll_over(task, date(2026, 10, 12), "backlog")
     assert task.due_date.value == "2026-10-12"
+
+
+@pytest.mark.parametrize("every", ["²", "٣", "3.5", "", " "])
+def test_a_number_that_is_not_plain_digits_drops_the_rule_instead_of_failing(every: str) -> None:
+    assert RepeatRule.from_raw({"every": every, "unit": "week"}) is None

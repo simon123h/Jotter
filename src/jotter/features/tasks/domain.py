@@ -144,7 +144,7 @@ class RepeatRule:
         if not isinstance(raw, dict):
             return None
         every = raw.get("every")
-        if isinstance(every, str) and every.strip().isdigit():
+        if isinstance(every, str) and re.fullmatch(r"[0-9]+", every.strip()):
             every = int(every.strip())
         if isinstance(every, bool) or not isinstance(every, int) or every < 1:
             return None

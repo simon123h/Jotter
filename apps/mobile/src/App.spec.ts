@@ -11,7 +11,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { locale } from '@/i18n';
 import { autoRefresh } from '@/composables/useAutoRefresh';
 import { holdConfig } from '@/composables/useCardDrag';
-import { MemoryNotifications, armDelay, forgetArmedReminders, notifications } from '@/reminders';
+import { MemoryNotifications, armDelay, forgetArmedReminders, localDateTime, notifications } from '@/reminders';
 import { VaultRepository } from '@/data/repository';
 import { VaultRegistry } from '@/data/vaults';
 import { VaultDb } from '@/data/db';
@@ -369,6 +369,35 @@ describe('capturing and editing tasks', () => {
     memoryNotifications.tap('home', 'gone');
     await settle();
     expect(find('task-title').exists()).toBe(false);
+  });
+
+  it('keeps the next postponement of a postponed recurring task that is completed in bulk, and undo restores it', async () => {
+    const { app } = await start((f) => {
+      desktopVault(f);
+      f.put(
+        'Jotter/work/a.md',
+        `---\ntitle: Write report\nstatus: todo\nposition: 1000\npostponed_until: "${isoDay(2)}"\nrepeat:\n  every: 1\n  unit: week\n---\n`
+      );
+    });
+
+    const before = await app.moveManyToBucket(['a'], 'done');
+    await settle();
+    expect(file('a')).toContain('status: todo');
+    expect(file('a')).toContain(`postponed_until: ${isoDay(7)}`);
+
+    await app.restoreMany(before);
+    await settle();
+    expect(file('a')).toContain(`postponed_until: ${isoDay(2)}`);
+  });
+
+  it('does not arm a reminder of the current minute, which is already past', async () => {
+    memoryNotifications.state = 'granted';
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/a.md', `---\ntitle: Write report\nstatus: todo\nreminders: ["${localDateTime()}", "2999-01-01T09:00"]\n---\n`);
+    });
+
+    expect(memoryNotifications.armed.map((r) => r.at)).toEqual(['2999-01-01T09:00']);
   });
 
   it('keeps a planned date and a colour that another tool wrote outside the menus', async () => {

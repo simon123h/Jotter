@@ -86,7 +86,10 @@ export const useAppStore = defineStore('app', () => {
   let armTimer: ReturnType<typeof setTimeout> | undefined;
   function armRemindersSoon() {
     clearTimeout(armTimer);
-    armTimer = setTimeout(() => void armReminders(() => repository().upcomingReminders(localDateTime())), armDelay.ms);
+    armTimer = setTimeout(
+      () => void armReminders(() => repository().upcomingReminders(localDateTime(new Date(Date.now() + 60_000)))),
+      armDelay.ms
+    );
   }
 
   async function loadProject() {
@@ -366,14 +369,16 @@ export const useAppStore = defineStore('app', () => {
                 due_date: task.due_date,
                 planned_date: task.planned_date,
                 postponed_until: task.postponed_until,
-                reminders: task.reminders,
+                // A plain copy: the task is a reactive object, which IndexedDB cannot store
+                reminders: task.reminders ? [...task.reminders] : undefined,
                 body: task.body,
               },
             }
           : {}),
       });
-      await r.moveTask(project, task.id, bucket, next);
+      // Cleared first: completing a recurring task sets its next postponement, which must stay
       if (postponed) await r.updateTask(project, task.id, { postponed_until: undefined });
+      await r.moveTask(project, task.id, bucket, next);
       next += 1000;
     }
     await loadProject();
