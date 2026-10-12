@@ -122,6 +122,8 @@ const en = {
   'task.postponed': 'Postponed until',
   'task.repeat': 'Repeat',
   'task.reminders': 'Reminders',
+  'reminders.channel': 'Reminders',
+  'reminders.denied': 'Notifications are off for Jotter, so reminders will not show. Turn them on in the system settings.',
   'task.addReminder': 'Add a reminder',
   'task.removeReminder': 'Remove reminder',
   'repeat.never': 'Never',
@@ -349,6 +351,9 @@ const de: Record<MessageKey, string> = {
   'task.postponed': 'Zurückgestellt bis',
   'task.repeat': 'Wiederholen',
   'task.reminders': 'Erinnerungen',
+  'reminders.channel': 'Erinnerungen',
+  'reminders.denied':
+    'Benachrichtigungen sind für Jotter ausgeschaltet, Erinnerungen werden also nicht angezeigt. Schalte sie in den Systemeinstellungen ein.',
   'task.addReminder': 'Erinnerung hinzufügen',
   'task.removeReminder': 'Erinnerung entfernen',
   'repeat.never': 'Nie',

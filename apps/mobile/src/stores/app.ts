@@ -5,6 +5,7 @@ import { filterTasks, isEmptyFilter, parseQuery } from '@jotter/task-filter';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { isoDay, isPostponed } from '@/dates';
+import { armDelay, armReminders, localDateTime } from '@/reminders';
 import { useUiStore } from '@/stores/ui';
 import { columnsFor, type Hidden, type View } from '@/stores/columns';
 import {
@@ -81,8 +82,16 @@ export const useAppStore = defineStore('app', () => {
     return repo.value;
   }
 
+  /** Arms the reminders that are still to come, a moment after the vault was last read. */
+  let armTimer: ReturnType<typeof setTimeout> | undefined;
+  function armRemindersSoon() {
+    clearTimeout(armTimer);
+    armTimer = setTimeout(() => void armReminders(() => repository().upcomingReminders(localDateTime())), armDelay.ms);
+  }
+
   async function loadProject() {
     const r = repository();
+    armRemindersSoon();
     if (!projectId.value) {
       buckets.value = [];
       allTasks.value = [];

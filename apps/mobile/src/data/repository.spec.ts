@@ -205,6 +205,21 @@ describe('tasks', () => {
     expect((await repo.moveTask('work', 'a', 'done', 9000)).bucket).toBe('done');
   });
 
+  it('lists the reminders still to come in all projects, the nearest first, without done and archived tasks', async () => {
+    fs.put('Jotter/work/r1.md', '---\ntitle: Soon\nstatus: todo\nreminders: ["2030-05-01T09:00", "2020-01-01T09:00"]\n---\n');
+    fs.put('Jotter/work/r2.md', '---\ntitle: Finished\nstatus: done\nreminders: ["2030-05-01T08:00"]\n---\n');
+    fs.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+    fs.put('Jotter/home/r3.md', '---\ntitle: Later\nstatus: backlog\nreminders: ["2030-04-30T18:00"]\n---\n');
+    await repo.sync();
+
+    expect(await repo.upcomingReminders('2025-01-01T00:00')).toEqual([
+      { projectId: 'home', projectTitle: 'Home', taskId: 'r3', title: 'Later', at: '2030-04-30T18:00' },
+      { projectId: 'work', projectTitle: 'Work', taskId: 'r1', title: 'Soon', at: '2030-05-01T09:00' },
+    ]);
+    expect(await repo.upcomingReminders('2030-05-01T09:00', 1)).toHaveLength(1);
+    expect(await repo.upcomingReminders('2031-01-01T00:00')).toEqual([]);
+  });
+
   it('uses the default bucket and refuses empty titles and unknown projects', async () => {
     const task = await repo.createTask('work', { title: 'No bucket given' });
     expect(['todo', 'done']).toContain(task.bucket);

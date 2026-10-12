@@ -53,6 +53,16 @@ const isTaskFile = (entry: { name: string; type: string }) => {
   return entry.type === 'file' && lower.endsWith('.md') && !entry.name.startsWith('.') && lower !== 'index.md' && lower !== 'readme.md';
 };
 
+/** A reminder that has not come yet, with what a notification shows. */
+export interface UpcomingReminder {
+  projectId: string;
+  projectTitle: string;
+  taskId: string;
+  title: string;
+  /** Local date-time, `YYYY-MM-DDTHH:mm`. */
+  at: string;
+}
+
 function toTask(row: CachedTask): Task {
   const { file, size, mtime, ...task } = row;
   return task;
@@ -365,6 +375,29 @@ export class VaultRepository {
     return filterTasks(rows, filter)
       .sort((a, b) => a.position - b.position)
       .map(toTask);
+  }
+
+  /**
+   * The reminders of open tasks in all projects that are due at `from` (`YYYY-MM-DDTHH:mm`, local time) or later,
+   * the nearest first. Done and archived tasks do not remind.
+   */
+  async upcomingReminders(from: string, limit = 100): Promise<UpcomingReminder[]> {
+    const projects = new Map((await this.listProjects()).map((p) => [p.id, p.title]));
+    const found: UpcomingReminder[] = [];
+    for (const task of await this.listTasks(null)) {
+      if (task.bucket === 'done' || task.bucket === 'archive') continue;
+      for (const at of task.reminders ?? []) {
+        if (at >= from)
+          found.push({
+            projectId: task.project_id,
+            projectTitle: projects.get(task.project_id) ?? task.project_id,
+            taskId: task.id,
+            title: task.title,
+            at,
+          });
+      }
+    }
+    return found.sort((a, b) => a.at.localeCompare(b.at) || a.taskId.localeCompare(b.taskId)).slice(0, limit);
   }
 
   async getTask(projectId: string, id: string): Promise<Task> {

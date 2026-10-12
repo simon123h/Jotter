@@ -10,6 +10,7 @@ import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS, colorHex } from '@/taskColors';
 import { PLANNED_CHOICES, plannedLabel } from '@/planned';
 import { REPEAT_UNITS } from '@/repeat';
+import { ensureReminderPermission } from '@/reminders';
 import { isoDay } from '@/dates';
 import type { RepeatRule } from '@jotter/vault-format';
 import TitleHints from './TitleHints.vue';
@@ -100,7 +101,9 @@ function pickRepeat() {
   saveSoon();
 }
 
-function addReminder() {
+async function addReminder() {
+  // Asked when the first reminder is added, not when the app starts
+  if (!(await ensureReminderPermission())) ui.showToast(t('reminders.denied'));
   // The day it is due, or tomorrow, at nine
   draft.value.reminders.push(`${draft.value.due || isoDay(1)}T09:00`);
   saveSoon();

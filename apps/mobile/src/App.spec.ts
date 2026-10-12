@@ -11,6 +11,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { locale } from '@/i18n';
 import { autoRefresh } from '@/composables/useAutoRefresh';
 import { holdConfig } from '@/composables/useCardDrag';
+import { MemoryNotifications, armDelay, forgetArmedReminders, notifications } from '@/reminders';
 import { VaultRepository } from '@/data/repository';
 import { VaultRegistry } from '@/data/vaults';
 import { VaultDb } from '@/data/db';
@@ -20,6 +21,8 @@ import { MemoryKeyValue } from '@/data/keyValue';
 let counter = 0;
 let fs: MemoryFs;
 let wrapper: VueWrapper;
+let memoryNotifications: MemoryNotifications;
+const realNotifications = notifications.port;
 
 /** `seed` fills the storage as another app would; with it the vault in `Jotter` is already registered. */
 async function start(seed?: (fs: MemoryFs) => void) {
@@ -86,12 +89,18 @@ const desktopVault = (f: MemoryFs) => {
 };
 
 afterEach(() => {
+  notifications.port = realNotifications;
+  armDelay.ms = 800;
   autoRefresh.intervalMs = 60_000;
   holdConfig.ms = 350;
   Object.defineProperty(document, 'hidden', { value: false, configurable: true });
 });
 
 beforeEach(() => {
+  memoryNotifications = new MemoryNotifications();
+  notifications.port = memoryNotifications;
+  armDelay.ms = 0;
+  forgetArmedReminders();
   holdConfig.ms = 30; // a hold is a few milliseconds in tests
   vi.spyOn(window, 'confirm').mockReturnValue(true);
   localStorage.clear();
@@ -281,6 +290,7 @@ describe('capturing and editing tasks', () => {
     expect(file()).toMatch(/every: 3\n\s+unit: month\n\s+from: due/);
 
     await find('reminder-add').trigger('click');
+    await settle();
     await type('reminder-input', '2030-05-01T08:30', 'change');
     await settle();
     expect(file()).toContain('2030-05-01T08:30');
@@ -297,6 +307,68 @@ describe('capturing and editing tasks', () => {
     await settle();
     expect(file()).not.toContain('repeat');
     expect(file()).not.toContain('reminders');
+  });
+
+  it('asks to notify when the first reminder is added, and arms the reminders of the vault', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    expect(memoryNotifications.asked).toBe(0);
+
+    await find('reminder-add').trigger('click');
+    await settle();
+    expect(memoryNotifications.asked).toBe(1);
+    expect(memoryNotifications.armed).toMatchObject([{ taskId: 'a', at: `${isoDay(1)}T09:00` }]); // tomorrow at nine
+
+    await type('reminder-input', '2030-05-01T08:30', 'change');
+    await settle();
+    expect(memoryNotifications.armed).toMatchObject([
+      { projectId: 'work', taskId: 'a', title: 'Write report', projectTitle: 'Work', at: '2030-05-01T08:30' },
+    ]);
+
+    // Asked once, not for every reminder
+    await find('reminder-add').trigger('click');
+    await settle();
+    expect(memoryNotifications.asked).toBe(1);
+
+    // Done tasks do not remind
+    await find('task-menu').trigger('click');
+    await find('task-done').trigger('click');
+    await settle();
+    expect(memoryNotifications.armed).toEqual([]);
+  });
+
+  it('says so when notifications are off, and keeps the reminder', async () => {
+    memoryNotifications.answer = 'denied';
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+
+    await find('reminder-add').trigger('click');
+    await settle();
+
+    expect(find('toast').text()).toContain('Notifications are off');
+    expect(find('reminder-input').exists()).toBe(true);
+    expect(memoryNotifications.armed).toEqual([]);
+  });
+
+  it('opens the task of a reminder when its notification is tapped, also in another project', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+      f.put('Jotter/home/z.md', '---\ntitle: Pay rent\nstatus: todo\nreminders: ["2030-05-01T09:00"]\n---\n');
+    });
+    expect(find('task-title').exists()).toBe(false);
+
+    memoryNotifications.tap('home', 'z');
+    await settle();
+
+    expect(useAppStore().projectId).toBe('home');
+    expect((find('task-title').element as HTMLTextAreaElement).value).toBe('Pay rent');
+
+    // A task that is gone opens nothing
+    useUiStore().close();
+    memoryNotifications.tap('home', 'gone');
+    await settle();
+    expect(find('task-title').exists()).toBe(false);
   });
 
   it('keeps a planned date and a colour that another tool wrote outside the menus', async () => {
