@@ -4,6 +4,7 @@ import { Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
 import BottomNav from '@/components/BottomNav.vue';
 import BulkToolbar from '@/components/BulkToolbar.vue';
+import { shownBucket } from '@/stores/columns';
 import ColumnTabs from '@/components/ColumnTabs.vue';
 import TaskRow from '@/components/TaskRow.vue';
 import { useCardDrag } from '@/composables/useCardDrag';
@@ -30,8 +31,9 @@ const drag = useCardDrag({
   move: async (id, bucket, position) => {
     const before = app.taskById(id);
     await app.moveTask(id, bucket, position);
-    // The postponed date goes along, so that an undo can put it back
-    if (before)
+    // Only a change of column is announced, not a new place within the same one. The postponed date goes along,
+    // so that an undo can put it back
+    if (before && shownBucket(before) !== bucket)
       actions.announceMove(id, { bucket: before.bucket, position: before.position, postponed: before.postponed_until ?? '' }, bucket);
   },
   onHoldRelease: (task) => app.toggleSelected(task.id),
