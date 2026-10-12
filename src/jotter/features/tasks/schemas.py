@@ -1,9 +1,27 @@
 """Pydantic schemas and DTOs for Tasks."""
 
 from dataclasses import dataclass
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from jotter.features.tasks.domain import RepeatRule
+
+
+class RepeatRuleSchema(BaseModel):
+    """How a task comes back after it is completed (spec/FORMAT.md, "Recurring tasks")."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    every: int = Field(ge=1)
+    unit: Literal["day", "week", "month", "year"]
+    from_: Literal["completion", "due"] = Field(default="completion", alias="from")
+
+
+def to_repeat_schema(rule: RepeatRule | None) -> RepeatRuleSchema | None:
+    return (
+        RepeatRuleSchema.model_validate({"every": rule.every, "unit": rule.unit, "from": rule.from_}) if rule else None
+    )
 
 
 class TaskCreate(BaseModel):
@@ -18,6 +36,8 @@ class TaskCreate(BaseModel):
     priority: str | None = None
     color: str | None = None
     postponed_until: str | None = None
+    repeat: RepeatRuleSchema | None = None
+    reminders: list[str] = []
     position: float | None = None
 
     @field_validator("tags", mode="before")
@@ -43,6 +63,8 @@ class TaskUpdate(BaseModel):
     priority: str | None = None
     color: str | None = None
     postponed_until: str | None = None
+    repeat: RepeatRuleSchema | None = None
+    reminders: list[str] | None = None
 
 
 class TaskMove(BaseModel):
@@ -68,6 +90,8 @@ class TaskResponse(BaseModel):
     priority: str | None = None
     color: str | None = None
     postponed_until: str | None = None
+    repeat: RepeatRuleSchema | None = None
+    reminders: list[str] = []
     created_at: str
     updated_at: str
 

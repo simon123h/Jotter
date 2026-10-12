@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Self
 
 from jotter.features.tasks.domain import Priority, Task
-from jotter.features.tasks.schemas import TaskResponse
+from jotter.features.tasks.schemas import TaskResponse, to_repeat_schema
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 
 
@@ -88,6 +88,8 @@ class TaskQueryService:
             priority=task.priority.value if task.priority != Priority.NONE else None,
             color=task.color,
             postponed_until=task.postponed_until.value,
+            repeat=to_repeat_schema(task.repeat),
+            reminders=list(task.reminders),
             created_at=task.created_at,
             updated_at=task.updated_at,
         )

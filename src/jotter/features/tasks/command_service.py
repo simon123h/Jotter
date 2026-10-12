@@ -10,17 +10,23 @@ from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository
 from jotter.features.projects.repo import ProjectRepository
 from jotter.features.tasks.disk_repo import DiskTaskRepository
-from jotter.features.tasks.domain import Priority, Task
+from jotter.features.tasks.domain import Priority, RepeatRule, Task, clean_reminders
 from jotter.features.tasks.projector import TaskProjector
 from jotter.features.tasks.recurrence import roll_over
 from jotter.features.tasks.schemas import (
+    RepeatRuleSchema,
     TaskCreate,
     TaskMove,
     TaskResponse,
     TaskUpdate,
+    to_repeat_schema,
 )
 from jotter.shared.exceptions import EntityNotFoundError
 from jotter.shared.unset import UNSET
+
+
+def _rule_of(rule: RepeatRuleSchema | None) -> RepeatRule | None:
+    return RepeatRule(every=rule.every, unit=rule.unit, from_=rule.from_) if rule else None
 
 
 class TaskCommandService:
@@ -91,6 +97,8 @@ class TaskCommandService:
             priority=req.priority,
             color=req.color,
             postponed_until=req.postponed_until,
+            repeat=_rule_of(req.repeat),
+            reminders=clean_reminders(req.reminders),
         )
 
         # 1. Authoritative write to Markdown file on disk (SSoT)
@@ -123,6 +131,8 @@ class TaskCommandService:
             planned_date=req.planned_date if "planned_date" in fields_set else UNSET,
             color=req.color if "color" in fields_set else UNSET,
             postponed_until=req.postponed_until if "postponed_until" in fields_set else UNSET,
+            repeat=_rule_of(req.repeat) if "repeat" in fields_set else UNSET,
+            reminders=req.reminders if "reminders" in fields_set else None,
             tags=req.tags if "tags" in fields_set else None,
         )
         if "attachments" in fields_set and req.attachments is not None:
@@ -244,6 +254,8 @@ class TaskCommandService:
             priority=task.priority.value if task.priority != Priority.NONE else None,
             color=task.color,
             postponed_until=task.postponed_until.value,
+            repeat=to_repeat_schema(task.repeat),
+            reminders=list(task.reminders),
             created_at=task.created_at,
             updated_at=task.updated_at,
         )

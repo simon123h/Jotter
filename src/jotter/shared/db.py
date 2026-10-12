@@ -84,6 +84,8 @@ _SCHEMA = """
         priority TEXT DEFAULT NULL,
         color TEXT DEFAULT NULL,
         postponed_until TEXT DEFAULT NULL,
+        repeat TEXT DEFAULT NULL,
+        reminders TEXT NOT NULL DEFAULT '[]',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         file_mtime_ns INTEGER DEFAULT NULL,

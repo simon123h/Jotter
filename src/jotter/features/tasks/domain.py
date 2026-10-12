@@ -299,6 +299,8 @@ class Task:
         planned_date: str | Unset | None = UNSET,
         color: str | Unset | None = UNSET,
         postponed_until: str | Unset | None = UNSET,
+        repeat: RepeatRule | Unset | None = UNSET,
+        reminders: list[str] | None = None,
         tags: list[str] | None = None,
     ) -> None:
         if title is not None:
@@ -324,6 +326,12 @@ class Task:
 
         if postponed_until is not UNSET:
             self.postponed_until = DueDate.from_str(postponed_until)
+
+        if repeat is not UNSET:
+            self.repeat = repeat
+
+        if reminders is not None:
+            self.reminders = clean_reminders(reminders)
 
         if tags is not None:
             self.tags = [Tag(t) for t in tags]
