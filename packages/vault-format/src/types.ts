@@ -1,5 +1,12 @@
 /** The entities of a vault, as read from and written to its markdown files (spec/FORMAT.md). */
 
+/** How a task comes back after it is completed (spec/FORMAT.md, "Recurring tasks"). */
+export interface RepeatRule {
+  every: number;
+  unit: 'day' | 'week' | 'month' | 'year';
+  from: 'completion' | 'due';
+}
+
 export interface Task {
   id: string;
   project_id: string;
@@ -14,6 +21,9 @@ export interface Task {
   priority?: string;
   color?: string | null;
   postponed_until?: string;
+  repeat?: RepeatRule;
+  /** Local date-times `YYYY-MM-DDTHH:mm`, sorted, without duplicates. */
+  reminders?: string[];
   created_at: string;
   updated_at: string;
   /** Frontmatter keys this app does not know. Kept so that saving a task does not delete them. */

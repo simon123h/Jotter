@@ -172,6 +172,26 @@ describe('tasks', () => {
     expect((await repo.getTask('work', first.id)).tags).toEqual(['t']);
   });
 
+  it('keeps the repeat rule and the reminders of a task when it is edited and moved', async () => {
+    fs.put(
+      'Jotter/work/r.md',
+      '---\ntitle: Water\nstatus: todo\nrepeat:\n  every: 2\n  unit: week\nreminders:\n  - "2026-10-14T09:00"\n---\n'
+    );
+    await repo.sync();
+
+    await repo.updateTask('work', 'r', { title: 'Water the plants' });
+    await repo.moveTask('work', 'r', 'done', 500);
+
+    const written = fs.files.get('Jotter/work/r.md')?.data;
+    expect(written).toContain('title: Water the plants');
+    expect(written).toMatch(/repeat:\n\s+every: 2\n\s+unit: week\n\s+from: completion/);
+    expect(written).toContain('2026-10-14T09:00');
+    expect(await repo.getTask('work', 'r')).toMatchObject({
+      repeat: { every: 2, unit: 'week', from: 'completion' },
+      reminders: ['2026-10-14T09:00'],
+    });
+  });
+
   it('uses the default bucket and refuses empty titles and unknown projects', async () => {
     const task = await repo.createTask('work', { title: 'No bucket given' });
     expect(['todo', 'done']).toContain(task.bucket);
