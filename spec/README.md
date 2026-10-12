@@ -55,5 +55,9 @@ Python backend answers the same filters from SQLite.
 
 `fixtures/repeat/roll.json` holds the worked cases of rolling a recurring task over when it is completed
 (`FORMAT.md`, *Recurring tasks*): for each case the `today` of the completion, the fields of the task that the
-roll reads, and the fields it must end up with. No implementation has a runner for it yet; the first one to
-implement the roll adds it here.
+roll reads, and the fields it must end up with.
+
+| Implementation | Runner |
+| :-- | :-- |
+| Python backend | `tests/test_recurrence.py` |
+| TypeScript parser (mobile) | `packages/vault-format/src/recurrence.spec.ts` |
