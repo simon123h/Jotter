@@ -1,5 +1,4 @@
 import type {
-  UpcomingReminder,
   Task,
   Bucket,
   Project,
@@ -61,10 +60,6 @@ export async function getAllTasks(filters?: TaskFilterParams): Promise<Task[]> {
 export async function getTasks(projectId: string, filters?: TaskFilterParams): Promise<Task[]> {
   if (isBlankId(projectId)) return [];
   return storage().getTasks(projectId, filters);
-}
-
-export async function getUpcomingReminders(after: string): Promise<UpcomingReminder[]> {
-  return storage().getUpcomingReminders(after);
 }
 
 export async function getTask(projectId: string, id: string): Promise<Task> {

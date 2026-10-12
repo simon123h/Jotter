@@ -14,16 +14,6 @@ export interface Project {
   done_clean_period?: number | null;
 }
 
-/** A reminder that has not come yet, with what a notification shows. */
-export interface UpcomingReminder {
-  project_id: string;
-  project_title: string;
-  task_id: string;
-  title: string;
-  /** Local date-time, `YYYY-MM-DDTHH:mm`. */
-  at: string;
-}
-
 /** How a task comes back after it is completed (spec/FORMAT.md, "Recurring tasks"). */
 export interface RepeatRule {
   every: number;

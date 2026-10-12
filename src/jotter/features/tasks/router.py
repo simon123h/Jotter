@@ -3,13 +3,12 @@
 import sqlite3
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from jotter.features.tasks.command_service import TaskCommandService
 from jotter.features.tasks.query_service import TaskQueryService
 from jotter.features.tasks.schemas import (
-    ReminderResponse,
     TaskCreate,
     TaskFilterParams,
     TaskMove,
@@ -87,16 +86,6 @@ def extract_task_filter_params(request: Request) -> TaskFilterParams:
         updated_before=_extract_query_param(request, "updatedBefore", "updated_before"),
         updated_after=_extract_query_param(request, "updatedAfter", "updated_after"),
     )
-
-
-# Reminders still to come in all projects, for the notifications of the desktop app
-@router.get("/api/reminders", response_model=list[ReminderResponse])
-def list_upcoming_reminders(
-    after: str = Query(pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$"),
-    limit: int = Query(default=100, ge=1, le=1000),
-    query_svc: TaskQueryService = Depends(get_task_query_service),
-) -> list[ReminderResponse]:
-    return query_svc.upcoming_reminders(after, limit)
 
 
 # Global tasks endpoint - full filtering support

@@ -1,6 +1,6 @@
 # Recurring Tasks and Reminders
 
-A task can **come back** after you complete it, and it can **remind you** at a time you choose. Both work in the desktop app and in the Android app, and both are stored in the task's Markdown file, so a vault synced between devices carries them along.
+A task can **come back** after you complete it, and it can **remind you** at a time you choose. Recurring tasks work in the desktop app and in the Android app, reminders are delivered by the Android app, and both are stored in the task's Markdown file, so a vault synced between devices carries them along.
 
 ## Recurring tasks
 
@@ -30,7 +30,7 @@ Under **Reminders** in the task, add one or more date and time entries. A remind
 
 **On the phone**, reminders are Android notifications that the system shows at their time, also while Jotter is closed. The first time you add a reminder, Jotter asks for permission to show notifications. Jotter arms the reminders after it has read the vault, so a reminder you add on the desktop is armed on the phone the next time the app opens and has synced. Reminders only fire for the vault that is open: switching to another vault replaces the armed reminders with that vault's. Tapping a notification opens the task. If Android restricts exact alarms for the app, a reminder can come a few minutes late.
 
-**On the desktop**, reminders are browser notifications, shown **while Jotter is open** (a browser cannot wake a closed page). The browser asks for permission with the first reminder you add. A reminder that came up to 15 minutes before you opened Jotter is still shown.
+**On the desktop**, you can set and edit reminders, and they show on the cards, but the desktop app does **not** show notifications: set them there, and the phone reminds you.
 
 Reminders of tasks in **Done** or **Archive** are not shown. A reminder does not repeat by itself: for one that comes back, make the task recurring and give it a reminder. The reminder then moves along with each roll-over.
 

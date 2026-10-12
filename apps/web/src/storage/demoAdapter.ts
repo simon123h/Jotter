@@ -1,6 +1,5 @@
 import { filterTasks } from '@jotter/task-filter';
 import type {
-  UpcomingReminder,
   Task,
   Bucket,
   Project,
@@ -642,19 +641,6 @@ export class DemoStorageAdapter implements StorageAdapter {
     const projects = await getProjects();
     const lists = await Promise.all(projects.map((p) => getTasks(p.id, filters)));
     return lists.flat();
-  }
-  async getUpcomingReminders(after: string): Promise<UpcomingReminder[]> {
-    const projects = await getProjects();
-    const found: UpcomingReminder[] = [];
-    for (const project of projects) {
-      for (const task of await getTasks(project.id)) {
-        if (task.bucket === 'done' || task.bucket === 'archive') continue;
-        for (const at of task.reminders ?? []) {
-          if (at >= after) found.push({ project_id: project.id, project_title: project.title, task_id: task.id, title: task.title, at });
-        }
-      }
-    }
-    return found.sort((a, b) => a.at.localeCompare(b.at));
   }
   getTasks = getTasks;
   getTask = getTask;

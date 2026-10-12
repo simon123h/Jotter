@@ -140,8 +140,8 @@ A task has five fields about time. Each answers a different question, and none s
 - Whether a reminder has already fired is **not** part of the vault. It is device state: two devices must not
   conflict over it, and a reminder that was moved or edited counts as new.
 - A reminder does not repeat. A reminder that comes back is a recurring task with a reminder (below).
-- Delivering reminders is up to the app (a local notification on a phone, a notification while the desktop
-  app is running). A vault without a running app does not fire anything.
+- Delivering reminders is up to the app (a local notification on a phone, for example). A vault without an
+  app that delivers them does not fire anything.
 
 ### Recurring tasks
 

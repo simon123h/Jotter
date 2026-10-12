@@ -1,6 +1,6 @@
 # Wiederkehrende Aufgaben und Erinnerungen
 
-Eine Aufgabe kann nach dem Erledigen **wiederkommen**, und sie kann dich zu einer gewählten Zeit **erinnern**. Beides funktioniert in der Desktop-App und in der Android-App und steht in der Markdown-Datei der Aufgabe, sodass ein zwischen Geräten synchronisierter Vault es mitnimmt.
+Eine Aufgabe kann nach dem Erledigen **wiederkommen**, und sie kann dich zu einer gewählten Zeit **erinnern**. Wiederkehrende Aufgaben funktionieren in der Desktop-App und in der Android-App, Erinnerungen liefert die Android-App; beides steht in der Markdown-Datei der Aufgabe, sodass ein zwischen Geräten synchronisierter Vault es mitnimmt.
 
 ## Wiederkehrende Aufgaben
 
@@ -30,7 +30,7 @@ Füge unter **Erinnerungen** in der Aufgabe einen oder mehrere Einträge mit Dat
 
 **Auf dem Handy** sind Erinnerungen Android-Benachrichtigungen, die das System zur gewählten Zeit anzeigt, auch wenn Jotter geschlossen ist. Beim ersten Hinzufügen einer Erinnerung fragt Jotter nach der Erlaubnis für Benachrichtigungen. Jotter richtet die Erinnerungen ein, nachdem es den Vault gelesen hat. Eine am Desktop hinzugefügte Erinnerung ist auf dem Handy also eingerichtet, sobald die App das nächste Mal geöffnet wurde und synchronisiert ist. Erinnerungen werden nur für den geöffneten Vault ausgelöst: Wechselst du den Vault, ersetzen seine Erinnerungen die bisher eingerichteten. Ein Tipp auf die Benachrichtigung öffnet die Aufgabe. Schränkt Android genaue Alarme für die App ein, kann eine Erinnerung einige Minuten zu spät kommen.
 
-**Am Desktop** sind Erinnerungen Browser-Benachrichtigungen, die **angezeigt werden, solange Jotter geöffnet ist** (ein Browser kann eine geschlossene Seite nicht wecken). Der Browser fragt mit der ersten Erinnerung nach der Erlaubnis. Eine Erinnerung, die bis zu 15 Minuten vor dem Öffnen von Jotter fällig war, wird trotzdem angezeigt.
+**Am Desktop** kannst du Erinnerungen setzen und bearbeiten, und sie erscheinen auf den Karten, aber die Desktop-App zeigt **keine** Benachrichtigungen: Setze sie dort, und das Handy erinnert dich.
 
 Erinnerungen von Aufgaben in **Erledigt** oder **Archiv** werden nicht angezeigt. Eine Erinnerung wiederholt sich nicht von selbst: Für eine, die wiederkommt, mach die Aufgabe wiederkehrend und gib ihr eine Erinnerung. Sie wandert dann bei jeder Wiederkehr mit.
 

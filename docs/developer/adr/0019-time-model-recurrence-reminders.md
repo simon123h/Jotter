@@ -48,7 +48,7 @@ Not part of the design:
 
 - The spec and the fixtures come first, then the Python backend, then `packages/vault-format`, then the UIs. Until a reader implements the two keys, its conformance runner lists the new task fixtures as known divergences.
 - Rolling over is a pure function (file and today in, fields out), shared in spirit by both implementations and checked by `spec/fixtures/repeat/roll.json`.
-- Reminders only fire while an app can run: mobile schedules Android alarms from the vault whenever it opens or syncs, the desktop only notifies while it is running. Moving or editing a reminder re-arms it.
+- Reminders only fire while an app can run: mobile schedules Android alarms from the vault whenever it opens or syncs. The desktop app only sets and shows reminders: a browser cannot wake a closed page, so notifications there would only work while Jotter is open, and were left out (they are kept on the branch `feat/desktop-reminder-notifications`). Moving or editing a reminder re-arms it.
 - A month or year step clamps to the end of a shorter month, and the clamp sticks (31 January, 28 February, 28 March).
 - Completing a recurring task is not completing it: the Done column never shows it. The history is in Git. If a visible log becomes necessary, a `completed` note in the body is the place for it, not a new key.
 
