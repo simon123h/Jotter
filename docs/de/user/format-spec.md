@@ -68,6 +68,8 @@ Der YAML-Frontmatter-Block unterstützt die folgenden Schlüssel-Wert-Paare. All
 | `priority` | String | Nein | Die Priorität der Aufgabe. Unterstützte Werte: `low`, `medium`, `high`, `urgent` oder `null`. |
 | `color` | String | Nein | Der Name einer Palettenfarbe (`red`, `orange`, `yellow`, `green`, `blue`, `purple` oder `pink`), die die Aufgabenkarte einfärbt. Andere Werte, etwa ein Hex-Code aus einem anderen Werkzeug, bleiben unverändert erhalten. |
 | `postponed_until` | String | Nein | Das Datum, bis zu dem die Aufgabe aufgeschoben ist, im ISO-Format `YYYY-MM-DD` (oder `null`, wenn keines vorhanden ist). |
+| `repeat` | Mapping | Nein | Wie die Aufgabe beim Erledigen wiederkommt: `every` (eine ganze Zahl, mindestens 1), `unit` (`day`, `week`, `month` oder `year`) und `from` (`completion`, Standard, oder `due`). Siehe [Wiederkehrende Aufgaben und Erinnerungen](./recurring-and-reminders). |
+| `reminders` | Liste von Strings | Nein | Lokale Datum-Uhrzeit-Angaben `YYYY-MM-DDTHH:mm` (ohne Zeitzone), zu denen die App erinnert. |
 | `created_at` | String | Nein | ISO 8601 UTC-Zeitstempel der Erstellung (z. B. `2026-06-07T12:00:00Z`). |
 | `updated_at` | String | Nein | ISO 8601 UTC-Zeitstempel der letzten Änderung. |
 
