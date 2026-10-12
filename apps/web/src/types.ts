@@ -14,6 +14,13 @@ export interface Project {
   done_clean_period?: number | null;
 }
 
+/** How a task comes back after it is completed (spec/FORMAT.md, "Recurring tasks"). */
+export interface RepeatRule {
+  every: number;
+  unit: 'day' | 'week' | 'month' | 'year';
+  from: 'completion' | 'due';
+}
+
 export interface Task {
   id: string;
   project_id: string;
@@ -28,6 +35,9 @@ export interface Task {
   priority?: string;
   color?: string | null;
   postponed_until?: string;
+  repeat?: RepeatRule | null;
+  /** Local date-times `YYYY-MM-DDTHH:mm`, sorted. */
+  reminders?: string[];
   created_at: string;
   updated_at: string;
 }

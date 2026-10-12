@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Calendar, Clock, Paperclip, Hourglass, Box } from '@lucide/vue';
+import { Calendar, Clock, Paperclip, Hourglass, Box, Repeat, Bell } from '@lucide/vue';
+import { repeatLabel } from '@/utils/repeat';
 import type { Task, Timeblock } from '@/types';
 import type { ChecklistStats } from '@/utils/checklist';
 import { useI18n } from '@/composables/useI18n';
@@ -32,6 +33,8 @@ const hasContent = computed(
       props.task.planned_date ||
       props.task.priority ||
       props.task.postponed_until ||
+      props.task.repeat ||
+      (props.task.reminders && props.task.reminders.length) ||
       (props.task.attachments && props.task.attachments.length) ||
       (props.showTags && props.task.tags && props.task.tags.length) ||
       (props.checklistStats && props.showChecklistStats)
@@ -104,6 +107,21 @@ const getPriorityClasses = (prio: string) => {
     >
       <Hourglass :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
       <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.postponed_until) }}</span>
+    </div>
+
+    <!-- Repeat rule and reminders -->
+    <div
+      v-if="task.repeat"
+      class="flex items-center gap-1 text-theme-text-muted"
+      :title="repeatLabel(task.repeat, t)"
+      data-testid="card-repeat"
+    >
+      <Repeat :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
+      <span :class="{ 'text-[10px]': compact }">{{ repeatLabel(task.repeat, t) }}</span>
+    </div>
+    <div v-if="task.reminders && task.reminders.length" class="flex items-center gap-1 text-theme-text-muted" data-testid="card-reminders">
+      <Bell :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
+      <span v-if="task.reminders.length > 1" :class="{ 'text-[10px]': compact }">{{ task.reminders.length }}</span>
     </div>
 
     <!-- Attachments -->
