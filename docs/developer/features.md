@@ -29,6 +29,8 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Themes and languages (English, German) | yes | yes | ~1.7k | Core | `packages/themes` (shared), `locales` |
 | Indexing and periodic scan | yes | own | ~1.8k | Core | `features/sync` (SQLite index, ADR 0014/0015); mobile scans through its repository |
 | Postponing tasks | yes | yes | ~0.3k | Core | virtual Postponed column |
+| Recurring tasks: `repeat` rule, rolled over in place on completion (not built yet) | yes | yes | ~0.8k | Core | `spec/FORMAT.md` (*Recurring tasks*), ADR 0019; reuses `postponed_until` |
+| Reminders: local notifications at a floating local time (not built yet) | yes | yes | ~1k | Optional | `spec/FORMAT.md` (*Reminders*), ADR 0019; mobile schedules Android alarms, desktop only while it runs |
 | Tag view and planning view | yes | yes | ~0.5k | Optional | `TagView`, `TimeView`; mobile has them as tabbed views |
 | Spreadsheet import and export | yes | no | ~1.6k | Optional | `features/task-import`, `useTaskExport`; isolated |
 | Git versioning and Time Machine | yes | no | ~1.3k | Optional | git part of `features/sync`, `TimeMachineModal`; ADR 0012 |

@@ -78,6 +78,8 @@ Body text
 | `priority` | `low` `medium` `high` `urgent` | `none`. Case-insensitive. | when not `none` |
 | `color` | string: a palette name | none | when set |
 | `postponed_until` | `YYYY-MM-DD` | none | when set |
+| `repeat` | mapping: `every`, `unit`, `from` (see *Recurring tasks*) | none | when set |
+| `reminders` | list of `YYYY-MM-DDTHH:mm` (see *Reminders*) | `[]`. A single string is accepted. | when not empty |
 | `created_at` | ISO 8601 timestamp | the time the file was read | always |
 | `updated_at` | ISO 8601 timestamp | the time the file was read | always |
 
@@ -93,8 +95,9 @@ Further rules:
 - **Keyword in `due_date`.** Any planning keyword found in `due_date` is read as `planned_date`.
 - **Values a reader cannot use are dropped, the task is still read.** This covers an unknown `priority`, a tag
   with a space, a `planned_date`, `due_date` or `postponed_until` that is neither a keyword (planned only) nor a
-  date, and a `position` that is not a number. See the `invalid-values-dropped` fixture. (A writer that finds
-  such a value in a file it rewrites drops it as well, which is why the first four of these are not preserved.)
+  date, a `position` that is not a number, a `repeat` that does not follow the rules below and a reminder that
+  is not a local date-time. See the `invalid-values-dropped` and `repeat-invalid` fixtures. (A writer that finds
+  such a value in a file it rewrites drops it as well, which is why these are not preserved.)
 - **Colour.** The apps write the name of a palette colour: `red`, `orange`, `yellow`, `green`, `blue`, `purple`
   or `pink`. Readers MUST keep any other value as it is (for example `#rrggbb` written by another tool) and
   SHOULD draw it when they can. See the `color-name` and `color-hex` fixtures.
@@ -102,6 +105,92 @@ Further rules:
   contain a path separator.
 - **Body.** Markdown, preserved exactly (apart from the leading blank lines above). Checklists
   (`- [ ]`, `- [x]`) are plain markdown and are edited in place.
+
+### Dates and times
+
+A task has five fields about time. Each answers a different question, and none stands in for another:
+
+| Field | Question | Value |
+| :-- | :-- | :-- |
+| `due_date` | When must it be done? | a day |
+| `planned_date` | When do I intend to do it? | a keyword or a day |
+| `postponed_until` | Until when should it stay out of my way? | a day |
+| `reminders` | When should something nudge me? | local date-times |
+| `repeat` | How does it come back? | a rule |
+
+- **Days** (`YYYY-MM-DD`) are local calendar days with no time zone. "Today" is the day on the reader's clock.
+- **Planning keywords** are relative to today. A writer MUST NOT turn a keyword into a date, and recurrence
+  leaves keywords as they are.
+- **A task is postponed** while `postponed_until` is after today. Readers show it out of the way (the apps use
+  a Postponed column) and show it normally again from that day on.
+- **Only reminders have a time of day**, and it is *floating*: `09:00` means 09:00 on the wall clock wherever
+  the reader is, with no time zone and no UTC. `created_at` and `updated_at` are the only instants.
+- `due_date` is date-only on purpose. A time of day belongs in a reminder (or a time block).
+- `timeblocks.json` has its own `recurrence`. It is unrelated to `repeat`.
+
+### Reminders
+
+`reminders` is a list of local date-times, written `YYYY-MM-DDTHH:mm` and quoted.
+
+- Readers also accept a space instead of `T`, seconds (dropped), a single string instead of a list, and an
+  unquoted YAML timestamp.
+- A value with a time zone designator (`Z`, `+02:00`) or without a time is not a local date-time, so it is
+  dropped. Guessing a zone would move the reminder.
+- The list is read sorted ascending, without duplicates. Writers write it that way.
+- Whether a reminder has already fired is **not** part of the vault. It is device state: two devices must not
+  conflict over it, and a reminder that was moved or edited counts as new.
+- A reminder does not repeat. A reminder that comes back is a recurring task with a reminder (below).
+- Delivering reminders is up to the app (a local notification on a phone, a notification while the desktop
+  app is running). A vault without a running app does not fire anything.
+
+### Recurring tasks
+
+```
+repeat:
+  every: 2
+  unit: week
+  from: completion
+```
+
+| Key | Value | Read rule |
+| :-- | :-- | :-- |
+| `every` | integer, at least 1 | required; a numeric string is accepted |
+| `unit` | `day`, `week`, `month` or `year` | required; compared ignoring case, a plural (`weeks`) is accepted |
+| `from` | `completion` or `due` | `completion` when missing |
+
+A `repeat` without a usable `every` or `unit`, or that is not a mapping, is dropped. A recurring task is one
+file: there is never a second copy of it for a later occurrence, and a missed occurrence does not create a
+pile of tasks.
+
+**Completing a recurring task rolls it over instead of finishing it.** What counts as completing is up to the
+app (moving the task to `done`, ticking it on a card, a bulk action). Given `today` and the task:
+
+1. **The next day**, `next`:
+   - `from: completion`: `today` plus `every` units.
+   - `from: due`: `due_date` plus *k* times `every` units, for the smallest *k* of at least 1 that gives a day
+     on or after `today`. So completing early moves one step ahead, and completing late catches up to the
+     next day on the rhythm.
+   - `from: due` on a task without `due_date` behaves like `from: completion`.
+   - Adding months or years is calculated from the starting day and clamped to the end of a shorter month
+     (31 January plus one month is 28 February). The result is what is stored, so the clamp sticks.
+2. **The shift**: the anchor is `due_date`, else the day of the earliest reminder, else `today`. The shift is
+   `next` minus the anchor, in days.
+3. **The task** is rewritten:
+   - `due_date`, when set, becomes `next`.
+   - `planned_date`, when it is a day, and `reminders` (the time of day is kept) move by the shift. A planning
+     keyword stays. An empty field stays empty.
+   - `postponed_until` becomes `next`, so the task stays out of the way until its next occurrence. That is how
+     a recurring task "reappears". (When `next` is today, the task is not postponed at all.)
+   - `status` goes back to the bucket the task was in before it was completed. An app that does not know it
+     uses the default bucket of the project.
+   - Checklist items in the body are unticked (`- [x]` becomes `- [ ]`). The rest of the body is kept.
+   - `updated_at` is set. `repeat` itself stays.
+
+The rule is a pure function of the file and `today`, so two devices that complete the same task on the same
+day write the same dates. See `fixtures/repeat/roll.json` for worked cases.
+
+The task is only rolled when it is completed. A recurring task that nobody completes stays where it is, and is
+overdue if it has a `due_date`.
 
 ## 4. Project manifest (`<project>/index.md`)
 

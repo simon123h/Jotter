@@ -1,0 +1,284 @@
+{
+  "description": "Completing a task with a `repeat` rule rolls it over (spec/FORMAT.md, Recurring tasks). `task` holds the fields the roll reads, `previous_bucket` is the bucket before completion (null when unknown), `expected` is the result. The default bucket of the project is `backlog`.",
+  "default_bucket": "backlog",
+  "cases": [
+    {
+      "name": "completion-weekly-no-dates",
+      "description": "Without dates the task is only hidden until the next occurrence, and goes back to its bucket.",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "week",
+          "from": "completion"
+        },
+        "previous_bucket": "todo"
+      },
+      "expected": {
+        "bucket": "todo",
+        "due_date": null,
+        "planned_date": null,
+        "postponed_until": "2026-10-19",
+        "reminders": [],
+        "body": ""
+      }
+    },
+    {
+      "name": "due-on-time",
+      "description": "Completed on its due day: one step ahead. A planned day and the reminders move with it.",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "week",
+          "from": "due"
+        },
+        "due_date": "2026-10-12",
+        "planned_date": "2026-10-12",
+        "reminders": [
+          "2026-10-11T18:00"
+        ],
+        "previous_bucket": "in-progress"
+      },
+      "expected": {
+        "bucket": "in-progress",
+        "due_date": "2026-10-19",
+        "planned_date": "2026-10-19",
+        "postponed_until": "2026-10-19",
+        "reminders": [
+          "2026-10-18T18:00"
+        ],
+        "body": ""
+      }
+    },
+    {
+      "name": "due-early",
+      "description": "Completed early: still exactly one step ahead of the due day.",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "week",
+          "from": "due"
+        },
+        "due_date": "2026-10-19",
+        "previous_bucket": "in-progress"
+      },
+      "expected": {
+        "bucket": "in-progress",
+        "due_date": "2026-10-26",
+        "planned_date": null,
+        "postponed_until": "2026-10-26",
+        "reminders": [],
+        "body": ""
+      }
+    },
+    {
+      "name": "due-late-catches-up",
+      "description": "Completed two steps late: the next day on the rhythm that is not before today, which is today itself.",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "week",
+          "from": "due"
+        },
+        "due_date": "2026-09-28",
+        "previous_bucket": "in-progress"
+      },
+      "expected": {
+        "bucket": "in-progress",
+        "due_date": "2026-10-12",
+        "planned_date": null,
+        "postponed_until": "2026-10-12",
+        "reminders": [],
+        "body": ""
+      }
+    },
+    {
+      "name": "completion-with-overdue-due",
+      "description": "From completion, the new due day counts from today, whatever the old one was. Reminders keep their distance to it.",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 3,
+          "unit": "day",
+          "from": "completion"
+        },
+        "due_date": "2026-10-01",
+        "reminders": [
+          "2026-09-30T09:00"
+        ],
+        "previous_bucket": "in-progress"
+      },
+      "expected": {
+        "bucket": "in-progress",
+        "due_date": "2026-10-15",
+        "planned_date": null,
+        "postponed_until": "2026-10-15",
+        "reminders": [
+          "2026-10-14T09:00"
+        ],
+        "body": ""
+      }
+    },
+    {
+      "name": "month-clamps",
+      "description": "31 January plus a month is the end of February.",
+      "today": "2026-01-31",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "month",
+          "from": "due"
+        },
+        "due_date": "2026-01-31",
+        "previous_bucket": "in-progress"
+      },
+      "expected": {
+        "bucket": "in-progress",
+        "due_date": "2026-02-28",
+        "planned_date": null,
+        "postponed_until": "2026-02-28",
+        "reminders": [],
+        "body": ""
+      }
+    },
+    {
+      "name": "leap-day-plus-year",
+      "description": "29 February plus a year is 28 February.",
+      "today": "2028-02-29",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "year",
+          "from": "due"
+        },
+        "due_date": "2028-02-29",
+        "previous_bucket": "in-progress"
+      },
+      "expected": {
+        "bucket": "in-progress",
+        "due_date": "2029-02-28",
+        "planned_date": null,
+        "postponed_until": "2029-02-28",
+        "reminders": [],
+        "body": ""
+      }
+    },
+    {
+      "name": "keyword-stays",
+      "description": "A planning keyword is left alone.",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 2,
+          "unit": "day",
+          "from": "completion"
+        },
+        "planned_date": "thisWeek",
+        "previous_bucket": "in-progress"
+      },
+      "expected": {
+        "bucket": "in-progress",
+        "due_date": null,
+        "planned_date": "thisWeek",
+        "postponed_until": "2026-10-14",
+        "reminders": [],
+        "body": ""
+      }
+    },
+    {
+      "name": "due-without-due-date",
+      "description": "`from: due` without a due day behaves like `from: completion`, and no due day appears.",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "day",
+          "from": "due"
+        },
+        "previous_bucket": "in-progress"
+      },
+      "expected": {
+        "bucket": "in-progress",
+        "due_date": null,
+        "planned_date": null,
+        "postponed_until": "2026-10-13",
+        "reminders": [],
+        "body": ""
+      }
+    },
+    {
+      "name": "anchor-is-earliest-reminder",
+      "description": "Without a due day, the earliest reminder is the anchor, so the spacing between reminders is kept.",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "week",
+          "from": "completion"
+        },
+        "reminders": [
+          "2026-10-13T09:00",
+          "2026-10-12T09:00"
+        ],
+        "previous_bucket": "in-progress"
+      },
+      "expected": {
+        "bucket": "in-progress",
+        "due_date": null,
+        "planned_date": null,
+        "postponed_until": "2026-10-19",
+        "reminders": [
+          "2026-10-19T09:00",
+          "2026-10-20T09:00"
+        ],
+        "body": ""
+      }
+    },
+    {
+      "name": "checklist-unticked",
+      "description": "Checklist items are unticked, other text is not touched.",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "week",
+          "from": "completion"
+        },
+        "body": "- [x] a\n- [ ] b\n  - [X] nested\n\nText with [x] stays.\n",
+        "previous_bucket": "in-progress"
+      },
+      "expected": {
+        "bucket": "in-progress",
+        "due_date": null,
+        "planned_date": null,
+        "postponed_until": "2026-10-19",
+        "reminders": [],
+        "body": "- [ ] a\n- [ ] b\n  - [ ] nested\n\nText with [x] stays.\n"
+      }
+    },
+    {
+      "name": "unknown-bucket-uses-default",
+      "description": "When the bucket before completion is not known, the project's default bucket is used (`backlog` in this file).",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "week",
+          "from": "completion"
+        },
+        "previous_bucket": null
+      },
+      "expected": {
+        "bucket": "backlog",
+        "due_date": null,
+        "planned_date": null,
+        "postponed_until": "2026-10-19",
+        "reminders": [],
+        "body": ""
+      }
+    }
+  ]
+}

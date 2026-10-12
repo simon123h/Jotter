@@ -14,7 +14,8 @@ fixtures/projects/<case>.json   { description, context, expected }
 
 `context` holds what the parser needs besides the file content (`file_stem` and `default_project_id` for tasks,
 `dir_name` for projects). `expected` is the normalized result. Timestamps (`created_at`, `updated_at`) are only
-compared when `expected` contains them, because they default to "now".
+compared when `expected` contains them, because they default to "now". The same goes for `repeat` and `reminders`, which
+older fixtures do not mention.
 
 Each implementation must pass two checks per case:
 
@@ -49,3 +50,10 @@ Python backend answers the same filters from SQLite.
 | :-- | :-- |
 | Python backend | `tests/test_search_conformance.py` |
 | TypeScript (`packages/task-filter`) | `apps/web/src/utils/__tests__/taskFilter.spec.ts` |
+
+## Recurrence fixtures
+
+`fixtures/repeat/roll.json` holds the worked cases of rolling a recurring task over when it is completed
+(`FORMAT.md`, *Recurring tasks*): for each case the `today` of the completion, the fields of the task that the
+roll reads, and the fields it must end up with. No implementation has a runner for it yet; the first one to
+implement the roll adds it here.

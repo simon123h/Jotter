@@ -11,7 +11,12 @@ import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectM
  * KNOWN_DIVERGENCES lists fixtures this implementation does not pass yet. Each one is a bug to fix: remove
  * its entry once fixed (a fixed case fails the suite until you do, so the list cannot rot).
  */
-const KNOWN_DIVERGENCES: Record<string, string> = {};
+const KNOWN_DIVERGENCES: Record<string, string> = Object.fromEntries(
+  ['repeat-and-reminders', 'repeat-defaults', 'repeat-invalid', 'repeat-not-mapping', 'reminders-normalized', 'reminders-single-string'].map((name) => [
+    `task/${name}`,
+    '`repeat` and `reminders` are in the spec, the parser does not read them yet',
+  ]),
+);
 
 // Vitest runs from packages/vault-format
 const fixturesDir = `${resolve(process.cwd(), '../../spec/fixtures')}/`;
@@ -51,8 +56,9 @@ function taskView(task: any, expected: Record<string, any>) {
     postponed_until: task.postponed_until ?? null,
     extra: task.extra_frontmatter ?? {},
   };
-  for (const key of ['created_at', 'updated_at']) {
-    if (key in expected) view[key] = task[key];
+  // Fields that older fixtures leave out, and timestamps (which default to "now"), are only compared when the fixture states them
+  for (const key of ['repeat', 'reminders', 'created_at', 'updated_at']) {
+    if (key in expected) view[key] = task[key] ?? null;
   }
   return view;
 }

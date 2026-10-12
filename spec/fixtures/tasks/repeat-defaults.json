@@ -1,0 +1,29 @@
+{
+  "description": "`from` defaults to completion, a numeric string and a plural or upper case unit are accepted.",
+  "context": {
+    "file_stem": "repeat-defaults",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "repeat-defaults",
+    "project_id": "proj",
+    "title": "T",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "postponed_until": null,
+    "extra": {},
+    "repeat": {
+      "every": 3,
+      "unit": "day",
+      "from": "completion"
+    },
+    "reminders": []
+  }
+}
