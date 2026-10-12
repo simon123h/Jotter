@@ -22,17 +22,7 @@ PROJECT_CASES = sorted((FIXTURES / "projects").glob("*.json"))
 
 # Fixtures this implementation does not pass yet. Each one is a bug to fix: remove its entry once fixed (a fixed case
 # fails the suite until you do, so the list cannot rot).
-KNOWN_DIVERGENCES: dict[str, str] = {
-    name: "`repeat` and `reminders` are in the spec, the backend does not read them yet"
-    for name in (
-        "repeat-and-reminders",
-        "repeat-defaults",
-        "repeat-invalid",
-        "repeat-not-mapping",
-        "reminders-normalized",
-        "reminders-single-string",
-    )
-}
+KNOWN_DIVERGENCES: dict[str, str] = {}
 
 
 def _known_divergence(case: Path) -> bool:
@@ -57,9 +47,10 @@ def _task_view(task: Any, expected: dict[str, Any]) -> dict[str, Any]:
         "extra": dict(task.extra_frontmatter),
     }
     # Fields that older fixtures leave out are only compared when the fixture states them
-    for key in ("repeat", "reminders"):
-        if key in expected:
-            view[key] = getattr(task, key, None)
+    if "repeat" in expected:
+        view["repeat"] = task.repeat.to_dict() if task.repeat else None
+    if "reminders" in expected:
+        view["reminders"] = list(task.reminders)
     # Timestamps default to "now" when absent, so only compare them when the fixture states them
     for key in ("created_at", "updated_at"):
         if key in expected:

@@ -158,7 +158,7 @@ repeat:
 | `unit` | `day`, `week`, `month` or `year` | required; compared ignoring case, a plural (`weeks`) is accepted |
 | `from` | `completion` or `due` | `completion` when missing |
 
-A `repeat` without a usable `every` or `unit`, or that is not a mapping, is dropped. A recurring task is one
+A `repeat` without a usable `every` or `unit`, with a `from` that is neither `completion` nor `due`, or that is not a mapping, is dropped. A recurring task is one
 file: there is never a second copy of it for a later occurrence, and a missed occurrence does not create a
 pile of tasks.
 

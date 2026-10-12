@@ -1,5 +1,6 @@
 """Task Domain Aggregate Root and Value Objects."""
 
+import re
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from enum import StrEnum
@@ -125,6 +126,68 @@ class DueDate:
         return self.value or ""
 
 
+REPEAT_UNITS = ("day", "week", "month", "year")
+REPEAT_FROM = ("completion", "due")
+
+
+@dataclass(frozen=True)
+class RepeatRule:
+    """How a task comes back after it is completed (spec/FORMAT.md, "Recurring tasks")."""
+
+    every: int
+    unit: str  # one of REPEAT_UNITS
+    from_: str = "completion"  # one of REPEAT_FROM
+
+    @classmethod
+    def from_raw(cls, raw: object) -> "RepeatRule | None":
+        """Reads the frontmatter value; a rule the spec does not allow is `None`."""
+        if not isinstance(raw, dict):
+            return None
+        every = raw.get("every")
+        if isinstance(every, str) and every.strip().isdigit():
+            every = int(every.strip())
+        if isinstance(every, bool) or not isinstance(every, int) or every < 1:
+            return None
+        unit = str(raw.get("unit") or "").strip().lower()
+        if unit.endswith("s"):
+            unit = unit[:-1]
+        if unit not in REPEAT_UNITS:
+            return None
+        origin = raw.get("from")
+        origin = "completion" if origin is None else str(origin).strip().lower()
+        if origin not in REPEAT_FROM:
+            return None
+        return cls(every=every, unit=unit, from_=origin)
+
+    def to_dict(self) -> dict[str, object]:
+        return {"every": self.every, "unit": self.unit, "from": self.from_}
+
+
+_LOCAL_DATETIME = re.compile(r"^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(:\d{2}(\.\d+)?)?$")
+
+
+def clean_reminders(raw: object) -> list[str]:
+    """Reminders as `YYYY-MM-DDTHH:mm`, sorted and without duplicates. Values that are no local date-time are dropped."""
+    if raw is None or raw == "":
+        return []
+    items = raw if isinstance(raw, list) else [raw]
+    found: set[str] = set()
+    for item in items:
+        if isinstance(item, datetime):
+            if item.tzinfo is None:
+                found.add(item.strftime("%Y-%m-%dT%H:%M"))
+            continue
+        match = _LOCAL_DATETIME.match(item.strip()) if isinstance(item, str) else None
+        if not match:
+            continue
+        try:
+            datetime.strptime(f"{match.group(1)} {match.group(2)}", "%Y-%m-%d %H:%M")
+        except ValueError:
+            continue
+        found.add(f"{match.group(1)}T{match.group(2)}")
+    return sorted(found)
+
+
 @dataclass(frozen=True)
 class Tag:
     value: str
@@ -154,6 +217,8 @@ class Task:
     priority: Priority = Priority.NONE
     color: str | None = None
     postponed_until: DueDate = field(default_factory=lambda: DueDate(None))
+    repeat: RepeatRule | None = None
+    reminders: list[str] = field(default_factory=list)
     extra_frontmatter: dict[str, object] = field(default_factory=dict)
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
@@ -181,6 +246,8 @@ class Task:
         priority: str | None = None,
         color: str | None = None,
         postponed_until: str | None = None,
+        repeat: RepeatRule | None = None,
+        reminders: list[str] | None = None,
         task_id: str | None = None,
         extra_frontmatter: dict[str, object] | None = None,
     ) -> Self:
@@ -208,6 +275,8 @@ class Task:
             priority=Priority.from_str(priority),
             color=color.strip() if color else None,
             postponed_until=DueDate.from_str(postponed_until),
+            repeat=repeat,
+            reminders=list(reminders) if reminders else [],
             extra_frontmatter=dict(extra_frontmatter) if extra_frontmatter else {},
             created_at=now_str,
             updated_at=now_str,

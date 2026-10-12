@@ -391,3 +391,19 @@ Fix bearer token parsing in middleware.
     # 5. Delete the task
     task_svc.delete_task("arb", "fix-auth-header")
     assert not custom_file.exists()
+
+
+def test_editing_and_moving_a_recurring_task_keeps_repeat_and_reminders(temp_dir, test_env):
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    disk_repo = DiskTaskRepository(temp_dir)
+    markdown = 'title: Water plants\nrepeat:\n  every: 2\n  unit: week\nreminders:\n  - "2026-10-14T09:00"\n'
+    disk_repo.save(disk_repo.parse_task_content(f"---\n{markdown}---\n", "water", "default"))
+
+    task_svc.update_task("default", "water", TaskUpdate(title="Water the plants"))
+    task_svc.move_task("default", "water", TaskMove(bucket="in-progress", position=500.0))
+
+    written = (Path(temp_dir) / "default" / "water.md").read_text(encoding="utf-8")
+    assert "title: Water the plants" in written
+    assert "every: 2" in written and "unit: week" in written and "from: completion" in written
+    assert "2026-10-14T09:00" in written
