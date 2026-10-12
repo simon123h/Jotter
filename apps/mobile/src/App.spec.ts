@@ -264,6 +264,41 @@ describe('capturing and editing tasks', () => {
     expect(file()).not.toContain('planned_date');
   });
 
+  it('sets a repeat rule and reminders, shows them on the card, and clears them again', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    const file = () => fs.files.get('Jotter/work/a.md')!.data;
+
+    await type('task-repeat', 'week', 'change');
+    await settle();
+    expect(file()).toMatch(/repeat:\n\s+every: 1\n\s+unit: week\n\s+from: completion/);
+
+    await type('task-repeat', 'custom', 'change');
+    await type('task-repeat-every', '3', 'change');
+    await type('task-repeat-unit', 'month', 'change');
+    await type('task-repeat-from', 'due', 'change');
+    await settle();
+    expect(file()).toMatch(/every: 3\n\s+unit: month\n\s+from: due/);
+
+    await find('reminder-add').trigger('click');
+    await type('reminder-input', '2030-05-01T08:30', 'change');
+    await settle();
+    expect(file()).toContain('2030-05-01T08:30');
+
+    await closeSheet();
+    await settle();
+    const card = all('task-card')[0];
+    expect(card.find('[data-testid="card-repeat"]').text()).toBe('Every 3 months');
+    expect(card.find('[data-testid="card-reminders"]').exists()).toBe(true);
+
+    await card.trigger('click');
+    await type('task-repeat', '', 'change');
+    await find('reminder-remove').trigger('click');
+    await settle();
+    expect(file()).not.toContain('repeat');
+    expect(file()).not.toContain('reminders');
+  });
+
   it('keeps a planned date and a colour that another tool wrote outside the menus', async () => {
     await start((f) => {
       desktopVault(f);

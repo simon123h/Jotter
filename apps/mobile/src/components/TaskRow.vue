@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CalendarDays, Check, Clock, ListChecks, Hourglass, Paperclip } from '@lucide/vue';
+import { CalendarDays, Check, Clock, ListChecks, Hourglass, Paperclip, Repeat, Bell } from '@lucide/vue';
 import type { Task } from '@jotter/vault-format';
 import { t, type MessageKey } from '@/i18n';
 import { dueInfo } from '@/dates';
 import { checklistProgress } from '@/markdown';
 import { plannedLabel } from '@/planned';
+import { repeatLabel } from '@/repeat';
 import { colorHex } from '@/taskColors';
 
 const props = defineProps<{
@@ -57,6 +58,8 @@ const hasMeta = computed(
     progress.value ||
     props.task.planned_date ||
     props.task.postponed_until ||
+    props.task.repeat ||
+    props.task.reminders?.length ||
     props.task.tags.length ||
     props.task.attachments.length
 );
@@ -120,6 +123,12 @@ const hasMeta = computed(
           </span>
           <span v-if="task.postponed_until" class="inline-flex items-center gap-1 text-amber-600" data-testid="card-postponed">
             <Hourglass class="h-3.5 w-3.5" />{{ task.postponed_until }}
+          </span>
+          <span v-if="task.repeat" class="inline-flex items-center gap-1" data-testid="card-repeat">
+            <Repeat class="h-3.5 w-3.5" />{{ repeatLabel(task.repeat) }}
+          </span>
+          <span v-if="task.reminders?.length" class="inline-flex items-center gap-1" data-testid="card-reminders">
+            <Bell class="h-3.5 w-3.5" />{{ task.reminders.length > 1 ? task.reminders.length : '' }}
           </span>
           <span
             v-if="progress"
