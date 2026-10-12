@@ -28,7 +28,7 @@ On mobile, **Undo** in the message after completing puts the old dates back.
 
 Under **Reminders** in the task, add one or more date and time entries. A reminder is the clock time on the wall wherever you are: 09:00 is 09:00 in every time zone.
 
-**On the phone**, reminders are Android notifications that the system shows at their time, also while Jotter is closed. The first time you add a reminder, Jotter asks for permission to show notifications. Jotter arms the reminders after it has read the vault, so a reminder you add on the desktop is armed on the phone the next time the app opens and has synced. Tapping a notification opens the task. If Android restricts exact alarms for the app, a reminder can come a few minutes late.
+**On the phone**, reminders are Android notifications that the system shows at their time, also while Jotter is closed. The first time you add a reminder, Jotter asks for permission to show notifications. Jotter arms the reminders after it has read the vault, so a reminder you add on the desktop is armed on the phone the next time the app opens and has synced. Reminders only fire for the vault that is open: switching to another vault replaces the armed reminders with that vault's. Tapping a notification opens the task. If Android restricts exact alarms for the app, a reminder can come a few minutes late.
 
 **On the desktop**, reminders are browser notifications, shown **while Jotter is open** (a browser cannot wake a closed page). The browser asks for permission with the first reminder you add. A reminder that came up to 15 minutes before you opened Jotter is still shown.
 

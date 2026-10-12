@@ -43,7 +43,7 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Time blocking | yes | no | ~3.1k | Parked | `features/timeblock` (+ backend `features/timeblock`) |
 | 2D infinite canvas | yes | no | ~2.5k | Parked | `features/canvas` (+ backend `features/canvas`), ADR 0010 |
 | Eisenhower matrix view | yes | no | ~0.5k | Parked | `MatrixView` |
-| Static demo on GitHub Pages | yes | n/a | ~0.7k | Parked | `storage/demoAdapter.ts`, a second backend written in TypeScript |
+| Static demo on GitHub Pages | yes | n/a | ~0.7k | Parked | `storage/demoAdapter.ts`, a second backend written in TypeScript. It stores `repeat` and `reminders` but does not roll recurring tasks over, so the demo differs from the backend and the mobile app there |
 
 The parked rows add up to about **9k lines (17 % of the code base)**, which no other feature depends on.
 
