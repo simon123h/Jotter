@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { VaultRepository } from './repository';
 import { VaultRegistry } from './vaults';
 import { VaultDb } from './db';
@@ -83,6 +83,15 @@ describe('scan', () => {
       ['a', 'Alpha', 'todo'],
       ['b', 'Beta', 'done'],
     ]);
+  });
+
+  it('saves a task even when the file cannot be statted right after the write, and reads it again at the next scan', async () => {
+    vi.spyOn(fs, 'stat').mockRejectedValueOnce(new Error("'stat' failed because file does not exist."));
+
+    await expect(repo.updateTask('work', 'a', { title: 'Alpha, edited' })).resolves.toMatchObject({ title: 'Alpha, edited' });
+
+    expect((await repo.getTask('work', 'a')).title).toBe('Alpha, edited');
+    expect((await repo.sync()).read).toBe(1);
   });
 
   it('only reads files that changed since the last scan', async () => {

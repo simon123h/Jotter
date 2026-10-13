@@ -73,8 +73,21 @@ export class CapacitorFs implements FsPort {
     return this.writeAtomic(path, { data });
   }
 
+  private writes = new Map<string, Promise<unknown>>();
+
+  /** Writes to one path run one after the other: they share a temporary file, so two at once would trample it. */
+  private writeAtomic(path: string, content: { data: string; encoding?: Encoding }): Promise<void> {
+    const write = (this.writes.get(path) ?? Promise.resolve()).then(() => this.writeAtomicNow(path, content));
+    const tail = write.catch(() => undefined);
+    this.writes.set(path, tail);
+    void tail.then(() => {
+      if (this.writes.get(path) === tail) this.writes.delete(path);
+    });
+    return write;
+  }
+
   /** Writes to a hidden temporary file next to the target, then renames it over the target. */
-  private async writeAtomic(path: string, content: { data: string; encoding?: Encoding }): Promise<void> {
+  private async writeAtomicNow(path: string, content: { data: string; encoding?: Encoding }): Promise<void> {
     const slash = path.lastIndexOf('/');
     const tmp = `${path.slice(0, slash + 1)}.${path.slice(slash + 1)}.tmp`;
     await Filesystem.writeFile({ path: tmp, directory: ROOT, recursive: true, ...content });

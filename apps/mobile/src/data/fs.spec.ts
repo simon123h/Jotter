@@ -35,4 +35,22 @@ describe('CapacitorFs writes', () => {
     );
     expect(Filesystem.deleteFile).toHaveBeenCalledWith(expect.objectContaining({ path: 'Jotter/work/attachments/a/.pic.png.tmp' }));
   });
+
+  it('writes to the same path one after the other, so they never share the temporary file at once', async () => {
+    const order: string[] = [];
+    vi.mocked(Filesystem.writeFile).mockImplementation(async (o) => {
+      order.push(`write ${o.data}`);
+      await Promise.resolve();
+      return {} as never;
+    });
+    vi.mocked(Filesystem.rename).mockImplementation(async () => {
+      order.push('rename');
+      return undefined as never;
+    });
+    const fs = new CapacitorFs();
+
+    await Promise.all([fs.writeText('Jotter/work/a.md', '1'), fs.writeText('Jotter/work/a.md', '2')]);
+
+    expect(order).toEqual(['write 1', 'rename', 'write 2', 'rename']);
+  });
 });

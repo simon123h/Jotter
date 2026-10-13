@@ -360,8 +360,7 @@ export class VaultRepository {
 
     const { size, mtime, ...project } = row;
     await this.fs.writeText(path, dumpProjectManifest(project, await this.listBuckets(projectId)));
-    const stat = await this.fs.stat(path);
-    await db.projects.put({ ...row, size: stat.size, mtime: stat.mtime });
+    await db.projects.put({ ...row, ...(await this.stamp(path)) });
   }
 
   // ==========================================
@@ -510,8 +509,7 @@ export class VaultRepository {
 
     await this.fs.remove(`${this.projectDir(projectId)}/${row.file}.md`);
     await db.tasks.delete([projectId, id]);
-    const stat = await this.fs.stat(newPath);
-    await db.tasks.put({ ...task, file: row.file, size: stat.size, mtime: stat.mtime });
+    await db.tasks.put({ ...task, file: row.file, ...(await this.stamp(newPath)) });
     return task;
   }
 
@@ -519,8 +517,19 @@ export class VaultRepository {
     const { db } = this.current();
     const path = `${this.projectDir(task.project_id)}/${file}.md`;
     await this.fs.writeText(path, dumpTaskMarkdown(task));
-    const stat = await this.fs.stat(path);
-    await db.tasks.put({ ...task, file, size: stat.size, mtime: stat.mtime });
+    await db.tasks.put({ ...task, file, ...(await this.stamp(path)) });
+  }
+
+  /**
+   * Size and modification time of a file just written, for the cache. They are only bookkeeping: when the file cannot
+   * be statted (a sync tool replaced it that moment), the stamp matches nothing, so the next scan reads it again.
+   */
+  private async stamp(path: string): Promise<{ size: number; mtime: number }> {
+    try {
+      return await this.fs.stat(path);
+    } catch {
+      return { size: NO_INDEX, mtime: NO_INDEX };
+    }
   }
 
   // ==========================================
