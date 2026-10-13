@@ -29,7 +29,9 @@ const settingsStore = useSettingsStore();
 const modalStore = useModalStore();
 const selectionStore = useSelectionStore();
 
-const activeProjectId = computed(() => (route.params.projectId as string) || projectStore.projects[0]?.id || 'default');
+const activeProjectId = computed(
+  () => (route.params.projectId as string) || projectStore.projects.find((p) => !p.archived)?.id || 'default'
+);
 
 const { activeDateStr, todayStr, isToday, activeDayTitle, prevDay, nextDay, resetToToday, setDateFromInput } = useActiveDay();
 

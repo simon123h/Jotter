@@ -53,9 +53,8 @@ watch(
   { immediate: true }
 );
 
-const handleSave = async () => {
-  if (!props.project || !title.value.trim()) return;
-
+/** The edits of the form as an update, to which `extra` adds what a button of the form changes besides. */
+const formUpdate = (): Partial<Project> => {
   let cleanPeriod: number | null = null;
   if (doneCleanPeriod.value !== null && doneCleanPeriod.value !== undefined && String(doneCleanPeriod.value).trim() !== '') {
     const parsed = Number(doneCleanPeriod.value);
@@ -63,22 +62,27 @@ const handleSave = async () => {
       cleanPeriod = Math.floor(parsed);
     }
   }
+  return { title: title.value.trim(), done_clean_period: cleanPeriod };
+};
 
-  await updateProject(props.project.id, {
-    title: title.value.trim(),
-    done_clean_period: cleanPeriod,
-  });
+const handleSave = async () => {
+  if (!props.project || !title.value.trim()) return;
+
+  await updateProject(props.project.id, formUpdate());
 
   await projectStore.invalidate();
   emit('close');
 };
 
-/** Puts the project away, or takes it back. An open project that is put away makes way for the "all" view. */
+/**
+ * Puts the project away, or takes it back, and saves the edits of the form with it. An open project that is put
+ * away makes way for the "all" view.
+ */
 const handleArchive = async () => {
   if (!props.project) return;
   const { id } = props.project;
   const archived = !props.project.archived;
-  await updateProject(id, { archived });
+  await updateProject(id, { ...(title.value.trim() ? formUpdate() : {}), archived });
   await projectStore.invalidate();
   emit('close');
   if (archived && route.params.projectId === id) await router.push({ name: 'project', params: { projectId: 'all' } });

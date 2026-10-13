@@ -167,8 +167,19 @@ describe('ProjectEditModal.vue', () => {
     await nextTick();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(updateProject).toHaveBeenCalledWith('proj-123', { archived: true });
+    expect(updateProject).toHaveBeenCalledWith('proj-123', { title: 'Our Awesome Project', done_clean_period: 14, archived: true });
     expect(push).toHaveBeenCalledWith({ name: 'project', params: { projectId: 'all' } });
+  });
+
+  it('saves the edits of the form together with the archiving', async () => {
+    wrapper = mount(ProjectEditModal, { props: defaultProps });
+    await wrapper.find('input[type="text"]').setValue('Renamed');
+    await wrapper.find('input[type="number"]').setValue('30');
+    await wrapper.find('[data-testid="project-archive-toggle"]').trigger('click');
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateProject).toHaveBeenCalledWith('proj-123', { title: 'Renamed', done_clean_period: 30, archived: true });
   });
 
   it('restores an archived project and stays where it is', async () => {
@@ -179,7 +190,7 @@ describe('ProjectEditModal.vue', () => {
     await nextTick();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(updateProject).toHaveBeenCalledWith('proj-123', { archived: false });
+    expect(updateProject).toHaveBeenCalledWith('proj-123', { title: 'Our Awesome Project', done_clean_period: 14, archived: false });
     expect(push).not.toHaveBeenCalled();
   });
 });

@@ -62,13 +62,18 @@ async function saveRename() {
 }
 
 async function archive(id: string, title: string) {
+  const wasOpen = app.projectId === id;
   try {
     await app.setProjectArchived(id, true);
     ui.showToast(t('projects.archived', { name: title }), {
       label: t('common.undo'),
       run: () => {
         ui.dismissToast();
-        app.setProjectArchived(id, false).catch(fail);
+        // Undoing brings back the view the user left
+        app
+          .setProjectArchived(id, false)
+          .then(() => (wasOpen ? app.selectProject(id) : undefined))
+          .catch(fail);
       },
     });
   } catch (err) {

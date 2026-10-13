@@ -33,6 +33,17 @@ def test_archiving_writes_the_flag_to_the_manifest_and_restoring_removes_it(test
     assert "archived" not in _manifest(temp_dir, "trip")
 
 
+def test_archiving_and_restoring_keep_the_retention_of_the_project(test_env):
+    client, temp_dir = test_env
+    client.post("/api/projects", json={"title": "Trip", "id": "trip", "done_clean_period": 14})
+
+    assert client.put("/api/projects/trip", json={"archived": True}).json()["done_clean_period"] == 14
+    assert client.put("/api/projects/trip", json={"archived": False}).json()["done_clean_period"] == 14
+    assert "done_clean_period: 14" in _manifest(temp_dir, "trip")
+    # Naming it still clears it
+    assert client.put("/api/projects/trip", json={"done_clean_period": None}).json()["done_clean_period"] is None
+
+
 def test_an_edit_that_does_not_mention_archived_keeps_it(test_env):
     client, _ = test_env
     client.post("/api/projects", json={"title": "Trip", "id": "trip"})

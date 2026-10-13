@@ -10,6 +10,7 @@ from jotter.features.projects.repo import ProjectRepository
 from jotter.features.projects.schemas import ProjectCreate, ProjectResponse, ProjectUpdate
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
 from jotter.shared.slug import slugify
+from jotter.shared.unset import UNSET
 
 
 class ProjectApplicationService:
@@ -76,7 +77,8 @@ class ProjectApplicationService:
         project.update_details(
             name=title,
             description=req.description,
-            done_clean_period=req.done_clean_period,
+            # Only a retention the request names changes it: null clears it, a missing key leaves it
+            done_clean_period=req.done_clean_period if "done_clean_period" in req.model_fields_set else UNSET,
             archived=req.archived,
         )
 

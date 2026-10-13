@@ -2244,6 +2244,8 @@ describe('archived projects', () => {
     await find('toast-action').trigger('click');
     await settle();
     expect(fs.files.get('Jotter/home/index.md')!.data).not.toContain('archived');
+    // The project that was open is open again
+    expect(find('app-bar-title').text()).toBe('Home');
   });
 
   it('does not offer an archived project, also when the vault says so from the start', async () => {

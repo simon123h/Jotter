@@ -622,7 +622,7 @@ export class DemoStorageAdapter implements StorageAdapter {
   deleteProject = deleteProject;
 
   async getAllTasks(filters?: TaskFilterParams): Promise<Task[]> {
-    const projects = await getProjects();
+    const projects = (await getProjects()).filter((p) => !p.archived);
     const lists = await Promise.all(projects.map((p) => getTasks(p.id, filters)));
     return lists.flat();
   }
