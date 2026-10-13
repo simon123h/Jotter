@@ -258,13 +258,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
         planned_date: form.plannedDate,
         priority: form.priority,
         color: form.color,
-        // The Postponed column has a date to edit here, and picking another column ends the postponement. A save that
-        // leaves the column alone keeps it, which a recurring task that is waiting for its next day depends on.
-        ...(form.bucket === 'postponed'
-          ? { postponed_until: form.postponedUntil }
-          : form.bucket !== task.value.bucket
-            ? { postponed_until: '' }
-            : {}),
+        postponed_until: form.postponedUntil,
         repeat: repeatOf(form),
         reminders: [...new Set(form.reminders.filter(Boolean))].sort(),
       });

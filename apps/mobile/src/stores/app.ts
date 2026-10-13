@@ -4,7 +4,6 @@ import type { Task, Project, Bucket } from '@jotter/vault-format';
 import { filterTasks, isEmptyFilter, parseQuery } from '@jotter/task-filter';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
-import { isoDay, isPostponed } from '@jotter/task-filter';
 import { armDelay, armReminders, localDateTime } from '@/reminders';
 import { useUiStore } from '@/stores/ui';
 import { columnsFor, type Hidden, type View } from '@/stores/columns';
@@ -70,9 +69,6 @@ export const useAppStore = defineStore('app', () => {
   const isFiltering = computed(() => !isEmptyFilter(parsedFilter.value));
   const visibleTasks = computed(() => filterTasks(allTasks.value, parsedFilter.value));
   const allTags = computed(() => [...new Set(allTasks.value.flatMap((t) => t.tags))].sort());
-
-  /** The Postponed column is virtual when the project has no column of that name. */
-  const isVirtualPostponed = (bucket: string) => bucket === 'postponed' && !buckets.value.some((b) => b.name === 'postponed');
 
   /** The columns of the current view. */
   const columns = computed(() => columnsFor(view.value, buckets.value, visibleTasks.value, hidden.value));
@@ -302,16 +298,8 @@ export const useAppStore = defineStore('app', () => {
     await loadProject();
   }
 
-  /** Moves a task to a bucket, to the end of it unless a position is given. The virtual Postponed column postpones to tomorrow. */
+  /** Moves a task to a bucket, to the end of it unless a position is given. A postponement stays. */
   async function moveTask(id: string, bucket: string, position?: number) {
-    if (isVirtualPostponed(bucket)) {
-      const task = taskById(id);
-      if (task && !isPostponed(task)) await repository().updateTask(requireProject(), id, { postponed_until: isoDay(1) });
-      await loadProject();
-      return;
-    }
-    const task = taskById(id);
-    if (task && isPostponed(task)) await repository().updateTask(requireProject(), id, { postponed_until: undefined });
     const inBucket = allTasks.value.filter((t) => t.bucket === bucket && t.id !== id);
     const target = position ?? Math.max(0, ...inBucket.map((t) => t.position)) + 1000;
     await repository().moveTask(requireProject(), id, bucket, target);
@@ -323,8 +311,6 @@ export const useAppStore = defineStore('app', () => {
     id: string;
     bucket: string;
     position: number;
-    /** The postponed date to put back ('' for none), when the move changed it. */
-    postponed?: string;
     /** The fields a recurring task's roll-over changed, when completing it did that. */
     rolled?: Partial<Task>;
   }
@@ -341,30 +327,18 @@ export const useAppStore = defineStore('app', () => {
       await r.createBucket(project, { title });
       await loadProject();
     }
-    if (isVirtualPostponed(bucket)) {
-      const before: Placement[] = [];
-      for (const task of ids.map(taskById).filter((t): t is Task => !!t && !isPostponed(t))) {
-        before.push({ id: task.id, bucket: task.bucket, position: task.position, postponed: task.postponed_until ?? '' });
-        await r.updateTask(project, task.id, { postponed_until: isoDay(1) });
-      }
-      await loadProject();
-      return before;
-    }
-    // A task moved out of the Postponed column (or onto its own column while postponed) is not postponed any more
     const moving = ids
       .map(taskById)
-      .filter((t): t is Task => !!t && (t.bucket !== bucket || isPostponed(t)))
+      .filter((t): t is Task => !!t && t.bucket !== bucket)
       .sort((a, b) => a.position - b.position);
     let next = Math.max(0, ...allTasks.value.filter((t) => t.bucket === bucket).map((t) => t.position)) + 1000;
     const before: Placement[] = [];
     for (const task of moving) {
-      const postponed = isPostponed(task);
       const rolled = task.repeat && bucket === 'done' && task.bucket !== 'done';
       before.push({
         id: task.id,
         bucket: task.bucket,
         position: task.position,
-        ...(postponed ? { postponed: task.postponed_until } : {}),
         ...(rolled
           ? {
               rolled: {
@@ -378,8 +352,6 @@ export const useAppStore = defineStore('app', () => {
             }
           : {}),
       });
-      // Cleared first: completing a recurring task sets its next postponement, which must stay
-      if (postponed) await r.updateTask(project, task.id, { postponed_until: undefined });
       await r.moveTask(project, task.id, bucket, next);
       next += 1000;
     }
@@ -430,9 +402,6 @@ export const useAppStore = defineStore('app', () => {
       }
       if (task && (task.bucket !== p.bucket || task.position !== p.position)) {
         await repository().moveTask(requireProject(), p.id, p.bucket, p.position);
-      }
-      if (p.postponed !== undefined && (task?.postponed_until ?? '') !== p.postponed) {
-        await repository().updateTask(requireProject(), p.id, { postponed_until: p.postponed || undefined });
       }
     }
     await loadProject();

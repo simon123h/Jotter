@@ -224,8 +224,8 @@ export const de = {
     hideText: 'Archiv ausblenden',
   },
   postponedBucket: {
-    show: 'Spalte "Zurückgestellt" anzeigen',
-    hide: 'Spalte "Zurückgestellt" ausblenden',
+    show: 'Zurückgestellte Aufgaben anzeigen',
+    hide: 'Zurückgestellte Aufgaben ausblenden',
     showText: 'Zurückgestellt anzeigen',
     hideText: 'Zurückgestellt ausblenden',
   },

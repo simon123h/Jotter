@@ -20,7 +20,6 @@ describe('useBuckets composable', () => {
     const activeProjectId = ref('proj-1');
     const hideDone = ref(false);
     const hideArchive = ref(false);
-    const hidePostponed = ref(true);
 
     const initialBuckets: Bucket[] = [
       { name: 'backlog', title: 'Backlog', subtitle: '', position: 1000.0, is_default: false },
@@ -30,7 +29,7 @@ describe('useBuckets composable', () => {
     ];
     const externalBuckets = ref<Bucket[]>([...initialBuckets]);
 
-    const { handleColumnReordered } = useBuckets(activeProjectId, hideDone, hideArchive, hidePostponed, externalBuckets);
+    const { handleColumnReordered } = useBuckets(activeProjectId, hideDone, hideArchive, externalBuckets);
 
     // Move 'backlog' (index 0) to after 'in-progress' (index 2)
     await handleColumnReordered({ oldIndex: 0, newIndex: 2 });
@@ -42,7 +41,6 @@ describe('useBuckets composable', () => {
     const activeProjectId = ref('proj-1');
     const hideDone = ref(false);
     const hideArchive = ref(false);
-    const hidePostponed = ref(true);
 
     const initialBuckets: Bucket[] = [
       { name: 'backlog', title: 'Backlog', subtitle: '', position: 1000.0, is_default: false },
@@ -51,7 +49,7 @@ describe('useBuckets composable', () => {
     ];
     const externalBuckets = ref<Bucket[]>([...initialBuckets]);
 
-    const { handleColumnReordered } = useBuckets(activeProjectId, hideDone, hideArchive, hidePostponed, externalBuckets);
+    const { handleColumnReordered } = useBuckets(activeProjectId, hideDone, hideArchive, externalBuckets);
 
     // Move 'in-progress' (index 2) to first position (index 0)
     await handleColumnReordered({ oldIndex: 2, newIndex: 0 });

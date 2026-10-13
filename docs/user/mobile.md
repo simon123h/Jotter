@@ -50,11 +50,11 @@ The search field understands the same query language as the desktop, for example
 
 ## Hiding done, archived and postponed tasks
 
-The ⋮ menu in the top bar hides or shows done, archived and postponed tasks, separately for each view. On the board this also hides their columns. Tags and Planning start with all three hidden.
+The ⋮ menu in the top bar hides or shows done, archived and postponed tasks, separately for each view. On the board, hiding done or archived tasks hides their columns too. Tags and Planning start with all three hidden. The postponed entry shows how many tasks it keeps out of the way.
 
 ## Postponing
 
-A task postponed to a later day leaves its column and appears in a *Postponed* column, which is hidden until you switch it on in the ⋮ menu. From the selection toolbar, *More*, *Postpone* offers *Tomorrow*, *Next week*, a date, or to clear it. The task page has a *Postponed until* field. Moving a task out of the Postponed column brings it back. See [Postponing Tasks](/user/postponing).
+A task postponed to a later day stays in its column but is hidden until you switch postponed tasks on in the ⋮ menu. It then shows in its own column, marked with the day it comes back. From the selection toolbar, *More*, *Postpone* offers *Tomorrow*, *Next week*, a date, or to clear it. The task page has a *Postponed until* field. See [Postponing Tasks](/user/postponing).
 
 ## Settings
 

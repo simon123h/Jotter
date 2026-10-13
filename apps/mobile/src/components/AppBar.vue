@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { Menu, Search, ArrowLeft, X, SlidersHorizontal, ListChecks, EllipsisVertical, Check, ChevronDown } from '@lucide/vue';
 import { isEmptyFilter } from '@jotter/task-filter';
 import { t } from '@/i18n';
+import { isPostponed } from '@jotter/task-filter';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 
@@ -38,10 +39,12 @@ function selectAllHere() {
 const menuOpen = ref(false);
 const menuItem = 'flex h-12 w-full items-center gap-3 px-4 text-left text-base active:bg-line';
 
+const postponedCount = computed(() => app.allTasks.filter((task) => isPostponed(task)).length);
+
 const viewOptions = computed(() => [
   { id: 'done' as const, label: t('view.hideDone'), on: app.hidden[app.view].done },
   { id: 'archive' as const, label: t('view.hideArchived'), on: app.hidden[app.view].archive },
-  { id: 'postponed' as const, label: t('view.hidePostponed'), on: app.hidden[app.view].postponed },
+  { id: 'postponed' as const, label: t('view.hidePostponed'), count: postponedCount.value, on: app.hidden[app.view].postponed },
 ]);
 
 function toggleOption(id: 'done' | 'archive' | 'postponed') {
@@ -122,7 +125,9 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
             :data-testid="`hide-${option.id}`"
             @click="toggleOption(option.id)"
           >
-            <Check class="h-5 w-5 shrink-0" :class="option.on ? 'text-accent' : 'text-transparent'" />{{ option.label }}
+            <Check class="h-5 w-5 shrink-0" :class="option.on ? 'text-accent' : 'text-transparent'" />
+            <span class="min-w-0 flex-1 truncate">{{ option.label }}</span>
+            <span v-if="option.count" class="text-sm text-muted">{{ option.count }}</span>
           </button>
         </div>
       </template>

@@ -39,7 +39,6 @@ function seedDemoData() {
       { name: 'backlog', title: 'Backlog', subtitle: 'Ideas and incoming items', position: 1000.0, is_default: true },
       { name: 'todo', title: 'To Do', subtitle: 'Ready to work on', position: 2000.0, is_default: false },
       { name: 'in-progress', title: 'In Progress', subtitle: 'Work in progress', position: 3000.0, is_default: false },
-      { name: 'postponed', title: 'Postponed', subtitle: 'Postponed items', position: 3500.0, is_default: false },
       { name: 'done', title: 'Done', subtitle: 'Completed tasks', position: 4000.0, is_default: false, color: 'green' },
     ],
   };
@@ -356,15 +355,9 @@ async function updateTask(projectId: string, id: string, task: Partial<Task>): P
   const idx = list.findIndex((t) => t.id === id);
   if (idx !== -1) {
     const now = new Date().toISOString();
-    const updatedBucket = task.bucket === 'postponed' ? list[idx].bucket : task.bucket || list[idx].bucket;
-    let postponedUntil = task.postponed_until;
-    if (task.bucket === 'postponed') {
-      if (postponedUntil === undefined || postponedUntil === '') {
-        postponedUntil = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-      }
-    } else if (task.bucket !== undefined) {
-      postponedUntil = '';
-    }
+    const updatedBucket = task.bucket || list[idx].bucket;
+    // An empty date ends the postponement, a missing one leaves it
+    const postponedUntil = task.postponed_until === undefined ? list[idx].postponed_until : task.postponed_until;
 
     list[idx] = {
       ...list[idx],
@@ -387,18 +380,7 @@ async function moveTask(projectId: string, id: string, bucket: string, position:
   const idx = list.findIndex((t) => t.id === id);
   if (idx !== -1) {
     const now = new Date().toISOString();
-    const targetBucket = bucket === 'postponed' ? list[idx].bucket : bucket;
-    let postponedUntil = list[idx].postponed_until;
-    if (bucket === 'postponed') {
-      if (!postponedUntil) {
-        postponedUntil = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-      }
-    } else {
-      postponedUntil = undefined;
-    }
-
-    list[idx].bucket = targetBucket;
-    list[idx].postponed_until = postponedUntil;
+    list[idx].bucket = bucket;
     list[idx].position = position;
     list[idx].updated_at = now;
     tasksMap[projectId] = list;
@@ -422,7 +404,6 @@ async function getBuckets(projectId: string): Promise<Bucket[]> {
       { name: 'backlog', title: 'Backlog', subtitle: '', position: 1000.0, is_default: true },
       { name: 'todo', title: 'To Do', subtitle: '', position: 2000.0, is_default: false },
       { name: 'in-progress', title: 'In Progress', subtitle: '', position: 3000.0, is_default: false },
-      { name: 'postponed', title: 'Postponed', subtitle: '', position: 3500.0, is_default: false },
       { name: 'done', title: 'Done', subtitle: '', position: 4000.0, is_default: false },
     ];
     saveDemoBucketsMap(bucketsMap);

@@ -147,8 +147,12 @@ A task has five fields about time. Each answers a different question, and none s
 - **Days** (`YYYY-MM-DD`) are local calendar days with no time zone. "Today" is the day on the reader's clock.
 - **Planning keywords** are relative to today. A writer MUST NOT turn a keyword into a date, and recurrence
   leaves keywords as they are.
-- **A task is postponed** while `postponed_until` is after today. Readers show it out of the way (the apps use
-  a Postponed column) and show it normally again from that day on.
+- **A task is postponed** while `postponed_until` is after today. Readers show it out of the way and show it
+  normally again from that day on. A postponed task stays in its own column (`status` is not touched): the
+  apps hide such tasks by default and can show them, in that column, marked with the day they come back. A
+  reader MUST NOT show a postponed task under a column other than its `status`, and a writer MUST NOT change
+  `status` to postpone a task or to bring it back. Moving a postponed task to another column keeps the
+  postponement.
 - **Only reminders have a time of day**, and it is *floating*: `09:00` means 09:00 on the wall clock wherever
   the reader is, with no time zone and no UTC. `created_at` and `updated_at` are the only instants.
 - `due_date` is date-only on purpose. A time of day belongs in a reminder (or a time block).
