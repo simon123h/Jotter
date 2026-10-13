@@ -104,7 +104,7 @@ jobs:
 
       - name: Run Backend Tests with Coverage
         run: |
-          python3 -m pytest --cov=src/jotter --cov-report=xml --cov-report=term tests/
+          python3 -m pytest --cov=src/jotter --cov-branch --cov-report=xml --cov-report=term tests/
 
       - name: Run Web Tests with Coverage
         run: |
@@ -130,7 +130,9 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
           flags: backend
-          fail_ci_if_error: false
+          disable_search: true
+          # A failed upload fails the run on main; pull requests from forks have no token
+          fail_ci_if_error: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Upload Web Coverage to Codecov
         uses: codecov/codecov-action@v7
@@ -138,7 +140,9 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/web/coverage/lcov.info
           flags: web
-          fail_ci_if_error: false
+          disable_search: true
+          # A failed upload fails the run on main; pull requests from forks have no token
+          fail_ci_if_error: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Upload Mobile Coverage to Codecov
         uses: codecov/codecov-action@v7
@@ -146,7 +150,9 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/mobile/coverage/lcov.info
           flags: mobile
-          fail_ci_if_error: false
+          disable_search: true
+          # A failed upload fails the run on main; pull requests from forks have no token
+          fail_ci_if_error: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Upload Shared Package Coverage to Codecov
         uses: codecov/codecov-action@v7
@@ -154,7 +160,9 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/vault-format/coverage/lcov.info
           flags: packages
-          fail_ci_if_error: false
+          disable_search: true
+          # A failed upload fails the run on main; pull requests from forks have no token
+          fail_ci_if_error: ${{ github.ref == 'refs/heads/main' }}
 
   e2e-tests:
     runs-on: ubuntu-latest
