@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Calendar, Clock, Paperclip, Hourglass, Box, Repeat, Bell } from '@lucide/vue';
+import { today } from '@jotter/task-filter';
 import { repeatLabel } from '@/utils/repeat';
 import type { Task, Timeblock } from '@/types';
 import type { ChecklistStats } from '@/utils/checklist';
@@ -26,13 +27,18 @@ const emit = defineEmits<{
 const { t, locale } = useI18n();
 const settingsStore = useSettingsStore();
 
+/** Only a date still ahead is shown: once it has passed, the task is back and the date means nothing. */
+const postponedUntil = computed(() =>
+  props.task.postponed_until && props.task.postponed_until > today() ? props.task.postponed_until : null
+);
+
 const hasContent = computed(
   () =>
     !!(
       props.task.due_date ||
       props.task.planned_date ||
       props.task.priority ||
-      props.task.postponed_until ||
+      postponedUntil.value ||
       props.task.repeat ||
       (props.task.reminders && props.task.reminders.length) ||
       (props.task.attachments && props.task.attachments.length) ||
@@ -100,13 +106,9 @@ const getPriorityClasses = (prio: string) => {
     </div>
 
     <!-- Postponed date -->
-    <div
-      v-if="task.postponed_until"
-      class="flex items-center gap-1 text-yellow-500/80"
-      :title="'Postponed Until: ' + formatDate(task.postponed_until)"
-    >
+    <div v-if="postponedUntil" class="flex items-center gap-1 text-yellow-500/80" :title="'Postponed Until: ' + formatDate(postponedUntil)">
       <Hourglass :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
-      <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.postponed_until) }}</span>
+      <span :class="{ 'text-[10px]': compact }">{{ formatDate(postponedUntil) }}</span>
     </div>
 
     <!-- Repeat rule and reminders -->

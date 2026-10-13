@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { CalendarDays, Check, Clock, ListChecks, Hourglass, Paperclip, Repeat, Bell } from '@lucide/vue';
 import type { Task } from '@jotter/vault-format';
 import { t, type MessageKey } from '@/i18n';
-import { dueInfo } from '@/dates';
+import { dueInfo, isPostponed } from '@/dates';
 import { checklistProgress } from '@/markdown';
 import { plannedLabel } from '@/planned';
 import { repeatLabel } from '@/repeat';
@@ -57,7 +57,7 @@ const hasMeta = computed(
     due.value ||
     progress.value ||
     props.task.planned_date ||
-    props.task.postponed_until ||
+    isPostponed(props.task) ||
     props.task.repeat ||
     props.task.reminders?.length ||
     props.task.tags.length ||
@@ -121,7 +121,7 @@ const hasMeta = computed(
           <span v-if="task.planned_date" class="inline-flex items-center gap-1 text-accent" data-testid="card-planned">
             <Clock class="h-3.5 w-3.5" />{{ plannedLabel(task.planned_date) }}
           </span>
-          <span v-if="task.postponed_until" class="inline-flex items-center gap-1 text-amber-600" data-testid="card-postponed">
+          <span v-if="isPostponed(task)" class="inline-flex items-center gap-1 text-amber-600" data-testid="card-postponed">
             <Hourglass class="h-3.5 w-3.5" />{{ task.postponed_until }}
           </span>
           <span v-if="task.repeat" class="inline-flex items-center gap-1" data-testid="card-repeat">

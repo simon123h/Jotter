@@ -419,6 +419,15 @@ describe('capturing and editing tasks', () => {
     expect(fs.files.get('Jotter/work/a.md')?.data).toMatch(/color: ['"]?#12ab34/);
   });
 
+  it('hides the postponed date once it has passed', async () => {
+    await start((f) => {
+      f.put('Jotter/work/index.md', '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n---\n');
+      f.put('Jotter/work/a.md', '---\ntitle: Back\nstatus: todo\npostponed_until: "2020-01-31"\n---\n');
+    });
+    expect(all('task-card')).toHaveLength(1);
+    expect(find('card-postponed').exists()).toBe(false);
+  });
+
   it('shows the postponed date for a task in the postponed bucket', async () => {
     await start((f) => {
       f.put(
