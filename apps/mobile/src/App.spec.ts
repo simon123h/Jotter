@@ -5,7 +5,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import App from './App.vue';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
-import { isoDay } from '@/dates';
+import { isoDay } from '@jotter/task-filter';
 import { capacitorKeyValue } from '@/data/keyValue';
 import { runShortcut, shortcutAction, sharedDraft } from '@/shortcuts';
 import { useSettingsStore } from '@/stores/settings';

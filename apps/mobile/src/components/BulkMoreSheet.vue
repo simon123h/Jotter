@@ -7,7 +7,7 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS } from '@/taskColors';
-import { isoDay } from '@/dates';
+import { isoDay } from '@jotter/task-filter';
 
 const app = useAppStore();
 const ui = useUiStore();

@@ -1,4 +1,5 @@
 import { type Ref } from 'vue';
+import { isoDay } from '@jotter/task-filter';
 import type { Task } from '@/types';
 import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
@@ -39,7 +40,7 @@ export function useTaskExport(filteredTasks: Ref<Task[]>, activeProjectId: Ref<s
 
     const activeProjectTitle = projectStore.projects.find((p) => p.id === activeProjectId.value)?.title || 'All Projects';
     const cleanTitle = activeProjectTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = isoDay();
     const filename = `Jotter_Export_${cleanTitle}_${dateStr}.${format}`;
 
     writeFile(workbook, filename, { bookType: format });

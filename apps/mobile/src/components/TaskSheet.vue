@@ -11,7 +11,7 @@ import { TASK_COLORS, colorHex } from '@/taskColors';
 import { PLANNED_CHOICES, plannedLabel } from '@/planned';
 import { REPEAT_UNITS } from '@/repeat';
 import { ensureReminderPermission } from '@/reminders';
-import { isoDay } from '@/dates';
+import { isoDay } from '@jotter/task-filter';
 import type { RepeatRule } from '@jotter/vault-format';
 import TitleHints from './TitleHints.vue';
 import { useSmartTitle } from '@/composables/useSmartTitle';

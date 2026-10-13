@@ -3,6 +3,7 @@ import type { Task, Bucket, RepeatRule } from '@/types';
 import { parseTitleState, getKeywordMatches } from '@jotter/title-parser';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import { sanitizeTags } from '@/utils/tagUtils';
+import { isoDay } from '@jotter/task-filter';
 
 export interface TaskEditorForm {
   title: string;
@@ -223,7 +224,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
 
   const addReminder = () => {
     // The day it is due, or tomorrow, at nine
-    const day = form.dueDate || new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const day = form.dueDate || isoDay(1);
     form.reminders.push(`${day}T09:00`);
   };
 

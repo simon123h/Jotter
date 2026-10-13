@@ -4,7 +4,7 @@ import { VaultRegistry } from './vaults';
 import { VaultDb } from './db';
 import { MemoryFs } from './memoryFs';
 import { MemoryKeyValue } from './keyValue';
-import { isoDay } from '@/dates';
+import { isoDay } from '@jotter/task-filter';
 
 let counter = 0;
 let fs: MemoryFs;

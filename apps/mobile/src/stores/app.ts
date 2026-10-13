@@ -4,7 +4,7 @@ import type { Task, Project, Bucket } from '@jotter/vault-format';
 import { filterTasks, isEmptyFilter, parseQuery } from '@jotter/task-filter';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
-import { isoDay, isPostponed } from '@/dates';
+import { isoDay, isPostponed } from '@jotter/task-filter';
 import { armDelay, armReminders, localDateTime } from '@/reminders';
 import { useUiStore } from '@/stores/ui';
 import { columnsFor, type Hidden, type View } from '@/stores/columns';

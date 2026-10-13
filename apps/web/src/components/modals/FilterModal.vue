@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { X, SlidersHorizontal, Calendar, Tag, Trash2, Check } from '@lucide/vue';
+import { isoDay } from '@jotter/task-filter';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
@@ -108,32 +109,17 @@ const handleClose = () => {
   handleApply();
 };
 
+/** The start of a preset range, as a day: today, or 7 or 30 days back. */
+const presetStart = (preset: 'today' | '7days' | '30days') => isoDay(preset === 'today' ? 0 : preset === '7days' ? -7 : -30);
+
 const setCreatedPreset = (preset: 'today' | '7days' | '30days') => {
-  const now = new Date();
-  createdBefore.value = now.toISOString().split('T')[0];
-  if (preset === 'today') {
-    createdAfter.value = now.toISOString().split('T')[0];
-  } else if (preset === '7days') {
-    const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    createdAfter.value = past.toISOString().split('T')[0];
-  } else if (preset === '30days') {
-    const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    createdAfter.value = past.toISOString().split('T')[0];
-  }
+  createdBefore.value = isoDay();
+  createdAfter.value = presetStart(preset);
 };
 
 const setUpdatedPreset = (preset: 'today' | '7days' | '30days') => {
-  const now = new Date();
-  updatedBefore.value = now.toISOString().split('T')[0];
-  if (preset === 'today') {
-    updatedAfter.value = now.toISOString().split('T')[0];
-  } else if (preset === '7days') {
-    const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    updatedAfter.value = past.toISOString().split('T')[0];
-  } else if (preset === '30days') {
-    const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    updatedAfter.value = past.toISOString().split('T')[0];
-  }
+  updatedBefore.value = isoDay();
+  updatedAfter.value = presetStart(preset);
 };
 
 const handleClear = () => {

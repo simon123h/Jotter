@@ -3,6 +3,7 @@ import { ref, watch, computed, nextTick } from 'vue';
 import { Trash2, Calendar, Clock, Palette, Repeat, Save, Plus, X } from '@lucide/vue';
 import type { Timeblock } from '@/types';
 import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
+import { isoDay } from '@jotter/task-filter';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import BaseModal from '@/components/ui/BaseModal.vue';
@@ -45,14 +46,6 @@ const COLOR_PRESETS = [
   { id: 'pink', label: 'Pink', bg: 'bg-pink-500', border: 'border-pink-400' },
 ];
 
-const getTodayStr = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
 const getRandomColor = () => {
   const options = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'];
   return options[Math.floor(Math.random() * options.length)];
@@ -72,7 +65,7 @@ watch(
         recurrence.value = tb.recurrence || 'none';
       } else {
         title.value = '';
-        date.value = props.initialDate || getTodayStr();
+        date.value = props.initialDate || isoDay();
         startTime.value = props.initialStartTime || '09:00';
         endTime.value = props.initialEndTime || '10:00';
         color.value = getRandomColor();

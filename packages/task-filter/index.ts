@@ -192,11 +192,23 @@ const list = (value: string | undefined) =>
     .map((v) => v.trim().toLowerCase())
     .filter(Boolean);
 
+/** A day as YYYY-MM-DD in the local calendar, `offset` days from today. */
+export function isoDay(offset = 0, now: Date = new Date()): string {
+  const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+}
+
 /** Today as YYYY-MM-DD in the local calendar. */
 export function today(now: Date = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  return isoDay(0, now);
 }
+
+/** Postponed to a day after today: the task is out of the way until then. */
+export const isPostponed = (
+  task: { postponed_until?: string | null },
+  now: Date = new Date(),
+) => !!task.postponed_until && task.postponed_until > today(now);
 
 /** The words of a text, lower case: letters and digits, the rest separates. */
 const words = (text: string) =>

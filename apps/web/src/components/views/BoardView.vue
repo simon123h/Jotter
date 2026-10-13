@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isPostponed } from '@jotter/task-filter';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { Plus, MoreHorizontal, ChevronLeft } from '@lucide/vue';
@@ -68,10 +69,8 @@ const tasksByBucket = computed(() => {
     groups[b.name] = [];
   });
 
-  const todayStr = new Date().toISOString().split('T')[0];
   props.tasks.forEach((task) => {
-    const isPostponed = !!(task.postponed_until && task.postponed_until > todayStr);
-    const b = isPostponed ? 'postponed' : task.bucket;
+    const b = isPostponed(task) ? 'postponed' : task.bucket;
     if (groups[b] === undefined) {
       groups[b] = [];
     }

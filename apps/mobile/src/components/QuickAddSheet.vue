@@ -8,7 +8,7 @@ import { useUiStore } from '@/stores/ui';
 import type { Column } from '@/stores/app';
 import TitleHints from './TitleHints.vue';
 import { useSmartTitle, type Hint } from '@/composables/useSmartTitle';
-import { isoDay } from '@/dates';
+import { isoDay } from '@jotter/task-filter';
 
 /** The tab in view: a new task is filed where the user is looking (its column, tag or planned date). */
 const props = defineProps<{ column: Column | null }>();

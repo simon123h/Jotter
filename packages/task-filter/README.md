@@ -5,6 +5,7 @@ search field (`tag:ui+bug prio:high due:before:2026-12-31 "fix leak"`) and the m
 
 - `parseQuery(query)` gives a `TaskFilter`, `stringifyQuery(filter)` the query back.
 - `filterTasks(tasks, filter)` keeps the tasks that match, in their order.
+- `isoDay(offset)`, `today()` and `isPostponed(task)` name days in the local calendar (not UTC, which is a day off around midnight) and tell whether a task is postponed to a later day.
 
 The Python backend answers the same filters from its SQLite index. The cases in `spec/fixtures/search/` are run against
 both (`apps/web/src/utils/__tests__/taskFilter.spec.ts` and `tests/test_search_conformance.py`), so that they agree. The

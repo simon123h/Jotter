@@ -1,6 +1,6 @@
 import type { Task, Bucket } from '@jotter/vault-format';
 import { t } from '@/i18n';
-import { isPostponed } from '@/dates';
+import { isPostponed } from '@jotter/task-filter';
 import { PLANNED_CHOICES, plannedKey, plannedLabel } from '@/planned';
 
 /** How the tabs group the tasks: by column of the board, by tag, or by planned date. */

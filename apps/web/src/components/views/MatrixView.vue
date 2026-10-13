@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isoDay } from '@jotter/task-filter';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useRoute } from 'vue-router';
@@ -147,8 +148,7 @@ const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
 
   if (tasksToUpdate.length === 0) return;
 
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = isoDay();
 
   // Store original states for potential rollback
   const originalStates = tasksToUpdate.map((t) => ({

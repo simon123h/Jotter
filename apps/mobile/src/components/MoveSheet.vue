@@ -2,7 +2,7 @@
 import { Check } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t } from '@/i18n';
-import { isPostponed } from '@/dates';
+import { isPostponed } from '@jotter/task-filter';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';

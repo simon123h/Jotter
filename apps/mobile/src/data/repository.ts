@@ -14,7 +14,7 @@ import {
 import { filterTasks, type TaskFilter } from '@jotter/task-filter';
 import { VaultDb, type CachedTask } from './db';
 import type { FsPort } from './fs';
-import { isoDay } from '@/dates';
+import { isoDay } from '@jotter/task-filter';
 import { VaultRegistry, type Vault } from './vaults';
 
 export interface NewTask {

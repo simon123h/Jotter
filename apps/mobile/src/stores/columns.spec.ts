@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Bucket, Task } from '@jotter/vault-format';
-import { isoDay } from '@/dates';
+import { isoDay } from '@jotter/task-filter';
 import { columnsFor } from '@/stores/columns';
 import { defaultHidden } from '@/stores/preferences';
 
