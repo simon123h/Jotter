@@ -58,7 +58,7 @@ Eine Aufgabe, die auf einen späteren Tag zurückgestellt ist, verlässt ihre Sp
 
 ## Einstellungen
 
-Design (auch *True Black* für OLED-Bildschirme, oder dem System folgen), Sprache und die Vaults findest du im Seitenmenü. Ein langer Druck auf das App-Symbol bietet Kürzel für eine neue Aufgabe, die Suche und die Planungsansicht.
+Design (auch *True Black* für OLED-Bildschirme, oder dem System folgen, mit einem hellen und einem dunklen Design deiner Wahl), Sprache und die Vaults findest du im Seitenmenü. Ein langer Druck auf das App-Symbol bietet Kürzel für eine neue Aufgabe, die Suche und die Planungsansicht.
 
 Um etwas aus einer anderen App zu speichern (eine Webseite, eine Nachricht), nutze deren *Teilen*-Schaltfläche und wähle Jotter. Das Schnellerfassen öffnet sich mit dem geteilten Text: Der Seitentitel oder die erste Zeile wird zum Titel der Aufgabe, der Rest zu den Notizen. Tags, Datumsangaben und Priorität im Text werden wie gewohnt erkannt.
 

@@ -86,6 +86,10 @@ Jotter wertet die Einstellungen in folgender Reihenfolge aus (höhere Priorität
 
 ---
 
+## Farbschema und Sprache
+
+Farbschema und Sprache stellst du auf der Seite **Einstellungen** der App ein, nicht in `jotter.yaml`. Wähle eines der Farbschemata oder setze den Haken bei **Dem hellen oder dunklen Modus des Geräts folgen**: Jotter nutzt dann das gewählte helle Farbschema, solange dein Betriebssystem oder Browser hell ist, und das gewählte dunkle, solange er dunkel ist, und wechselt von selbst, wenn sich das ändert. Viele Systeme wechseln nach einem Zeitplan zwischen hell und dunkel (zum Beispiel bei Sonnenuntergang), deshalb braucht Jotter keinen eigenen Zeitplan. Die Android-App hat dieselbe Auswahl unter *Design* → *System*.
+
 ## Git-Versionierung
 
 Ist der Ordner deines Vaults ein Git-Repository, committet Jotter lokale Änderungen, automatisch kurz nach jeder Änderung (höchstens einmal pro Minute) oder sobald du in der Fußzeile der Seitenleiste auf **Commit** klickst. Auf diesen Commits baut die Time Machine auf.
