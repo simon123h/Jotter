@@ -17,7 +17,7 @@ const uiStore = useUiStore();
 const projectStore = useProjectStore();
 
 const activeProjectId = computed(() => {
-  return (route.params.projectId as string) || projectStore.projects[0]?.id || 'all';
+  return (route.params.projectId as string) || projectStore.projects.find((p) => !p.archived)?.id || 'all';
 });
 
 const isTabActive = (tab: string) => {

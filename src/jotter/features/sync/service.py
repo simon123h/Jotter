@@ -162,6 +162,8 @@ class SyncApplicationService:
         for project in projects:
             p_id = project.id
             clean_period = project.done_clean_period if project.done_clean_period is not None else global_clean_period
+            if project.archived:
+                clean_period = None  # a project put away must not lose tasks later
             scan_started = time.perf_counter()
             task_files = self.disk_task_repo.scan_task_files(p_id)
             scan_seconds += time.perf_counter() - scan_started

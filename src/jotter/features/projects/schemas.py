@@ -10,6 +10,7 @@ class ProjectCreate(BaseModel):
     id: str | None = None
     description: str = ""
     done_clean_period: int | None = None
+    archived: bool = False
 
 
 class ProjectUpdate(BaseModel):
@@ -18,6 +19,7 @@ class ProjectUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     done_clean_period: int | None = None
+    archived: bool | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -28,4 +30,5 @@ class ProjectResponse(BaseModel):
     description: str = ""
     created_at: str
     done_clean_period: int | None = None
+    archived: bool = False
     task_count: int | None = None

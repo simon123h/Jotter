@@ -143,6 +143,7 @@ class SqliteTaskRepository:
         created_after: str | None = None,
         updated_before: str | None = None,
         updated_after: str | None = None,
+        include_archived: bool = False,
     ) -> list[Task]:
         cursor = self.conn.cursor()
         query = """
@@ -160,6 +161,9 @@ class SqliteTaskRepository:
         if project_id:
             query += " AND project_id = ?"
             args.append(project_id)
+        elif not include_archived:
+            # A question across projects leaves out the projects that are put away
+            query += " AND project_id NOT IN (SELECT id FROM projects WHERE archived = 1)"
 
         # Bucket filter
         if bucket:

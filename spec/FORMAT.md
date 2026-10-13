@@ -232,6 +232,7 @@ overdue if it has a `due_date`.
 | `description` | string | empty | when not empty |
 | `created_at` | ISO 8601 timestamp | the time the file was read | when set |
 | `done_clean_period` | integer days | none (`doneCleanPeriod` is the legacy key) | when set |
+| `archived` | boolean | `false`. Only the boolean `true` archives: any other value reads as `false`. | only when `true` |
 | `buckets` | list of buckets | the default buckets, see below | always |
 
 A **bucket** is a board column:
@@ -249,6 +250,17 @@ A **bucket** is a board column:
 
 - The **default buckets**, used when `buckets` is missing or empty, are `backlog` (default bucket), `todo`,
   `in-progress`, `done` and `archive`, at positions 1000 to 5000.
+- **An archived project** (`archived: true`) is put away, not deleted: its folder, tasks and attachments stay as
+  they are, and it can be restored by removing the key (writers omit `archived` when it is `false`, so there
+  is no `archived: false` to find). While a project is archived:
+  - Readers MUST NOT show it among the projects in use. An app MAY list archived projects apart, to restore or
+    delete them, and MAY open one to read it.
+  - Its tasks are left out of every view or answer that spans projects (an "all tasks" view, a search over the
+    vault, a list for an assistant), unless the reader asks for archived projects explicitly.
+  - **Reminders** of its tasks MUST NOT notify. They stay in the files, and notify again when the project is
+    restored (a reminder in the past by then is simply past, as always).
+  - An app MUST NOT remove tasks of it by itself, such as the cleaning of old done tasks.
+  - Archiving a project does not change its tasks: no `status`, date or other field is written.
 - A missing or unreadable `index.md` behaves like an empty manifest.
 - The body of `index.md` is free text for humans and other tools. Writers MUST keep it. A new manifest gets a
   `# <title>` heading.

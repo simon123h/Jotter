@@ -244,7 +244,10 @@ async function createProject(title: string): Promise<Project> {
   return newProj;
 }
 
-async function updateProject(id: string, updates: { title?: string; done_clean_period?: number | null }): Promise<Project> {
+async function updateProject(
+  id: string,
+  updates: { title?: string; done_clean_period?: number | null; archived?: boolean }
+): Promise<Project> {
   const projects = getDemoProjects();
   const idx = projects.findIndex((p) => p.id === id);
   if (idx !== -1) {
@@ -619,7 +622,7 @@ export class DemoStorageAdapter implements StorageAdapter {
   deleteProject = deleteProject;
 
   async getAllTasks(filters?: TaskFilterParams): Promise<Task[]> {
-    const projects = await getProjects();
+    const projects = (await getProjects()).filter((p) => !p.archived);
     const lists = await Promise.all(projects.map((p) => getTasks(p.id, filters)));
     return lists.flat();
   }

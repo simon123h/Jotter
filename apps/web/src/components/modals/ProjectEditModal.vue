@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { Trash2, Save, X } from '@lucide/vue';
+import { Trash2, Save, X, Archive, ArchiveRestore } from '@lucide/vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
@@ -13,6 +14,8 @@ const { t } = useI18n();
 const projectStore = useProjectStore();
 const settingsStore = useSettingsStore();
 const { showDialog } = useDialog();
+const route = useRoute();
+const router = useRouter();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -50,9 +53,8 @@ watch(
   { immediate: true }
 );
 
-const handleSave = async () => {
-  if (!props.project || !title.value.trim()) return;
-
+/** The edits of the form as an update, to which `extra` adds what a button of the form changes besides. */
+const formUpdate = (): Partial<Project> => {
   let cleanPeriod: number | null = null;
   if (doneCleanPeriod.value !== null && doneCleanPeriod.value !== undefined && String(doneCleanPeriod.value).trim() !== '') {
     const parsed = Number(doneCleanPeriod.value);
@@ -60,14 +62,30 @@ const handleSave = async () => {
       cleanPeriod = Math.floor(parsed);
     }
   }
+  return { title: title.value.trim(), done_clean_period: cleanPeriod };
+};
 
-  await updateProject(props.project.id, {
-    title: title.value.trim(),
-    done_clean_period: cleanPeriod,
-  });
+const handleSave = async () => {
+  if (!props.project || !title.value.trim()) return;
+
+  await updateProject(props.project.id, formUpdate());
 
   await projectStore.invalidate();
   emit('close');
+};
+
+/**
+ * Puts the project away, or takes it back, and saves the edits of the form with it. An open project that is put
+ * away makes way for the "all" view.
+ */
+const handleArchive = async () => {
+  if (!props.project) return;
+  const { id } = props.project;
+  const archived = !props.project.archived;
+  await updateProject(id, { ...(title.value.trim() ? formUpdate() : {}), archived });
+  await projectStore.invalidate();
+  emit('close');
+  if (archived && route.params.projectId === id) await router.push({ name: 'project', params: { projectId: 'all' } });
 };
 
 const handleDelete = async () => {
@@ -148,6 +166,17 @@ const closeAndSave = async () => {
         >
           <Trash2 class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('projectEdit.deleteButton') }}</span>
+        </button>
+
+        <button
+          type="button"
+          @click="handleArchive"
+          class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 rounded transition-all cursor-pointer whitespace-nowrap"
+          :title="project?.archived ? t('projectEdit.restoreButton') : t('projectEdit.archiveButton')"
+          data-testid="project-archive-toggle"
+        >
+          <component :is="project?.archived ? ArchiveRestore : Archive" class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">{{ project?.archived ? t('projectEdit.restoreButton') : t('projectEdit.archiveButton') }}</span>
         </button>
 
         <div class="flex flex-wrap items-center gap-2 ml-auto">

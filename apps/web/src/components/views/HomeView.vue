@@ -52,13 +52,15 @@ const handleCreateProject = async () => {
 };
 
 const sortedProjects = computed(() => {
-  return [...projects.value].sort((a, b) => {
-    const aPinned = pinnedProjectIds.value.includes(a.id);
-    const bPinned = pinnedProjectIds.value.includes(b.id);
-    if (aPinned && !bPinned) return -1;
-    if (!aPinned && bPinned) return 1;
-    return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
-  });
+  return projects.value
+    .filter((p) => !p.archived)
+    .sort((a, b) => {
+      const aPinned = pinnedProjectIds.value.includes(a.id);
+      const bPinned = pinnedProjectIds.value.includes(b.id);
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
+      return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+    });
 });
 
 const welcomeParts = computed(() => {
@@ -111,7 +113,7 @@ const welcomeParts = computed(() => {
           </div>
 
           <!-- If projects exist, show grid -->
-          <div v-else-if="projects.length > 0" key="projects-grid" class="space-y-3 sm:space-y-6 text-left w-full">
+          <div v-else-if="sortedProjects.length > 0" key="projects-grid" class="space-y-3 sm:space-y-6 text-left w-full">
             <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-theme-text-muted flex items-center gap-1.5 sm:gap-2">
               <Folder class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-theme-accent" />
               {{ t('home.selectProject') }}

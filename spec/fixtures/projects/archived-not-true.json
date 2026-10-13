@@ -1,0 +1,26 @@
+{
+  "description": "Only the boolean true archives: a string, a number or `false` read as not archived.",
+  "context": {
+    "dir_name": "trip"
+  },
+  "expected": {
+    "id": "trip",
+    "title": "Trip to Lisbon",
+    "description": "",
+    "done_clean_period": null,
+    "archived": false,
+    "buckets": [
+      {
+        "name": "todo",
+        "title": "To Do",
+        "subtitle": "",
+        "position": 1000.0,
+        "color": null,
+        "layout": "list",
+        "max_tasks": null,
+        "is_default": true
+      }
+    ],
+    "body": "# Trip to Lisbon\n"
+  }
+}

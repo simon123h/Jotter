@@ -36,6 +36,8 @@ export interface Project {
   created_at: string;
   done_clean_period?: number | null;
   description?: string;
+  /** Put away: out of the lists, the reminders and every view across projects. Only the boolean `true` archives. */
+  archived?: boolean;
   /** Markdown below the manifest's frontmatter, kept when the manifest is rewritten. */
   body?: string;
   /** Manifest keys this app does not know, kept when the manifest is rewritten. */

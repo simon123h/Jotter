@@ -9,6 +9,7 @@ Sie deckt den Kern ab: Vaults, Projekte, Spalten, Aufgaben mit allen Eigenschaft
 Beim ersten Start fragt die App nach einem Ordner als Vault und nach dem Zugriff auf Dateien. Weitere Vaults kannst du hinzufügen und im Seitenmenü wechseln.
 
 - **Projekt wechseln**: Tippe oben auf den Projektnamen und wähle ein Projekt aus der Liste, oder nutze das Seitenmenü.
+- **Archivieren**: Unter *Projekte verwalten* legt die Archiv-Taste ein Projekt beiseite (mit Rückgängig). Es verschwindet aus den Listen, und seine Erinnerungen hören auf. Unter *Archiviert* am Ende der Liste holst du es zurück oder löschst es. Die Aufgaben bleiben, wie sie sind.
 - **Anheften**: Unter *Projekte verwalten* hält die Pin-Taste ein Projekt in allen Listen oben. Angeheftetes wird pro Vault auf dem Gerät gespeichert.
 
 ## Das Board

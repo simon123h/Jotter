@@ -50,6 +50,7 @@ class TaskQueryService:
         created_after: str | None = None,
         updated_before: str | None = None,
         updated_after: str | None = None,
+        include_archived: bool = False,
     ) -> list[TaskResponse]:
         tasks = self.sqlite_repo.find_tasks(
             project_id=project_id,
@@ -70,6 +71,7 @@ class TaskQueryService:
             created_after=created_after,
             updated_before=updated_before,
             updated_after=updated_after,
+            include_archived=include_archived,
         )
         return [self._to_response(t) for t in tasks]
 

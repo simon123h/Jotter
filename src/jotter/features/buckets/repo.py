@@ -162,7 +162,7 @@ class BucketRepository:
         # Retrieve project entity from DB or create a fallback
         cursor = self.conn.cursor()
         cursor.execute(
-            "SELECT id, title, description, created_at, done_clean_period FROM projects WHERE id = ?",
+            "SELECT id, title, description, created_at, done_clean_period, archived FROM projects WHERE id = ?",
             (project_id,),
         )
         row = cursor.fetchone()
@@ -174,6 +174,7 @@ class BucketRepository:
                 if "description" in row.keys() and row["description"] is not None  # noqa: SIM118  sqlite3.Row: `in` tests values, not column names
                 else "",
                 done_clean_period=row["done_clean_period"],
+                archived=bool(row["archived"]),
                 created_at=row["created_at"],
             )
         else:
@@ -227,7 +228,7 @@ class BucketRepository:
 
         cursor = self.conn.cursor()
         cursor.execute(
-            "SELECT id, title, description, created_at, done_clean_period FROM projects WHERE id = ?",
+            "SELECT id, title, description, created_at, done_clean_period, archived FROM projects WHERE id = ?",
             (project_id,),
         )
         row = cursor.fetchone()
@@ -239,6 +240,7 @@ class BucketRepository:
                 if "description" in row.keys() and row["description"] is not None  # noqa: SIM118  sqlite3.Row: `in` tests values, not column names
                 else "",
                 done_clean_period=row["done_clean_period"],
+                archived=bool(row["archived"]),
                 created_at=row["created_at"],
             )
         else:

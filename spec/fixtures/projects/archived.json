@@ -1,0 +1,26 @@
+{
+  "description": "A project put away with `archived: true`.",
+  "context": {
+    "dir_name": "trip"
+  },
+  "expected": {
+    "id": "trip",
+    "title": "Trip to Lisbon",
+    "description": "",
+    "done_clean_period": null,
+    "archived": true,
+    "buckets": [
+      {
+        "name": "todo",
+        "title": "To Do",
+        "subtitle": "",
+        "position": 1000.0,
+        "color": null,
+        "layout": "list",
+        "max_tasks": null,
+        "is_default": true
+      }
+    ],
+    "body": "# Trip to Lisbon\n"
+  }
+}

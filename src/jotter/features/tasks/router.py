@@ -85,6 +85,8 @@ def extract_task_filter_params(request: Request) -> TaskFilterParams:
         created_after=_extract_query_param(request, "createdAfter", "created_after"),
         updated_before=_extract_query_param(request, "updatedBefore", "updated_before"),
         updated_after=_extract_query_param(request, "updatedAfter", "updated_after"),
+        include_archived=(_extract_query_param(request, "includeArchived", "include_archived") or "").lower()
+        in ("true", "1", "yes"),
     )
 
 

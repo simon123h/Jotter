@@ -50,6 +50,10 @@ export const useAppStore = defineStore('app', () => {
   const navVisible = computed(() => selection.value.length === 0 && !ui.navHidden);
 
   const project = computed(() => projects.value.find((p) => p.id === projectId.value) ?? null);
+  /** The project to open when the remembered one is gone or put away. */
+  const firstProject = () => projects.value.find((p) => !p.archived)?.id ?? null;
+  /** The projects that are put away (spec/FORMAT.md, *Project manifest*), apart from the ones in use. */
+  const archivedProjects = computed(() => projects.value.filter((p) => p.archived));
   /** The projects as the lists show them: the pinned ones first, each group in the chosen order. */
   const orderedProjects = computed(() => {
     const index = (id: string) => projectOrder.value.indexOf(id);
@@ -59,7 +63,7 @@ export const useAppStore = defineStore('app', () => {
       }
       return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
     };
-    const sorted = [...projects.value].sort(inOrder);
+    const sorted = projects.value.filter((p) => !p.archived).sort(inOrder);
     return [...sorted.filter((p) => pinned.value.includes(p.id)), ...sorted.filter((p) => !pinned.value.includes(p.id))];
   });
 
@@ -139,7 +143,7 @@ export const useAppStore = defineStore('app', () => {
     }
     projects.value = await r.listProjects();
     const remembered = await recallProject(opened.id);
-    projectId.value = projects.value.find((p) => p.id === remembered)?.id ?? projects.value[0]?.id ?? null;
+    projectId.value = projects.value.find((p) => p.id === remembered && !p.archived)?.id ?? firstProject();
     view.value = await recallView(opened.id);
     hidden.value = await recallHidden(opened.id);
     await loadSettings(true);
@@ -179,7 +183,7 @@ export const useAppStore = defineStore('app', () => {
       await loadSettings();
       if (!result.changed && !options.force) return;
       projects.value = await repository().listProjects();
-      if (!projects.value.some((p) => p.id === projectId.value)) projectId.value = projects.value[0]?.id ?? null;
+      if (!projects.value.some((p) => p.id === projectId.value && !p.archived)) projectId.value = firstProject();
       await loadProject();
     } finally {
       scanning = false;
@@ -276,8 +280,24 @@ export const useAppStore = defineStore('app', () => {
   async function removeProject(id: string) {
     await repository().deleteProject(id);
     projects.value = await repository().listProjects();
-    if (projectId.value === id) await selectProject(projects.value[0]?.id ?? '');
-    if (!projects.value.length) projectId.value = null;
+    if (projectId.value === id) await selectProject(firstProject() ?? '');
+    if (!firstProject()) projectId.value = null;
+  }
+
+  /** Puts a project away, or takes it back. Its reminders stop or come back with it. */
+  async function setProjectArchived(id: string, archived: boolean) {
+    await repository().updateProject(id, { archived });
+    projects.value = await repository().listProjects();
+    if (archived && projectId.value === id) {
+      const next = firstProject();
+      if (next) await selectProject(next);
+      else {
+        projectId.value = null;
+        await loadProject();
+      }
+    } else {
+      armRemindersSoon();
+    }
   }
 
   // ---------- tasks ----------
@@ -498,6 +518,8 @@ export const useAppStore = defineStore('app', () => {
     vault,
     vaults,
     projects,
+    archivedProjects,
+    setProjectArchived,
     pinned,
     orderedProjects,
     togglePinned,

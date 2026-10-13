@@ -69,6 +69,20 @@ describe('ProjectSidebar.vue', () => {
     expect(items[2].text()).toContain('Project B');
   });
 
+  it('lists archived projects apart, collapsed, and not among the projects in use', async () => {
+    const props = {
+      ...defaultProps,
+      projects: [...defaultProps.projects, { id: '3', title: 'Old trip', created_at: '2026-06-08T00:00:00Z', archived: true } as Project],
+    };
+    const wrapper = mount(ProjectSidebar, { ...getMountOptions(), props });
+    expect(wrapper.findAll('.project-item').map((i) => i.text())).not.toContain('Old trip');
+    expect(wrapper.find('[data-testid="archived-toggle"]').text()).toContain('Archived (1)');
+    expect(wrapper.find('[data-testid="archived-project"]').exists()).toBe(false);
+
+    await wrapper.find('[data-testid="archived-toggle"]').trigger('click');
+    expect(wrapper.findAll('[data-testid="archived-project"]').map((i) => i.text())).toEqual(['Old trip']);
+  });
+
   it('sets the active project class correctly', () => {
     const wrapper = mount(ProjectSidebar, getMountOptions());
     const items = wrapper.findAll('.project-item');
