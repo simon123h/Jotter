@@ -788,7 +788,12 @@ describe('settings', () => {
     expect(wrapper.text()).toContain('Einstellungen');
     expect(document.documentElement.classList.contains('theme-midnight')).toBe(true);
     await settle();
-    expect(JSON.parse((await capacitorKeyValue.get('jotter_lite_settings'))!)).toEqual({ theme: 'midnight', language: 'de' });
+    expect(JSON.parse((await capacitorKeyValue.get('jotter_lite_settings'))!)).toEqual({
+      theme: 'midnight',
+      lightTheme: 'nordic-light',
+      darkTheme: 'midnight',
+      language: 'de',
+    });
     expect(find('open-search').attributes('aria-label')).toBe('Suchen');
 
     // Another theme replaces it; the default theme has no class, and so does the system choice on a light device

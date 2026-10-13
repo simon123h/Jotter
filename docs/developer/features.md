@@ -26,7 +26,7 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Bulk actions on a selection | yes | yes | ~1k | Core | `components/ui/bulk`, mobile toolbar |
 | Smart title input (dates, priority, tags, column) | yes | yes | ~0.6k | Core | `packages/title-parser` (shared) |
 | Vault format and Obsidian/PKM compatibility | yes | yes | ~2k | Core | `spec/`, `packages/vault-format`, `index.md` manifests |
-| Themes and languages (English, German) | yes | yes | ~1.7k | Core | `packages/themes` (shared), `locales` |
+| Themes (light and dark theme follow the device) and languages (English, German) | yes | yes | ~1.9k | Core | `packages/themes` (shared), `locales` |
 | Indexing and periodic scan | yes | own | ~1.8k | Core | `features/sync` (SQLite index, ADR 0014/0015); mobile scans through its repository |
 | Postponing tasks | yes | yes | ~0.3k | Core | virtual Postponed column |
 | Recurring tasks: `repeat` rule, rolled over in place on completion | yes | yes | ~0.8k | Core | `spec/FORMAT.md` (*Recurring tasks*), ADR 0019; reuses `postponed_until` |

@@ -70,6 +70,10 @@ export interface AppSettings {
   hidePostponedColumn: boolean;
   isSidebarOpen: boolean;
   currentTheme: string;
+  /** Use lightTheme or darkTheme, as the device is light or dark, instead of currentTheme. */
+  themeFollowsSystem?: boolean;
+  lightTheme?: string;
+  darkTheme?: string;
   thresholdDays: number;
   pinnedProjectIds: string[];
   sortBy: 'alpha' | 'manual';

@@ -24,6 +24,9 @@ export const en = {
   searchPlaceholder: 'Search tasks...',
   themeLabel: 'Theme',
   themeChoose: 'Choose theme',
+  themeFollowSystem: "Follow the device's light or dark setting",
+  themeWhenLight: 'Theme when the device is light',
+  themeWhenDark: 'Theme when the device is dark',
   themeNames: {
     midnight: 'Midnight Violet',
     forest: 'Emerald Forest',

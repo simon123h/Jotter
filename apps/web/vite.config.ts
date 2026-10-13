@@ -1,8 +1,8 @@
-import { execSync } from 'node:child_process'
-import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vitest/config'
-import vue from '@vitejs/plugin-vue'
-import tailwindcss from '@tailwindcss/vite'
+import { execSync } from 'node:child_process';
+import { fileURLToPath, URL } from 'node:url';
+import { defineConfig } from 'vitest/config';
+import vue from '@vitejs/plugin-vue';
+import tailwindcss from '@tailwindcss/vite';
 
 function getAppVersion(): string {
   if (process.env.TAG) {
@@ -31,10 +31,7 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
   },
-  plugins: [
-    vue(),
-    tailwindcss(),
-  ],
+  plugins: [vue(), tailwindcss()],
   server: {
     fs: { allow: ['.', sharedPackages, sharedSpec] },
     proxy: {
@@ -44,9 +41,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@jotter/themes': fileURLToPath(new URL('../../packages/themes/index.ts', import.meta.url)),
       '@jotter/title-parser': fileURLToPath(new URL('../../packages/title-parser/index.ts', import.meta.url)),
       '@jotter/task-filter': fileURLToPath(new URL('../../packages/task-filter/index.ts', import.meta.url)),
-    }
+    },
   },
   test: {
     globals: true,
@@ -61,4 +59,4 @@ export default defineConfig({
       exclude: ['src/storage/demoAdapter.ts', '**/*.spec.ts', 'src/test-setup.ts', '**/node_modules/**'],
     },
   },
-})
+});

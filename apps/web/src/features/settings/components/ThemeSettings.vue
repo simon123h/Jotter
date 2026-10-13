@@ -2,11 +2,12 @@
 import { storeToRefs } from 'pinia';
 import { Check } from '@lucide/vue';
 import { useSettingsStore } from '@/stores/settings';
+import { THEMES } from '@jotter/themes';
 import { useI18n } from '@/composables/useI18n';
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
-const { currentTheme } = storeToRefs(settingsStore);
+const { currentTheme, themeFollowsSystem, lightTheme, darkTheme } = storeToRefs(settingsStore);
 
 const themes = [
   { id: 'nordic-light', name: 'Nordic Light', color: 'bg-blue-600' },
@@ -22,23 +23,35 @@ const themes = [
 
 const setTheme = (theme: string) => {
   settingsStore.setTheme(theme);
-  const docClasses = document.documentElement.classList;
-  // Remove existing themes
-  docClasses.forEach((c) => {
-    if (c.startsWith('theme-')) {
-      docClasses.remove(c);
-    }
-  });
-  if (theme !== 'nordic-light') {
-    docClasses.add('theme-' + theme);
-  }
 };
+
+const lightThemes = THEMES.filter((th) => !th.dark);
+const darkThemes = THEMES.filter((th) => th.dark);
+const select = 'bg-theme-card border border-theme-border rounded-lg px-3 py-2 text-xs text-theme-text-main outline-none';
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
     <h3 class="text-xs font-bold text-theme-text-main uppercase tracking-wider">{{ t('themeLabel') }}</h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+    <label class="flex items-center gap-2 text-xs text-theme-text-main cursor-pointer">
+      <input v-model="themeFollowsSystem" type="checkbox" data-testid="theme-follows-system" />
+      {{ t('themeFollowSystem') }}
+    </label>
+    <div v-if="themeFollowsSystem" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <label class="flex flex-col gap-1 text-xs text-theme-text-muted">
+        {{ t('themeWhenLight') }}
+        <select v-model="lightTheme" :class="select" data-testid="theme-light">
+          <option v-for="th in lightThemes" :key="th.id" :value="th.id">{{ t('themeNames.' + th.id) }}</option>
+        </select>
+      </label>
+      <label class="flex flex-col gap-1 text-xs text-theme-text-muted">
+        {{ t('themeWhenDark') }}
+        <select v-model="darkTheme" :class="select" data-testid="theme-dark">
+          <option v-for="th in darkThemes" :key="th.id" :value="th.id">{{ t('themeNames.' + th.id) }}</option>
+        </select>
+      </label>
+    </div>
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
       <button
         v-for="th in themes"
         :key="th.id"

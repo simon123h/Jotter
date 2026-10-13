@@ -1,7 +1,8 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs';
 import { createPinia, setActivePinia } from 'pinia';
-import { describe, it, expect } from 'vitest';
+import { nextTick } from 'vue';
+import { describe, it, expect, vi } from 'vitest';
 import { THEMES, DEFAULT_THEME } from '@jotter/themes';
 import { capacitorKeyValue } from '@/data/keyValue';
 import { useSettingsStore } from '@/stores/settings';
@@ -45,5 +46,48 @@ describe('shared themes', () => {
     const settings = useSettingsStore();
     await settings.restore();
     expect(settings.theme).toBe('midnight');
+  });
+
+  it('lets the system choice use the light and the dark theme picked, as the device switches', async () => {
+    let dark = false;
+    let notify: () => void = () => undefined;
+    vi.stubGlobal('matchMedia', () => ({
+      get matches() {
+        return dark;
+      },
+      addEventListener: (_: string, listener: () => void) => (notify = listener),
+    }));
+    try {
+      setActivePinia(createPinia());
+      await capacitorKeyValue.set(
+        'jotter_lite_settings',
+        JSON.stringify({ theme: 'system', lightTheme: 'earth-light', darkTheme: 'forest' })
+      );
+      const settings = useSettingsStore();
+      await settings.restore();
+      const themeClasses = () => [...document.documentElement.classList].filter((c) => c.startsWith('theme-'));
+      expect(themeClasses()).toEqual(['theme-earth-light']);
+
+      dark = true;
+      notify();
+      expect(themeClasses()).toEqual(['theme-forest']);
+
+      settings.darkTheme = 'sakura';
+      await nextTick();
+      expect(themeClasses()).toEqual(['theme-sakura']);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('ignores a saved light or dark theme of the wrong kind', async () => {
+    setActivePinia(createPinia());
+    await capacitorKeyValue.set(
+      'jotter_lite_settings',
+      JSON.stringify({ theme: 'system', lightTheme: 'forest', darkTheme: 'nordic-light' })
+    );
+    const settings = useSettingsStore();
+    await settings.restore();
+    expect([settings.lightTheme, settings.darkTheme]).toEqual(['nordic-light', 'midnight']);
   });
 });

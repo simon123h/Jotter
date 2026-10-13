@@ -1,4 +1,4 @@
-import { reactive, toRefs, watch, nextTick } from 'vue';
+import { reactive, ref, toRefs, watch, nextTick } from 'vue';
 import { defineStore } from 'pinia';
 import { useDebounceFn } from '@vueuse/core';
 import { getSettings, saveSettings } from '@/api';
@@ -22,6 +22,9 @@ export const useSettingsStore = defineStore('settings', () => {
     hidePostponedColumn: true,
     isSidebarOpen: getStoredBool(SIDEBAR_STORAGE_KEY, true),
     currentTheme: 'nordic-light',
+    themeFollowsSystem: false,
+    lightTheme: 'nordic-light',
+    darkTheme: 'midnight',
     thresholdDays: 7,
     pinnedProjectIds: [],
     sortBy: 'alpha',
@@ -66,7 +69,7 @@ export const useSettingsStore = defineStore('settings', () => {
       localStorage.setItem(TIMEBLOCK_SIDEBAR_STORAGE_KEY, String(sidebarOpen));
       localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.isSidebarOpen));
 
-      applyThemeToDocument(state.currentTheme);
+      applyThemeToDocument(activeTheme());
 
       await nextTick();
       skipSave = false;
@@ -108,8 +111,18 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   };
 
+  // The device's light or dark setting, followed while the choice is "follow system"
+  const darkQuery = typeof window !== 'undefined' ? window.matchMedia?.('(prefers-color-scheme: dark)') : undefined;
+  const deviceDark = ref(!!darkQuery?.matches);
+  darkQuery?.addEventListener?.('change', (event) => (deviceDark.value = event.matches));
+
+  function activeTheme(): string {
+    if (!state.themeFollowsSystem) return state.currentTheme;
+    return (deviceDark.value ? state.darkTheme : state.lightTheme) || state.currentTheme;
+  }
+
   watch(
-    () => state.currentTheme,
+    activeTheme,
     (newTheme) => {
       applyThemeToDocument(newTheme);
     },

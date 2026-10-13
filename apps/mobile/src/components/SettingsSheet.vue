@@ -30,6 +30,24 @@ const version = __APP_VERSION__;
           <option v-for="theme in THEMES" :key="theme.id" :value="theme.id">{{ t(`theme.${theme.id}` as MessageKey) }}</option>
         </select>
       </label>
+      <template v-if="settings.theme === 'system'">
+        <label class="block">
+          <span class="mb-1 block text-xs font-medium text-muted">{{ t('settings.themeLight') }}</span>
+          <select v-model="settings.lightTheme" :class="field" data-testid="setting-theme-light">
+            <option v-for="theme in THEMES.filter((entry) => !entry.dark)" :key="theme.id" :value="theme.id">
+              {{ t(`theme.${theme.id}` as MessageKey) }}
+            </option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs font-medium text-muted">{{ t('settings.themeDark') }}</span>
+          <select v-model="settings.darkTheme" :class="field" data-testid="setting-theme-dark">
+            <option v-for="theme in THEMES.filter((entry) => entry.dark)" :key="theme.id" :value="theme.id">
+              {{ t(`theme.${theme.id}` as MessageKey) }}
+            </option>
+          </select>
+        </label>
+      </template>
       <button
         class="inline-flex items-center gap-2 text-sm font-medium text-accent"
         data-testid="setting-vaults"

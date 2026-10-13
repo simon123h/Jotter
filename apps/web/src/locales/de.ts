@@ -24,6 +24,9 @@ export const de = {
   searchPlaceholder: 'Aufgaben suchen...',
   themeLabel: 'Farbschema',
   themeChoose: 'Farbschema auswählen',
+  themeFollowSystem: 'Dem hellen oder dunklen Modus des Geräts folgen',
+  themeWhenLight: 'Farbschema bei hellem Gerät',
+  themeWhenDark: 'Farbschema bei dunklem Gerät',
   themeNames: {
     midnight: 'Midnight Violet',
     forest: 'Emerald Forest',

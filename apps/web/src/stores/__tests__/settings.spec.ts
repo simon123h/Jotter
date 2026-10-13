@@ -1,3 +1,4 @@
+import { nextTick } from 'vue';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
@@ -65,5 +66,33 @@ describe('Settings Store', () => {
     await store.loadSettings();
     expect((store as any).autoSyncInterval).toBeUndefined();
     expect((store as any).autoCommitInterval).toBeUndefined();
+  });
+});
+
+describe('Settings Store: following the device theme', () => {
+  const classes = () => [...document.documentElement.classList].filter((c) => c.startsWith('theme-'));
+
+  it('uses the light or the dark theme chosen, as the device switches', async () => {
+    let notify: (event: { matches: boolean }) => void = () => undefined;
+    vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: (_: string, listener: typeof notify) => (notify = listener) }));
+    try {
+      setActivePinia(createPinia());
+      const store = useSettingsStore();
+      store.themeFollowsSystem = true;
+      store.lightTheme = 'earth-light';
+      store.darkTheme = 'forest';
+      await nextTick();
+      expect(classes()).toEqual(['theme-earth-light']);
+
+      notify({ matches: true });
+      await nextTick();
+      expect(classes()).toEqual(['theme-forest']);
+
+      store.themeFollowsSystem = false;
+      await nextTick();
+      expect(classes()).toEqual([]); // currentTheme is the default theme
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
