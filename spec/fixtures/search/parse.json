@@ -107,6 +107,48 @@
     {
       "query": "",
       "filter": {}
+    },
+    {
+      "query": "#shopping",
+      "filter": {
+        "tags": "shopping",
+        "tag_mode": "any"
+      }
+    },
+    {
+      "query": "#ui #bug",
+      "filter": {
+        "tags": "ui,bug",
+        "tag_mode": "all"
+      }
+    },
+    {
+      "query": "milk #shopping bucket:todo",
+      "filter": {
+        "search": "milk",
+        "tags": "shopping",
+        "tag_mode": "any",
+        "buckets": "todo"
+      }
+    },
+    {
+      "query": "issue#12",
+      "filter": {
+        "search": "issue#12"
+      }
+    },
+    {
+      "query": "#",
+      "filter": {
+        "search": "#"
+      }
+    },
+    {
+      "query": "tag:ui #bug",
+      "filter": {
+        "tags": "bug",
+        "tag_mode": "any"
+      }
     }
   ]
 }

@@ -55,6 +55,7 @@ const quoted = (value: string) => (value.includes(" ") ? `"${value}"` : value);
 /**
  * Supports:
  * - tag:ui,bug (any of them) or tag:ui+bug (all of them), also `tags:`
+ * - #ui for a tag; several (#ui #bug) need all of them. Only a token that starts with # counts, so issue#12 stays a word
  * - bucket:todo or buckets:todo,review
  * - priority:high or prio:high,urgent (`none` for tasks without one)
  * - project:work or proj:work
@@ -67,12 +68,25 @@ export function parseQuery(query: string): TaskFilter {
   const filter: TaskFilter = {};
   const searchTerms: string[] = [];
 
-  // key:"quoted value", key:value, "quoted text" or a plain word
-  const regex = /(-?\w+):(?:"([^"]+)"|([^\s]+))|(?:"([^"]+)"|([^\s]+))/g;
+  // key:"quoted value", key:value, #tag, "quoted text" or a plain word
+  const regex =
+    /(-?\w+):(?:"([^"]+)"|([^\s]+))|#([^\s]+)|(?:"([^"]+)"|([^\s]+))/g;
   let match;
+  let afterHashTag = false;
 
   while ((match = regex.exec(query)) !== null) {
-    const [, key, quotedVal, unquotedVal, quotedText, unquotedText] = match;
+    const [, key, quotedVal, unquotedVal, hashTag, quotedText, unquotedText] =
+      match;
+
+    if (hashTag) {
+      // the tags of a run of #tokens add up; a tag: token before it is replaced
+      const previous = afterHashTag && filter.tags ? `${filter.tags},` : "";
+      filter.tags = previous + hashTag;
+      filter.tag_mode = previous ? "all" : "any";
+      afterHashTag = true;
+      continue;
+    }
+    afterHashTag = false;
 
     if (key) {
       const rawValue = (

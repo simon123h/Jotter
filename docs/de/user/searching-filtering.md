@@ -20,6 +20,7 @@ Eine Suchabfrage setzt sich aus freiem Volltext (einzelne Wörter oder Phrasen i
 | **Exakte Phrase** | `"fix memory leak"` | Aufgaben, die exakt die Phrase "fix memory leak" enthalten |
 | **Tags (ODER-Match)** | `tags:ui,bug` <br> *oder* `tag:ui,bug` | Aufgaben, die **entweder** das Tag `ui` **oder** `bug` besitzen |
 | **Tags (UND-Match)** | `tags:ui+bug` <br> *oder* `tag:ui+bug` | Aufgaben, die **sowohl** das Tag `ui` **als auch** `bug` besitzen müssen |
+| **Tag-Kurzform** | `#ui` <br> `#ui #bug` | Kurzform von `tag:`. Mehrere `#`-Tags müssen **alle** passen. Groß-/Kleinschreibung spielt keine Rolle, und `issue#12` bleibt ein gewöhnliches Wort |
 | **Spalten/Buckets** | `bucket:todo` <br> *oder* `buckets:todo,progress` | Aufgaben, die sich in den angegebenen Spalten befinden |
 | **Prioritäten** | `priority:high` <br> *oder* `prio:high,urgent` | Aufgaben mit den angegebenen Prioritätsstufen |
 | **Projekte** | `project:marketing` <br> *oder* `proj:frontend` | Aufgaben, die zu einem Projekt nach ID oder **Projekttitel** gehören |
