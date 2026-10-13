@@ -64,4 +64,4 @@ To save something from another app (a web page, a message), use its *Share* butt
 
 ## Keeping in sync
 
-The app rescans the vault periodically and when you return to it, so changes from your sync tool appear by themselves. *Rescan vault* in the side menu does it right away. The app keeps what it does not understand: unknown properties and files are never removed.
+The app rescans the vault periodically and when you return to it, so changes from your sync tool appear by themselves. *Rescan the open vault* in the vault list (tap the vault in the side menu) does it right away. The app keeps what it does not understand: unknown properties and files are never removed.

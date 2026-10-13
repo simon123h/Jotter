@@ -64,4 +64,4 @@ Um etwas aus einer anderen App zu speichern (eine Webseite, eine Nachricht), nut
 
 ## Synchron bleiben
 
-Die App durchsucht den Vault regelmäßig und wenn du zu ihr zurückkehrst, Änderungen deines Sync-Werkzeugs erscheinen also von selbst. *Vault neu einlesen* im Seitenmenü tut das sofort. Die App behält, was sie nicht versteht: unbekannte Eigenschaften und Dateien werden nie entfernt.
+Die App durchsucht den Vault regelmäßig und wenn du zu ihr zurückkehrst, Änderungen deines Sync-Werkzeugs erscheinen also von selbst. *Offenen Vault neu einlesen* in der Vault-Liste (tippe im Seitenmenü auf den Vault) tut das sofort. Die App behält, was sie nicht versteht: unbekannte Eigenschaften und Dateien werden nie entfernt.

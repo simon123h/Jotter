@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Database, ChevronsUpDown, Folder, Pin, Pencil, Plus, Columns3, Settings, RefreshCw } from '@lucide/vue';
+import { Database, ChevronsUpDown, Folder, Pin, Pencil, Plus, Columns3, Settings } from '@lucide/vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -8,23 +7,9 @@ import { useUiStore } from '@/stores/ui';
 const app = useAppStore();
 const ui = useUiStore();
 
-const rescanning = ref(false);
-
 async function select(id: string) {
   await app.selectProject(id);
   ui.close();
-}
-
-async function rescan() {
-  rescanning.value = true;
-  try {
-    await app.refresh({ force: true });
-    ui.close();
-  } catch (err) {
-    ui.showToast(err instanceof Error ? err.message : String(err));
-  } finally {
-    rescanning.value = false;
-  }
 }
 
 // A swipe towards the left edge closes the drawer, as it does in other Android apps
@@ -106,9 +91,6 @@ const row = 'flex h-14 w-full items-center gap-4 rounded-full px-4 text-left tex
         </button>
         <button :class="row" data-testid="drawer-settings" @click="ui.open({ type: 'settings' })">
           <Settings class="h-5 w-5 shrink-0 text-muted" />{{ t('nav.settings') }}
-        </button>
-        <button :class="row" :disabled="rescanning" data-testid="drawer-rescan" @click="rescan">
-          <RefreshCw class="h-5 w-5 shrink-0 text-muted" :class="{ 'animate-spin': rescanning }" />{{ t('nav.rescan') }}
         </button>
       </div>
     </aside>

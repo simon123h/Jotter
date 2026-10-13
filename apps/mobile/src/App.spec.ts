@@ -551,7 +551,8 @@ describe('board', () => {
     fs.put('Jotter/work/e.md', '---\ntitle: Added by sync\nstatus: done\n---\n');
 
     await openDrawer();
-    await find('drawer-rescan').trigger('click');
+    await find('drawer-vault').trigger('click');
+    await find('vaults-rescan').trigger('click');
     await settle();
 
     expect(all('column')[1].text()).toContain('Added by sync');
@@ -561,7 +562,8 @@ describe('board', () => {
     await start(desktopVault);
     fs.put('Jotter/work/broken.md', '---\ntitle: [unclosed\n---\n');
     await openDrawer();
-    await find('drawer-rescan').trigger('click');
+    await find('drawer-vault').trigger('click');
+    await find('vaults-rescan').trigger('click');
     await settle();
     expect(find('unreadable-banner').exists()).toBe(true);
   });
@@ -811,7 +813,7 @@ describe('settings', () => {
 });
 
 describe('navigation', () => {
-  it('opens the drawer with the vault, the projects, settings and rescan, and closes it again', async () => {
+  it('opens the drawer with the vault, the projects and settings, and closes it again', async () => {
     await start((f) => {
       desktopVault(f);
       f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
@@ -830,7 +832,7 @@ describe('navigation', () => {
     expect(current('Home')).toBe('page');
     expect(current('Work')).toBeUndefined();
     expect(find('drawer-settings').exists()).toBe(true);
-    expect(find('drawer-rescan').exists()).toBe(true);
+    expect(find('drawer-rescan').exists()).toBe(false); // rescanning lives in the vault list
 
     await find('drawer-scrim').trigger('click');
     await settle();
