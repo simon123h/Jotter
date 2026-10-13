@@ -2,6 +2,8 @@
 
 A task can **come back** after you complete it, and it can **remind you** at a time you choose. Recurring tasks work in the desktop app and in the Android app, reminders are delivered by the Android app, and both are stored in the task's Markdown file, so a vault synced between devices carries them along.
 
+The [online demo](/demo/) keeps its tasks in your browser and does not bring recurring tasks back: completing one just completes it.
+
 ## Recurring tasks
 
 Open a task and choose **Repeat**: *Daily*, *Weekly*, *Monthly*, *Yearly*, or *Custom* (every 3 days, every 2 weeks, and so on). **Comes back** says how the next day is counted:

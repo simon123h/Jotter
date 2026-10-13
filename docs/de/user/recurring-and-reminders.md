@@ -2,6 +2,8 @@
 
 Eine Aufgabe kann nach dem Erledigen **wiederkommen**, und sie kann dich zu einer gewählten Zeit **erinnern**. Wiederkehrende Aufgaben funktionieren in der Desktop-App und in der Android-App, Erinnerungen liefert die Android-App; beides steht in der Markdown-Datei der Aufgabe, sodass ein zwischen Geräten synchronisierter Vault es mitnimmt.
 
+Die [Online-Demo](/demo/) speichert ihre Aufgaben im Browser und lässt wiederkehrende Aufgaben nicht wiederkommen: Wer eine erledigt, erledigt sie nur.
+
 ## Wiederkehrende Aufgaben
 
 Öffne eine Aufgabe und wähle **Wiederholen**: *Täglich*, *Wöchentlich*, *Monatlich*, *Jährlich* oder *Benutzerdefiniert* (alle 3 Tage, alle 2 Wochen usw.). **Kommt wieder** legt fest, wie der nächste Tag gezählt wird:
