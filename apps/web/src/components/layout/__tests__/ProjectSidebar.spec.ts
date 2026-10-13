@@ -112,6 +112,31 @@ describe('ProjectSidebar.vue', () => {
     expect(moveEvents?.[0]).toEqual([{ taskIds: ['task-1', 'task-2'], projectId: '2' }]);
   });
 
+  it('keeps the drop target highlighted while the pointer moves over the parts of its row', async () => {
+    const wrapper = mount(ProjectSidebar, getMountOptions());
+    const row = wrapper.findAll('.project-item')[2];
+    const title = row.find('span.truncate');
+    const highlighted = () => wrapper.find('.bg-theme-primary.animate-pulse').exists();
+    selectionStore.draggingTaskIds = ['task-1'];
+
+    await row.trigger('dragenter');
+    expect(highlighted()).toBe(true);
+
+    // The browser fires dragenter for the child, then dragleave for the row it came from
+    await title.trigger('dragenter');
+    await row.trigger('dragleave', { relatedTarget: title.element });
+    expect(highlighted()).toBe(true);
+
+    // A dragleave without a related target (some browsers) is repaired by the next dragover
+    await row.trigger('dragleave');
+    await row.trigger('dragover', { dataTransfer: { dropEffect: '' } });
+    expect(highlighted()).toBe(true);
+
+    // Leaving the row for something else clears it
+    await row.trigger('dragleave', { relatedTarget: document.body });
+    expect(highlighted()).toBe(false);
+  });
+
   it('emits import-spreadsheet when import button is clicked', async () => {
     const wrapper = mount(ProjectSidebar, getMountOptions());
     const importBtn = wrapper.findAll('button').find((b) => b.text().includes('Import'));

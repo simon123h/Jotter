@@ -57,6 +57,8 @@ const onDragOver = (event: DragEvent, projectId: string) => {
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = 'move';
     }
+    // dragover keeps firing while the pointer is over the row, so the highlight comes back after any stray dragleave
+    draggingOverProjectId.value = projectId;
   }
 };
 
@@ -66,7 +68,10 @@ const onDragEnter = (projectId: string) => {
   }
 };
 
-const onDragLeave = () => {
+const onDragLeave = (event: DragEvent) => {
+  // Moving onto a child of the row (icon, title, buttons) fires dragleave for the row too: still inside
+  const next = event.relatedTarget;
+  if (next instanceof Node && (event.currentTarget as Node | null)?.contains(next)) return;
   draggingOverProjectId.value = null;
 };
 
