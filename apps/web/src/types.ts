@@ -7,53 +7,13 @@ export interface Vault {
   created_at: string;
 }
 
-export interface Project {
-  id: string;
-  title: string;
-  created_at: string;
-  done_clean_period?: number | null;
-}
+// The entities are defined with the vault format (packages/vault-format), which the mobile app uses as well. Only the
+// types are imported, so nothing of the parser ends up in this app.
+import type { Task as VaultTask, RepeatRule } from '@jotter/vault-format/types';
+export type { Project, Bucket, BucketName, RepeatRule } from '@jotter/vault-format/types';
 
-/** How a task comes back after it is completed (spec/FORMAT.md, "Recurring tasks"). */
-export interface RepeatRule {
-  every: number;
-  unit: 'day' | 'week' | 'month' | 'year';
-  from: 'completion' | 'due';
-}
-
-export interface Task {
-  id: string;
-  project_id: string;
-  title: string;
-  bucket: string;
-  position: number;
-  tags: string[];
-  attachments: string[];
-  body: string;
-  due_date?: string;
-  planned_date?: string;
-  priority?: string;
-  color?: string | null;
-  postponed_until?: string;
-  repeat?: RepeatRule | null;
-  /** Local date-times `YYYY-MM-DDTHH:mm`, sorted. */
-  reminders?: string[];
-  created_at: string;
-  updated_at: string;
-}
-
-export type BucketName = string;
-
-export interface Bucket {
-  name: BucketName;
-  title: string;
-  subtitle: string;
-  position: number;
-  color?: string | null;
-  layout?: 'list' | 'grid-2' | 'grid-3';
-  max_tasks?: number | null;
-  is_default?: boolean;
-}
+/** The backend sends `repeat: null` for a task that does not repeat, and does not pass on the keys it does not know. */
+export type Task = Omit<VaultTask, 'repeat' | 'extra_frontmatter'> & { repeat?: RepeatRule | null };
 
 /** What a search query asks for; defined with the query language in packages/task-filter. */
 export type { TaskFilter as TaskFilterParams } from '@jotter/task-filter';

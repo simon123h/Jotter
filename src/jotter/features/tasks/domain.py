@@ -21,7 +21,7 @@ class Priority(StrEnum):
     @classmethod
     def from_str(cls, val: str | None) -> Self:
         if not val:
-            return cls.NONE
+            return cls("none")
         clean = str(val).strip().lower()
         try:
             return cls(clean)

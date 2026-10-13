@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { X } from '@lucide/vue';
+import { parseTags } from '@jotter/task-filter';
 import BottomSheet from './BottomSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -26,15 +27,6 @@ const suggestions = computed(() =>
   app.allTags.filter((tag) => onTasks.value.find(([name]) => name === tag)?.[1] !== selectedTasks.value.length)
 );
 
-const parse = (value: string) => [
-  ...new Set(
-    value
-      .split(/[,\s]+/)
-      .map((tag) => tag.trim().replace(/^#+/, '').toLowerCase())
-      .filter(Boolean)
-  ),
-];
-
 async function add(tags: string[]) {
   if (!tags.length) return;
   await actions.addTags(props.ids, tags);
@@ -44,7 +36,7 @@ async function add(tags: string[]) {
 
 <template>
   <BottomSheet :title="`${t('bulk.tag')} · ${props.ids.length}`" @close="ui.close()">
-    <form class="flex gap-2 pb-3" @submit.prevent="add(parse(text))">
+    <form class="flex gap-2 pb-3" @submit.prevent="add(parseTags(text))">
       <input
         v-model="text"
         :placeholder="t('bulk.tagsAdd')"
@@ -55,7 +47,7 @@ async function add(tags: string[]) {
       <button
         type="submit"
         class="rounded-xl bg-accent px-4 text-sm font-semibold text-accent-ink disabled:opacity-40"
-        :disabled="!parse(text).length"
+        :disabled="!parseTags(text).length"
         data-testid="tags-add"
       >
         {{ t('task.add') }}

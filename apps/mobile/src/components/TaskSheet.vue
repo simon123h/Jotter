@@ -11,7 +11,7 @@ import { TASK_COLORS, colorHex } from '@/taskColors';
 import { PLANNED_CHOICES, plannedLabel } from '@/planned';
 import { REPEAT_UNITS } from '@/repeat';
 import { ensureReminderPermission } from '@/reminders';
-import { isoDay } from '@jotter/task-filter';
+import { isoDay, parseTags } from '@jotter/task-filter';
 import type { RepeatRule } from '@jotter/vault-format';
 import TitleHints from './TitleHints.vue';
 import { useSmartTitle } from '@/composables/useSmartTitle';
@@ -24,12 +24,6 @@ const task = computed(() => app.taskById(props.id));
 const actions = useTaskActions();
 const priorities = ['low', 'medium', 'high', 'urgent'] as const;
 const field = 'w-full rounded-xl border border-line bg-surface px-3 py-3 text-base outline-none focus:border-accent';
-
-const parseTags = (text: string) =>
-  text
-    .split(',')
-    .map((tag) => tag.trim().replace(/^#+/, '').toLowerCase())
-    .filter((tag) => tag && !/\s/.test(tag));
 
 // The sheet edits a draft; it is written back on every change and once more when the sheet closes
 const initial = task.value;

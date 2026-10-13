@@ -87,6 +87,10 @@ Jotter resolves settings using the following priority (highest overrides lowest)
 
 ---
 
+## Theme and Language
+
+Colour theme and language are set in the app's **Settings** page, not in `jotter.yaml`. Pick one of the themes, or tick **Follow the device's light or dark setting**: Jotter then uses the light theme you chose while your operating system or browser is light, and the dark theme while it is dark, and switches by itself when that changes. Many systems change between light and dark on a schedule (for example at sunset), so Jotter needs no schedule of its own. The Android app has the same choice under *Theme* → *System*.
+
 ## Git Versioning
 
 If your vault folder is a Git repository, Jotter commits local changes to it automatically shortly after every change (at most once per minute), or whenever you click the **Commit** button in the sidebar footer. These commits power the Time Machine.

@@ -169,4 +169,16 @@ describe('TagInput.vue', () => {
     await input.setValue('#frontend, #backend');
     expect(wrapper.emitted('update:modelValue')?.[0][0]).toBe('frontend, backend');
   });
+
+  it('treats a space like a comma: the tag being typed is the one after the last separator', async () => {
+    const wrapper = mount(TagInput, {
+      props: { modelValue: 'bug f', suggestionsOverride: ['frontend', 'feature', 'docs'] },
+    }) as any;
+
+    await wrapper.find('input').trigger('focus');
+    expect(wrapper.vm.tagSuggestions).toEqual(['frontend', 'feature']);
+
+    wrapper.vm.selectTagSuggestion('frontend');
+    expect(wrapper.emitted('update:modelValue')?.[0][0]).toBe('bug frontend, ');
+  });
 });

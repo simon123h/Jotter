@@ -9,10 +9,6 @@ coverage:
         informational: true
   range: "50...75"
 
-# The backend report is relative to src/jotter (features/tasks/router.py); this puts the folder back in front
-fixes:
-  - "::src/jotter/"
-
 # Coverage comes from four uploads: the Python backend (flag backend), the web app (web), the mobile app (mobile) and
 # the shared packages (packages). The shared packages are also covered by the tests of the two apps.
 flags:
