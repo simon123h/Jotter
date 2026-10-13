@@ -17,8 +17,6 @@ export interface TaskFilter {
   tag_mode?: "any" | "all";
   exclude_bucket?: string;
   exclude_buckets?: string;
-  show_done?: boolean;
-  show_archived?: boolean;
   /** low, medium, high, urgent, or none for tasks without a priority. */
   priorities?: string;
   search?: string;

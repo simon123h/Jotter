@@ -91,6 +91,36 @@ describe('useTaskFilters', () => {
       expect(filters.hasActiveFilters.value).toBe(true);
     });
 
+    it('matches as the phone and the backend do: the start of a word, also in the tags', async () => {
+      const { filters } = setup();
+      filters.applyFilters({ search: 'mil' });
+      await nextTick();
+      expect(ids(filters.filteredTasks.value)).toEqual(['a', 'c']);
+
+      filters.applyFilters({ search: 'ilk' }); // not the start of a word
+      await nextTick();
+      expect(ids(filters.filteredTasks.value)).toEqual([]);
+
+      filters.applyFilters({ search: 'shopp' }); // the tag of a task
+      await nextTick();
+      expect(ids(filters.filteredTasks.value)).toEqual(['a']);
+    });
+
+    it('leaves a task postponed to a later day out of its column, which the postponed column then holds', async () => {
+      const later = createMockTask({ id: 'p', bucket: 'todo', postponed_until: '2999-01-01' });
+      const scope = effectScope();
+      const filters = scope.run(() => useTaskFilters(ref([...tasks, later])))!;
+      scopes.push(scope);
+
+      filters.applyFilters({ buckets: 'todo' });
+      await nextTick();
+      expect(ids(filters.filteredTasks.value)).toEqual(['a', 'c']);
+
+      filters.applyFilters({ buckets: 'postponed' });
+      await nextTick();
+      expect(ids(filters.filteredTasks.value)).toEqual(['p']);
+    });
+
     it('filters by buckets and priorities (none for tasks without one)', async () => {
       const { filters } = setup();
       filters.applyFilters({ buckets: 'todo, DOING' });

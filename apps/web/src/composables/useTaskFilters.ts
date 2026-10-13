@@ -1,6 +1,7 @@
 import { ref, computed, watch, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { Task, TaskFilterParams } from '@/types';
+import { filterTasks, parseTags } from '@jotter/task-filter';
 import { parseDSL, stringifyDSL } from '@/utils/dsl';
 import { useProjectStore } from '@/stores/project';
 
@@ -81,8 +82,6 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
       priorities: (q.priorities as string) || undefined,
       tags: (q.tags as string) || undefined,
       tag_mode: (q.tag_mode as 'any' | 'all') || undefined,
-      show_done: q.show_done === 'true' ? true : undefined,
-      show_archived: q.show_archived === 'true' ? true : undefined,
       has_due_date,
       due_after: (q.due_after as string) || undefined,
       due_before: (q.due_before as string) || undefined,
@@ -132,12 +131,6 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
       if (newFilters.tag_mode) query.tag_mode = newFilters.tag_mode;
       else delete query.tag_mode;
 
-      if (newFilters.show_done) query.show_done = 'true';
-      else delete query.show_done;
-
-      if (newFilters.show_archived) query.show_archived = 'true';
-      else delete query.show_archived;
-
       if (newFilters.has_due_date !== undefined && newFilters.has_due_date !== null) {
         query.has_due_date = String(newFilters.has_due_date);
       } else {
@@ -166,43 +159,13 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
     { deep: true }
   );
 
-  // Compute the filtered task list
+  // The tasks that match: the matching itself is the shared one (packages/task-filter), as on the phone and in the
+  // backend. It cannot tell a project from a task alone, so the tasks are narrowed to the project here.
   const filteredTasks = computed(() => {
     let list = tasks.value;
 
-    const searchVal = (taskFilters.value.search || '').trim().toLowerCase();
-    if (searchVal) {
-      list = list.filter((task) => {
-        return task.title.toLowerCase().includes(searchVal) || (task.body && task.body.toLowerCase().includes(searchVal));
-      });
-    }
-
-    if (taskFilters.value.buckets) {
-      const bucketList = taskFilters.value.buckets
-        .split(',')
-        .map((b) => b.trim().toLowerCase())
-        .filter(Boolean);
-      if (bucketList.length) {
-        list = list.filter((t) => bucketList.includes(t.bucket.toLowerCase()));
-      }
-    }
-
-    if (taskFilters.value.priorities) {
-      const priorityList = taskFilters.value.priorities
-        .split(',')
-        .map((p) => p.trim().toLowerCase())
-        .filter(Boolean);
-      if (priorityList.length) {
-        list = list.filter((t) => {
-          const priority = (t.priority || 'none').toLowerCase();
-          return priorityList.includes(priority);
-        });
-      }
-    }
-
-    // Project filtering evaluation
-    if (taskFilters.value.project) {
-      const query = taskFilters.value.project.toLowerCase();
+    const projectQuery = (taskFilters.value.project || '').toLowerCase();
+    if (projectQuery) {
       let projectStore;
       try {
         projectStore = useProjectStore();
@@ -213,78 +176,17 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
 
       list = list.filter((task) => {
         // 1. Direct match on ID
-        if (task.project_id.toLowerCase() === query) return true;
+        if (task.project_id.toLowerCase() === projectQuery) return true;
 
         // 2. Fuzzy match on title
         const proj = projectsList.find((p) => p.id === task.project_id);
-        const pTitle = (proj?.title || '').toLowerCase();
-        return pTitle.includes(query);
+        return (proj?.title || '').toLowerCase().includes(projectQuery);
       });
     }
 
-    const modalTags = taskFilters.value.tags
-      ? taskFilters.value.tags
-          .split(',')
-          .map((t) => t.trim().toLowerCase())
-          .filter(Boolean)
-      : [];
-    const combinedTags = Array.from(new Set([...selectedTags.value.map((t) => t.toLowerCase()), ...modalTags]));
-
-    if (combinedTags.length > 0) {
-      const mode = taskFilters.value.tag_mode || 'any';
-      if (mode === 'all') {
-        list = list.filter((t) => combinedTags.every((ft) => (t.tags ?? []).some((tg) => tg.toLowerCase() === ft)));
-      } else {
-        list = list.filter((t) => combinedTags.some((ft) => (t.tags ?? []).some((tg) => tg.toLowerCase() === ft)));
-      }
-    }
-
-    if (taskFilters.value.has_due_date !== undefined && taskFilters.value.has_due_date !== null) {
-      if (taskFilters.value.has_due_date) {
-        list = list.filter((t) => !!t.due_date);
-      } else {
-        list = list.filter((t) => !t.due_date);
-      }
-    }
-
-    if (taskFilters.value.due_before) {
-      list = list.filter((t) => !!t.due_date && t.due_date <= taskFilters.value.due_before!);
-    }
-    if (taskFilters.value.due_after) {
-      list = list.filter((t) => !!t.due_date && t.due_date >= taskFilters.value.due_after!);
-    }
-
-    if (taskFilters.value.created_before) {
-      const cb =
-        taskFilters.value.created_before.length === 10
-          ? `${taskFilters.value.created_before}T23:59:59.999Z`
-          : taskFilters.value.created_before;
-      list = list.filter((t) => !!t.created_at && t.created_at <= cb);
-    }
-    if (taskFilters.value.created_after) {
-      const ca =
-        taskFilters.value.created_after.length === 10
-          ? `${taskFilters.value.created_after}T00:00:00.000Z`
-          : taskFilters.value.created_after;
-      list = list.filter((t) => !!t.created_at && t.created_at >= ca);
-    }
-
-    if (taskFilters.value.updated_before) {
-      const ub =
-        taskFilters.value.updated_before.length === 10
-          ? `${taskFilters.value.updated_before}T23:59:59.999Z`
-          : taskFilters.value.updated_before;
-      list = list.filter((t) => !!t.updated_at && t.updated_at <= ub);
-    }
-    if (taskFilters.value.updated_after) {
-      const ua =
-        taskFilters.value.updated_after.length === 10
-          ? `${taskFilters.value.updated_after}T00:00:00.000Z`
-          : taskFilters.value.updated_after;
-      list = list.filter((t) => !!t.updated_at && t.updated_at >= ua);
-    }
-
-    return list;
+    // The tags of the dialog and the ones chosen on the cards count together
+    const tags = parseTags([...selectedTags.value, taskFilters.value.tags ?? '']).join(',');
+    return filterTasks(list, { ...taskFilters.value, project: undefined, tags: tags || undefined });
   });
 
   return {
