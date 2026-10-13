@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from jotter.features.buckets.service import BucketApplicationService
-from jotter.features.projects.schemas import ProjectCreate
+from jotter.features.projects.schemas import ProjectCreate, ProjectUpdate
 from jotter.features.projects.service import ProjectApplicationService
 from jotter.features.sync.service import SyncApplicationService
 from jotter.features.tasks.schemas import TaskCreate
@@ -575,6 +575,35 @@ def test_sync_does_not_rewrite_project_manifests_when_nothing_changed(temp_dir, 
     sync_svc.sync_db_only()
 
     assert writes == []
+
+
+def test_a_column_deleted_elsewhere_stays_deleted(temp_dir):
+    vault = Path(temp_dir)
+    (vault / "plan").mkdir()
+    manifest = vault / "plan" / "index.md"
+
+    def write(names):
+        columns = "".join(f"- name: {n}\n  title: {n}\n  position: {i * 1000}.0\n" for i, n in enumerate(names, 1))
+        manifest.write_text(f"---\ntype: project\nid: plan\ntitle: Plan\nbuckets:\n{columns}---\n", encoding="utf-8")
+
+    write(["backlog", "flat", "done"])
+    conn = create_sqlite_connection(str(vault / "tasks.db"))
+    sync_svc = SyncApplicationService.from_data_dir(vault, conn)
+    sync_svc.sync_db_only()
+
+    write(["backlog", "done"])  # the phone deleted the empty column "flat"
+    sync_svc.sync_db_only()
+    sync_svc.sync_db_only()
+
+    assert "name: flat" not in manifest.read_text(encoding="utf-8")
+    assert [b.name for b in BucketApplicationService.from_data_dir(vault, conn).get_all_buckets("plan")] == [
+        "backlog",
+        "done",
+    ]
+
+    # And an edit made here afterwards does not bring it back either
+    ProjectApplicationService.from_data_dir(vault, conn).update_project("plan", ProjectUpdate(title="Plan B"))
+    assert "name: flat" not in manifest.read_text(encoding="utf-8")
 
 
 def test_startup_rebuild_is_retried_when_a_file_could_not_be_read(temp_dir, test_env, monkeypatch):

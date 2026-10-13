@@ -39,8 +39,10 @@ class ProjectRepository:
         rows = cursor.fetchall()
         return [self._row_to_project(row) for row in rows]
 
-    def save(self, project: Project) -> None:
-        if self.data_dir:
+    def save(self, project: Project, persist: bool = True) -> None:
+        """Stores the project. With `persist`, index.md is rewritten from the index; the sync turns that off, because
+        it reads index.md into the index and must not write it back."""
+        if self.data_dir and persist:
             proj_dir = self.data_dir / project.id
             proj_dir.mkdir(parents=True, exist_ok=True)
             # Sync index.md manifest
