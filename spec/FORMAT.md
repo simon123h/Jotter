@@ -118,14 +118,15 @@ columns or editing its title does not rename the file. What a *writer* chooses f
    word longer than 60 characters is cut at 60.
 3. **Never leave it empty.** A title without any such characters (an empty title, only emoji, a script without a
    Latin form) gives `task`.
-4. **Avoid a taken name.** If a file with that name (compared without regard to case) exists in the project
-   folder, or the name is *reserved*, append `-` and four random characters from `a-z0-9`, and look again until
+4. **Avoid a taken name.** If a task of *any project in the vault* has that name (compared without regard to
+   case), or the name is *reserved*, append `-` and four random characters from `a-z0-9`, and look again until
    the name is free. Reserved names are `index` and `readme` (they are not tasks, see the vault layout) and the
-   names Windows keeps for devices (`con`, `prn`, `aux`, `nul`, `com1`-`com9`, `lpt1`-`lpt9`). No suffix is added
-   when the name is free, which is why two devices that create the same title offline can still collide; the sync
-   tool then keeps one of the files as a conflict copy.
-5. **Moving a task** into another project keeps its file name, unless the target folder has that name already: then
-   rule 4 applies and the file (and so the id) gets a suffix.
+   names Windows keeps for devices (`con`, `prn`, `aux`, `nul`, `com1`-`com9`, `lpt1`-`lpt9`). The whole vault is
+   checked, not only the project folder, because the desktop's index keys tasks by id alone and a time block
+   refers to a task by its id. No suffix is added when the name is free, which is why two devices that create the
+   same title offline can still collide; the sync tool then keeps one of the files as a conflict copy.
+5. **Moving a task** into another project keeps its file name. A writer MUST NOT overwrite a file of the same
+   name in the target folder (another tool's vault can repeat a name in two projects): it refuses the move.
 
 Readers accept any file name (ADR 0003): older tasks keep the 26-character ULIDs they were written with, and files
 from other tools keep theirs. Writers MUST NOT rename an existing file because its title changed. The cases are in

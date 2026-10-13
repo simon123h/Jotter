@@ -1,6 +1,6 @@
 # ADR 0020: New Tasks Are Named After Their Title
 
-- **Status**: Proposed (spec and fixtures only; no implementation yet)
+- **Status**: Accepted
 - **Date**: 2026-10-13
 - **Amends**: [ADR 0003](./0003-arbitrary-task-slugs.md), decision 2
 - **Related**: `spec/FORMAT.md` (*File names of new tasks*), `spec/fixtures/filenames/slug.json`
@@ -15,13 +15,13 @@ New tasks are named after their title: "Grocery shopping" becomes `grocery-shopp
 
 - **The slug is made once, at creation, and never changes.** Editing the title does not rename the file. The id is what attachments (`attachments/<task-id>/`), canvas links, reminders armed on a phone and undo records refer to; a rename would break all of them, and two devices renaming the same task would produce conflicts in a synced vault.
 - **Rules are in the spec** (`FORMAT.md`): lowercase ASCII, German umlauts spelled out (`ä` is `ae`), other accents dropped, runs of other characters become one `-`, at most 60 characters (cut after a whole word), `task` when nothing is left. The cases are a conformance fixture, run by both writers.
-- **A random suffix only on a name collision.** If the name is taken in the project folder, or reserved (`index`, `readme`, Windows device names), four random characters are appended (`buy-milk-7k3f.md`). A free name stays plain.
-- **Moving a task** to another project keeps its name unless the target has it already.
+- **A random suffix only on a name collision.** If the name is taken, or reserved (`index`, `readme`, Windows device names), four random characters are appended (`buy-milk-7k3f.md`). A free name stays plain. "Taken" means by a task of *any project in the vault*: the desktop's SQLite index has the task id as its only key, and time blocks refer to tasks by id, so two projects with a `buy-milk` would collide there. A vault from other tools that repeats a name across projects still has that old problem; it is not made worse.
+- **Moving a task** to another project keeps its name. A move that would overwrite a file of the same name in the target is refused.
 - **Existing files keep their names.** No migration. ULIDs stay valid ids, as do names written by other tools.
 
 ## Consequences
 
-- Two places write names and must agree: the Python backend (`shared/slug.py`, task creation) and the mobile app (`src/data/ulid.ts`, `repository.ts`). The static demo makes its own ids and is parked, so it stays as it is. The parser package only reads, so it is not affected.
+- Two places write names and must agree: the Python backend (`shared/slug.py`, used by task creation) and TypeScript (`packages/vault-format/src/taskName.ts`, used by the mobile app). Both pass `spec/fixtures/filenames/slug.json`. The static demo makes its own ids and is parked, so it stays as it is.
 - Names no longer sort by creation time. `created_at` and `position` already carry that.
 - A title that has no Latin letters (Japanese, emoji only) is named `task`, then `task-xxxx` for the next one. The title is in the file; only the name is plain.
 - A slug can go stale after a retitle (`grocery-shopping.md` holding "Weekly shopping"). That is the price of a stable id, and it is the choice that most notes apps make.

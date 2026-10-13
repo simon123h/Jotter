@@ -21,7 +21,8 @@ from jotter.features.tasks.schemas import (
     TaskUpdate,
     to_repeat_schema,
 )
-from jotter.shared.exceptions import EntityNotFoundError
+from jotter.shared.exceptions import EntityNotFoundError, TaskOperationError
+from jotter.shared.slug import task_slug, unique_task_name
 from jotter.shared.unset import UNSET
 
 
@@ -57,6 +58,16 @@ class TaskCommandService:
             project_repo=ProjectRepository(data_dir, conn),
         )
 
+    def _new_task_name(self, project_id: str, title: str) -> str:
+        """The file name and id of a new task: its title as a slug, made unique among the tasks of the whole vault.
+
+        The index keys tasks by id alone (and so do time blocks), so a name that is free in this project but used in
+        another one would still collide."""
+        return unique_task_name(
+            task_slug(title),
+            lambda name: self.projector.id_taken(name) or self.disk_repo.exists(project_id, name),
+        )
+
     def create_task(self, project_id: str, req: TaskCreate) -> TaskResponse:
         if not self.project_repo.exists(project_id):
             raise EntityNotFoundError(f"Project '{project_id}' not found")
@@ -86,6 +97,7 @@ class TaskCommandService:
 
         task = Task.create(
             project_id=project_id,
+            task_id=self._new_task_name(project_id, req.title),
             title=req.title,
             bucket=target_bucket,
             position=position,
@@ -148,6 +160,11 @@ class TaskCommandService:
         if target_project_id != project_id:
             if not self.project_repo.exists(target_project_id):
                 raise EntityNotFoundError(f"Project '{target_project_id}' not found")
+
+            # A file of that name in the target would be overwritten: refuse (names of new tasks are unique in the
+            # vault, but a vault from other tools can repeat a name in two projects)
+            if self.disk_repo.exists(target_project_id, task_id):
+                raise TaskOperationError(f"Project '{target_project_id}' already has a task named '{task_id}'")
 
             # Update domain entity project_id
             task.project_id = target_project_id

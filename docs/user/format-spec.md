@@ -17,7 +17,7 @@ Here is an example of a complete, valid task file:
 ```markdown
 ---
 type: task
-id: 01HJKM7ST89AB234CDEFGHJKMN
+id: implement-sidebar-documentation-links
 project_id: default
 title: Implement sidebar documentation links
 status: in-progress
@@ -56,7 +56,7 @@ The YAML frontmatter block supports the following key-value pairs. All key names
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `type` | String | No | OKF entity type identifier. Serialized as `task`. |
-| `id` | String | No | A unique, URL-safe identifier (ULID or UUID) that uniquely identifies this task across the entire application. Defaults to the file name without `.md`. |
+| `id` | String | No | A unique, URL-safe identifier that uniquely identifies this task across the entire application. Defaults to the file name without `.md`. New tasks are named after their title (`grocery-shopping.md`; four random characters are added when the name is taken), and the name never changes when the title is edited. Older tasks keep their ULID names. |
 | `project_id` | String | No | The ID of the project this task belongs to. The folder the file is in always decides, so this is only a fallback. |
 | `title` | String | No | The title of the task. Keep this on a single line. Defaults to `Untitled Task`. |
 | `status` | String | No | The slug/name of the column this task belongs to (e.g. `backlog`, `todo`, `in-progress`, `done`). Defaults to `todo`. Note: Legacy files using `bucket:` are fully supported for backwards compatibility. |

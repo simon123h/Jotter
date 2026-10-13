@@ -35,6 +35,8 @@ compared.
 | :-- | :-- | :-- |
 | Python backend | `tests/test_format_conformance.py` | `pytest tests/test_format_conformance.py` |
 | TypeScript parser (mobile) | `packages/vault-format/src/formatConformance.spec.ts` | `npm --prefix packages/vault-format test` |
+| Slugs, Python | `tests/test_task_names.py` | `pytest tests/test_task_names.py` |
+| Slugs, TypeScript | `packages/vault-format/src/taskName.spec.ts` | `npm --prefix packages/vault-format test` |
 
 A new implementation only needs a small runner that loads these files and compares the same normalized view.
 

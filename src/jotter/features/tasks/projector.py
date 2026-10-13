@@ -19,6 +19,13 @@ class TaskProjector:
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
+    def id_taken(self, task_id: str) -> bool:
+        """Whether a task of any project has this id (compared without regard to case)."""
+        return (
+            self.conn.execute("SELECT 1 FROM tasks WHERE lower(id) = lower(?) LIMIT 1", (task_id,)).fetchone()
+            is not None
+        )
+
     def max_position(self, project_id: str, bucket: str) -> float | None:
         """Returns the highest task position in a bucket, or None if the bucket has no tasks.
 

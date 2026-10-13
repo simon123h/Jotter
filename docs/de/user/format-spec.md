@@ -17,7 +17,7 @@ Hier ist ein Beispiel einer vollständigen, gültigen Aufgabendatei:
 ```markdown
 ---
 type: task
-id: 01HJKM7ST89AB234CDEFGHJKMN
+id: implement-sidebar-documentation-links
 project_id: default
 title: Sidebar-Dokumentationslinks implementieren
 status: in-progress
@@ -56,7 +56,7 @@ Der YAML-Frontmatter-Block unterstützt die folgenden Schlüssel-Wert-Paare. All
 | Feld | Typ | Erforderlich | Beschreibung |
 | :--- | :--- | :--- | :--- |
 | `type` | String | Nein | OKF-Entitätstyp. Wird als `task` serialisiert. |
-| `id` | String | Ja | Eine eindeutige, URL-sichere Kennung (ULID oder UUID), die diese Aufgabe im gesamten System eindeutig identifiziert. |
+| `id` | String | Ja | Eine eindeutige, URL-sichere Kennung, die diese Aufgabe im gesamten System eindeutig identifiziert. Ohne Angabe gilt der Dateiname ohne `.md`. Neue Aufgaben heißen nach ihrem Titel (`einkaufen.md`; ist der Name vergeben, kommen vier Zufallszeichen dazu), und der Name ändert sich nicht, wenn der Titel geändert wird. Ältere Aufgaben behalten ihre ULID-Namen. |
 | `project_id` | String | Nein | Die ID des Projekts, zu dem diese Aufgabe gehört. Standardwert ist `default`. |
 | `title` | String | Nein | Der Titel der Aufgabe. Sollte einzeilig bleiben. |
 | `status` | String | Nein | Der Slug (Name) der Spalte, in der sich die Aufgabe befindet (z. B. `backlog`, `todo`, `in-progress`, `done`). Hinweis: Das bisherige Feld `bucket:` wird zur Abwärtskompatibilität vollständig unterstützt. |

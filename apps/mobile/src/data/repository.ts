@@ -8,12 +8,13 @@ import {
   type Task,
   type Project,
   type Bucket,
+  taskSlug,
+  uniqueTaskName,
 } from '@jotter/vault-format';
 import { filterTasks, type TaskFilter } from '@jotter/task-filter';
 import { VaultDb, type CachedTask } from './db';
 import type { FsPort } from './fs';
 import { isoDay } from '@/dates';
-import { ulid } from './ulid';
 import { VaultRegistry, type Vault } from './vaults';
 
 export interface NewTask {
@@ -409,6 +410,20 @@ export class VaultRepository {
     return row;
   }
 
+  /**
+   * The id of a new task: its title as a slug, made unique among the tasks of the whole vault. The desktop's index
+   * keys tasks by id alone (so do its time blocks), so a name that is free in this project but used in another one
+   * would still collide there.
+   */
+  private async newTaskName(projectId: string, title: string): Promise<string> {
+    const { db } = this.current();
+    const known = new Set((await db.tasks.toArray()).map((t) => t.id.toLowerCase()));
+    return uniqueTaskName(
+      taskSlug(title),
+      async (name) => known.has(name) || (await this.fs.exists(`${this.projectDir(projectId)}/${name}.md`))
+    );
+  }
+
   async createTask(projectId: string, input: NewTask): Promise<Task> {
     const { db } = this.current();
     const title = input.title.trim();
@@ -423,7 +438,7 @@ export class VaultRepository {
       .filter((t) => t.bucket === bucket)
       .toArray();
     const now = new Date().toISOString();
-    const id = ulid();
+    const id = await this.newTaskName(projectId, title);
 
     const task: Task = {
       id,
