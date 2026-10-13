@@ -118,9 +118,12 @@ class SyncApplicationService:
 
             project, buckets = read_project_manifest(proj_dir, fallback_id=proj_id)
 
-            self.project_repo.save(project)
-            for b in buckets:
-                self.bucket_repo.save(proj_id, b)
+            # The file is the truth: read it into the index without writing it back, or a change made elsewhere (a
+            # column deleted on the phone) would be undone by the stale index before it was read
+            self.project_repo.save(project, persist=False)
+            self.bucket_repo.replace_all(proj_id, buckets)
+            if not (proj_dir / "index.md").is_file():
+                self.bucket_repo.sync_buckets_file(proj_id)  # a project without manifest gets one
             synced_project_ids.add(proj_id)
 
         # Remove projects from SQLite if their folders are no longer present on disk

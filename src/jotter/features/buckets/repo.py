@@ -73,7 +73,9 @@ class BucketRepository:
             raise EntityNotFoundError(f"Column '{name}' not found in project '{project_id}'")
         return self._row_to_bucket(row)
 
-    def save(self, project_id: str, bucket: Bucket) -> None:
+    def save(self, project_id: str, bucket: Bucket, persist: bool = True) -> None:
+        """Stores the bucket. With `persist`, index.md is rewritten from the index; the sync turns that off, because it
+        reads index.md into the index and must not write it back."""
         cursor = self.conn.cursor()
         if bucket.is_default:
             # Unset is_default on other buckets for this project
@@ -107,7 +109,23 @@ class BucketRepository:
                 1 if bucket.is_default else 0,
             ),
         )
-        self.sync_buckets_file(project_id)
+        if persist:
+            self.sync_buckets_file(project_id)
+
+    def replace_all(self, project_id: str, buckets: list[Bucket]) -> None:
+        """Makes the index hold exactly these buckets (what index.md says), without writing index.md.
+
+        A bucket that was deleted elsewhere (on the phone, say) is gone from the file and must go from the index too:
+        otherwise the next edit here would write it back."""
+        cursor = self.conn.cursor()
+        names = [b.name for b in buckets]
+        marks = ",".join("?" * len(names))
+        cursor.execute(
+            f"DELETE FROM buckets WHERE project_id = ? AND name NOT IN ({marks})",
+            (project_id, *names),
+        )
+        for bucket in buckets:
+            self.save(project_id, bucket, persist=False)
 
     def delete(self, project_id: str, name: str) -> None:
         cursor = self.conn.cursor()
