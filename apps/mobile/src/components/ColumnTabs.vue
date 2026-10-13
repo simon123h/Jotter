@@ -18,9 +18,17 @@ const title = (key: string, text: string) => (key === '__other' ? t('board.other
 
 // Vue calls this with null when a tab goes away: keep only tabs that exist
 function setTab(index: number, el: HTMLElement | null) {
-  if (el) tabs.value[index] = el;
-  else delete tabs.value[index];
+  if (el) {
+    tabs.value[index] = el;
+    sizes?.observe(el);
+  } else {
+    if (tabs.value[index]) sizes?.unobserve(tabs.value[index]);
+    delete tabs.value[index];
+  }
 }
+
+// A tab changes its width with the system's font size or zoom, without any title or count changing
+const sizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure());
 
 function measure() {
   boxes.value = app.columns.flatMap((_, i) =>
@@ -78,8 +86,12 @@ const onUp = (e: PointerEvent) => {
 onMounted(() => {
   measure();
   window.addEventListener('resize', measure);
+  if (strip.value) sizes?.observe(strip.value);
 });
-onBeforeUnmount(() => window.removeEventListener('resize', measure));
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', measure);
+  sizes?.disconnect();
+});
 </script>
 
 <template>
