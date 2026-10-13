@@ -85,6 +85,23 @@ describe('scan', () => {
     ]);
   });
 
+  it('never deletes an old done task, whatever the retention period of the project says: it only reads', async () => {
+    const files = new MemoryFs();
+    files.put('Jotter/work/index.md', '---\ntitle: Work\ndone_clean_period: 7\nbuckets:\n  - name: done\n    title: Done\n---\n');
+    const old = "updated_at: '2020-01-01T00:00:00+00:00'";
+    files.put('Jotter/work/plain.md', `---\ntitle: Plain\nstatus: done\n${old}\n---\n`);
+    files.put('Jotter/work/later.md', `---\ntitle: Later\nstatus: done\npostponed_until: '2999-01-01'\n${old}\n---\n`);
+    files.put('Jotter/work/weekly.md', `---\ntitle: Weekly\nstatus: done\nrepeat:\n  every: 1\n  unit: week\n${old}\n---\n`);
+    const other = newRepo(files);
+    await other.addVault({ name: 'Jotter', path: 'Jotter' });
+
+    await other.sync();
+    await other.sync();
+
+    expect((await other.listTasks('work')).map((t) => t.id).sort()).toEqual(['later', 'plain', 'weekly']);
+    for (const name of ['plain', 'later', 'weekly']) expect(await files.exists(`Jotter/work/${name}.md`)).toBe(true);
+  });
+
   it('saves a task even when the file cannot be statted right after the write, and reads it again at the next scan', async () => {
     vi.spyOn(fs, 'stat').mockRejectedValueOnce(new Error("'stat' failed because file does not exist."));
 
