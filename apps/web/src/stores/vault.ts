@@ -59,10 +59,12 @@ export const useVaultStore = defineStore('vault', () => {
 
       await reloadWorkspace();
     } catch (err: any) {
-      error.value = err.message || 'Failed to switch vault';
+      const message = err.message || 'Failed to switch vault';
       // Restore the previous vault's data that was cleared above
       await fetchVaults();
       await reloadWorkspace().catch(() => {});
+      // Loading the vaults clears the error, so it is set after that
+      error.value = message;
       throw err;
     } finally {
       loading.value = false;
