@@ -265,12 +265,13 @@ watch(
         : 'bg-theme-column shadow-none md:shadow-sm ' +
           (isFluid
             ? 'w-full h-full min-w-0'
-            : 'h-fit max-h-full shrink-0 ' +
+            : 'h-fit max-h-full shrink-0 w-[100vw] min-w-[100vw] max-w-[100vw] md:max-w-none ' +
+              // Below md the cards sit in one css column whatever the layout, so the column is one screen wide
               (layout === 'grid-3'
-                ? 'min-w-[840px] w-[864px] md:w-[960px]'
+                ? 'md:w-[960px] md:min-w-[840px]'
                 : layout === 'grid-2'
-                  ? 'min-w-[560px] w-[576px] md:w-[640px]'
-                  : 'w-[100vw] min-w-[100vw] max-w-[100vw] md:w-80 md:min-w-[320px] md:max-w-none')),
+                  ? 'md:w-[640px] md:min-w-[560px]'
+                  : 'md:w-80 md:min-w-[320px]')),
     ]"
   >
     <template v-if="!isCollapsed">
