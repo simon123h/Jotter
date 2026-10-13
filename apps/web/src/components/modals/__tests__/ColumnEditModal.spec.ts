@@ -177,7 +177,7 @@ describe('ColumnEditModal.vue', () => {
       },
     });
 
-    // Find the red color swatch button (the bg-rose-500 one)
+    // Find the red color swatch button (bg-rose-500)
     const colorBtn = document.body.querySelector('button.bg-rose-500') as HTMLButtonElement;
     expect(colorBtn).not.toBeNull();
     colorBtn.click();
@@ -194,7 +194,7 @@ describe('ColumnEditModal.vue', () => {
       bucketName: 'todo',
       title: 'To Do',
       subtitle: 'Tasks that need to be done',
-      color: 'rose',
+      color: 'red',
       layout: 'list',
       max_tasks: null,
       is_default: false,

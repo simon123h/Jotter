@@ -100,3 +100,24 @@ def test_index_md_project_manifest_roundtrip(temp_dir, test_env):
         or "color: '#00FF00'" in content_updated
         or 'color: "#00ff00"' in content_updated
     )
+
+
+def test_update_bucket_keeps_the_colour_and_the_limit_a_request_does_not_name(temp_dir, test_env):
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
+    bucket_svc = BucketApplicationService.from_data_dir(temp_dir, conn)
+    bucket_svc.create_bucket("default", BucketCreate(title="Review", color="blue", max_tasks=5))
+
+    # Moving the column sends the position alone, as the web app does when columns are reordered
+    moved = bucket_svc.update_bucket("default", "review", BucketUpdate(position=9000.0))
+    assert (moved.color, moved.max_tasks, moved.position) == ("blue", 5, 9000.0)
+
+    renamed = bucket_svc.update_bucket("default", "review", BucketUpdate(title="Reviewing"))
+    assert (renamed.color, renamed.max_tasks) == ("blue", 5)
+
+    # Naming them changes them; null clears them
+    changed = bucket_svc.update_bucket("default", "review", BucketUpdate(color="red", max_tasks=8))
+    assert (changed.color, changed.max_tasks) == ("red", 8)
+    cleared = bucket_svc.update_bucket(
+        "default", "review", BucketUpdate.model_validate({"color": None, "max_tasks": None})
+    )
+    assert (cleared.color, cleared.max_tasks) == (None, None)

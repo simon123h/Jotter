@@ -3,6 +3,7 @@ import { ref, watch, nextTick } from 'vue';
 import { Slash, Trash2, Save, X } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import BaseModal from '@/components/ui/BaseModal.vue';
+import { TASK_COLORS } from '@/utils/constants';
 
 const { t } = useI18n();
 
@@ -43,14 +44,8 @@ const maxTasks = ref<string>(props.initialMaxTasks ? String(props.initialMaxTask
 const isDefault = ref<boolean>(props.initialIsDefault || false);
 const titleInput = ref<HTMLInputElement | null>(null);
 
-const colors = [
-  { id: 'rose', name: 'Rose', bg: 'bg-rose-500', ring: 'ring-rose-400' },
-  { id: 'sky', name: 'Sky', bg: 'bg-sky-500', ring: 'ring-sky-400' },
-  { id: 'amber', name: 'Amber', bg: 'bg-amber-500', ring: 'ring-amber-400' },
-  { id: 'emerald', name: 'Emerald', bg: 'bg-emerald-500', ring: 'ring-emerald-400' },
-  { id: 'indigo', name: 'Indigo', bg: 'bg-indigo-500', ring: 'ring-indigo-400' },
-  { id: 'purple', name: 'Purple', bg: 'bg-purple-500', ring: 'ring-purple-400' },
-];
+// The palette of the vault format (spec/FORMAT.md), as the columns are drawn with it
+const colors = TASK_COLORS;
 
 watch(
   () => props.isOpen,

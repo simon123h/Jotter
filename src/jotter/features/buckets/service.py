@@ -8,6 +8,7 @@ from jotter.features.buckets.domain import Bucket
 from jotter.features.buckets.repo import BucketRepository
 from jotter.features.buckets.schemas import BucketCreate, BucketResponse, BucketUpdate
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
+from jotter.shared.unset import UNSET
 
 
 class BucketApplicationService:
@@ -70,13 +71,14 @@ class BucketApplicationService:
     def update_bucket(self, project_id: str, name: str, req: BucketUpdate) -> BucketResponse:
         bucket = self.bucket_repo.get(project_id, name)
 
+        # Only what the request names changes: null clears the colour or the limit, a missing key leaves it
         bucket.update_details(
             title=req.title,
             subtitle=req.subtitle,
             position=req.position,
-            color=req.color,
+            color=req.color if "color" in req.model_fields_set else UNSET,
             layout=req.layout,
-            max_tasks=req.max_tasks,
+            max_tasks=req.max_tasks if "max_tasks" in req.model_fields_set else UNSET,
             is_default=req.is_default,
         )
 
