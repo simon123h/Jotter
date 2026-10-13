@@ -93,7 +93,15 @@ onMounted(() => {
 
   const startState = EditorState.create({
     doc: props.modelValue,
-    extensions: [basicSetup, markdown(), cmPlaceholder(props.placeholder), keymap.of([indentWithTab]), onDocChange, customTheme],
+    extensions: [
+      basicSetup,
+      markdown(),
+      EditorView.lineWrapping,
+      cmPlaceholder(props.placeholder),
+      keymap.of([indentWithTab]),
+      onDocChange,
+      customTheme,
+    ],
   });
 
   view = new EditorView({
