@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Trash2, Pencil, Check } from '@lucide/vue';
+import { Trash2, Pencil, Check, RefreshCw } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import VaultForm from './VaultForm.vue';
 import { t } from '@/i18n';
@@ -10,6 +10,7 @@ import { useUiStore } from '@/stores/ui';
 const app = useAppStore();
 const ui = useUiStore();
 
+const rescanning = ref(false);
 const editing = ref<string | null>(null);
 const editName = ref('');
 const fail = (err: unknown) => ui.showToast(err instanceof Error ? err.message : String(err));
@@ -20,6 +21,19 @@ async function open(id: string) {
     ui.close();
   } catch (err) {
     fail(err);
+  }
+}
+
+/** Reads the open vault again, for changes a sync tool made that the periodic scan has not picked up. */
+async function rescan() {
+  rescanning.value = true;
+  try {
+    await app.refresh({ force: true });
+    ui.close();
+  } catch (err) {
+    fail(err);
+  } finally {
+    rescanning.value = false;
   }
 }
 
@@ -79,6 +93,15 @@ async function remove(id: string, name: string) {
         </div>
       </li>
     </ul>
+
+    <button
+      class="mt-3 flex h-12 w-full items-center gap-3 rounded-xl border border-line px-4 text-left active:bg-line disabled:opacity-50"
+      :disabled="rescanning"
+      data-testid="vaults-rescan"
+      @click="rescan"
+    >
+      <RefreshCw class="h-5 w-5 shrink-0 text-muted" :class="{ 'animate-spin': rescanning }" />{{ t('vaults.rescan') }}
+    </button>
 
     <h3 class="mb-2 mt-5 text-sm font-semibold">{{ t('vaults.add') }}</h3>
     <VaultForm :submit-label="t('vaults.add')" @done="ui.close()" />
