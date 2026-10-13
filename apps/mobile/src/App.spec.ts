@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { mount, flushPromises, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import App from './App.vue';
@@ -778,6 +779,30 @@ describe('managing columns', () => {
     await all('column-delete')[2]!.trigger('click');
     await settle();
     expect(tabs()).toHaveLength(2);
+  });
+});
+
+describe('message bar', () => {
+  it('wraps a long message instead of cutting it to one line, and keeps it longer', async () => {
+    await start(desktopVault);
+    const ui = useUiStore();
+    const message = 'Something went wrong while saving the task, and the reason is a rather long one. '.repeat(3).trim();
+    vi.useFakeTimers();
+    try {
+      ui.showToast(message);
+      await nextTick();
+      expect(find('toast').text()).toBe(message);
+      expect(find('toast').find('span').classes()).not.toContain('truncate');
+
+      vi.advanceTimersByTime(2600);
+      await nextTick();
+      expect(find('toast').exists()).toBe(true);
+      vi.advanceTimersByTime(message.length * 60);
+      await nextTick();
+      expect(find('toast').exists()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

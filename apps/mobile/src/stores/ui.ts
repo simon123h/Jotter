@@ -42,11 +42,11 @@ export const useUiStore = defineStore('ui', () => {
   const close = () => {
     sheet.value = null;
   };
-  /** A short message at the top. With an action (Undo) it stays longer, since it needs a thumb. */
+  /** A message at the bottom. It wraps over several lines and stays longer the longer it is; with an action (Undo) it stays longest, since it needs a thumb. */
   const showToast = (message: string, action?: { label: string; run: () => void }) => {
     toast.value = { message, action };
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => (toast.value = null), action ? 6000 : 2500);
+    toastTimer = setTimeout(() => (toast.value = null), action ? 6000 : Math.max(2500, message.length * 60));
   };
   const dismissToast = () => {
     clearTimeout(toastTimer);

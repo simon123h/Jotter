@@ -127,7 +127,7 @@ watch(
       role="status"
       data-testid="toast"
     >
-      <span class="min-w-0 flex-1 truncate">{{ ui.toast.message }}</span>
+      <span class="min-w-0 flex-1 line-clamp-6 break-words">{{ ui.toast.message }}</span>
       <button
         v-if="ui.toast.action"
         class="shrink-0 rounded-md px-3 py-1 font-semibold uppercase tracking-wide text-accent active:bg-white/10"
