@@ -59,8 +59,10 @@ defineExpose({
 
 <template>
   <div
-    class="bg-theme-card border border-theme-border rounded-lg shadow-2xl p-1.5 min-w-[200px] mb-1 animate-in fade-in zoom-in duration-150 max-h-[60vh] overflow-y-auto"
+    class="bg-theme-card border border-theme-border rounded-lg shadow-2xl p-1.5 min-w-[200px] mb-1 animate-in fade-in zoom-in duration-150"
+    :class="{ 'max-h-[60vh] overflow-y-auto': menu !== 'tag' }"
   >
+    <!-- The tag menu does not scroll (see the class above): it would clip the suggestions that drop out of its input -->
     <!-- Bucket Menu -->
     <div v-if="menu === 'bucket'" class="flex flex-col">
       <button

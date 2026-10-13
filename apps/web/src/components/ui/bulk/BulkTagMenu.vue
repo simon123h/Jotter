@@ -34,7 +34,7 @@ defineExpose({
 <template>
   <div class="p-2 space-y-3">
     <!-- Common Tags Toggles -->
-    <div v-if="commonTags.length" class="flex flex-wrap gap-1 max-w-[240px]">
+    <div v-if="commonTags.length" class="flex flex-wrap gap-1 max-w-[240px] max-h-32 overflow-y-auto">
       <div
         v-for="tag in commonTags"
         :key="tag"
