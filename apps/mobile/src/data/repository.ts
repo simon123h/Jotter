@@ -347,7 +347,7 @@ export class VaultRepository {
       .equals(projectId)
       .filter((t) => t.bucket === name)
       .count();
-    if (inUse > 0) throw new Error('Move or delete the tasks in this bucket first');
+    if (inUse > 0) throw new Error(`${inUse} task(s) are still in this column, postponed ones included. Move or delete them first`);
     await db.buckets.delete([projectId, name]);
     await this.persistManifest(projectId);
   }

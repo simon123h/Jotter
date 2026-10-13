@@ -357,7 +357,7 @@ describe('projects and buckets', () => {
   });
 
   it('only deletes an empty bucket', async () => {
-    await expect(repo.deleteBucket('work', 'todo')).rejects.toThrow('Move or delete');
+    await expect(repo.deleteBucket('work', 'todo')).rejects.toThrow('still in this column');
     await repo.createBucket('work', { title: 'Empty' });
     await repo.deleteBucket('work', 'empty');
     expect((await repo.listBuckets('work')).map((b) => b.name)).toEqual(['todo', 'done']);

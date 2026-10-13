@@ -49,7 +49,7 @@ def test_bucket_delete_safety_and_task_move(temp_dir, test_env):
     # Invariant: Cannot delete bucket with active tasks
     with pytest.raises(ValidationError) as exc:
         bucket_svc.delete_bucket("default", "deployments")
-    assert "contains 1 task" in str(exc.value)
+    assert "1 task(s) are still in it" in str(exc.value)
 
     # Move task out of Deployments
     task_svc.move_task("default", task.id, TaskMove(bucket="done", position=1000.0))

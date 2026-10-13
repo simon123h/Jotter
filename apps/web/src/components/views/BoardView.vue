@@ -8,6 +8,7 @@ import GenericColumn from '@/components/ui/GenericColumn.vue';
 import SnapScroller from '@/components/ui/SnapScroller.vue';
 import ColumnEditModal from '@/components/modals/ColumnEditModal.vue';
 import { useI18n } from '@/composables/useI18n';
+import { useToast } from '@/composables/useToast';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useTaskMutations } from '@/composables/useTaskMutations';
@@ -19,6 +20,7 @@ import { storeToRefs } from 'pinia';
 const { t, tBucket } = useI18n();
 const route = useRoute();
 const settingsStore = useSettingsStore();
+const toast = useToast();
 const projectStore = useProjectStore();
 const uiStore = useUiStore();
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
@@ -84,13 +86,14 @@ const tasksByBucket = computed(() => {
 });
 
 const bucketsRef = computed(() => props.buckets);
-const { fetchBuckets, handleCreateColumn, handleRenameColumn, handleDeleteColumn, handleColumnReordered } = useBuckets(
-  activeProjectId,
-  hideDoneColumn,
-  hideArchiveColumn,
-  hidePostponedColumn,
-  bucketsRef
-);
+const {
+  error: bucketError,
+  fetchBuckets,
+  handleCreateColumn,
+  handleRenameColumn,
+  handleDeleteColumn,
+  handleColumnReordered,
+} = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn, hidePostponedColumn, bucketsRef);
 
 const { tasks: storeTasks } = storeToRefs(projectStore);
 const { handleCardDropped, handleMarkTaskDone } = useTaskMutations(storeTasks, activeProjectId, fetchBuckets, async () => {
@@ -125,8 +128,14 @@ const onSaveColumn = async (payload: any) => {
   emit('refresh');
 };
 
+/** The tasks that keep a column from being deleted: the ones shown in it and the postponed ones, which show in the Postponed column. */
+const tasksInColumn = (name: string) =>
+  Math.max((tasksByBucket.value[name] || []).length, props.tasks.filter((task) => task.bucket === name).length);
+
 const onColumnDeleted = async (name: string) => {
+  bucketError.value = null;
   await handleDeleteColumn(name);
+  if (bucketError.value) toast.error(bucketError.value);
   emit('refresh');
 };
 
@@ -423,7 +432,7 @@ useBoardNavigation({
       :initial-layout="currentEditingBucket.layout"
       :initial-max-tasks="currentEditingBucket.max_tasks"
       :initial-is-default="currentEditingBucket.is_default"
-      :tasks-count="(tasksByBucket[currentEditingBucket.name] || []).length"
+      :tasks-count="tasksInColumn(currentEditingBucket.name)"
       @close="
         isEditModalOpen = false;
         currentEditingBucket = null;
