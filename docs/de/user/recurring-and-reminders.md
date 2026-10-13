@@ -2,7 +2,7 @@
 
 Eine Aufgabe kann nach dem Erledigen **wiederkommen**, und sie kann dich zu einer gewählten Zeit **erinnern**. Wiederkehrende Aufgaben funktionieren in der Desktop-App und in der Android-App, Erinnerungen liefert die Android-App; beides steht in der Markdown-Datei der Aufgabe, sodass ein zwischen Geräten synchronisierter Vault es mitnimmt.
 
-Die [Online-Demo](/demo/) speichert ihre Aufgaben im Browser und lässt wiederkehrende Aufgaben nicht wiederkommen: Wer eine erledigt, erledigt sie nur.
+Die [Online-Demo](https://simon123h.github.io/Jotter/demo/) speichert ihre Aufgaben im Browser und lässt wiederkehrende Aufgaben nicht wiederkommen: Wer eine erledigt, erledigt sie nur.
 
 ## Wiederkehrende Aufgaben
 
