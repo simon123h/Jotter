@@ -880,6 +880,29 @@ describe('navigation', () => {
     expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ left: 0 }));
   });
 
+  it('keeps a tapped tab selected while the columns scroll to it, and follows the finger again afterwards', async () => {
+    await start(desktopVault);
+    const scroller = find('columns').element as HTMLElement;
+    Object.defineProperty(scroller, 'clientWidth', { value: 390, configurable: true });
+    scroller.scrollTo = vi.fn() as unknown as typeof scroller.scrollTo;
+    const selected = () => all('bucket-tab').map((t) => t.attributes('aria-selected'));
+    const scrollTo = async (left: number) => {
+      Object.defineProperty(scroller, 'scrollLeft', { value: left, configurable: true });
+      await find('columns').trigger('scroll');
+    };
+
+    await all('bucket-tab')[1].trigger('click');
+    expect(selected()).toEqual(['false', 'true']);
+    await scrollTo(40); // the first frames of the smooth scroll are still near the old column
+    expect(selected()).toEqual(['false', 'true']);
+    expect(useUiStore().columnProgress).toBeCloseTo(40 / 390); // the underline follows the scroll
+    await scrollTo(390); // arrived
+    expect(selected()).toEqual(['false', 'true']);
+
+    await scrollTo(100); // a finger moves the columns back
+    expect(selected()).toEqual(['true', 'false']);
+  });
+
   it('steps to the previous or next column with a sideways swipe on the tab strip', async () => {
     await start(desktopVault);
     const scroller = find('columns').element as HTMLElement;

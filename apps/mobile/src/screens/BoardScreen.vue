@@ -76,6 +76,8 @@ let swipeFrom: number | null = null;
 let swipeIdle: ReturnType<typeof setTimeout> | undefined;
 
 function onTouchStart() {
+  // A finger on the columns takes over from a tab that was tapped
+  stopNavigating();
   const el = scroller.value;
   if (!el?.clientWidth || ui.dragging) return;
   clearTimeout(swipeIdle);
@@ -93,25 +95,54 @@ function holdWithinOneColumn(el: HTMLElement) {
   swipeIdle = setTimeout(() => (swipeFrom = null), 200);
 }
 
+/**
+ * A tapped tab is the active one at once, and stays so while the columns scroll there: the scroll passes every column
+ * in between, and following it would let the highlight and the centred tab walk back and forth. The underline
+ * follows the scroll position all the same.
+ */
+let navigatingTo: number | null = null;
+let navigatingTimer: ReturnType<typeof setTimeout> | undefined;
+
+function stopNavigating() {
+  navigatingTo = null;
+  clearTimeout(navigatingTimer);
+}
+
 function onScroll() {
   const el = scroller.value;
   if (!el || !el.clientWidth) return;
   holdWithinOneColumn(el);
   const position = el.scrollLeft / el.clientWidth;
   ui.columnProgress = position;
+  if (navigatingTo !== null) {
+    if (Math.abs(position - navigatingTo) < 0.02) stopNavigating();
+    return;
+  }
   active.value = Math.round(position);
 }
 
 function goTo(index: number) {
   active.value = index;
   const el = scroller.value;
-  if (el) el.scrollTo({ left: index * el.clientWidth, behavior: 'smooth' });
+  if (!el) return;
+  // The swipe guard must not hold a scroll that is meant to travel further than one column
+  swipeFrom = null;
+  clearTimeout(swipeIdle);
+  stopNavigating();
+  const left = index * el.clientWidth;
+  if (Math.abs(el.scrollLeft - left) >= 1) {
+    navigatingTo = index;
+    // If the scroll is cut short (a touch, a layout change), the position decides again after a moment
+    navigatingTimer = setTimeout(stopNavigating, 800);
+  }
+  el.scrollTo({ left, behavior: 'smooth' });
 }
 
 // A different project or view starts at its first tab
 watch(
   () => [app.projectId, app.view],
   async () => {
+    stopNavigating();
     active.value = 0;
     ui.columnProgress = 0;
     ui.navHidden = false;
