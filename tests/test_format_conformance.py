@@ -101,6 +101,7 @@ def _project_view(project: Any, buckets: list[Any]) -> dict[str, Any]:
         "title": project.name,
         "description": project.description,
         "done_clean_period": project.done_clean_period,
+        "archived": project.archived,
         "created_at": project.created_at,
         "buckets": [
             {
@@ -119,9 +120,8 @@ def _project_view(project: Any, buckets: list[Any]) -> dict[str, Any]:
 
 
 def _without_unstated_timestamp(view: dict[str, Any], expected: dict[str, Any]) -> dict[str, Any]:
-    if "created_at" not in expected:
-        view = {k: v for k, v in view.items() if k != "created_at"}
-    return view
+    # Fixtures written before these fields existed do not state them
+    return {k: v for k, v in view.items() if k not in ("created_at", "archived") or k in expected}
 
 
 @pytest.mark.parametrize("case", PROJECT_CASES, ids=lambda p: p.stem)

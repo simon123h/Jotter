@@ -15,6 +15,7 @@ class Project:
     name: str  # Display name / title (e.g. "Default", "Work & Office")
     description: str = ""
     done_clean_period: int | None = None
+    archived: bool = False  # put away: out of the lists, cross-project views, reminders and the MCP server
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def __post_init__(self) -> None:
@@ -30,6 +31,7 @@ class Project:
         project_id: str | None = None,
         description: str = "",
         done_clean_period: int | None = None,
+        archived: bool = False,
         **kwargs: Any,
     ) -> Self:
         clean_name = name.strip()
@@ -45,6 +47,7 @@ class Project:
             name=clean_name,
             description=description.strip() if description else "",
             done_clean_period=done_clean_period,
+            archived=archived,
             created_at=datetime.now(UTC).isoformat(),
         )
 
@@ -53,6 +56,7 @@ class Project:
         name: str | None = None,
         description: str | None = None,
         done_clean_period: int | Unset | None = UNSET,
+        archived: bool | None = None,
     ) -> None:
         if name is not None:
             clean_name = name.strip()
@@ -65,3 +69,6 @@ class Project:
 
         if done_clean_period is not UNSET:
             self.done_clean_period = done_clean_period
+
+        if archived is not None:
+            self.archived = archived

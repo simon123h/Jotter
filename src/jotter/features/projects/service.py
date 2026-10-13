@@ -24,7 +24,8 @@ class ProjectApplicationService:
             bucket_repo=BucketRepository(data_dir, conn),
         )
 
-    def get_all_projects(self) -> list[ProjectResponse]:
+    def get_all_projects(self, include_archived: bool = True) -> list[ProjectResponse]:
+        """All projects. Archived ones carry `archived`, so a client can show them apart; pass False to leave them out."""
         projects = self.project_repo.get_all()
         if not projects:
             # Seed default project if empty
@@ -33,7 +34,7 @@ class ProjectApplicationService:
             self.bucket_repo.get_all("default")
             projects = [default_p]
 
-        return [self._to_response(p) for p in projects]
+        return [self._to_response(p) for p in projects if include_archived or not p.archived]
 
     def get_project(self, project_id: str) -> ProjectResponse:
         return self._to_response(self.project_repo.get(project_id))
@@ -59,6 +60,7 @@ class ProjectApplicationService:
             project_id=slug,
             description=req.description,
             done_clean_period=req.done_clean_period,
+            archived=req.archived,
         )
 
         self.project_repo.save(project)
@@ -75,6 +77,7 @@ class ProjectApplicationService:
             name=title,
             description=req.description,
             done_clean_period=req.done_clean_period,
+            archived=req.archived,
         )
 
         self.project_repo.save(project)
@@ -91,5 +94,6 @@ class ProjectApplicationService:
             title=p.name,
             description=p.description,
             done_clean_period=p.done_clean_period,
+            archived=p.archived,
             created_at=p.created_at,
         )

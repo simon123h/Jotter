@@ -159,3 +159,4 @@ class TaskFilterParams:
     created_after: str | None = None
     updated_before: str | None = None
     updated_after: str | None = None
+    include_archived: bool = False

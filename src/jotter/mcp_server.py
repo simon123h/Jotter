@@ -111,9 +111,9 @@ def _create_server(config: UserConfig | None, vault: str | None) -> tuple[MCPSer
     server = MCPServer("jotter")
 
     @server.tool()
-    def list_projects() -> list[dict[str, Any]]:
-        """List all projects in Jotter."""
-        projects = project_svc.get_all_projects()
+    def list_projects(include_archived: bool = False) -> list[dict[str, Any]]:
+        """List the projects in Jotter. Archived (put away) projects are left out unless `include_archived=True`."""
+        projects = project_svc.get_all_projects(include_archived=include_archived)
         return [p.model_dump() for p in projects]
 
     @server.tool()
@@ -187,8 +187,11 @@ def _create_server(config: UserConfig | None, vault: str | None) -> tuple[MCPSer
         updated_before: str | None = None,
         updated_after: str | None = None,
         limit: int | None = None,
+        include_archived: bool = False,
     ) -> list[dict[str, Any]]:
         """Query and list tasks with rich filtering options.
+
+        A query without `project_id` leaves out the tasks of archived projects unless `include_archived=True`.
 
         By default, active tasks are returned and completed/archived tasks are excluded
         (`include_done=False`). Set `include_done=True` or explicitly specify `bucket="done"`
@@ -220,6 +223,7 @@ def _create_server(config: UserConfig | None, vault: str | None) -> tuple[MCPSer
             created_after=created_after,
             updated_before=updated_before,
             updated_after=updated_after,
+            include_archived=include_archived,
         )
 
         if limit is not None and limit >= 0:
@@ -350,7 +354,7 @@ def _create_server(config: UserConfig | None, vault: str | None) -> tuple[MCPSer
     )
     def resource_projects() -> str:
         """Overview of all projects and their buckets/columns."""
-        projects = project_svc.get_all_projects()
+        projects = project_svc.get_all_projects(include_archived=False)
         lines = ["# Jotter Projects\n"]
         for p in projects:
             lines.append(f"## {p.title} (`{p.id}`)")

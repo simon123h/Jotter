@@ -47,7 +47,8 @@ _SCHEMA = """
         title TEXT NOT NULL,
         description TEXT DEFAULT '',
         created_at TEXT NOT NULL,
-        done_clean_period INTEGER DEFAULT NULL
+        done_clean_period INTEGER DEFAULT NULL,
+        archived INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS meta (

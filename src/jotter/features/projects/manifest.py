@@ -20,6 +20,7 @@ KNOWN_MANIFEST_KEYS = frozenset(
         "createdAt",
         "done_clean_period",
         "doneCleanPeriod",
+        "archived",
         "buckets",
     }
 )
@@ -68,6 +69,8 @@ def read_project_manifest(
         project_id=proj_id,
         description=description,
         done_clean_period=clean_period_int,
+        # Only the boolean true archives: anything else ("yes", 1) reads as not archived
+        archived=fm_data.get("archived") is True,
     )
     if created_at:
         project.created_at = str(created_at).strip()
@@ -144,6 +147,8 @@ def write_project_manifest(
         fm_dict["created_at"] = project.created_at
     if project.done_clean_period is not None:
         fm_dict["done_clean_period"] = project.done_clean_period
+    if project.archived:
+        fm_dict["archived"] = True
 
     fm_dict["buckets"] = [
         {
