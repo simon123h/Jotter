@@ -1,6 +1,6 @@
 # ADR 3: Support Arbitrary File Slugs and Non-Enforcement of ULID Format
 
-- **Status**: Accepted
+- **Status**: Accepted. Decision 2 (new tasks get ULIDs) is replaced by [ADR 0020](./0020-readable-task-file-names.md); the rest stands.
 - **Date**: 2026-10-03
 - **Author**: Antigravity (AI Coding Assistant) & User
 

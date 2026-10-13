@@ -170,12 +170,29 @@ describe('tasks', () => {
     await repo.addVault({ name: 'Jotter', path: 'Jotter' });
   });
 
-  it('creates a task file with a ULID name at the end of its bucket', async () => {
+  it('names a task after its title, makes the name unique in the whole vault, and keeps it when the title changes', async () => {
+    const first = await repo.createTask('work', { title: 'Buy milk', bucket: 'todo' });
+    const same = await repo.createTask('work', { title: 'Buy milk', bucket: 'todo' });
+    const home = await repo.createProject('Home');
+    const other = await repo.createTask(home.id, { title: 'Buy milk', bucket: 'todo' });
+    const manifest = await repo.createTask('work', { title: 'Index', bucket: 'todo' });
+
+    expect(first.id).toBe('buy-milk');
+    expect(same.id).toMatch(/^buy-milk-[a-z0-9]{4}$/);
+    expect(other.id).toMatch(/^buy-milk-[a-z0-9]{4}$/);
+    expect(manifest.id).toMatch(/^index-[a-z0-9]{4}$/);
+
+    await repo.updateTask('work', first.id, { title: 'Buy oat milk' });
+    expect((await repo.getTask('work', 'buy-milk')).title).toBe('Buy oat milk');
+    expect(fs.files.has('Jotter/work/buy-milk.md')).toBe(true);
+  });
+
+  it('creates a task file named after its title at the end of its bucket', async () => {
     const first = await repo.createTask('work', { title: '  New one  ', bucket: 'todo', tags: ['t'] });
     const second = await repo.createTask('work', { title: 'Second', bucket: 'todo' });
 
     expect(first.title).toBe('New one');
-    expect(first.id).toMatch(/^[0-9A-HJKMNP-TV-Z]{26}$/);
+    expect(first.id).toBe('new-one');
     expect(second.position).toBe(first.position + 1000);
     expect(first.position).toBeGreaterThan(1000);
     expect(fs.files.get(`Jotter/work/${first.id}.md`)?.data).toContain('title: New one');

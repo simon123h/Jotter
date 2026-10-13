@@ -23,12 +23,20 @@ Each implementation must pass two checks per case:
 2. **Round trip**: writing that result back out and parsing it again still gives `expected`. This is what
    protects unknown frontmatter keys.
 
+### Slug fixtures
+
+`fixtures/filenames/slug.json` lists titles and the file name (without a suffix) a writer gives a new task, and the
+reserved names that always get a suffix (`FORMAT.md`, *File names of new tasks*). The random suffix itself is not
+compared.
+
 ## Runners
 
 | Implementation | Runner | Command |
 | :-- | :-- | :-- |
 | Python backend | `tests/test_format_conformance.py` | `pytest tests/test_format_conformance.py` |
 | TypeScript parser (mobile) | `packages/vault-format/src/formatConformance.spec.ts` | `npm --prefix packages/vault-format test` |
+| Slugs, Python | `tests/test_task_names.py` | `pytest tests/test_task_names.py` |
+| Slugs, TypeScript | `packages/vault-format/src/taskName.spec.ts` | `npm --prefix packages/vault-format test` |
 
 A new implementation only needs a small runner that loads these files and compares the same normalized view.
 
