@@ -2,7 +2,7 @@ import type { Ref } from 'vue';
 import { createTask, deleteTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
-import { extractAllChecklistItems } from '@/utils/markdown';
+import { extractChecklistItems } from '@jotter/checklist';
 import type { Task, Bucket } from '@/types';
 
 interface Options {
@@ -47,7 +47,7 @@ export function useTaskDetailActions({
   const splitAllSubtasks = async () => {
     if (!task.value || !task.value.body) return;
 
-    const { items, cleanedBody } = extractAllChecklistItems(task.value.body);
+    const { items, cleanedBody } = extractChecklistItems(task.value.body);
     if (items.length === 0) return;
 
     const confirmed = await showDialog({

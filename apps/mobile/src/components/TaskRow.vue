@@ -5,7 +5,7 @@ import type { Task } from '@jotter/vault-format';
 import { t, type MessageKey } from '@/i18n';
 import { dueInfo } from '@/dates';
 import { isPostponed } from '@jotter/task-filter';
-import { checklistProgress } from '@/markdown';
+import { checklistProgress } from '@jotter/checklist';
 import { plannedLabel } from '@/planned';
 import { repeatLabel } from '@/repeat';
 import { colorHex } from '@/taskColors';

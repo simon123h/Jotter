@@ -2,7 +2,8 @@
 import { computed } from 'vue';
 import { marked } from 'marked';
 import { useI18n } from '@/composables/useI18n';
-import { createMarkdownRenderer, toggleChecklistItemInMarkdown } from '@/utils/markdown';
+import { createMarkdownRenderer } from '@/utils/markdown';
+import { toggleChecklistItem } from '@jotter/checklist';
 
 const props = defineProps<{
   body: string;
@@ -32,7 +33,7 @@ const parsedMarkdown = computed(() => {
 
 const toggleCheckboxInBody = (targetIndex: number, isChecked: boolean) => {
   try {
-    const newBody = toggleChecklistItemInMarkdown(props.body, targetIndex, isChecked);
+    const newBody = toggleChecklistItem(props.body, targetIndex, isChecked);
     emit('update:body', newBody);
   } catch (err: any) {
     emit('error', t('errors.updateTask', { message: err.message || err }));

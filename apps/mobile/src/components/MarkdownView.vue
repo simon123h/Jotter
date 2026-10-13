@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { renderMarkdown, countChecklistItems } from '@/markdown';
+import { renderMarkdown } from '@/markdown';
+import { countChecklistItems } from '@jotter/checklist';
 
 const props = defineProps<{ source: string }>();
 const emit = defineEmits<{ (e: 'toggle', index: number): void }>();

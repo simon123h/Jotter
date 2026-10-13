@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderMarkdown, toggleChecklistItem, countChecklistItems, checklistProgress, appendChecklistItem } from './markdown';
+import { renderMarkdown } from './markdown';
 
 describe('renderMarkdown', () => {
   it('renders common markdown and checklists', () => {
@@ -31,38 +31,5 @@ describe('renderMarkdown', () => {
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
     expect(html).not.toMatch(/type="text"|<button/);
-  });
-});
-
-describe('checklist toggling', () => {
-  const source = '# Plan\n\n- [ ] first\n- [x] second\n  - [ ] nested\n1. [ ] numbered\n\n```\n- [ ] in a code block\n```\n\n- [ ] last\n';
-
-  it('counts the items that render as checkboxes, not those in code blocks', () => {
-    expect(countChecklistItems(source)).toBe(5);
-  });
-
-  it('flips only the chosen item and leaves the rest of the text alone', () => {
-    expect(toggleChecklistItem(source, 0)).toBe(source.replace('- [ ] first', '- [x] first'));
-    expect(toggleChecklistItem(source, 1)).toBe(source.replace('- [x] second', '- [ ] second'));
-    expect(toggleChecklistItem(source, 3)).toBe(source.replace('1. [ ] numbered', '1. [x] numbered'));
-    // The item after the code block is number 4, the one inside the block is skipped
-    expect(toggleChecklistItem(source, 4)).toBe(source.replace('- [ ] last', '- [x] last'));
-  });
-
-  it('does nothing for an index that does not exist', () => {
-    expect(toggleChecklistItem(source, 9)).toBe(source);
-  });
-});
-
-describe('checklist progress and adding items', () => {
-  it('counts ticked and total items, ignoring code blocks', () => {
-    expect(checklistProgress('Text only')).toBeNull();
-    expect(checklistProgress('- [x] one\n- [ ] two\n  - [X] nested\n```\n- [ ] in code\n```\n')).toEqual({ checked: 2, total: 3 });
-  });
-
-  it('appends an item, next to the list it ends with', () => {
-    expect(appendChecklistItem('', 'first')).toBe('- [ ] first\n');
-    expect(appendChecklistItem('- [x] a\n', ' b  c ')).toBe('- [x] a\n- [ ] b c\n');
-    expect(appendChecklistItem('Some notes\n', 'a')).toBe('Some notes\n\n- [ ] a\n');
   });
 });

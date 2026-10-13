@@ -2,7 +2,7 @@
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue';
 import { ArrowLeft, EllipsisVertical, Trash2, Paperclip, Pencil, X, Slash, Check, Archive, Plus } from '@lucide/vue';
 import MarkdownView from './MarkdownView.vue';
-import { appendChecklistItem, toggleChecklistItem } from '@/markdown';
+import { appendChecklistItem, toggleChecklistItem } from '@jotter/checklist';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';

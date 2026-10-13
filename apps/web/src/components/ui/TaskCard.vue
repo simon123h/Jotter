@@ -9,7 +9,7 @@ import { useSelectionStore } from '@/stores/selection';
 import { useProjectStore } from '@/stores/project';
 import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
 import { updateTask } from '@/api';
-import { toggleChecklistItemInMarkdown } from '@/utils/markdown';
+import { toggleChecklistItem as toggleChecklistItemInBody } from '@jotter/checklist';
 import { parseChecklist } from '@/utils/checklist';
 import { getTaskCardTintStyle } from '@/utils/taskColors';
 import { triggerDoneParticleBurst } from '@/utils/effects';
@@ -113,7 +113,7 @@ const checklist = computed(() => parseChecklist(props.task.body, props.maxNestin
 const showChecklistInCard = computed(() => !props.compact && checklist.value.items.length > 0);
 
 const toggleChecklistItem = async (targetIndex: number, isChecked: boolean) => {
-  const newBody = toggleChecklistItemInMarkdown(props.task.body, targetIndex, isChecked);
+  const newBody = toggleChecklistItemInBody(props.task.body, targetIndex, isChecked);
 
   try {
     await updateTask(props.task.project_id, props.task.id, { body: newBody });
