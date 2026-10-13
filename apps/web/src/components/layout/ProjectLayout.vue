@@ -34,7 +34,7 @@ const toggleTimeblockSidebar = () => {
   settingsStore.toggleTimeblockSidebar();
 };
 
-const { hideDoneColumn, hideArchiveColumn, hidePostponedColumn } = storeToRefs(settingsStore);
+const { hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 const { projects, buckets, tasks, projectsLoaded } = storeToRefs(projectStore);
 
 const selectionStore = useSelectionStore();
@@ -60,23 +60,9 @@ const { filteredTasks, clearFilters } = useTaskFilters(tasks, { syncRoute: false
 
 const displayedBuckets = computed(() => {
   const list = [...buckets.value];
-  const hasPostponed = list.some((b) => b.name === 'postponed');
-  if (!hasPostponed && !hidePostponedColumn.value) {
-    const doneBucket = list.find((b) => b.name === 'done');
-    const pos = doneBucket ? doneBucket.position - 50 : 2500;
-    list.push({
-      name: 'postponed',
-      title: 'Postponed',
-      subtitle: 'Postponed tasks',
-      position: pos,
-    });
-    list.sort((a, b) => a.position - b.position);
-  }
-
   return list.filter((b) => {
     if (hideDoneColumn.value && b.name === 'done') return false;
     if (hideArchiveColumn.value && b.name === 'archive') return false;
-    if (hidePostponedColumn.value && b.name === 'postponed') return false;
     return true;
   });
 });

@@ -69,8 +69,10 @@ const tasksByBucket = computed(() => {
     groups[b.name] = [];
   });
 
+  // A postponed task stays in its own column; it is only left out while postponed tasks are hidden
   props.tasks.forEach((task) => {
-    const b = isPostponed(task) ? 'postponed' : task.bucket;
+    if (hidePostponedColumn.value && isPostponed(task)) return;
+    const b = task.bucket;
     if (groups[b] === undefined) {
       groups[b] = [];
     }
@@ -92,7 +94,7 @@ const {
   handleRenameColumn,
   handleDeleteColumn,
   handleColumnReordered,
-} = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn, hidePostponedColumn, bucketsRef);
+} = useBuckets(activeProjectId, hideDoneColumn, hideArchiveColumn, bucketsRef);
 
 const { tasks: storeTasks } = storeToRefs(projectStore);
 const { handleCardDropped, handleMarkTaskDone } = useTaskMutations(storeTasks, activeProjectId, fetchBuckets, async () => {
@@ -127,9 +129,10 @@ const onSaveColumn = async (payload: any) => {
   emit('refresh');
 };
 
-/** The tasks that keep a column from being deleted: the ones shown in it and the postponed ones, which show in the Postponed column. */
-const tasksInColumn = (name: string) =>
-  Math.max((tasksByBucket.value[name] || []).length, props.tasks.filter((task) => task.bucket === name).length);
+/** The tasks that keep a column from being deleted: the ones in it, hidden postponed ones included. */
+const tasksInColumn = (name: string) => props.tasks.filter((task) => task.bucket === name).length;
+
+const postponedCount = computed(() => props.tasks.filter((task) => isPostponed(task)).length);
 
 const onColumnDeleted = async (name: string) => {
   bucketError.value = null;
@@ -405,7 +408,7 @@ useBoardNavigation({
           <span class="font-semibold">{{ t('archiveBucket.hide') }}</span>
         </label>
 
-        <!-- hide postponed column check -->
+        <!-- hide postponed tasks check -->
         <label
           class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
         >
@@ -416,6 +419,7 @@ useBoardNavigation({
             class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
           />
           <span class="font-semibold">{{ t('postponedBucket.hide') }}</span>
+          <span v-if="postponedCount" class="text-theme-text-muted" data-testid="postponed-count">{{ postponedCount }}</span>
         </label>
       </div>
     </div>

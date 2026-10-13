@@ -6,7 +6,6 @@ import { useUiStore } from '@/stores/ui';
 interface Placement {
   bucket: string;
   position: number;
-  postponed?: string;
 }
 
 const list = (ids: string | string[]) => (Array.isArray(ids) ? ids : [ids]);
@@ -66,8 +65,8 @@ export function useTaskActions() {
 
   /** Tells the user a dragged or single task changed bucket, if it did, and lets them undo it. */
   function announceMove(id: string, before: Placement, bucket: string) {
-    if (before.bucket === bucket && before.postponed === undefined) return;
-    const title = app.buckets.find((b) => b.name === bucket)?.title ?? (bucket === 'postponed' ? t('postponed.title') : bucket);
+    if (before.bucket === bucket) return;
+    const title = app.buckets.find((b) => b.name === bucket)?.title ?? bucket;
     offerUndo(t('task.movedTo', { bucket: title }), () => app.restoreMany([{ id, ...before }]));
   }
 

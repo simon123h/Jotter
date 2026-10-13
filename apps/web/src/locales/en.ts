@@ -223,8 +223,8 @@ export const en = {
     hideText: 'Hide Archive',
   },
   postponedBucket: {
-    show: 'Show "Postponed" column',
-    hide: 'Hide "Postponed" column',
+    show: 'Show postponed tasks',
+    hide: 'Hide postponed tasks',
     showText: 'Show Postponed',
     hideText: 'Hide Postponed',
   },

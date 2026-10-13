@@ -6,7 +6,6 @@ export function useBuckets(
   activeProjectId: Ref<string>,
   hideDoneColumn: Ref<boolean>,
   hideArchiveColumn: Ref<boolean>,
-  hidePostponedColumn?: Ref<boolean>,
   externalBuckets?: Ref<Bucket[]>
 ) {
   const internalBuckets = ref<Bucket[]>([]);
@@ -27,23 +26,9 @@ export function useBuckets(
 
   const displayedBuckets = computed(() => {
     const list = [...buckets.value];
-    const hasPostponed = list.some((b) => b.name === 'postponed');
-    if (!hasPostponed && hidePostponedColumn && !hidePostponedColumn.value) {
-      const doneBucket = list.find((b) => b.name === 'done');
-      const pos = doneBucket ? doneBucket.position - 50 : 2500;
-      list.push({
-        name: 'postponed',
-        title: 'Postponed',
-        subtitle: 'Postponed tasks',
-        position: pos,
-      });
-      list.sort((a, b) => a.position - b.position);
-    }
-
     return list.filter((b) => {
       if (b.name === 'done' && hideDoneColumn.value) return false;
       if (b.name === 'archive' && hideArchiveColumn.value) return false;
-      if (b.name === 'postponed' && hidePostponedColumn?.value) return false;
       return true;
     });
   });

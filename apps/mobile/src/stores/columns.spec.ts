@@ -21,15 +21,16 @@ const bucket = (name: string, position: number): Bucket => ({ name, title: name,
 const buckets = [bucket('todo', 1), bucket('done', 2), bucket('archive', 3)];
 
 describe('columnsFor', () => {
-  it('puts a postponed task in a virtual Postponed column before Done, hidden on the board by default', () => {
+  it('keeps a postponed task in its own column, and leaves it out while the view hides postponed tasks', () => {
     const tasks = [task('a'), task('b', { postponed_until: isoDay(3) })];
     const hidden = defaultHidden();
-    expect(columnsFor('board', buckets, tasks, hidden).map((c) => c.key)).toEqual(['todo', 'done', 'archive']);
-    hidden.board.postponed = false;
     const cols = columnsFor('board', buckets, tasks, hidden);
-    expect(cols.map((c) => c.key)).toEqual(['todo', 'postponed', 'done', 'archive']);
-    expect(cols.find((c) => c.key === 'postponed')!.tasks.map((t) => t.id)).toEqual(['b']);
+    expect(cols.map((c) => c.key)).toEqual(['todo', 'done', 'archive']);
     expect(cols[0]!.tasks.map((t) => t.id)).toEqual(['a']);
+    hidden.board.postponed = false;
+    const shown = columnsFor('board', buckets, tasks, hidden);
+    expect(shown.map((c) => c.key)).toEqual(['todo', 'done', 'archive']);
+    expect(shown[0]!.tasks.map((t) => t.id)).toEqual(['a', 'b']);
   });
 
   it('collects tasks of an unknown bucket in a trailing column', () => {

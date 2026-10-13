@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Calendar, Clock, Paperclip, Hourglass, Box, Repeat, Bell } from '@lucide/vue';
-import { today } from '@jotter/task-filter';
+import { isPostponed } from '@jotter/task-filter';
 import { repeatLabel } from '@/utils/repeat';
 import type { Task, Timeblock } from '@/types';
 import type { ChecklistStats } from '@/utils/checklist';
@@ -28,9 +28,7 @@ const { t, locale } = useI18n();
 const settingsStore = useSettingsStore();
 
 /** Only a date still ahead is shown: once it has passed, the task is back and the date means nothing. */
-const postponedUntil = computed(() =>
-  props.task.postponed_until && props.task.postponed_until > today() ? props.task.postponed_until : null
-);
+const postponedUntil = computed(() => (isPostponed(props.task) ? props.task.postponed_until : null));
 
 const hasContent = computed(
   () =>

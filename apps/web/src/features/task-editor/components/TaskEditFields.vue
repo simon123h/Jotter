@@ -110,8 +110,8 @@ defineExpose({
       </div>
     </div>
 
-    <!-- Postponed Until Row (Only shown when bucket is set to postponed) -->
-    <div v-if="editor.form.bucket === 'postponed'">
+    <!-- Postponed Until Row -->
+    <div>
       <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
         {{ t('form.postponedUntilLabel') || 'Postponed Until' }}
       </label>
@@ -119,7 +119,6 @@ defineExpose({
         v-model="editor.form.postponedUntil"
         type="date"
         class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-        required
       />
     </div>
 

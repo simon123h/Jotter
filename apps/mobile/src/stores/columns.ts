@@ -28,29 +28,25 @@ const byUrgency = (a: Task, b: Task) =>
   (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999') ||
   a.position - b.position;
 
-/** Where a task is shown: a task postponed to a later day is in the Postponed column, whatever its own column. */
-export const shownBucket = (task: Task) => (isPostponed(task) ? 'postponed' : task.bucket);
-
+/** Postponed tasks stay in their own column; they are only left out while the view hides them. */
 export const isHiddenIn = (task: Task, hidden: Hidden) =>
-  (task.bucket === 'done' && hidden.done) ||
-  (task.bucket === 'archive' && hidden.archive) ||
-  (shownBucket(task) === 'postponed' && hidden.postponed);
+  (task.bucket === 'done' && hidden.done) || (task.bucket === 'archive' && hidden.archive) || (hidden.postponed && isPostponed(task));
 
 /** Tasks the tag and planning views list, most urgent first. */
 export const openTasksOf = (tasks: Task[], hidden: Hidden): Task[] => tasks.filter((task) => !isHiddenIn(task, hidden)).sort(byUrgency);
 
 /** One column per bucket, plus one for tasks that name a bucket the project does not have. */
 export function boardColumns(buckets: Bucket[], tasks: Task[], hidden: Hidden): Column[] {
-  const known = new Set([...buckets.map((b) => b.name), 'postponed']);
-  const all: Column[] = buckets.map((b) => ({ key: b.name, title: b.title, bucket: b.name, tasks: [] as Task[] }));
-  // Postponed tasks have a column even when the project defines none, just before Done
-  if (!all.some((c) => c.key === 'postponed')) {
-    const at = all.findIndex((c) => c.key === 'done');
-    all.splice(at < 0 ? all.length : at, 0, { key: 'postponed', title: t('postponed.title'), bucket: 'postponed', tasks: [] });
-  }
-  for (const col of all) col.tasks = tasks.filter((task) => shownBucket(task) === col.key);
-  const cols = all.filter((c) => !hidden[c.key as keyof Hidden]);
-  const orphans = tasks.filter((task) => !known.has(shownBucket(task)));
+  const known = new Set(buckets.map((b) => b.name));
+  const cols: Column[] = buckets
+    .filter((b) => !(b.name === 'done' && hidden.done) && !(b.name === 'archive' && hidden.archive))
+    .map((b) => ({
+      key: b.name,
+      title: b.title,
+      bucket: b.name,
+      tasks: tasks.filter((task) => task.bucket === b.name && !isHiddenIn(task, hidden)),
+    }));
+  const orphans = tasks.filter((task) => !known.has(task.bucket) && !isHiddenIn(task, hidden));
   if (orphans.length) cols.push({ key: '__other', title: '', bucket: null, tasks: orphans });
   return cols;
 }

@@ -1806,12 +1806,16 @@ describe('postponing tasks', () => {
     await start(vault);
     expect(tabs()).toEqual(['To Do', 'Done']);
     expect(find('board').text()).not.toContain('Later task');
+    // The menu says how many tasks are out of the way
+    await find('view-menu').trigger('click');
+    expect(find('hide-postponed').text()).toContain('1');
+    await find('view-menu').trigger('click');
     expect(find('board').text()).toContain('Back again');
 
     await showPostponed();
-    expect(tabs()).toEqual(['To Do', 'Postponed', 'Done']);
-    all('bucket-tab')[1]!.element.dispatchEvent(new Event('click'));
+    expect(tabs()).toEqual(['To Do', 'Done']);
     expect(find('board').text()).toContain('Later task');
+    expect(find('card-postponed').text()).toBe('2999-01-01');
   });
 
   it('leaves postponed tasks out of the tag and planning views until they are shown', async () => {
@@ -1853,38 +1857,21 @@ describe('postponing tasks', () => {
     expect(file('d')).not.toContain('postponed_until');
   });
 
-  it('moves a task into the Postponed column by postponing it to tomorrow, and out of it by moving it elsewhere', async () => {
+  it('keeps the postponement when a postponed task is moved to another column, and undo puts it back', async () => {
     await start(vault);
-    const app = useAppStore();
-    await app.moveTask('a', 'postponed');
-    await settle();
-    expect(file('a')).toContain(`postponed_until: ${tomorrow()}`);
-    expect(file('a')).toContain('status: todo');
-
     await showPostponed();
     await holdSelect('Later task');
     await find('bulk-move').trigger('click');
     await settle();
-    await find('move-to-todo').trigger('click');
+    await find('move-to-done').trigger('click');
     await settle();
-    expect(file('d')).not.toContain('postponed_until');
-    expect(file('d')).toContain('status: todo');
+    expect(file('d')).toContain('postponed_until: 2999-01-01');
+    expect(file('d')).toContain('status: done');
 
     await find('toast-action').trigger('click');
     await settle();
     expect(file('d')).toContain('postponed_until: 2999-01-01');
-  });
-
-  it('adds a task in the Postponed column postponed to tomorrow', async () => {
-    await start(vault);
-    await showPostponed();
-    useUiStore().activeColumn = 1;
-    await find('fab').trigger('click');
-    await type('quick-add-input', 'Think about it');
-    await submit('quick-add-input');
-    const data = [...fs.files.entries()].find(([, f]) => f.data.includes('title: Think about it'))?.[1].data ?? '';
-    expect(data).toContain(`postponed_until: ${tomorrow()}`);
-    expect(data).toContain('status: todo');
+    expect(file('d')).toContain('status: todo');
   });
 
   it('sets the postponed date on the task page, for any task', async () => {

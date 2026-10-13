@@ -50,11 +50,11 @@ Das Suchfeld versteht dieselbe Abfragesprache wie der Desktop, zum Beispiel `tag
 
 ## Erledigte, archivierte und zurückgestellte Aufgaben ausblenden
 
-Das ⋮-Menü oben blendet erledigte, archivierte und zurückgestellte Aufgaben ein oder aus, getrennt für jede Ansicht. Auf dem Board verschwinden dabei auch ihre Spalten. Tags und Planung beginnen mit allen dreien ausgeblendet.
+Das ⋮-Menü oben blendet erledigte, archivierte und zurückgestellte Aufgaben ein oder aus, getrennt für jede Ansicht. Auf dem Board verschwinden beim Ausblenden erledigter oder archivierter Aufgaben auch deren Spalten. Tags und Planung beginnen mit allen dreien ausgeblendet. Der Eintrag für zurückgestellte Aufgaben zeigt, wie viele er aus dem Weg hält.
 
 ## Aufgaben aufschieben
 
-Eine Aufgabe, die auf einen späteren Tag zurückgestellt ist, verlässt ihre Spalte und erscheint in einer Spalte *Zurückgestellt*, die ausgeblendet bleibt, bis du sie im ⋮-Menü einschaltest. In der Werkzeugleiste bietet *Mehr*, *Zurückstellen* an: *Morgen*, *Nächste Woche*, ein Datum, oder die Zurückstellung aufheben. Die Aufgabenseite hat ein Feld *Zurückgestellt bis*. Wer eine Aufgabe aus der Spalte *Zurückgestellt* verschiebt, holt sie zurück. Siehe [Aufgaben aufschieben](/de/user/postponing).
+Eine Aufgabe, die auf einen späteren Tag zurückgestellt ist, bleibt in ihrer Spalte, ist aber ausgeblendet, bis du zurückgestellte Aufgaben im ⋮-Menü einschaltest. Dann steht sie in ihrer Spalte, mit dem Tag markiert, an dem sie zurückkommt. In der Werkzeugleiste bietet *Mehr*, *Zurückstellen* an: *Morgen*, *Nächste Woche*, ein Datum, oder die Zurückstellung aufheben. Die Aufgabenseite hat ein Feld *Zurückgestellt bis*. Siehe [Aufgaben aufschieben](/de/user/postponing).
 
 ## Einstellungen
 
