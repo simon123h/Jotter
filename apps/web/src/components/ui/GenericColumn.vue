@@ -303,7 +303,7 @@ watch(
         <div
           ref="cardsContainer"
           :data-column-id="id"
-          class="cards-container flex-grow pb-6"
+          class="cards-container flex-grow shrink-0 pb-6"
           :class="[
             layout === 'grid-3'
               ? 'columns-1 md:columns-3 gap-2.5 [column-fill:_balance]'

@@ -29,4 +29,10 @@ describe('GenericColumn.vue', () => {
     expect(column('grid-2').classes()).toContain('md:w-[640px]');
     expect(column('grid-3').classes()).toContain('md:w-[960px]');
   });
+
+  it('does not let its cards shrink to the height of the column, which makes Firefox spill them into extra columns sideways', () => {
+    for (const layout of ['grid-2', 'grid-3'] as const) {
+      expect(column(layout).find('.cards-container').classes(), layout).toContain('shrink-0');
+    }
+  });
 });
