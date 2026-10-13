@@ -36,30 +36,40 @@ function measure() {
   );
 }
 
-/** The indicator slides between two tabs while the columns are being swiped, instead of jumping at the end. */
-const indicator = computed(() => {
+/** Where the columns are between two neighbouring tabs: the tab before, the tab after and how far (0 to 1) between them. */
+const between = computed(() => {
   const count = boxes.value.length;
-  if (!count) return { left: 0, width: 0 };
-  const progress = Math.min(Math.max(ui.columnProgress, 0), count - 1);
+  const progress = Math.min(Math.max(ui.columnProgress, 0), Math.max(count - 1, 0));
   const from = Math.floor(progress);
-  const to = Math.min(from + 1, count - 1);
-  const f = progress - from;
-  return {
-    left: boxes.value[from].left + (boxes.value[to].left - boxes.value[from].left) * f,
-    width: boxes.value[from].width + (boxes.value[to].width - boxes.value[from].width) * f,
-  };
+  return { count, from, to: Math.min(from + 1, count - 1), f: progress - from };
 });
 
-// Keep the selected tab in view when there are more tabs than fit
-watch(
-  () => ui.activeColumn,
-  (index) => {
-    const el = tabs.value[index];
-    const box = strip.value;
-    if (!el || !box) return;
-    box.scrollTo({ left: el.offsetLeft - (box.clientWidth - el.offsetWidth) / 2, behavior: 'smooth' });
-  }
-);
+/** The indicator slides between two tabs while the columns are being swiped, instead of jumping at the end. */
+const indicator = computed(() => {
+  const { count, from, to, f } = between.value;
+  if (!count) return { left: 0, width: 0 };
+  const a = boxes.value[from];
+  const b = boxes.value[to];
+  return { left: a.left + (b.left - a.left) * f, width: a.width + (b.width - a.width) * f };
+});
+
+/** How much a tab is the one in view, 1 when the columns rest on it and 0 from one column away: its colour blends. */
+const weight = (index: number) => Math.max(0, 1 - Math.abs(ui.columnProgress - index));
+const colour = (index: number) => `color-mix(in srgb, var(--color-accent) ${Math.round(weight(index) * 100)}%, var(--color-muted))`;
+
+/**
+ * The strip moves with the columns, frame by frame, so that the tab in view stays centred without an animation of
+ * its own that would run behind the finger. A strip the user scrolled by hand stays put until the columns move again.
+ */
+function follow() {
+  const box = strip.value;
+  const { count, from, to, f } = between.value;
+  if (!box || !count) return;
+  const middle = (i: number) => boxes.value[i].left + boxes.value[i].width / 2;
+  const target = middle(from) + (middle(to) - middle(from)) * f - box.clientWidth / 2;
+  box.scrollLeft = Math.min(Math.max(target, 0), Math.max(box.scrollWidth - box.clientWidth, 0));
+}
+watch([() => ui.columnProgress, boxes], follow, { flush: 'post' });
 
 // Titles and counts change the tab widths
 watch(
@@ -112,8 +122,8 @@ onBeforeUnmount(() => {
         :ref="(el) => setTab(i, el as HTMLElement | null)"
         role="tab"
         :aria-selected="i === ui.activeColumn"
-        class="flex h-12 min-w-[5.5rem] flex-[1_0_auto] items-center justify-center gap-1.5 whitespace-nowrap px-4 text-sm font-medium transition-colors active:bg-line/60"
-        :class="i === ui.activeColumn ? 'text-accent' : 'text-muted'"
+        class="flex h-12 min-w-[5.5rem] flex-[1_0_auto] items-center justify-center gap-1.5 whitespace-nowrap px-4 text-sm font-medium active:bg-line/60"
+        :style="{ color: colour(i) }"
         data-testid="bucket-tab"
         @click="emit('select', i)"
       >
