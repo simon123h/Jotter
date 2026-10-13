@@ -37,6 +37,8 @@ class IndexedFile(NamedTuple):
     created_at: str | None
     updated_at: str | None
     file_stat: tuple[int, int] | None
+    postponed_until: str | None = None
+    repeats: bool = False
 
 
 class SqliteTaskRepository:
@@ -100,7 +102,8 @@ class SqliteTaskRepository:
     def get_index_state(self, project_id: str) -> dict[str, IndexedFile]:
         """Returns what the index knows about each task file of a project, keyed by task ID."""
         rows = self.conn.execute(
-            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size FROM tasks WHERE project_id = ?",
+            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size, postponed_until, repeat "
+            "FROM tasks WHERE project_id = ?",
             (project_id,),
         ).fetchall()
         return {
@@ -109,6 +112,8 @@ class SqliteTaskRepository:
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 file_stat=(row["file_mtime_ns"], row["file_size"]) if row["file_mtime_ns"] is not None else None,
+                postponed_until=row["postponed_until"],
+                repeats=bool(row["repeat"]),
             )
             for row in rows
         }

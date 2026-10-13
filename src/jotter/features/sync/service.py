@@ -44,10 +44,18 @@ def _file_stat(st: os.stat_result) -> tuple[int, int] | None:
 
 
 def _is_expired(
-    bucket: str, updated_at: str | None, created_at: str | None, clean_period: int | None, now: datetime
+    bucket: str,
+    updated_at: str | None,
+    created_at: str | None,
+    clean_period: int | None,
+    now: datetime,
+    postponed_until: str | None = None,
+    repeats: bool = False,
 ) -> bool:
-    """True if a done task is older than the retention period."""
+    """True if a done task is older than the retention period. A recurring or still postponed task never is."""
     if not clean_period or clean_period <= 0 or bucket != "done":
+        return False
+    if repeats or (postponed_until and postponed_until > now.astimezone().date().isoformat()):
         return False
     date_str = updated_at or created_at
     if not date_str:
@@ -175,7 +183,15 @@ class SyncApplicationService:
                     known = indexed.get(file_path.stem)
                     if known is not None and file_stat is not None and known.file_stat == file_stat:
                         # Unchanged since it was indexed: no need to open and parse it (retention still applies)
-                        if _is_expired(known.bucket, known.updated_at, known.created_at, clean_period, now):
+                        if _is_expired(
+                            known.bucket,
+                            known.updated_at,
+                            known.created_at,
+                            clean_period,
+                            now,
+                            known.postponed_until,
+                            known.repeats,
+                        ):
                             self.disk_task_repo.delete(p_id, file_path.stem)
                             self.sqlite_task_repo.delete_task(file_path.stem)
                             self.last_changes += 1
@@ -187,7 +203,15 @@ class SyncApplicationService:
                     self.last_changes += 1
 
                     # Check if done task should be pruned based on retention period
-                    if _is_expired(task.bucket, task.updated_at, task.created_at, clean_period, now):
+                    if _is_expired(
+                        task.bucket,
+                        task.updated_at,
+                        task.created_at,
+                        clean_period,
+                        now,
+                        task.postponed_until.value,
+                        task.repeat is not None,
+                    ):
                         self.disk_task_repo.delete(p_id, str(task.id))
                         self.sqlite_task_repo.delete_task(str(task.id))
                         continue

@@ -3,6 +3,8 @@ import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import pytest
+
 from jotter.features.buckets.service import BucketApplicationService
 from jotter.features.projects.schemas import ProjectCreate, ProjectUpdate
 from jotter.features.projects.service import ProjectApplicationService
@@ -496,6 +498,45 @@ def test_sync_still_prunes_unchanged_expired_done_tasks(temp_dir, test_env, monk
     sync_svc.sync_db_only()
     assert reads == []  # unchanged file was not parsed...
     assert not path.exists()  # ...yet retention applied from the indexed dates
+
+
+@pytest.mark.parametrize("indexed_first", [False, True])
+def test_retention_never_prunes_postponed_or_recurring_done_tasks(temp_dir, test_env, indexed_first):
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
+    proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    proj_svc.create_project(ProjectCreate(title="Proj", id="proj", done_clean_period=None))
+    project_dir = Path(temp_dir) / "proj"
+    old_iso = (datetime.now(UTC) - timedelta(days=30)).isoformat()
+    future = (datetime.now() + timedelta(days=30)).date().isoformat()
+    past = (datetime.now() - timedelta(days=30)).date().isoformat()
+
+    extras = {
+        "plain": "",
+        "postponed": f"postponed_until: '{future}'\n",
+        "lapsed": f"postponed_until: '{past}'\n",
+        "recurring": "repeat:\n  every: 1\n  unit: week\n  from: completion\n",
+    }
+    paths = {}
+    for name, extra in extras.items():
+        task = task_svc.create_task("proj", TaskCreate(title=name, bucket="done"))
+        path = project_dir / f"{task.id}.md"
+        path.write_text(
+            f"---\nid: {task.id}\nproject_id: proj\ntitle: {name}\nbucket: done\nupdated_at: '{old_iso}'\n{extra}---\n",
+            encoding="utf-8",
+        )
+        paths[name] = path
+    _age_files(project_dir)
+
+    if indexed_first:
+        sync_svc.sync_db_only()  # indexes the files; retention is off, so nothing is pruned yet
+        assert all(path.exists() for path in paths.values())
+    (Path(temp_dir) / "settings.json").write_text(json.dumps({"doneCleanPeriod": 7}), encoding="utf-8")
+    sync_svc.sync_db_only()
+
+    # A lapsed postponement makes it an ordinary old done task again
+    assert {name for name, path in paths.items() if path.exists()} == {"postponed", "recurring"}
 
 
 def test_startup_sync_rebuilds_only_when_the_app_version_changes(temp_dir, test_env, monkeypatch):
