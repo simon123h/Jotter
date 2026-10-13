@@ -48,6 +48,22 @@ export interface FilterableTask {
   updated_at?: string | null;
 }
 
+// ---------- tags ----------
+
+/**
+ * The tags in a text or a list: tags are separated by commas, semicolons, bars, line breaks or spaces (a tag has no space,
+ * spec/FORMAT.md). They lose a leading #, are lower-cased, and each one appears once, in the order it came.
+ */
+export function parseTags(input: string | readonly string[] | null | undefined): string[] {
+  if (!input) return [];
+  const parts = typeof input === "string" ? [input] : input;
+  const tags = parts
+    .flatMap((part) => String(part).split(/[,;|\s]+/))
+    .map((tag) => tag.replace(/^#+/, "").toLowerCase())
+    .filter(Boolean);
+  return [...new Set(tags)];
+}
+
 // ---------- the query language ----------
 
 const quoted = (value: string) => (value.includes(" ") ? `"${value}"` : value);

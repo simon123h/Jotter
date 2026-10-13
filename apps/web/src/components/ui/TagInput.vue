@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
 import { useProjectStore } from '@/stores/project';
-import { sanitizeTag, sanitizeTags, sanitizeTagInputString } from '@/utils/tagUtils';
+import { sanitizeTags, sanitizeTagInputString, lastTagToken } from '@/utils/tagUtils';
 
 const props = withDefaults(
   defineProps<{
@@ -35,22 +35,14 @@ const existingTags = computed(() => {
   const tagsSet = new Set<string>();
   projectStore.tasks.forEach((t) => {
     if (t.tags) {
-      t.tags.forEach((tag) => {
-        const clean = sanitizeTag(tag);
-        if (clean) {
-          tagsSet.add(clean);
-        }
-      });
+      sanitizeTags(t.tags).forEach((tag) => tagsSet.add(tag));
     }
   });
   return Array.from(tagsSet).sort();
 });
 
-// The current query is the text after the last comma
-const activeTagQuery = computed(() => {
-  const parts = props.modelValue.split(',');
-  return sanitizeTag(parts[parts.length - 1]);
-});
+// The current query is the text after the last separator
+const activeTagQuery = computed(() => sanitizeTags(lastTagToken(props.modelValue))[0] ?? '');
 
 // Set of tags already added
 const currentTagsSet = computed(() => {
@@ -60,7 +52,7 @@ const currentTagsSet = computed(() => {
 // Suggestions list
 const tagSuggestions = computed(() => {
   const query = activeTagQuery.value;
-  const baseList = props.suggestionsOverride ? props.suggestionsOverride.map(sanitizeTag).filter(Boolean) : existingTags.value;
+  const baseList = props.suggestionsOverride ? sanitizeTags(props.suggestionsOverride) : existingTags.value;
   return baseList.filter((tag) => {
     const normalizedTag = tag.toLowerCase();
     if (currentTagsSet.value.has(normalizedTag)) return false;
@@ -74,9 +66,9 @@ watch(tagSuggestions, () => {
 });
 
 const selectTagSuggestion = (suggestion: string) => {
-  const parts = props.modelValue.split(',');
-  parts[parts.length - 1] = ' ' + suggestion;
-  const newVal = parts.join(',').trim() + ', ';
+  const typed = lastTagToken(props.modelValue);
+  const newVal =
+    props.modelValue.slice(0, props.modelValue.length - typed.length).trim() + (typed === props.modelValue ? '' : ' ') + suggestion + ', ';
   emit('update:modelValue', newVal);
   isDropdownOpen.value = true;
   nextTick(() => {

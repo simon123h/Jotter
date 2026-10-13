@@ -1,51 +1,47 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeTag, sanitizeTags, sanitizeTagInputString } from '../tagUtils';
+import { parseTags } from '@jotter/task-filter';
+import { sanitizeTags, sanitizeTagInputString, lastTagToken } from '../tagUtils';
 
-describe('tagUtils', () => {
-  describe('sanitizeTag', () => {
-    it('strips leading # characters', () => {
-      expect(sanitizeTag('#frontend')).toBe('frontend');
-      expect(sanitizeTag('###urgent')).toBe('urgent');
-    });
-
-    it('strips inline # characters', () => {
-      expect(sanitizeTag('front#end')).toBe('frontend');
-    });
-
-    it('converts uppercase to lowercase', () => {
-      expect(sanitizeTag('#BugReport')).toBe('bugreport');
-    });
-
-    it('replaces spaces with dashes', () => {
-      expect(sanitizeTag('#web dev')).toBe('web-dev');
-      expect(sanitizeTag('  backend   service  ')).toBe('backend-service');
-    });
-
-    it('handles null and undefined', () => {
-      expect(sanitizeTag(null)).toBe('');
-      expect(sanitizeTag(undefined)).toBe('');
-      expect(sanitizeTag('')).toBe('');
-    });
+// parseTags is shared with the mobile app: what a tag is does not depend on the app
+describe('parseTags', () => {
+  it('lower-cases tags and strips leading # characters', () => {
+    expect(parseTags('#BugReport ###urgent')).toEqual(['bugreport', 'urgent']);
   });
 
-  describe('sanitizeTags', () => {
-    it('sanitizes and deduplicates string input with commas', () => {
-      expect(sanitizeTags('#bug, #feature, bug, #FEATURE')).toEqual(['bug', 'feature']);
-    });
+  it('keeps a # inside a tag, as the vault format allows', () => {
+    expect(parseTags('front#end')).toEqual(['front#end']);
+  });
 
-    it('sanitizes and deduplicates array input', () => {
-      expect(sanitizeTags(['#urgent', 'frontend', '#URGENT', '  backend  '])).toEqual(['urgent', 'frontend', 'backend']);
-    });
+  it('splits on commas, semicolons, bars, line breaks and spaces, so that "foo bar" is two tags', () => {
+    expect(parseTags('foo bar')).toEqual(['foo', 'bar']);
+    expect(parseTags('#web dev,  backend   service')).toEqual(['web', 'dev', 'backend', 'service']);
+    expect(parseTags('#alpha; #beta | #gamma\n#delta')).toEqual(['alpha', 'beta', 'gamma', 'delta']);
+  });
 
-    it('handles semicolon, pipe, and newline separators', () => {
-      expect(sanitizeTags('#alpha; #beta | #gamma\n#delta')).toEqual(['alpha', 'beta', 'gamma', 'delta']);
-    });
+  it('deduplicates in order, for text and for lists, and splits the items of a list too', () => {
+    expect(parseTags('#bug, #feature, bug, #FEATURE')).toEqual(['bug', 'feature']);
+    expect(parseTags(['#urgent', 'front end', '#URGENT', '  backend  '])).toEqual(['urgent', 'front', 'end', 'backend']);
+  });
 
-    it('handles empty or null inputs', () => {
-      expect(sanitizeTags(null)).toEqual([]);
-      expect(sanitizeTags('')).toEqual([]);
-      expect(sanitizeTags([])).toEqual([]);
-    });
+  it('handles empty input', () => {
+    expect(parseTags(null)).toEqual([]);
+    expect(parseTags(undefined)).toEqual([]);
+    expect(parseTags('')).toEqual([]);
+    expect(parseTags([])).toEqual([]);
+    expect(parseTags(' , ; #')).toEqual([]);
+  });
+});
+
+describe('tagUtils', () => {
+  it('sanitizeTags is parseTags', () => {
+    expect(sanitizeTags('#Foo bar')).toEqual(['foo', 'bar']);
+  });
+
+  it('lastTagToken is what is being typed now', () => {
+    expect(lastTagToken('bug, fro')).toBe('fro');
+    expect(lastTagToken('bug fro')).toBe('fro');
+    expect(lastTagToken('bug, ')).toBe('');
+    expect(lastTagToken('')).toBe('');
   });
 
   describe('sanitizeTagInputString', () => {

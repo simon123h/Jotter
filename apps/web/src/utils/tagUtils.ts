@@ -1,45 +1,20 @@
 /**
- * Utility functions for tag normalization and validation across the frontend.
- *
- * Ensures tags are clean, stripped of `#` prefixes/symbols, normalized to lowercase,
- * and safe for YAML frontmatter serialization without comment collisions or syntax issues.
+ * Tag helpers of the web app. What a tag is (lower case, no leading `#`, no spaces) is decided by `parseTags` in
+ * packages/task-filter, which the mobile app uses as well.
  */
+import { parseTags } from '@jotter/task-filter';
 
-/**
- * Sanitizes a single tag string:
- * - Strips any leading '#' or '#' inside words
- * - Trims whitespace
- * - Converts to lowercase
- * - Strips spaces within tags (or replaces them)
- */
-export function sanitizeTag(tag: string | null | undefined): string {
-  if (!tag) return '';
-  return String(tag).trim().replace(/^#+/, '').replace(/#/g, '').replace(/\s+/g, '-').toLowerCase();
-}
+/** The tags in a text or a list; a space separates tags like a comma does. */
+export const sanitizeTags = (tagsInput: string | string[] | null | undefined): string[] => parseTags(tagsInput);
 
-/**
- * Sanitizes a comma/separator-delimited string of tags or array of tags into a clean string array.
- * Deduplicates and removes empty entries.
- */
-export function sanitizeTags(tagsInput: string | string[] | null | undefined): string[] {
-  if (!tagsInput) return [];
-
-  const rawTags = Array.isArray(tagsInput) ? tagsInput : String(tagsInput).split(/[,;|\n]+/);
-
-  const resultSet = new Set<string>();
-  for (const raw of rawTags) {
-    const cleaned = sanitizeTag(raw);
-    if (cleaned.length > 0) {
-      resultSet.add(cleaned);
-    }
-  }
-
-  return Array.from(resultSet);
+/** The part of a tag field after the last separator: what is being typed now (a tag, or nothing after a separator). */
+export function lastTagToken(input: string): string {
+  return /[^,;|\s]*$/.exec(input)?.[0] ?? '';
 }
 
 /**
  * Normalizes a raw input string from tag input fields into a display string.
- * Strips '#' characters from user typing while maintaining comma separation.
+ * Strips '#' characters from user typing while maintaining separators.
  */
 export function sanitizeTagInputString(input: string): string {
   if (!input) return '';

@@ -1465,10 +1465,13 @@ describe('bulk actions on the selection', () => {
     await find('bulk-tag').trigger('click');
     await settle();
 
-    await type('tags-input', '#Urgent, errands');
+    await type('tags-input', '#Urgent, errands, big plan');
     await submit('tags-add');
     expect(file('a')).toContain('urgent');
     expect(file('b')).toContain('errands');
+    // A space separates tags: "big plan" is two tags
+    expect(find('tags-on-tasks').text()).toContain('#big');
+    expect(find('tags-on-tasks').text()).toContain('#plan');
     // Tags that were already there stay
     expect(file('a')).toContain('office');
     expect(find('tags-on-tasks').text()).toContain('#urgent');
