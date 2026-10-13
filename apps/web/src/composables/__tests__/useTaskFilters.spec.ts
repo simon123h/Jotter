@@ -106,7 +106,7 @@ describe('useTaskFilters', () => {
       expect(ids(filters.filteredTasks.value)).toEqual(['a']);
     });
 
-    it('leaves a task postponed to a later day out of its column, which the postponed column then holds', async () => {
+    it('keeps a task postponed to a later day in its own column, and finds it in the postponed one too', async () => {
       const later = createMockTask({ id: 'p', bucket: 'todo', postponed_until: '2999-01-01' });
       const scope = effectScope();
       const filters = scope.run(() => useTaskFilters(ref([...tasks, later])))!;
@@ -114,7 +114,7 @@ describe('useTaskFilters', () => {
 
       filters.applyFilters({ buckets: 'todo' });
       await nextTick();
-      expect(ids(filters.filteredTasks.value)).toEqual(['a', 'c']);
+      expect(ids(filters.filteredTasks.value)).toEqual(['a', 'c', 'p']);
 
       filters.applyFilters({ buckets: 'postponed' });
       await nextTick();

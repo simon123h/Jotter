@@ -171,19 +171,16 @@ class SqliteTaskRepository:
                 query += " AND postponed_until IS NOT NULL AND postponed_until > ?"
                 args.append(today_str)
             else:
-                query += " AND bucket = ? AND (postponed_until IS NULL OR postponed_until = '' OR postponed_until <= ?)"
-                args.extend([bucket, today_str])
+                query += " AND bucket = ?"
+                args.append(bucket)
         elif buckets:
             has_postponed = "postponed" in buckets
             normal_buckets = [b for b in buckets if b != "postponed"]
             clauses: list[str] = []
             if normal_buckets:
                 placeholders = ",".join("?" * len(normal_buckets))
-                clauses.append(
-                    f"(bucket IN ({placeholders}) AND (postponed_until IS NULL OR postponed_until = '' OR postponed_until <= ?))"
-                )
+                clauses.append(f"bucket IN ({placeholders})")
                 args.extend(normal_buckets)
-                args.append(today_str)
             if has_postponed:
                 clauses.append("(postponed_until IS NOT NULL AND postponed_until > ?)")
                 args.append(today_str)

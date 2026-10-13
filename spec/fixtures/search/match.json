@@ -105,18 +105,19 @@
       ]
     },
     {
-      "name": "a bucket leaves out tasks postponed to a later day",
+      "name": "a bucket holds the tasks postponed to a later day, as the tasks stay in their column",
       "filter": {
         "bucket": "todo"
       },
       "ids": [
         "a",
         "b",
+        "d",
         "e"
       ]
     },
     {
-      "name": "the postponed bucket",
+      "name": "the postponed bucket holds the tasks that are postponed to a later day, whichever column they are in",
       "filter": {
         "bucket": "postponed"
       },

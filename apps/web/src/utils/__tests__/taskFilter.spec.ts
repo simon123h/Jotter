@@ -37,7 +37,7 @@ describe('task filter', () => {
   });
 
   it('keeps the order of the tasks', () => {
-    expect(filterTasks([...tasks].reverse(), { bucket: 'todo' }, '2026-06-15').map((t) => t.id)).toEqual(['e', 'b', 'a']);
+    expect(filterTasks([...tasks].reverse(), { bucket: 'todo' }, '2026-06-15').map((t) => t.id)).toEqual(['e', 'd', 'b', 'a']);
   });
 });
 

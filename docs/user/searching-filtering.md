@@ -22,6 +22,7 @@ A search query is composed of standalone full-text search phrases and optional c
 | **Tag (AND Match)** | `tags:ui+bug` <br> *or* `tag:ui+bug` | Tasks that must have **both** the `ui` tag **and** the `bug` tag |
 | **Tag shorthand** | `#ui` <br> `#ui #bug` | Short form of `tag:`. Several `#` tags must **all** match. Case does not matter, and `issue#12` stays a plain word |
 | **Columns/Buckets** | `bucket:todo` <br> *or* `buckets:todo,progress` | Tasks residing in the specified bucket(s) |
+| **Postponed** | `bucket:postponed` | Tasks postponed to a later day, in whichever column they are. A postponed task also stays in its own column for `bucket:todo`. |
 | **Priorities** | `priority:high` <br> *or* `prio:high,urgent` | Tasks with the specified priority levels |
 | **Projects** | `project:marketing` <br> *or* `proj:frontend` | Tasks belonging to a project by ID or **Project Title** |
 | **Planned Date** | `planned:today` | Tasks planned for that date or keyword |

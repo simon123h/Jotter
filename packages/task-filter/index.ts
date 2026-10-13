@@ -238,8 +238,9 @@ const startOfDay = (date: string) =>
   date.length === 10 ? `${date}T00:00:00` : date;
 
 /**
- * Whether a task matches. `today` decides which postponements are still running: a task postponed to a later day
- * belongs to the Postponed column and to no other.
+ * Whether a task matches. `today` decides which postponements are still running. A postponed task stays in its own
+ * column (spec/FORMAT.md): a bucket finds it there, and the pseudo bucket `postponed` finds the ones that are postponed
+ * to a later day, whichever column they are in.
  */
 export function matchesFilter(
   task: FilterableTask,
@@ -253,11 +254,9 @@ export function matchesFilter(
   if (filter.bucket) {
     if (filter.bucket.toLowerCase() === "postponed") {
       if (!postponedNow) return false;
-    } else if (bucket !== filter.bucket.toLowerCase() || postponedNow)
-      return false;
+    } else if (bucket !== filter.bucket.toLowerCase()) return false;
   } else if (buckets.length) {
-    const regular = buckets.filter((b) => b !== "postponed");
-    const inRegular = regular.includes(bucket) && !postponedNow;
+    const inRegular = buckets.includes(bucket) && bucket !== "postponed";
     const inPostponed = buckets.includes("postponed") && postponedNow;
     if (!inRegular && !inPostponed) return false;
   } else if (
