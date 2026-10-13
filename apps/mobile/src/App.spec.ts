@@ -903,6 +903,28 @@ describe('navigation', () => {
     expect(selected()).toEqual(['true', 'false']);
   });
 
+  it('scrolls the tab strip with the columns, to the point between two tabs, without an animation of its own', async () => {
+    await start(desktopVault);
+    const strip = find('tab-strip').element as HTMLElement;
+    Object.defineProperty(strip, 'clientWidth', { value: 300, configurable: true });
+    Object.defineProperty(strip, 'scrollWidth', { value: 900, configurable: true });
+    all('bucket-tab').forEach((tab, i) => {
+      Object.defineProperty(tab.element, 'offsetLeft', { value: i * 300, configurable: true });
+      Object.defineProperty(tab.element, 'offsetWidth', { value: 300, configurable: true });
+    });
+    window.dispatchEvent(new Event('resize')); // the tabs are measured again
+    const scrollTo = vi.fn();
+    strip.scrollTo = scrollTo as unknown as typeof strip.scrollTo;
+
+    useUiStore().columnProgress = 0.5;
+    await settle();
+    expect(strip.scrollLeft).toBe(150); // halfway between "first tab centred" (0) and "second tab centred" (300)
+    useUiStore().columnProgress = 1;
+    await settle();
+    expect(strip.scrollLeft).toBe(300);
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
   it('steps to the previous or next column with a sideways swipe on the tab strip', async () => {
     await start(desktopVault);
     const scroller = find('columns').element as HTMLElement;
