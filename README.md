@@ -20,18 +20,13 @@ Jotter is a **local-first, privacy-focused task management web application** des
 
 ## 🌟 Key Features
 
-- **Data Ownership & Portability**: Tasks are stored as human-readable `.md` markdown files. Your data remains yours, fully accessible even if you stop using Jotter. The files are formatted according to the **Open Knowledge Format (OKF)**.
-- **Combat Task Flooding**: Built for dealing with hundreds of open tasks.
-- **Flexible Views**: Organise tasks your way with Kanban columns, list view, a priority-based **Eisenhower Matrix**, and a chronological **Time View** grouping by due dates.
-- **Smart Task Creation**: Create rich tasks quickly with keywords for tags, due dates or priorities in the task title.
-- **Offline-First & Local Index**: Runs entirely on your computer with a lightning-fast local SQLite database index. If the database index is ever deleted, the system automatically rebuilds it instantly from your markdown files.
-- **Local Git Versioning**: If your vault is a Git repository, Jotter snapshots your changes as local commits. Pushing, pulling, and sharing stay in your hands, using your own Git workflow or any file sync tool.
-- **Git-Backed Time Machine**: Roll your workspace or individual projects back to any historical snapshot in your Git history using a dedicated, searchable, and spacious dialog. Automatically creates pre-restore backup commits so you can revert any rollback operation at any time.
-- **Multi-Language Support**: Fully localized in English and German.
-- **Model Context Protocol (MCP) Support**: Connect AI assistants directly to your local Kanban board via `jotter mcp` (optional: install with `pipx install 'jotter-app[mcp]'`).
-- **Excel & CSV Import & Export**: Seamlessly import tasks, checklists, priorities, and custom columns from any standard Excel or CSV spreadsheet with support for sheet auto-detection, interactive previews, and custom mappings. Export all tasks from your current filtered view as `.xlsx` or `.csv` client-side.
-- **Obsidian & PKM Native**: Project directories include an `index.md` manifest compatible with Obsidian Folder Notes and PKM namespaces, allowing task boards to live directly within your personal knowledge vault.
-- **Android App**: Carry your tasks in your pocket with a lean, touch-first Android app. It covers the core (vaults, projects with pinning, board, tag and planning views with a tick circle and bulk edits, the desktop's search language, postponing, attachments, markdown notes, themes including True Black), operates 100% offline on local Markdown files, and syncs with your desktop via Syncthing, Git, or cloud drives.
+- **Your data stays yours**: Tasks are human-readable Markdown files in the **Open Knowledge Format (OKF)**, one folder per project. They stay accessible without Jotter, and project folders work inside an Obsidian or other PKM vault.
+- **Built for hundreds of open tasks**: Kanban columns, list view, an Eisenhower Matrix and a time view, plus a search language and filters to fight task flooding. Dates, tags and priorities go straight into the task title.
+- **Local-first and fast**: Runs entirely on your computer. A local SQLite index is rebuilt from your files whenever it is missing.
+- **Git history**: If your vault is a Git repository, Jotter commits your changes locally and can restore any project or the whole workspace from the history. Pushing and pulling stay in your hands, as does any file sync tool.
+- **Android app**: A lean, touch-first app with the core of the desktop app, fully offline on local Markdown files. Sync with your desktop via Syncthing, Git or a cloud drive.
+- **Import and export**: Excel and CSV in, `.xlsx` and `.csv` out.
+- **AI-ready and multilingual**: Connect AI assistants through the Model Context Protocol (`jotter mcp`, optional: `pipx install 'jotter-app[mcp]'`). English and German.
 
 ---
 
