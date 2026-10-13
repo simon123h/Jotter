@@ -281,7 +281,10 @@ export class VaultRepository {
     return project;
   }
 
-  async updateProject(id: string, updates: Partial<Pick<Project, 'title' | 'description' | 'done_clean_period'>>): Promise<Project> {
+  async updateProject(
+    id: string,
+    updates: Partial<Pick<Project, 'title' | 'description' | 'done_clean_period' | 'archived'>>
+  ): Promise<Project> {
     const { db } = this.current();
     const existing = await db.projects.get(id);
     if (!existing) throw new Error(`Project ${id} not found`);
@@ -379,13 +382,15 @@ export class VaultRepository {
 
   /**
    * The reminders of open tasks in all projects that are due at `from` (`YYYY-MM-DDTHH:mm`, local time) or later,
-   * the nearest first. Done and archived tasks do not remind.
+   * the nearest first. Done and archived tasks do not remind, and neither do the tasks of an archived project.
    */
   async upcomingReminders(from: string, limit = 100): Promise<UpcomingReminder[]> {
-    const projects = new Map((await this.listProjects()).map((p) => [p.id, p.title]));
+    const all = await this.listProjects();
+    const projects = new Map(all.map((p) => [p.id, p.title]));
+    const shelved = new Set(all.filter((p) => p.archived).map((p) => p.id));
     const found: UpcomingReminder[] = [];
     for (const task of await this.listTasks(null)) {
-      if (task.bucket === 'done' || task.bucket === 'archive') continue;
+      if (task.bucket === 'done' || task.bucket === 'archive' || shelved.has(task.project_id)) continue;
       for (const at of task.reminders ?? []) {
         if (at >= from)
           found.push({

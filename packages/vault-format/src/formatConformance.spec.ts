@@ -78,6 +78,7 @@ function projectView(project: any, buckets: any[], expected: Record<string, any>
     })),
   };
   if ('created_at' in expected) view.created_at = project.created_at;
+  if ('archived' in expected) view.archived = Boolean(project.archived);
   return view;
 }
 

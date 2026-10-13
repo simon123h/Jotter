@@ -9,6 +9,7 @@ It covers the core: vaults, projects, columns, tasks with all their attributes, 
 On the first start the app asks for a folder to use as a vault, and for access to files. You can add more vaults and switch between them from the side menu.
 
 - **Switching projects**: tap the project name in the top bar and pick one from the list, or use the side menu.
+- **Archiving**: in *Manage projects* the archive button puts a project away (with an Undo). It leaves the lists, and its reminders stop. *Archived* at the bottom of the list brings it back or deletes it. The tasks stay as they are.
 - **Pinning**: in *Manage projects* the pin button keeps a project at the top of every list. Pins are kept on the device, per vault.
 
 ## The board

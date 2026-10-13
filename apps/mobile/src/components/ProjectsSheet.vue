@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Plus, Pencil, Pin, Trash2, Database, ChevronUp, ChevronDown, ArrowDownAZ, ListOrdered } from '@lucide/vue';
+import {
+  Plus,
+  Pencil,
+  Pin,
+  Trash2,
+  Database,
+  ChevronUp,
+  ChevronDown,
+  ArrowDownAZ,
+  ListOrdered,
+  Archive,
+  ArchiveRestore,
+} from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -12,6 +24,7 @@ const ui = useUiStore();
 const newTitle = ref('');
 const editing = ref<string | null>(null);
 const editTitle = ref('');
+const showArchived = ref(false);
 
 const fail = (err: unknown) => ui.showToast(err instanceof Error ? err.message : String(err));
 
@@ -43,6 +56,29 @@ async function saveRename() {
   if (!id || !editTitle.value.trim()) return;
   try {
     await app.renameProject(id, editTitle.value);
+  } catch (err) {
+    fail(err);
+  }
+}
+
+async function archive(id: string, title: string) {
+  try {
+    await app.setProjectArchived(id, true);
+    ui.showToast(t('projects.archived', { name: title }), {
+      label: t('common.undo'),
+      run: () => {
+        ui.dismissToast();
+        app.setProjectArchived(id, false).catch(fail);
+      },
+    });
+  } catch (err) {
+    fail(err);
+  }
+}
+
+async function restore(id: string) {
+  try {
+    await app.setProjectArchived(id, false);
   } catch (err) {
     fail(err);
   }
@@ -113,12 +149,48 @@ async function remove(id: string, title: string) {
           <button class="rounded-full p-2 text-muted active:bg-line" :aria-label="t('projects.rename')" @click="startRename(p.id, p.title)">
             <Pencil class="h-4 w-4" />
           </button>
+          <button
+            class="rounded-full p-2 text-muted active:bg-line"
+            :aria-label="t('projects.archive')"
+            data-testid="project-archive"
+            @click="archive(p.id, p.title)"
+          >
+            <Archive class="h-4 w-4" />
+          </button>
           <button class="rounded-full p-2 text-muted active:bg-line" :aria-label="t('common.delete')" @click="remove(p.id, p.title)">
             <Trash2 class="h-4 w-4" />
           </button>
         </template>
       </li>
     </ul>
+
+    <div v-if="app.archivedProjects.length" class="mt-3 border-t border-line pt-2" data-testid="archived-projects">
+      <button
+        class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted active:bg-line"
+        :aria-expanded="showArchived"
+        data-testid="archived-toggle"
+        @click="showArchived = !showArchived"
+      >
+        <component :is="showArchived ? ChevronUp : ChevronDown" class="h-4 w-4" />
+        {{ t('projects.archivedGroup', { count: app.archivedProjects.length }) }}
+      </button>
+      <ul v-if="showArchived" class="space-y-1">
+        <li v-for="p in app.archivedProjects" :key="p.id" class="flex items-center gap-1" data-testid="archived-row">
+          <span class="min-w-0 flex-1 truncate px-3 py-3 text-base text-muted">{{ p.title }}</span>
+          <button
+            class="rounded-full p-2 text-muted active:bg-line"
+            :aria-label="t('projects.restore')"
+            data-testid="project-restore"
+            @click="restore(p.id)"
+          >
+            <ArchiveRestore class="h-4 w-4" />
+          </button>
+          <button class="rounded-full p-2 text-muted active:bg-line" :aria-label="t('common.delete')" @click="remove(p.id, p.title)">
+            <Trash2 class="h-4 w-4" />
+          </button>
+        </li>
+      </ul>
+    </div>
 
     <form class="mt-3 flex gap-2 border-t border-line pt-3" @submit.prevent="create">
       <input

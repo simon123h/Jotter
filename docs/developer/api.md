@@ -87,7 +87,7 @@ Add Jotter to your `claude_desktop_config.json` or agent MCP configuration:
 ### Available MCP Tools
 
 #### Project Operations
-* `list_projects()`: List all projects with id, title, and description.
+* `list_projects(include_archived=False)`: List projects with id, title, and description. Archived (put away) projects are left out unless asked for. `list_tasks` without a `project_id` leaves out their tasks the same way (`include_archived=True` brings them back).
 * `get_project(project_id="default")`: Retrieve project details and settings by ID.
 * `create_project(title, id=None, description=None)`: Create a new project board with default columns (`todo`, `in-progress`, `done`).
 

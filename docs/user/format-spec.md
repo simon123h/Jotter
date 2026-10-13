@@ -121,6 +121,7 @@ Welcome to the project board documentation note. You can freely edit this markdo
 | `title` | String | Yes | Display title of the project board. |
 | `description` | String | No | Human-readable description of the project. |
 | `done_clean_period` | Integer | No | Auto-prune policy for completed tasks in days (e.g. `0` for disabled, `1`, `7`, `30`, or `null` to use global default). |
+| `archived` | Boolean | No | `true` puts the project away: it leaves the project lists, the "all" view, reminders and the MCP server, and its tasks are not changed or cleaned. Left out when not archived. |
 | `buckets` | Array of Objects | Yes | List of board columns (buckets), ordered by `position`. Each object contains `name` (slug), `title`, `position`, `color`, `layout`, `max_tasks`, and `is_default`. |
 
 > [!NOTE]

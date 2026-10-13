@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { Trash2, Save, X } from '@lucide/vue';
+import { Trash2, Save, X, Archive, ArchiveRestore } from '@lucide/vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
@@ -13,6 +14,8 @@ const { t } = useI18n();
 const projectStore = useProjectStore();
 const settingsStore = useSettingsStore();
 const { showDialog } = useDialog();
+const route = useRoute();
+const router = useRouter();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -68,6 +71,17 @@ const handleSave = async () => {
 
   await projectStore.invalidate();
   emit('close');
+};
+
+/** Puts the project away, or takes it back. An open project that is put away makes way for the "all" view. */
+const handleArchive = async () => {
+  if (!props.project) return;
+  const { id } = props.project;
+  const archived = !props.project.archived;
+  await updateProject(id, { archived });
+  await projectStore.invalidate();
+  emit('close');
+  if (archived && route.params.projectId === id) await router.push({ name: 'project', params: { projectId: 'all' } });
 };
 
 const handleDelete = async () => {
@@ -148,6 +162,17 @@ const closeAndSave = async () => {
         >
           <Trash2 class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">{{ t('projectEdit.deleteButton') }}</span>
+        </button>
+
+        <button
+          type="button"
+          @click="handleArchive"
+          class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-semibold text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 rounded transition-all cursor-pointer whitespace-nowrap"
+          :title="project?.archived ? t('projectEdit.restoreButton') : t('projectEdit.archiveButton')"
+          data-testid="project-archive-toggle"
+        >
+          <component :is="project?.archived ? ArchiveRestore : Archive" class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">{{ project?.archived ? t('projectEdit.restoreButton') : t('projectEdit.archiveButton') }}</span>
         </button>
 
         <div class="flex flex-wrap items-center gap-2 ml-auto">

@@ -244,7 +244,10 @@ async function createProject(title: string): Promise<Project> {
   return newProj;
 }
 
-async function updateProject(id: string, updates: { title?: string; done_clean_period?: number | null }): Promise<Project> {
+async function updateProject(
+  id: string,
+  updates: { title?: string; done_clean_period?: number | null; archived?: boolean }
+): Promise<Project> {
   const projects = getDemoProjects();
   const idx = projects.findIndex((p) => p.id === id);
   if (idx !== -1) {

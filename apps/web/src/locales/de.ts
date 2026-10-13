@@ -230,6 +230,7 @@ export const de = {
     hideText: 'Zurückgestellt ausblenden',
   },
   projects: {
+    archivedGroup: 'Archiviert ({count})',
     noProjectsTitle: 'Noch keine Projekte',
     noProjectsDesc: 'Erstelle dein erstes Projekt, um deine Aufgaben zu organisieren.',
     sidebarTitle: 'Projekte',
@@ -307,6 +308,8 @@ export const de = {
       'Aufgaben in der Spalte "Erledigt" werden nach dieser Anzahl von Tagen automatisch gelöscht. Leer lassen oder auf 0 setzen, um das automatische Löschen zu deaktivieren.',
     saveButton: 'Speichern',
     deleteButton: 'Projekt Löschen',
+    archiveButton: 'Projekt archivieren',
+    restoreButton: 'Projekt wiederherstellen',
     deleteDialogTitle: 'Projekt "{title}" löschen',
     deleteDialogMessage:
       'Möchten Sie dieses Projekt wirklich löschen? Alle zugehörigen Spalten und Markdown-Aufgabendateien werden dauerhaft gelöscht.',

@@ -474,7 +474,7 @@ const handleBulkConsolidate = async () => {
         ref="bulkActionBarRef"
         :selected-count="selectionCount"
         :buckets="buckets"
-        :projects="projects"
+        :projects="projects.filter((p) => !p.archived)"
         :active-project-id="projectId"
         :common-tags="commonTags"
         @clear="clearSelection"

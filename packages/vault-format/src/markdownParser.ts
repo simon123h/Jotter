@@ -78,6 +78,7 @@ const KNOWN_PROJECT_KEYS = new Set([
   'created_at',
   'createdAt',
   'done_clean_period',
+  'archived',
   'doneCleanPeriod',
   'buckets',
 ]);
@@ -298,6 +299,7 @@ export function parseProjectManifest(content: string, fallbackId: string): { pro
     created_at: timestamp(fm.created_at ?? fm.createdAt, new Date().toISOString()),
     done_clean_period: doneCleanPeriod,
     description: String(fm.description ?? '').trim(),
+    archived: fm.archived === true,
     body,
     extra_frontmatter: Object.fromEntries(Object.entries(fm).filter(([key]) => !KNOWN_PROJECT_KEYS.has(key))),
   };
@@ -342,6 +344,7 @@ export function dumpProjectManifest(project: Project, buckets: Bucket[], existin
   if (project.done_clean_period !== undefined && project.done_clean_period !== null) {
     fmDict.done_clean_period = project.done_clean_period;
   }
+  if (project.archived) fmDict.archived = true;
 
   fmDict.buckets = buckets.map((b, idx) => ({
     name: b.name,

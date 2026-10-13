@@ -229,6 +229,7 @@ export const en = {
     hideText: 'Hide Postponed',
   },
   projects: {
+    archivedGroup: 'Archived ({count})',
     noProjectsTitle: 'No Projects Yet',
     noProjectsDesc: 'Create your first project to start organizing your tasks.',
     sidebarTitle: 'Projects',
@@ -305,6 +306,8 @@ export const en = {
       'Automatically delete tasks in the "Done" column after this many days. Leave empty or set to 0 to disable auto-deletion.',
     saveButton: 'Save',
     deleteButton: 'Delete project',
+    archiveButton: 'Archive project',
+    restoreButton: 'Restore project',
     deleteDialogTitle: 'Delete Project "{title}"',
     deleteDialogMessage:
       'Are you sure you want to delete this project? All associated columns and markdown task files will be permanently deleted.',

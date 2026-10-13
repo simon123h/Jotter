@@ -167,33 +167,39 @@ onUnmounted(() => {
 
 // Computed sorted and pinned projects list
 const sortedProjects = computed(() => {
-  return [...props.projects].sort((a, b) => {
-    const aPinned = pinnedProjectIds.value.includes(a.id);
-    const bPinned = pinnedProjectIds.value.includes(b.id);
+  return props.projects
+    .filter((p) => !p.archived)
+    .sort((a, b) => {
+      const aPinned = pinnedProjectIds.value.includes(a.id);
+      const bPinned = pinnedProjectIds.value.includes(b.id);
 
-    // 1. Pinned projects are always displayed first at the top
-    if (aPinned && !bPinned) return -1;
-    if (!aPinned && bPinned) return 1;
+      // 1. Pinned projects are always displayed first at the top
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
 
-    // 2. Sort by the user's selected sorting order
-    if (sortBy.value === 'manual') {
-      const aIndex = settingsStore.projectOrder.indexOf(a.id);
-      const bIndex = settingsStore.projectOrder.indexOf(b.id);
-      const aHasOrder = aIndex !== -1;
-      const bHasOrder = bIndex !== -1;
-      if (aHasOrder && bHasOrder) {
-        if (aIndex !== bIndex) return aIndex - bIndex;
-      } else if (aHasOrder) {
-        return -1;
-      } else if (bHasOrder) {
-        return 1;
+      // 2. Sort by the user's selected sorting order
+      if (sortBy.value === 'manual') {
+        const aIndex = settingsStore.projectOrder.indexOf(a.id);
+        const bIndex = settingsStore.projectOrder.indexOf(b.id);
+        const aHasOrder = aIndex !== -1;
+        const bHasOrder = bIndex !== -1;
+        if (aHasOrder && bHasOrder) {
+          if (aIndex !== bIndex) return aIndex - bIndex;
+        } else if (aHasOrder) {
+          return -1;
+        } else if (bHasOrder) {
+          return 1;
+        }
       }
-    }
 
-    // Fallback/Default: Alphabetical sorting
-    return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
-  });
+      // Fallback/Default: Alphabetical sorting
+      return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+    });
 });
+
+// Projects that are put away are listed apart, to open or restore them
+const archivedProjects = computed(() => props.projects.filter((p) => p.archived).sort((a, b) => a.title.localeCompare(b.title)));
+const showArchived = ref(false);
 
 // Add project input states
 const showAddProjectInput = ref(false);
@@ -410,6 +416,42 @@ const onVaultSelected = async (event: Event) => {
           </template>
         </div>
       </router-link>
+    </div>
+
+    <!-- Archived projects: put away, opened and restored from here -->
+    <div v-if="archivedProjects.length && !switching" class="px-2 pb-1 shrink-0" data-testid="archived-projects">
+      <button
+        class="w-full flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-theme-text-muted hover:text-theme-text-main cursor-pointer"
+        :aria-expanded="showArchived"
+        data-testid="archived-toggle"
+        @click="showArchived = !showArchived"
+      >
+        <ChevronDown class="w-3 h-3 transition-transform" :class="{ '-rotate-90': !showArchived }" />
+        {{ t('projects.archivedGroup', { count: archivedProjects.length }) }}
+      </button>
+      <div v-if="showArchived" class="space-y-0.5 max-h-40 overflow-y-auto scroller-thin">
+        <router-link
+          v-for="project in archivedProjects"
+          :key="project.id"
+          :to="{ name: 'project', params: { projectId: project.id }, query: $route.query }"
+          class="group flex items-center justify-between px-3 py-1 rounded text-sm border"
+          :class="
+            project.id === activeProjectId
+              ? 'bg-theme-primary/10 text-theme-accent border-theme-primary/15'
+              : 'text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main border-transparent'
+          "
+          data-testid="archived-project"
+        >
+          <span class="truncate">{{ project.title }}</span>
+          <button
+            @click.stop.prevent="emit('edit-project', project)"
+            class="p-1 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column rounded cursor-pointer"
+            :title="t('projects.editProject')"
+          >
+            <MoreHorizontal class="w-3.5 h-3.5" />
+          </button>
+        </router-link>
+      </div>
     </div>
 
     <!-- Add Project Action at Bottom of Sidebar -->

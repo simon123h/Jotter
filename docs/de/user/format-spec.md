@@ -121,6 +121,7 @@ Willkommen in der Dokumentations-Notiz des Projekt-Boards. Du kannst diesen Mark
 | `title` | String | Nein | Angezeigter Titel des Projekt-Boards. |
 | `description` | String | Nein | Menschenlesbare Beschreibung des Projekts. |
 | `done_clean_period` | Integer | Nein | Richtlinie zum automatischen Aufräumen erledigter Aufgaben in Tagen (z. B. `0` für deaktiviert, `1`, `7`, `30` oder `null` für globalen Standard). |
+| `archived` | Boolean | Nein | `true` legt das Projekt beiseite: Es verschwindet aus den Projektlisten, der Ansicht „Alle“, den Erinnerungen und dem MCP-Server, seine Aufgaben werden weder verändert noch aufgeräumt. Fehlt, wenn nicht archiviert. |
 | `buckets` | Array von Objekten | Ja | Liste der Spalten (Buckets), sortiert nach `position`. Jedes Objekt enthält `name` (Slug), `title`, `position`, `color`, `layout`, `max_tasks` und `is_default`. |
 
 > [!NOTE]

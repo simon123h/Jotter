@@ -17,6 +17,10 @@ vi.mock('@/api', () => ({
   deleteProject: vi.fn().mockResolvedValue({}),
 }));
 
+const push = vi.fn();
+const route = { params: { projectId: 'proj-123' } };
+vi.mock('vue-router', () => ({ useRoute: () => route, useRouter: () => ({ push }) }));
+
 // Mock useDialog
 vi.mock('@/composables/useDialog', () => ({
   useDialog: () => ({
@@ -155,5 +159,27 @@ describe('ProjectEditModal.vue', () => {
 
     expect(deleteProject).toHaveBeenCalledWith('proj-123');
     expect(wrapper.emitted('close')).toBeTruthy();
+  });
+
+  it('archives the project and leaves it for the all view when it is the open one', async () => {
+    wrapper = mount(ProjectEditModal, { props: defaultProps });
+    await wrapper.find('[data-testid="project-archive-toggle"]').trigger('click');
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateProject).toHaveBeenCalledWith('proj-123', { archived: true });
+    expect(push).toHaveBeenCalledWith({ name: 'project', params: { projectId: 'all' } });
+  });
+
+  it('restores an archived project and stays where it is', async () => {
+    wrapper = mount(ProjectEditModal, { props: { ...defaultProps, project: { ...defaultProps.project, archived: true } } });
+    const toggle = wrapper.find('[data-testid="project-archive-toggle"]');
+    expect(toggle.text()).toContain('Restore project');
+    await toggle.trigger('click');
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateProject).toHaveBeenCalledWith('proj-123', { archived: false });
+    expect(push).not.toHaveBeenCalled();
   });
 });

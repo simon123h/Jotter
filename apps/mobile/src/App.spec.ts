@@ -2192,3 +2192,68 @@ describe('text shared from other apps', () => {
     expect(useUiStore().toast?.message).toContain('vault');
   });
 });
+
+describe('archived projects', () => {
+  const vault = (f: MemoryFs) => {
+    desktopVault(f);
+    f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+    f.put('Jotter/home/x.md', '---\ntitle: Water plants\nstatus: todo\nreminders: ["2999-01-01T09:00"]\n---\n');
+    f.put('Jotter/work/a.md', '---\ntitle: Write report\nstatus: todo\nreminders: ["2999-02-01T09:00"]\n---\n');
+  };
+  const openManage = async () => {
+    await find('open-projects').trigger('click');
+    await settle();
+    await find('project-switch-manage').trigger('click');
+    await settle();
+  };
+
+  it('archives a project from the project list, keeps its files, and takes it back', async () => {
+    memoryNotifications.state = 'granted';
+    await start(vault);
+    expect(memoryNotifications.armed.map((r) => r.taskId).sort()).toEqual(['a', 'x']);
+
+    await openManage();
+    const work = all('project-row').find((r) => r.text().includes('Work'))!;
+    await work.find('[data-testid="project-archive"]').trigger('click');
+    await settle();
+
+    // The manifest says so, the tasks are untouched, and the project is out of the list
+    expect(fs.files.get('Jotter/work/index.md')!.data).toContain('archived: true');
+    expect(file('a')).toContain('status: todo');
+    expect(all('project-row').map((r) => r.text())).toEqual([expect.stringContaining('Home')]);
+    // Its reminder no longer notifies
+    expect(memoryNotifications.armed.map((r) => r.taskId)).toEqual(['x']);
+
+    await find('archived-toggle').trigger('click');
+    expect(all('archived-row').map((r) => r.text())).toEqual([expect.stringContaining('Work')]);
+    await find('project-restore').trigger('click');
+    await settle();
+    expect(fs.files.get('Jotter/work/index.md')!.data).not.toContain('archived');
+    expect(all('project-row')).toHaveLength(2);
+    expect(memoryNotifications.armed.map((r) => r.taskId).sort()).toEqual(['a', 'x']);
+  });
+
+  it('opens another project when the open one is archived, and offers an undo', async () => {
+    await start(vault);
+    expect(find('app-bar-title').text()).toBe('Home');
+    await openManage();
+    await all('project-row')[0]!.find('[data-testid="project-archive"]').trigger('click');
+    await settle();
+    expect(find('app-bar-title').text()).toBe('Work');
+
+    await find('toast-action').trigger('click');
+    await settle();
+    expect(fs.files.get('Jotter/home/index.md')!.data).not.toContain('archived');
+  });
+
+  it('does not offer an archived project, also when the vault says so from the start', async () => {
+    await start((f) => {
+      vault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\narchived: true\n---\n');
+    });
+    expect(find('app-bar-title').text()).toBe('Work');
+    await find('open-projects').trigger('click');
+    await settle();
+    expect(all('project-switch-row').map((r) => r.text())).toEqual(['Work']);
+  });
+});
