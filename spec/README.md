@@ -23,6 +23,12 @@ Each implementation must pass two checks per case:
 2. **Round trip**: writing that result back out and parsing it again still gives `expected`. This is what
    protects unknown frontmatter keys.
 
+### Slug fixtures
+
+`fixtures/filenames/slug.json` lists titles and the file name (without a suffix) a writer gives a new task, and the
+reserved names that always get a suffix (`FORMAT.md`, *File names of new tasks*). The random suffix itself is not
+compared.
+
 ## Runners
 
 | Implementation | Runner | Command |

@@ -30,6 +30,7 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Indexing and periodic scan | yes | own | ~1.8k | Core | `features/sync` (SQLite index, ADR 0014/0015); mobile scans through its repository |
 | Postponing tasks | yes | yes | ~0.3k | Core | virtual Postponed column |
 | Recurring tasks: `repeat` rule, rolled over in place on completion | yes | yes | ~0.8k | Core | `spec/FORMAT.md` (*Recurring tasks*), ADR 0019; reuses `postponed_until` |
+| Readable file names: new tasks are named after their title (`grocery-shopping.md`) | yes | yes | ~0.3k | Core | `spec/FORMAT.md` (*File names of new tasks*), ADR 0020; the slug is written twice (Python, mobile TypeScript) and checked by `spec/fixtures/filenames/slug.json` |
 | Reminders: notifications at a floating local time | edit only | yes | ~0.8k | Optional | `spec/FORMAT.md` (*Reminders*), ADR 0019; mobile arms Android notifications (`src/reminders.ts`); the desktop sets and shows them but does not notify (browser notifications only work while the page is open: branch `feat/desktop-reminder-notifications`) |
 | Tag view and planning view | yes | yes | ~0.5k | Optional | `TagView`, `TimeView`; mobile has them as tabbed views |
 | Spreadsheet import and export | yes | no | ~1.6k | Optional | `features/task-import`, `useTaskExport`; isolated |

@@ -106,6 +106,31 @@ Further rules:
 - **Body.** Markdown, preserved exactly (apart from the leading blank lines above). Checklists
   (`- [ ]`, `- [x]`) are plain markdown and are edited in place.
 
+### File names of new tasks
+
+A task's file name without `.md` is its id (see the table above), and it never changes: moving the task between
+columns or editing its title does not rename the file. What a *writer* chooses for a new task:
+
+1. **Take the title and make a slug.** Lowercase it. Replace `ä ö ü ß æ œ ø ł đ` by `ae oe ue ss ae oe o l d`, then
+   decompose the text (Unicode NFKD) and drop the combining marks, so `é` becomes `e`. Replace every run of
+   characters other than `a-z` and `0-9` by one `-`, and trim `-` from both ends.
+2. **Limit it to 60 characters.** If it is longer, cut it after the last whole word that fits (at a `-`). A single
+   word longer than 60 characters is cut at 60.
+3. **Never leave it empty.** A title without any such characters (an empty title, only emoji, a script without a
+   Latin form) gives `task`.
+4. **Avoid a taken name.** If a file with that name (compared without regard to case) exists in the project
+   folder, or the name is *reserved*, append `-` and four random characters from `a-z0-9`, and look again until
+   the name is free. Reserved names are `index` and `readme` (they are not tasks, see the vault layout) and the
+   names Windows keeps for devices (`con`, `prn`, `aux`, `nul`, `com1`-`com9`, `lpt1`-`lpt9`). No suffix is added
+   when the name is free, which is why two devices that create the same title offline can still collide; the sync
+   tool then keeps one of the files as a conflict copy.
+5. **Moving a task** into another project keeps its file name, unless the target folder has that name already: then
+   rule 4 applies and the file (and so the id) gets a suffix.
+
+Readers accept any file name (ADR 0003): older tasks keep the 26-character ULIDs they were written with, and files
+from other tools keep theirs. Writers MUST NOT rename an existing file because its title changed. The cases are in
+`fixtures/filenames/slug.json`.
+
 ### Dates and times
 
 A task has five fields about time. Each answers a different question, and none stands in for another:
