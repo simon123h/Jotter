@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { Plus, TriangleAlert } from '@lucide/vue';
+import { ChevronDown, Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
 import BottomNav from '@/components/BottomNav.vue';
 import BulkToolbar from '@/components/BulkToolbar.vue';
@@ -11,6 +11,7 @@ import { useTaskActions } from '@/composables/useTaskActions';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
+import type { Column } from '@/stores/columns';
 import type { Task } from '@jotter/vault-format';
 
 const app = useAppStore();
@@ -23,6 +24,8 @@ const active = computed({
 });
 
 const actions = useTaskActions();
+const listed = computed(() => app.layout === 'list');
+const columnTitle = (col: Column) => (col.key === '__other' ? t('board.other') : col.title);
 
 const drag = useCardDrag({
   scroller,
@@ -73,6 +76,7 @@ let swipeFrom: number | null = null;
 let swipeIdle: ReturnType<typeof setTimeout> | undefined;
 
 function onTouchStart() {
+  if (listed.value) return;
   // A finger on the columns takes over from a tab that was tapped
   stopNavigating();
   const el = scroller.value;
@@ -107,7 +111,7 @@ function stopNavigating() {
 
 function onScroll() {
   const el = scroller.value;
-  if (!el || !el.clientWidth) return;
+  if (listed.value || !el || !el.clientWidth) return;
   holdWithinOneColumn(el);
   const position = el.scrollLeft / el.clientWidth;
   ui.columnProgress = position;
@@ -144,7 +148,7 @@ watch(
     ui.columnProgress = 0;
     ui.navHidden = false;
     await nextTick();
-    scroller.value?.scrollTo({ left: 0 });
+    scroller.value?.scrollTo({ left: 0, top: 0 });
   }
 );
 
@@ -152,7 +156,7 @@ watch(
 watch(
   () => app.columns.length,
   (count) => {
-    if (active.value >= count) goTo(Math.max(count - 1, 0));
+    if (!listed.value && active.value >= count) goTo(Math.max(count - 1, 0));
   }
 );
 
@@ -190,27 +194,44 @@ watch(
     </main>
 
     <template v-else>
-      <ColumnTabs @select="goTo" @step="(delta) => goTo(Math.min(Math.max(active + delta, 0), app.columns.length - 1))" />
+      <ColumnTabs v-if="!listed" @select="goTo" @step="(delta) => goTo(Math.min(Math.max(active + delta, 0), app.columns.length - 1))" />
 
       <div
         ref="scroller"
-        class="flex min-h-0 flex-1 overflow-x-auto"
-        :class="drag.dragging.value ? 'snap-none' : 'snap-x snap-mandatory'"
+        class="min-h-0 flex-1"
+        :class="
+          listed
+            ? 'overflow-y-auto overscroll-y-contain bg-card pb-24'
+            : ['flex overflow-x-auto', drag.dragging.value ? 'snap-none' : 'snap-x snap-mandatory']
+        "
+        :data-layout="app.layout"
         data-testid="columns"
         @touchstart.passive="onTouchStart"
-        @scroll.passive="onScroll"
+        @scroll.passive="listed ? onListScroll($event) : onScroll()"
       >
         <!-- snap-always: a hard flick stops at the next column instead of flying past several -->
         <section
           v-for="col in app.columns"
           :key="col.key"
-          class="h-full w-full shrink-0 snap-center snap-always overflow-y-auto overscroll-y-contain bg-card pb-24"
+          :class="listed ? '' : 'h-full w-full shrink-0 snap-center snap-always overflow-y-auto overscroll-y-contain bg-card pb-24'"
           :data-column="col.key"
           :data-bucket="col.bucket ?? undefined"
           data-testid="column"
           @scroll.passive="onListScroll"
         >
-          <ul>
+          <!-- The list layout: a header for each column, which folds its tasks away -->
+          <h2 v-if="listed" class="sticky top-0 z-[1] border-b border-line bg-card" data-testid="section-header">
+            <button
+              class="flex h-10 w-full items-center gap-2 px-4 text-left text-sm font-semibold text-muted active:bg-line"
+              :aria-expanded="!app.isCollapsed(col)"
+              @click="app.toggleCollapsed(col)"
+            >
+              <ChevronDown class="h-4 w-4 shrink-0 transition-transform" :class="app.isCollapsed(col) ? '-rotate-90' : ''" />
+              <span class="min-w-0 flex-1 truncate">{{ columnTitle(col) }}</span>
+              <span class="font-normal">{{ col.tasks.length }}</span>
+            </button>
+          </h2>
+          <ul v-show="!app.isCollapsed(col)">
             <template v-for="task in col.tasks" :key="task.id">
               <li
                 v-if="!isDragged(task) && dropIndex(col.key) === shown(col.tasks).indexOf(task)"
@@ -236,7 +257,7 @@ watch(
             </template>
             <li v-if="dropIndex(col.key) >= shown(col.tasks).length" class="h-0.5 bg-accent" data-testid="drop-line"></li>
           </ul>
-          <p v-if="!col.tasks.length" class="pt-10 text-center text-sm text-muted">
+          <p v-if="!listed && !col.tasks.length" class="pt-10 text-center text-sm text-muted">
             {{ app.isFiltering ? t('board.noMatches') : t('board.emptyBucket') }}
           </p>
         </section>

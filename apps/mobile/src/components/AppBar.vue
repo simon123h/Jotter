@@ -32,8 +32,9 @@ function closeSearch() {
 }
 
 function selectAllHere() {
-  const column = app.columns[ui.activeColumn];
-  if (column) app.selectOnly(column.tasks.map((task) => task.id));
+  // The list shows every column at once, the tabs one of them
+  const columns = app.layout === 'list' ? app.columns : app.columns.slice(ui.activeColumn, ui.activeColumn + 1);
+  app.selectOnly([...new Set(columns.flatMap((column) => column.tasks.map((task) => task.id)))]);
 }
 
 const menuOpen = ref(false);
@@ -46,6 +47,11 @@ const viewOptions = computed(() => [
   { id: 'archive' as const, label: t('view.hideArchived'), on: app.hidden[app.view].archive },
   { id: 'postponed' as const, label: t('view.hidePostponed'), count: postponedCount.value, on: app.hidden[app.view].postponed },
 ]);
+
+function toggleLayout() {
+  menuOpen.value = false;
+  app.setLayout(app.layout === 'list' ? 'tabs' : 'list');
+}
 
 function toggleOption(id: 'done' | 'archive' | 'postponed') {
   menuOpen.value = false;
@@ -116,6 +122,17 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
           role="menu"
           data-testid="view-menu-list"
         >
+          <button
+            :class="menuItem"
+            role="menuitemcheckbox"
+            :aria-checked="app.layout === 'list'"
+            data-testid="layout-list"
+            @click="toggleLayout"
+          >
+            <Check class="h-5 w-5 shrink-0" :class="app.layout === 'list' ? 'text-accent' : 'text-transparent'" />
+            <span class="min-w-0 flex-1 truncate">{{ t('view.asList') }}</span>
+          </button>
+          <div class="my-1 border-t border-line"></div>
           <button
             v-for="option in viewOptions"
             :key="option.id"

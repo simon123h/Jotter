@@ -6,16 +6,21 @@ import { getRepository, type VaultRepository, type Vault, type NewTask } from '@
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { armDelay, armReminders, localDateTime } from '@/reminders';
 import { useUiStore } from '@/stores/ui';
-import { columnsFor, type Hidden, type View } from '@/stores/columns';
+import { columnsFor, type Column, type Hidden, type View } from '@/stores/columns';
 import {
   defaultHidden,
+  recallCollapsed,
   recallHidden,
+  recallLayout,
   recallPinned,
   recallProject,
   recallView,
+  rememberCollapsed,
   rememberHidden,
+  rememberLayout,
   rememberProject,
   rememberView,
+  type Layout,
 } from '@/stores/preferences';
 
 export type Status = 'loading' | 'onboarding' | 'ready' | 'error';
@@ -39,6 +44,8 @@ export const useAppStore = defineStore('app', () => {
   const sortBy = ref<'alpha' | 'manual'>('alpha');
   const view = ref<View>('board');
   const hidden = ref<Record<View, Hidden>>(defaultHidden());
+  const layout = ref<Layout>('tabs');
+  const collapsed = ref<Record<string, boolean>>({});
   const buckets = ref<Bucket[]>([]);
   const allTasks = ref<Task[]>([]);
   const unreadable = ref<string[]>([]);
@@ -146,6 +153,8 @@ export const useAppStore = defineStore('app', () => {
     projectId.value = projects.value.find((p) => p.id === remembered && !p.archived)?.id ?? firstProject();
     view.value = await recallView(opened.id);
     hidden.value = await recallHidden(opened.id);
+    layout.value = await recallLayout();
+    collapsed.value = await recallCollapsed(opened.id);
     await loadSettings(true);
     await loadProject();
     status.value = 'ready';
@@ -233,6 +242,24 @@ export const useAppStore = defineStore('app', () => {
     current[which] = !current[which];
     selection.value = [];
     if (vault.value) rememberHidden(vault.value.id, hidden.value);
+  }
+
+  /** Shows the columns as tabs or as one list with a section for each. */
+  function setLayout(next: Layout) {
+    layout.value = next;
+    selection.value = [];
+    rememberLayout(next);
+  }
+
+  /** Whether a section of the list layout is folded away. The finished columns start folded; empty ones and the hits of a search never are. */
+  function isCollapsed(column: Column): boolean {
+    if (!column.tasks.length || isFiltering.value) return false;
+    return collapsed.value[column.key] ?? (view.value === 'board' && (column.key === 'done' || column.key === 'archive'));
+  }
+
+  function toggleCollapsed(column: Column) {
+    collapsed.value = { ...collapsed.value, [column.key]: !isCollapsed(column) };
+    if (vault.value) rememberCollapsed(vault.value.id, collapsed.value);
   }
 
   function togglePinned(id: string) {
@@ -530,6 +557,10 @@ export const useAppStore = defineStore('app', () => {
     projectId,
     view,
     hidden,
+    layout,
+    setLayout,
+    isCollapsed,
+    toggleCollapsed,
     toggleHidden,
     setView,
     navVisible,

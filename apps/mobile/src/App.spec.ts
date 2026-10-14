@@ -556,6 +556,66 @@ describe('board', () => {
     expect(all('column')[2].text()).toContain('Lost task');
   });
 
+  it('shows the columns as one list with a section for each, folds a section away, and remembers both', async () => {
+    await start(desktopVault);
+    expect(all('bucket-tab')).toHaveLength(2);
+
+    await find('view-menu').trigger('click');
+    await find('layout-list').trigger('click');
+    await settle();
+
+    expect(all('bucket-tab')).toHaveLength(0);
+    expect(find('columns').attributes('data-layout')).toBe('list');
+    expect(all('section-header').map((h) => h.text())).toEqual(['To Do2', 'Done1']);
+    expect(await capacitorKeyValue.get('jotter_lite_layout')).toBe('list');
+
+    // The finished column starts folded; the others are open
+    const [todo, done] = all('column');
+    expect(todo.find('ul').isVisible()).toBe(true);
+    expect(done.find('ul').isVisible()).toBe(false);
+
+    await done.find('[data-testid="section-header"] button').trigger('click');
+    expect(done.find('ul').isVisible()).toBe(true);
+    await todo.find('[data-testid="section-header"] button').trigger('click');
+    expect(todo.find('ul').isVisible()).toBe(false);
+    expect(todo.find('[data-testid="section-header"] button').attributes('aria-expanded')).toBe('false');
+    expect(JSON.parse((await capacitorKeyValue.get('jotter_lite_collapsed:jotter')) ?? '{}')).toEqual({ done: false, todo: true });
+  });
+
+  it('opens the folded sections that a search finds something in, and shows an empty column as a header', async () => {
+    const { app } = await start(desktopVault);
+    app.setLayout('list');
+    await settle();
+    expect(all('column')[1].find('ul').isVisible()).toBe(false);
+
+    app.query = 'Ship';
+    await settle();
+    expect(all('column')[1].find('ul').isVisible()).toBe(true);
+
+    app.query = 'nothing matches this';
+    await settle();
+    expect(all('section-header').map((h) => h.text())).toEqual(['To Do0', 'Done0']);
+    expect(wrapper.text()).not.toContain('No matches');
+  });
+
+  it('selects the tasks of every section in the list, and those of the column in view in the tabs', async () => {
+    const { app } = await start(desktopVault);
+    app.setLayout('list');
+    await settle();
+    await find('open-search').trigger('click');
+    app.selectOnly([]);
+    app.toggleSelected(app.columns[0].tasks[0].id);
+    await settle();
+    await find('select-all').trigger('click');
+    expect(app.selectedCount).toBe(3);
+
+    app.setLayout('tabs');
+    app.toggleSelected(app.columns[0].tasks[0].id);
+    await settle();
+    await find('select-all').trigger('click');
+    expect(app.selectedCount).toBe(2);
+  });
+
   it('picks up changes made outside the app on refresh', async () => {
     await start(desktopVault);
     fs.put('Jotter/work/e.md', '---\ntitle: Added by sync\nstatus: done\n---\n');

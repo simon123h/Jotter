@@ -10,6 +10,8 @@ const LAST_PROJECT_KEY = 'jotter_lite_last_project';
 const VIEW_KEY = 'jotter_lite_view';
 const HIDDEN_KEY = 'jotter_lite_hidden';
 const PINNED_KEY = 'jotter_lite_pinned';
+const LAYOUT_KEY = 'jotter_lite_layout';
+const COLLAPSED_KEY = 'jotter_lite_collapsed';
 
 const save = (key: string, value: string) => void preferences.set(key, value).catch(() => undefined);
 
@@ -65,3 +67,29 @@ export const recallProject = async (vaultId: string): Promise<string | null> => 
 export const rememberProject = (vaultId: string, projectId: string | null) => {
   if (projectId) save(`${LAST_PROJECT_KEY}:${vaultId}`, projectId);
 };
+
+/** The columns as tabs you swipe between, or as one list with a section for each column. */
+export type Layout = 'tabs' | 'list';
+
+export const recallLayout = async (): Promise<Layout> => {
+  try {
+    return (await preferences.get(LAYOUT_KEY)) === 'list' ? 'list' : 'tabs';
+  } catch {
+    return 'tabs';
+  }
+};
+export const rememberLayout = (layout: Layout) => save(LAYOUT_KEY, layout);
+
+/** The sections the user collapsed or expanded in the list layout, by column key. A section not in it has its default. */
+export const recallCollapsed = async (vaultId: string): Promise<Record<string, boolean>> => {
+  try {
+    const stored = JSON.parse((await preferences.get(`${COLLAPSED_KEY}:${vaultId}`)) ?? '{}');
+    const collapsed: Record<string, boolean> = {};
+    for (const [key, value] of Object.entries(stored ?? {})) if (typeof value === 'boolean') collapsed[key] = value;
+    return collapsed;
+  } catch {
+    return {};
+  }
+};
+export const rememberCollapsed = (vaultId: string, collapsed: Record<string, boolean>) =>
+  save(`${COLLAPSED_KEY}:${vaultId}`, JSON.stringify(collapsed));
