@@ -20,6 +20,8 @@ interface Stored {
   lightTheme: ThemeId;
   darkTheme: ThemeId;
   language: LanguageChoice;
+  /** Read the title of a page when a bare link is added. Off until the user turns it on: the address is sent to that website. */
+  lookUpLinkTitles: boolean;
 }
 
 /** Settings saved by earlier versions chose between light and dark. */
@@ -38,9 +40,10 @@ async function load(): Promise<Stored> {
       lightTheme: isThemeId(parsed.lightTheme, false) ? parsed.lightTheme : DEFAULT_LIGHT,
       darkTheme: isThemeId(parsed.darkTheme, true) ? parsed.darkTheme : DEFAULT_DARK,
       language: isLanguage(parsed.language) ? parsed.language : 'system',
+      lookUpLinkTitles: parsed.lookUpLinkTitles === true,
     };
   } catch {
-    return { theme: 'system', lightTheme: DEFAULT_LIGHT, darkTheme: DEFAULT_DARK, language: 'system' };
+    return { theme: 'system', lightTheme: DEFAULT_LIGHT, darkTheme: DEFAULT_DARK, language: 'system', lookUpLinkTitles: false };
   }
 }
 
@@ -59,6 +62,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const lightTheme = ref<ThemeId>(DEFAULT_LIGHT);
   const darkTheme = ref<ThemeId>(DEFAULT_DARK);
   const language = ref<LanguageChoice>('system');
+  const lookUpLinkTitles = ref(false);
   /** The saved settings have been read. Until then nothing is written, or the defaults would replace them. */
   let loaded = false;
 
@@ -69,6 +73,7 @@ export const useSettingsStore = defineStore('settings', () => {
     lightTheme.value = saved.lightTheme;
     darkTheme.value = saved.darkTheme;
     language.value = saved.language;
+    lookUpLinkTitles.value = saved.lookUpLinkTitles;
     loaded = true;
     apply();
   }
@@ -90,7 +95,7 @@ export const useSettingsStore = defineStore('settings', () => {
   window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => theme.value === 'system' && apply());
 
   watch(
-    [theme, lightTheme, darkTheme, language],
+    [theme, lightTheme, darkTheme, language, lookUpLinkTitles],
     () => {
       apply();
       // Not persisted when the preferences cannot be written; the choice lasts until the app is closed
@@ -98,12 +103,18 @@ export const useSettingsStore = defineStore('settings', () => {
         void preferences
           .set(
             KEY,
-            JSON.stringify({ theme: theme.value, lightTheme: lightTheme.value, darkTheme: darkTheme.value, language: language.value })
+            JSON.stringify({
+              theme: theme.value,
+              lightTheme: lightTheme.value,
+              darkTheme: darkTheme.value,
+              language: language.value,
+              lookUpLinkTitles: lookUpLinkTitles.value,
+            })
           )
           .catch(() => undefined);
     },
     { immediate: true }
   );
 
-  return { theme, lightTheme, darkTheme, language, restore };
+  return { theme, lightTheme, darkTheme, language, lookUpLinkTitles, restore };
 });

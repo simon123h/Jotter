@@ -37,6 +37,7 @@ export const useSettingsStore = defineStore('settings', () => {
     isTimeblockSidebarOpen: getStoredBool(TIMEBLOCK_SIDEBAR_STORAGE_KEY, false),
     doneCleanPeriod: null,
     autoCommit: true,
+    lookUpLinkTitles: false,
   });
 
   let skipSave = false;

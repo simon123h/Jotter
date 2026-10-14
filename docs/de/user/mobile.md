@@ -37,7 +37,7 @@ Um eine einzelne Karte an eine bestimmte Stelle zu setzen, halte sie gedrückt u
 
 ## Ansichten
 
-Die Leiste unten wechselt die Ansicht. Die Spalten sind immer Tabs, zwischen denen du wischen kannst.
+Die Leiste unten wechselt die Ansicht. Die Spalten sind Tabs, zwischen denen du wischen kannst, oder, mit *Als Liste anzeigen* im ⋮-Menü, eine Liste mit einem Abschnitt je Spalte. Ein Abschnitt klappt zu, wenn du auf seine Kopfzeile tippst; leere zeigen nur die Kopfzeile, und *Erledigt* und *Archiv* starten zugeklappt.
 
 - **Board**: ein Tab pro Spalte.
 - **Tags**: ein Tab pro Tag und einer für Aufgaben ohne Tag.

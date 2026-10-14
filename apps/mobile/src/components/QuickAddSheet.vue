@@ -7,7 +7,9 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import type { Column } from '@/stores/app';
 import TitleHints from './TitleHints.vue';
-import { duplicateOf } from '@jotter/links';
+import { duplicateOf, isBareUrl } from '@jotter/links';
+import { lookUpTitle } from '@/linkTitle';
+import { useSettingsStore } from '@/stores/settings';
 import { useSmartTitle, type Hint } from '@/composables/useSmartTitle';
 
 /** The tab in view: a new task is filed where the user is looking (its column, tag or planned date), unless the sheet was opened for the inbox. */
@@ -40,6 +42,34 @@ async function chooseProject(id: string) {
   picked.value = (app.buckets.find((b) => b.is_default) ?? app.buckets[0])?.name ?? null;
 }
 
+/**
+ * A title that is only a web address becomes the title of the page, and the address moves into the notes. It is left
+ * alone when the setting is off, when the page cannot be read in time, or when the title was edited meanwhile.
+ */
+const settings = useSettingsStore();
+const lookingUp = ref(false);
+const looked = new Set<string>();
+let lookupTimer: ReturnType<typeof setTimeout> | undefined;
+watch(
+  title,
+  (value) => {
+    clearTimeout(lookupTimer);
+    const url = value.trim();
+    if (!settings.lookUpLinkTitles || !isBareUrl(url) || looked.has(url)) return;
+    // A pasted or shared address is one change; a typed one passes through many, so wait until it rests
+    lookupTimer = setTimeout(async () => {
+      looked.add(url);
+      lookingUp.value = true;
+      const found = await lookUpTitle(url);
+      lookingUp.value = false;
+      if (!found || title.value.trim() !== url) return;
+      title.value = found;
+      draftBody = draftBody ? `${url}\n\n${draftBody}` : url;
+    }, 500);
+  },
+  { immediate: true }
+);
+
 const smart = useSmartTitle(title, () => app.buckets);
 /** What is left of the title once dates, priority, tags and column are taken out. */
 const finalTitle = computed(() => smart.resolve().title);
@@ -66,7 +96,10 @@ watch(
   },
   { immediate: true }
 );
-onBeforeUnmount(() => clearTimeout(clearTimer));
+onBeforeUnmount(() => {
+  clearTimeout(clearTimer);
+  clearTimeout(lookupTimer);
+});
 
 async function submit() {
   const found = smart.resolve();
@@ -157,6 +190,7 @@ async function submit() {
         </button>
       </div>
     </div>
+    <p v-if="lookingUp" class="pb-2 text-sm text-muted" data-testid="quick-add-looking-up">{{ t('quickAdd.lookingUp') }}</p>
     <p v-if="duplicate" class="pb-2 text-sm text-amber-600" data-testid="quick-add-duplicate">
       {{ t('quickAdd.alreadySaved', { title: duplicate.title }) }}
     </p>

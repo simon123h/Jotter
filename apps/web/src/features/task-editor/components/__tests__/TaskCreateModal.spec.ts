@@ -1,10 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { useProjectStore } from '@/stores/project';
+import { useSettingsStore } from '@/stores/settings';
+import { createTask, getLinkTitle } from '@/api';
 import { createMockTask } from '@/__tests__/factories';
 import TaskCreateModal from '@/features/task-editor/components/TaskCreateModal.vue';
+
+vi.mock('vue-router', () => ({ useRoute: () => ({ params: { projectId: 'work' } }) }));
+
+vi.mock('@/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api')>()),
+  createTask: vi.fn(() => Promise.resolve({})),
+  getLinkTitle: vi.fn(),
+}));
 
 describe('TaskCreateModal.vue', () => {
   const defaultProps = {
@@ -41,6 +51,70 @@ describe('TaskCreateModal.vue', () => {
 
     await wrapper.find('input[type="text"]').setValue('https://example.com/post/2');
     expect(wrapper.find('[data-testid="duplicate-hint"]').exists()).toBe(false);
+  });
+
+  describe('the title of a pasted link', () => {
+    const url = 'https://example.com/post/1';
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.mocked(getLinkTitle).mockReset();
+    });
+    afterEach(() => vi.useRealTimers());
+
+    async function paste(text: string) {
+      const wrapper = mount(TaskCreateModal, { props: defaultProps });
+      await wrapper.find('input[type="text"]').setValue(text);
+      return wrapper;
+    }
+    const settle = async () => {
+      await vi.advanceTimersByTimeAsync(600);
+      await nextTick();
+    };
+
+    it('takes the title of the page and moves the address into the notes, when the setting is on', async () => {
+      useSettingsStore().settings.lookUpLinkTitles = true;
+      vi.mocked(getLinkTitle).mockResolvedValue('A good article');
+      const wrapper = await paste(url);
+      await settle();
+
+      expect(getLinkTitle).toHaveBeenCalledWith(url);
+      expect((wrapper.find('input[type="text"]').element as HTMLInputElement).value).toBe('A good article');
+      await wrapper.find('form').trigger('submit');
+      expect(createTask).toHaveBeenCalledWith('work', expect.objectContaining({ title: 'A good article', body: url }));
+    });
+
+    it('does nothing with the setting off, and keeps the address when the page cannot be read', async () => {
+      const off = await paste(url);
+      await settle();
+      expect(getLinkTitle).not.toHaveBeenCalled();
+      expect((off.find('input[type="text"]').element as HTMLInputElement).value).toBe(url);
+
+      useSettingsStore().settings.lookUpLinkTitles = true;
+      vi.mocked(getLinkTitle).mockResolvedValue(null);
+      const failed = await paste('https://example.com/other');
+      await settle();
+      expect(getLinkTitle).toHaveBeenCalledTimes(1);
+      expect((failed.find('input[type="text"]').element as HTMLInputElement).value).toBe('https://example.com/other');
+      expect(failed.find('[data-testid="looking-up-title"]').exists()).toBe(false);
+    });
+
+    it('does not ask for a text that is more than an address, nor overwrite a title edited meanwhile', async () => {
+      useSettingsStore().settings.lookUpLinkTitles = true;
+      await paste(`Read ${url}`);
+      await settle();
+      expect(getLinkTitle).not.toHaveBeenCalled();
+
+      let answer: (title: string) => void = () => undefined;
+      vi.mocked(getLinkTitle).mockReturnValue(new Promise((resolve) => (answer = resolve)));
+      const wrapper = await paste(url);
+      await vi.advanceTimersByTimeAsync(600);
+      expect(wrapper.find('[data-testid="looking-up-title"]').exists()).toBe(true);
+      await wrapper.find('input[type="text"]').setValue('My own title');
+      answer('A good article');
+      await settle();
+      expect((wrapper.find('input[type="text"]').element as HTMLInputElement).value).toBe('My own title');
+    });
   });
 
   it('does not render when isOpen is false', () => {

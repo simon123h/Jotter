@@ -37,7 +37,7 @@ To move a single card to a place in a column, press, hold and drag it.
 
 ## Views
 
-The bar at the bottom switches the view. The columns are always tabs you can swipe.
+The bar at the bottom switches the view. The columns are tabs you can swipe, or, with *Show as list* in the ⋮ menu, one list with a section for each column. A section folds away when you tap its header; empty ones show only the header, and *Done* and *Archive* start folded.
 
 - **Board**: one tab per column.
 - **Tags**: one tab per tag, and one for tasks without a tag.

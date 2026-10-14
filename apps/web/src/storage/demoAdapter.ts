@@ -650,6 +650,11 @@ export class DemoStorageAdapter implements StorageAdapter {
     localStorage.setItem(DEMO_SETTINGS_KEY, JSON.stringify(settings));
   }
 
+  /** The static demo has no server to look a page up. */
+  async getLinkTitle(): Promise<string | null> {
+    return null;
+  }
+
   async getTimeblocks(params?: { startDate?: string; endDate?: string }): Promise<Timeblock[]> {
     return loadTimeblocks().filter(
       (b) => (!params?.startDate || b.date >= params.startDate) && (!params?.endDate || b.date <= params.endDate)

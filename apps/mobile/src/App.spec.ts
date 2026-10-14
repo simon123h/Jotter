@@ -9,6 +9,7 @@ import { isoDay } from '@jotter/task-filter';
 import { capacitorKeyValue } from '@/data/keyValue';
 import { runShortcut, shortcutAction, sharedDraft } from '@/shortcuts';
 import { useSettingsStore } from '@/stores/settings';
+import { linkTitles } from '@/linkTitle';
 import { locale } from '@/i18n';
 import { autoRefresh } from '@/composables/useAutoRefresh';
 import { holdConfig } from '@/composables/useCardDrag';
@@ -24,6 +25,7 @@ let fs: MemoryFs;
 let wrapper: VueWrapper;
 let memoryNotifications: MemoryNotifications;
 const realNotifications = notifications.port;
+const realLinkTitles = linkTitles.port;
 
 /** `seed` fills the storage as another app would; with it the vault in `Jotter` is already registered. */
 async function start(seed?: (fs: MemoryFs) => void) {
@@ -91,6 +93,7 @@ const desktopVault = (f: MemoryFs) => {
 
 afterEach(() => {
   notifications.port = realNotifications;
+  linkTitles.port = realLinkTitles;
   armDelay.ms = 800;
   autoRefresh.intervalMs = 60_000;
   holdConfig.ms = 350;
@@ -907,6 +910,7 @@ describe('settings', () => {
       lightTheme: 'nordic-light',
       darkTheme: 'midnight',
       language: 'de',
+      lookUpLinkTitles: false,
     });
     expect(find('open-search').attributes('aria-label')).toBe('Suchen');
 
@@ -916,6 +920,19 @@ describe('settings', () => {
     settings.theme = 'system';
     await settle();
     expect([...document.documentElement.classList].filter((c) => c.startsWith('theme-'))).toEqual([]);
+  });
+
+  it('asks before looking up link titles, and remembers the choice', async () => {
+    await start(desktopVault);
+    await useSettingsStore().restore();
+    expect(useSettingsStore().lookUpLinkTitles).toBe(false);
+    await openDrawer();
+    await find('drawer-settings').trigger('click');
+    await settle();
+    await find('setting-link-titles').setValue(true);
+    await settle();
+    expect(useSettingsStore().lookUpLinkTitles).toBe(true);
+    expect(JSON.parse((await capacitorKeyValue.get('jotter_lite_settings')) ?? '{}').lookUpLinkTitles).toBe(true);
   });
 
   it('shows the version and links to the vaults', async () => {
@@ -2221,6 +2238,54 @@ describe('launcher shortcuts', () => {
     expect(find('quick-add-duplicate').text()).toBe('Already saved: Saved article');
     await type('quick-add-input', 'https://example.com/post/2');
     expect(find('quick-add-duplicate').exists()).toBe(false);
+  });
+
+  it('takes the title of the page for a task that is only an address, when the setting is on', async () => {
+    const lookUp = vi.fn(async (url: string) => (url.includes('good') ? 'A good article' : null));
+    linkTitles.port = lookUp;
+    const { app } = await start(desktopVault);
+    const wait = () => new Promise((resolve) => setTimeout(resolve, 700)).then(settle);
+    await find('fab').trigger('click');
+
+    // Off: the address stays what it is
+    await type('quick-add-input', 'https://example.com/good');
+    await wait();
+    expect(lookUp).not.toHaveBeenCalled();
+
+    useSettingsStore().lookUpLinkTitles = true;
+    await type('quick-add-input', '');
+    await type('quick-add-input', 'https://example.com/good');
+    await wait();
+    expect(lookUp).toHaveBeenCalledTimes(1);
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('A good article');
+    await submit('quick-add-input');
+    const saved = app.allTasks.find((t) => t.title === 'A good article');
+    expect(saved?.body.trim()).toBe('https://example.com/good');
+
+    // A page that cannot be read leaves the address as the title; no message, no hang
+    await type('quick-add-input', 'https://example.com/unreadable');
+    await wait();
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('https://example.com/unreadable');
+    expect(find('quick-add-looking-up').exists()).toBe(false);
+    expect(useUiStore().toast).toBeNull();
+  });
+
+  it('keeps the address when the look-up fails, and reads the title of a shared address', async () => {
+    useSettingsStore().lookUpLinkTitles = true;
+    linkTitles.port = vi.fn(async () => {
+      throw new Error('offline');
+    });
+    await start(desktopVault);
+    useSettingsStore().lookUpLinkTitles = true;
+    await runShortcut('jotter://share?text=https%3A%2F%2Fexample.com%2Fa');
+    await settle();
+    await new Promise((resolve) => setTimeout(resolve, 700)).then(settle);
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('https://example.com/a');
+
+    linkTitles.port = vi.fn(async () => 'Shared page');
+    await runShortcut('jotter://share?text=https%3A%2F%2Fexample.com%2Fb');
+    await new Promise((resolve) => setTimeout(resolve, 700)).then(settle);
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('Shared page');
   });
 
   it('shows where the + button files a task, and lets the user choose another column and project', async () => {
