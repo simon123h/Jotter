@@ -182,10 +182,6 @@ export async function getSettings(): Promise<AppSettings> {
   return storage().getSettings();
 }
 
-export async function getLinkTitle(url: string): Promise<string | null> {
-  return storage().getLinkTitle(url);
-}
-
 export async function saveSettings(settings: AppSettings): Promise<void> {
   return storage().saveSettings(settings);
 }

@@ -15,16 +15,11 @@ When the address you add is already in the project, the dialog says *Already sav
 you: addresses count as the same page without `www.`, a `#fragment`, a trailing `/` or tracking parameters such as
 `utm_source`. The desktop looks at the tasks that are loaded on the board.
 
-## Titles of links (optional)
+## Titles of links (Android)
 
-When you add a task that is **only** a web address (pasted, or shared from another app), Jotter can read the page's title and
-use it as the task's title, with the address moved into the notes. This is **off by default**, because it contacts the website:
-the address is sent to it, nothing else.
-
-- **Desktop**: *Settings → Look up the titles of links*. The Jotter server loads the page, so it needs to reach the internet. It only
-  fetches `http` and `https` addresses, never a host on your own machine or network, gives up after six seconds, and reads at
-  most half a megabyte.
-- **Android**: *Settings → Look up the titles of links*. The phone loads the page.
+When you add a task that is **only** a web address (typed, pasted, or shared from another app), the Android app reads the title
+of the page and uses it as the task's title, with the address moved into the notes. The phone loads the page itself, so the
+address is sent to that website, nothing else. The desktop never looks anything up: it makes no requests of its own.
 
 If the page cannot be read in time, or has no title, nothing changes: the task keeps the address as its title. A title you type
 yourself while the look-up runs is never replaced.

@@ -231,9 +231,6 @@ const en = {
   'theme.forest': 'Emerald Forest',
   'theme.sakura': 'Sakura Rose',
   'theme.true-black': 'True Black',
-  'settings.linkTitles': 'Look up the titles of links',
-  'settings.linkTitlesHint':
-    'When a task is only a web address, the app loads that page to read its title. The address is sent to that website, nothing else.',
   'settings.vaults': 'Manage vaults',
   'settings.about': 'About',
   'settings.version': 'Version {version}',
@@ -475,9 +472,6 @@ const de: Record<MessageKey, string> = {
   'theme.forest': 'Emerald Forest',
   'theme.sakura': 'Sakura Rose',
   'theme.true-black': 'True Black',
-  'settings.linkTitles': 'Titel von Links nachschlagen',
-  'settings.linkTitlesHint':
-    'Wenn eine Aufgabe nur aus einer Webadresse besteht, lädt die App diese Seite, um ihren Titel zu lesen. Die Adresse wird an diese Website gesendet, sonst nichts.',
   'settings.vaults': 'Vaults verwalten',
   'settings.about': 'Über',
   'settings.version': 'Version {version}',

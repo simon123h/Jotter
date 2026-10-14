@@ -48,18 +48,6 @@ const version = __APP_VERSION__;
           </select>
         </label>
       </template>
-      <label class="flex items-start gap-3">
-        <input
-          v-model="settings.lookUpLinkTitles"
-          type="checkbox"
-          class="mt-1 h-5 w-5 shrink-0 accent-accent"
-          data-testid="setting-link-titles"
-        />
-        <span>
-          <span class="block text-base">{{ t('settings.linkTitles') }}</span>
-          <span class="block text-xs text-muted">{{ t('settings.linkTitlesHint') }}</span>
-        </span>
-      </label>
       <button
         class="inline-flex items-center gap-2 text-sm font-medium text-accent"
         data-testid="setting-vaults"

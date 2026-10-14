@@ -12,7 +12,6 @@ from fastapi.staticfiles import StaticFiles
 from jotter.config import UserConfig, load_config
 from jotter.features.buckets.router import router as buckets_router
 from jotter.features.canvas.router import router as canvas_router
-from jotter.features.links.router import router as links_router
 from jotter.features.projects.router import router as projects_router
 from jotter.features.settings.router import router as settings_router
 from jotter.features.sync import SyncApplicationService, VaultSyncScheduler
@@ -136,7 +135,6 @@ def create_app(
     app.include_router(timeblock_router)
     app.include_router(canvas_router)
     app.include_router(vaults_router)
-    app.include_router(links_router)
 
     # Locate static frontend distribution (bundled package dist or local dev apps/web/dist)
     pkg_dist = Path(__file__).resolve().parent / "dist"

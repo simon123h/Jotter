@@ -51,8 +51,6 @@ export interface AppSettings {
   isTimeblockSidebarOpen?: boolean;
   doneCleanPeriod?: number | null;
   autoCommit?: boolean;
-  /** Read the title of a page when a bare link is added (the server fetches the page). */
-  lookUpLinkTitles?: boolean;
 }
 
 export interface SystemInfo {

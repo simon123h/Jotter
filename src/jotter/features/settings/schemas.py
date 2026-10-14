@@ -25,7 +25,6 @@ class AppSettings(BaseModel):
     tagColors: dict[str, str] = {}
     doneCleanPeriod: int | None = None
     autoCommit: bool = True
-    lookUpLinkTitles: bool = False
 
 
 class SettingsUpdate(BaseModel):
@@ -50,4 +49,3 @@ class SettingsUpdate(BaseModel):
     tagColors: dict[str, str] | None = None
     doneCleanPeriod: int | None = None
     autoCommit: bool | None = None
-    lookUpLinkTitles: bool | None = None

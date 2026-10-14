@@ -252,21 +252,6 @@ export class HttpStorageAdapter implements StorageAdapter {
     if (!res.ok) await this.handleResponseError(res, 'Failed to save settings');
   }
 
-  async getLinkTitle(url: string): Promise<string | null> {
-    try {
-      const res = await this.customFetch(`${API_BASE}/links/title`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-        // The server gives up after six seconds; a page that is slower than that is not worth the wait
-        signal: AbortSignal.timeout(8000),
-      });
-      return res.ok ? ((await res.json()).title ?? null) : null;
-    } catch {
-      return null;
-    }
-  }
-
   async getTimeblocks(params?: { startDate?: string; endDate?: string }): Promise<Timeblock[]> {
     const url = new URL(`${API_BASE}/timeblocks`, window.location.origin);
     if (params?.startDate) url.searchParams.append('start_date', params.startDate);

@@ -9,7 +9,6 @@ import type { Column } from '@/stores/app';
 import TitleHints from './TitleHints.vue';
 import { duplicateOf, isBareUrl } from '@jotter/links';
 import { lookUpTitle } from '@/linkTitle';
-import { useSettingsStore } from '@/stores/settings';
 import { useSmartTitle, type Hint } from '@/composables/useSmartTitle';
 
 /** The tab in view: a new task is filed where the user is looking (its column, tag or planned date), unless the sheet was opened for the inbox. */
@@ -44,9 +43,8 @@ async function chooseProject(id: string) {
 
 /**
  * A title that is only a web address becomes the title of the page, and the address moves into the notes. It is left
- * alone when the setting is off, when the page cannot be read in time, or when the title was edited meanwhile.
+ * alone when the page cannot be read in time, or when the title was edited meanwhile.
  */
-const settings = useSettingsStore();
 const lookingUp = ref(false);
 const looked = new Set<string>();
 let lookupTimer: ReturnType<typeof setTimeout> | undefined;
@@ -55,7 +53,7 @@ watch(
   (value) => {
     clearTimeout(lookupTimer);
     const url = value.trim();
-    if (!settings.lookUpLinkTitles || !isBareUrl(url) || looked.has(url)) return;
+    if (!isBareUrl(url) || looked.has(url)) return;
     // A pasted or shared address is one change; a typed one passes through many, so wait until it rests
     lookupTimer = setTimeout(async () => {
       looked.add(url);

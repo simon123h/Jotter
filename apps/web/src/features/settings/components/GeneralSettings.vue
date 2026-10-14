@@ -5,7 +5,7 @@ import { useI18n } from '@/composables/useI18n';
 import { isDemoMode } from '@/platform';
 
 const { t } = useI18n();
-const { hideAddTaskButton, doneCleanPeriod, autoCommit, lookUpLinkTitles } = storeToRefs(useSettingsStore());
+const { hideAddTaskButton, doneCleanPeriod, autoCommit } = storeToRefs(useSettingsStore());
 </script>
 
 <template>
@@ -38,22 +38,6 @@ const { hideAddTaskButton, doneCleanPeriod, autoCommit, lookUpLinkTitles } = sto
         <div class="flex flex-col">
           <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.autoCommitToggle') }}</span>
           <span class="text-xs text-theme-text-muted mt-0.5">{{ t('settingsView.autoCommitToggleDesc') }}</span>
-        </div>
-      </label>
-
-      <label
-        v-if="!isDemoMode"
-        class="flex items-start gap-3 p-4 bg-theme-card/60 border border-theme-border/60 rounded-xl cursor-pointer hover:bg-theme-column/30 transition-all select-none"
-      >
-        <input
-          type="checkbox"
-          v-model="lookUpLinkTitles"
-          class="mt-1 w-4 h-4 rounded text-theme-primary border border-theme-border/60 focus:ring-theme-ring focus:ring-2 focus:ring-offset-0 bg-theme-card/60"
-          data-testid="setting-look-up-link-titles"
-        />
-        <div class="flex flex-col">
-          <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.lookUpLinkTitles') }}</span>
-          <span class="text-xs text-theme-text-muted mt-0.5">{{ t('settingsView.lookUpLinkTitlesDesc') }}</span>
         </div>
       </label>
 

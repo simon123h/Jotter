@@ -72,7 +72,6 @@ export const de = {
     titleLabel: 'Titel *',
     titlePlaceholder: 'Was muss getan werden?',
     alreadySaved: 'Schon gespeichert: {title}',
-    lookingUpTitle: 'Titel wird gesucht …',
     columnLabel: 'Spalte',
     tagsLabel: 'Tags (kommagetrennt)',
     tagsPlaceholder: 'z. B. bug, hohe-prioritaet',
@@ -328,9 +327,6 @@ export const de = {
     autoCommitToggle: 'Automatische Git-Commits',
     autoCommitToggleDesc:
       'Committet Änderungen kurz nach dem Bearbeiten im Git-Repository des Vaults. Deaktivieren, wenn das Speichern auf Rechnern mit aggressivem Virenscanner langsam ist.',
-    lookUpLinkTitles: 'Titel von Links nachschlagen',
-    lookUpLinkTitlesDesc:
-      'Wenn du eine Aufgabe anlegst, die nur aus einer Webadresse besteht, lädt der Jotter-Server diese Seite, um ihren Titel zu lesen. Die Adresse wird an diese Website gesendet, sonst nichts. Standardmäßig aus.',
     globalDoneCleanPeriod: 'Globale Aufbewahrungsfrist für erledigte Aufgaben (Tage)',
     globalDoneCleanPeriodDesc:
       'Löscht Aufgaben in der Spalte "Erledigt" automatisch nach dieser Anzahl von Tagen projektübergreifend (sofern nicht in den Projekteinstellungen überschrieben). Leer lassen oder auf 0 setzen, um das automatische Löschen zu deaktivieren.',

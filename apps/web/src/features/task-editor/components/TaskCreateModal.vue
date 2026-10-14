@@ -4,12 +4,11 @@ import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { ClipboardList, Slash, Plus, X } from '@lucide/vue';
 import type { BucketName } from '@/types';
-import { createTask, getLinkTitle } from '@/api';
+import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
-import { useSettingsStore } from '@/stores/settings';
 import { parseTitleState } from '@jotter/title-parser';
-import { duplicateOf, isBareUrl } from '@jotter/links';
+import { duplicateOf } from '@jotter/links';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
@@ -22,7 +21,6 @@ const MarkdownEditor = defineAsyncComponent(() => import('@/components/ui/Markdo
 const { locale, t, tBucket } = useI18n();
 const route = useRoute();
 const projectStore = useProjectStore();
-const settingsStore = useSettingsStore();
 const { buckets } = storeToRefs(projectStore);
 
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
@@ -53,30 +51,6 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 
 const colors = TASK_COLORS;
-
-/**
- * A title that is only a web address becomes the title of the page, and the address moves into the notes. It is left
- * alone when the setting is off, when the page cannot be read in time, or when the title was edited meanwhile.
- */
-const lookingUp = ref(false);
-const looked = new Set<string>();
-let lookupTimer: ReturnType<typeof setTimeout> | undefined;
-watch(title, (value) => {
-  clearTimeout(lookupTimer);
-  const url = value.trim();
-  if (!settingsStore.settings.lookUpLinkTitles || !isBareUrl(url) || looked.has(url)) return;
-  // A pasted address is one change; a typed one passes through many, so wait until it rests
-  lookupTimer = setTimeout(async () => {
-    looked.add(url);
-    lookingUp.value = true;
-    const found = await getLinkTitle(url);
-    lookingUp.value = false;
-    if (!found || title.value.trim() !== url) return;
-    title.value = found;
-    body.value = body.value ? `${url}\n\n${body.value}` : url;
-  }, 500);
-});
-onUnmounted(() => clearTimeout(lookupTimer));
 
 /** A task of this project that already holds the address in the title or the notes. */
 const duplicate = computed(() => duplicateOf(`${title.value}\n${body.value}`, projectStore.tasks));
@@ -301,7 +275,6 @@ const handleSubmit = async () => {
         </div>
       </div>
 
-      <p v-if="lookingUp" class="-mt-2 text-xs text-theme-text-muted" data-testid="looking-up-title">{{ t('form.lookingUpTitle') }}</p>
       <p
         v-if="duplicate"
         class="-mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-xs rounded"

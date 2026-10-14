@@ -71,7 +71,6 @@ export const en = {
     titleLabel: 'Title *',
     titlePlaceholder: 'What needs to be done?',
     alreadySaved: 'Already saved: {title}',
-    lookingUpTitle: 'Looking up the title …',
     columnLabel: 'Column',
     tagsLabel: 'Tags (comma-separated)',
     tagsPlaceholder: 'e.g. bug, high-priority',
@@ -326,9 +325,6 @@ export const en = {
     autoCommitToggle: 'Automatic Git commits',
     autoCommitToggleDesc:
       "Commits changes to the vault's Git repository shortly after you make them. Turn off if saving feels slow on a machine with aggressive antivirus.",
-    lookUpLinkTitles: 'Look up the titles of links',
-    lookUpLinkTitlesDesc:
-      'When you add a task that is only a web address, the Jotter server loads that page to read its title. The address is sent to that website, and nothing else. Off by default.',
     globalDoneCleanPeriod: 'Global Done Task Retention (Days)',
     globalDoneCleanPeriodDesc:
       'Automatically cleans and purges tasks in the "Done" column after this number of days across all projects (unless overridden by project settings). Leave empty or 0 to disable.',

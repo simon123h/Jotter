@@ -50,8 +50,6 @@ export interface StorageAdapter {
   // Settings
   getSettings(): Promise<AppSettings>;
   saveSettings(settings: AppSettings): Promise<void>;
-  /** The title of the page at an address, or null when it cannot be read (the server must be allowed to look it up). */
-  getLinkTitle(url: string): Promise<string | null>;
 
   // Timeblocks
   getTimeblocks(params?: { startDate?: string; endDate?: string }): Promise<Timeblock[]>;

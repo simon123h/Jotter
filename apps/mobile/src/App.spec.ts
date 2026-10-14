@@ -29,6 +29,8 @@ const realLinkTitles = linkTitles.port;
 
 /** `seed` fills the storage as another app would; with it the vault in `Jotter` is already registered. */
 async function start(seed?: (fs: MemoryFs) => void) {
+  // No test loads a page: the look-up of a title is on for every bare address, so the real port is replaced
+  if (linkTitles.port === realLinkTitles) linkTitles.port = vi.fn(async () => null);
   fs = new MemoryFs();
   seed?.(fs);
   const prefix = `app-${++counter}`;
@@ -910,7 +912,6 @@ describe('settings', () => {
       lightTheme: 'nordic-light',
       darkTheme: 'midnight',
       language: 'de',
-      lookUpLinkTitles: false,
     });
     expect(find('open-search').attributes('aria-label')).toBe('Suchen');
 
@@ -920,19 +921,6 @@ describe('settings', () => {
     settings.theme = 'system';
     await settle();
     expect([...document.documentElement.classList].filter((c) => c.startsWith('theme-'))).toEqual([]);
-  });
-
-  it('asks before looking up link titles, and remembers the choice', async () => {
-    await start(desktopVault);
-    await useSettingsStore().restore();
-    expect(useSettingsStore().lookUpLinkTitles).toBe(false);
-    await openDrawer();
-    await find('drawer-settings').trigger('click');
-    await settle();
-    await find('setting-link-titles').setValue(true);
-    await settle();
-    expect(useSettingsStore().lookUpLinkTitles).toBe(true);
-    expect(JSON.parse((await capacitorKeyValue.get('jotter_lite_settings')) ?? '{}').lookUpLinkTitles).toBe(true);
   });
 
   it('shows the version and links to the vaults', async () => {
@@ -2240,20 +2228,13 @@ describe('launcher shortcuts', () => {
     expect(find('quick-add-duplicate').exists()).toBe(false);
   });
 
-  it('takes the title of the page for a task that is only an address, when the setting is on', async () => {
+  it('takes the title of the page for a task that is only an address', async () => {
     const lookUp = vi.fn(async (url: string) => (url.includes('good') ? 'A good article' : null));
     linkTitles.port = lookUp;
     const { app } = await start(desktopVault);
     const wait = () => new Promise((resolve) => setTimeout(resolve, 700)).then(settle);
     await find('fab').trigger('click');
 
-    // Off: the address stays what it is
-    await type('quick-add-input', 'https://example.com/good');
-    await wait();
-    expect(lookUp).not.toHaveBeenCalled();
-
-    useSettingsStore().lookUpLinkTitles = true;
-    await type('quick-add-input', '');
     await type('quick-add-input', 'https://example.com/good');
     await wait();
     expect(lookUp).toHaveBeenCalledTimes(1);
@@ -2271,12 +2252,10 @@ describe('launcher shortcuts', () => {
   });
 
   it('keeps the address when the look-up fails, and reads the title of a shared address', async () => {
-    useSettingsStore().lookUpLinkTitles = true;
     linkTitles.port = vi.fn(async () => {
       throw new Error('offline');
     });
     await start(desktopVault);
-    useSettingsStore().lookUpLinkTitles = true;
     await runShortcut('jotter://share?text=https%3A%2F%2Fexample.com%2Fa');
     await settle();
     await new Promise((resolve) => setTimeout(resolve, 700)).then(settle);
