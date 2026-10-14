@@ -80,34 +80,6 @@ describe('NavigationBar.vue', () => {
     expect(wrapper.find('.overflow-menu-container .absolute').exists()).toBe(true);
   });
 
-  it('emits export-tasks with xlsx when clicking the Excel export button', async () => {
-    const wrapper = mount(NavigationBar, mountOptions);
-    const toggleBtn = wrapper.find('.overflow-menu-container button');
-    await toggleBtn.trigger('click');
-
-    const buttons = wrapper.findAll('.overflow-menu-container button');
-    const excelBtn = buttons.find((b) => b.text().includes('Excel'));
-    expect(excelBtn).toBeDefined();
-    await excelBtn!.trigger('click');
-
-    expect(wrapper.emitted('export-tasks')).toBeTruthy();
-    expect(wrapper.emitted('export-tasks')![0]).toEqual(['xlsx']);
-  });
-
-  it('emits export-tasks with csv when clicking the CSV export button', async () => {
-    const wrapper = mount(NavigationBar, mountOptions);
-    const toggleBtn = wrapper.find('.overflow-menu-container button');
-    await toggleBtn.trigger('click');
-
-    const buttons = wrapper.findAll('.overflow-menu-container button');
-    const csvBtn = buttons.find((b) => b.text().includes('CSV'));
-    expect(csvBtn).toBeDefined();
-    await csvBtn!.trigger('click');
-
-    expect(wrapper.emitted('export-tasks')).toBeTruthy();
-    expect(wrapper.emitted('export-tasks')![0]).toEqual(['csv']);
-  });
-
   it('emits toggle-timeblock-sidebar when clicking the timeblock sidebar button', async () => {
     const wrapper = mount(NavigationBar, mountOptions);
     const timeblockBtn = wrapper.find('.timeblock-toggle-btn');

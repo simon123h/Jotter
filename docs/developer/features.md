@@ -35,7 +35,6 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Reminders: notifications at a floating local time | edit only | yes | ~0.8k | Optional | `spec/FORMAT.md` (*Reminders*), ADR 0019; mobile arms Android notifications (`src/reminders.ts`); the desktop sets and shows them but does not notify (browser notifications only work while the page is open: branch `feat/desktop-reminder-notifications`) |
 | Tag view and planning view | yes | yes | ~0.5k | Optional | `TagView`, `TimeView`; mobile has them as tabbed views |
 | List layout of the board, tag and planning views | n/a | yes | ~0.3k | Optional | `BoardScreen`: one list with a collapsible section per column instead of the tabs, set in the app bar menu. Sections can be collapsed; moving a task to another column is the swipe and the move sheet, as in the tabs |
-| Spreadsheet import and export | yes | no | ~1.6k | Optional | `features/task-import`, `useTaskExport`; isolated |
 | Git versioning and Time Machine | yes | no | ~1.3k | Optional | git part of `features/sync`, `TimeMachineModal`; ADR 0012 |
 | MCP server (AI assistants) | yes | no | ~0.7k | Optional | `mcp_server.py`, optional package extra |
 | Voice dictation | yes | no | ~0.2k | Optional | `useSpeechRecognition`, browser API |

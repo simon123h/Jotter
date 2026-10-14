@@ -10,7 +10,6 @@ import {
   GitBranch,
   Settings,
   BookOpen,
-  FileSpreadsheet,
   History,
   Layers,
   Database,
@@ -43,7 +42,6 @@ const emit = defineEmits<{
   (e: 'create-project', title: string): void;
   (e: 'edit-project', project: Project): void;
   (e: 'enable-git'): void;
-  (e: 'import-spreadsheet', projectId: string): void;
   (e: 'move-tasks-to-project', payload: { taskIds: string[]; projectId: string }): void;
   (e: 'close'): void;
 }>();
@@ -506,16 +504,6 @@ const onVaultSelected = async (event: Event) => {
       >
         <GitBranch class="w-3.5 h-3.5" />
         <span>{{ t('commit.enable') }}</span>
-      </button>
-
-      <!-- Import Spreadsheet Button -->
-      <button
-        v-if="activeProjectId"
-        @click="emit('import-spreadsheet', activeProjectId)"
-        class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded border border-transparent text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main transition-all cursor-pointer"
-      >
-        <FileSpreadsheet class="w-3.5 h-3.5" />
-        <span>{{ t('sidebar.importSpreadsheet') }}</span>
       </button>
 
       <!-- Documentation Link -->

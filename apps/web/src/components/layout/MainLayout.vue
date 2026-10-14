@@ -18,7 +18,6 @@ import { useTaskFilters } from '@/composables/useTaskFilters';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useToast } from '@/composables/useToast';
 import { useI18n } from '@/composables/useI18n';
-import { useTaskExport } from '@/composables/useTaskExport';
 import { crossTabBus } from '@/utils/broadcast';
 
 const { t } = useI18n();
@@ -118,7 +117,7 @@ const setTheme = (theme: string) => {
 };
 
 // Hook into task filters to bind the search query and filter modal to NavigationBar
-const { searchQuery, taskFilters, hasActiveFilters, applyFilters, filteredTasks } = useTaskFilters(computed(() => projectStore.tasks));
+const { searchQuery, taskFilters, hasActiveFilters, applyFilters } = useTaskFilters(computed(() => projectStore.tasks));
 
 const openFilterModal = () => {
   modalStore.openModal('filter', {
@@ -130,8 +129,6 @@ const openFilterModal = () => {
 const openCreateModal = (bucketName?: string) => {
   modalStore.openTaskCreate(bucketName || 'todo');
 };
-
-const { exportTasks } = useTaskExport(filteredTasks, activeProjectId);
 
 // Project creation handling using standard projects composable
 const { handleCreateProject: runCreateProject } = useProjects(selectProject);
@@ -241,7 +238,6 @@ onBeforeUnmount(() => {
       @toggle-timeblock-sidebar="toggleTimeblockSidebar"
       @open-filter="openFilterModal"
       @create-task="openCreateModal"
-      @export-tasks="exportTasks"
     />
 
     <div class="flex-grow flex overflow-hidden w-full relative">
@@ -264,7 +260,6 @@ onBeforeUnmount(() => {
           @create-project="handleCreateProject"
           @edit-project="modalStore.openProjectEdit"
           @enable-git="handleEnableGit"
-          @import-spreadsheet="modalStore.openImportSpreadsheet"
           @move-tasks-to-project="handleMoveTasksToProject"
           @close="settingsStore.isSidebarOpen = false"
         />
