@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
-import { Check } from '@lucide/vue';
+import { Check, ChevronDown } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -9,7 +9,7 @@ import type { Column } from '@/stores/app';
 import TitleHints from './TitleHints.vue';
 import { useSmartTitle, type Hint } from '@/composables/useSmartTitle';
 
-/** The tab in view: a new task is filed where the user is looking (its column, tag or planned date). */
+/** The tab in view: a new task is filed where the user is looking (its column, tag or planned date), unless the sheet was opened for the inbox. */
 const props = defineProps<{ column: Column | null }>();
 const app = useAppStore();
 const ui = useUiStore();
@@ -19,6 +19,26 @@ const draft = ui.sheet?.type === 'quickadd' ? ui.sheet.draft : undefined;
 const title = ref(draft?.title ?? '');
 let draftBody = draft?.body;
 const input = ref<HTMLInputElement | null>(null);
+/** Opened from outside (launcher shortcut, shared text): nothing is in view, so the task goes to the project's default column. */
+const inbox = ui.sheet?.type === 'quickadd' && !!ui.sheet.inbox;
+/** A column chosen in the sheet. It replaces what is in view, tag and planned date included. */
+const picked = ref<string | null>(null);
+const here = computed(() => (inbox || picked.value !== null ? null : props.column));
+/** The column the task goes to: the one chosen, the one in view, or the project's default. */
+const bucket = computed(
+  () => app.buckets.find((b) => b.name === (picked.value ?? here.value?.bucket)) ?? app.buckets.find((b) => b.is_default) ?? app.buckets[0]
+);
+/** Where the task goes, as the chip says it: the project, then the column, tag or planned date. */
+const destination = computed(
+  () => `${app.project?.title ?? ''} · ${here.value?.value !== undefined ? here.value.title : (bucket.value?.title ?? '')}`
+);
+const choosing = ref(false);
+
+async function chooseProject(id: string) {
+  if (id !== app.projectId) await app.selectProject(id);
+  picked.value = (app.buckets.find((b) => b.is_default) ?? app.buckets[0])?.name ?? null;
+}
+
 const smart = useSmartTitle(title, () => app.buckets);
 /** What is left of the title once dates, priority, tags and column are taken out. */
 const finalTitle = computed(() => smart.resolve().title);
@@ -51,13 +71,13 @@ async function submit() {
   if (!clean || busy.value) return;
   busy.value = true;
   try {
-    const column = props.column;
+    const column = here.value;
     // Where the user is looking sets the defaults; what the title says wins
     const viewTag = app.view === 'tags' && column?.value ? [column.value] : [];
     const viewPlanned = app.view === 'planning' && column?.value ? column.value : undefined;
     await app.addTask({
       title: clean,
-      bucket: found.bucket ?? column?.bucket ?? undefined,
+      bucket: found.bucket ?? picked.value ?? column?.bucket ?? undefined,
       tags: [...new Set([...viewTag, ...found.tags])],
       due_date: found.due_date ?? undefined,
       planned_date: found.planned_date ?? viewPlanned,
@@ -89,6 +109,49 @@ async function submit() {
     >
       <div class="min-h-0 overflow-hidden">
         <TitleHints :hints="shownHints" class="pb-3" @ignore="smart.ignore" />
+      </div>
+    </div>
+    <!-- Where the task goes. Tapping it offers another project or column; the choice holds for the next task. -->
+    <button
+      type="button"
+      class="mb-2 flex max-w-full items-center gap-1 rounded-full bg-line px-3 py-1.5 text-sm text-muted active:opacity-70"
+      :aria-label="t('quickAdd.where')"
+      :aria-expanded="choosing"
+      data-testid="quick-add-destination"
+      @pointerdown.prevent
+      @click="choosing = !choosing"
+    >
+      <span class="truncate">{{ destination }}</span>
+      <ChevronDown class="h-4 w-4 shrink-0 transition-transform" :class="choosing ? 'rotate-180' : ''" />
+    </button>
+    <div v-if="choosing" class="mb-3 space-y-2" data-testid="quick-add-choices">
+      <div class="flex flex-wrap gap-2" role="group" :aria-label="t('quickAdd.project')">
+        <button
+          v-for="p in app.orderedProjects"
+          :key="p.id"
+          type="button"
+          class="rounded-full border px-3 py-1.5 text-sm"
+          :class="p.id === app.projectId ? 'border-accent bg-accent/15 text-accent' : 'border-line'"
+          :data-testid="`quick-add-project-${p.id}`"
+          @pointerdown.prevent
+          @click="chooseProject(p.id)"
+        >
+          {{ p.title }}
+        </button>
+      </div>
+      <div class="flex flex-wrap gap-2" role="group" :aria-label="t('quickAdd.column')">
+        <button
+          v-for="b in app.buckets"
+          :key="b.name"
+          type="button"
+          class="rounded-full border px-3 py-1.5 text-sm"
+          :class="b.name === bucket?.name && here?.bucket !== null ? 'border-accent bg-accent/15 text-accent' : 'border-line'"
+          :data-testid="`quick-add-column-${b.name}`"
+          @pointerdown.prevent
+          @click="picked = b.name"
+        >
+          {{ b.title }}
+        </button>
       </div>
     </div>
     <form class="flex gap-2 pb-2" @submit.prevent="submit">

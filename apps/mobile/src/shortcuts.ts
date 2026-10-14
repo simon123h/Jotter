@@ -77,8 +77,8 @@ export async function runShortcut(url: string): Promise<void> {
     const draft = sharedDraft(url);
     // Closed first, so that quick add that is already open starts over with the shared text
     await nextTick();
-    if (draft) ui.open({ type: 'quickadd', draft });
-  } else if (action === 'new-task') ui.open({ type: 'quickadd' });
+    if (draft) ui.open({ type: 'quickadd', draft, inbox: true });
+  } else if (action === 'new-task') ui.open({ type: 'quickadd', inbox: true });
   else if (action === 'search') ui.searching = true;
   else app.setView('planning');
 }

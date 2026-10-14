@@ -98,7 +98,10 @@ watch(
     <!-- A sheet slides out as well as in; the page of a task has no transition of its own and just goes -->
     <Transition name="sheet" :duration="180">
       <TaskSheet v-if="ui.sheet?.type === 'task'" :id="ui.sheet.id" :key="ui.sheet.id" />
-      <QuickAddSheet v-else-if="ui.sheet?.type === 'quickadd'" :column="app.columns[ui.activeColumn] ?? null" />
+      <QuickAddSheet
+        v-else-if="ui.sheet?.type === 'quickadd'"
+        :column="app.layout === 'list' ? null : (app.columns[ui.activeColumn] ?? null)"
+      />
       <ProjectsSheet v-else-if="ui.sheet?.type === 'projects'" />
       <ProjectSwitchSheet v-else-if="ui.sheet?.type === 'project-switch'" />
       <ColumnsSheet v-else-if="ui.sheet?.type === 'columns'" />

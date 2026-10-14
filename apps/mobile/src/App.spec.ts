@@ -2171,6 +2171,52 @@ describe('launcher shortcuts', () => {
     expect(shortcutAction('https://example.com/new-task')).toBeNull();
   });
 
+  it('files a task of the new-task shortcut in the default column, whichever column is in view, and says so', async () => {
+    const { app, ui } = await start((f) => {
+      f.put(
+        'Jotter/work/index.md',
+        '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: doing\n    title: Doing\n    is_default: true\n---\n'
+      );
+    });
+    ui.activeColumn = 0;
+    await runShortcut('jotter://new-task');
+    await settle();
+    expect(find('quick-add-destination').text()).toBe('Work · Doing');
+
+    await type('quick-add-input', 'From the launcher');
+    await submit('quick-add-input');
+    expect(app.allTasks.find((t) => t.title === 'From the launcher')?.bucket).toBe('doing');
+  });
+
+  it('shows where the + button files a task, and lets the user choose another column and project', async () => {
+    const { app } = await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\nbuckets:\n  - name: todo\n    title: Inbox\n---\n');
+    });
+    await app.selectProject('work');
+    await settle();
+    await find('fab').trigger('click');
+    await settle();
+    expect(find('quick-add-destination').text()).toBe('Work · To Do');
+
+    // The viewed column is only the default
+    await find('quick-add-destination').trigger('click');
+    await find('quick-add-column-done').trigger('click');
+    expect(find('quick-add-destination').text()).toBe('Work · Done');
+    await type('quick-add-input', 'Already finished');
+    await submit('quick-add-input');
+    expect(app.allTasks.find((t) => t.title === 'Already finished')?.bucket).toBe('done');
+
+    // Another project; the choice holds for the next task
+    await find('quick-add-project-home').trigger('click');
+    await settle();
+    expect(find('quick-add-destination').text()).toBe('Home · Inbox');
+    await type('quick-add-input', 'At home');
+    await submit('quick-add-input');
+    expect(app.projectId).toBe('home');
+    expect(app.allTasks.map((t) => t.title)).toEqual(['At home']);
+  });
+
   it('opens quick add, the search and the planning view', async () => {
     await start(desktopVault);
     await runShortcut('jotter://new-task');

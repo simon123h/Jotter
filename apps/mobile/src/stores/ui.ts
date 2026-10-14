@@ -3,7 +3,8 @@ import { defineStore } from 'pinia';
 
 export type Sheet =
   | { type: 'task'; id: string }
-  | { type: 'quickadd'; draft?: { title: string; body?: string } }
+  /** `inbox`: the task goes to the project's default column, whatever column is in view (launcher shortcut, shared text). */
+  | { type: 'quickadd'; draft?: { title: string; body?: string }; inbox?: boolean }
   | { type: 'projects' }
   | { type: 'project-switch' }
   | { type: 'columns' }

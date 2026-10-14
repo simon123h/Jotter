@@ -59,7 +59,7 @@ A task postponed to a later day stays in its column but is hidden until you swit
 
 ## Settings
 
-Theme (including *True Black* for OLED screens, or follow the system, with a light and a dark theme of your choice), language and the vaults are in the side menu. Long-pressing the app icon offers shortcuts for a new task, the search and the planning view.
+Theme (including *True Black* for OLED screens, or follow the system, with a light and a dark theme of your choice), language and the vaults are in the side menu. Long-pressing the app icon offers shortcuts for a new task, the search and the planning view. The new task from the shortcut, like shared text, goes to the default column of the project you were last in; the chip above the field says where, and tapping it lets you pick another project or column.
 
 To save something from another app (a web page, a message), use its *Share* button and choose Jotter. Quick add opens with the shared text: a title of the page or the first line becomes the task's title, the rest its notes. Tags, dates and priority in the text are recognised as usual.
 
