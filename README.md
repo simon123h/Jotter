@@ -25,7 +25,6 @@ Jotter is a **local-first, privacy-focused task management web application** des
 - **Local-first and fast**: Runs entirely on your computer. A local SQLite index is rebuilt from your files whenever it is missing.
 - **Git history**: If your vault is a Git repository, Jotter commits your changes locally and can restore any project or the whole workspace from the history. Pushing and pulling stay in your hands, as does any file sync tool.
 - **Android app**: A lean, touch-first app with the core of the desktop app, fully offline on local Markdown files. Sync with your desktop via Syncthing, Git or a cloud drive.
-- **Import and export**: Excel and CSV in, `.xlsx` and `.csv` out.
 - **AI-ready and multilingual**: Connect AI assistants through the Model Context Protocol (`jotter mcp`, optional: `pipx install 'jotter-app[mcp]'`). English and German.
 
 ---
@@ -105,7 +104,7 @@ Alternatively, you can refer to the raw Markdown source files in the `docs/` fol
 - **User Guide & Setup**:
   - [Configuring Jotter (Ports, Directories, Logs)](docs/user/configuration.md)
   - [Search & Filtering DSL](docs/user/searching-filtering.md)
-  - [Importing & Exporting Data (Excel & CSV)](docs/user/import-export.md)
+  - [Moving Tasks In and Out](docs/user/migrating.md)
   - [Keyboard Shortcuts](docs/user/shortcuts.md)
   - [Postponing Tasks](docs/user/postponing.md)
   - [Markdown File Format Specification](docs/user/format-spec.md)

@@ -11,7 +11,7 @@ Accepted
 The frontend (`apps/web/src`) grew organically and ended up with two conflicting layouts:
 
 1. **Layer-based**: `components/ui`, `components/views`, `components/modals`, `components/layout`, `composables/`, `stores/`.
-2. **Feature-sliced**: `features/task-import`, `features/task-editor` and `features/task-triage`.
+2. **Feature-sliced**: `features/task-editor` and `features/task-triage`.
 
 The migration to `features/` had only been half done, so some domains were split across both. The task editor's sub-components lived in `features/task-editor/` while `TaskDetailModal` and `TaskCreateModal` stayed in `components/modals/`. Triage had `TriageCard` in `features/` and `TriageView` in `components/views/`. Canvas and timeblocks were spread over `components/`, `stores/` and `views/`. Nothing said where new code should go.
 
@@ -35,7 +35,7 @@ apps/web/src/features/<feature>/
 
 Subfolders are created only when needed. Tests sit in an `__tests__/` folder beside the code they cover.
 
-Current features: `canvas`, `settings`, `task-editor`, `task-import`, `task-triage`, `timeblock`.
+Current features: `canvas`, `settings`, `task-editor`, `task-triage`, `timeblock`.
 
 ### 2. Shared code stays at the top level
 
@@ -74,5 +74,5 @@ Pure presentational pieces take props and emit events. Logic lives in composable
 - Splitting components made the source somewhat larger overall (extracted files carry their own imports and declarations) while adding test coverage for previously untested logic. Reviewers should expect this and judge splits by the criteria above, not by line count.
 - Known exceptions to "shared code does not import from features":
   - **Timeblock store.** `stores/project.ts`, `stores/vault.ts`, `components/ui/TaskCard.vue` and `components/layout/MainLayout.vue` read `features/timeblock/stores/timeblock`. It behaves like app-wide state and is a candidate to move to `stores/`.
-  - **Composition points.** `ModalRegistry` and `ProjectLayout` mount feature modals and the timeblock sidebar, and `components/modals/TaskImportModal.vue` composes the `task-import` step components. Composing features is the job of these files.
+  - **Composition points.** `ModalRegistry` and `ProjectLayout` mount feature modals and the timeblock sidebar. Composing features is the job of these files.
 - Some duplication remains where components share an idea but not code, for example the priority badge classes in `TaskCard`, `TaskDetailView` and `ListView`, and the column color map in `GenericColumn`. These can be consolidated when next touched.
