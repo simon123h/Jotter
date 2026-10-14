@@ -8,6 +8,7 @@
       "@/*": ["./src/*"],
       "@jotter/title-parser": ["../../packages/title-parser/index.ts"],
       "@jotter/task-filter": ["../../packages/task-filter/index.ts"],
+      "@jotter/links": ["../../packages/links/index.ts"],
       "@jotter/themes": ["../../packages/themes/index.ts"],
       "@jotter/checklist": ["../../packages/checklist/index.ts"],
       "@jotter/vault-format": ["../../packages/vault-format/src/index.ts"],

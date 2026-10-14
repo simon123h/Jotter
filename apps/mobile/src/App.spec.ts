@@ -203,6 +203,26 @@ describe('capturing and editing tasks', () => {
     expect(app.positionsIn('done')).toEqual([1000]);
   });
 
+  it('shows the domain of the address in the title or the notes on the row, and the link does not open the task', async () => {
+    const { app, ui } = await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/d.md', '---\ntitle: Article\nstatus: todo\nposition: 3000\n---\nFound at https://www.example.com/post/1.\n');
+    });
+    const row = all('task-row').find((r) => r.text().includes('Article'))!;
+    const link = row.find('[data-testid="row-link"]');
+    expect(link.text()).toBe('example.com');
+    expect(link.attributes('href')).toBe('https://www.example.com/post/1');
+    await link.trigger('click');
+    expect(app.selectedCount).toBe(0);
+    expect(ui.sheet).toBeNull();
+    expect(
+      all('task-row')
+        .find((r) => r.text().includes('Write report'))!
+        .find('[data-testid="row-link"]')
+        .exists()
+    ).toBe(false);
+  });
+
   it('shows the checklist progress on the row and adds an item from the sheet', async () => {
     await start((f) => {
       desktopVault(f);
