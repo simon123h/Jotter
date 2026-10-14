@@ -2228,27 +2228,49 @@ describe('launcher shortcuts', () => {
     expect(find('quick-add-duplicate').exists()).toBe(false);
   });
 
-  it('takes the title of the page for a task that is only an address', async () => {
+  it('takes the title of a pasted address, and looks up nothing that is typed', async () => {
     const lookUp = vi.fn(async (url: string) => (url.includes('good') ? 'A good article' : null));
     linkTitles.port = lookUp;
     const { app } = await start(desktopVault);
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 700)).then(settle);
+    const pause = () => settle();
+    // What the keyboard does when text arrives in one piece, as a paste or as a clipboard suggestion
+    const paste = async (text: string, inputType = 'insertFromPaste') => {
+      await find('quick-add-input').trigger('beforeinput', { inputType, data: inputType === 'insertFromPaste' ? null : text });
+      await type('quick-add-input', text);
+      await pause();
+    };
     await find('fab').trigger('click');
 
+    // Typed letter by letter, or all at once without a paste: no site is contacted
+    await type('quick-add-input', 'https://example.co');
     await type('quick-add-input', 'https://example.com/good');
-    await wait();
+    await pause();
+    expect(lookUp).not.toHaveBeenCalled();
+
+    await type('quick-add-input', '');
+    await paste('https://example.com/good');
     expect(lookUp).toHaveBeenCalledTimes(1);
     expect((find('quick-add-input').element as HTMLInputElement).value).toBe('A good article');
     await submit('quick-add-input');
     const saved = app.allTasks.find((t) => t.title === 'A good article');
     expect(saved?.body.trim()).toBe('https://example.com/good');
 
+    // A suggestion of the keyboard's clipboard arrives as typed text that holds a whole address
+    await paste('https://example.com/good-two', 'insertText');
+    expect(lookUp).toHaveBeenCalledTimes(2);
+
     // A page that cannot be read leaves the address as the title; no message, no hang
-    await type('quick-add-input', 'https://example.com/unreadable');
-    await wait();
+    await submit('quick-add-input');
+    await paste('https://example.com/unreadable');
     expect((find('quick-add-input').element as HTMLInputElement).value).toBe('https://example.com/unreadable');
     expect(find('quick-add-looking-up').exists()).toBe(false);
     expect(useUiStore().toast).toBeNull();
+
+    // The paste is used up: letters typed after it are not looked up
+    await type('quick-add-input', '');
+    await paste('https://example.com/good-three');
+    await type('quick-add-input', 'https://example.com/good-three-x');
+    expect(lookUp).toHaveBeenCalledTimes(4);
   });
 
   it('keeps the address when the look-up fails, and reads the title of a shared address', async () => {
@@ -2258,12 +2280,12 @@ describe('launcher shortcuts', () => {
     await start(desktopVault);
     await runShortcut('jotter://share?text=https%3A%2F%2Fexample.com%2Fa');
     await settle();
-    await new Promise((resolve) => setTimeout(resolve, 700)).then(settle);
+    await settle();
     expect((find('quick-add-input').element as HTMLInputElement).value).toBe('https://example.com/a');
 
     linkTitles.port = vi.fn(async () => 'Shared page');
     await runShortcut('jotter://share?text=https%3A%2F%2Fexample.com%2Fb');
-    await new Promise((resolve) => setTimeout(resolve, 700)).then(settle);
+    await settle();
     expect((find('quick-add-input').element as HTMLInputElement).value).toBe('Shared page');
   });
 

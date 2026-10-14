@@ -1,5 +1,11 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { CapacitorHttp } from '@capacitor/core';
 import { linkTitles, lookUpTitle, titleOfHtml } from '@/linkTitle';
+
+vi.mock('@capacitor/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@capacitor/core')>()),
+  CapacitorHttp: { get: vi.fn() },
+}));
 
 const realPort = linkTitles.port;
 afterEach(() => (linkTitles.port = realPort));
@@ -33,5 +39,18 @@ describe('lookUpTitle', () => {
       throw new Error('offline');
     };
     expect(await lookUpTitle('https://example.com')).toBeNull();
+  });
+});
+
+describe('the request', () => {
+  it('asks for the top of the page only, so that a link to a big file is not downloaded in full', async () => {
+    const get = vi.mocked(CapacitorHttp.get).mockResolvedValue({
+      status: 206,
+      headers: { 'content-type': 'text/html' },
+      data: '<title>Partial</title>',
+      url: 'https://example.com',
+    });
+    expect(await lookUpTitle('https://example.com/a')).toBe('Partial');
+    expect(get).toHaveBeenCalledWith(expect.objectContaining({ headers: expect.objectContaining({ Range: 'bytes=0-262143' }) }));
   });
 });

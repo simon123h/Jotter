@@ -17,7 +17,8 @@ export function titleOfHtml(html: string): string | null {
 async function fetchFromDevice(url: string): Promise<string | null> {
   const response = await CapacitorHttp.get({
     url,
-    headers: { Accept: 'text/html,application/xhtml+xml' },
+    // The title is at the top of a page: ask for its first 256 KB, so that a link to a big file is not downloaded in full
+    headers: { Accept: 'text/html,application/xhtml+xml', Range: 'bytes=0-262143' },
     connectTimeout: TIMEOUT_MS,
     readTimeout: TIMEOUT_MS,
     responseType: 'text',

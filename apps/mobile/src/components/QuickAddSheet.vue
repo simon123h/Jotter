@@ -42,28 +42,33 @@ async function chooseProject(id: string) {
 }
 
 /**
- * A title that is only a web address becomes the title of the page, and the address moves into the notes. It is left
- * alone when the page cannot be read in time, or when the title was edited meanwhile.
+ * A title that is only a web address becomes the title of the page, and the address moves into the notes. Only an
+ * address that arrives at once is looked up, one that was shared or pasted: an address typed letter by letter passes
+ * through many that are no site of the user's choosing. The title is left alone when the page cannot be read in time,
+ * or when it was edited meanwhile.
  */
 const lookingUp = ref(false);
 const looked = new Set<string>();
-let lookupTimer: ReturnType<typeof setTimeout> | undefined;
+/** The next change of the title brings a whole address: the shared text, or a paste (also from the keyboard's clipboard suggestion). */
+let arrivesAtOnce = !!draft?.title;
+const onBeforeInput = (e: InputEvent) => {
+  if (e.inputType === 'insertFromPaste' || /:\/\//.test(e.data ?? '')) arrivesAtOnce = true;
+  smart.onBeforeInput(e);
+};
 watch(
   title,
-  (value) => {
-    clearTimeout(lookupTimer);
+  async (value) => {
+    const whole = arrivesAtOnce;
+    arrivesAtOnce = false;
     const url = value.trim();
-    if (!isBareUrl(url) || looked.has(url)) return;
-    // A pasted or shared address is one change; a typed one passes through many, so wait until it rests
-    lookupTimer = setTimeout(async () => {
-      looked.add(url);
-      lookingUp.value = true;
-      const found = await lookUpTitle(url);
-      lookingUp.value = false;
-      if (!found || title.value.trim() !== url) return;
-      title.value = found;
-      draftBody = draftBody ? `${url}\n\n${draftBody}` : url;
-    }, 500);
+    if (!whole || !isBareUrl(url) || looked.has(url)) return;
+    looked.add(url);
+    lookingUp.value = true;
+    const found = await lookUpTitle(url);
+    lookingUp.value = false;
+    if (!found || title.value.trim() !== url) return;
+    title.value = found;
+    draftBody = draftBody ? `${url}\n\n${draftBody}` : url;
   },
   { immediate: true }
 );
@@ -94,10 +99,7 @@ watch(
   },
   { immediate: true }
 );
-onBeforeUnmount(() => {
-  clearTimeout(clearTimer);
-  clearTimeout(lookupTimer);
-});
+onBeforeUnmount(() => clearTimeout(clearTimer));
 
 async function submit() {
   const found = smart.resolve();
@@ -200,7 +202,7 @@ async function submit() {
         class="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 py-3 text-base outline-none focus:border-accent"
         enterkeyhint="send"
         data-testid="quick-add-input"
-        @beforeinput="smart.onBeforeInput"
+        @beforeinput="onBeforeInput"
         @keydown.enter.prevent="submit"
       />
       <button
