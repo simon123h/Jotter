@@ -45,13 +45,6 @@ describe('modal store', () => {
     expect(store.activeModal).toBe('filter');
   });
 
-  it('opens import-spreadsheet via helper', () => {
-    const store = useModalStore();
-    store.openImportSpreadsheet('project-xyz');
-    expect(store.activeModal).toBe('import-spreadsheet');
-    expect(store.modalProps).toEqual({ projectId: 'project-xyz' });
-  });
-
   it('opens move-tasks-confirm via helper', () => {
     const store = useModalStore();
     store.openMoveTasksConfirm(['t1'], 'p2');

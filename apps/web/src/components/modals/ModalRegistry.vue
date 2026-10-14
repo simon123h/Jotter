@@ -5,7 +5,6 @@ import { useProjectStore } from '@/stores/project';
 import TaskCreateModal from '@/features/task-editor/components/TaskCreateModal.vue';
 import ProjectEditModal from './ProjectEditModal.vue';
 import FilterModal from './FilterModal.vue';
-import TaskImportModal from './TaskImportModal.vue';
 import MoveTasksConfirmModal from './MoveTasksConfirmModal.vue';
 import TimeMachineModal from './TimeMachineModal.vue';
 import TimeblockEditModal from '@/features/timeblock/components/TimeblockEditModal.vue';
@@ -52,15 +51,6 @@ const handleTaskCreateSuccess = async () => {
           :current-filters="modalProps.currentFilters"
           @close="modalStore.closeModal"
           @apply="modalProps.onApply"
-        />
-
-        <!-- Task Import Modal -->
-        <TaskImportModal
-          v-else-if="activeModal === 'import-spreadsheet'"
-          :is-open="true"
-          :project-id="modalProps.projectId"
-          @close="modalStore.closeModal"
-          @success="handleTaskCreateSuccess"
         />
 
         <!-- Move Tasks Confirm Modal -->

@@ -15,8 +15,6 @@ import {
   Sparkles,
   CheckCircle2,
   MoreVertical,
-  FileSpreadsheet,
-  FileText,
   Box,
   Network,
 } from '@lucide/vue';
@@ -42,7 +40,6 @@ const emit = defineEmits<{
   (e: 'toggle-timeblock-sidebar'): void;
   (e: 'open-filter'): void;
   (e: 'create-task', defaultBucket: BucketName): void;
-  (e: 'export-tasks', format: 'xlsx' | 'csv'): void;
 }>();
 
 const searchInput = ref<HTMLInputElement | null>(null);
@@ -68,11 +65,6 @@ const overflowMenuRef = ref<HTMLElement | null>(null);
 onClickOutside(overflowMenuRef, () => {
   showOverflowMenu.value = false;
 });
-
-const triggerExport = (format: 'xlsx' | 'csv') => {
-  showOverflowMenu.value = false;
-  emit('export-tasks', format);
-};
 </script>
 
 <template>
@@ -248,7 +240,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
       </button>
 
       <!-- Overflow Menu (Three dots) -->
-      <div ref="overflowMenuRef" class="relative shrink-0 overflow-menu-container">
+      <div ref="overflowMenuRef" class="relative shrink-0 overflow-menu-container lg:hidden">
         <button
           @click="showOverflowMenu = !showOverflowMenu"
           class="p-1.5 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/30 rounded transition-all cursor-pointer"
@@ -260,8 +252,8 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
           v-if="showOverflowMenu"
           class="absolute right-0 mt-1 w-48 bg-theme-base border border-theme-border rounded shadow-lg z-[120] py-1 text-xs"
         >
-          <!-- Views Section (only visible on mobile/small screens < lg) -->
-          <div class="lg:hidden">
+          <!-- Views Section (the menu only exists on small screens < lg) -->
+          <div>
             <div
               class="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-theme-text-muted border-b border-theme-border/50 mb-1"
             >
@@ -321,26 +313,7 @@ const triggerExport = (format: 'xlsx' | 'csv') => {
               <CheckCircle2 class="w-3.5 h-3.5" />
               <span>{{ t('views.review') || 'Review' }}</span>
             </router-link>
-            <div class="border-t border-theme-border/50 my-1"></div>
           </div>
-
-          <div class="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-theme-text-muted border-b border-theme-border/50 mb-1">
-            {{ t('export.buttonText') || 'Export' }}
-          </div>
-          <button
-            @click="triggerExport('xlsx')"
-            class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
-          >
-            <FileSpreadsheet class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-            {{ t('export.toExcel') || 'Export to Excel (.xlsx)' }}
-          </button>
-          <button
-            @click="triggerExport('csv')"
-            class="w-full text-left px-3 py-1.5 hover:bg-theme-column/25 text-theme-text-main font-semibold cursor-pointer flex items-center gap-2"
-          >
-            <FileText class="w-3.5 h-3.5 text-blue-500 shrink-0" />
-            {{ t('export.toCSV') || 'Export to CSV (.csv)' }}
-          </button>
         </div>
       </div>
 
