@@ -70,3 +70,17 @@ export function normalizeUrl(url: string): string {
     return url.trim().toLowerCase();
   }
 }
+
+/** The task among `tasks` that holds the same page as the first address in `text`, if there is one. */
+export function duplicateOf<T extends { title?: string; body?: string }>(
+  text: string,
+  tasks: readonly T[],
+): T | undefined {
+  const url = urlsIn(text)[0];
+  if (!url) return undefined;
+  const wanted = normalizeUrl(url);
+  return tasks.find((task) => {
+    const other = taskUrl(task);
+    return other !== null && normalizeUrl(other) === wanted;
+  });
+}

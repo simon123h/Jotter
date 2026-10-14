@@ -7,6 +7,7 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import type { Column } from '@/stores/app';
 import TitleHints from './TitleHints.vue';
+import { duplicateOf } from '@jotter/links';
 import { useSmartTitle, type Hint } from '@/composables/useSmartTitle';
 
 /** The tab in view: a new task is filed where the user is looking (its column, tag or planned date), unless the sheet was opened for the inbox. */
@@ -43,6 +44,8 @@ const smart = useSmartTitle(title, () => app.buckets);
 /** What is left of the title once dates, priority, tags and column are taken out. */
 const finalTitle = computed(() => smart.resolve().title);
 const busy = ref(false);
+/** A task of this project that already holds the address being typed or pasted. */
+const duplicate = computed(() => duplicateOf(`${title.value}\n${draftBody ?? ''}`, app.allTasks));
 // What was added in this sheet, so the next capture can follow without leaving
 const added = ref<string[]>([]);
 
@@ -154,6 +157,9 @@ async function submit() {
         </button>
       </div>
     </div>
+    <p v-if="duplicate" class="pb-2 text-sm text-amber-600" data-testid="quick-add-duplicate">
+      {{ t('quickAdd.alreadySaved', { title: duplicate.title }) }}
+    </p>
     <form class="flex gap-2 pb-2" @submit.prevent="submit">
       <input
         ref="input"

@@ -2208,6 +2208,21 @@ describe('launcher shortcuts', () => {
     expect(app.allTasks.find((t) => t.title === 'From the launcher')?.bucket).toBe('doing');
   });
 
+  it('warns, without blocking, when the address in the title is already saved in the project', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/d.md', '---\ntitle: Saved article\nstatus: todo\nposition: 3000\n---\nhttps://www.example.com/post/1\n');
+    });
+    await find('fab').trigger('click');
+    await settle();
+    expect(find('quick-add-duplicate').exists()).toBe(false);
+
+    await type('quick-add-input', 'https://example.com/post/1#top');
+    expect(find('quick-add-duplicate').text()).toBe('Already saved: Saved article');
+    await type('quick-add-input', 'https://example.com/post/2');
+    expect(find('quick-add-duplicate').exists()).toBe(false);
+  });
+
   it('shows where the + button files a task, and lets the user choose another column and project', async () => {
     const { app } = await start((f) => {
       desktopVault(f);

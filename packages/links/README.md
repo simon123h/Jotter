@@ -10,4 +10,6 @@ whose title or notes hold an address; nothing else is stored.
 - `domainOf(url)` is the host without `www.`, what the chip on a card shows.
 - `normalizeUrl(url)` makes two addresses of the same page equal: no `www.`, fragment, trailing slash or tracking parameters (`utm_*`, `fbclid`, ...).
 
+- `duplicateOf(text, tasks)` finds the task that already holds the same page as the first address of a text, for the hint "already saved" when a link is added.
+
 The tests are in `apps/web/src/utils/__tests__/links.spec.ts`.

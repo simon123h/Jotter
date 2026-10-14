@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { domainOf, isBareUrl, normalizeUrl, taskUrl, urlsIn } from '@jotter/links';
+import { domainOf, duplicateOf, isBareUrl, normalizeUrl, taskUrl, urlsIn } from '@jotter/links';
 
 describe('urlsIn', () => {
   it('finds the addresses of a text in reading order', () => {
@@ -61,5 +61,22 @@ describe('normalizeUrl', () => {
     expect(normalizeUrl('https://example.com/a?id=1')).not.toBe(normalizeUrl('https://example.com/a?id=2'));
     expect(normalizeUrl('https://example.com/a')).not.toBe(normalizeUrl('https://example.com/b'));
     expect(normalizeUrl('https://example.com:8080/a')).not.toBe(normalizeUrl('https://example.com/a'));
+  });
+});
+
+describe('duplicateOf', () => {
+  const tasks = [
+    { title: 'Plain', body: '' },
+    { title: 'Article', body: 'https://www.example.com/post/1?utm_source=feed' },
+  ];
+
+  it('finds the task that holds the same page, however the address is written', () => {
+    expect(duplicateOf('https://example.com/post/1/#top', tasks)).toBe(tasks[1]);
+    expect(duplicateOf('Read this http://example.com/post/1', tasks)).toBe(tasks[1]);
+  });
+
+  it('finds nothing for another page or a text without an address', () => {
+    expect(duplicateOf('https://example.com/post/2', tasks)).toBeUndefined();
+    expect(duplicateOf('no link', tasks)).toBeUndefined();
   });
 });

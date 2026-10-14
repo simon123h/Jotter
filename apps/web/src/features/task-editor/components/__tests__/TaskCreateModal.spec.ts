@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { useProjectStore } from '@/stores/project';
+import { createMockTask } from '@/__tests__/factories';
 import TaskCreateModal from '@/features/task-editor/components/TaskCreateModal.vue';
 
 describe('TaskCreateModal.vue', () => {
@@ -28,6 +29,18 @@ describe('TaskCreateModal.vue', () => {
 
     expect(wrapper.find('input[type="text"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('Create New Task');
+  });
+
+  it('warns, without blocking, when the address in the title is already saved in the project', async () => {
+    useProjectStore().tasks = [createMockTask({ id: 'a', title: 'Saved article', body: 'https://www.example.com/post/1' })];
+    const wrapper = mount(TaskCreateModal, { props: defaultProps });
+    expect(wrapper.find('[data-testid="duplicate-hint"]').exists()).toBe(false);
+
+    await wrapper.find('input[type="text"]').setValue('https://example.com/post/1?utm_source=x');
+    expect(wrapper.find('[data-testid="duplicate-hint"]').text()).toBe('Already saved: Saved article');
+
+    await wrapper.find('input[type="text"]').setValue('https://example.com/post/2');
+    expect(wrapper.find('[data-testid="duplicate-hint"]').exists()).toBe(false);
   });
 
   it('does not render when isOpen is false', () => {

@@ -70,6 +70,7 @@ export const en = {
   form: {
     titleLabel: 'Title *',
     titlePlaceholder: 'What needs to be done?',
+    alreadySaved: 'Already saved: {title}',
     columnLabel: 'Column',
     tagsLabel: 'Tags (comma-separated)',
     tagsPlaceholder: 'e.g. bug, high-priority',
