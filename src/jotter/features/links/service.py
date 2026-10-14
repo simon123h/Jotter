@@ -79,7 +79,7 @@ def is_public_host(host: str) -> bool:
     except OSError:
         return False
     for info in infos:
-        address = ipaddress.ip_address(info[4][0].split("%")[0])
+        address = ipaddress.ip_address(str(info[4][0]).split("%")[0])
         if not address.is_global:
             return False
     return bool(infos)
