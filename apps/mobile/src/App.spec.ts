@@ -9,6 +9,7 @@ import { isoDay } from '@jotter/task-filter';
 import { capacitorKeyValue } from '@/data/keyValue';
 import { runShortcut, shortcutAction, sharedDraft } from '@/shortcuts';
 import { useSettingsStore } from '@/stores/settings';
+import { linkTitles } from '@/linkTitle';
 import { locale } from '@/i18n';
 import { autoRefresh } from '@/composables/useAutoRefresh';
 import { holdConfig } from '@/composables/useCardDrag';
@@ -24,9 +25,12 @@ let fs: MemoryFs;
 let wrapper: VueWrapper;
 let memoryNotifications: MemoryNotifications;
 const realNotifications = notifications.port;
+const realLinkTitles = linkTitles.port;
 
 /** `seed` fills the storage as another app would; with it the vault in `Jotter` is already registered. */
 async function start(seed?: (fs: MemoryFs) => void) {
+  // No test loads a page: the look-up of a title is on for every bare address, so the real port is replaced
+  if (linkTitles.port === realLinkTitles) linkTitles.port = vi.fn(async () => null);
   fs = new MemoryFs();
   seed?.(fs);
   const prefix = `app-${++counter}`;
@@ -91,6 +95,7 @@ const desktopVault = (f: MemoryFs) => {
 
 afterEach(() => {
   notifications.port = realNotifications;
+  linkTitles.port = realLinkTitles;
   armDelay.ms = 800;
   autoRefresh.intervalMs = 60_000;
   holdConfig.ms = 350;
@@ -201,6 +206,26 @@ describe('capturing and editing tasks', () => {
 
     await app.moveTask('a', 'done');
     expect(app.positionsIn('done')).toEqual([1000]);
+  });
+
+  it('shows the domain of the address in the title or the notes on the row, and the link does not open the task', async () => {
+    const { app, ui } = await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/d.md', '---\ntitle: Article\nstatus: todo\nposition: 3000\n---\nFound at https://www.example.com/post/1.\n');
+    });
+    const row = all('task-row').find((r) => r.text().includes('Article'))!;
+    const link = row.find('[data-testid="row-link"]');
+    expect(link.text()).toBe('example.com');
+    expect(link.attributes('href')).toBe('https://www.example.com/post/1');
+    await link.trigger('click');
+    expect(app.selectedCount).toBe(0);
+    expect(ui.sheet).toBeNull();
+    expect(
+      all('task-row')
+        .find((r) => r.text().includes('Write report'))!
+        .find('[data-testid="row-link"]')
+        .exists()
+    ).toBe(false);
   });
 
   it('shows the checklist progress on the row and adds an item from the sheet', async () => {
@@ -2186,6 +2211,82 @@ describe('launcher shortcuts', () => {
     await type('quick-add-input', 'From the launcher');
     await submit('quick-add-input');
     expect(app.allTasks.find((t) => t.title === 'From the launcher')?.bucket).toBe('doing');
+  });
+
+  it('warns, without blocking, when the address in the title is already saved in the project', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/d.md', '---\ntitle: Saved article\nstatus: todo\nposition: 3000\n---\nhttps://www.example.com/post/1\n');
+    });
+    await find('fab').trigger('click');
+    await settle();
+    expect(find('quick-add-duplicate').exists()).toBe(false);
+
+    await type('quick-add-input', 'https://example.com/post/1#top');
+    expect(find('quick-add-duplicate').text()).toBe('Already saved: Saved article');
+    await type('quick-add-input', 'https://example.com/post/2');
+    expect(find('quick-add-duplicate').exists()).toBe(false);
+  });
+
+  it('takes the title of a pasted address, and looks up nothing that is typed', async () => {
+    const lookUp = vi.fn(async (url: string) => (url.includes('good') ? 'A good article' : null));
+    linkTitles.port = lookUp;
+    const { app } = await start(desktopVault);
+    const pause = () => settle();
+    // What the keyboard does when text arrives in one piece, as a paste or as a clipboard suggestion
+    const paste = async (text: string, inputType = 'insertFromPaste') => {
+      await find('quick-add-input').trigger('beforeinput', { inputType, data: inputType === 'insertFromPaste' ? null : text });
+      await type('quick-add-input', text);
+      await pause();
+    };
+    await find('fab').trigger('click');
+
+    // Typed letter by letter, or all at once without a paste: no site is contacted
+    await type('quick-add-input', 'https://example.co');
+    await type('quick-add-input', 'https://example.com/good');
+    await pause();
+    expect(lookUp).not.toHaveBeenCalled();
+
+    await type('quick-add-input', '');
+    await paste('https://example.com/good');
+    expect(lookUp).toHaveBeenCalledTimes(1);
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('A good article');
+    await submit('quick-add-input');
+    const saved = app.allTasks.find((t) => t.title === 'A good article');
+    expect(saved?.body.trim()).toBe('https://example.com/good');
+
+    // A suggestion of the keyboard's clipboard arrives as typed text that holds a whole address
+    await paste('https://example.com/good-two', 'insertText');
+    expect(lookUp).toHaveBeenCalledTimes(2);
+
+    // A page that cannot be read leaves the address as the title; no message, no hang
+    await submit('quick-add-input');
+    await paste('https://example.com/unreadable');
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('https://example.com/unreadable');
+    expect(find('quick-add-looking-up').exists()).toBe(false);
+    expect(useUiStore().toast).toBeNull();
+
+    // The paste is used up: letters typed after it are not looked up
+    await type('quick-add-input', '');
+    await paste('https://example.com/good-three');
+    await type('quick-add-input', 'https://example.com/good-three-x');
+    expect(lookUp).toHaveBeenCalledTimes(4);
+  });
+
+  it('keeps the address when the look-up fails, and reads the title of a shared address', async () => {
+    linkTitles.port = vi.fn(async () => {
+      throw new Error('offline');
+    });
+    await start(desktopVault);
+    await runShortcut('jotter://share?text=https%3A%2F%2Fexample.com%2Fa');
+    await settle();
+    await settle();
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('https://example.com/a');
+
+    linkTitles.port = vi.fn(async () => 'Shared page');
+    await runShortcut('jotter://share?text=https%3A%2F%2Fexample.com%2Fb');
+    await settle();
+    expect((find('quick-add-input').element as HTMLInputElement).value).toBe('Shared page');
   });
 
   it('shows where the + button files a task, and lets the user choose another column and project', async () => {

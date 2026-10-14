@@ -7,6 +7,8 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import type { Column } from '@/stores/app';
 import TitleHints from './TitleHints.vue';
+import { duplicateOf, isBareUrl } from '@jotter/links';
+import { lookUpTitle } from '@/linkTitle';
 import { useSmartTitle, type Hint } from '@/composables/useSmartTitle';
 
 /** The tab in view: a new task is filed where the user is looking (its column, tag or planned date), unless the sheet was opened for the inbox. */
@@ -39,10 +41,44 @@ async function chooseProject(id: string) {
   picked.value = (app.buckets.find((b) => b.is_default) ?? app.buckets[0])?.name ?? null;
 }
 
+/**
+ * A title that is only a web address becomes the title of the page, and the address moves into the notes. Only an
+ * address that arrives at once is looked up, one that was shared or pasted: an address typed letter by letter passes
+ * through many that are no site of the user's choosing. The title is left alone when the page cannot be read in time,
+ * or when it was edited meanwhile.
+ */
+const lookingUp = ref(false);
+const looked = new Set<string>();
+/** The next change of the title brings a whole address: the shared text, or a paste (also from the keyboard's clipboard suggestion). */
+let arrivesAtOnce = !!draft?.title;
+const onBeforeInput = (e: InputEvent) => {
+  if (e.inputType === 'insertFromPaste' || /:\/\//.test(e.data ?? '')) arrivesAtOnce = true;
+  smart.onBeforeInput(e);
+};
+watch(
+  title,
+  async (value) => {
+    const whole = arrivesAtOnce;
+    arrivesAtOnce = false;
+    const url = value.trim();
+    if (!whole || !isBareUrl(url) || looked.has(url)) return;
+    looked.add(url);
+    lookingUp.value = true;
+    const found = await lookUpTitle(url);
+    lookingUp.value = false;
+    if (!found || title.value.trim() !== url) return;
+    title.value = found;
+    draftBody = draftBody ? `${url}\n\n${draftBody}` : url;
+  },
+  { immediate: true }
+);
+
 const smart = useSmartTitle(title, () => app.buckets);
 /** What is left of the title once dates, priority, tags and column are taken out. */
 const finalTitle = computed(() => smart.resolve().title);
 const busy = ref(false);
+/** A task of this project that already holds the address being typed or pasted. */
+const duplicate = computed(() => duplicateOf(`${title.value}\n${draftBody ?? ''}`, app.allTasks));
 // What was added in this sheet, so the next capture can follow without leaving
 const added = ref<string[]>([]);
 
@@ -154,6 +190,10 @@ async function submit() {
         </button>
       </div>
     </div>
+    <p v-if="lookingUp" class="pb-2 text-sm text-muted" data-testid="quick-add-looking-up">{{ t('quickAdd.lookingUp') }}</p>
+    <p v-if="duplicate" class="pb-2 text-sm text-amber-600" data-testid="quick-add-duplicate">
+      {{ t('quickAdd.alreadySaved', { title: duplicate.title }) }}
+    </p>
     <form class="flex gap-2 pb-2" @submit.prevent="submit">
       <input
         ref="input"
@@ -162,7 +202,7 @@ async function submit() {
         class="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 py-3 text-base outline-none focus:border-accent"
         enterkeyhint="send"
         data-testid="quick-add-input"
-        @beforeinput="smart.onBeforeInput"
+        @beforeinput="onBeforeInput"
         @keydown.enter.prevent="submit"
       />
       <button

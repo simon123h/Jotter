@@ -53,6 +53,19 @@ describe('TaskCard.vue', () => {
     },
   };
 
+  it('shows the domain of the address in the title or the notes as a link that does not open the task', async () => {
+    const task = createMockTask({ ...mockTask, title: 'Article', body: 'Saw it at https://www.example.com/post/1.' });
+    const wrapper = mount(TaskCard, { ...mountOptions, props: { task } });
+    const link = wrapper.find('[data-testid="card-link"]');
+    expect(link.text()).toBe('example.com');
+    expect(link.attributes('href')).toBe('https://www.example.com/post/1');
+    expect(link.attributes('target')).toBe('_blank');
+    await link.trigger('click');
+    expect(wrapper.emitted('click')).toBeUndefined();
+
+    expect(mount(TaskCard, mountOptions).find('[data-testid="card-link"]').exists()).toBe(false);
+  });
+
   it('renders task title correctly', () => {
     const wrapper = mount(TaskCard, mountOptions);
     expect(wrapper.text()).toContain('Test Task Title');

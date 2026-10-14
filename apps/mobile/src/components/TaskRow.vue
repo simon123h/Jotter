@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CalendarDays, Check, Clock, ListChecks, Hourglass, Paperclip, Repeat, Bell } from '@lucide/vue';
+import { CalendarDays, Check, Clock, Link, ListChecks, Hourglass, Paperclip, Repeat, Bell } from '@lucide/vue';
 import type { Task } from '@jotter/vault-format';
 import { t, type MessageKey } from '@/i18n';
 import { dueInfo } from '@/dates';
 import { isPostponed } from '@jotter/task-filter';
 import { checklistProgress } from '@jotter/checklist';
+import { domainOf, taskUrl } from '@jotter/links';
 import { plannedLabel } from '@/planned';
 import { repeatLabel } from '@/repeat';
 import { colorHex } from '@/taskColors';
@@ -53,8 +54,13 @@ function onClick() {
 
 const progress = computed(() => checklistProgress(props.task.body));
 
+/** The address in the title or the notes: the task is a bookmark, and the row shows where it leads. */
+const url = computed(() => taskUrl(props.task));
+const domain = computed(() => (url.value ? domainOf(url.value) : null));
+
 const hasMeta = computed(
   () =>
+    domain.value ||
     due.value ||
     progress.value ||
     props.task.planned_date ||
@@ -116,6 +122,17 @@ const hasMeta = computed(
           {{ task.title }}
         </div>
         <div v-if="hasMeta" class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
+          <a
+            v-if="url && domain"
+            :href="url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex min-w-0 max-w-[12rem] items-center gap-1 text-accent"
+            data-testid="row-link"
+            @click.stop
+          >
+            <Link class="h-3.5 w-3.5 shrink-0" /><span class="truncate">{{ domain }}</span>
+          </a>
           <span v-if="due" class="inline-flex items-center gap-1" :class="dueClass[due.tone]" data-testid="row-due">
             <CalendarDays class="h-3.5 w-3.5" />{{ due.text }}
           </span>

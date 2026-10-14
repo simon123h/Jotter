@@ -71,6 +71,7 @@ export const de = {
   form: {
     titleLabel: 'Titel *',
     titlePlaceholder: 'Was muss getan werden?',
+    alreadySaved: 'Schon gespeichert: {title}',
     columnLabel: 'Spalte',
     tagsLabel: 'Tags (kommagetrennt)',
     tagsPlaceholder: 'z. B. bug, hohe-prioritaet',

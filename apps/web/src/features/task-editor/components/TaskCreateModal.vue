@@ -8,6 +8,7 @@ import { createTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { parseTitleState } from '@jotter/title-parser';
+import { duplicateOf } from '@jotter/links';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
@@ -50,6 +51,9 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 
 const colors = TASK_COLORS;
+
+/** A task of this project that already holds the address in the title or the notes. */
+const duplicate = computed(() => duplicateOf(`${title.value}\n${body.value}`, projectStore.tasks));
 
 const titleInput = ref<any>(null);
 const markdownEditor = ref<any>(null);
@@ -270,6 +274,14 @@ const handleSubmit = async () => {
           </div>
         </div>
       </div>
+
+      <p
+        v-if="duplicate"
+        class="-mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-xs rounded"
+        data-testid="duplicate-hint"
+      >
+        {{ t('form.alreadySaved', { title: duplicate.title }) }}
+      </p>
 
       <!-- Bucket & Tags Row -->
       <div class="grid grid-cols-2 gap-3.5">

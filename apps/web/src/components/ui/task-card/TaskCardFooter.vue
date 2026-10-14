@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Calendar, Clock, Paperclip, Hourglass, Box, Repeat, Bell } from '@lucide/vue';
+import { Calendar, Clock, Paperclip, Hourglass, Box, Repeat, Bell, Link } from '@lucide/vue';
 import { isPostponed } from '@jotter/task-filter';
+import { domainOf, taskUrl } from '@jotter/links';
 import { repeatLabel } from '@/utils/repeat';
 import type { Task, Timeblock } from '@/types';
 import type { ChecklistStats } from '@/utils/checklist';
@@ -30,9 +31,14 @@ const settingsStore = useSettingsStore();
 /** Only a date still ahead is shown: once it has passed, the task is back and the date means nothing. */
 const postponedUntil = computed(() => (isPostponed(props.task) ? props.task.postponed_until : null));
 
+/** The address in the title or the notes: the task is a bookmark, and the card links to it. */
+const url = computed(() => taskUrl(props.task));
+const domain = computed(() => (url.value ? domainOf(url.value) : null));
+
 const hasContent = computed(
   () =>
     !!(
+      domain.value ||
       props.task.due_date ||
       props.task.planned_date ||
       props.task.priority ||
@@ -86,6 +92,21 @@ const getPriorityClasses = (prio: string) => {
         {{ tag }}
       </span>
     </div>
+
+    <!-- Link: the domain of the first address in the title or the notes -->
+    <a
+      v-if="url && domain"
+      :href="url"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex min-w-0 items-center gap-1 text-theme-accent/80 hover:text-theme-accent hover:underline"
+      :title="url"
+      data-testid="card-link"
+      @click.stop
+    >
+      <Link :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
+      <span class="max-w-[10rem] truncate" :class="{ 'text-[10px]': compact }">{{ domain }}</span>
+    </a>
 
     <!-- Due Date -->
     <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted" :title="'Due: ' + formatDate(task.due_date)">
