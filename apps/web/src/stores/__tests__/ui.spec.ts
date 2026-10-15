@@ -62,6 +62,34 @@ describe('UI Store', () => {
     expect(store.isColumnCollapsed('proj-1', 'todo')).toBe(false);
   });
 
+  it('docks columns per project and remembers them', () => {
+    const store = useUiStore();
+    expect(store.isColumnDocked('proj-1', 'backlog')).toBe(false);
+
+    store.toggleColumnDock('proj-1', 'backlog');
+    expect(store.isColumnDocked('proj-1', 'backlog')).toBe(true);
+    expect(store.isColumnDocked('proj-2', 'backlog')).toBe(false);
+    expect(JSON.parse(localStorage.getItem('jotter-docked-columns')!)).toEqual({ 'proj-1': ['backlog'] });
+
+    store.toggleColumnDock('proj-1', 'backlog');
+    expect(store.isColumnDocked('proj-1', 'backlog')).toBe(false);
+  });
+
+  it('keeps the height of the lower pane within bounds', () => {
+    const store = useUiStore();
+    expect(store.dockHeight).toBe(40);
+
+    store.setDockHeight(55.4);
+    expect(store.dockHeight).toBe(55);
+    expect(localStorage.getItem('jotter-dock-height')).toBe('55');
+    store.setDockHeight(3);
+    expect(store.dockHeight).toBe(15);
+    store.setDockHeight(99);
+    expect(store.dockHeight).toBe(80);
+    store.setDockHeight(NaN);
+    expect(store.dockHeight).toBe(80);
+  });
+
   it('can set and persist collapseEmptyColumns toggle', () => {
     const store = useUiStore();
     expect(store.collapseEmptyColumns).toBe(false);

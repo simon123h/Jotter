@@ -22,6 +22,7 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Projects and columns (buckets), pinned projects | yes | yes | ~2.5k | Core | `features/projects`, `features/buckets`, `ProjectSidebar`, `ColumnEditModal` |
 | Tasks with all attributes: notes, checklist, tags, priority, due, planned, colour, attachments | yes | yes | ~6k | Core | `features/tasks`, `features/task-editor`, task card |
 | Board view | yes | yes | ~0.5k | Core | `BoardView` |
+| Lower pane of the board: dock a large column (Backlog, Inbox) across the bottom, resizable | yes | n/a | ~0.3k | Optional | `BoardColumn`, `BoardView`, `ui` store (`dockedColumns`, `dockHeight`); a browser setting, not in the vault, desktop widths only |
 | Search and filters (query language) | yes | yes | ~1.5k | Core | `packages/task-filter` (shared), `FilterModal`; fixtures run against Python |
 | Bulk actions on a selection | yes | yes | ~1k | Core | `components/ui/bulk`, mobile toolbar |
 | Smart title input (dates, priority, tags, column) | yes | yes | ~0.6k | Core | `packages/title-parser` (shared) |

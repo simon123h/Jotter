@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { isPostponed } from '@jotter/task-filter';
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
 import { useRoute } from 'vue-router';
-import { Plus, MoreHorizontal, ChevronLeft } from '@lucide/vue';
+import { Plus } from '@lucide/vue';
 import Sortable from 'sortablejs';
 import type { Task, Bucket, BucketName } from '@/types';
-import GenericColumn from '@/components/ui/GenericColumn.vue';
+import BoardColumn from '@/components/views/BoardColumn.vue';
 import SnapScroller from '@/components/ui/SnapScroller.vue';
 import ColumnEditModal from '@/components/modals/ColumnEditModal.vue';
 import { useI18n } from '@/composables/useI18n';
@@ -18,7 +19,7 @@ import { useUiStore } from '@/stores/ui';
 import { useBoardNavigation } from '@/composables/useBoardNavigation';
 import { storeToRefs } from 'pinia';
 
-const { t, tBucket } = useI18n();
+const { t } = useI18n();
 const route = useRoute();
 const settingsStore = useSettingsStore();
 const toast = useToast();
@@ -170,25 +171,50 @@ const newColumnTitle = ref('');
 const newColumnSubtitle = ref('');
 
 const columnsContainer = ref<HTMLElement | null>(null);
+const dockContainer = ref<HTMLElement | null>(null);
+
+// The columns can be dragged into another order, in the board and in the lower pane. The order is the one of the
+// whole board, so the places in a pane are looked up among all the columns.
+const makeColumnSortable = (el: HTMLElement, pane: () => Bucket[]) =>
+  Sortable.create(el, {
+    animation: 180,
+    draggable: '.group\\/col',
+    handle: '.column-drag-handle',
+    filter: 'button, input, select, textarea',
+    preventOnFilter: false,
+    delay: 150,
+    delayOnTouchOnly: true,
+    touchStartThreshold: 5,
+    onEnd: (evt) => {
+      const { oldDraggableIndex, newDraggableIndex } = evt;
+      if (oldDraggableIndex === undefined || newDraggableIndex === undefined || oldDraggableIndex === newDraggableIndex) return;
+      const moved = pane()[oldDraggableIndex];
+      const target = pane()[newDraggableIndex];
+      if (!moved || !target) return;
+      onColumnReordered({ oldIndex: props.buckets.indexOf(moved), newIndex: props.buckets.indexOf(target) });
+    },
+  });
+
+let boardSortable: Sortable | null = null;
+let dockSortable: Sortable | null = null;
 
 onMounted(() => {
-  if (columnsContainer.value) {
-    Sortable.create(columnsContainer.value, {
-      animation: 180,
-      draggable: '.group\\/col',
-      handle: '.column-drag-handle',
-      filter: 'button, input, select, textarea',
-      preventOnFilter: false,
-      delay: 150,
-      delayOnTouchOnly: true,
-      touchStartThreshold: 5,
-      onEnd: (evt) => {
-        const { oldIndex, newIndex } = evt;
-        if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;
-        onColumnReordered({ oldIndex, newIndex });
-      },
-    });
-  }
+  if (columnsContainer.value) boardSortable = makeColumnSortable(columnsContainer.value, () => boardBuckets.value);
+});
+
+// The lower pane comes and goes with its columns
+watch(
+  dockContainer,
+  (el) => {
+    dockSortable?.destroy();
+    dockSortable = el ? makeColumnSortable(el, () => dockedBuckets.value) : null;
+  },
+  { flush: 'post' }
+);
+
+onBeforeUnmount(() => {
+  boardSortable?.destroy();
+  dockSortable?.destroy();
 });
 
 const onAddColumn = async () => {
@@ -207,7 +233,33 @@ const handleCancelAddColumn = () => {
   newColumnSubtitle.value = '';
   isAddingColumn.value = false;
 };
-const visibleBuckets = computed(() => props.buckets.filter((b) => !isCollapsed(b.name)));
+
+// The lower pane (desktop, one project): the columns that are docked there, and the divider that sizes it
+const isDesktop = useMediaQuery('(min-width: 768px)');
+const canDock = computed(() => isDesktop.value && activeProjectId.value !== 'all');
+const isDocked = (bucketName: string) => canDock.value && uiStore.isColumnDocked(activeProjectId.value, bucketName);
+const boardBuckets = computed(() => props.buckets.filter((b) => !isDocked(b.name)));
+const dockedBuckets = computed(() => props.buckets.filter((b) => isDocked(b.name)));
+
+const boardEl = ref<HTMLElement | null>(null);
+const resizeLowerPane = (event: PointerEvent) => {
+  event.preventDefault();
+  const move = (e: PointerEvent) => {
+    const rect = boardEl.value?.getBoundingClientRect();
+    if (rect && rect.height > 0) uiStore.setDockHeight(((rect.bottom - e.clientY) / rect.height) * 100);
+  };
+  const stop = () => {
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', stop);
+    document.body.classList.remove('select-none');
+  };
+  document.body.classList.add('select-none');
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', stop);
+};
+const nudgeLowerPane = (percent: number) => uiStore.setDockHeight(uiStore.dockHeight + percent);
+
+const visibleBuckets = computed(() => [...boardBuckets.value, ...dockedBuckets.value].filter((b) => !isCollapsed(b.name)));
 const tasksRef = computed(() => props.tasks);
 
 useBoardNavigation({
@@ -218,211 +270,180 @@ useBoardNavigation({
 </script>
 
 <template>
-  <SnapScroller>
-    <div ref="columnsContainer" class="flex gap-0 md:gap-3.5 items-stretch h-full">
-      <GenericColumn
-        v-for="b in buckets"
-        :key="b.name"
-        :id="b.name"
-        :title="tBucket(b.name, b.title)"
-        :subtitle="b.subtitle"
-        :tasks="tasksByBucket[b.name] || []"
-        :layout="b.layout"
-        :color="b.color"
-        :max-tasks="b.max_tasks"
-        :is-limit-exceeded="!!b.max_tasks && (tasksByBucket[b.name] || []).length > b.max_tasks"
-        :show-add-task="activeProjectId !== 'all'"
-        :is-read-only="activeProjectId === 'all'"
-        :show-project="activeProjectId === 'all'"
-        group-name="kanban-board"
-        :is-collapsed="isCollapsed(b.name)"
-        @add-task-click="(id) => emit('add-task-click', id as BucketName)"
-        @card-dropped="onCardDropped"
-        @mark-done="onMarkDone"
-        @toggle-select="(task) => emit('toggle-select', task)"
-        @toggle-collapse="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
-      >
-        <template #header="{ classes }">
-          <div
-            class="px-3 py-2 flex justify-between items-center border-b rounded-t shrink-0 min-h-[48px]"
-            :class="[classes.bg, classes.border, activeProjectId === 'all' ? '' : 'cursor-grab active:cursor-grabbing column-drag-handle']"
+  <div ref="boardEl" class="flex flex-col h-full min-h-0 w-full">
+    <div class="flex-1 min-h-0">
+      <SnapScroller>
+        <div ref="columnsContainer" class="flex gap-0 md:gap-3.5 items-stretch h-full">
+          <BoardColumn
+            v-for="b in boardBuckets"
+            :key="b.name"
+            :bucket="b"
+            :tasks="tasksByBucket[b.name] || []"
+            :project-id="activeProjectId"
+            :is-collapsed="isCollapsed(b.name)"
+            :is-docked="false"
+            :can-dock="canDock"
+            @add-task-click="(name) => emit('add-task-click', name)"
+            @card-dropped="onCardDropped"
+            @mark-done="onMarkDone"
+            @toggle-select="(task) => emit('toggle-select', task)"
+            @toggle-collapse="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
+            @toggle-dock="uiStore.toggleColumnDock(activeProjectId, b.name)"
+            @edit="openEditColumn"
+          />
+        </div>
+
+        <div
+          class="flex flex-col gap-3 shrink-0 w-[100vw] min-w-[100vw] max-w-[100vw] px-3 md:px-0 md:w-72 md:min-w-0 md:max-w-none snap-page"
+        >
+          <!-- Add Column Card -->
+          <button
+            v-if="!isAddingColumn && activeProjectId !== 'all'"
+            @click="isAddingColumn = true"
+            class="flex items-center justify-center gap-2 bg-theme-column/20 hover:bg-theme-column/40 border border-dashed border-theme-border/60 hover:border-theme-accent text-theme-text-muted hover:text-theme-text-main font-semibold text-sm cursor-pointer w-full shrink-0 h-[48px] rounded transition-all shadow-sm"
           >
-            <div class="flex-grow flex flex-col justify-center overflow-hidden mr-1">
-              <div class="flex items-center gap-1.5 overflow-hidden">
-                <h3
-                  class="font-bold text-sm uppercase tracking-wider truncate max-w-[130px] md:max-w-[160px] cursor-pointer hover:text-theme-accent transition-colors"
-                  :class="[classes.text]"
-                  @dblclick="openEditColumn(b)"
-                  :title="t('doubleClickToRename')"
-                >
-                  {{ tBucket(b.name, b.title) }}
-                </h3>
-                <span
-                  class="text-xs px-1.5 py-0.25 font-bold rounded shrink-0 transition-all duration-300"
-                  :class="[
-                    b.max_tasks && (tasksByBucket[b.name] || []).length > b.max_tasks
-                      ? 'bg-rose-500/20 border border-rose-500/50 text-rose-400 animate-pulse'
-                      : classes.badge,
-                  ]"
-                >
-                  {{ b.max_tasks ? `${(tasksByBucket[b.name] || []).length}/${b.max_tasks}` : (tasksByBucket[b.name] || []).length }}
-                </span>
-              </div>
-              <span
-                v-if="b.subtitle"
-                class="text-xs text-theme-text-muted truncate cursor-pointer font-sans italic hover:text-theme-accent leading-normal"
-                @dblclick="openEditColumn(b)"
-              >
-                {{ b.subtitle }}
-              </span>
-            </div>
-            <div class="flex items-center shrink-0 gap-1">
+            <Plus class="w-4 h-4 shrink-0" />
+            {{ t('buttons.addColumn') }}
+          </button>
+          <div
+            v-else
+            class="flex flex-col bg-theme-column/20 border border-dashed border-theme-border/60 rounded w-full shrink-0 p-3 h-fit space-y-2.5"
+          >
+            <h4 class="font-bold text-xs uppercase tracking-wider text-theme-text-muted">{{ t('newColumnTitle') }}</h4>
+            <input
+              v-model="newColumnTitle"
+              type="text"
+              :placeholder="t('columnTitlePlaceholder')"
+              class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary"
+              @keyup.enter="onAddColumn"
+              @keyup.esc="handleCancelAddColumn"
+              autofocus
+            />
+            <input
+              v-model="newColumnSubtitle"
+              type="text"
+              :placeholder="t('columnEdit.subtitlePlaceholder')"
+              class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary font-sans italic"
+              @keyup.enter="onAddColumn"
+              @keyup.esc="handleCancelAddColumn"
+            />
+            <div class="flex gap-1.5 justify-end">
               <button
-                @click.stop="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
-                class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer animate-fade-in"
-                :title="t('collapseColumnTooltip')"
+                @click="handleCancelAddColumn"
+                class="text-xs font-semibold px-2 py-1 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded cursor-pointer"
               >
-                <ChevronLeft class="w-4 h-4 shrink-0" />
+                {{ t('buttons.cancel') }}
               </button>
               <button
-                v-if="settingsStore.hideAddTaskButton && activeProjectId !== 'all'"
-                @click="emit('add-task-click', b.name)"
-                class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
+                @click="onAddColumn"
+                class="text-xs font-semibold px-2 py-1 bg-theme-primary hover:bg-theme-primary-hover text-white rounded cursor-pointer"
               >
-                <Plus class="w-4 h-4 shrink-0" />
-              </button>
-              <button
-                v-if="activeProjectId !== 'all'"
-                @click="openEditColumn(b)"
-                class="text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer"
-                :title="t('renameColumnTooltip')"
-              >
-                <MoreHorizontal class="w-4 h-4 shrink-0" />
+                {{ t('buttons.add') }}
               </button>
             </div>
           </div>
-        </template>
 
-        <!-- Custom Add Button -->
-        <template #add-button>
-          <button
-            v-if="!settingsStore.hideAddTaskButton && activeProjectId !== 'all'"
-            @click="emit('add-task-click', b.name)"
-            class="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 mb-2.5 bg-theme-card/35 hover:bg-theme-accent/10 text-theme-text-muted hover:text-theme-accent border border-transparent rounded transition-all cursor-pointer group/btn shrink-0"
+          <!-- board display options container -->
+          <div
+            class="flex flex-col bg-theme-column/10 border border-theme-border/40 rounded text-xs text-theme-text-muted overflow-hidden divide-y divide-theme-border/30"
           >
-            <Plus class="w-3.5 h-3.5 shrink-0 transition-transform group-hover/btn:scale-110" />
-            <span class="text-sm font-semibold">{{ t('addTaskButton') }}</span>
-          </button>
-        </template>
-      </GenericColumn>
+            <!-- auto-collapse empty columns check -->
+            <label
+              class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+            >
+              <input
+                type="checkbox"
+                :checked="uiStore.collapseEmptyColumns"
+                @change="uiStore.setCollapseEmptyColumns(($event.target as HTMLInputElement).checked)"
+                class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
+              />
+              <span class="font-semibold">{{ t('autoCollapseEmptyColumns') }}</span>
+            </label>
+
+            <!-- hide done column check -->
+            <label
+              class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+            >
+              <input
+                type="checkbox"
+                :checked="settingsStore.hideDoneColumn"
+                @change="settingsStore.hideDoneColumn = ($event.target as HTMLInputElement).checked"
+                class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
+              />
+              <span class="font-semibold">{{ t('doneBucket.hide') }}</span>
+            </label>
+
+            <!-- hide archive column check -->
+            <label
+              class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+            >
+              <input
+                type="checkbox"
+                :checked="settingsStore.hideArchiveColumn"
+                @change="settingsStore.hideArchiveColumn = ($event.target as HTMLInputElement).checked"
+                class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
+              />
+              <span class="font-semibold">{{ t('archiveBucket.hide') }}</span>
+            </label>
+
+            <!-- hide postponed tasks check -->
+            <label
+              class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+            >
+              <input
+                type="checkbox"
+                :checked="settingsStore.hidePostponedColumn"
+                @change="settingsStore.hidePostponedColumn = ($event.target as HTMLInputElement).checked"
+                class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
+              />
+              <span class="font-semibold">{{ t('postponedBucket.hide') }}</span>
+              <span v-if="postponedCount" class="text-theme-text-muted" data-testid="postponed-count">{{ postponedCount }}</span>
+            </label>
+          </div>
+        </div>
+      </SnapScroller>
     </div>
 
-    <div class="flex flex-col gap-3 shrink-0 w-[100vw] min-w-[100vw] max-w-[100vw] px-3 md:px-0 md:w-72 md:min-w-0 md:max-w-none snap-page">
-      <!-- Add Column Card -->
-      <button
-        v-if="!isAddingColumn && activeProjectId !== 'all'"
-        @click="isAddingColumn = true"
-        class="flex items-center justify-center gap-2 bg-theme-column/20 hover:bg-theme-column/40 border border-dashed border-theme-border/60 hover:border-theme-accent text-theme-text-muted hover:text-theme-text-main font-semibold text-sm cursor-pointer w-full shrink-0 h-[48px] rounded transition-all shadow-sm"
-      >
-        <Plus class="w-4 h-4 shrink-0" />
-        {{ t('buttons.addColumn') }}
-      </button>
+    <!-- The lower pane: the docked columns, across the whole width, under a divider that sizes it -->
+    <template v-if="dockedBuckets.length">
       <div
-        v-else
-        class="flex flex-col bg-theme-column/20 border border-dashed border-theme-border/60 rounded w-full shrink-0 p-3 h-fit space-y-2.5"
+        role="separator"
+        aria-orientation="horizontal"
+        tabindex="0"
+        :aria-label="t('resizeLowerPane')"
+        :aria-valuenow="uiStore.dockHeight"
+        class="group/divider shrink-0 h-3 -my-0.5 flex items-center justify-center cursor-row-resize touch-none z-10 focus:outline-none"
+        data-testid="lower-pane-divider"
+        @pointerdown="resizeLowerPane"
+        @keydown.up.prevent.stop="nudgeLowerPane(5)"
+        @keydown.down.prevent.stop="nudgeLowerPane(-5)"
       >
-        <h4 class="font-bold text-xs uppercase tracking-wider text-theme-text-muted">{{ t('newColumnTitle') }}</h4>
-        <input
-          v-model="newColumnTitle"
-          type="text"
-          :placeholder="t('columnTitlePlaceholder')"
-          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary"
-          @keyup.enter="onAddColumn"
-          @keyup.esc="handleCancelAddColumn"
-          autofocus
-        />
-        <input
-          v-model="newColumnSubtitle"
-          type="text"
-          :placeholder="t('columnEdit.subtitlePlaceholder')"
-          class="w-full bg-theme-card border border-theme-border/60 rounded px-2.5 py-1.5 text-sm text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary font-sans italic"
-          @keyup.enter="onAddColumn"
-          @keyup.esc="handleCancelAddColumn"
-        />
-        <div class="flex gap-1.5 justify-end">
-          <button
-            @click="handleCancelAddColumn"
-            class="text-xs font-semibold px-2 py-1 bg-theme-card hover:bg-theme-column/80 text-slate-200 border border-theme-border rounded cursor-pointer"
-          >
-            {{ t('buttons.cancel') }}
-          </button>
-          <button
-            @click="onAddColumn"
-            class="text-xs font-semibold px-2 py-1 bg-theme-primary hover:bg-theme-primary-hover text-white rounded cursor-pointer"
-          >
-            {{ t('buttons.add') }}
-          </button>
+        <div
+          class="w-16 h-1 rounded-full bg-theme-border group-hover/divider:bg-theme-accent group-focus-visible/divider:bg-theme-accent transition-colors"
+        ></div>
+      </div>
+      <div class="min-h-0 pb-2" :style="{ flex: `0 0 ${uiStore.dockHeight}%` }" data-testid="lower-pane">
+        <div ref="dockContainer" class="flex gap-3.5 items-stretch h-full">
+          <BoardColumn
+            v-for="b in dockedBuckets"
+            :key="b.name"
+            :bucket="b"
+            :tasks="tasksByBucket[b.name] || []"
+            :project-id="activeProjectId"
+            :is-collapsed="isCollapsed(b.name)"
+            :is-docked="true"
+            :can-dock="canDock"
+            @add-task-click="(name) => emit('add-task-click', name)"
+            @card-dropped="onCardDropped"
+            @mark-done="onMarkDone"
+            @toggle-select="(task) => emit('toggle-select', task)"
+            @toggle-collapse="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
+            @toggle-dock="uiStore.toggleColumnDock(activeProjectId, b.name)"
+            @edit="openEditColumn"
+          />
         </div>
       </div>
-
-      <!-- board display options container -->
-      <div
-        class="flex flex-col bg-theme-column/10 border border-theme-border/40 rounded text-xs text-theme-text-muted overflow-hidden divide-y divide-theme-border/30"
-      >
-        <!-- auto-collapse empty columns check -->
-        <label
-          class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
-        >
-          <input
-            type="checkbox"
-            :checked="uiStore.collapseEmptyColumns"
-            @change="uiStore.setCollapseEmptyColumns(($event.target as HTMLInputElement).checked)"
-            class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
-          />
-          <span class="font-semibold">{{ t('autoCollapseEmptyColumns') }}</span>
-        </label>
-
-        <!-- hide done column check -->
-        <label
-          class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
-        >
-          <input
-            type="checkbox"
-            :checked="settingsStore.hideDoneColumn"
-            @change="settingsStore.hideDoneColumn = ($event.target as HTMLInputElement).checked"
-            class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
-          />
-          <span class="font-semibold">{{ t('doneBucket.hide') }}</span>
-        </label>
-
-        <!-- hide archive column check -->
-        <label
-          class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
-        >
-          <input
-            type="checkbox"
-            :checked="settingsStore.hideArchiveColumn"
-            @change="settingsStore.hideArchiveColumn = ($event.target as HTMLInputElement).checked"
-            class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
-          />
-          <span class="font-semibold">{{ t('archiveBucket.hide') }}</span>
-        </label>
-
-        <!-- hide postponed tasks check -->
-        <label
-          class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
-        >
-          <input
-            type="checkbox"
-            :checked="settingsStore.hidePostponedColumn"
-            @change="settingsStore.hidePostponedColumn = ($event.target as HTMLInputElement).checked"
-            class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
-          />
-          <span class="font-semibold">{{ t('postponedBucket.hide') }}</span>
-          <span v-if="postponedCount" class="text-theme-text-muted" data-testid="postponed-count">{{ postponedCount }}</span>
-        </label>
-      </div>
-    </div>
+    </template>
 
     <!-- Edit Modal -->
     <ColumnEditModal
@@ -443,5 +464,5 @@ useBoardNavigation({
       @save="onSaveColumn"
       @delete-column="onColumnDeleted(currentEditingBucket.name)"
     />
-  </SnapScroller>
+  </div>
 </template>

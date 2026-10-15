@@ -17,7 +17,8 @@ const props = withDefaults(
     title: string;
     subtitle?: string;
     tasks: Task[];
-    layout?: 'list' | 'grid-2' | 'grid-3';
+    // 'auto' fills the width with as many columns of cards as fit (the lower pane of the board)
+    layout?: 'list' | 'grid-2' | 'grid-3' | 'auto';
     color?: string | null;
     maxTasks?: number | null;
     isLimitExceeded?: boolean;
@@ -305,11 +306,13 @@ watch(
           :data-column-id="id"
           class="cards-container flex-grow shrink-0 pb-6"
           :class="[
-            layout === 'grid-3'
-              ? 'columns-1 md:columns-3 gap-2.5 [column-fill:_balance]'
-              : layout === 'grid-2'
-                ? 'columns-1 md:columns-2 gap-2.5 [column-fill:_balance]'
-                : 'flex flex-col',
+            layout === 'auto'
+              ? 'columns-[18rem] gap-2.5 [column-fill:_balance]'
+              : layout === 'grid-3'
+                ? 'columns-1 md:columns-3 gap-2.5 [column-fill:_balance]'
+                : layout === 'grid-2'
+                  ? 'columns-1 md:columns-2 gap-2.5 [column-fill:_balance]'
+                  : 'flex flex-col',
           ]"
         >
           <div
