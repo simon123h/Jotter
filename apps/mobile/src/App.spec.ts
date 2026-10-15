@@ -2360,6 +2360,13 @@ describe('launcher shortcuts', () => {
     expect(find('quick-add-input').exists()).toBe(true);
     await closeSheet();
 
+    // A share without text opens nothing, and does not move the user either
+    await app.selectProject('work');
+    await runShortcut('jotter://share');
+    await settle();
+    expect(app.projectId).toBe('work');
+    expect(find('quick-add-input').exists()).toBe(false);
+
     // The button in the app files where the user is
     await app.selectProject('work');
     await find('fab').trigger('click');

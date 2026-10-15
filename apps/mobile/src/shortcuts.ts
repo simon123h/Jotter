@@ -77,8 +77,9 @@ export async function runShortcut(url: string): Promise<void> {
   const ui = useUiStore();
   if (!action) return;
   const ready = await whenReady(app);
-  // What comes from outside goes to the project chosen for quick capture, and the app opens there
-  const capture = action === 'new-task' || action === 'share' ? app.captureProject : null;
+  // What comes from outside goes to the project chosen for quick capture, and the app opens there. Shared text that
+  // is empty opens nothing, so it does not switch the project either.
+  const capture = action === 'new-task' || (action === 'share' && sharedDraft(url)) ? app.captureProject : null;
   if (ready && capture && capture.id !== app.projectId) await app.selectProject(capture.id);
   if (!ready || !app.project) {
     // Shared text is not dropped without a word
