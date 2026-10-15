@@ -32,7 +32,9 @@ public class MainActivity extends BridgeActivity {
         if (type == null || !type.startsWith("text/") || text == null) return intent;
 
         Uri.Builder link = new Uri.Builder().scheme("jotter").authority("share").appendQueryParameter("text", cut(text));
+        // The title the sharing app gives: the subject, or the title for the preview of the share sheet (Android 10 and later)
         String subject = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+        if (subject == null || subject.trim().isEmpty()) subject = intent.getStringExtra(Intent.EXTRA_TITLE);
         if (subject != null) link.appendQueryParameter("title", cut(subject));
         intent.setAction(Intent.ACTION_VIEW);
         intent.setData(link.build());

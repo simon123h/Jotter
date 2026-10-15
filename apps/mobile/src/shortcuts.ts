@@ -2,6 +2,7 @@ import { nextTick, watch } from 'vue';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { t } from '@/i18n';
+import { urlsIn } from '@jotter/links';
 
 /** The scheme of the launcher shortcuts (android/app/src/main/res/xml/shortcuts.xml). */
 export const SHORTCUT_SCHEME = 'jotter://';
@@ -18,7 +19,9 @@ export function shortcutAction(url: string): ShortcutAction | null {
 /**
  * The task a share link (jotter://share?title=..&text=..) stands for. MainActivity turns what other apps share into
  * such a link. A subject (a page title) is the title and the text (its address) the notes; text alone gives its first
- * line as the title and the rest as the notes. Null when nothing was shared.
+ * line as the title and the rest as the notes. A first line that holds an address next to words (`Headline – https://…`)
+ * gives the words as the title and the address, with the rest, as the notes; a line that is only an address stays the
+ * title. Null when nothing was shared.
  */
 export function sharedDraft(url: string): { title: string; body?: string } | null {
   const params = new URLSearchParams(url.split('#')[0]!.split('?')[1] ?? '');
@@ -26,6 +29,15 @@ export function sharedDraft(url: string): { title: string; body?: string } | nul
   const text = params.get('text')?.trim() ?? '';
   if (subject) return { title: subject, body: text || undefined };
   const [first = '', ...rest] = text.split(/\r?\n/);
+  const words = first
+    .replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/^[\s\-–—:|·•]+|[\s\-–—:|·•]+$/g, '')
+    .replace(/\s+/g, ' ');
+  // Words next to an address: the words are the title, and the address stays in the notes
+  if (words && words !== first.trim() && urlsIn(first).length) {
+    const body = [urlsIn(first).join('\n'), ...rest].join('\n').trim();
+    return { title: words, body: body || undefined };
+  }
   const body = rest.join('\n').trim();
   return first.trim() ? { title: first.trim(), body: body || undefined } : null;
 }

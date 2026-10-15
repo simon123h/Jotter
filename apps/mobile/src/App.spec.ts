@@ -2368,6 +2368,26 @@ describe('text shared from other apps', () => {
     expect(sharedDraft(link({ text: '  ' }))).toBeNull();
   });
 
+  it('takes the words next to an address as the title and keeps the address in the notes', () => {
+    expect(sharedDraft(link({ text: 'Ein Titel – https://example.com/a' }))).toEqual({ title: 'Ein Titel', body: 'https://example.com/a' });
+    expect(sharedDraft(link({ text: '"Quoted headline": https://example.com/a?x=1\nMore text' }))).toEqual({
+      title: '"Quoted headline"',
+      body: 'https://example.com/a?x=1\nMore text',
+    });
+    expect(sharedDraft(link({ text: 'https://example.com/a | Headline after' }))).toEqual({
+      title: 'Headline after',
+      body: 'https://example.com/a',
+    });
+    // Only an address: it stays the title, as the page's title is looked up for it
+    expect(sharedDraft(link({ text: 'https://example.com/a' }))).toEqual({ title: 'https://example.com/a', body: undefined });
+    expect(sharedDraft(link({ text: 'Headline\nhttps://example.com/a' }))).toEqual({ title: 'Headline', body: 'https://example.com/a' });
+    // A subject from the sharing app wins, as before
+    expect(sharedDraft(link({ title: 'Subject', text: 'Words https://example.com/a' }))).toEqual({
+      title: 'Subject',
+      body: 'Words https://example.com/a',
+    });
+  });
+
   it('opens quick add with the shared text, and files it with the notes', async () => {
     const { app } = await start(desktopVault);
     await runShortcut(link({ title: 'Read this #later', text: 'https://example.com/article' }));
