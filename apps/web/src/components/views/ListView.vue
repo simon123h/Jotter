@@ -83,8 +83,8 @@ const handleTagClick = (tag: string) => {
   });
 };
 
-type SortKey = 'title' | 'bucket' | 'priority' | 'due_date' | 'planned_date' | 'created_at';
-const sortKey = ref<SortKey>('created_at');
+type SortKey = 'title' | 'bucket' | 'priority' | 'due_date' | 'planned_date' | 'updated_at';
+const sortKey = ref<SortKey>('updated_at');
 const sortOrder = ref<'asc' | 'desc'>('desc');
 
 const isAllSelected = computed(() => {
@@ -192,12 +192,12 @@ const getBucketTitle = (name: string) => {
               </div>
             </th>
             <th
-              @click="toggleSort('created_at')"
+              @click="toggleSort('updated_at')"
               class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-40 text-right"
             >
               <div class="flex items-center justify-end gap-1 whitespace-nowrap">
                 {{ t('table.updated') }}
-                <component :is="sortKey === 'created_at' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
+                <component :is="sortKey === 'updated_at' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
               </div>
             </th>
           </tr>
