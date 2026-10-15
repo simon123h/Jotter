@@ -70,6 +70,17 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
     { deep: true }
   );
 
+  // A filter belongs to the project it was typed in (its columns and tags): leaving for another project clears the search
+  // field. Only the instance that owns the field and the address does this, the one of the page would clear its own copy.
+  if (syncRoute) {
+    watch(
+      () => route?.params?.projectId,
+      (now, before) => {
+        if (now && before && now !== before) clearFilters();
+      }
+    );
+  }
+
   // Parse URL query parameters to taskFilters
   const parseFiltersFromQuery = (q: any) => {
     let has_due_date: boolean | null = null;

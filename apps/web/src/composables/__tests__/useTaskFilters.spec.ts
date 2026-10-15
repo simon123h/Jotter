@@ -7,7 +7,7 @@ import { createMockTask } from '@/__tests__/factories';
 import type { Task } from '@/types';
 
 // The URL: a reactive route whose query the composable reads and replaces
-const route = reactive<{ query: Record<string, string> }>({ query: {} });
+const route = reactive<{ query: Record<string, string>; params: Record<string, string> }>({ query: {}, params: {} });
 const replace = vi.fn(({ query }: { query: Record<string, string> }) => {
   route.query = query;
 });
@@ -72,6 +72,7 @@ describe('useTaskFilters', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     route.query = {};
+    route.params = {};
     replace.mockClear();
   });
 
@@ -286,6 +287,28 @@ describe('useTaskFilters', () => {
       await nextTick();
       expect(replace).not.toHaveBeenCalled();
       expect(ids(filters.filteredTasks.value)).toEqual(['a', 'c']);
+    });
+
+    it('clears the search when the user goes to another project, from the field and the address', async () => {
+      route.params = { projectId: 'home' };
+      const { filters } = setup();
+      filters.searchQuery.value = 'milk';
+      await nextTick();
+      expect(route.query).toEqual({ search: 'milk' });
+
+      route.params = { projectId: 'work' };
+      await nextTick();
+      await nextTick();
+      expect(filters.searchQuery.value).toBe('');
+      expect(route.query).toEqual({});
+    });
+
+    it('keeps the search when no project was left (opening a page with a search in its address)', async () => {
+      route.query = { search: 'milk' };
+      const { filters } = setup();
+      route.params = { projectId: 'home' };
+      await nextTick();
+      expect(filters.searchQuery.value).toBe('milk');
     });
   });
 });

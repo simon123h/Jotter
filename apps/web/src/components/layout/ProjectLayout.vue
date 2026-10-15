@@ -56,7 +56,7 @@ const projectId = computed(() => (route.params.projectId as string) || '');
 const isGlobalView = computed(() => !!route.meta.isGlobal);
 
 // Filter state & logic (read-only query sync; MainLayout manages router query state)
-const { filteredTasks, clearFilters } = useTaskFilters(tasks, { syncRoute: false });
+const { filteredTasks } = useTaskFilters(tasks, { syncRoute: false });
 
 const displayedBuckets = computed(() => {
   const list = [...buckets.value];
@@ -141,7 +141,6 @@ onMounted(async () => {
 watch(
   () => [projectId.value, isGlobalView.value],
   async (newVal, oldVal) => {
-    clearFilters();
     clearSelection();
     const isProjectSwitch = !oldVal || newVal[0] !== oldVal[0] || newVal[1] !== oldVal[1];
     await fetchAllData(isProjectSwitch);
