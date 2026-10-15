@@ -6,9 +6,11 @@ import { useProjectStore } from '@/stores/project';
 import { getGitHistory } from '@/api';
 import type { GitCommit } from '@/types';
 import { useI18n } from '@/composables/useI18n';
+import { useDialog } from '@/composables/useDialog';
 import BaseModal from '@/components/ui/BaseModal.vue';
 
 const { t } = useI18n();
+const { showDialog } = useDialog();
 const { copy } = useClipboard();
 
 const props = defineProps<{
@@ -65,14 +67,20 @@ const filteredCommits = computed(() => {
 
 // Restore confirmation & action
 const handleRestore = async (commit: GitCommit) => {
-  const confirmMsg = t('timeMachineModal.confirmRestore', { message: commit.message, shortId: commit.short_id });
-  if (confirm(confirmMsg)) {
-    try {
-      emit('close');
-      await projectStore.restoreToCommit(commit.id, props.projectId);
-    } catch (err: any) {
-      alert(t('timeMachineModal.restoreFailed', { message: err.message || err }));
-    }
+  const confirmed = await showDialog({
+    title: t('timeMachineModal.restoreButton'),
+    message: t('timeMachineModal.confirmRestore', { message: commit.message, shortId: commit.short_id }),
+    type: 'warning',
+    showCancel: true,
+    confirmText: t('timeMachineModal.restoreButton'),
+    cancelText: t('buttons.cancel'),
+  });
+  if (!confirmed) return;
+  try {
+    emit('close');
+    await projectStore.restoreToCommit(commit.id, props.projectId);
+  } catch (err: any) {
+    await showDialog({ message: t('timeMachineModal.restoreFailed', { message: err.message || err }), type: 'error' });
   }
 };
 

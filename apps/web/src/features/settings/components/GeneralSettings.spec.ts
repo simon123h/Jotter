@@ -1,5 +1,6 @@
+import { useDialog } from '@/composables/useDialog';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 
 const platform = vi.hoisted(() => ({ isDemoMode: true }));
@@ -22,14 +23,17 @@ describe('GeneralSettings', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('offers to reset the demo, after a confirmation', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
     const wrapper = mount(GeneralSettings);
 
     await wrapper.find('[data-testid="demo-reset"]').trigger('click');
+    useDialog().handleCancel();
+    await flushPromises();
     expect(resetDemo).not.toHaveBeenCalled();
 
     await wrapper.find('[data-testid="demo-reset"]').trigger('click');
-    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(useDialog().isOpen.value).toBe(true);
+    useDialog().handleConfirm();
+    await flushPromises();
     expect(resetDemo).toHaveBeenCalledTimes(1);
   });
 

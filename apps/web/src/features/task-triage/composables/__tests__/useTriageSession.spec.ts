@@ -1,3 +1,4 @@
+import { useDialog } from '@/composables/useDialog';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ref, nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
@@ -23,7 +24,6 @@ describe('useTriageSession', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
   });
 
   it('starts on the oldest task', () => {
@@ -104,16 +104,20 @@ describe('useTriageSession', () => {
 
   it('deletes after confirmation, counts it and refreshes', async () => {
     const s = useTriageSession(ref(makeTasks()), onRefresh);
-    await s.removeCurrentTask();
+    const removing = s.removeCurrentTask();
+    expect(useDialog().isOpen.value).toBe(true);
+    useDialog().handleConfirm();
+    await removing;
     expect(deleteTask).toHaveBeenCalledWith('p', 'a');
     expect(s.deletedCount.value).toBe(1);
     expect(onRefresh).toHaveBeenCalled();
   });
 
   it('keeps the task when deletion is declined', async () => {
-    vi.stubGlobal('confirm', vi.fn().mockReturnValue(false));
     const s = useTriageSession(ref(makeTasks()), onRefresh);
-    await s.removeCurrentTask();
+    const removing = s.removeCurrentTask();
+    useDialog().handleCancel();
+    await removing;
     expect(deleteTask).not.toHaveBeenCalled();
     expect(s.deletedCount.value).toBe(0);
   });

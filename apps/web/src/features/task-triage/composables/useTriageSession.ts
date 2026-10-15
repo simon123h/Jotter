@@ -1,6 +1,7 @@
 import { ref, computed, watch, type Ref } from 'vue';
 import { deleteTask } from '@/api';
 import { useI18n } from '@/composables/useI18n';
+import { useDialog } from '@/composables/useDialog';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { TRIAGE_COLORS } from '@/utils/constants';
 import type { Task } from '@/types';
@@ -9,6 +10,7 @@ import { sortTriageTasks, type TriageSortOrder } from '../utils/triageSort';
 /** The triage queue: ordering, the current position, session stats and the actions on the current task. */
 export function useTriageSession(tasks: Ref<Task[]>, onRefresh: () => void) {
   const { t } = useI18n();
+  const { showDialog } = useDialog();
 
   const sortOrder = ref<TriageSortOrder>('created-asc');
   const currentTaskIndex = ref(0);
@@ -88,14 +90,21 @@ export function useTriageSession(tasks: Ref<Task[]>, onRefresh: () => void) {
   const removeCurrentTask = async () => {
     if (!currentTask.value) return;
     const taskToDelete = currentTask.value;
-    if (confirm(t('buttons.deleteTask') + '?')) {
-      try {
-        await deleteTask(taskToDelete.project_id, taskToDelete.id);
-        deletedCount.value++;
-        onRefresh();
-      } catch (err) {
-        console.error(err);
-      }
+    const confirmed = await showDialog({
+      title: t('buttons.deleteTask'),
+      message: t('deleteConfirm'),
+      type: 'warning',
+      showCancel: true,
+      confirmText: t('buttons.delete'),
+      cancelText: t('buttons.cancel'),
+    });
+    if (!confirmed) return;
+    try {
+      await deleteTask(taskToDelete.project_id, taskToDelete.id);
+      deletedCount.value++;
+      onRefresh();
+    } catch (err) {
+      console.error(err);
     }
   };
 

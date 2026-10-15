@@ -224,7 +224,15 @@ const commonTags = computed(() => {
 // Bulk Action Handlers
 const handleBulkDelete = async () => {
   const count = selectionCount.value;
-  if (!confirm(t('bulkActions.confirmDelete', { count }))) return;
+  const confirmed = await showDialog({
+    title: t('buttons.delete'),
+    message: t('bulkActions.confirmDelete', { count }),
+    type: 'warning',
+    showCancel: true,
+    confirmText: t('buttons.delete'),
+    cancelText: t('buttons.cancel'),
+  });
+  if (!confirmed) return;
   const ids = Array.from(selectedIds.value);
   try {
     for (const id of ids) {

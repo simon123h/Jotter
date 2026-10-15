@@ -2,14 +2,24 @@
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useI18n } from '@/composables/useI18n';
+import { useDialog } from '@/composables/useDialog';
 import { isDemoMode } from '@/platform';
 import { resetDemo } from '@/storage/demoAdapter';
 
 const { t } = useI18n();
+const { showDialog } = useDialog();
 const { hideAddTaskButton, doneCleanPeriod, autoCommit } = storeToRefs(useSettingsStore());
 
-const handleResetDemo = () => {
-  if (confirm(t('settingsView.demoResetConfirm'))) resetDemo();
+const handleResetDemo = async () => {
+  const confirmed = await showDialog({
+    title: t('settingsView.demoReset'),
+    message: t('settingsView.demoResetConfirm'),
+    type: 'warning',
+    showCancel: true,
+    confirmText: t('settingsView.demoReset'),
+    cancelText: t('buttons.cancel'),
+  });
+  if (confirmed) resetDemo();
 };
 </script>
 

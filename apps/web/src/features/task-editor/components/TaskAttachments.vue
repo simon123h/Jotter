@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from '@/composables/useI18n';
+import { useDialog } from '@/composables/useDialog';
 import { Paperclip, Slash, Plus, FileText, Download, Trash2 } from '@lucide/vue';
 import { uploadAttachment, deleteAttachment, getAttachmentUrl } from '@/api';
 import type { Task } from '@/types';
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { showDialog } = useDialog();
 
 const isUploading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -65,7 +67,15 @@ const handleFileUpload = async (event: Event) => {
 };
 
 const handleRemoveAttachment = async (filename: string) => {
-  if (!confirm(t('form.deleteAttachmentConfirm'))) return;
+  const confirmed = await showDialog({
+    title: t('buttons.delete'),
+    message: t('form.deleteAttachmentConfirm'),
+    type: 'warning',
+    showCancel: true,
+    confirmText: t('buttons.delete'),
+    cancelText: t('buttons.cancel'),
+  });
+  if (!confirmed) return;
 
   try {
     const updated = await deleteAttachment(props.projectId, props.taskId, filename);

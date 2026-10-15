@@ -1,3 +1,4 @@
+import { useDialog } from '@/composables/useDialog';
 import { beforeAll, afterEach, describe, it, expect, vi } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { nextTick } from 'vue';
@@ -102,9 +103,6 @@ describe('TimeMachineModal.vue', () => {
     const projectStore = useProjectStore();
     const restoreSpy = vi.spyOn(projectStore, 'restoreToCommit').mockResolvedValue(undefined as any);
 
-    // Mock window.confirm to return true
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-
     wrapper = mount(TimeMachineModal, {
       props: defaultProps,
     });
@@ -118,13 +116,13 @@ describe('TimeMachineModal.vue', () => {
     expect(restoreBtn).toBeDefined();
 
     await restoreBtn!.trigger('click');
-    await nextTick();
+    expect(useDialog().isOpen.value).toBe(true);
+    useDialog().handleConfirm();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(confirmSpy).toHaveBeenCalled();
     expect(restoreSpy).toHaveBeenCalledWith('commit-1234567890', 'project-1');
     expect(wrapper.emitted('close')).toBeTruthy();
 
-    confirmSpy.mockRestore();
     restoreSpy.mockRestore();
   });
 });

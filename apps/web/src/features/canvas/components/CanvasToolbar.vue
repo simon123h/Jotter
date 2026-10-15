@@ -3,12 +3,16 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Plus, Trash2, FolderOpen, Type, Square, PanelRightOpen, PanelRightClose, Loader2, Check, Hand, MousePointer } from '@lucide/vue';
 import { useCanvasStore } from '@/features/canvas/stores/canvas';
+import { useI18n } from '@/composables/useI18n';
+import { useDialog } from '@/composables/useDialog';
 
 const props = defineProps<{
   projectId: string;
 }>();
 
 const router = useRouter();
+const { t } = useI18n();
+const { showDialog } = useDialog();
 const canvasStore = useCanvasStore();
 
 const showNewCanvasInput = ref(false);
@@ -36,7 +40,15 @@ const handleCreateCanvas = async () => {
 
 const handleDeleteCurrentCanvas = async () => {
   if (canvasStore.canvases.length <= 1) return;
-  if (!confirm(`Delete canvas "${activeCanvas.value}"?`)) return;
+  const confirmed = await showDialog({
+    title: t('canvas.delete'),
+    message: t('canvas.deleteConfirm', { name: activeCanvas.value }),
+    type: 'warning',
+    showCancel: true,
+    confirmText: t('buttons.delete'),
+    cancelText: t('buttons.cancel'),
+  });
+  if (!confirmed) return;
   await canvasStore.removeCanvas(props.projectId, activeCanvas.value);
   selectCanvas(canvasStore.canvases[0]?.id || 'main');
 };

@@ -375,6 +375,8 @@ export const en = {
     unplacedTasks: 'Unplaced Tasks',
     allTasksPlaced: 'All tasks have been placed on this canvas!',
     saveError: 'Failed to save canvas document',
+    delete: 'Delete canvas',
+    deleteConfirm: 'Delete canvas "{name}"?',
   },
   timeblock: {
     createButton: 'Create',

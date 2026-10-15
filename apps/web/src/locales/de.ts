@@ -377,6 +377,8 @@ export const de = {
     unplacedTasks: 'Nicht platzierte Aufgaben',
     allTasksPlaced: 'Alle Aufgaben wurden bereits auf diesem Canvas platziert!',
     saveError: 'Fehler beim Speichern des Canvas-Dokuments',
+    delete: 'Canvas löschen',
+    deleteConfirm: 'Canvas "{name}" löschen?',
   },
   timeblock: {
     createButton: 'Erstellen',

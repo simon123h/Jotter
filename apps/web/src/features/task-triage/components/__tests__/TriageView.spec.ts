@@ -1,5 +1,6 @@
+import { useDialog } from '@/composables/useDialog';
 import { afterEach, beforeAll, describe, it, expect, vi, beforeEach } from 'vitest';
-import { mount, enableAutoUnmount } from '@vue/test-utils';
+import { flushPromises, mount, enableAutoUnmount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import TriageView from '@/features/task-triage/components/TriageView.vue';
@@ -76,8 +77,6 @@ describe('TriageView.vue', () => {
   beforeEach(() => {
     mockTasks = getMockTasks();
     vi.clearAllMocks();
-    // Stub confirm to return true by default
-    vi.spyOn(window, 'confirm').mockImplementation(() => true);
   });
 
   it('renders correctly showing the first task initially in default sorting order', () => {
@@ -280,7 +279,9 @@ describe('TriageView.vue', () => {
     const event = new KeyboardEvent('keydown', { key: 'd' });
     window.dispatchEvent(event);
 
-    expect(window.confirm).toHaveBeenCalled();
+    expect(useDialog().isOpen.value).toBe(true);
+    useDialog().handleConfirm();
+    await flushPromises();
     expect(deleteTask).toHaveBeenCalledWith('proj-1', 'task-1');
   });
 
