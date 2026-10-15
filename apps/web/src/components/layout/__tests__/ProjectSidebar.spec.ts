@@ -13,6 +13,12 @@ vi.mock('vue-router', () => ({
   }),
 }));
 
+// The drag of a project is Sortable's: the test takes the options the sidebar gives it and plays its end of a drag
+const sortableOptions = vi.hoisted(() => ({ current: null as any }));
+vi.mock('sortablejs', () => ({
+  default: { create: (_el: unknown, options: unknown) => ((sortableOptions.current = options), { destroy() {}, option() {} }) },
+}));
+
 describe('ProjectSidebar.vue', () => {
   let pinia: any;
   let selectionStore: any;
@@ -67,6 +73,17 @@ describe('ProjectSidebar.vue', () => {
     expect(items[0].text()).toContain('All Projects');
     expect(items[1].text()).toContain('Project A');
     expect(items[2].text()).toContain('Project B');
+  });
+
+  it('keeps the order a project is dragged to, "All Projects" not counted as a place in the list', () => {
+    settingsStore.sortBy = 'manual';
+    const wrapper = mount(ProjectSidebar, getMountOptions());
+    // Only the projects can be dragged, not the "All Projects" entry in front of them
+    const draggable = wrapper.findAll(sortableOptions.current.draggable);
+    expect(draggable.map((item) => item.text())).toEqual(['Project A', 'Project B']);
+    // Project B is dropped in front of project A: the second child of the list becomes the first
+    sortableOptions.current.onEnd({ oldIndex: 2, newIndex: 1, oldDraggableIndex: 1, newDraggableIndex: 0 });
+    expect(settingsStore.projectOrder).toEqual(['2', '1']);
   });
 
   it('lists archived projects apart, collapsed, and not among the projects in use', async () => {

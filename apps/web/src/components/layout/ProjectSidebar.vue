@@ -125,11 +125,11 @@ const initSortable = () => {
 
   sortableInstance = Sortable.create(projectsListEl.value, {
     animation: 150,
-    draggable: '.project-item',
+    draggable: '[data-project-id]',
     disabled: sortBy.value !== 'manual',
     filter: 'button, input, select, textarea',
     onEnd: (evt) => {
-      const { oldIndex, newIndex } = evt;
+      const { oldDraggableIndex: oldIndex, newDraggableIndex: newIndex } = evt;
       if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;
 
       const reordered = [...sortedProjects.value];
@@ -349,6 +349,7 @@ const onVaultSelected = async (event: Event) => {
       <router-link
         v-for="project in switching ? [] : sortedProjects"
         :key="project.id"
+        :data-project-id="project.id"
         :to="{
           name: 'project',
           params: { projectId: project.id },
