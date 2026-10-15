@@ -322,6 +322,9 @@ export const de = {
   },
   settingsView: {
     general: 'Allgemeine Einstellungen',
+    demoReset: 'Demo zurücksetzen',
+    demoResetDesc: 'Löscht deine Änderungen in diesem Browser und stellt die Beispielprojekte und -aufgaben wieder her.',
+    demoResetConfirm: 'Die Demo in den Ausgangszustand zurücksetzen? Deine Änderungen gehen verloren.',
     hideAddTask: 'Kleinere Schaltfläche für "Aufgabe hinzufügen"',
     hideAddTaskDesc: 'Ersetzt die große Schaltfläche zum Erstellen einer neuen Aufgabe in jeder Spalte durch ein Kleines "+"-Symbol.',
     autoCommitToggle: 'Automatische Git-Commits',

@@ -19,8 +19,28 @@ import { appVersion } from '@/platform';
 // LOCAL STORAGE MOCK CLIENT (DEMO MODE)
 // ==========================================
 
+/** Raised whenever the seed data changes: a visitor with an older copy gets the new demo (and loses their edits once). */
+const DEMO_SEED_VERSION = 2;
+const DEMO_SEED_VERSION_KEY = 'jotter_demo_seed_version';
+const DEMO_KEY_PREFIXES = ['jotter_demo_', 'jotter-demo-'];
+
+/** Forgets everything the demo stored in this browser: the next read seeds the initial state again. */
+export function clearDemoData() {
+  for (const key of Object.keys(localStorage)) {
+    if (DEMO_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))) localStorage.removeItem(key);
+  }
+}
+
+/** Back to the initial state of the demo, and the page reloaded so that every store reads it again. */
+export function resetDemo() {
+  clearDemoData();
+  window.location.reload();
+}
+
 function seedDemoData() {
-  if (localStorage.getItem('jotter_demo_projects')) return;
+  if (localStorage.getItem(DEMO_SEED_VERSION_KEY) === String(DEMO_SEED_VERSION)) return;
+  clearDemoData();
+  localStorage.setItem(DEMO_SEED_VERSION_KEY, String(DEMO_SEED_VERSION));
 
   const now = new Date().toISOString();
 
@@ -31,6 +51,8 @@ function seedDemoData() {
       created_at: now,
       done_clean_period: null,
     },
+    { id: 'reading-list', title: 'Reading list', created_at: now, done_clean_period: null },
+    { id: 'summer-trip', title: 'Summer trip', created_at: now, done_clean_period: null, archived: true },
   ];
   localStorage.setItem('jotter_demo_projects', JSON.stringify(projects));
 
@@ -38,8 +60,24 @@ function seedDemoData() {
     'demo-project': [
       { name: 'backlog', title: 'Backlog', subtitle: 'Ideas and incoming items', position: 1000.0, is_default: true },
       { name: 'todo', title: 'To Do', subtitle: 'Ready to work on', position: 2000.0, is_default: false },
-      { name: 'in-progress', title: 'In Progress', subtitle: 'Work in progress', position: 3000.0, is_default: false },
+      {
+        name: 'in-progress',
+        title: 'In Progress',
+        subtitle: 'At most three at a time',
+        position: 3000.0,
+        is_default: false,
+        max_tasks: 3,
+      },
       { name: 'done', title: 'Done', subtitle: 'Completed tasks', position: 4000.0, is_default: false, color: 'green' },
+    ],
+    'reading-list': [
+      { name: 'inbox', title: 'Inbox', subtitle: 'Saved links', position: 1000.0, is_default: true },
+      { name: 'to-read', title: 'To read', subtitle: '', position: 2000.0, is_default: false },
+      { name: 'done', title: 'Done', subtitle: '', position: 3000.0, is_default: false, color: 'green' },
+    ],
+    'summer-trip': [
+      { name: 'todo', title: 'To Do', subtitle: '', position: 1000.0, is_default: true },
+      { name: 'done', title: 'Done', subtitle: '', position: 2000.0, is_default: false, color: 'green' },
     ],
   };
   localStorage.setItem('jotter_demo_buckets', JSON.stringify(bucketsMap));
@@ -47,6 +85,10 @@ function seedDemoData() {
   const nextWeek = new Date();
   nextWeek.setDate(nextWeek.getDate() + 7);
   const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
+  const nextMonth = new Date();
+  nextMonth.setDate(nextMonth.getDate() + 30);
+  const monthStr = nextMonth.toISOString().split('T')[0];
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -62,7 +104,7 @@ function seedDemoData() {
         position: 1000,
         tags: ['demo', 'guide'],
         attachments: [],
-        body: 'Welcome to your local-first Markdown Kanban board!\n\nThis is a static demo running entirely in your browser using `localStorage`.\n\n### Key Features:\n- 📝 **Markdown support** in descriptions (checklists, headers, bold text).\n- 🏷️ **Custom Tags** & Filtering.\n- 📅 **Due Dates** & Prioritization.\n- 🔄 **Local-first synchronization** (in the desktop app, files are synced as `.md` text files directly on your computer!).',
+        body: 'Welcome to your local-first Markdown Kanban board!\n\nThis is a static demo running entirely in your browser using `localStorage`.\n\n### Key Features:\n- 📝 **Markdown support** in descriptions (checklists, headers, bold text).\n- 🏷️ **Custom Tags** & Filtering.\n- 📅 **Due Dates** & Prioritization.\n- 🔗 **Links as tasks**: see the *Reading list* project.\n- 🗄️ **Archived projects**: *Summer trip* is archived, find it in the sidebar.\n- 🔄 **Local-first synchronization** (in the desktop app, files are synced as `.md` text files directly on your computer!).\n\nYour changes stay in this browser. *Settings → Reset the demo* brings back the initial state.',
         due_date: nextWeekStr,
         priority: 'medium',
         created_at: now,
@@ -139,6 +181,85 @@ function seedDemoData() {
         updated_at: now,
         due_date: tomorrowStr,
         priority: 'high',
+      },
+      {
+        id: '7',
+        project_id: 'demo-project',
+        title: 'Water the plants (postponed)',
+        bucket: 'todo',
+        position: 3000,
+        tags: ['demo'],
+        attachments: [],
+        body: 'A postponed task stays in its own column and is hidden until its date. Use *Show Postponed* on the board to see it, or open the task and clear the date.',
+        postponed_until: monthStr,
+        created_at: now,
+        updated_at: now,
+      },
+    ],
+    'reading-list': [
+      {
+        id: 'r1',
+        project_id: 'reading-list',
+        title: 'Links are tasks, too 🔗',
+        bucket: 'inbox',
+        position: 1000,
+        tags: ['demo', 'guide'],
+        attachments: [],
+        body: 'A task whose title or notes hold a web address is a bookmark: its domain shows on the card and opens the page. Nothing special is stored, the address is plain text in the Markdown file.\n\nTry it: create a task with `https://obsidian.md` in the title. Jotter says **Already saved** and names the task below.\n\nOn Android, a link shared from the browser becomes a task, and its title is read from the page.',
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 'r2',
+        project_id: 'reading-list',
+        title: 'Obsidian: a second brain in Markdown',
+        bucket: 'inbox',
+        position: 2000,
+        tags: ['tools', 'markdown'],
+        attachments: [],
+        body: 'https://obsidian.md\n\nJotter vaults open in Obsidian: every task is a Markdown file.',
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 'r3',
+        project_id: 'reading-list',
+        title: 'https://en.wikipedia.org/wiki/Kanban',
+        bucket: 'to-read',
+        position: 1000,
+        tags: ['background'],
+        attachments: [],
+        body: '',
+        priority: 'low',
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 'r4',
+        project_id: 'reading-list',
+        title: 'The Jotter documentation',
+        bucket: 'to-read',
+        position: 2000,
+        tags: ['jotter'],
+        attachments: [],
+        body: 'https://simon123h.github.io/Jotter/\n\n- [x] Quick start\n- [ ] Search and filters\n- [ ] The vault format',
+        priority: 'medium',
+        created_at: now,
+        updated_at: now,
+      },
+    ],
+    'summer-trip': [
+      {
+        id: 't1',
+        project_id: 'summer-trip',
+        title: 'Book the ferry',
+        bucket: 'todo',
+        position: 1000,
+        tags: ['travel'],
+        attachments: [],
+        body: 'This project is archived: it is out of the project list, the "all" view, reminders and the MCP server, but nothing is deleted. Restore it from the project settings.',
+        created_at: now,
+        updated_at: now,
       },
     ],
   };

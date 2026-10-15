@@ -3,15 +3,38 @@ import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
 import { useI18n } from '@/composables/useI18n';
 import { isDemoMode } from '@/platform';
+import { resetDemo } from '@/storage/demoAdapter';
 
 const { t } = useI18n();
 const { hideAddTaskButton, doneCleanPeriod, autoCommit } = storeToRefs(useSettingsStore());
+
+const handleResetDemo = () => {
+  if (confirm(t('settingsView.demoResetConfirm'))) resetDemo();
+};
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
     <h3 class="text-xs font-bold text-theme-text-main uppercase tracking-wider">{{ t('settingsView.general') }}</h3>
     <div class="flex flex-col gap-3">
+      <div
+        v-if="isDemoMode"
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-theme-card/60 border border-theme-border/60 rounded-xl"
+      >
+        <div class="flex flex-col max-w-xl">
+          <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.demoReset') }}</span>
+          <span class="text-xs text-theme-text-muted mt-0.5 leading-relaxed">{{ t('settingsView.demoResetDesc') }}</span>
+        </div>
+        <button
+          type="button"
+          data-testid="demo-reset"
+          class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded border border-theme-border/60 text-theme-text-main hover:bg-theme-column/30 transition-all cursor-pointer"
+          @click="handleResetDemo"
+        >
+          {{ t('settingsView.demoReset') }}
+        </button>
+      </div>
+
       <label
         class="flex items-start gap-3 p-4 bg-theme-card/60 border border-theme-border/60 rounded-xl cursor-pointer hover:bg-theme-column/30 transition-all select-none"
       >

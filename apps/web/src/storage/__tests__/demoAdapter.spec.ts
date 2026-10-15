@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DemoStorageAdapter } from '../demoAdapter';
+import { DemoStorageAdapter, clearDemoData } from '../demoAdapter';
+import { taskUrl, duplicateOf } from '@jotter/links';
 import { createStorageAdapter, getStorageAdapter, setStorageAdapter } from '../index';
 import { HttpStorageAdapter } from '../httpAdapter';
 
@@ -15,9 +16,9 @@ describe('DemoStorageAdapter', () => {
     expect(await adapter.checkStatus()).toBe(true);
   });
 
-  it('returns tasks from every project for getAllTasks', async () => {
-    const [seeded] = await adapter.getProjects();
-    const perProject = await adapter.getTasks(seeded.id);
+  it('returns the tasks of every project that is not archived for getAllTasks', async () => {
+    const projects = (await adapter.getProjects()).filter((p) => !p.archived);
+    const perProject = (await Promise.all(projects.map((p) => adapter.getTasks(p.id)))).flat();
     expect(perProject.length).toBeGreaterThan(0);
 
     const other = await adapter.createProject('Another');
@@ -26,6 +27,47 @@ describe('DemoStorageAdapter', () => {
 
     const all = await adapter.getAllTasks();
     expect(all.length).toBe(perProject.length + 1);
+  });
+
+  it('starts with projects that show links, postponing and archiving', async () => {
+    const projects = await adapter.getProjects();
+    expect(projects.map((p) => p.id)).toEqual(['demo-project', 'reading-list', 'summer-trip']);
+    expect(projects.filter((p) => p.archived).map((p) => p.id)).toEqual(['summer-trip']);
+
+    // The bookmarks: an address in the notes, one in the title, and a page that the new-task dialog calls "already saved"
+    const links = await adapter.getTasks('reading-list');
+    expect(links.filter((t) => taskUrl(t)).length).toBeGreaterThanOrEqual(3);
+    expect(duplicateOf('https://www.obsidian.md/?utm_source=x', links)?.title).toContain('Obsidian');
+
+    // A postponed task in its own column, a column with a limit, and nothing of the archived project in the "all" view
+    const demo = await adapter.getTasks('demo-project');
+    expect(demo.find((t) => t.postponed_until)?.bucket).toBe('todo');
+    expect((await adapter.getBuckets('demo-project')).find((b) => b.name === 'in-progress')?.max_tasks).toBe(3);
+    expect((await adapter.getAllTasks()).some((t) => t.project_id === 'summer-trip')).toBe(false);
+  });
+
+  it('seeds again after the demo is cleared, and when the seed data is newer than the stored copy', async () => {
+    const [first] = await adapter.getProjects();
+    await adapter.updateProject(first.id, { title: 'Mine' });
+    await adapter.createProject('Another');
+    expect((await adapter.getProjects()).length).toBe(4);
+
+    clearDemoData();
+    expect((await adapter.getProjects()).map((p) => p.title)).toContain('Demo Project');
+    expect((await adapter.getProjects()).length).toBe(3);
+
+    await adapter.createProject('Another');
+    localStorage.setItem('jotter_demo_seed_version', '0');
+    expect((await adapter.getProjects()).length).toBe(3);
+  });
+
+  it('clears only what the demo stored', () => {
+    localStorage.setItem('jotter_demo_projects', '[]');
+    localStorage.setItem('jotter-demo-settings', '{}');
+    localStorage.setItem('jotter_demo_canvas_p_list', '[]');
+    localStorage.setItem('unrelated', 'kept');
+    clearDemoData();
+    expect(Object.keys(localStorage)).toEqual(['unrelated']);
   });
 
   it('reports the build version, marked as demo', async () => {
