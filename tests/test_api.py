@@ -245,6 +245,14 @@ def test_settings_endpoint(test_env):
     assert res.json()["currentTheme"] == "dark"
     assert res.json()["language"] == "de"
 
+    # The project for quick capture is kept next to the other settings, and can be cleared again
+    assert res.json()["captureProjectId"] is None
+    res = client.patch("/api/settings", json={"captureProjectId": "inbox"})
+    assert res.json()["captureProjectId"] == "inbox"
+    assert client.get("/api/settings").json()["captureProjectId"] == "inbox"
+    res = client.patch("/api/settings", json={"captureProjectId": None})
+    assert client.get("/api/settings").json()["captureProjectId"] is None
+
 
 def test_system_sync_and_info(test_env):
     client, temp_dir = test_env

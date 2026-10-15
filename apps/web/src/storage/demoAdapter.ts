@@ -690,6 +690,7 @@ const DEFAULT_DEMO_SETTINGS: AppSettings = {
   currentTheme: 'nordic-light',
   thresholdDays: 7,
   pinnedProjectIds: [],
+  captureProjectId: null,
   sortBy: 'alpha',
   hideAddTaskButton: true,
   projectOrder: [],

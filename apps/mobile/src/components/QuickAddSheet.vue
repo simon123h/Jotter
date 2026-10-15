@@ -21,7 +21,7 @@ const draft = ui.sheet?.type === 'quickadd' ? ui.sheet.draft : undefined;
 const title = ref(draft?.title ?? '');
 let draftBody = draft?.body;
 const input = ref<HTMLInputElement | null>(null);
-/** Opened from outside (launcher shortcut, shared text): nothing is in view, so the task goes to the project's default column. */
+/** Opened from outside (launcher shortcut, shared text): nothing is in view, so the task goes to the default column of the project for quick capture (shortcuts.ts has opened it). */
 const inbox = ui.sheet?.type === 'quickadd' && !!ui.sheet.inbox;
 /** A column chosen in the sheet. It replaces what is in view, tag and planned date included. */
 const picked = ref<string | null>(null);

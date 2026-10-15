@@ -14,6 +14,8 @@ const resetDemo = vi.hoisted(() => vi.fn());
 vi.mock('@/storage/demoAdapter', () => ({ resetDemo }));
 
 import GeneralSettings from './GeneralSettings.vue';
+import { useSettingsStore } from '@/stores/settings';
+import { useProjectStore } from '@/stores/project';
 
 describe('GeneralSettings', () => {
   beforeEach(() => {
@@ -42,5 +44,21 @@ describe('GeneralSettings', () => {
     const wrapper = mount(GeneralSettings);
     expect(wrapper.find('[data-testid="demo-reset"]').exists()).toBe(false);
     platform.isDemoMode = true;
+  });
+
+  it('chooses the project for quick capture from the projects of the vault', async () => {
+    useProjectStore().projects = [
+      { id: 'work', title: 'Work' },
+      { id: 'inbox', title: 'Inbox' },
+    ] as never;
+    const wrapper = mount(GeneralSettings);
+    const select = wrapper.find('[data-testid="capture-project"]');
+    expect(select.findAll('option').map((o) => o.text())).toEqual(['None (the open project)', 'Work', 'Inbox']);
+
+    await select.setValue('inbox');
+    expect(useSettingsStore().captureProjectId).toBe('inbox');
+    (select.element as HTMLSelectElement).selectedIndex = 0;
+    await select.trigger('change');
+    expect(useSettingsStore().captureProjectId).toBeNull();
   });
 });

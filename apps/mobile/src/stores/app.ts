@@ -42,6 +42,8 @@ export const useAppStore = defineStore('app', () => {
   const pinned = ref<string[]>([]);
   const projectOrder = ref<string[]>([]);
   const sortBy = ref<'alpha' | 'manual'>('alpha');
+  /** The project that shared text and the new-task shortcut go to. Null: the project that is open. Kept in the vault's settings.json, shared with the desktop. */
+  const captureProjectId = ref<string | null>(null);
   const view = ref<View>('board');
   const hidden = ref<Record<View, Hidden>>(defaultHidden());
   const layout = ref<Layout>('tabs');
@@ -131,6 +133,8 @@ export const useAppStore = defineStore('app', () => {
     if (JSON.stringify(next.pinned) !== JSON.stringify(pinned.value)) pinned.value = next.pinned;
     if (JSON.stringify(next.order) !== JSON.stringify(projectOrder.value)) projectOrder.value = next.order;
     sortBy.value = next.sort;
+    const capture = typeof settings.captureProjectId === 'string' && settings.captureProjectId ? settings.captureProjectId : null;
+    if (capture !== captureProjectId.value) captureProjectId.value = capture;
   }
 
   /** Not kept when the file cannot be written; the lists look right until the next scan. */
@@ -284,6 +288,14 @@ export const useAppStore = defineStore('app', () => {
     sortBy.value = sort;
     saveSettings({ sortBy: sort });
   }
+
+  function setCaptureProject(id: string | null) {
+    captureProjectId.value = id;
+    saveSettings({ captureProjectId: id });
+  }
+
+  /** The project for what comes from outside: the one chosen for quick capture, unless it is gone. */
+  const captureProject = computed(() => projects.value.find((p) => p.id === captureProjectId.value) ?? null);
 
   async function selectProject(id: string) {
     projectId.value = id;
@@ -580,6 +592,9 @@ export const useAppStore = defineStore('app', () => {
     renameVault,
     removeVault,
     selectProject,
+    captureProjectId,
+    captureProject,
+    setCaptureProject,
     addProject,
     renameProject,
     removeProject,

@@ -70,13 +70,17 @@ export async function openReminder(ref: { projectId: string; taskId: string }): 
   ui.open({ type: 'task', id: ref.taskId });
 }
 
-/** Does what a launcher shortcut asks for. Links that are not shortcuts, and shortcuts without a project, do nothing. */
+/** Does what a launcher shortcut asks for. Links that are not shortcuts, and shortcuts without a project, do nothing. A new task or shared text goes to the project chosen for quick capture, else to the one that is open. */
 export async function runShortcut(url: string): Promise<void> {
   const action = shortcutAction(url);
   const app = useAppStore();
   const ui = useUiStore();
   if (!action) return;
   const ready = await whenReady(app);
+  // What comes from outside goes to the project chosen for quick capture, and the app opens there. Shared text that
+  // is empty opens nothing, so it does not switch the project either.
+  const capture = action === 'new-task' || (action === 'share' && sharedDraft(url)) ? app.captureProject : null;
+  if (ready && capture && capture.id !== app.projectId) await app.selectProject(capture.id);
   if (!ready || !app.project) {
     // Shared text is not dropped without a word
     if (action === 'share' && sharedDraft(url)) ui.showToast(t('share.noProject'));

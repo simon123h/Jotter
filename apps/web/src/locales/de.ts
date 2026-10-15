@@ -325,6 +325,10 @@ export const de = {
     demoReset: 'Demo zurücksetzen',
     demoResetDesc: 'Löscht deine Änderungen in diesem Browser und stellt die Beispielprojekte und -aufgaben wieder her.',
     demoResetConfirm: 'Die Demo in den Ausgangszustand zurücksetzen? Deine Änderungen gehen verloren.',
+    captureProject: 'Projekt für schnelles Erfassen',
+    captureProjectDesc:
+      'Das Kürzel "i" legt von überall hier eine Aufgabe an, "q" auf einer Seite ohne Projekt ebenso. Auf dem Handy landen geteilter Text und die Verknüpfung „Neue Aufgabe“ hier.',
+    captureProjectNone: 'Keines (das geöffnete Projekt)',
     hideAddTask: 'Kleinere Schaltfläche für "Aufgabe hinzufügen"',
     hideAddTaskDesc: 'Ersetzt die große Schaltfläche zum Erstellen einer neuen Aufgabe in jeder Spalte durch ein Kleines "+"-Symbol.',
     autoCommitToggle: 'Automatische Git-Commits',

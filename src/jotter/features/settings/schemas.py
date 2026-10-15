@@ -13,6 +13,7 @@ class AppSettings(BaseModel):
     currentTheme: str = "nordic-light"
     thresholdDays: int = 7
     pinnedProjectIds: list[str] = []
+    captureProjectId: str | None = None
     sortBy: str = "alpha"
     hideAddTaskButton: bool = True
     projectOrder: list[str] = []
@@ -37,6 +38,7 @@ class SettingsUpdate(BaseModel):
     currentTheme: str | None = None
     thresholdDays: int | None = None
     pinnedProjectIds: list[str] | None = None
+    captureProjectId: str | None = None
     sortBy: str | None = None
     hideAddTaskButton: bool | None = None
     projectOrder: list[str] | None = None

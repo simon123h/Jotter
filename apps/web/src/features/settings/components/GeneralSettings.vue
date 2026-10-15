@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
+import { useProjectStore } from '@/stores/project';
 import { useI18n } from '@/composables/useI18n';
 import { useDialog } from '@/composables/useDialog';
 import { isDemoMode } from '@/platform';
@@ -8,7 +9,8 @@ import { resetDemo } from '@/storage/demoAdapter';
 
 const { t } = useI18n();
 const { showDialog } = useDialog();
-const { hideAddTaskButton, doneCleanPeriod, autoCommit } = storeToRefs(useSettingsStore());
+const { hideAddTaskButton, doneCleanPeriod, autoCommit, captureProjectId } = storeToRefs(useSettingsStore());
+const { projects } = storeToRefs(useProjectStore());
 
 const handleResetDemo = async () => {
   const confirmed = await showDialog({
@@ -43,6 +45,23 @@ const handleResetDemo = async () => {
         >
           {{ t('settingsView.demoReset') }}
         </button>
+      </div>
+
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-theme-card/60 border border-theme-border/60 rounded-xl"
+      >
+        <div class="flex flex-col max-w-xl">
+          <span class="text-xs font-bold text-theme-text-main">{{ t('settingsView.captureProject') }}</span>
+          <span class="text-xs text-theme-text-muted mt-0.5 leading-relaxed">{{ t('settingsView.captureProjectDesc') }}</span>
+        </div>
+        <select
+          v-model="captureProjectId"
+          data-testid="capture-project"
+          class="shrink-0 w-48 bg-theme-bg border border-theme-border/60 rounded-xl px-3 py-1.5 text-xs text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary/30"
+        >
+          <option :value="null">{{ t('settingsView.captureProjectNone') }}</option>
+          <option v-for="p in projects" :key="p.id" :value="p.id">{{ p.title }}</option>
+        </select>
       </div>
 
       <label

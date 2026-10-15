@@ -27,6 +27,7 @@ export const useSettingsStore = defineStore('settings', () => {
     darkTheme: 'midnight',
     thresholdDays: 7,
     pinnedProjectIds: [],
+    captureProjectId: null,
     sortBy: 'alpha',
     hideAddTaskButton: true,
     projectOrder: [],

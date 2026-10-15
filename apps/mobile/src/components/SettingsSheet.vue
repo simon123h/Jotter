@@ -5,9 +5,11 @@ import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useSettingsStore } from '@/stores/settings';
 import { useUiStore } from '@/stores/ui';
+import { useAppStore } from '@/stores/app';
 
 const settings = useSettingsStore();
 const ui = useUiStore();
+const app = useAppStore();
 const field = 'w-full rounded-xl border border-line bg-surface px-3 py-3 text-base outline-none focus:border-accent';
 const version = __APP_VERSION__;
 </script>
@@ -48,6 +50,19 @@ const version = __APP_VERSION__;
           </select>
         </label>
       </template>
+      <label class="block">
+        <span class="mb-1 block text-xs font-medium text-muted">{{ t('settings.captureProject') }}</span>
+        <select
+          :value="app.captureProject?.id ?? ''"
+          :class="field"
+          data-testid="setting-capture-project"
+          @change="app.setCaptureProject(($event.target as HTMLSelectElement).value || null)"
+        >
+          <option value="">{{ t('settings.captureNone') }}</option>
+          <option v-for="p in app.orderedProjects" :key="p.id" :value="p.id">{{ p.title }}</option>
+        </select>
+        <span class="mt-1 block text-xs text-muted">{{ t('settings.captureHint') }}</span>
+      </label>
       <button
         class="inline-flex items-center gap-2 text-sm font-medium text-accent"
         data-testid="setting-vaults"
