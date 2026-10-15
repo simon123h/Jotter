@@ -203,8 +203,9 @@ app (moving the task to `done`, ticking it on a card, a bulk action). Given `tod
    - `from: due` on a task without `due_date` behaves like `from: completion`.
    - Adding months or years is calculated from the starting day and clamped to the end of a shorter month
      (31 January plus one month is 28 February). The result is what is stored, so the clamp sticks.
-2. **The shift**: the anchor is `due_date`, else the day of the earliest reminder, else `today`. The shift is
-   `next` minus the anchor, in days.
+2. **The shift**: the anchor is `due_date`, else the day of the earliest reminder, else `planned_date` when it is a
+   day, else `today`. The shift is `next` minus the anchor, in days. So a task that has only a planned day is
+   planned on `next`, however late or early it was completed.
 3. **The task** is rewritten:
    - `due_date`, when set, becomes `next`.
    - `planned_date`, when it is a day, and `reminders` (the time of day is kept) move by the shift. A planning

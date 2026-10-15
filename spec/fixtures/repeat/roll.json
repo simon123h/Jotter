@@ -238,6 +238,50 @@
       }
     },
     {
+      "name": "planned-day-is-the-anchor-without-due",
+      "description": "Without a due day or reminders, a planned day is the anchor: it lands on the next occurrence, however late the task is completed (planned Monday, done on Thursday).",
+      "today": "2026-10-15",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "week",
+          "from": "completion"
+        },
+        "planned_date": "2026-10-12",
+        "previous_bucket": "todo"
+      },
+      "expected": {
+        "bucket": "todo",
+        "due_date": null,
+        "planned_date": "2026-10-22",
+        "postponed_until": "2026-10-22",
+        "reminders": [],
+        "body": ""
+      }
+    },
+    {
+      "name": "planned-day-ahead-of-today-still-lands-on-next",
+      "description": "A planned day in the future is the anchor too, so a task planned ahead that is done today lands on the next occurrence as well.",
+      "today": "2026-10-12",
+      "task": {
+        "repeat": {
+          "every": 1,
+          "unit": "week",
+          "from": "completion"
+        },
+        "planned_date": "2026-10-14",
+        "previous_bucket": "todo"
+      },
+      "expected": {
+        "bucket": "todo",
+        "due_date": null,
+        "planned_date": "2026-10-19",
+        "postponed_until": "2026-10-19",
+        "reminders": [],
+        "body": ""
+      }
+    },
+    {
       "name": "checklist-unticked",
       "description": "Checklist items are unticked, other text is not touched.",
       "today": "2026-10-12",

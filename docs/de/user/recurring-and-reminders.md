@@ -17,7 +17,7 @@ Eine wiederkehrende Aufgabe zu erledigen (in **Erledigt** verschieben, den Kreis
 
 * bekommt ihren nächsten Tag als **Fälligkeitsdatum** (wenn sie eines hat),
 * wird bis zu diesem Tag **aufgeschoben** und taucht daher zur rechten Zeit wieder auf (siehe [Aufgaben aufschieben](./postponing)),
-* verschiebt ihr geplantes Datum (wenn es ein Datum ist, kein Stichwort wie *diese Woche*) und ihre Erinnerungen um dieselbe Anzahl von Tagen,
+* verschiebt ihr geplantes Datum (wenn es ein Datum ist, kein Stichwort wie *diese Woche*) und ihre Erinnerungen um dieselbe Anzahl von Tagen. Eine Aufgabe, die nur ein geplantes Datum hat, wird auf ihren nächsten Tag geplant,
 * setzt ihre Checkliste zurück.
 
 Es gibt immer **eine** Aufgabe, nie einen Stapel von Kopien. Verpasst du einen Tag, bleibt die Aufgabe einfach überfällig, bis du sie erledigst. Was du erledigt hast, steht in deinem Git-Verlauf, falls du Git nutzt.

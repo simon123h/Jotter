@@ -44,14 +44,14 @@ def roll_over(task: Task, today: date, default_bucket: str, previous_bucket: str
     due = task.due_date.as_date
     following = next_occurrence(rule, due, today)
 
+    planned = task.planned_date.as_date
     anchor = due
     if anchor is None and task.reminders:
         anchor = date.fromisoformat(task.reminders[0][:10])  # reminders are sorted
-    shift = timedelta(days=(following - (anchor or today)).days)
+    shift = timedelta(days=(following - (anchor or planned or today)).days)
 
     if due is not None:
         task.due_date = DueDate(following.isoformat())
-    planned = task.planned_date.as_date
     if planned is not None:
         task.planned_date = DueDate((planned + shift).isoformat())
     task.reminders = [(datetime.fromisoformat(r) + shift).strftime("%Y-%m-%dT%H:%M") for r in task.reminders]

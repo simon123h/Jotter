@@ -63,7 +63,8 @@ export function rollOver(
   const following = nextOccurrence(task.repeat, task.due_date, today);
 
   const reminders = task.reminders ?? [];
-  const anchor = task.due_date ?? reminders[0]?.slice(0, 10) ?? today; // reminders are sorted
+  const plannedDay = task.planned_date && /^\d{4}-\d{2}-\d{2}$/.test(task.planned_date) ? task.planned_date : undefined;
+  const anchor = task.due_date ?? reminders[0]?.slice(0, 10) ?? plannedDay ?? today; // reminders are sorted
   const shift = daysBetween(anchor, following);
 
   const rolled: Task = {
@@ -77,7 +78,6 @@ export function rollOver(
     updated_at: new Date().toISOString(),
   };
   if (task.due_date) rolled.due_date = following;
-  if (task.planned_date && /^\d{4}-\d{2}-\d{2}$/.test(task.planned_date))
-    rolled.planned_date = addUnits(task.planned_date, shift, "day");
+  if (plannedDay) rolled.planned_date = addUnits(plannedDay, shift, "day");
   return rolled;
 }

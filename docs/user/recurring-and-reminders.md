@@ -17,7 +17,7 @@ Completing a recurring task (moving it to **Done**, ticking its circle, or a bul
 
 * gets its next day as the **due date** (when it has one),
 * is **postponed** until that day, so it reappears when it is time (see [Postponing Tasks](./postponing)),
-* moves its planned date (when it is a date, not a keyword like *this week*) and its reminders by the same number of days,
+* moves its planned date (when it is a date, not a keyword like *this week*) and its reminders by the same number of days. A task with only a planned date is planned on its next day,
 * has its checklist unticked.
 
 There is always **one** task, never a pile of copies. If you miss a day, the task simply stays overdue until you complete it. The history of what you completed is in your Git history, if you use one.
