@@ -70,6 +70,8 @@ const handleSave = async () => {
 
   await updateProject(props.project.id, formUpdate());
 
+  // The sidebar lists the projects of the store: they have to be read again for the new name to show
+  await projectStore.fetchProjects();
   await projectStore.invalidate();
   emit('close');
 };
@@ -83,6 +85,7 @@ const handleArchive = async () => {
   const { id } = props.project;
   const archived = !props.project.archived;
   await updateProject(id, { ...(title.value.trim() ? formUpdate() : {}), archived });
+  await projectStore.fetchProjects();
   await projectStore.invalidate();
   emit('close');
   if (archived && route.params.projectId === id) await router.push({ name: 'project', params: { projectId: 'all' } });

@@ -3,7 +3,8 @@ import { mount, VueWrapper } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import ProjectEditModal from '@/components/modals/ProjectEditModal.vue';
-import { updateProject, deleteProject } from '@/api';
+import { getProjects, updateProject, deleteProject } from '@/api';
+import { useProjectStore } from '@/stores/project';
 
 // Set up Pinia
 beforeAll(() => {
@@ -90,6 +91,19 @@ describe('ProjectEditModal.vue', () => {
       done_clean_period: 14,
     });
     expect(wrapper.emitted('close')).toBeTruthy();
+  });
+
+  it('shows the new name in the project list right after saving', async () => {
+    const store = useProjectStore();
+    store.projects = [{ ...defaultProps.project } as any];
+    vi.mocked(getProjects).mockResolvedValueOnce([{ ...defaultProps.project, title: 'Renamed' } as any]);
+    wrapper = mount(ProjectEditModal, { props: defaultProps });
+
+    await wrapper.find('input[type="text"]').setValue('Renamed');
+    await wrapper.find('form').trigger('submit');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(store.projects.map((p) => p.title)).toEqual(['Renamed']);
   });
 
   it('calls updateProject and emits close when pressing Escape key (auto-save)', async () => {
