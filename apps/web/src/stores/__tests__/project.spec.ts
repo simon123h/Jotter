@@ -127,13 +127,12 @@ describe('project store', () => {
       const settings = useSettingsStore();
       settings.hideDoneColumn = true;
       settings.hideArchiveColumn = false;
-      settings.hidePostponedColumn = true;
       vi.mocked(api.getTasks).mockResolvedValue([createMockTask({ id: 'a' })]);
       const store = useProjectStore();
 
       await store.fetchTasks({ projectId: 'work' });
 
-      expect(api.getTasks).toHaveBeenCalledWith('work', { exclude_buckets: 'done,postponed' });
+      expect(api.getTasks).toHaveBeenCalledWith('work', { exclude_buckets: 'done' });
       expect(store.tasks.map((t) => t.id)).toEqual(['a']);
       expect(store.loading).toBe(false);
     });

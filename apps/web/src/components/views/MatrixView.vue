@@ -12,6 +12,7 @@ import type { Task } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
 import { useI18n } from '@/composables/useI18n';
 import { updateTask } from '@/api';
+import { useTasksWithoutPostponed } from '@/composables/useTasksWithoutPostponed';
 
 const { t } = useI18n();
 
@@ -32,6 +33,8 @@ const projectStore = useProjectStore();
 const uiStore = useUiStore();
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
 const { thresholdDays, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
+
+const shownTasks = useTasksWithoutPostponed(() => props.tasks);
 
 const fetchViewTasks = async () => {
   if (!activeProjectId.value) return;
@@ -77,7 +80,7 @@ const quadrants = computed(() => {
   const q3: Task[] = [];
   const q4: Task[] = [];
 
-  props.tasks.forEach((task) => {
+  shownTasks.value.forEach((task) => {
     // Exclude completed or archived tasks
     if (task.bucket === 'done' || task.bucket === 'archive') return;
 

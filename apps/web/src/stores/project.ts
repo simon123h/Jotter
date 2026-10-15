@@ -80,7 +80,6 @@ export const useProjectStore = defineStore('project', () => {
     const excludeList = [];
     if (settingsStore.hideDoneColumn) excludeList.push('done');
     if (settingsStore.hideArchiveColumn) excludeList.push('archive');
-    if (settingsStore.hidePostponedColumn) excludeList.push('postponed');
     return excludeList.join(',');
   };
 

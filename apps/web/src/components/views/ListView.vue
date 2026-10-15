@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useSelectionStore } from '@/stores/selection';
 import { storeToRefs } from 'pinia';
+import { useTasksWithoutPostponed } from '@/composables/useTasksWithoutPostponed';
 
 const { t, locale, tBucket } = useI18n();
 const route = useRoute();
@@ -41,6 +42,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
 }>();
+
+const shownTasks = useTasksWithoutPostponed(() => props.tasks);
 
 const fetchViewTasks = async () => {
   if (!activeProjectId.value) return;
@@ -88,11 +91,11 @@ const sortKey = ref<SortKey>('updated_at');
 const sortOrder = ref<'asc' | 'desc'>('desc');
 
 const isAllSelected = computed(() => {
-  return props.tasks.length > 0 && props.tasks.every((t) => props.isSelected(t.id));
+  return shownTasks.value.length > 0 && shownTasks.value.every((t) => props.isSelected(t.id));
 });
 
 const sortedTasks = computed(() => {
-  return [...props.tasks].sort((a, b) => {
+  return [...shownTasks.value].sort((a, b) => {
     let valA: any = a[sortKey.value] || '';
     let valB: any = b[sortKey.value] || '';
 

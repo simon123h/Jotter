@@ -60,7 +60,7 @@ onMounted(async () => {
   await fetchViewTasks();
 });
 
-watch([activeProjectId, hideDoneColumn, hideArchiveColumn, hidePostponedColumn], async () => {
+watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
   await fetchViewTasks();
 });
 

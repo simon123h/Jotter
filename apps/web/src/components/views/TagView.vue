@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useBuckets } from '@/composables/useBuckets';
+import { useTasksWithoutPostponed } from '@/composables/useTasksWithoutPostponed';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -29,6 +30,8 @@ const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
   (e: 'refresh'): void;
 }>();
+
+const shownTasks = useTasksWithoutPostponed(() => props.tasks);
 
 const fetchViewTasks = async () => {
   if (!activeProjectId.value) return;
@@ -55,7 +58,7 @@ const tagColumns = computed(() => {
   const groups: Record<string, Task[]> = {};
   const untagged: Task[] = [];
 
-  props.tasks.forEach((task) => {
+  shownTasks.value.forEach((task) => {
     // Exclude archived tasks
     if (task.bucket === 'archive') return;
 

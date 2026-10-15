@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTasksWithoutPostponed } from '@/composables/useTasksWithoutPostponed';
 import { ref, onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -58,6 +59,10 @@ const isGlobalView = computed(() => !!route.meta.isGlobal);
 
 // Filter state & logic (read-only query sync; MainLayout manages router query state)
 const { filteredTasks } = useTaskFilters(tasks, { syncRoute: false });
+
+// Select all picks what the view shows: the planning view shows postponed tasks, the others may hide them
+const withoutPostponed = useTasksWithoutPostponed(() => filteredTasks.value);
+const selectableTasks = computed(() => (String(route.name).startsWith('time') ? filteredTasks.value : withoutPostponed.value));
 
 const displayedBuckets = computed(() => {
   const list = [...buckets.value];
@@ -194,7 +199,7 @@ useKeyboardShortcuts([
     callback: (e: KeyboardEvent) => {
       if (!modalStore.activeModal && !route.params.taskId) {
         e.preventDefault();
-        selectAll(filteredTasks.value);
+        selectAll(selectableTasks.value);
       }
     },
   },
@@ -486,7 +491,7 @@ const handleBulkConsolidate = async () => {
         :active-project-id="projectId"
         :common-tags="commonTags"
         @clear="clearSelection"
-        @select-all="() => selectAll(filteredTasks)"
+        @select-all="() => selectAll(selectableTasks)"
         @delete="handleBulkDelete"
         @archive="handleBulkArchive"
         @mark-done="handleBulkMarkDone"
