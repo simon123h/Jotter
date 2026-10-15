@@ -98,7 +98,7 @@ class VaultApplicationService:
             self._rebind_runtime_state(app_state, vault)
             elapsed = time.perf_counter() - started
             if elapsed > 1.0:
-                logger.warning("Vault switch to %s took %.2fs (index sync and rebinding)", vault.path, elapsed)
+                logger.debug("Vault switch to %s took %.2fs (index sync and rebinding)", vault.path, elapsed)
         self.registry.set_active_id(vault.id)
 
         return VaultResponse(

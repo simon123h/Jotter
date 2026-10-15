@@ -75,7 +75,7 @@ def test_slow_write_is_logged_with_its_phases(tmp_path, caplog, monkeypatch):
 
     monkeypatch.setattr(fs, "SLOW_WRITE_SECONDS", 0.01)
     monkeypatch.setattr(os, "fsync", slow_fsync)
-    with caplog.at_level("WARNING", logger="jotter.shared.fs"):
+    with caplog.at_level("DEBUG", logger="jotter.shared.fs"):
         atomic_write(tmp_path / "task.md", "content")
 
     messages = [r.message for r in caplog.records]

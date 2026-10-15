@@ -20,8 +20,6 @@ SYNC_INTERVAL_SECONDS = 60.0
 # (settings, attachments, canvases, files delivered by a sync tool)
 VERIFY_COMMIT_EVERY_CYCLES = 10
 
-# Steps slower than this are logged as warnings (slow disks and antivirus on Windows)
-SLOW_STEP_SECONDS = 1.0
 
 SyncFn = Callable[[Path], bool]
 CommitFn = Callable[[Path], bool]
@@ -134,8 +132,7 @@ class VaultSyncScheduler:
     @staticmethod
     def _log_step(step: str, data_dir: Path, started: float) -> None:
         elapsed = time.perf_counter() - started
-        log = logger.warning if elapsed > SLOW_STEP_SECONDS else logger.debug
-        log("%s of %s took %.2fs", step, data_dir, elapsed)
+        logger.debug("%s of %s took %.2fs", step, data_dir, elapsed)
 
     def flush(self) -> None:
         """Commits pending changes now (shutdown, vault switch)."""

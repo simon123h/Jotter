@@ -10,7 +10,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Writes slower than this are logged as warnings (slow disks and antivirus on Windows)
+# Writes slower than this are logged at debug level (slow disks and antivirus on Windows)
 SLOW_WRITE_SECONDS = 0.2
 
 
@@ -82,7 +82,7 @@ def atomic_write(
 
     total = time.perf_counter() - started
     if total > SLOW_WRITE_SECONDS:
-        logger.warning(
+        logger.debug(
             "Slow write of %s: %.2fs (%.2fs fsync, %.2fs creating and closing the temp file, %.2fs replacing)",
             path,
             total,

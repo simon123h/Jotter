@@ -31,7 +31,7 @@ __all__ = ["app_version", "create_app"]
 
 logger = logging.getLogger(__name__)
 
-# Requests slower than this are logged, to diagnose environments with slow file access (e.g. antivirus on Windows)
+# Requests slower than this are logged at debug level, to diagnose environments with slow file access (e.g. antivirus on Windows)
 SLOW_REQUEST_SECONDS = 0.5
 
 
@@ -104,7 +104,7 @@ def create_app(
         response = await call_next(request)
         elapsed = time.perf_counter() - started
         if elapsed > SLOW_REQUEST_SECONDS:
-            logger.warning("Slow request: %s %s took %.2fs", request.method, request.url.path, elapsed)
+            logger.debug("Slow request: %s %s took %.2fs", request.method, request.url.path, elapsed)
         path = request.url.path
         if (
             request.method in ("POST", "PUT", "PATCH", "DELETE")

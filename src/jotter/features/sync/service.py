@@ -244,7 +244,7 @@ class SyncApplicationService:
 
         elapsed = time.perf_counter() - sync_started
         if elapsed > SLOW_SYNC_SECONDS:
-            logger.warning(
+            logger.debug(
                 "Slow index sync: %.2fs for %d files in %d projects (%.2fs listing, %d re-read, %d I/O errors)",
                 elapsed,
                 files_seen,

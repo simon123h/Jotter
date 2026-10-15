@@ -241,14 +241,11 @@ def test_commit_vault_respects_auto_commit_setting(temp_dir):
     assert commit_vault(vault) is True
 
 
-def test_slow_step_is_logged_as_warning(tmp_path, caplog, monkeypatch):
-    import jotter.features.sync.scheduler as module
-
-    monkeypatch.setattr(module, "SLOW_STEP_SECONDS", -1.0)
+def test_step_durations_are_logged_at_debug(tmp_path, caplog):
     h = Harness(tmp_path)
     h.scheduler.mark_dirty()
-    with caplog.at_level("WARNING", logger="jotter.features.sync.scheduler"):
+    with caplog.at_level("DEBUG", logger="jotter.features.sync.scheduler"):
         h.scheduler.run_once()
-    messages = [r.message for r in caplog.records if r.levelname == "WARNING"]
+    messages = [r.message for r in caplog.records if r.levelname == "DEBUG"]
     assert any(m.startswith("Periodic sync of") for m in messages)
     assert any(m.startswith("Auto-commit of") for m in messages)
