@@ -320,6 +320,9 @@ export const en = {
   },
   settingsView: {
     general: 'General Preferences',
+    demoReset: 'Reset the demo',
+    demoResetDesc: 'Deletes your changes in this browser and brings back the example projects and tasks.',
+    demoResetConfirm: 'Reset the demo to its initial state? Your changes are lost.',
     hideAddTask: 'Smaller "Add task" button',
     hideAddTaskDesc: 'Replaces the large quick-add button at the top of each column with a small "+" symbol.',
     autoCommitToggle: 'Automatic Git commits',
