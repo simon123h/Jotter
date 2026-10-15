@@ -42,7 +42,7 @@ describe('Canvas Store', () => {
     expect(store.activeCanvasId).toBe('main');
     expect(store.canvases).toEqual([]);
     expect(store.currentDocument).toEqual({ nodes: [], edges: [] });
-    expect(store.isDrawerOpen).toBe(false);
+    expect(store.isDrawerOpen).toBe(true);
     expect(store.interactionMode).toBe('pan');
   });
 
@@ -59,13 +59,13 @@ describe('Canvas Store', () => {
 
   it('toggles task drawer open state', () => {
     const store = useCanvasStore();
-    expect(store.isDrawerOpen).toBe(false);
-
-    store.toggleDrawer();
     expect(store.isDrawerOpen).toBe(true);
 
     store.toggleDrawer();
     expect(store.isDrawerOpen).toBe(false);
+
+    store.toggleDrawer();
+    expect(store.isDrawerOpen).toBe(true);
   });
 
   it('fetches canvases list and defaults to main canvas if empty', async () => {

@@ -11,7 +11,7 @@ export const useCanvasStore = defineStore('canvas', () => {
   const activeCanvasId = ref<string>('main');
   const canvases = ref<CanvasMeta[]>([]);
   const currentDocument = ref<CanvasDocument>({ nodes: [], edges: [] });
-  const isDrawerOpen = ref<boolean>(false);
+  const isDrawerOpen = ref<boolean>(true);
   const isLoading = ref<boolean>(false);
   const isSaving = ref<boolean>(false);
   const saveTimeout = ref<any>(null);
