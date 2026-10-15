@@ -11,7 +11,7 @@ import {
   taskSlug,
   uniqueTaskName,
 } from '@jotter/vault-format';
-import { filterTasks, type TaskFilter } from '@jotter/task-filter';
+import { compareTitles, filterTasks, type TaskFilter } from '@jotter/task-filter';
 import { VaultDb, type CachedTask } from './db';
 import type { FsPort } from './fs';
 import { isoDay } from '@jotter/task-filter';
@@ -260,7 +260,7 @@ export class VaultRepository {
     const { db } = this.current();
     const rows = await db.projects.toArray();
 
-    return rows.map(({ size, mtime, ...project }) => project).sort((a, b) => a.title.localeCompare(b.title));
+    return rows.map(({ size, mtime, ...project }) => project).sort((a, b) => compareTitles(a.title, b.title));
   }
 
   async createProject(title: string): Promise<Project> {

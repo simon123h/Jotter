@@ -342,3 +342,20 @@ export function filterTasks<T extends FilterableTask>(
     ? tasks
     : tasks.filter((task) => matchesFilter(task, filter, day));
 }
+
+/** A title without its emojis, for a window or tab title, where they are noise. */
+export function withoutEmoji(title: string): string {
+  return title
+    .replace(/[\p{Extended_Pictographic}\p{Regional_Indicator}‍️⃣]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** How titles sort: emojis, symbols and punctuation in front of a title do not count, case and accents hardly. */
+export function compareTitles(a: string, b: string): number {
+  const key = (title: string) => title.replace(/^[^\p{L}\p{N}]+/u, "");
+  return (
+    key(a).localeCompare(key(b), undefined, { sensitivity: "base" }) ||
+    a.localeCompare(b)
+  );
+}

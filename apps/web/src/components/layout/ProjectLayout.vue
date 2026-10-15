@@ -18,6 +18,7 @@ import { useToast } from '@/composables/useToast';
 import { consolidateTasksIntoChecklist } from '@/utils/markdown';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
 import TimeblockSidebar from '@/features/timeblock/components/TimeblockSidebar.vue';
+import { withoutEmoji } from '@jotter/task-filter';
 
 const { t } = useI18n();
 const { showDialog } = useDialog();
@@ -79,7 +80,7 @@ watchEffect(() => {
   } else {
     const currentProj = projects.value.find((p) => p.id === projectId.value);
     if (currentProj) {
-      pageTitle = currentProj.title;
+      pageTitle = withoutEmoji(currentProj.title);
     }
   }
 

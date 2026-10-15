@@ -7,6 +7,7 @@ import { useI18n } from '@/composables/useI18n';
 import { useProjectStore } from '@/stores/project';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjects } from '@/composables/useProjects';
+import { compareTitles } from '@jotter/task-filter';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -59,7 +60,7 @@ const sortedProjects = computed(() => {
       const bPinned = pinnedProjectIds.value.includes(b.id);
       if (aPinned && !bPinned) return -1;
       if (!aPinned && bPinned) return 1;
-      return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+      return compareTitles(a.title, b.title);
     });
 });
 

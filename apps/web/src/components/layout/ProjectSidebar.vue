@@ -28,6 +28,7 @@ import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
 import { useSelectionStore } from '@/stores/selection';
+import { compareTitles } from '@jotter/task-filter';
 
 const { t } = useI18n();
 
@@ -191,12 +192,12 @@ const sortedProjects = computed(() => {
       }
 
       // Fallback/Default: Alphabetical sorting
-      return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+      return compareTitles(a.title, b.title);
     });
 });
 
 // Projects that are put away are listed apart, to open or restore them
-const archivedProjects = computed(() => props.projects.filter((p) => p.archived).sort((a, b) => a.title.localeCompare(b.title)));
+const archivedProjects = computed(() => props.projects.filter((p) => p.archived).sort((a, b) => compareTitles(a.title, b.title)));
 const showArchived = ref(false);
 
 // Add project input states

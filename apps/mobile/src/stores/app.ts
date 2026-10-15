@@ -1,7 +1,7 @@
 import { ref, shallowRef, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { Task, Project, Bucket } from '@jotter/vault-format';
-import { filterTasks, isEmptyFilter, parseQuery } from '@jotter/task-filter';
+import { compareTitles, filterTasks, isEmptyFilter, parseQuery } from '@jotter/task-filter';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { armDelay, armReminders, localDateTime } from '@/reminders';
@@ -68,7 +68,7 @@ export const useAppStore = defineStore('app', () => {
       if (sortBy.value === 'manual' && (index(a.id) >= 0 || index(b.id) >= 0)) {
         return (index(a.id) < 0 ? Infinity : index(a.id)) - (index(b.id) < 0 ? Infinity : index(b.id));
       }
-      return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+      return compareTitles(a.title, b.title);
     };
     const sorted = projects.value.filter((p) => !p.archived).sort(inOrder);
     return [...sorted.filter((p) => pinned.value.includes(p.id)), ...sorted.filter((p) => !pinned.value.includes(p.id))];
