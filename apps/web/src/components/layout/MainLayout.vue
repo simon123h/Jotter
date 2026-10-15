@@ -5,6 +5,7 @@ import { useDebounceFn, useEventListener } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
+import { useCaptureTask } from '@/composables/useCaptureTask';
 import { useProjectStore } from '@/stores/project';
 import { useModalStore } from '@/stores/modal';
 import { useTimeblockStore } from '@/features/timeblock/stores/timeblock';
@@ -46,7 +47,25 @@ const activeProjectId = computed(() => (route.params.projectId as string) || '')
 
 const navBarRef = ref<any>(null);
 
+const openCapture = useCaptureTask(
+  activeProjectId,
+  (id) => selectProject(id),
+  (bucket) => openCreateModal(bucket)
+);
+// Not over the task that is open
+const captureTask = () => {
+  if (!route.params.taskId) openCapture();
+};
+
 useKeyboardShortcuts([
+  { key: 'i', callback: () => captureTask() },
+  {
+    // A project page has its own q, for the project that is open
+    key: 'q',
+    callback: () => {
+      if (!activeProjectId.value) captureTask();
+    },
+  },
   {
     key: 'k',
     ctrlKey: true,
@@ -61,7 +80,7 @@ useKeyboardShortcuts([
 
 const selectProject = (projectId: string) => {
   projectStore.error = null;
-  router.push({
+  return router.push({
     name: 'project',
     params: { projectId },
     query: route.query,

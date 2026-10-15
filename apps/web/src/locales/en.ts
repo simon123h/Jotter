@@ -323,6 +323,10 @@ export const en = {
     demoReset: 'Reset the demo',
     demoResetDesc: 'Deletes your changes in this browser and brings back the example projects and tasks.',
     demoResetConfirm: 'Reset the demo to its initial state? Your changes are lost.',
+    captureProject: 'Project for quick capture',
+    captureProjectDesc:
+      'The "i" shortcut adds a task here, from wherever you are. "q" on a page without a project does too. On the phone, shared text and the new-task shortcut go here.',
+    captureProjectNone: 'None (the open project)',
     hideAddTask: 'Smaller "Add task" button',
     hideAddTaskDesc: 'Replaces the large quick-add button at the top of each column with a small "+" symbol.',
     autoCommitToggle: 'Automatic Git commits',

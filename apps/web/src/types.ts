@@ -36,6 +36,8 @@ export interface AppSettings {
   darkTheme?: string;
   thresholdDays: number;
   pinnedProjectIds: string[];
+  /** The project that new tasks from outside a project go to (the `i` shortcut); null: none chosen. */
+  captureProjectId: string | null;
   sortBy: 'alpha' | 'manual';
   hideAddTaskButton: boolean;
   projectOrder: string[];

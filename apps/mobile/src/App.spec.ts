@@ -892,6 +892,25 @@ describe('message bar', () => {
 });
 
 describe('settings', () => {
+  it('chooses the project for quick capture and keeps it in the vault, next to the desktop settings', async () => {
+    const { app } = await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\n---\n');
+      f.put('Jotter/settings.json', JSON.stringify({ currentTheme: 'nordic-dark' }));
+    });
+    await openDrawer();
+    await find('drawer-settings').trigger('click');
+    await settle();
+    await type('setting-capture-project', 'home', 'change');
+    await settle();
+    expect(app.captureProjectId).toBe('home');
+    expect(JSON.parse(await fs.readText('Jotter/settings.json'))).toEqual({ currentTheme: 'nordic-dark', captureProjectId: 'home' });
+
+    await type('setting-capture-project', '', 'change');
+    await settle();
+    expect(app.captureProjectId).toBeNull();
+  });
+
   it('switches the language and the theme, and remembers both', async () => {
     await start(desktopVault);
     const settings = useSettingsStore();
@@ -2316,6 +2335,53 @@ describe('launcher shortcuts', () => {
     await submit('quick-add-input');
     expect(app.projectId).toBe('home');
     expect(app.allTasks.map((t) => t.title)).toEqual(['At home']);
+  });
+
+  it('files what comes from outside in the project chosen for quick capture, and not what is added inside a project', async () => {
+    const { app } = await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/home/index.md', '---\ntitle: Home\nbuckets:\n  - name: inbox\n    title: Inbox\n    is_default: true\n---\n');
+      f.put('Jotter/settings.json', JSON.stringify({ captureProjectId: 'home', currentTheme: 'nordic-dark' }));
+    });
+    await settle();
+    await app.selectProject('work');
+    expect(app.captureProject?.id).toBe('home');
+
+    // The launcher shortcut and shared text open the project for quick capture
+    await runShortcut('jotter://new-task');
+    await settle();
+    expect(app.projectId).toBe('home');
+    expect(find('quick-add-destination').text()).toBe('Home · Inbox');
+    await closeSheet();
+    await app.selectProject('work');
+    await runShortcut('jotter://share?text=Read%20later');
+    await settle();
+    expect(app.projectId).toBe('home');
+    expect(find('quick-add-input').exists()).toBe(true);
+    await closeSheet();
+
+    // The button in the app files where the user is
+    await app.selectProject('work');
+    await find('fab').trigger('click');
+    await settle();
+    expect(find('quick-add-destination').text()).toContain('Work');
+    // Search and planning do not move the user
+    await closeSheet();
+    await runShortcut('jotter://search');
+    expect(app.projectId).toBe('work');
+  });
+
+  it('keeps the open project when no project is chosen, or the chosen one is gone', async () => {
+    const { app } = await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/settings.json', JSON.stringify({ captureProjectId: 'deleted' }));
+    });
+    await settle();
+    expect(app.captureProject).toBeNull();
+    await runShortcut('jotter://new-task');
+    await settle();
+    expect(app.projectId).toBe('work');
+    expect(find('quick-add-destination').text()).toContain('Work');
   });
 
   it('opens quick add, the search and the planning view', async () => {
