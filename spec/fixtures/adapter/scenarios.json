@@ -1,0 +1,98 @@
+{
+  "description": "What the web app needs from its data layer, as steps against the StorageAdapter. The Python backend replays them through its REST API (tests/test_adapter_contract.py), the static demo through DemoStorageAdapter (apps/web/src/storage/__tests__/adapterContract.spec.ts), so a difference between the two shows as a failing test. A step calls `op` with `args` (`{\"$ref\": \"name.path\"}` takes a value saved by an earlier step) and may keep the result under `save`. `pick` turns a list into the values of one field. `equals` compares exactly, `includes` and `excludes` check members, `match` checks the listed fields of an object, `absent` lists fields an object must not have (null counts as absent). A scenario with `skip` lists the runtimes that do not do this yet, with the reason; the test is then skipped and says why.",
+  "scenarios": [
+    {
+      "name": "a task is created in a column and moved to another",
+      "steps": [
+        { "op": "createProject", "args": ["Contract move"], "save": "project" },
+        { "op": "createTask", "args": [{ "$ref": "project.id" }, { "title": "Write report", "bucket": "todo", "tags": ["work"], "priority": "high" }], "save": "task", "match": { "title": "Write report", "bucket": "todo", "tags": ["work"], "priority": "high" } },
+        { "op": "moveTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, "done", 1000], "match": { "bucket": "done" } },
+        { "op": "getTasks", "args": [{ "$ref": "project.id" }], "pick": "bucket", "equals": ["done"] },
+        { "op": "getTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }], "match": { "title": "Write report", "bucket": "done" } }
+      ]
+    },
+    {
+      "name": "tasks of a column keep the order of their positions",
+      "steps": [
+        { "op": "createProject", "args": ["Contract order"], "save": "project" },
+        { "op": "createTask", "args": [{ "$ref": "project.id" }, { "title": "First", "bucket": "todo" }], "save": "first" },
+        { "op": "createTask", "args": [{ "$ref": "project.id" }, { "title": "Second", "bucket": "todo" }], "save": "second" },
+        { "op": "moveTask", "args": [{ "$ref": "project.id" }, { "$ref": "second.id" }, "todo", 1] },
+        { "op": "getTasks", "args": [{ "$ref": "project.id" }], "pick": "title", "equals": ["Second", "First"] }
+      ]
+    },
+    {
+      "name": "a task is changed and deleted",
+      "steps": [
+        { "op": "createProject", "args": ["Contract edit"], "save": "project" },
+        { "op": "createTask", "args": [{ "$ref": "project.id" }, { "title": "Draft", "bucket": "todo" }], "save": "task" },
+        { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "title": "Final", "body": "- [ ] one", "due_date": "2031-05-04" }], "match": { "title": "Final", "body": "- [ ] one", "due_date": "2031-05-04" } },
+        { "op": "getTasks", "args": [{ "$ref": "project.id" }, { "search": "Final" }], "pick": "title", "equals": ["Final"] },
+        { "op": "getTasks", "args": [{ "$ref": "project.id" }, { "search": "Draft" }], "pick": "title", "equals": [] },
+        { "op": "deleteTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }] },
+        { "op": "getTasks", "args": [{ "$ref": "project.id" }], "pick": "title", "equals": [] }
+      ]
+    },
+    {
+      "name": "a postponed task stays in its column, and an empty date ends the postponement",
+      "steps": [
+        { "op": "createProject", "args": ["Contract postpone"], "save": "project" },
+        { "op": "createTask", "args": [{ "$ref": "project.id" }, { "title": "Later", "bucket": "todo" }], "save": "task" },
+        { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "postponed_until": "2031-05-04" }], "match": { "bucket": "todo", "postponed_until": "2031-05-04" } },
+        { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "postponed_until": "" }], "match": { "bucket": "todo" } },
+        { "op": "getTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }], "absent": ["postponed_until"] }
+      ]
+    },
+    {
+      "name": "an archived project leaves the cross-project list of tasks, and comes back when restored",
+      "steps": [
+        { "op": "createProject", "args": ["Contract keep"], "save": "keep" },
+        { "op": "createProject", "args": ["Contract trip"], "save": "trip" },
+        { "op": "createTask", "args": [{ "$ref": "keep.id" }, { "title": "Stays", "bucket": "todo" }] },
+        { "op": "createTask", "args": [{ "$ref": "trip.id" }, { "title": "Packing", "bucket": "todo" }] },
+        { "op": "getAllTasks", "args": [], "pick": "title", "includes": ["Stays", "Packing"] },
+        { "op": "updateProject", "args": [{ "$ref": "trip.id" }, { "archived": true }], "match": { "archived": true } },
+        { "op": "getAllTasks", "args": [], "pick": "title", "includes": ["Stays"], "excludes": ["Packing"] },
+        { "op": "getTasks", "args": [{ "$ref": "trip.id" }], "pick": "title", "equals": ["Packing"] },
+        { "op": "updateProject", "args": [{ "$ref": "trip.id" }, { "archived": false }], "match": { "archived": false } },
+        { "op": "getAllTasks", "args": [], "pick": "title", "includes": ["Stays", "Packing"] }
+      ]
+    },
+    {
+      "name": "renaming a project keeps its tasks and its retention",
+      "steps": [
+        { "op": "createProject", "args": ["Contract rename"], "save": "project" },
+        { "op": "updateProject", "args": [{ "$ref": "project.id" }, { "done_clean_period": 14 }], "match": { "done_clean_period": 14 } },
+        { "op": "createTask", "args": [{ "$ref": "project.id" }, { "title": "Kept", "bucket": "todo" }] },
+        { "op": "updateProject", "args": [{ "$ref": "project.id" }, { "title": "Contract renamed" }], "match": { "title": "Contract renamed", "done_clean_period": 14 } },
+        { "op": "getTasks", "args": [{ "$ref": "project.id" }], "pick": "title", "equals": ["Kept"] }
+      ]
+    },
+    {
+      "name": "a deleted project is gone with its tasks",
+      "steps": [
+        { "op": "createProject", "args": ["Contract gone"], "save": "project" },
+        { "op": "createTask", "args": [{ "$ref": "project.id" }, { "title": "Vanishes", "bucket": "todo" }] },
+        { "op": "deleteProject", "args": [{ "$ref": "project.id" }] },
+        { "op": "getProjects", "args": [], "pick": "title", "excludes": ["Contract gone"] },
+        { "op": "getAllTasks", "args": [], "pick": "title", "excludes": ["Vanishes"] }
+      ]
+    },
+    {
+      "name": "a new project has a to-do and a done column",
+      "steps": [
+        { "op": "createProject", "args": ["Contract columns"], "save": "project" },
+        { "op": "getBuckets", "args": [{ "$ref": "project.id" }], "pick": "name", "includes": ["todo", "done"] }
+      ]
+    },
+    {
+      "name": "a repeating task comes back instead of staying in done",
+      "skip": { "demo": "the demo stores `repeat` but does not roll a task over when it is completed" },
+      "steps": [
+        { "op": "createProject", "args": ["Contract repeat"], "save": "project" },
+        { "op": "createTask", "args": [{ "$ref": "project.id" }, { "title": "Water plants", "bucket": "todo", "due_date": "2031-05-04", "repeat": { "every": 1, "unit": "week", "from": "due" } }], "save": "task" },
+        { "op": "moveTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, "done", 1000], "match": { "bucket": "todo", "due_date": "2031-05-11" } }
+      ]
+    }
+  ]
+}
