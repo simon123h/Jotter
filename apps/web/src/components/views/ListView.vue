@@ -165,29 +165,29 @@ const getBucketTitle = (name: string) => {
               </div>
             </th>
             <th @click="toggleSort('bucket')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-40">
-              <div class="flex items-center gap-1">
+              <div class="flex items-center gap-1 whitespace-nowrap">
                 <Layers class="w-3 h-3" /> {{ t('table.status') }}
                 <component :is="sortKey === 'bucket' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
               </div>
             </th>
             <th @click="toggleSort('priority')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-32 text-center">
-              <div class="flex items-center justify-center gap-1">
+              <div class="flex items-center justify-center gap-1 whitespace-nowrap">
                 <Flag class="w-3 h-3" /> {{ t('form.priorityLabel') }}
                 <component :is="sortKey === 'priority' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
               </div>
             </th>
             <th @click="toggleSort('due_date')" class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-32 text-center">
-              <div class="flex items-center justify-center gap-1">
+              <div class="flex items-center justify-center gap-1 whitespace-nowrap">
                 <Calendar class="w-3 h-3" /> {{ t('form.dueDateLabel') }}
                 <component :is="sortKey === 'due_date' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
               </div>
             </th>
             <th
               @click="toggleSort('planned_date')"
-              class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-32 text-center"
+              class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-40 text-center"
             >
-              <div class="flex items-center justify-center gap-1">
-                P: {{ t('form.plannedDateLabel') }}
+              <div class="flex items-center justify-center gap-1 whitespace-nowrap">
+                {{ t('form.plannedDateLabel') }}
                 <component :is="sortKey === 'planned_date' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
               </div>
             </th>
@@ -195,7 +195,7 @@ const getBucketTitle = (name: string) => {
               @click="toggleSort('created_at')"
               class="px-4 py-3 cursor-pointer hover:text-theme-accent transition-colors w-40 text-right"
             >
-              <div class="flex items-center justify-end gap-1">
+              <div class="flex items-center justify-end gap-1 whitespace-nowrap">
                 {{ t('table.updated') }}
                 <component :is="sortKey === 'created_at' ? (sortOrder === 'asc' ? ChevronUp : ChevronDown) : null" class="w-3 h-3" />
               </div>
@@ -259,7 +259,7 @@ const getBucketTitle = (name: string) => {
               <span v-if="task.priority" class="text-xs uppercase tracking-widest" :class="getPriorityClasses(task.priority)">
                 {{ task.priority }}
               </span>
-              <span v-else class="text-theme-text-muted opacity-30">-</span>
+              <span v-else class="text-theme-text-muted opacity-50">-</span>
             </td>
             <td class="px-4 py-2.5 text-center text-xs text-theme-text-card">
               {{ formatDate(task.due_date) }}
@@ -268,13 +268,13 @@ const getBucketTitle = (name: string) => {
               <span v-if="task.planned_date" class="text-theme-accent/80">
                 {{ t('plannedDateOptions.' + task.planned_date) }}
               </span>
-              <span v-else class="text-theme-text-muted opacity-30">-</span>
+              <span v-else class="text-theme-text-muted opacity-50">-</span>
             </td>
-            <td class="px-4 py-2.5 text-right text-xs text-theme-text-muted font-mono whitespace-nowrap">
+            <td class="px-4 py-2.5 text-right text-xs text-theme-text-muted whitespace-nowrap">
               {{
                 new Date(task.updated_at).toLocaleDateString(locale, {
-                  month: '2-digit',
-                  day: '2-digit',
+                  month: 'short',
+                  day: 'numeric',
                   hour: '2-digit',
                   minute: '2-digit',
                 })
