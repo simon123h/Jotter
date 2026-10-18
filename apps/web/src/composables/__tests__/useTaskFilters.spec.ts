@@ -76,6 +76,34 @@ describe('useTaskFilters', () => {
     replace.mockClear();
   });
 
+  describe('typing a query', () => {
+    // Typed letter by letter: the text in between is often no filter yet, or a different one
+    it.each(['created:after:-7d', 'due:before:+2w', 'tag:ui created:after:2026-01-01', 'tag:ui bucket:', 'updated:a'])(
+      'leaves what is typed in the field, at every letter: %s',
+      async (typed) => {
+        const { filters } = setup();
+        await nextTick();
+        for (let i = 1; i <= typed.length; i++) {
+          filters.searchQuery.value = typed.slice(0, i);
+          await nextTick();
+          await nextTick();
+          await nextTick();
+          expect(filters.searchQuery.value).toBe(typed.slice(0, i));
+        }
+      }
+    );
+
+    it('keeps the date criteria in the address, and the field as typed, next to a tag', async () => {
+      const { filters } = setup();
+      filters.searchQuery.value = 'tag:shopping created:after:-7d';
+      await nextTick();
+      await nextTick();
+      await nextTick();
+      expect(filters.searchQuery.value).toBe('tag:shopping created:after:-7d');
+      expect(route.query.created_after).toBe('-7d');
+    });
+  });
+
   describe('filtering the tasks', () => {
     it('keeps every task while nothing is asked for', async () => {
       const { filters } = setup();

@@ -49,11 +49,16 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
     selectedTags.value = [];
   };
 
+  // The filters changed because the field was typed in: what is typed stays as it is. An unfinished criterion
+  // (`created:after:`) has no filter yet, and writing the filters back would empty the field under the cursor.
+  let changedByTyping = false;
+
   // Parse searchQuery into taskFilters
   watch(searchQuery, (newVal) => {
     const parsed = parseDSL(newVal);
     // Only update taskFilters if parsed values actually differ to avoid infinite cycles
     if (JSON.stringify(taskFilters.value) !== JSON.stringify(parsed)) {
+      changedByTyping = true;
       taskFilters.value = parsed;
     }
   });
@@ -96,10 +101,15 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
       has_due_date,
       due_after: (q.due_after as string) || undefined,
       due_before: (q.due_before as string) || undefined,
+      created_after: (q.created_after as string) || undefined,
+      created_before: (q.created_before as string) || undefined,
+      updated_after: (q.updated_after as string) || undefined,
+      updated_before: (q.updated_before as string) || undefined,
       project: (q.project as string) || undefined,
     };
 
-    if (JSON.stringify(taskFilters.value) !== JSON.stringify(filters)) {
+    // The address is the filters written down: when it says what the field already says, the field is left as typed
+    if (stringifyDSL(taskFilters.value) !== stringifyDSL(filters)) {
       taskFilters.value = filters;
       searchQuery.value = stringifyDSL(filters);
       selectedTags.value = filters.tags
@@ -154,6 +164,11 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
       if (newFilters.due_before) query.due_before = newFilters.due_before;
       else delete query.due_before;
 
+      for (const key of ['created_after', 'created_before', 'updated_after', 'updated_before'] as const) {
+        if (newFilters[key]) query[key] = newFilters[key];
+        else delete query[key];
+      }
+
       if (newFilters.project) query.project = newFilters.project;
       else delete query.project;
 
@@ -161,9 +176,11 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
         router.replace({ query });
       }
 
-      // Sync stringified dsl back to searchQuery if they differ
+      // Sync stringified dsl back to searchQuery if they differ (the cards' tags, the dialog), unless it was typed
+      const typed = changedByTyping;
+      changedByTyping = false;
       const stringified = stringifyDSL(newFilters);
-      if (searchQuery.value !== stringified) {
+      if (!typed && searchQuery.value !== stringified) {
         searchQuery.value = stringified;
       }
     },
