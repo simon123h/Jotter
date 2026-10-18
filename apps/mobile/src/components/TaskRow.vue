@@ -77,7 +77,7 @@ const hasMeta = computed(
     <div
       role="button"
       tabindex="0"
-      class="relative flex cursor-pointer items-start gap-3 bg-card pl-4 row-pressable"
+      class="relative flex cursor-pointer items-start gap-3 border-b border-line bg-card pl-4 row-pressable"
       :style="{
         backgroundColor: selected
           ? 'color-mix(in srgb, var(--color-accent) 12%, var(--color-card))'
@@ -113,7 +113,7 @@ const hasMeta = computed(
         </span>
       </span>
 
-      <div class="min-w-0 flex-1 border-b border-line py-3 pr-4">
+      <div class="min-w-0 flex-1 py-3 pr-4">
         <div
           class="break-words text-[16px] leading-snug"
           :class="done ? 'text-muted line-through' : archived ? 'text-muted' : ''"
