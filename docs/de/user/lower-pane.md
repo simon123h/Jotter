@@ -6,8 +6,7 @@ deine regulären Spalten bleiben in der oberen Hälfte.
 
 ## Eine Spalte verschieben
 
-Klicke auf das Bereichs-Symbol im Kopf der Spalte, um sie nach unten zu verschieben. Dasselbe Symbol im unteren Bereich holt
-sie zurück ins Board. Du kannst mehrere Spalten in den unteren Bereich legen, sie teilen sich dessen Breite. Die Karten einer
+Öffne die Einstellungen der Spalte (die Schaltfläche **…** im Kopf oder ein Doppelklick auf den Titel) und setze den Haken bei **Unterer Bereich**. Ohne Haken ist die Spalte wieder im Board. Du kannst mehrere Spalten in den unteren Bereich legen, sie teilen sich dessen Breite. Die Karten einer
 verschobenen Spalte fließen in so viele Spalten, wie passen, sodass eine lange Liste viele Karten auf einmal zeigt.
 
 Karten lassen sich wie zwischen zwei beliebigen Spalten zwischen den Bereichen ziehen, und die Spalten jedes Bereichs lassen

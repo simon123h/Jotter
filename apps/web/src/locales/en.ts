@@ -189,8 +189,6 @@ export const en = {
   renameColumnTooltip: 'Rename column',
   collapseColumnTooltip: 'Collapse column',
   expandColumnTooltip: 'Expand column',
-  dockColumnTooltip: 'Move to the lower pane',
-  undockColumnTooltip: 'Move back to the board',
   resizeLowerPane: 'Resize the lower pane',
   autoCollapseEmptyColumns: 'Auto-Collapse Empty Columns',
   notesLabel: 'Notes & Description',
@@ -292,6 +290,8 @@ export const en = {
     defaultLabel: 'Default column for new tasks',
     isDefaultLabel: 'Default Column',
     isDefaultHelp: 'Tasks created without a column will go here.',
+    dockLabel: 'Lower pane',
+    dockHelp: 'Show the column across the bottom of the board. Set in this browser only.',
     saveButton: 'Save Changes',
   },
   projectEdit: {

@@ -135,6 +135,7 @@ describe('ColumnEditModal.vue', () => {
       layout: 'list',
       max_tasks: null,
       is_default: false,
+      docked: false,
     });
   });
 
@@ -198,6 +199,7 @@ describe('ColumnEditModal.vue', () => {
       layout: 'list',
       max_tasks: null,
       is_default: false,
+      docked: false,
     });
   });
 
@@ -231,6 +233,7 @@ describe('ColumnEditModal.vue', () => {
       layout: 'grid-2',
       max_tasks: null,
       is_default: false,
+      docked: false,
     });
   });
 
@@ -262,6 +265,7 @@ describe('ColumnEditModal.vue', () => {
       layout: 'grid-3',
       max_tasks: null,
       is_default: false,
+      docked: false,
     });
   });
 
@@ -296,6 +300,22 @@ describe('ColumnEditModal.vue', () => {
       layout: 'list',
       max_tasks: 7,
       is_default: false,
+      docked: false,
     });
+  });
+
+  it('offers the lower pane only where the board has one, and saves the choice', async () => {
+    wrapper = mountModal({ props: defaultProps });
+    expect(document.body.querySelector('[data-testid="column-dock"]')).toBeNull();
+    wrapper.unmount();
+
+    wrapper = mountModal({ props: { ...defaultProps, canDock: true, initialDocked: true } });
+    const checkbox = document.body.querySelector('[data-testid="column-dock"] input') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+    checkbox.click();
+    await nextTick();
+    const saveBtn = Array.from(document.body.querySelectorAll('button')).find((btn) => btn.textContent?.includes('Save Changes'));
+    saveBtn!.click();
+    expect(wrapper.emitted('save')![0][0]).toMatchObject({ bucketName: 'todo', docked: false });
   });
 });

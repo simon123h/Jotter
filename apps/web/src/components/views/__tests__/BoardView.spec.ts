@@ -107,11 +107,25 @@ describe('BoardView.vue lower pane', () => {
     return wrapper;
   };
 
-  it('has no lower pane until a column is docked, and docks a column from its header', async () => {
+  it('has no lower pane until a column is docked, and docks a column from its settings', async () => {
     const wrapper = await board();
     expect(wrapper.find('[data-testid="lower-pane"]').exists()).toBe(false);
 
-    await wrapper.findAll('[data-testid="column-dock"]')[1].trigger('click');
+    const setDocked = async (title: string, docked: boolean) => {
+      await wrapper
+        .findAll('h3')
+        .find((h) => h.text() === title)!
+        .trigger('dblclick');
+      await flushPromises();
+      const checkbox = document.body.querySelector('[data-testid="column-dock"] input') as HTMLInputElement;
+      checkbox.checked = docked;
+      checkbox.dispatchEvent(new Event('change'));
+      const save = Array.from(document.body.querySelectorAll('button')).find((btn) => btn.textContent?.includes('Save Changes'));
+      save!.click();
+      await flushPromises();
+    };
+
+    await setDocked('Review', true);
 
     const pane = wrapper.find('[data-testid="lower-pane"]');
     expect(pane.text()).toContain('Review');
@@ -119,8 +133,8 @@ describe('BoardView.vue lower pane', () => {
     expect(wrapper.find('[data-testid="lower-pane-divider"]').exists()).toBe(true);
     expect(useUiStore().isColumnDocked('work', 'review')).toBe(true);
 
-    // The button in the pane takes the column back
-    await pane.find('[data-testid="column-dock"]').trigger('click');
+    // Taking the tick out brings the column back to the board
+    await setDocked('Review', false);
     expect(wrapper.find('[data-testid="lower-pane"]').exists()).toBe(false);
     wrapper.unmount();
   });

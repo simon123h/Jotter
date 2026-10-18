@@ -6,7 +6,7 @@ stay in the top half.
 
 ## Moving a column
 
-Click the pane icon in the column's header to move it down. The same icon in the lower pane takes it back to the board.
+Open the column's settings (the **…** button in its header, or double-click its title) and tick **Lower pane**. Untick it to take the column back to the board.
 You can put several columns in the lower pane, and they share its width. The cards of a docked column flow into as many
 columns as fit, so a long list shows many cards at once.
 

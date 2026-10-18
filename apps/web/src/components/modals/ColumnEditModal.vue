@@ -17,6 +17,9 @@ const props = defineProps<{
   initialMaxTasks?: number | null;
   tasksCount?: number;
   initialIsDefault?: boolean;
+  /** The board has a lower pane to put the column in (desktop). */
+  canDock?: boolean;
+  initialDocked?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -32,6 +35,7 @@ const emit = defineEmits<{
       layout: 'list' | 'grid-2' | 'grid-3';
       max_tasks: number | null;
       is_default: boolean;
+      docked: boolean;
     }
   ): void;
 }>();
@@ -42,6 +46,7 @@ const color = ref<string | null>(props.initialColor || null);
 const layout = ref<'list' | 'grid-2' | 'grid-3'>(props.initialLayout || 'list');
 const maxTasks = ref<string>(props.initialMaxTasks ? String(props.initialMaxTasks) : '');
 const isDefault = ref<boolean>(props.initialIsDefault || false);
+const docked = ref<boolean>(props.initialDocked || false);
 const titleInput = ref<HTMLInputElement | null>(null);
 
 // The palette of the vault format (spec/FORMAT.md), as the columns are drawn with it
@@ -57,6 +62,7 @@ watch(
       layout.value = props.initialLayout || 'list';
       maxTasks.value = props.initialMaxTasks ? String(props.initialMaxTasks) : '';
       isDefault.value = props.initialIsDefault || false;
+      docked.value = props.initialDocked || false;
 
       nextTick(() => {
         titleInput.value?.focus();
@@ -99,6 +105,7 @@ const handleSave = () => {
     layout: layout.value,
     max_tasks: parsedMaxTasks,
     is_default: isDefault.value,
+    docked: docked.value,
   });
   emit('close');
 };
@@ -252,6 +259,19 @@ const closeAndSave = () => {
             <span class="text-[10px] text-theme-text-muted">{{
               t('columnEdit.isDefaultHelp') || 'Tasks created without a column will go here.'
             }}</span>
+          </div>
+        </label>
+
+        <!-- Lower pane: a browser setting, desktop widths only -->
+        <label v-if="canDock" class="flex items-center gap-2 cursor-pointer select-none mt-3" data-testid="column-dock">
+          <input
+            type="checkbox"
+            v-model="docked"
+            class="w-4 h-4 rounded bg-theme-base border-theme-border text-theme-primary focus:ring-theme-primary focus:ring-offset-theme-base cursor-pointer"
+          />
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-theme-text-main">{{ t('columnEdit.dockLabel') }}</span>
+            <span class="text-[10px] text-theme-text-muted">{{ t('columnEdit.dockHelp') }}</span>
           </div>
         </label>
       </div>

@@ -118,8 +118,9 @@ const openEditColumn = (bucket: Bucket) => {
 
 const onSaveColumn = async (payload: any) => {
   if (!currentEditingBucket.value) return;
+  const name = currentEditingBucket.value.name; // the dialog closes, and clears the column, while this runs
   await handleRenameColumn({
-    bucketName: currentEditingBucket.value.name,
+    bucketName: name,
     newTitle: payload.title,
     newSubtitle: payload.subtitle,
     newColor: payload.color,
@@ -127,6 +128,10 @@ const onSaveColumn = async (payload: any) => {
     newMaxTasks: payload.max_tasks,
     newIsDefault: payload.is_default,
   });
+  // The lower pane is a browser setting, not part of the column in the vault
+  if (payload.docked !== uiStore.isColumnDocked(activeProjectId.value, name)) {
+    uiStore.toggleColumnDock(activeProjectId.value, name);
+  }
   emit('refresh');
 };
 
@@ -282,13 +287,11 @@ useBoardNavigation({
             :project-id="activeProjectId"
             :is-collapsed="isCollapsed(b.name)"
             :is-docked="false"
-            :can-dock="canDock"
             @add-task-click="(name) => emit('add-task-click', name)"
             @card-dropped="onCardDropped"
             @mark-done="onMarkDone"
             @toggle-select="(task) => emit('toggle-select', task)"
             @toggle-collapse="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
-            @toggle-dock="uiStore.toggleColumnDock(activeProjectId, b.name)"
             @edit="openEditColumn"
           />
         </div>
@@ -432,13 +435,11 @@ useBoardNavigation({
             :project-id="activeProjectId"
             :is-collapsed="isCollapsed(b.name)"
             :is-docked="true"
-            :can-dock="canDock"
             @add-task-click="(name) => emit('add-task-click', name)"
             @card-dropped="onCardDropped"
             @mark-done="onMarkDone"
             @toggle-select="(task) => emit('toggle-select', task)"
             @toggle-collapse="uiStore.toggleColumnCollapse(activeProjectId, b.name)"
-            @toggle-dock="uiStore.toggleColumnDock(activeProjectId, b.name)"
             @edit="openEditColumn"
           />
         </div>
@@ -456,6 +457,8 @@ useBoardNavigation({
       :initial-layout="currentEditingBucket.layout"
       :initial-max-tasks="currentEditingBucket.max_tasks"
       :initial-is-default="currentEditingBucket.is_default"
+      :can-dock="canDock"
+      :initial-docked="uiStore.isColumnDocked(activeProjectId, currentEditingBucket.name)"
       :tasks-count="tasksInColumn(currentEditingBucket.name)"
       @close="
         isEditModalOpen = false;

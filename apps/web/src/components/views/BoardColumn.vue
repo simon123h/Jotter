@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Plus, MoreHorizontal, ChevronLeft, PanelBottom, PanelBottomClose } from '@lucide/vue';
+import { Plus, MoreHorizontal, ChevronLeft } from '@lucide/vue';
 import type { Task, Bucket, BucketName } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
 import { useI18n } from '@/composables/useI18n';
@@ -14,8 +14,6 @@ const props = defineProps<{
   isCollapsed: boolean;
   /** The column sits in the lower pane of the board, across its whole width. */
   isDocked: boolean;
-  /** The board has a lower pane to put the column in. */
-  canDock: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -24,7 +22,6 @@ const emit = defineEmits<{
   (e: 'mark-done', task: Task): void;
   (e: 'toggle-select', task: Task): void;
   (e: 'toggle-collapse'): void;
-  (e: 'toggle-dock'): void;
   (e: 'edit', bucket: Bucket): void;
 }>();
 
@@ -89,15 +86,6 @@ const exceeded = computed(() => !!props.bucket.max_tasks && props.tasks.length >
           </span>
         </div>
         <div class="flex items-center shrink-0 gap-1">
-          <button
-            v-if="canDock && !isAll"
-            @click.stop="emit('toggle-dock')"
-            class="hidden md:block text-theme-text-muted hover:text-theme-text-main p-1 hover:bg-theme-card/50 rounded transition-colors cursor-pointer animate-fade-in"
-            :title="isDocked ? t('undockColumnTooltip') : t('dockColumnTooltip')"
-            data-testid="column-dock"
-          >
-            <component :is="isDocked ? PanelBottomClose : PanelBottom" class="w-4 h-4 shrink-0" />
-          </button>
           <button
             v-if="!isDocked"
             @click.stop="emit('toggle-collapse')"

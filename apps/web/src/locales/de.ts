@@ -190,8 +190,6 @@ export const de = {
   renameColumnTooltip: 'Spalte umbenennen',
   collapseColumnTooltip: 'Spalte einklappen',
   expandColumnTooltip: 'Spalte ausklappen',
-  dockColumnTooltip: 'In den unteren Bereich verschieben',
-  undockColumnTooltip: 'Zurück ins Board verschieben',
   resizeLowerPane: 'Größe des unteren Bereichs ändern',
   autoCollapseEmptyColumns: 'Leere Spalten automatisch einklappen',
   notesLabel: 'Notizen & Beschreibung',
@@ -294,6 +292,8 @@ export const de = {
     defaultLabel: 'Standardspalte für neue Aufgaben',
     isDefaultLabel: 'Standardspalte',
     isDefaultHelp: 'Neue Aufgaben ohne zugewiesene Spalte landen hier.',
+    dockLabel: 'Unterer Bereich',
+    dockHelp: 'Die Spalte über die ganze Breite am unteren Rand des Boards zeigen. Gilt nur in diesem Browser.',
     saveButton: 'Änderungen speichern',
   },
   projectEdit: {
