@@ -160,8 +160,11 @@ async function submit() {
       <span class="truncate">{{ destination }}</span>
       <ChevronDown class="h-4 w-4 shrink-0 transition-transform" :class="choosing ? 'rotate-180' : ''" />
     </button>
-    <div v-if="choosing" class="mb-3 space-y-2" data-testid="quick-add-choices">
-      <div class="flex flex-wrap gap-2" role="group" :aria-label="t('quickAdd.project')">
+    <div v-if="choosing" class="mb-3 space-y-3" data-testid="quick-add-choices">
+      <div class="flex flex-wrap gap-2" role="group" :aria-labelledby="'quick-add-projects'">
+        <span id="quick-add-projects" class="w-full text-xs font-semibold uppercase tracking-wider text-muted">{{
+          t('quickAdd.project')
+        }}</span>
         <button
           v-for="p in app.orderedProjects"
           :key="p.id"
@@ -175,7 +178,10 @@ async function submit() {
           {{ p.title }}
         </button>
       </div>
-      <div class="flex flex-wrap gap-2" role="group" :aria-label="t('quickAdd.column')">
+      <div class="flex flex-wrap gap-2" role="group" :aria-labelledby="'quick-add-columns'">
+        <span id="quick-add-columns" class="w-full text-xs font-semibold uppercase tracking-wider text-muted">{{
+          t('quickAdd.column')
+        }}</span>
         <button
           v-for="b in app.buckets"
           :key="b.name"
