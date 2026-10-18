@@ -79,8 +79,8 @@ const finalTitle = computed(() => smart.resolve().title);
 const busy = ref(false);
 /** A task of this project that already holds the address being typed or pasted. */
 const duplicate = computed(() => duplicateOf(`${title.value}\n${draftBody ?? ''}`, app.allTasks));
-// What was added in this sheet, so the next capture can follow without leaving
-const added = ref<string[]>([]);
+// What was added in this sheet, so the next capture can follow without leaving. A tap on one opens its details.
+const added = ref<{ id: string; title: string }[]>([]);
 
 onMounted(() => input.value?.focus());
 
@@ -111,7 +111,7 @@ async function submit() {
     // Where the user is looking sets the defaults; what the title says wins
     const viewTag = app.view === 'tags' && column?.value ? [column.value] : [];
     const viewPlanned = app.view === 'planning' && column?.value ? column.value : undefined;
-    await app.addTask({
+    const task = await app.addTask({
       title: clean,
       bucket: found.bucket ?? picked.value ?? column?.bucket ?? undefined,
       tags: [...new Set([...viewTag, ...found.tags])],
@@ -123,7 +123,7 @@ async function submit() {
     draftBody = undefined;
     title.value = '';
     smart.reset();
-    added.value.unshift(clean);
+    added.value.unshift({ id: task.id, title: clean });
     // Stay open for the next one: quick capture is the point of this sheet
     input.value?.focus();
   } catch (err) {
@@ -216,8 +216,15 @@ async function submit() {
       </button>
     </form>
     <ul v-if="added.length" class="space-y-1 pb-2" data-testid="quick-add-added">
-      <li v-for="(item, i) in added" :key="i" class="flex items-center gap-2 text-sm text-muted">
-        <Check class="h-4 w-4 shrink-0 text-accent" /><span class="truncate">{{ item }}</span>
+      <li v-for="item in added" :key="item.id">
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 py-1 text-left text-sm text-muted active:opacity-70"
+          data-testid="quick-add-added-task"
+          @click="ui.open({ type: 'task', id: item.id })"
+        >
+          <Check class="h-4 w-4 shrink-0 text-accent" /><span class="truncate">{{ item.title }}</span>
+        </button>
       </li>
     </ul>
   </BottomSheet>

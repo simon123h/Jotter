@@ -2100,6 +2100,20 @@ describe('quick add keyboard', () => {
     expect((find('quick-add-input').element as HTMLInputElement).value).toBe('');
   });
 
+  it('opens the details of a task that was just added when its title in the list is tapped', async () => {
+    await start(desktopVault);
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'Buy milk');
+    await find('quick-add-input').trigger('keydown', { key: 'Enter' });
+    await settle();
+
+    await find('quick-add-added-task').trigger('click');
+    await settle();
+
+    expect((find('task-title').element as HTMLTextAreaElement).value).toBe('Buy milk');
+    expect(all('quick-add-input')).toHaveLength(0);
+  });
+
   it('opens and closes the row of keyword chips instead of leaving a gap, and keeps its buttons out of reach while closed', async () => {
     await start(desktopVault);
     await find('fab').trigger('click');
