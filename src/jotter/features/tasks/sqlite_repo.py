@@ -4,7 +4,7 @@ import json
 import re
 import sqlite3
 import threading
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from itertools import batched
 from typing import Any, NamedTuple
 
@@ -12,6 +12,22 @@ from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Tas
 from jotter.shared.exceptions import EntityNotFoundError
 
 _sqlite_write_lock = threading.Lock()
+
+
+_RELATIVE_DAY = re.compile(r"([+-])(\d+)([dw])", re.IGNORECASE)
+
+
+def _today() -> date:
+    return date.today()
+
+
+def _resolve_day(value: str | None) -> str | None:
+    """A day relative to today (`-7d`, `+2w`) as YYYY-MM-DD. Anything else is a day as written."""
+    match = _RELATIVE_DAY.fullmatch(value) if value else None
+    if not match:
+        return value
+    days = int(match[2]) * (7 if match[3].lower() == "w" else 1) * (-1 if match[1] == "-" else 1)
+    return (_today() + timedelta(days=days)).isoformat()
 
 
 def _json_or_none(raw: str | None) -> Any:
@@ -222,7 +238,10 @@ class SqliteTaskRepository:
             if sub_conditions:
                 query += f" AND ({' OR '.join(sub_conditions)})"
 
-        # Date filters
+        # Date filters. A day can be relative to today (-7d, +2w).
+        due_before, due_after = _resolve_day(due_before), _resolve_day(due_after)
+        created_before, created_after = _resolve_day(created_before), _resolve_day(created_after)
+        updated_before, updated_after = _resolve_day(updated_before), _resolve_day(updated_after)
         if due_before:
             query += " AND due_date IS NOT NULL AND due_date <= ?"
             args.append(due_before)

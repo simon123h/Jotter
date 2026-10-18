@@ -5,7 +5,12 @@ import { filterTasks, parseQuery, stringifyQuery, isEmptyFilter, isoDay, isPostp
 import matchFixture from '../../../../../spec/fixtures/search/match.json';
 import parseFixture from '../../../../../spec/fixtures/search/parse.json';
 
-const { tasks, cases } = matchFixture as {
+const {
+  tasks,
+  cases,
+  today: fixtureToday,
+} = matchFixture as {
+  today: string;
   tasks: Array<{ id: string; title: string; bucket: string; tags: string[] }>;
   cases: Array<{ name: string; filter: TaskFilter; ids: string[] }>;
 };
@@ -14,7 +19,7 @@ const parseCases = (parseFixture as { cases: Array<{ query: string; filter: Task
 describe('task filter conformance', () => {
   for (const c of cases) {
     it(`matches: ${c.name}`, () => {
-      expect(filterTasks(tasks, c.filter, '2026-06-15').map((t) => t.id)).toEqual(c.ids);
+      expect(filterTasks(tasks, c.filter, fixtureToday).map((t) => t.id)).toEqual(c.ids);
     });
   }
 

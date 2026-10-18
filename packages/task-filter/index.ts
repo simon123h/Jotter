@@ -75,6 +75,7 @@ const quoted = (value: string) => (value.includes(" ") ? `"${value}"` : value);
  * - project:work or proj:work
  * - planned:today
  * - due:has, due:none, due:before:YYYY-MM-DD, due:after:YYYY-MM-DD; created: and updated: take before: and after:
+ * - a day can be relative to today: -7d, +2w (days or weeks, the sign is required), e.g. created:after:-7d
  * - words and "quoted phrases" for the full-text search
  * Values with spaces go in quotes (bucket:"in progress").
  */
@@ -231,6 +232,15 @@ const words = (text: string) =>
     .split(/[^\p{L}\p{N}]+/u)
     .filter(Boolean);
 
+/** A day relative to today (-7d, +2w) as YYYY-MM-DD, counted from `day`. Anything else is a day as written. */
+function resolveDay(value: string, day: string): string {
+  const match = /^([+-])(\d+)([dw])$/i.exec(value);
+  if (!match) return value;
+  const days = Number(match[2]) * (match[3].toLowerCase() === "w" ? 7 : 1) * (match[1] === "-" ? -1 : 1);
+  const [year, month, date] = day.split("-").map(Number);
+  return isoDay(days, new Date(year, month - 1, date));
+}
+
 /** A date alone covers its whole day when compared with a timestamp. */
 const endOfDay = (date: string) =>
   date.length === 10 ? `${date}T23:59:59.999999` : date;
@@ -299,24 +309,28 @@ export function matchesFilter(
       return false;
   }
 
+  const resolve = (value: string | undefined) => (value ? resolveDay(value, day) : value);
+  const dueBefore = resolve(filter.due_before);
+  const dueAfter = resolve(filter.due_after);
+  const createdBefore = resolve(filter.created_before);
+  const createdAfter = resolve(filter.created_after);
+  const updatedBefore = resolve(filter.updated_before);
+  const updatedAfter = resolve(filter.updated_after);
+
   const due = task.due_date || "";
   if (filter.has_due_date === true && !due) return false;
   if (filter.has_due_date === false && due) return false;
-  if (filter.due_before && !(due && due <= filter.due_before)) return false;
-  if (filter.due_after && !(due && due >= filter.due_after)) return false;
+  if (dueBefore && !(due && due <= dueBefore)) return false;
+  if (dueAfter && !(due && due >= dueAfter)) return false;
   if (filter.planned_date && task.planned_date !== filter.planned_date)
     return false;
 
   const created = task.created_at ?? "";
   const updated = task.updated_at ?? "";
-  if (filter.created_before && !(created <= endOfDay(filter.created_before)))
-    return false;
-  if (filter.created_after && !(created >= startOfDay(filter.created_after)))
-    return false;
-  if (filter.updated_before && !(updated <= endOfDay(filter.updated_before)))
-    return false;
-  if (filter.updated_after && !(updated >= startOfDay(filter.updated_after)))
-    return false;
+  if (createdBefore && !(created <= endOfDay(createdBefore))) return false;
+  if (createdAfter && !(created >= startOfDay(createdAfter))) return false;
+  if (updatedBefore && !(updated <= endOfDay(updatedBefore))) return false;
+  if (updatedAfter && !(updated >= startOfDay(updatedAfter))) return false;
 
   if (filter.search) {
     const terms = words(filter.search);

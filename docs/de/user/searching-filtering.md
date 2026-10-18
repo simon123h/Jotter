@@ -27,6 +27,8 @@ Eine Suchabfrage setzt sich aus freiem Volltext (einzelne Wörter oder Phrasen i
 | **Projekte** | `project:marketing` <br> *oder* `proj:frontend` | Aufgaben, die zu einem Projekt nach ID oder **Projekttitel** gehören |
 | **Vorhandensein von Fälligkeit** | `due:has` <br> *oder* `due:none` | Aufgaben, die ein beliebiges Fälligkeitsdatum bzw. *kein* Fälligkeitsdatum haben |
 | **Fälligkeitsgrenzen** | `due:before:2026-12-31` <br> `due:after:2026-06-01` | Aufgaben, deren Fälligkeitsdatum innerhalb der angegebenen Grenzen liegt |
+| **Erstellt / Geändert** | `created:after:2026-06-01` <br> `updated:before:2026-06-30` | Aufgaben, die innerhalb der angegebenen Grenzen erstellt oder zuletzt geändert wurden (`before:` und `after:` schließen den Tag selbst ein) |
+| **Relative Tage** | `created:after:-7d` <br> `due:before:+2w` | Jede Datumsgrenze kann ab heute zählen: `-7d` ist vor sieben Tagen, `+2w` in zwei Wochen (Tage `d` oder Wochen `w`, das Vorzeichen ist Pflicht). `created:after:-7d` findet die Aufgaben der letzten Woche, auch morgen noch. |
 
 ---
 

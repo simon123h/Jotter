@@ -28,6 +28,8 @@ A search query is composed of standalone full-text search phrases and optional c
 | **Planned Date** | `planned:today` | Tasks planned for that date or keyword |
 | **Presence of Due Date** | `due:has` <br> *or* `due:none` | Tasks that have *any* due date, or *no* due date |
 | **Due Date Boundaries** | `due:before:2026-12-31` <br> `due:after:2026-06-01` | Tasks with due dates within the specified date boundaries |
+| **Created / Updated** | `created:after:2026-06-01` <br> `updated:before:2026-06-30` | Tasks created or last changed within the specified date boundaries (`before:` and `after:` include the day itself) |
+| **Relative Days** | `created:after:-7d` <br> `due:before:+2w` | Any date boundary can count from today instead: `-7d` is seven days ago, `+2w` is two weeks ahead (days `d` or weeks `w`, the sign is required). `created:after:-7d` finds the tasks added in the last week, and keeps doing so tomorrow. |
 
 ---
 

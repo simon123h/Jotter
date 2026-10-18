@@ -5,11 +5,13 @@ The TypeScript implementation (packages/task-filter, used by the web and the mob
 
 import json
 import sqlite3
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+from jotter.features.tasks import sqlite_repo
 from jotter.features.tasks.domain import Task
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 from jotter.shared.db import init_schema
@@ -29,6 +31,12 @@ def _kwargs(filter_: dict[str, Any]) -> dict[str, Any]:
         else:
             out[key] = value
     return out
+
+
+@pytest.fixture(autouse=True)
+def fixed_today(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The day the relative days of the cases count from."""
+    monkeypatch.setattr(sqlite_repo, "_today", lambda: date.fromisoformat(MATCH["today"]))
 
 
 @pytest.fixture

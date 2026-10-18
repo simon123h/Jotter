@@ -1,4 +1,5 @@
 {
+  "today": "2026-06-15",
   "tasks": [
     {
       "id": "a",
@@ -413,6 +414,50 @@
       "ids": [
         "a",
         "c"
+      ]
+    },
+    {
+      "name": "a relative day counts back from today: created within the last 120 days",
+      "filter": {
+        "created_after": "-120d"
+      },
+      "ids": [
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "a relative day in weeks",
+      "filter": {
+        "created_after": "-17w"
+      },
+      "ids": [
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "a relative day with a plus counts forward from today",
+      "filter": {
+        "due_before": "+60d"
+      },
+      "ids": [
+        "a",
+        "c"
+      ]
+    },
+    {
+      "name": "a relative day works for updated too",
+      "filter": {
+        "updated_before": "-100d"
+      },
+      "ids": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e"
       ]
     }
   ]

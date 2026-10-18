@@ -149,6 +149,19 @@
         "tags": "bug",
         "tag_mode": "any"
       }
+    },
+    {
+      "query": "created:after:-7d",
+      "filter": {
+        "created_after": "-7d"
+      }
+    },
+    {
+      "query": "due:before:+2w updated:after:-3d",
+      "filter": {
+        "due_before": "+2w",
+        "updated_after": "-3d"
+      }
     }
   ]
 }
