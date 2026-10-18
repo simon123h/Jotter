@@ -2007,6 +2007,18 @@ describe('task page', () => {
     expect(find('task-page').exists()).toBe(false);
     expect(file('a')).toContain('title: Write the final report');
   });
+
+  it('leaves with the Save button too, saving what was typed and not marking the task done', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    (find('task-title').element as HTMLTextAreaElement).value = 'Write the summary';
+    await find('task-title').trigger('input');
+    await find('task-save').trigger('click');
+    await settle();
+    expect(find('task-page').exists()).toBe(false);
+    expect(file('a')).toContain('title: Write the summary');
+    expect(file('a')).toContain('status: todo');
+  });
 });
 
 describe('swiping between columns', () => {

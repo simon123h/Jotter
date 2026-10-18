@@ -240,7 +240,7 @@ async function removeAttachment(name: string) {
 </script>
 
 <template>
-  <!-- A page of its own, not a sheet: the arrow leaves it (everything is saved as it is edited), the menu holds what changes the task -->
+  <!-- A page of its own, not a sheet: the arrow and the Save button leave it (everything is saved as it is edited), the menu holds what changes the task -->
   <div
     v-if="task"
     class="fixed inset-0 z-40 flex flex-col bg-card"
@@ -260,6 +260,14 @@ async function removeAttachment(name: string) {
         <ArrowLeft class="h-6 w-6" />
       </button>
       <h2 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-7">{{ t('task.heading') }}</h2>
+      <!-- Everything is saved as it is edited; the button is for the mind that looks for one. It does what the arrow does. -->
+      <button
+        class="h-10 shrink-0 rounded-full px-4 text-base font-semibold text-accent active:bg-line"
+        data-testid="task-save"
+        @click="close"
+      >
+        {{ t('common.save') }}
+      </button>
       <button
         class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full active:bg-line"
         :aria-label="t('common.moreActions')"
