@@ -286,11 +286,11 @@ const closeAndSave = () => {
             type="button"
             @click="handleDelete"
             :disabled="(tasksCount ?? 0) > 0"
-            class="text-xs font-semibold px-2.5 py-1.5 rounded border flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+            class="px-2.5 sm:px-3.5 py-1.5 rounded border text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap"
             :class="
               (tasksCount ?? 0) > 0
-                ? 'text-theme-text-muted/30 border-theme-border/30 cursor-not-allowed opacity-40'
-                : 'text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border-red-500/20'
+                ? 'text-theme-text-muted border-theme-border opacity-60 cursor-not-allowed'
+                : 'text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border-red-500/30 cursor-pointer'
             "
             :title="(tasksCount ?? 0) > 0 ? t('deleteColumnDisabledTooltip') : t('deleteColumnTooltip')"
           >
