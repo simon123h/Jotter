@@ -293,7 +293,7 @@ export const de = {
     isDefaultLabel: 'Standardspalte',
     isDefaultHelp: 'Neue Aufgaben ohne zugewiesene Spalte landen hier.',
     dockLabel: 'Unterer Bereich',
-    dockHelp: 'Die Spalte über die ganze Breite am unteren Rand des Boards zeigen. Gilt nur in diesem Browser.',
+    dockHelp: 'Die Spalte unten über die ganze Breite des Boards zeigen. Nur in diesem Browser.',
     saveButton: 'Änderungen speichern',
   },
   projectEdit: {

@@ -121,7 +121,7 @@ const closeAndSave = () => {
 </script>
 
 <template>
-  <BaseModal :is-open="isOpen" max-width="max-w-md" :title="t('columnEdit.title')" @close="closeAndSave">
+  <BaseModal :is-open="isOpen" max-width="max-w-lg" :title="t('columnEdit.title')" @close="closeAndSave">
     <!-- Form Body -->
     <form @submit.prevent="handleSave" class="p-4 space-y-4">
       <!-- Title Input -->
