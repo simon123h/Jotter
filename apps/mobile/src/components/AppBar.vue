@@ -101,7 +101,7 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
       </h1>
       <button
         v-if="moveHere"
-        class="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-accent px-3 text-sm font-semibold text-accent-ink active:opacity-80"
+        class="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-accent/50 px-3 text-sm font-medium text-accent active:bg-accent/15"
         data-testid="move-here"
         @click="actions.moveTo([...app.selection], moveHere)"
       >

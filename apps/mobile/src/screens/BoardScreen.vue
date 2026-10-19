@@ -232,17 +232,22 @@ watch(
             >
               <ChevronDown class="h-4 w-4 shrink-0 transition-transform" :class="app.isCollapsed(col) ? '-rotate-90' : ''" />
               <span class="min-w-0 flex-1 truncate">{{ columnTitle(col) }}</span>
-              <span class="font-normal">{{ col.tasks.length }}</span>
             </button>
             <!-- While tasks are selected, a section takes them: it works on a folded one too -->
             <button
               v-if="canMoveHere(col)"
-              class="mr-2 flex h-7 shrink-0 items-center gap-1 rounded-full bg-accent px-2.5 text-xs font-semibold text-accent-ink active:opacity-80"
+              class="flex h-7 shrink-0 items-center gap-1 rounded-full border border-accent/50 px-2.5 text-xs font-medium text-accent active:bg-accent/15"
               :data-testid="`move-here-${col.key}`"
               @click="actions.moveTo([...app.selection], col.bucket!)"
             >
               <ArrowDownToLine class="h-3.5 w-3.5" />{{ t('move.here') }}
             </button>
+            <!-- The count stays at the right edge, after the button; a tap on it folds the section like the title does -->
+            <span
+              class="w-12 shrink-0 self-stretch py-2.5 pr-4 text-right text-sm font-normal text-muted"
+              @click="app.toggleCollapsed(col)"
+              >{{ col.tasks.length }}</span
+            >
           </h2>
           <ul v-show="!app.isCollapsed(col)">
             <template v-for="task in col.tasks" :key="task.id">
