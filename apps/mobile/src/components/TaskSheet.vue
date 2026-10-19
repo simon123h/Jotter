@@ -31,7 +31,7 @@ import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS, colorHex } from '@/taskColors';
 import { PLANNED_CHOICES, plannedLabel } from '@/planned';
 import { REPEAT_UNITS, repeatLabel } from '@/repeat';
-import { dueInfo } from '@/dates';
+import { dueInfo, stampDay } from '@/dates';
 import { ensureReminderPermission } from '@/reminders';
 import { isoDay, parseTags } from '@jotter/task-filter';
 import type { RepeatRule } from '@jotter/vault-format';
@@ -105,6 +105,12 @@ const priorityText = computed(() => t(`priority.${draft.value.priority || 'none'
 const repeatText = computed(() => {
   const rule = repeatOf(draft.value);
   return rule ? repeatLabel(rule) : t('repeat.never');
+});
+/** When the task was made and last changed: one quiet line at the end of the page. */
+const stamps = computed(() => {
+  const created = task.value ? stampDay(task.value.created_at) : null;
+  const updated = task.value ? stampDay(task.value.updated_at) : null;
+  return created && updated ? t('task.stamps', { created, updated }) : '';
 });
 const clearLabel = (name: MessageKey) => t('task.clearField', { field: t(name) });
 
@@ -619,6 +625,8 @@ async function removeAttachment(name: string) {
               ></span>
             </div>
           </div>
+
+          <p v-if="stamps" class="px-1 text-xs text-muted" data-testid="task-stamps">{{ stamps }}</p>
         </div>
       </div>
     </div>

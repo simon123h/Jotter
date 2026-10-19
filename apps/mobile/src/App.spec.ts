@@ -2038,6 +2038,16 @@ describe('task page', () => {
     expect(find('task-due-clear').exists()).toBe(false);
   });
 
+  it('says when the task was made and last changed, and does not touch it by opening it', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    expect(find('task-stamps').text()).toMatch(/^Created .+ · Updated .+$/);
+    const before = file('a');
+    await find('task-back').trigger('click');
+    await settle();
+    expect(file('a')).toBe(before);
+  });
+
   it('has no Save button: the arrow leaves', async () => {
     await start(desktopVault);
     await find('task-card').trigger('click');

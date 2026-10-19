@@ -21,3 +21,11 @@ export function dueInfo(iso: string, now: Date = new Date()): { text: string; to
   });
   return { text, tone: days < 0 ? 'overdue' : 'later' };
 }
+
+/** The local day of a timestamp as dueInfo says it ("Today", "Yesterday", "12 Oct"), none when it is not a time. */
+export function stampDay(iso: string): string | null {
+  const time = new Date(iso);
+  if (Number.isNaN(time.getTime())) return null;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return dueInfo(`${time.getFullYear()}-${pad(time.getMonth() + 1)}-${pad(time.getDate())}`).text;
+}
