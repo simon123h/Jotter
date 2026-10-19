@@ -26,7 +26,7 @@ export interface DragDeps {
  * One long-press, two meanings, told apart by what the finger does next:
  * - held and let go without moving: `onHoldRelease` (the board selects the task);
  * - held and then moved: the row is lifted and dragged up or down to another place in its own list.
- * Moving a task to another column is a swipe and a picker, not a drag. A short press still opens the row and a
+ * Moving a task to another column is the picker, or Move here in the app bar, not a drag. A short press still opens the row and a
  * swipe still acts on it, because nothing happens before the hold.
  */
 export function useCardDrag(deps: DragDeps) {

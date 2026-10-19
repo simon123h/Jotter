@@ -33,7 +33,7 @@ Halte eine Aufgabe gedrückt, um sie auszuwählen, und tippe dann weitere an. Di
 | Planung | Setzt das geplante Datum |
 | Mehr | Erledigen, archivieren, in ein anderes Projekt verschieben, Fälligkeit, zurückstellen, Farbe, löschen |
 
-Um eine einzelne Karte an eine bestimmte Stelle zu setzen, halte sie gedrückt und ziehe sie.
+Um Aufgaben ohne das Auswahlfenster zu verschieben, lass sie ausgewählt und öffne eine andere Spalte: Die Leiste oben zeigt dann die Taste *Hierher*, die die ausgewählten Aufgaben ans Ende der Spalte setzt, die du gerade siehst. Um eine einzelne Karte an eine bestimmte Stelle ihrer Spalte zu setzen, halte sie gedrückt und ziehe sie.
 
 ## Ansichten
 

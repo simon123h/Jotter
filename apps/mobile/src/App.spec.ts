@@ -1258,6 +1258,23 @@ describe('finishing, archiving and moving', () => {
     expect(file('a')).toContain('status: todo');
   });
 
+  it('moves the selected tasks into the column in view with Move here', async () => {
+    await start(desktopVault);
+    await holdSelect('Write report');
+    expect(find('move-here').exists()).toBe(false); // the task is in this column already
+
+    // Another column is opened with the task still selected
+    useUiStore().activeColumn = 1;
+    await settle();
+    expect(find('selection-count').text()).toContain('1');
+    await find('move-here').trigger('click');
+    await settle();
+
+    expect(file('a')).toContain('status: done');
+    expect(find('toast').text()).toContain('Moved to Done');
+    expect(find('move-here').exists()).toBe(false); // the selection is used up
+  });
+
   it('finishes and archives from the task sheet, keeping what was typed', async () => {
     await start(desktopVault);
     await row('Write report').find('[data-testid="task-card"]').trigger('click');
