@@ -394,20 +394,6 @@ async function removeAttachment(name: string) {
           </form>
         </div>
 
-        <!-- What the task is about, with the notes; the lines below say where it stands -->
-        <label class="flex min-h-12 items-center gap-3 border-t border-line px-1">
-          <Tag class="h-5 w-5 shrink-0 text-muted" />
-          <span class="shrink-0 text-base">{{ t('task.tags') }}</span>
-          <input
-            v-model="draft.tags"
-            :placeholder="t('task.tagsHint')"
-            class="min-w-0 flex-1 bg-transparent py-3 text-right text-base outline-none placeholder:text-muted"
-            autocapitalize="off"
-            data-testid="task-tags"
-            @change="saveSoon"
-          />
-        </label>
-
         <div>
           <div class="flex items-center justify-between">
             <span class="text-xs font-medium text-muted">{{ t('task.attachments') }}</span>
@@ -437,6 +423,20 @@ async function removeAttachment(name: string) {
             </li>
           </ul>
         </div>
+
+        <!-- What the task is about, with the notes; the lines below say where it stands -->
+        <label class="flex min-h-12 items-center gap-3 border-t border-line px-1">
+          <Tag class="h-5 w-5 shrink-0 text-muted" />
+          <span class="shrink-0 text-base">{{ t('task.tags') }}</span>
+          <input
+            v-model="draft.tags"
+            :placeholder="t('task.tagsHint')"
+            class="min-w-0 flex-1 bg-transparent py-3 text-right text-base outline-none placeholder:text-muted"
+            autocapitalize="off"
+            data-testid="task-tags"
+            @change="saveSoon"
+          />
+        </label>
 
         <!-- The fields come last: opening a task is mostly about reading and ticking its notes. Each is a line that says what it is set to. -->
         <div class="space-y-6 border-t border-line pt-4">
