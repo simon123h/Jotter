@@ -2021,6 +2021,27 @@ describe('task page', () => {
     expect(file('a')).toContain('status: todo');
   });
 
+  it('sets a date with a quick choice and clears it again', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    expect(find('group-time').text()).toContain('Not set');
+
+    await find('due-quick-1').trigger('click');
+    await settle();
+    expect(file('a')).toContain(`due_date: ${isoDay(1)}`);
+    expect(find('due-quick-1').exists()).toBe(false); // the choices are for a field that is empty
+    expect(find('group-time').text()).toContain('Tomorrow');
+
+    await find('task-due-clear').trigger('click');
+    await settle();
+    expect(file('a')).not.toContain('due_date');
+    expect(find('due-quick-7').exists()).toBe(true);
+
+    await find('postponed-quick-7').trigger('click');
+    await settle();
+    expect(file('a')).toContain(`postponed_until: ${isoDay(7)}`);
+  });
+
   it('has no Save button: the arrow leaves', async () => {
     await start(desktopVault);
     await find('task-card').trigger('click');

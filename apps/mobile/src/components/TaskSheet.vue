@@ -22,6 +22,7 @@ import {
   Palette,
 } from '@lucide/vue';
 import MarkdownView from './MarkdownView.vue';
+import FieldRow from './FieldRow.vue';
 import { appendChecklistItem, toggleChecklistItem } from '@jotter/checklist';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
@@ -29,7 +30,8 @@ import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS, colorHex } from '@/taskColors';
 import { PLANNED_CHOICES, plannedLabel } from '@/planned';
-import { REPEAT_UNITS } from '@/repeat';
+import { REPEAT_UNITS, repeatLabel } from '@/repeat';
+import { dueInfo } from '@/dates';
 import { ensureReminderPermission } from '@/reminders';
 import { isoDay, parseTags } from '@jotter/task-filter';
 import type { RepeatRule } from '@jotter/vault-format';
@@ -49,7 +51,8 @@ const heading = 'mb-3 text-xs font-semibold uppercase tracking-wider text-muted'
 /** The ring of the circle follows the priority, as on the task rows. */
 const RING: Record<string, string> = { urgent: '#dc2626', high: '#f97316', medium: '#3b82f6', low: '#94a3b8' };
 const ring = computed(() => RING[draft.value.priority] ?? 'var(--color-muted)');
-const field = 'w-full rounded-xl border border-line bg-surface px-3 py-3 text-base outline-none focus:border-accent';
+// Fields have no outline of their own: the lines of a section are separated by hairlines, only the text areas keep a light surface
+const field = 'w-full rounded-xl bg-surface px-3 py-3 text-base outline-none';
 
 // The sheet edits a draft; it is written back on every change and once more when the sheet closes
 const initial = task.value;
@@ -93,6 +96,33 @@ function commitTitle() {
   titleEdited.value = false;
   smart.reset();
   saveSoon();
+}
+
+/** What a row says about its value; the control itself is invisible. */
+const dayText = (iso: string) => (iso ? dueInfo(iso).text : '');
+const bucketTitle = computed(() => app.buckets.find((b) => b.name === draft.value.bucket)?.title ?? draft.value.bucket);
+const priorityText = computed(() => t(`priority.${draft.value.priority || 'none'}` as MessageKey));
+const repeatText = computed(() => {
+  const rule = repeatOf(draft.value);
+  return rule ? repeatLabel(rule) : t('repeat.never');
+});
+const clearLabel = (name: MessageKey) => t('task.clearField', { field: t(name) });
+
+/** Today, tomorrow and next week are most of what a date is set to; the picker is for the rest. */
+const QUICK_DAYS = [
+  ['date.today', 0],
+  ['date.tomorrow', 1],
+  ['task.nextWeek', 7],
+] as const;
+
+function setDay(which: 'due' | 'postponed', value: string) {
+  draft.value[which] = value;
+  saveSoon();
+}
+
+function clearRepeat() {
+  draft.value.repeatKind = '';
+  pickRepeat();
 }
 
 const menuOpen = ref(false);
@@ -291,7 +321,7 @@ async function removeAttachment(name: string) {
       </template>
     </header>
 
-    <div class="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-4">
+    <div class="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-2">
       <div class="space-y-4 pb-6">
         <div class="flex items-start gap-1">
           <!-- The same circle as on the task rows: it finishes the task, or takes a finished one back to the inbox -->
@@ -318,7 +348,9 @@ async function removeAttachment(name: string) {
           <textarea
             v-model="draft.title"
             rows="1"
-            class="field-sizing-content block min-w-0 flex-1 resize-none rounded-xl border border-line bg-surface px-3 py-3 text-lg font-medium leading-snug outline-none focus:border-accent"
+            :aria-label="t('task.title')"
+            class="field-sizing-content block min-w-0 flex-1 resize-none bg-transparent px-1 py-3 text-xl font-semibold leading-snug outline-none"
+            :class="task.bucket === 'done' ? 'text-muted line-through' : ''"
             data-testid="task-title"
             @input="titleEdited = true"
             @beforeinput="titleEdited && smart.onBeforeInput($event)"
@@ -342,18 +374,13 @@ async function removeAttachment(name: string) {
               {{ t('common.done') }}
             </button>
           </div>
-          <MarkdownView
-            v-if="draft.body && !editingNotes"
-            :source="draft.body"
-            class="rounded-xl border border-line bg-surface p-3"
-            @toggle="toggleItem"
-          />
+          <MarkdownView v-if="draft.body && !editingNotes" :source="draft.body" class="rounded-xl bg-surface p-3" @toggle="toggleItem" />
           <textarea
             v-else
             v-model="draft.body"
-            rows="8"
+            rows="3"
             :aria-label="t('task.notes')"
-            :class="`${field} font-mono text-sm`"
+            :class="`${field} field-sizing-content min-h-24 font-mono text-sm`"
             data-testid="task-body"
             @change="saveSoon"
           ></textarea>
@@ -367,7 +394,7 @@ async function removeAttachment(name: string) {
             />
             <button
               type="submit"
-              class="rounded-xl border border-line px-3 text-sm font-medium text-accent disabled:opacity-40"
+              class="rounded-xl px-3 text-sm font-medium text-accent disabled:opacity-40"
               :disabled="!newItem.trim()"
               data-testid="checklist-add"
             >
@@ -377,18 +404,18 @@ async function removeAttachment(name: string) {
         </div>
 
         <div>
-          <div class="mb-2 flex items-center justify-between">
+          <div class="flex items-center justify-between">
             <span class="text-xs font-medium text-muted">{{ t('task.attachments') }}</span>
             <label class="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-accent">
               <Paperclip class="h-4 w-4" />{{ t('task.addAttachment') }}
               <input type="file" multiple class="hidden" data-testid="task-attach" @change="addFiles" />
             </label>
           </div>
-          <ul class="space-y-2">
+          <ul v-if="task.attachments.length" class="mt-2 space-y-2">
             <li
               v-for="name in task.attachments"
               :key="name"
-              class="flex items-center gap-3 rounded-xl border border-line p-2"
+              class="flex items-center gap-3 rounded-xl bg-surface p-2"
               data-testid="attachment-row"
             >
               <img v-if="isImage(name)" :src="app.attachmentUrl(id, name)" :alt="name" class="h-12 w-12 shrink-0 rounded-lg object-cover" />
@@ -405,38 +432,63 @@ async function removeAttachment(name: string) {
             </li>
           </ul>
         </div>
-        <!-- The fields come last: opening a task is mostly about reading and ticking its notes -->
+
+        <!-- The fields come last: opening a task is mostly about reading and ticking its notes. Each is a line that says what it is set to. -->
         <div class="space-y-6 border-t border-line pt-4">
           <section data-testid="group-status">
             <h3 :class="heading">{{ t('task.groupStatus') }}</h3>
-            <div class="grid grid-cols-2 gap-3">
-              <label class="block">
-                <span :class="label"><Columns3 class="h-3.5 w-3.5 shrink-0" />{{ t('task.bucket') }}</span>
-                <select v-model="draft.bucket" :class="field" data-testid="task-bucket" @change="saveSoon">
+            <div class="divide-y divide-line">
+              <FieldRow :icon="Columns3" :label="t('task.bucket')" :value="bucketTitle">
+                <select v-model="draft.bucket" :aria-label="t('task.bucket')" data-testid="task-bucket" @change="saveSoon">
                   <option v-for="b in app.buckets" :key="b.name" :value="b.name">{{ b.title }}</option>
                   <option v-if="!app.buckets.some((b) => b.name === draft.bucket)" :value="draft.bucket">{{ draft.bucket }}</option>
                 </select>
-              </label>
-              <label class="block">
-                <span :class="label"><Flag class="h-3.5 w-3.5 shrink-0" />{{ t('task.priority') }}</span>
-                <select v-model="draft.priority" :class="field" data-testid="task-priority" @change="saveSoon">
+              </FieldRow>
+              <FieldRow :icon="Flag" :icon-color="draft.priority ? ring : undefined" :label="t('task.priority')" :value="priorityText">
+                <select v-model="draft.priority" :aria-label="t('task.priority')" data-testid="task-priority" @change="saveSoon">
                   <option value="">{{ t('priority.none') }}</option>
                   <option v-for="p in priorities" :key="p" :value="p">{{ t(`priority.${p}` as MessageKey) }}</option>
                 </select>
-              </label>
+              </FieldRow>
             </div>
           </section>
 
-          <section class="space-y-4" data-testid="group-time">
-            <h3 :class="`${heading} mb-0`">{{ t('task.groupTime') }}</h3>
-            <div class="grid grid-cols-2 gap-3">
-              <label class="block">
-                <span :class="label"><CalendarDays class="h-3.5 w-3.5 shrink-0" />{{ t('task.due') }}</span>
-                <input v-model="draft.due" type="date" :class="field" data-testid="task-due" @change="saveSoon" />
-              </label>
-              <label class="block">
-                <span :class="label"><Clock class="h-3.5 w-3.5 shrink-0" />{{ t('task.planned') }}</span>
-                <select v-model="draft.planned" :class="field" data-testid="task-planned" @change="saveSoon">
+          <section data-testid="group-time">
+            <h3 :class="heading">{{ t('task.groupTime') }}</h3>
+            <div class="divide-y divide-line">
+              <div v-for="which in ['due', 'postponed'] as const" :key="which">
+                <FieldRow
+                  :icon="which === 'due' ? CalendarDays : Hourglass"
+                  :label="t(`task.${which}`)"
+                  :value="dayText(draft[which])"
+                  :clear-label="clearLabel(`task.${which}`)"
+                  :clear-testid="`task-${which}-clear`"
+                  @clear="setDay(which, '')"
+                >
+                  <input
+                    v-model="draft[which]"
+                    type="date"
+                    :aria-label="t(`task.${which}`)"
+                    :data-testid="`task-${which}`"
+                    @change="saveSoon"
+                  />
+                </FieldRow>
+                <div v-if="!draft[which]" class="flex flex-wrap gap-2 pb-3 pl-9">
+                  <button
+                    v-for="[key, days] in QUICK_DAYS"
+                    :key="key"
+                    type="button"
+                    class="rounded-full border border-line px-3 py-1 text-sm active:bg-line"
+                    :data-testid="`${which}-quick-${days}`"
+                    @click="setDay(which, isoDay(days))"
+                  >
+                    {{ t(key) }}
+                  </button>
+                </div>
+              </div>
+
+              <FieldRow :icon="Clock" :label="t('task.planned')" :value="draft.planned ? plannedLabel(draft.planned) : t('planned.none')">
+                <select v-model="draft.planned" :aria-label="t('task.planned')" data-testid="task-planned" @change="saveSoon">
                   <option value="">{{ t('planned.none') }}</option>
                   <option v-for="p in PLANNED_CHOICES" :key="p" :value="p">{{ plannedLabel(p) }}</option>
                   <!-- A value another tool wrote (next week, a date, ...) stays selectable and is kept -->
@@ -444,140 +496,141 @@ async function removeAttachment(name: string) {
                     {{ plannedLabel(draft.planned) }}
                   </option>
                 </select>
-              </label>
-            </div>
+              </FieldRow>
 
-            <label class="block">
-              <span :class="label"><Hourglass class="h-3.5 w-3.5 shrink-0" />{{ t('task.postponed') }}</span>
-              <input v-model="draft.postponed" type="date" :class="field" data-testid="task-postponed" @change="saveSoon" />
-            </label>
-
-            <div>
-              <span :class="label"><Repeat class="h-3.5 w-3.5 shrink-0" />{{ t('task.repeat') }}</span>
-              <select
-                v-model="draft.repeatKind"
-                :class="field"
-                :aria-label="t('task.repeat')"
-                data-testid="task-repeat"
-                @change="pickRepeat"
+              <FieldRow
+                :icon="Repeat"
+                :label="t('task.repeat')"
+                :value="repeatText"
+                :clear-label="draft.repeatKind ? clearLabel('task.repeat') : undefined"
+                @clear="clearRepeat"
               >
-                <option value="">{{ t('repeat.never') }}</option>
-                <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t(`repeat.once.${u}` as MessageKey) }}</option>
-                <option value="custom">{{ t('repeat.custom') }}</option>
-              </select>
-              <div v-if="draft.repeatKind === 'custom'" class="mt-2 flex items-center gap-3">
+                <select v-model="draft.repeatKind" :aria-label="t('task.repeat')" data-testid="task-repeat" @change="pickRepeat">
+                  <option value="">{{ t('repeat.never') }}</option>
+                  <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t(`repeat.once.${u}` as MessageKey) }}</option>
+                  <option value="custom">{{ t('repeat.custom') }}</option>
+                </select>
+              </FieldRow>
+              <div v-if="draft.repeatKind === 'custom'" class="flex items-center gap-3 py-2 pl-9">
                 <span class="text-sm text-muted">{{ t('repeat.every') }}</span>
                 <input
                   v-model.number="draft.repeatEvery"
                   type="number"
                   min="1"
                   inputmode="numeric"
+                  :aria-label="t('repeat.every')"
                   :class="`${field} w-24`"
                   data-testid="task-repeat-every"
                   @change="saveSoon"
                 />
-                <select v-model="draft.repeatUnit" :class="`${field} min-w-0 flex-1`" data-testid="task-repeat-unit" @change="saveSoon">
+                <select
+                  v-model="draft.repeatUnit"
+                  :aria-label="t('task.repeat')"
+                  :class="`${field} min-w-0 flex-1`"
+                  data-testid="task-repeat-unit"
+                  @change="saveSoon"
+                >
                   <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t(`repeat.unit.${u}` as MessageKey) }}</option>
                 </select>
               </div>
-              <template v-if="draft.repeatKind">
-                <label class="mt-2 block">
-                  <span class="mb-1 block text-xs font-medium text-muted">{{ t('repeat.counted') }}</span>
-                  <select v-model="draft.repeatFrom" :class="field" data-testid="task-repeat-from" @change="saveSoon">
-                    <option value="completion">{{ t('repeat.fromCompletion') }}</option>
-                    <option value="due">{{ t('repeat.fromDue') }}</option>
-                  </select>
-                </label>
-              </template>
-            </div>
+              <FieldRow
+                v-if="draft.repeatKind"
+                :label="t('repeat.counted')"
+                :value="draft.repeatFrom === 'due' ? t('repeat.fromDue') : t('repeat.fromCompletion')"
+              >
+                <select v-model="draft.repeatFrom" :aria-label="t('repeat.counted')" data-testid="task-repeat-from" @change="saveSoon">
+                  <option value="completion">{{ t('repeat.fromCompletion') }}</option>
+                  <option value="due">{{ t('repeat.fromDue') }}</option>
+                </select>
+              </FieldRow>
 
-            <div>
-              <div class="mb-1 flex items-center justify-between">
-                <span class="flex items-center gap-1.5 text-xs font-medium text-muted"
-                  ><Bell class="h-3.5 w-3.5 shrink-0" />{{ t('task.reminders') }}</span
-                >
+              <div class="flex min-h-12 items-center gap-3 px-1">
+                <Bell class="h-5 w-5 shrink-0 text-muted" />
+                <span class="flex-1 text-base">{{ t('task.reminders') }}</span>
                 <button
-                  class="inline-flex items-center gap-1 text-sm font-medium text-accent"
+                  type="button"
+                  class="inline-flex items-center gap-1 py-3 text-sm font-medium text-accent"
                   data-testid="reminder-add"
                   @click="addReminder"
                 >
                   <Plus class="h-4 w-4" />{{ t('task.addReminder') }}
                 </button>
               </div>
-              <ul class="space-y-2">
-                <li v-for="(_, i) in draft.reminders" :key="i" class="flex items-center gap-2">
-                  <input
-                    v-model="draft.reminders[i]"
-                    type="datetime-local"
-                    :class="`${field} min-w-0 flex-1`"
-                    :aria-label="t('task.reminders')"
-                    data-testid="reminder-input"
-                    @change="saveSoon"
-                  />
-                  <button
-                    class="rounded-full p-2 text-muted active:bg-line"
-                    :aria-label="t('task.removeReminder')"
-                    data-testid="reminder-remove"
-                    @click="removeReminder(i)"
-                  >
-                    <X class="h-4 w-4" />
-                  </button>
-                </li>
-              </ul>
+              <FieldRow
+                v-for="(_, i) in draft.reminders"
+                :key="i"
+                :label="draft.reminders[i]?.replace('T', ' ') ?? ''"
+                :clear-label="t('task.removeReminder')"
+                clear-testid="reminder-remove"
+                @clear="removeReminder(i)"
+              >
+                <input
+                  v-model="draft.reminders[i]"
+                  type="datetime-local"
+                  :aria-label="t('task.reminders')"
+                  data-testid="reminder-input"
+                  @change="saveSoon"
+                />
+              </FieldRow>
             </div>
           </section>
 
-          <section class="space-y-4" data-testid="group-labels">
-            <h3 :class="`${heading} mb-0`">{{ t('task.groupLabels') }}</h3>
-            <label class="block">
-              <span :class="label"><Tag class="h-3.5 w-3.5 shrink-0" />{{ t('task.tags') }}</span>
-              <input
-                v-model="draft.tags"
-                :placeholder="t('task.tagsHint')"
-                :class="field"
-                autocapitalize="off"
-                data-testid="task-tags"
-                @change="saveSoon"
-              />
-            </label>
+          <section data-testid="group-labels">
+            <h3 :class="heading">{{ t('task.groupLabels') }}</h3>
+            <div class="divide-y divide-line">
+              <label class="flex min-h-12 items-center gap-3 px-1">
+                <Tag class="h-5 w-5 shrink-0 text-muted" />
+                <span class="shrink-0 text-base">{{ t('task.tags') }}</span>
+                <input
+                  v-model="draft.tags"
+                  :placeholder="t('task.tagsHint')"
+                  class="min-w-0 flex-1 bg-transparent py-3 text-right text-base outline-none placeholder:text-muted"
+                  autocapitalize="off"
+                  data-testid="task-tags"
+                  @change="saveSoon"
+                />
+              </label>
 
-            <div>
-              <span :class="`${label} mb-2`"><Palette class="h-3.5 w-3.5 shrink-0" />{{ t('task.color') }}</span>
-              <div class="flex flex-wrap items-center gap-2.5" role="radiogroup" :aria-label="t('task.color')" data-testid="task-colors">
-                <button
-                  type="button"
-                  role="radio"
-                  :aria-checked="!draft.color"
-                  :aria-label="t('color.none')"
-                  class="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted"
-                  :class="!draft.color ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
-                  data-testid="color-none"
-                  @click="pickColor('')"
+              <div class="px-1 py-3">
+                <span :class="`${label} mb-3`"
+                  ><Palette class="h-5 w-5 shrink-0" /><span class="text-base font-normal text-current">{{ t('task.color') }}</span></span
                 >
-                  <Slash class="h-4 w-4 rotate-90" />
-                </button>
-                <button
-                  v-for="c in TASK_COLORS"
-                  :key="c.id"
-                  type="button"
-                  role="radio"
-                  :aria-checked="draft.color === c.id"
-                  :aria-label="t(`color.${c.id}` as MessageKey)"
-                  class="flex h-8 w-8 items-center justify-center rounded-full text-white"
-                  :class="draft.color === c.id ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
-                  :style="{ backgroundColor: c.hex }"
-                  :data-testid="`color-${c.id}`"
-                  @click="pickColor(c.id)"
-                >
-                  <Check v-if="draft.color === c.id" class="h-4 w-4" />
-                </button>
-                <!-- A colour written by another tool, outside the palette, stays as it is -->
-                <span
-                  v-if="draft.color && !TASK_COLORS.some((c) => c.id === draft.color) && colorHex(draft.color)"
-                  class="h-8 w-8 rounded-full ring-2 ring-accent ring-offset-2 ring-offset-card"
-                  :style="{ backgroundColor: colorHex(draft.color) }"
-                  data-testid="color-custom"
-                ></span>
+                <div class="flex flex-wrap items-center gap-2.5" role="radiogroup" :aria-label="t('task.color')" data-testid="task-colors">
+                  <button
+                    type="button"
+                    role="radio"
+                    :aria-checked="!draft.color"
+                    :aria-label="t('color.none')"
+                    class="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted"
+                    :class="!draft.color ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
+                    data-testid="color-none"
+                    @click="pickColor('')"
+                  >
+                    <Slash class="h-4 w-4 rotate-90" />
+                  </button>
+                  <button
+                    v-for="c in TASK_COLORS"
+                    :key="c.id"
+                    type="button"
+                    role="radio"
+                    :aria-checked="draft.color === c.id"
+                    :aria-label="t(`color.${c.id}` as MessageKey)"
+                    class="flex h-8 w-8 items-center justify-center rounded-full text-white"
+                    :class="draft.color === c.id ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
+                    :style="{ backgroundColor: c.hex }"
+                    :data-testid="`color-${c.id}`"
+                    @click="pickColor(c.id)"
+                  >
+                    <Check v-if="draft.color === c.id" class="h-4 w-4" />
+                  </button>
+                  <!-- A colour written by another tool, outside the palette, stays as it is -->
+                  <span
+                    v-if="draft.color && !TASK_COLORS.some((c) => c.id === draft.color) && colorHex(draft.color)"
+                    class="h-8 w-8 rounded-full ring-2 ring-accent ring-offset-2 ring-offset-card"
+                    :style="{ backgroundColor: colorHex(draft.color) }"
+                    data-testid="color-custom"
+                  ></span>
+                </div>
               </div>
             </div>
           </section>
