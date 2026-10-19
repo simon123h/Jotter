@@ -22,6 +22,23 @@ Diese Tastenkombinationen sind aktiv, wenn du dich auf der Hauptansicht des Kanb
 
 ---
 
+## Mit ausgewählten Aufgaben
+
+Sind eine oder mehrere Aufgaben ausgewählt, öffnet eine Taste das passende Menü der Aktionsleiste. In einem geöffneten Menü wählen die Zifferntasten <kbd>1</kbd> bis <kbd>9</kbd> den Eintrag an dieser Stelle (nicht im Tag-Menü, wo du tippst).
+
+| Tastenkombination | Menü |
+| :--- | :--- |
+| <kbd>t</kbd> | **Tags** |
+| <kbd>p</kbd> | **Priorität** |
+| <kbd>m</kbd> | **In Spalte verschieben** |
+| <kbd>Umschalt</kbd> + <kbd>M</kbd> | **In Projekt verschieben** |
+| <kbd>d</kbd> | **Fälligkeit** |
+| <kbd>s</kbd> | **Geplantes Datum** |
+| <kbd>z</kbd> | **Zurückstellen** |
+| <kbd>c</kbd> | **Farbe** |
+
+---
+
 ## Modals und Dialogfenster
 
 Diese Tastenkombinationen gelten, wenn ein modales Dialogfenster (z. B. Aufgabendetails, Neuerstellung oder Einstellungen) geöffnet ist.

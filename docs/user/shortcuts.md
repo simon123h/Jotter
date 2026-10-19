@@ -22,6 +22,23 @@ These shortcuts are active on the main kanban board view when you are not active
 
 ---
 
+## With Tasks Selected
+
+With one or more tasks selected, a key opens the matching menu of the bulk action bar. Inside an open menu, the number keys <kbd>1</kbd> to <kbd>9</kbd> pick the entry in that position (not in the tag menu, where you type).
+
+| Shortcut | Menu |
+| :--- | :--- |
+| <kbd>t</kbd> | **Tags** |
+| <kbd>p</kbd> | **Priority** |
+| <kbd>m</kbd> | **Move to column** |
+| <kbd>Shift</kbd> + <kbd>M</kbd> | **Move to project** |
+| <kbd>d</kbd> | **Due date** |
+| <kbd>s</kbd> | **Planned date** |
+| <kbd>z</kbd> | **Postpone** |
+| <kbd>c</kbd> | **Color** |
+
+---
+
 ## Modals & Dialogs
 
 These shortcuts apply when a modal (such as Task Detail, Task Create, or Settings) is currently open.

@@ -18,4 +18,19 @@ describe('BulkActionMenu.vue', () => {
   it('keeps the other menus within the screen by scrolling them', () => {
     expect(mountMenu('priority').classes()).toContain('overflow-y-auto');
   });
+
+  it('picks the entry in that position with a number key', () => {
+    const wrapper = mountMenu('priority');
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '5' }));
+    expect(wrapper.emitted('set-priority')).toEqual([['urgent']]);
+    expect(wrapper.emitted('close')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it('ignores number keys in the tag menu, whose input takes them as text', () => {
+    const wrapper = mountMenu('tag');
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }));
+    expect(wrapper.emitted('edit-tag')).toBeUndefined();
+    wrapper.unmount();
+  });
 });

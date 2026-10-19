@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { Flag, Clock, FolderOpen, Slash } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket, Project } from '@/types';
@@ -7,7 +8,7 @@ import BulkDatePicker from './BulkDatePicker.vue';
 import BulkTagMenu from './BulkTagMenu.vue';
 import type { BulkMenu, DatePreset } from './types';
 
-defineProps<{
+const props = defineProps<{
   menu: Exclude<BulkMenu, 'none'>;
   buckets: Bucket[];
   projects: Project[];
@@ -52,6 +53,20 @@ const postponedPresets = computed<DatePreset[]>(() => [
   { id: 'clear', label: t('bulkActions.postponedClear') || 'Clear Postponement', offsetDays: null, wide: true },
 ]);
 
+// The number keys 1-9 pick the entry in that position, so a menu opened by its hotkey works without the mouse.
+const rootRef = ref<HTMLElement | null>(null);
+useEventListener(window, 'keydown', (event: KeyboardEvent) => {
+  if (props.menu === 'tag' || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+  if (!/^[1-9]$/.test(event.key)) return;
+  const tag = (document.activeElement as HTMLElement | null)?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  const entry = rootRef.value?.querySelectorAll('button')[Number(event.key) - 1];
+  if (entry) {
+    event.preventDefault();
+    entry.click();
+  }
+});
+
 defineExpose({
   focusTagInput: () => tagMenuRef.value?.focus(),
 });
@@ -59,6 +74,7 @@ defineExpose({
 
 <template>
   <div
+    ref="rootRef"
     class="bg-theme-card border border-theme-border rounded-lg shadow-2xl p-1.5 min-w-[200px] mb-1 animate-in fade-in zoom-in duration-150"
     :class="{ 'max-h-[60vh] overflow-y-auto': menu !== 'tag' }"
   >

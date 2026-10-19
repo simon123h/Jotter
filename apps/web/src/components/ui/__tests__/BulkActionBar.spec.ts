@@ -30,6 +30,13 @@ describe('BulkActionBar.vue', () => {
     expect(wrapper.text()).toContain('Selected');
   });
 
+  it('opens a menu on request, as the hotkeys do', async () => {
+    const wrapper = mount(BulkActionBar, { props: defaultProps });
+    (wrapper.vm as unknown as { openMenu: (menu: string) => void }).openMenu('priority');
+    await nextTick();
+    expect(wrapper.text()).toContain('Urgent');
+  });
+
   it('toggles the due date menu and emits preset set-due-date events', async () => {
     const wrapper = mount(BulkActionBar, {
       props: defaultProps,

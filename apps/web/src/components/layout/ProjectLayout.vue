@@ -18,6 +18,7 @@ import { useSelectionStore } from '@/stores/selection';
 import { useToast } from '@/composables/useToast';
 import { consolidateTasksIntoChecklist } from '@/utils/markdown';
 import BulkActionBar from '@/components/ui/BulkActionBar.vue';
+import type { BulkMenu } from '@/components/ui/bulk/types';
 import TimeblockSidebar from '@/features/timeblock/components/TimeblockSidebar.vue';
 import { withoutEmoji } from '@jotter/task-filter';
 
@@ -164,6 +165,18 @@ const openCreateModal = (bucket: BucketName) => {
 
 const bulkActionBarRef = ref<any>(null);
 
+// With tasks selected, a key opens the matching menu of the bulk bar.
+const BULK_MENU_KEYS: { key: string; shiftKey?: boolean; menu: Exclude<BulkMenu, 'none'> }[] = [
+  { key: 't', menu: 'tag' },
+  { key: 'p', menu: 'priority' },
+  { key: 'm', menu: 'bucket' },
+  { key: 'd', menu: 'dueDate' },
+  { key: 's', menu: 'planned' },
+  { key: 'z', menu: 'postponedDate' },
+  { key: 'c', menu: 'color' },
+  { key: 'm', shiftKey: true, menu: 'project' },
+];
+
 useKeyboardShortcuts([
   {
     key: 'q',
@@ -185,14 +198,15 @@ useKeyboardShortcuts([
       });
     },
   },
-  {
-    key: 't',
+  ...BULK_MENU_KEYS.map(({ key, shiftKey, menu }) => ({
+    key,
+    shiftKey,
     callback: () => {
       if (!modalStore.activeModal && !route.params.taskId && hasSelection.value) {
-        bulkActionBarRef.value?.openTagMenu();
+        bulkActionBarRef.value?.openMenu(menu);
       }
     },
-  },
+  })),
   {
     key: 'a',
     ctrlKey: true,

@@ -75,8 +75,14 @@ const openTagMenu = () => {
   });
 };
 
+const openMenu = (menu: Exclude<BulkMenu, 'none'>) => {
+  if (menu === 'tag') openTagMenu();
+  else activeMenu.value = menu;
+};
+
 defineExpose({
   openTagMenu,
+  openMenu,
 });
 </script>
 

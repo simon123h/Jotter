@@ -25,6 +25,7 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Lower pane of the board: dock a large column (Backlog, Inbox) across the bottom, resizable | yes | n/a | ~0.3k | Optional | `BoardView`, `ColumnEditModal` (the checkbox), `ui` store (`dockedColumns`, `dockHeight`); a browser setting, not in the vault, desktop widths only |
 | Search and filters (query language) | yes | yes | ~1.5k | Core | `packages/task-filter` (shared), `FilterModal`; fixtures run against Python |
 | Bulk actions on a selection | yes | yes | ~1k | Core | `components/ui/bulk`, mobile toolbar |
+| Hotkeys for the bulk menus (`t`, `p`, `m`, `d`, `s`, `z`, `c`) and number keys inside them | yes | no | ~0.1k | Optional | `ProjectLayout.vue`, `BulkActionBar.vue`, `BulkActionMenu.vue` |
 | Smart title input (dates, priority, tags, column) | yes | yes | ~0.6k | Core | `packages/title-parser` (shared) |
 | Vault format and Obsidian/PKM compatibility | yes | yes | ~2k | Core | `spec/`, `packages/vault-format`, `index.md` manifests |
 | Themes (light and dark theme follow the device) and languages (English, German) | yes | yes | ~1.9k | Core | `packages/themes` (shared), `locales` |
