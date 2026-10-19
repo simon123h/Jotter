@@ -377,20 +377,18 @@ async function removeAttachment(name: string) {
             data-testid="task-body"
             @change="saveSoon"
           ></textarea>
-          <form class="mt-2 flex gap-2" @submit.prevent="addItem">
+          <!-- The last line of the list: a plus and a field without an outline; Enter adds, the button shows once something is typed -->
+          <form class="mt-1 flex items-center gap-2 px-1" @submit.prevent="addItem">
+            <Plus class="h-5 w-5 shrink-0 text-muted" />
             <input
               v-model="newItem"
               :placeholder="t('task.addItem')"
-              :class="`${field} min-w-0 flex-1 py-2`"
+              :aria-label="t('task.addItem')"
+              class="min-w-0 flex-1 bg-transparent py-3 text-base outline-none placeholder:text-muted"
               enterkeyhint="done"
               data-testid="checklist-add-input"
             />
-            <button
-              type="submit"
-              class="rounded-xl px-3 text-sm font-medium text-accent disabled:opacity-40"
-              :disabled="!newItem.trim()"
-              data-testid="checklist-add"
-            >
+            <button v-if="newItem.trim()" type="submit" class="px-2 py-3 text-sm font-medium text-accent" data-testid="checklist-add">
               {{ t('task.add') }}
             </button>
           </form>
