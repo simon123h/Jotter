@@ -108,15 +108,8 @@ const repeatText = computed(() => {
 });
 const clearLabel = (name: MessageKey) => t('task.clearField', { field: t(name) });
 
-/** Today, tomorrow and next week are most of what a date is set to; the picker is for the rest. */
-const QUICK_DAYS = [
-  ['date.today', 0],
-  ['date.tomorrow', 1],
-  ['task.nextWeek', 7],
-] as const;
-
-function setDay(which: 'due' | 'postponed', value: string) {
-  draft.value[which] = value;
+function clearDay(which: 'due' | 'postponed') {
+  draft.value[which] = '';
   saveSoon();
 }
 
@@ -456,36 +449,16 @@ async function removeAttachment(name: string) {
           <section data-testid="group-time">
             <h3 :class="heading">{{ t('task.groupTime') }}</h3>
             <div class="divide-y divide-line">
-              <div v-for="which in ['due', 'postponed'] as const" :key="which">
-                <FieldRow
-                  :icon="which === 'due' ? CalendarDays : Hourglass"
-                  :label="t(`task.${which}`)"
-                  :value="dayText(draft[which])"
-                  :clear-label="clearLabel(`task.${which}`)"
-                  :clear-testid="`task-${which}-clear`"
-                  @clear="setDay(which, '')"
-                >
-                  <input
-                    v-model="draft[which]"
-                    type="date"
-                    :aria-label="t(`task.${which}`)"
-                    :data-testid="`task-${which}`"
-                    @change="saveSoon"
-                  />
-                </FieldRow>
-                <div v-if="!draft[which]" class="flex flex-wrap gap-2 pb-3 pl-9">
-                  <button
-                    v-for="[key, days] in QUICK_DAYS"
-                    :key="key"
-                    type="button"
-                    class="rounded-full border border-line px-3 py-1 text-sm active:bg-line"
-                    :data-testid="`${which}-quick-${days}`"
-                    @click="setDay(which, isoDay(days))"
-                  >
-                    {{ t(key) }}
-                  </button>
-                </div>
-              </div>
+              <FieldRow
+                :icon="CalendarDays"
+                :label="t('task.due')"
+                :value="dayText(draft.due)"
+                :clear-label="clearLabel('task.due')"
+                clear-testid="task-due-clear"
+                @clear="clearDay('due')"
+              >
+                <input v-model="draft.due" type="date" :aria-label="t('task.due')" data-testid="task-due" @change="saveSoon" />
+              </FieldRow>
 
               <FieldRow :icon="Clock" :label="t('task.planned')" :value="draft.planned ? plannedLabel(draft.planned) : t('planned.none')">
                 <select v-model="draft.planned" :aria-label="t('task.planned')" data-testid="task-planned" @change="saveSoon">
@@ -496,6 +469,23 @@ async function removeAttachment(name: string) {
                     {{ plannedLabel(draft.planned) }}
                   </option>
                 </select>
+              </FieldRow>
+
+              <FieldRow
+                :icon="Hourglass"
+                :label="t('task.postponed')"
+                :value="dayText(draft.postponed)"
+                :clear-label="clearLabel('task.postponed')"
+                clear-testid="task-postponed-clear"
+                @clear="clearDay('postponed')"
+              >
+                <input
+                  v-model="draft.postponed"
+                  type="date"
+                  :aria-label="t('task.postponed')"
+                  data-testid="task-postponed"
+                  @change="saveSoon"
+                />
               </FieldRow>
 
               <FieldRow
