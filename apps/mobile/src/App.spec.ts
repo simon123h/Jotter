@@ -1308,7 +1308,7 @@ describe('finishing, archiving and moving', () => {
     await row('Write the final report').find('[data-testid="task-card"]').trigger('click');
     expect(find('task-check').attributes('aria-checked')).toBe('true');
     await find('task-menu').trigger('click');
-    expect(find('task-done').exists()).toBe(false); // finishing is the circle beside the title, not the menu
+    expect(find('task-done').text()).toContain('Reopen'); // the menu offers what the circle does
     await find('task-archive').trigger('click');
     await settle();
     expect(file('a')).toContain('status: archive');
@@ -2039,6 +2039,17 @@ describe('task page', () => {
     await settle();
     expect(find('task-page').exists()).toBe(false);
     expect(file('a')).toContain('title: Write the final report');
+  });
+
+  it('finishes a task from the menu too, for whoever looks there', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    await find('task-menu').trigger('click');
+    expect(find('task-done').text()).toContain('Mark done');
+    await find('task-done').trigger('click');
+    await settle();
+    expect(find('task-page').exists()).toBe(false);
+    expect(file('a')).toContain('status: done');
   });
 
   it('takes a finished task back to the inbox with the circle beside the title', async () => {

@@ -310,6 +310,16 @@ async function removeAttachment(name: string) {
           role="menu"
           data-testid="task-menu-list"
         >
+          <!-- Also the circle beside the title; here for whoever looks in the menu -->
+          <button
+            v-if="task.bucket !== 'archive'"
+            :class="menuItem"
+            role="menuitem"
+            data-testid="task-done"
+            @click="finish(task.bucket === 'done' ? 'reopen' : 'done')"
+          >
+            <Check class="h-5 w-5 text-muted" />{{ t(task.bucket === 'done' ? 'task.reopen' : 'task.markDone') }}
+          </button>
           <button v-if="task.bucket !== 'archive'" :class="menuItem" role="menuitem" data-testid="task-archive" @click="finish('archive')">
             <Archive class="h-5 w-5 text-muted" />{{ t('task.archive') }}
           </button>
