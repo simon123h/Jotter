@@ -33,7 +33,7 @@ Press and hold a task to select it, then tap more tasks. The bar at the top show
 | Planned | Sets the planned date |
 | More | Mark done, archive, move to another project, due date, postpone, colour, delete |
 
-To move tasks without the sheet, leave them selected and open another column: the bar at the top then has a *Move here* button that puts the selected tasks at the end of the column you are looking at. To move a single card to a place in its column, press, hold and drag it.
+To move tasks without the sheet, leave them selected and open another column: the bar at the top then has a *Move here* button that puts the selected tasks at the end of the column you are looking at. In the list view every section header has the same button while tasks are selected, also on a folded one. To move a single card to a place in its column, press, hold and drag it.
 
 ## Views
 

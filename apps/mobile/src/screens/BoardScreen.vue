@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { ChevronDown, Plus, TriangleAlert } from '@lucide/vue';
+import { ArrowDownToLine, ChevronDown, Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
 import BottomNav from '@/components/BottomNav.vue';
 import BulkToolbar from '@/components/BulkToolbar.vue';
@@ -49,6 +49,10 @@ const drag = useCardDrag({
 const isDragged = (task: Task) => task.id === drag.dragging.value?.id;
 const shown = (tasks: Task[]) => tasks.filter((t) => !isDragged(t));
 const dropIndex = (key: string) => (drag.target.value?.columnKey === key ? drag.target.value.index : -1);
+
+/** The selected tasks can be put into this section: on the board, with one of them from elsewhere. */
+const canMoveHere = (col: Column) =>
+  app.view === 'board' && !!col.bucket && app.selection.some((id) => app.taskById(id)?.bucket !== col.bucket);
 
 /** A tap opens a task, or ticks it while others are selected. */
 function onTap(task: Task) {
@@ -220,15 +224,24 @@ watch(
           @scroll.passive="onListScroll"
         >
           <!-- The list layout: a header for each column, which folds its tasks away -->
-          <h2 v-if="listed" class="sticky top-0 z-[1] border-b border-line bg-card" data-testid="section-header">
+          <h2 v-if="listed" class="sticky top-0 z-[1] flex items-center border-b border-line bg-card" data-testid="section-header">
             <button
-              class="flex h-10 w-full items-center gap-2 px-4 text-left text-sm font-semibold text-muted active:bg-line"
+              class="flex h-10 min-w-0 flex-1 items-center gap-2 px-4 text-left text-sm font-semibold text-muted active:bg-line"
               :aria-expanded="!app.isCollapsed(col)"
               @click="app.toggleCollapsed(col)"
             >
               <ChevronDown class="h-4 w-4 shrink-0 transition-transform" :class="app.isCollapsed(col) ? '-rotate-90' : ''" />
               <span class="min-w-0 flex-1 truncate">{{ columnTitle(col) }}</span>
               <span class="font-normal">{{ col.tasks.length }}</span>
+            </button>
+            <!-- While tasks are selected, a section takes them: it works on a folded one too -->
+            <button
+              v-if="canMoveHere(col)"
+              class="mr-2 flex h-7 shrink-0 items-center gap-1 rounded-full bg-accent px-2.5 text-xs font-semibold text-accent-ink active:opacity-80"
+              :data-testid="`move-here-${col.key}`"
+              @click="actions.moveTo([...app.selection], col.bucket!)"
+            >
+              <ArrowDownToLine class="h-3.5 w-3.5" />{{ t('move.here') }}
             </button>
           </h2>
           <ul v-show="!app.isCollapsed(col)">

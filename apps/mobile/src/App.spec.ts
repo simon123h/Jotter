@@ -1275,6 +1275,23 @@ describe('finishing, archiving and moving', () => {
     expect(find('move-here').exists()).toBe(false); // the selection is used up
   });
 
+  it('moves the selected tasks into a section of the list with its Move here', async () => {
+    await start(desktopVault);
+    await find('view-menu').trigger('click');
+    await find('layout-list').trigger('click');
+    await settle();
+    expect(find('move-here-done').exists()).toBe(false); // nothing is selected
+
+    await holdSelect('Write report');
+    expect(find('move-here-todo').exists()).toBe(false); // it is in this section already
+    await find('move-here-done').trigger('click');
+    await settle();
+
+    expect(file('a')).toContain('status: done');
+    expect(find('toast').text()).toContain('Moved to Done');
+    expect(find('move-here-done').exists()).toBe(false);
+  });
+
   it('finishes and archives from the task sheet, keeping what was typed', async () => {
     await start(desktopVault);
     await row('Write report').find('[data-testid="task-card"]').trigger('click');
