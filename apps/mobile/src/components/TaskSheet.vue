@@ -394,6 +394,20 @@ async function removeAttachment(name: string) {
           </form>
         </div>
 
+        <!-- What the task is about, with the notes; the lines below say where it stands -->
+        <label class="flex min-h-12 items-center gap-3 border-t border-line px-1">
+          <Tag class="h-5 w-5 shrink-0 text-muted" />
+          <span class="shrink-0 text-base">{{ t('task.tags') }}</span>
+          <input
+            v-model="draft.tags"
+            :placeholder="t('task.tagsHint')"
+            class="min-w-0 flex-1 bg-transparent py-3 text-right text-base outline-none placeholder:text-muted"
+            autocapitalize="off"
+            data-testid="task-tags"
+            @change="saveSoon"
+          />
+        </label>
+
         <div>
           <div class="flex items-center justify-between">
             <span class="text-xs font-medium text-muted">{{ t('task.attachments') }}</span>
@@ -563,65 +577,48 @@ async function removeAttachment(name: string) {
             </div>
           </section>
 
-          <section data-testid="group-labels">
-            <h3 :class="heading">{{ t('task.groupLabels') }}</h3>
-            <div class="divide-y divide-line">
-              <label class="flex min-h-12 items-center gap-3 px-1">
-                <Tag class="h-5 w-5 shrink-0 text-muted" />
-                <span class="shrink-0 text-base">{{ t('task.tags') }}</span>
-                <input
-                  v-model="draft.tags"
-                  :placeholder="t('task.tagsHint')"
-                  class="min-w-0 flex-1 bg-transparent py-3 text-right text-base outline-none placeholder:text-muted"
-                  autocapitalize="off"
-                  data-testid="task-tags"
-                  @change="saveSoon"
-                />
-              </label>
-
-              <div class="px-1 py-3">
-                <span :class="`${label} mb-3`"
-                  ><Palette class="h-5 w-5 shrink-0" /><span class="text-base font-normal text-current">{{ t('task.color') }}</span></span
-                >
-                <div class="flex flex-wrap items-center gap-2.5" role="radiogroup" :aria-label="t('task.color')" data-testid="task-colors">
-                  <button
-                    type="button"
-                    role="radio"
-                    :aria-checked="!draft.color"
-                    :aria-label="t('color.none')"
-                    class="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted"
-                    :class="!draft.color ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
-                    data-testid="color-none"
-                    @click="pickColor('')"
-                  >
-                    <Slash class="h-4 w-4 rotate-90" />
-                  </button>
-                  <button
-                    v-for="c in TASK_COLORS"
-                    :key="c.id"
-                    type="button"
-                    role="radio"
-                    :aria-checked="draft.color === c.id"
-                    :aria-label="t(`color.${c.id}` as MessageKey)"
-                    class="flex h-8 w-8 items-center justify-center rounded-full text-white"
-                    :class="draft.color === c.id ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
-                    :style="{ backgroundColor: c.hex }"
-                    :data-testid="`color-${c.id}`"
-                    @click="pickColor(c.id)"
-                  >
-                    <Check v-if="draft.color === c.id" class="h-4 w-4" />
-                  </button>
-                  <!-- A colour written by another tool, outside the palette, stays as it is -->
-                  <span
-                    v-if="draft.color && !TASK_COLORS.some((c) => c.id === draft.color) && colorHex(draft.color)"
-                    class="h-8 w-8 rounded-full ring-2 ring-accent ring-offset-2 ring-offset-card"
-                    :style="{ backgroundColor: colorHex(draft.color) }"
-                    data-testid="color-custom"
-                  ></span>
-                </div>
-              </div>
+          <!-- Rarely changed: the last thing on the page -->
+          <div class="px-1">
+            <span :class="`${label} mb-3`"
+              ><Palette class="h-5 w-5 shrink-0" /><span class="text-base font-normal text-current">{{ t('task.color') }}</span></span
+            >
+            <div class="flex flex-wrap items-center gap-2.5" role="radiogroup" :aria-label="t('task.color')" data-testid="task-colors">
+              <button
+                type="button"
+                role="radio"
+                :aria-checked="!draft.color"
+                :aria-label="t('color.none')"
+                class="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted"
+                :class="!draft.color ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
+                data-testid="color-none"
+                @click="pickColor('')"
+              >
+                <Slash class="h-4 w-4 rotate-90" />
+              </button>
+              <button
+                v-for="c in TASK_COLORS"
+                :key="c.id"
+                type="button"
+                role="radio"
+                :aria-checked="draft.color === c.id"
+                :aria-label="t(`color.${c.id}` as MessageKey)"
+                class="flex h-8 w-8 items-center justify-center rounded-full text-white"
+                :class="draft.color === c.id ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''"
+                :style="{ backgroundColor: c.hex }"
+                :data-testid="`color-${c.id}`"
+                @click="pickColor(c.id)"
+              >
+                <Check v-if="draft.color === c.id" class="h-4 w-4" />
+              </button>
+              <!-- A colour written by another tool, outside the palette, stays as it is -->
+              <span
+                v-if="draft.color && !TASK_COLORS.some((c) => c.id === draft.color) && colorHex(draft.color)"
+                class="h-8 w-8 rounded-full ring-2 ring-accent ring-offset-2 ring-offset-card"
+                :style="{ backgroundColor: colorHex(draft.color) }"
+                data-testid="color-custom"
+              ></span>
             </div>
-          </section>
+          </div>
         </div>
       </div>
     </div>
