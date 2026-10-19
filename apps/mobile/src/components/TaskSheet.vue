@@ -46,6 +46,9 @@ const priorities = ['low', 'medium', 'high', 'urgent'] as const;
 /** A field's label: the icon of the task card says the same thing there. */
 const label = 'mb-1 flex items-center gap-1.5 text-xs font-medium text-muted';
 const heading = 'mb-3 text-xs font-semibold uppercase tracking-wider text-muted';
+/** The ring of the circle follows the priority, as on the task rows. */
+const RING: Record<string, string> = { urgent: '#dc2626', high: '#f97316', medium: '#3b82f6', low: '#94a3b8' };
+const ring = computed(() => RING[draft.value.priority] ?? 'var(--color-muted)');
 const field = 'w-full rounded-xl border border-line bg-surface px-3 py-3 text-base outline-none focus:border-accent';
 
 // The sheet edits a draft; it is written back on every change and once more when the sheet closes
@@ -176,11 +179,11 @@ onBeforeUnmount(() => {
 });
 
 /** Saves what is typed first, then moves the task: the sheet must not write its old bucket back afterwards. */
-async function finish(kind: 'done' | 'archive') {
+async function finish(kind: 'done' | 'reopen' | 'archive') {
   await save();
   closing = true;
   ui.close();
-  await (kind === 'done' ? actions.markDone(props.id) : actions.archive(props.id));
+  await actions[kind === 'done' ? 'markDone' : kind === 'reopen' ? 'reopen' : 'archive'](props.id);
 }
 
 async function remove() {
@@ -240,7 +243,7 @@ async function removeAttachment(name: string) {
 </script>
 
 <template>
-  <!-- A page of its own, not a sheet: the arrow and the Save button leave it (everything is saved as it is edited), the menu holds what changes the task -->
+  <!-- A page of its own, not a sheet: the arrow leaves it (everything is saved as it is edited), the circle beside the title finishes the task, the menu archives or deletes it -->
   <div
     v-if="task"
     class="fixed inset-0 z-40 flex flex-col bg-card"
@@ -260,14 +263,6 @@ async function removeAttachment(name: string) {
         <ArrowLeft class="h-6 w-6" />
       </button>
       <h2 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-7">{{ t('task.heading') }}</h2>
-      <!-- Everything is saved as it is edited; the button is for the mind that looks for one. It does what the arrow does. -->
-      <button
-        class="h-10 shrink-0 rounded-full px-4 text-base font-semibold text-accent active:bg-line"
-        data-testid="task-save"
-        @click="close"
-      >
-        {{ t('common.save') }}
-      </button>
       <button
         class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full active:bg-line"
         :aria-label="t('common.moreActions')"
@@ -286,15 +281,6 @@ async function removeAttachment(name: string) {
           role="menu"
           data-testid="task-menu-list"
         >
-          <button
-            v-if="task.bucket !== 'done' && task.bucket !== 'archive'"
-            :class="menuItem"
-            role="menuitem"
-            data-testid="task-done"
-            @click="finish('done')"
-          >
-            <Check class="h-5 w-5 text-muted" />{{ t('task.markDone') }}
-          </button>
           <button v-if="task.bucket !== 'archive'" :class="menuItem" role="menuitem" data-testid="task-archive" @click="finish('archive')">
             <Archive class="h-5 w-5 text-muted" />{{ t('task.archive') }}
           </button>
@@ -307,15 +293,38 @@ async function removeAttachment(name: string) {
 
     <div class="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-4">
       <div class="space-y-4 pb-6">
-        <textarea
-          v-model="draft.title"
-          rows="1"
-          class="field-sizing-content block w-full resize-none rounded-xl border border-line bg-surface px-3 py-3 text-lg font-medium leading-snug outline-none focus:border-accent"
-          data-testid="task-title"
-          @input="titleEdited = true"
-          @beforeinput="titleEdited && smart.onBeforeInput($event)"
-          @change="commitTitle"
-        ></textarea>
+        <div class="flex items-start gap-1">
+          <!-- The same circle as on the task rows: it finishes the task, or takes a finished one back to the inbox -->
+          <button
+            v-if="task.bucket !== 'archive'"
+            type="button"
+            class="-ml-1 flex h-12 w-12 shrink-0 items-center justify-center"
+            role="checkbox"
+            :aria-checked="task.bucket === 'done'"
+            :aria-label="t(task.bucket === 'done' ? 'swipe.reopen' : 'swipe.done')"
+            data-testid="task-check"
+            @click="finish(task.bucket === 'done' ? 'reopen' : 'done')"
+          >
+            <span
+              class="flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 transition-colors"
+              :style="{
+                borderColor: ring,
+                backgroundColor: task.bucket === 'done' ? ring : `color-mix(in srgb, ${ring} 12%, transparent)`,
+              }"
+            >
+              <Check v-if="task.bucket === 'done'" class="h-4 w-4 text-accent-ink" :stroke-width="3" />
+            </span>
+          </button>
+          <textarea
+            v-model="draft.title"
+            rows="1"
+            class="field-sizing-content block min-w-0 flex-1 resize-none rounded-xl border border-line bg-surface px-3 py-3 text-lg font-medium leading-snug outline-none focus:border-accent"
+            data-testid="task-title"
+            @input="titleEdited = true"
+            @beforeinput="titleEdited && smart.onBeforeInput($event)"
+            @change="commitTitle"
+          ></textarea>
+        </div>
         <TitleHints v-if="titleEdited" :hints="smart.hints.value" class="-mt-2" @ignore="smart.ignore" />
 
         <div>

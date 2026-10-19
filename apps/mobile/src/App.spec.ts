@@ -357,8 +357,7 @@ describe('capturing and editing tasks', () => {
     expect(memoryNotifications.asked).toBe(1);
 
     // Done tasks do not remind
-    await find('task-menu').trigger('click');
-    await find('task-done').trigger('click');
+    await find('task-check').trigger('click');
     await settle();
     expect(memoryNotifications.armed).toEqual([]);
   });
@@ -1263,8 +1262,7 @@ describe('finishing, archiving and moving', () => {
     await start(desktopVault);
     await row('Write report').find('[data-testid="task-card"]').trigger('click');
     await find('task-title').setValue('Write the final report');
-    await find('task-menu').trigger('click');
-    await find('task-done').trigger('click');
+    await find('task-check').trigger('click');
     await settle();
 
     expect(find('task-title').exists()).toBe(false);
@@ -1274,8 +1272,9 @@ describe('finishing, archiving and moving', () => {
     expect(file('a')).not.toContain('status: todo');
 
     await row('Write the final report').find('[data-testid="task-card"]').trigger('click');
+    expect(find('task-check').attributes('aria-checked')).toBe('true');
     await find('task-menu').trigger('click');
-    expect(find('task-done').exists()).toBe(false); // already done: only archive and delete are offered
+    expect(find('task-done').exists()).toBe(false); // finishing is the circle beside the title, not the menu
     await find('task-archive').trigger('click');
     await settle();
     expect(file('a')).toContain('status: archive');
@@ -2008,16 +2007,24 @@ describe('task page', () => {
     expect(file('a')).toContain('title: Write the final report');
   });
 
-  it('leaves with the Save button too, saving what was typed and not marking the task done', async () => {
+  it('takes a finished task back to the inbox with the circle beside the title', async () => {
     await start(desktopVault);
     await find('task-card').trigger('click');
-    (find('task-title').element as HTMLTextAreaElement).value = 'Write the summary';
-    await find('task-title').trigger('input');
-    await find('task-save').trigger('click');
+    await find('task-check').trigger('click');
+    await settle();
+    expect(file('a')).toContain('status: done');
+
+    await row('Write report').find('[data-testid="task-card"]').trigger('click');
+    await find('task-check').trigger('click');
     await settle();
     expect(find('task-page').exists()).toBe(false);
-    expect(file('a')).toContain('title: Write the summary');
     expect(file('a')).toContain('status: todo');
+  });
+
+  it('has no Save button: the arrow leaves', async () => {
+    await start(desktopVault);
+    await find('task-card').trigger('click');
+    expect(find('task-save').exists()).toBe(false);
   });
 });
 
