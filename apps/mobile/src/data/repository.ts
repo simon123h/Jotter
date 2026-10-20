@@ -227,7 +227,8 @@ export class VaultRepository {
       const file = entry.name.slice(0, -3);
       seen.add(file);
       const row = await db.tasks.where('[project_id+file]').equals([id, file]).first();
-      if (row && row.size === entry.size && row.mtime === entry.mtime) continue;
+      // A file with a planning keyword is read again: the day it stands for moves on with the calendar
+      if (row && row.size === entry.size && row.mtime === entry.mtime && !row.legacy_planned) continue;
       try {
         const task = parseTaskMarkdown(await this.fs.readText(`${dir}/${entry.name}`), id, entry.name);
         if (row && row.id !== task.id) await db.tasks.delete([id, row.id]);
@@ -535,7 +536,8 @@ export class VaultRepository {
     const { db } = this.current();
     const path = `${this.projectDir(task.project_id)}/${file}.md`;
     await this.fs.writeText(path, dumpTaskMarkdown(task));
-    await db.tasks.put({ ...task, file, ...(await this.stamp(path)) });
+    // What is written is in the new form: the file is no longer one that the scan must read again
+    await db.tasks.put({ ...task, legacy_planned: undefined, file, ...(await this.stamp(path)) });
   }
 
   /**

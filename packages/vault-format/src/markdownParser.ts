@@ -1,6 +1,6 @@
 import yaml from 'yaml';
 import type { Task, Project, Bucket, RepeatRule } from './types';
-import { isPlanningKeyword, mergePostponed, readPlanned } from '@jotter/task-filter';
+import { isLegacyPlanned, isPlanningKeyword, mergePostponed, readPlanned, today as localToday } from '@jotter/task-filter';
 
 /**
  * Reads and writes the vault format defined in spec/FORMAT.md. The Python backend implements the same format;
@@ -87,11 +87,6 @@ function splitFrontmatter(content: string): Frontmatter {
   return { data, body: content.slice(match[0].length).replace(/^[\r\n]+/, '') };
 }
 
-/** Today as a local `YYYY-MM-DD`. */
-export function localDay(now = new Date()): string {
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
-
 function isoDate(value: string): string | null {
   const day = value.slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
@@ -173,7 +168,7 @@ function timestamp(raw: unknown, fallback: string): string {
  * Parses a Task markdown file with YAML frontmatter. Throws when the frontmatter is not valid YAML. `today` (a local
  * `YYYY-MM-DD`) resolves the legacy planning values.
  */
-export function parseTaskMarkdown(content: string, defaultProjectId = 'default', filename = '', today = localDay()): Task {
+export function parseTaskMarkdown(content: string, defaultProjectId = 'default', filename = '', today = localToday()): Task {
   const { data: fm, body } = splitFrontmatter(content);
 
   const id = String(fm.id || filename.replace(/\.md$/i, '') || `task_${Date.now()}`).trim();
@@ -209,6 +204,7 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
     body,
     due_date: dueDate ?? undefined,
     planned_date: plannedDate ?? undefined,
+    legacy_planned: isLegacyPlanned(rawPlanned, fm.postponed_until ?? fm.postponedUntil, today) || undefined,
     priority: PRIORITIES.includes(priority) ? priority : undefined,
     color: fm.color ? String(fm.color).trim() : undefined,
     repeat: parseRepeat(fm.repeat),

@@ -9,7 +9,7 @@ from itertools import batched
 from typing import Any, NamedTuple
 
 from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Task, TaskId, clean_reminders
-from jotter.features.tasks.planned import PlannedDate, planned_span
+from jotter.features.tasks.planned import PlannedDate, is_planning_keyword, planned_span, resolve_keyword
 from jotter.shared.exceptions import EntityNotFoundError
 
 _sqlite_write_lock = threading.Lock()
@@ -55,6 +55,8 @@ class IndexedFile(NamedTuple):
     updated_at: str | None
     file_stat: tuple[int, int] | None
     repeats: bool = False
+    planned_start: str | None = None
+    legacy_planned: bool = False
 
 
 class SqliteTaskRepository:
@@ -118,7 +120,7 @@ class SqliteTaskRepository:
     def get_index_state(self, project_id: str) -> dict[str, IndexedFile]:
         """Returns what the index knows about each task file of a project, keyed by task ID."""
         rows = self.conn.execute(
-            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size, repeat "
+            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size, repeat, planned_start, legacy_planned "
             "FROM tasks WHERE project_id = ?",
             (project_id,),
         ).fetchall()
@@ -129,6 +131,8 @@ class SqliteTaskRepository:
                 updated_at=row["updated_at"],
                 file_stat=(row["file_mtime_ns"], row["file_size"]) if row["file_mtime_ns"] is not None else None,
                 repeats=bool(row["repeat"]),
+                planned_start=row["planned_start"],
+                legacy_planned=bool(row["legacy_planned"]),
             )
             for row in rows
         }
@@ -224,7 +228,10 @@ class SqliteTaskRepository:
             query += " AND due_date IS NOT NULL AND due_date >= ?"
             args.append(due_after)
         if planned_date:
-            if planned_date.lower() == "none":
+            # `none`, and the old words for no date (`someday`, `thisYear`, ...), find the tasks that are not planned
+            if planned_date.lower() == "none" or (
+                is_planning_keyword(planned_date) and resolve_keyword(planned_date, _today()) is None
+            ):
                 query += " AND planned_start IS NULL"
             else:
                 span = planned_span(planned_date, _today())

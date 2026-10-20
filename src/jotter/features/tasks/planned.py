@@ -10,9 +10,10 @@ from datetime import date, timedelta
 
 from jotter.shared.exceptions import ValidationError
 
-_DAY = re.compile(r"^(\d{4}-\d{2}-\d{2})(?:[T ].*)?$")
-_WEEK = re.compile(r"^(\d{4})-[Ww](\d{2})$")
-_MONTH = re.compile(r"^(\d{4})-(\d{2})$")
+# ASCII digits only, and years from 1000 on: both readers agree on what a planned value is (spec/FORMAT.md)
+_DAY = re.compile(r"^([1-9][0-9]{3}-[0-9]{2}-[0-9]{2})(?:[T ].*)?$")
+_WEEK = re.compile(r"^([1-9][0-9]{3})-[Ww]([0-9]{2})$")
+_MONTH = re.compile(r"^([1-9][0-9]{3})-([0-9]{2})$")
 
 # Legacy planning keywords, compared case-insensitively and ignoring hyphens (`this-week` is `thisWeek`).
 _NO_DATE = frozenset({"thisyear", "nextyear", "someday", "sometime"})
@@ -82,6 +83,18 @@ def planned_start(value: str) -> date:
     if match := _MONTH.match(value):
         return date(int(match.group(1)), int(match.group(2)), 1)
     return date.fromisoformat(value)
+
+
+def is_legacy(planned_raw: object, postponed_raw: object, today: date) -> bool:
+    """True when a file holds a planning keyword or a postponement that is still ahead. Such a file is read again on every
+    scan until it is saved, so that the day it stands for follows the calendar the way it always did, on every device."""
+    if planned_raw and is_planning_keyword(str(planned_raw)):
+        return True
+    match = _DAY.match(str(postponed_raw).strip()) if postponed_raw else None
+    try:
+        return bool(match) and date.fromisoformat(match.group(1)) > today  # type: ignore[union-attr]
+    except ValueError:
+        return False
 
 
 def planned_span(value: str, today: date) -> tuple[str, str] | None:

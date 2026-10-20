@@ -145,6 +145,8 @@ A task has four fields about time. Each answers a different question, and none s
     week number is two digits, and week 53 exists only in the years that have one (2026 does, 2027 does not);
   - a month, `2026-10`: "some day in that month".
 
+  The digits are ASCII digits and the year is from 1000 to 9999; anything else is not a planned date.
+
   A week or a month **starts on its first day**. That is the day readers use to order tasks and to decide
   whether a planned task is still in the future. A planned date that lies in the past, a passed week or month
   included, is *slipped*: nothing changes it by itself. Whether a planned date in the future is shown or kept out
@@ -152,7 +154,9 @@ A task has four fields about time. Each answers a different question, and none s
 - **Legacy values are resolved when a file is read.** Older files may hold a planning keyword in `planned_date`
   (or in `due_date`, see section 3) and may hold `postponed_until`. A reader resolves them against *today*, and
   everything after that sees only the forms above. A writer never writes a keyword or `postponed_until`; a file
-  that is saved loses them. A file that is only read is not rewritten.
+  that is saved loses them. A file that is only read is not rewritten. A reader that keeps an index MUST read a file
+  with a planning keyword (or a postponement still ahead) again on every scan until it is saved, so that the day it
+  stands for follows the calendar, the same on every device.
   - **Keywords** are compared ignoring case and hyphens (`this-week`, `thisWeek` and `THISWEEK` are the same
     keyword). `today` and `tomorrow` become that day, `thisWeek` and `nextWeek` the ISO week, `thisMonth` and
     `nextMonth` the month. `thisYear`, `nextYear`, `someday` and `sometime` have no date: the task reads as not

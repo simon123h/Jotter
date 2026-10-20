@@ -193,6 +193,8 @@ class Task:
     repeat: RepeatRule | None = None
     reminders: list[str] = field(default_factory=list)
     extra_frontmatter: dict[str, object] = field(default_factory=dict)
+    # Read from a file with a planning keyword or a running postponement: not written, the index reads such files again
+    legacy_planned: bool = False
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 

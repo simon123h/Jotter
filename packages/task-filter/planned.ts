@@ -31,7 +31,7 @@ function weekStart(year: number, week: number): string | null {
 }
 
 function validDay(text: string): string | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  if (!/^[1-9]\d{3}-\d{2}-\d{2}$/.test(text)) return null;
   const date = parseDay(text);
   return !Number.isNaN(date.getTime()) && formatDay(date) === text ? text : null;
 }
@@ -39,11 +39,11 @@ function validDay(text: string): string | null {
 /** The day, week or month `raw` stands for, in its written form. Null when it is none of them. */
 export function canonicalPlanned(raw: string): string | null {
   const text = raw.trim();
-  const day = /^(\d{4}-\d{2}-\d{2})(?:[T ].*)?$/.exec(text);
+  const day = /^([1-9]\d{3}-\d{2}-\d{2})(?:[T ].*)?$/.exec(text);
   if (day) return validDay(day[1]);
-  const week = /^(\d{4})-[Ww](\d{2})$/.exec(text);
+  const week = /^([1-9]\d{3})-[Ww](\d{2})$/.exec(text);
   if (week) return weekStart(Number(week[1]), Number(week[2])) ? `${week[1]}-W${week[2]}` : null;
-  const month = /^(\d{4})-(\d{2})$/.exec(text);
+  const month = /^([1-9]\d{3})-(\d{2})$/.exec(text);
   if (month) return Number(month[2]) >= 1 && Number(month[2]) <= 12 ? text : null;
   return null;
 }
@@ -91,11 +91,21 @@ export function readPlanned(raw: unknown, today: string): string | null {
   return isPlanningKeyword(text) ? resolveKeyword(text, today) : canonicalPlanned(text);
 }
 
+/**
+ * True when a file holds a planning keyword or a postponement that is still ahead. Such a file is read again on every scan
+ * until it is saved, so that the day it stands for follows the calendar the way it always did, on every device.
+ */
+export function isLegacyPlanned(plannedRaw: unknown, postponedRaw: unknown, today: string): boolean {
+  if (plannedRaw && isPlanningKeyword(String(plannedRaw))) return true;
+  const match = postponedRaw ? /^([1-9]\d{3}-\d{2}-\d{2})(?:[T ].*)?$/.exec(String(postponedRaw).trim()) : null;
+  return !!match && !!validDay(match[1]) && match[1] > today;
+}
+
 /** Folds a legacy `postponed_until` into the planned date: it wins when it lies after today and the planned date
  * starts before it. */
 export function mergePostponed(planned: string | null, postponedRaw: unknown, today: string): string | null {
   if (postponedRaw === undefined || postponedRaw === null || postponedRaw === '') return planned;
-  const match = /^(\d{4}-\d{2}-\d{2})(?:[T ].*)?$/.exec(String(postponedRaw).trim());
+  const match = /^([1-9]\d{3}-\d{2}-\d{2})(?:[T ].*)?$/.exec(String(postponedRaw).trim());
   const postponed = match ? validDay(match[1]) : null;
   if (!postponed || postponed <= today) return planned;
   if (planned !== null) {

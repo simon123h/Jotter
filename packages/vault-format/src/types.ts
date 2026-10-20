@@ -26,6 +26,8 @@ export interface Task {
   reminders?: string[];
   created_at: string;
   updated_at: string;
+  /** Read from a file with a planning keyword or a running postponement: not written, the scan reads such a file again. */
+  legacy_planned?: boolean;
   /** Frontmatter keys this app does not know. Kept so that saving a task does not delete them. */
   extra_frontmatter?: Record<string, unknown>;
 }

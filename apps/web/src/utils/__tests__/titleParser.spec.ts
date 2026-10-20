@@ -355,6 +355,14 @@ describe('titleParser', () => {
       expect(result.dueDate).toBeNull();
     });
 
+    it('finishes on markers without a date, however they are piled up', () => {
+      for (const title of ['!', '!!', '! !', 'until', 'until until friday', '!until friday', 'bis !']) {
+        expect(parseDateFromTitle(title, 'en').matchedKeyword === null || title.includes('friday')).toBe(true);
+        getKeywordMatches(title, 'en', []);
+        getKeywordMatches(title, 'de', []);
+      }
+    });
+
     it('lets the marker be ignored with the date: the words stay in the title', () => {
       const result = parseDateFromTitle('Submit report until friday', 'en', new Set(['until friday']));
       expect(result.matchedKeyword).toBeNull();

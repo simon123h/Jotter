@@ -82,14 +82,20 @@ const timeColumns = computed(() => {
 });
 
 const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
+  const slot = payload.toId as PlanSlot;
+  // Slipped is where a plan ends up, not somewhere to plan to
+  if (slot === 'slipped') return;
+
   const isSelectedTask = selectionStore.isSelected(payload.taskId);
-  const tasksToUpdate = isSelectedTask
-    ? props.tasks.filter((t) => selectionStore.isSelected(t.id))
-    : props.tasks.filter((t) => t.id === payload.taskId);
+  const now = new Date();
+  // A task already in that stretch keeps its own plan: dropping a Wednesday on "This week" must not widen it to the week
+  const tasksToUpdate = (
+    isSelectedTask ? props.tasks.filter((t) => selectionStore.isSelected(t.id)) : props.tasks.filter((t) => t.id === payload.taskId)
+  ).filter((t) => plannedSlot(t.planned_date, now) !== slot);
 
   if (tasksToUpdate.length === 0) return;
 
-  const targetDate = slotValue(payload.toId as PlanSlot);
+  const targetDate = slotValue(slot, now);
 
   await Promise.all(
     tasksToUpdate.map((t) =>

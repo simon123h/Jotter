@@ -9,7 +9,7 @@ from typing import Any
 import yaml
 
 from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Task, clean_reminders
-from jotter.features.tasks.planned import is_planning_keyword, merge_postponed, read_planned
+from jotter.features.tasks.planned import is_legacy, is_planning_keyword, merge_postponed, read_planned
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
 from jotter.shared.frontmatter import split_frontmatter
 from jotter.shared.yaml_io import safe_load
@@ -250,6 +250,7 @@ class DiskTaskRepository:
         }
         extra_fm = {k: v for k, v in fm_data.items() if k not in known_keys}
 
+        legacy = is_legacy(planned_date, postponed_until, today)
         task = Task.create(
             project_id=proj_id,
             title=title,
@@ -267,6 +268,8 @@ class DiskTaskRepository:
             task_id=tid,
             extra_frontmatter=extra_fm,
         )
+
+        task.legacy_planned = legacy
 
         created_val = fm_data.get("created_at") or fm_data.get("createdAt")
         if created_val:

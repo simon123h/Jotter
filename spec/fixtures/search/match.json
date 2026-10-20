@@ -474,6 +474,28 @@
         "d",
         "e"
       ]
+    },
+    {
+      "name": "the old words for no date find the tasks that are not planned",
+      "filter": {
+        "planned_date": "someday"
+      },
+      "ids": [
+        "b",
+        "d",
+        "f"
+      ]
+    },
+    {
+      "name": "thisYear is such a word too",
+      "filter": {
+        "planned_date": "thisYear"
+      },
+      "ids": [
+        "b",
+        "d",
+        "f"
+      ]
     }
   ]
 }
