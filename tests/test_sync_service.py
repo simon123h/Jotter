@@ -129,10 +129,10 @@ def test_sync_retains_tasks_on_transient_read_error(temp_dir, test_env, monkeypa
     # Mock read_task_file to simulate a transient OS permission / sharing error on Windows
     orig_read = sync_svc.disk_task_repo.read_task_file
 
-    def mock_read(file_path, default_project_id=None):
+    def mock_read(file_path, default_project_id=None, today=None):
         if str(task.id) in str(file_path):
             raise OSError("WinError 32: The process cannot access the file because it is being used by another process")
-        return orig_read(file_path, default_project_id)
+        return orig_read(file_path, default_project_id, today)
 
     monkeypatch.setattr(sync_svc.disk_task_repo, "read_task_file", mock_read)
 
@@ -414,9 +414,9 @@ def _count_reads(monkeypatch):
     reads = []
     original = DiskTaskRepository.read_task_file
 
-    def counting(self, file_path, default_project_id):
+    def counting(self, file_path, default_project_id, today=None):
         reads.append(Path(file_path).name)
-        return original(self, file_path, default_project_id)
+        return original(self, file_path, default_project_id, today)
 
     monkeypatch.setattr(DiskTaskRepository, "read_task_file", counting)
     return reads
@@ -654,7 +654,7 @@ def test_startup_rebuild_is_retried_when_a_file_could_not_be_read(temp_dir, test
     monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
     original = DiskTaskRepository.read_task_file
 
-    def locked(self, file_path, default_project_id):
+    def locked(self, file_path, default_project_id, today=None):
         raise PermissionError("file is locked")
 
     monkeypatch.setattr(DiskTaskRepository, "read_task_file", locked)
@@ -681,7 +681,7 @@ def test_startup_rebuild_is_recorded_despite_unparseable_files(temp_dir, test_en
     task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
     monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
 
-    def broken(self, file_path, default_project_id):
+    def broken(self, file_path, default_project_id, today=None):
         raise ValueError("invalid frontmatter")
 
     monkeypatch.setattr(DiskTaskRepository, "read_task_file", broken)

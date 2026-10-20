@@ -208,7 +208,8 @@ class SyncApplicationService:
                             total_synced += 1
                         continue
 
-                    task = self.disk_task_repo.read_task_file(file_path, default_project_id=p_id)
+                    scan_day = now.astimezone().date()
+                    task = self.disk_task_repo.read_task_file(file_path, default_project_id=p_id, today=scan_day)
                     self.last_changes += 1
 
                     # Check if done task should be pruned based on retention period
@@ -235,7 +236,7 @@ class SyncApplicationService:
 
                     # Index task in SQLite
                     # The day of this scan stamps a legacy file, the same day the shortcut above compares with
-                    self.sqlite_task_repo.upsert_task(task, file_stat, now.astimezone().date())
+                    self.sqlite_task_repo.upsert_task(task, file_stat, scan_day)
                     total_synced += 1
                 except Exception as e:
                     if isinstance(e, OSError):

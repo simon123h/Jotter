@@ -100,6 +100,14 @@ export const useAppStore = defineStore('app', () => {
   /** The columns of the current view. */
   const columns = computed(() => columnsFor(view.value, buckets.value, visibleTasks.value, hiding.value, horizonApplies.value));
 
+  /** How many tasks the view leaves out because they are planned beyond its horizon (not the finished ones it hides anyway). */
+  const beyondCount = computed(() => {
+    const h = hiding.value[view.value];
+    const day = today();
+    return allTasks.value.filter((task) => isBeyond(task.planned_date, h.horizon, day) && !isHiddenIn(task, { ...h, horizon: 'all' }))
+      .length;
+  });
+
   /** What a search found beyond the horizon of the view: the columns leave it out, and the strip under the app bar says so. */
   const beyondFound = computed(() => {
     if (!isFiltering.value || !horizonApplies.value) return 0;
@@ -618,6 +626,7 @@ export const useAppStore = defineStore('app', () => {
     parsedFilter,
     isFiltering,
     beyondFound,
+    beyondCount,
     allTags,
     columns,
     unreadable,

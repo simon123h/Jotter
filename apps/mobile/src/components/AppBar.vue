@@ -13,7 +13,7 @@ import {
   ArrowDownToLine,
   Calendar,
 } from '@lucide/vue';
-import { isBeyond, isEmptyFilter, today } from '@jotter/task-filter';
+import { isEmptyFilter } from '@jotter/task-filter';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -63,9 +63,6 @@ const moveHere = computed(() => {
 
 const menuOpen = ref(false);
 const menuItem = 'flex h-12 w-full items-center gap-3 px-4 text-left text-base active:bg-line';
-
-/** How many tasks the view leaves out because they are planned beyond its horizon. */
-const beyondCount = computed(() => app.allTasks.filter((task) => isBeyond(task.planned_date, app.horizon, today())).length);
 
 const viewOptions = computed(() => [
   { id: 'done' as const, label: t('view.hideDone'), on: app.hidden[app.view].done },
@@ -196,7 +193,7 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
               <span class="block truncate text-base">{{ t('view.horizon') }}</span>
               <span class="block truncate text-sm text-muted"
                 >{{ t(`horizon.upTo.${app.horizon}` as MessageKey)
-                }}{{ beyondCount ? ' · ' + t('horizon.hidden', { count: beyondCount }) : '' }}</span
+                }}{{ app.beyondCount ? ' · ' + t('horizon.hidden', { count: app.beyondCount }) : '' }}</span
               >
             </span>
           </button>

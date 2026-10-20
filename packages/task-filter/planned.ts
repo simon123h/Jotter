@@ -117,13 +117,16 @@ export function mergePostponed(planned: string | null, postponedRaw: unknown, to
   return postponed;
 }
 
+const min9999 = (day: string) => (day.startsWith('+') ? '9999-12-31' : day);
+
 /** The first and last day a search for `value` covers: a day, a week, a month, or a legacy keyword for one. */
 export function plannedSpan(value: string, today: string): [string, string] | null {
   const text = isPlanningKeyword(value) ? resolveKeyword(value, today) : canonicalPlanned(value);
   const start = text ? plannedStart(text) : null;
   if (!text || !start) return null;
   if (text.length === 10) return [start, start];
-  if (text.includes('W')) return [start, formatDay(addDays(parseDay(start), 6))];
+  // The last week of year 9999 reaches past the calendar: the end stops at its last day
+  if (text.includes('W')) return [start, min9999(formatDay(addDays(parseDay(start), 6)))];
   const [year, month] = start.split('-').map(Number);
   return [start, formatDay(new Date(Date.UTC(year, month, 0)))];
 }
@@ -199,7 +202,8 @@ export function plannedSlot(value: string | null | undefined, now: Date = new Da
   if (from === to && from === day) return 'today';
   if (from === to && from === localDay(now, 1)) return 'tomorrow';
   // A month plan is "some day this month" even in the last days of it, when the week reaches past the end of the month
-  const isMonth = canonicalPlanned(value!)?.length === 7;
+  const resolved = isPlanningKeyword(value!) ? resolveKeyword(value!, day) : canonicalPlanned(value!);
+  const isMonth = resolved?.length === 7;
   if (!isMonth && to <= horizonEnd('week', day)!) return 'week';
   if (to <= horizonEnd('month', day)!) return 'month';
   return 'later';

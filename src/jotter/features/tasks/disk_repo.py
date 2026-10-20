@@ -155,9 +155,9 @@ class DiskTaskRepository:
 
         return f"---\n{yaml_content}---\n{body_str}"
 
-    def read_task_file(self, file_path: Path, default_project_id: str) -> Task:
+    def read_task_file(self, file_path: Path, default_project_id: str, today: date | None = None) -> Task:
         content = file_path.read_text(encoding="utf-8")
-        return self.parse_task_content(content, file_path.stem, default_project_id)
+        return self.parse_task_content(content, file_path.stem, default_project_id, today)
 
     def parse_task_content(
         self, content: str, fallback_id: str, default_project_id: str, today: date | None = None

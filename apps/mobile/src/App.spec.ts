@@ -1964,6 +1964,18 @@ describe('planning ahead', () => {
     expect(find('open-horizon').exists()).toBe(false);
   });
 
+  it('does not count the finished tasks the view hides anyway among those kept out by the horizon', async () => {
+    await start((f) => {
+      vault(f);
+      f.put('Jotter/work/f.md', '---\ntitle: Finished far ahead\nstatus: done\nposition: 1000\nplanned_date: "2999-02-02"\n---\n');
+    });
+    // The tags hide finished tasks: the one far ahead is hidden anyway, a wider limit would not show it
+    await find('view-tags').trigger('click');
+    await settle();
+    await find('view-menu').trigger('click');
+    expect(find('open-horizon').text()).toContain('up to today · 1 hidden');
+  });
+
   it('says how many tasks a search found beyond the horizon, and shows them on request', async () => {
     await start(vault);
     expect(find('beyond-hint').exists()).toBe(false); // nothing is searched for
