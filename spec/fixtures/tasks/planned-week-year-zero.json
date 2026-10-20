@@ -1,0 +1,22 @@
+{
+  "description": "The same for a week (and the two readers must not read year 0 as 1900).",
+  "context": {
+    "file_stem": "planned-week-year-zero",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "planned-week-year-zero",
+    "project_id": "proj",
+    "title": "Planned week year zero",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "description": "A year before 1000 is not a planned date, in a day, a week or a month: the value is dropped.",
+  "context": {
+    "file_stem": "planned-year-zero",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "planned-year-zero",
+    "project_id": "proj",
+    "title": "Planned year zero",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

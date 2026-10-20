@@ -184,6 +184,18 @@ watch(
       <span>{{ app.unreadable.length }} file(s) could not be read and were left untouched.</span>
     </div>
 
+    <!-- A search found tasks planned beyond the horizon: the columns leave them out, so they would seem not to exist -->
+    <div v-if="app.beyondFound" class="mx-3 mb-2 flex items-center gap-2 text-sm text-muted" data-testid="beyond-hint">
+      <span class="min-w-0 flex-1">{{ t('horizon.moreFound', { count: app.beyondFound }) }}</span>
+      <button
+        class="rounded-full px-3 py-1 font-medium text-accent active:bg-accent/15"
+        data-testid="beyond-show"
+        @click="app.setHorizon('all')"
+      >
+        {{ t('horizon.show') }}
+      </button>
+    </div>
+
     <!-- No project yet -->
     <main v-if="!app.project" class="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center" data-testid="no-projects">
       <h2 class="text-lg font-semibold">{{ t('board.noProjects') }}</h2>

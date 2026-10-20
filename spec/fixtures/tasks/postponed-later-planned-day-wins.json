@@ -1,0 +1,22 @@
+{
+  "description": "A planned day on or after the postponement is kept.",
+  "context": {
+    "file_stem": "postponed-later-planned-day-wins",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "postponed-later-planned-day-wins",
+    "project_id": "proj",
+    "title": "Postponed later planned day wins",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": "2026-10-25",
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

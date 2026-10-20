@@ -1,6 +1,8 @@
 import { ref, reactive, watch, computed, nextTick, provide, inject, type Ref, type InjectionKey } from 'vue';
 import type { Task, Bucket, RepeatRule } from '@/types';
 import { parseTitleState, getKeywordMatches } from '@jotter/title-parser';
+import { useAheadNotice } from '@/composables/useAheadNotice';
+import { keywordDates } from '@/utils/keywordDates';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import { sanitizeTags } from '@/utils/tagUtils';
 import { isoDay } from '@jotter/task-filter';
@@ -15,7 +17,6 @@ export interface TaskEditorForm {
   plannedDate: string;
   priority: string;
   color: string | null;
-  postponedUntil: string;
   /** '' for never, a unit for daily, weekly, ..., or 'custom' (then `repeatEvery` and `repeatUnit` apply). */
   repeatKind: string;
   repeatUnit: string;
@@ -51,7 +52,6 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
     plannedDate: '',
     priority: '',
     color: null,
-    postponedUntil: '',
     repeatKind: '',
     repeatUnit: '',
     repeatEvery: 1,
@@ -60,6 +60,11 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
   });
 
   const lastMatchedKeyword = ref<string | null>(null);
+  /** The date the keyword in the title stands for, and taking it back (see keywordDates). */
+  const keywordDate = keywordDates(
+    (field) => form[field],
+    (field, value) => (form[field] = value)
+  );
   const lastMatchedPriority = ref<string | null>(null);
   const lastExtractedTags = ref<string[]>([]);
 
@@ -86,7 +91,6 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       form.plannedDate = taskVal.planned_date || '';
       form.priority = taskVal.priority || '';
       form.color = taskVal.color || null;
-      form.postponedUntil = taskVal.postponed_until || '';
       form.repeatKind = taskVal.repeat ? (taskVal.repeat.every === 1 ? taskVal.repeat.unit : 'custom') : '';
       form.repeatUnit = taskVal.repeat?.unit ?? '';
       form.repeatEvery = taskVal.repeat?.every ?? 1;
@@ -102,7 +106,6 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       form.plannedDate = '';
       form.priority = '';
       form.color = null;
-      form.postponedUntil = '';
       form.repeatKind = '';
       form.repeatUnit = '';
       form.repeatEvery = 1;
@@ -110,6 +113,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       form.reminders = [];
     }
     lastMatchedKeyword.value = null;
+    keywordDate.reset();
     lastMatchedPriority.value = null;
     lastExtractedTags.value = [];
   };
@@ -125,15 +129,12 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       // 1. Due & Planned Date Sync
       if (result.matchedKeyword) {
         if (result.matchedKeyword !== lastMatchedKeyword.value) {
-          form.dueDate = result.dueDate || '';
-          form.plannedDate = result.plannedDate || '';
+          // The keyword sets one of the two dates and leaves the other as it is; going away it gives the old value back
+          keywordDate.apply(result);
           lastMatchedKeyword.value = result.matchedKeyword;
         }
       } else {
-        if (lastMatchedKeyword.value) {
-          form.dueDate = '';
-          form.plannedDate = '';
-        }
+        keywordDate.clear();
         lastMatchedKeyword.value = null;
       }
 
@@ -232,6 +233,8 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
     form.reminders.splice(index, 1);
   };
 
+  const notifyAhead = useAheadNotice();
+
   const handleSave = async (onSuccess?: (updated: Task) => void, onError?: (err: any) => void) => {
     if (!task.value) return;
 
@@ -248,6 +251,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
 
     try {
       const tagArray = sanitizeTags(form.tags);
+      const plannedBefore = task.value.planned_date || '';
 
       const updated = await patchTask(task.value, {
         title: finalTitle,
@@ -258,11 +262,12 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
         planned_date: form.plannedDate,
         priority: form.priority,
         color: form.color,
-        postponed_until: form.postponedUntil,
         repeat: repeatOf(form),
         reminders: [...new Set(form.reminders.filter(Boolean))].sort(),
       });
 
+      // A plan that moved beyond the horizon hides the task: say so
+      if (form.plannedDate !== plannedBefore) notifyAhead(form.plannedDate);
       isEditing.value = false;
       if (onSuccess) {
         onSuccess(updated);

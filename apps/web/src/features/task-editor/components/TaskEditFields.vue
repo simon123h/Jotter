@@ -7,6 +7,8 @@ import type { Bucket } from '@/types';
 import { useTaskEditorContext } from '../composables/useTaskEditor';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
+import PlannedSelect from '@/components/ui/PlannedSelect.vue';
+import DeadlineField from '@/components/ui/DeadlineField.vue';
 import { TASK_COLORS } from '@/utils/constants';
 
 const MarkdownEditor = defineAsyncComponent(() => import('@/components/ui/MarkdownEditor.vue'));
@@ -110,45 +112,15 @@ defineExpose({
       </div>
     </div>
 
-    <!-- Postponed Until Row -->
-    <div>
-      <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">
-        {{ t('form.postponedUntilLabel') || 'Postponed Until' }}
-      </label>
-      <input
-        v-model="editor.form.postponedUntil"
-        type="date"
-        class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-      />
-    </div>
-
     <!-- Due Date, Planned Date & Priority Row -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.dueDateLabel') }}</label>
-        <input
-          v-model="editor.form.dueDate"
-          type="date"
-          class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-        />
-      </div>
       <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
           t('form.plannedDateLabel') || 'Planned'
         }}</label>
-        <select
-          v-model="editor.form.plannedDate"
-          class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-        >
-          <option value="">{{ t('plannedDateOptions.none') }}</option>
-          <option value="today">{{ t('plannedDateOptions.today') }}</option>
-          <option value="tomorrow">{{ t('plannedDateOptions.tomorrow') }}</option>
-          <option value="thisWeek">{{ t('plannedDateOptions.thisWeek') }}</option>
-          <option value="thisMonth">{{ t('plannedDateOptions.thisMonth') }}</option>
-          <option value="thisYear">{{ t('plannedDateOptions.thisYear') }}</option>
-          <option value="sometime">{{ t('plannedDateOptions.sometime') }}</option>
-        </select>
+        <PlannedSelect v-model="editor.form.plannedDate" />
       </div>
+      <DeadlineField v-model="editor.form.dueDate" />
       <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.priorityLabel') }}</label>
         <select

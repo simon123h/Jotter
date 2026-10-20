@@ -28,6 +28,7 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
       f.updated_after ||
       f.updated_before ||
       f.project ||
+      f.planned_date ||
       (f.has_due_date !== undefined && f.has_due_date !== null)
     );
   });
@@ -106,6 +107,7 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
       updated_after: (q.updated_after as string) || undefined,
       updated_before: (q.updated_before as string) || undefined,
       project: (q.project as string) || undefined,
+      planned_date: (q.planned_date as string) || undefined,
     };
 
     // The address is the filters written down: when it says what the field already says, the field is left as typed
@@ -171,6 +173,9 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
 
       if (newFilters.project) query.project = newFilters.project;
       else delete query.project;
+
+      if (newFilters.planned_date) query.planned_date = newFilters.planned_date;
+      else delete query.planned_date;
 
       if (syncRoute && route && JSON.stringify(route.query) !== JSON.stringify(query)) {
         router.replace({ query });

@@ -18,7 +18,7 @@ const { t } = useI18n();
 const customDate = ref('');
 
 const selectPreset = (preset: DatePreset) => {
-  emit('select', preset.offsetDays === null ? '' : isoDay(preset.offsetDays));
+  emit('select', preset.value ?? (preset.offsetDays === null ? '' : isoDay(preset.offsetDays)));
 };
 </script>
 
@@ -30,6 +30,7 @@ const selectPreset = (preset: DatePreset) => {
     <!-- Presets -->
     <div class="grid grid-cols-2 gap-1.5">
       <button
+        data-entry
         v-for="preset in presets"
         :key="preset.id"
         @click="selectPreset(preset)"

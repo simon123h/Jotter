@@ -13,6 +13,10 @@ import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
+import PlannedSelect from '@/components/ui/PlannedSelect.vue';
+import { useAheadNotice } from '@/composables/useAheadNotice';
+import { keywordDates } from '@/utils/keywordDates';
+import DeadlineField from '@/components/ui/DeadlineField.vue';
 import { TASK_COLORS } from '@/utils/constants';
 import { sanitizeTags } from '@/utils/tagUtils';
 
@@ -74,6 +78,11 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 const lastMatchedKeyword = ref<string | null>(null);
+/** The date the keyword in the title stands for, and taking it back (see keywordDates). */
+const keywordDate = keywordDates(
+  (field) => (field === 'dueDate' ? dueDate : plannedDate).value,
+  (field, value) => ((field === 'dueDate' ? dueDate : plannedDate).value = value)
+);
 const lastMatchedPriority = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
@@ -97,6 +106,7 @@ watch(
       color.value = props.initialColor || null;
       error.value = null;
       lastMatchedKeyword.value = null;
+      keywordDate.reset();
       lastMatchedPriority.value = null;
       lastExtractedTags.value = [];
       showAutocomplete.value = false;
@@ -126,15 +136,12 @@ watch([title, () => ignoredKeywords.value], ([newTitle, newIgnored]) => {
   // 1. Due & Planned Date Sync
   if (result.matchedKeyword) {
     if (result.matchedKeyword !== lastMatchedKeyword.value) {
-      dueDate.value = result.dueDate || '';
-      plannedDate.value = result.plannedDate || '';
+      // The keyword sets one of the two dates and leaves the other as it is; going away it gives the old value back
+      keywordDate.apply(result);
       lastMatchedKeyword.value = result.matchedKeyword;
     }
   } else {
-    if (lastMatchedKeyword.value) {
-      dueDate.value = '';
-      plannedDate.value = '';
-    }
+    keywordDate.clear();
     lastMatchedKeyword.value = null;
   }
 
@@ -180,6 +187,8 @@ watch([title, () => ignoredKeywords.value], ([newTitle, newIgnored]) => {
   }
 });
 
+const notifyAhead = useAheadNotice();
+
 const handleSubmit = async () => {
   if (loading.value) return;
 
@@ -208,6 +217,7 @@ const handleSubmit = async () => {
       planned_date: plannedDate.value || undefined,
     });
 
+    notifyAhead(plannedDate.value);
     emit('success');
     emit('close');
   } catch (err: any) {
@@ -303,30 +313,12 @@ const handleSubmit = async () => {
       <!-- Due Date & Planned Date Row -->
       <div class="grid grid-cols-2 gap-3.5">
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.dueDateLabel') }}</label>
-          <input
-            v-model="dueDate"
-            type="date"
-            class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-          />
-        </div>
-        <div>
           <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
             t('form.plannedDateLabel') || 'Planned'
           }}</label>
-          <select
-            v-model="plannedDate"
-            class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-          >
-            <option value="">{{ t('plannedDateOptions.none') }}</option>
-            <option value="today">{{ t('plannedDateOptions.today') }}</option>
-            <option value="tomorrow">{{ t('plannedDateOptions.tomorrow') }}</option>
-            <option value="thisWeek">{{ t('plannedDateOptions.thisWeek') }}</option>
-            <option value="thisMonth">{{ t('plannedDateOptions.thisMonth') }}</option>
-            <option value="thisYear">{{ t('plannedDateOptions.thisYear') }}</option>
-            <option value="sometime">{{ t('plannedDateOptions.sometime') }}</option>
-          </select>
+          <PlannedSelect v-model="plannedDate" />
         </div>
+        <DeadlineField v-model="dueDate" />
       </div>
 
       <!-- Priority & Highlight Color Row -->

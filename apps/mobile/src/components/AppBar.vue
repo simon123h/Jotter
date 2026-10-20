@@ -11,10 +11,10 @@ import {
   Check,
   ChevronDown,
   ArrowDownToLine,
+  Calendar,
 } from '@lucide/vue';
 import { isEmptyFilter } from '@jotter/task-filter';
-import { t } from '@/i18n';
-import { isPostponed } from '@jotter/task-filter';
+import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
@@ -64,20 +64,22 @@ const moveHere = computed(() => {
 const menuOpen = ref(false);
 const menuItem = 'flex h-12 w-full items-center gap-3 px-4 text-left text-base active:bg-line';
 
-const postponedCount = computed(() => app.allTasks.filter((task) => isPostponed(task)).length);
-
 const viewOptions = computed(() => [
   { id: 'done' as const, label: t('view.hideDone'), on: app.hidden[app.view].done },
   { id: 'archive' as const, label: t('view.hideArchived'), on: app.hidden[app.view].archive },
-  { id: 'postponed' as const, label: t('view.hidePostponed'), count: postponedCount.value, on: app.hidden[app.view].postponed },
 ]);
+
+function openHorizon() {
+  menuOpen.value = false;
+  ui.open({ type: 'horizon' });
+}
 
 function toggleLayout() {
   menuOpen.value = false;
   app.setLayout(app.layout === 'list' ? 'tabs' : 'list');
 }
 
-function toggleOption(id: 'done' | 'archive' | 'postponed') {
+function toggleOption(id: 'done' | 'archive') {
   menuOpen.value = false;
   app.toggleHidden(id);
 }
@@ -176,7 +178,24 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
           >
             <Check class="h-5 w-5 shrink-0" :class="option.on ? 'text-accent' : 'text-transparent'" />
             <span class="min-w-0 flex-1 truncate">{{ option.label }}</span>
-            <span v-if="option.count" class="text-sm text-muted">{{ option.count }}</span>
+          </button>
+          <!-- The planning view looks ahead by nature: it has no horizon -->
+          <button
+            v-if="app.view !== 'planning'"
+            class="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-line"
+            role="menuitem"
+            data-testid="open-horizon"
+            @click="openHorizon"
+          >
+            <Calendar class="h-5 w-5 shrink-0 text-muted" />
+            <!-- Two lines read as one sentence: "Show planned tasks… up to today · 3 hidden" -->
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-base">{{ t('view.horizon') }}</span>
+              <span class="block truncate text-sm text-muted"
+                >{{ t(`horizon.upTo.${app.horizon}` as MessageKey)
+                }}{{ app.beyondCount ? ' · ' + t('horizon.hidden', { count: app.beyondCount }) : '' }}</span
+              >
+            </span>
           </button>
         </div>
       </template>

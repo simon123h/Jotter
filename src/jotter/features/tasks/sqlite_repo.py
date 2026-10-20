@@ -4,11 +4,12 @@ import json
 import re
 import sqlite3
 import threading
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 from itertools import batched
 from typing import Any, NamedTuple
 
 from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Task, TaskId, clean_reminders
+from jotter.features.tasks.planned import PlannedDate, is_planning_keyword, planned_span, resolve_keyword
 from jotter.shared.exceptions import EntityNotFoundError
 
 _sqlite_write_lock = threading.Lock()
@@ -53,8 +54,9 @@ class IndexedFile(NamedTuple):
     created_at: str | None
     updated_at: str | None
     file_stat: tuple[int, int] | None
-    postponed_until: str | None = None
     repeats: bool = False
+    planned_start: str | None = None
+    legacy_day: str | None = None
 
 
 class SqliteTaskRepository:
@@ -64,9 +66,9 @@ class SqliteTaskRepository:
 
         self._projector = TaskProjector(conn)
 
-    def upsert_task(self, task: Task, file_stat: tuple[int, int] | None = None) -> None:
+    def upsert_task(self, task: Task, file_stat: tuple[int, int] | None = None, today: date | None = None) -> None:
         """Indexes or updates a task in SQLite via TaskProjector."""
-        self._projector.project_task_upsert(task, file_stat)
+        self._projector.project_task_upsert(task, file_stat, today)
 
     def delete_task(self, task_id: str) -> None:
         """Deletes a task from SQLite via TaskProjector."""
@@ -84,7 +86,7 @@ class SqliteTaskRepository:
         cursor.execute(
             """
             SELECT id, project_id, title, bucket, position, tags, attachments, body,
-                   due_date, planned_date, priority, color, postponed_until, repeat, reminders, created_at, updated_at
+                   due_date, planned_date, priority, color, repeat, reminders, created_at, updated_at
             FROM tasks
             WHERE project_id = ? AND id = ?
             """,
@@ -105,7 +107,7 @@ class SqliteTaskRepository:
             cursor.execute(
                 f"""
                 SELECT id, project_id, title, bucket, position, tags, attachments, body,
-                       due_date, planned_date, priority, color, postponed_until, repeat, reminders, created_at, updated_at
+                       due_date, planned_date, priority, color, repeat, reminders, created_at, updated_at
                 FROM tasks
                 WHERE id IN ({placeholders})
                 """,
@@ -118,7 +120,7 @@ class SqliteTaskRepository:
     def get_index_state(self, project_id: str) -> dict[str, IndexedFile]:
         """Returns what the index knows about each task file of a project, keyed by task ID."""
         rows = self.conn.execute(
-            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size, postponed_until, repeat "
+            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size, repeat, planned_start, legacy_day "
             "FROM tasks WHERE project_id = ?",
             (project_id,),
         ).fetchall()
@@ -128,8 +130,9 @@ class SqliteTaskRepository:
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 file_stat=(row["file_mtime_ns"], row["file_size"]) if row["file_mtime_ns"] is not None else None,
-                postponed_until=row["postponed_until"],
                 repeats=bool(row["repeat"]),
+                planned_start=row["planned_start"],
+                legacy_day=row["legacy_day"],
             )
             for row in rows
         }
@@ -164,13 +167,11 @@ class SqliteTaskRepository:
         cursor = self.conn.cursor()
         query = """
         SELECT id, project_id, title, bucket, position, tags, attachments, body,
-               due_date, planned_date, priority, color, postponed_until, repeat, reminders, created_at, updated_at
+               due_date, planned_date, priority, color, repeat, reminders, created_at, updated_at
         FROM tasks
         WHERE 1=1
         """
         args: list[Any] = []
-        today_str = datetime.now(UTC).strftime("%Y-%m-%d")
-
         if project_id in ("null", "undefined"):
             return []
 
@@ -183,42 +184,20 @@ class SqliteTaskRepository:
 
         # Bucket filter
         if bucket:
-            if bucket == "postponed":
-                query += " AND postponed_until IS NOT NULL AND postponed_until > ?"
-                args.append(today_str)
-            else:
-                query += " AND bucket = ?"
-                args.append(bucket)
+            query += " AND bucket = ?"
+            args.append(bucket)
         elif buckets:
-            has_postponed = "postponed" in buckets
-            normal_buckets = [b for b in buckets if b != "postponed"]
-            clauses: list[str] = []
-            if normal_buckets:
-                placeholders = ",".join("?" * len(normal_buckets))
-                clauses.append(f"bucket IN ({placeholders})")
-                args.extend(normal_buckets)
-            if has_postponed:
-                clauses.append("(postponed_until IS NOT NULL AND postponed_until > ?)")
-                args.append(today_str)
-            if clauses:
-                query += f" AND ({' OR '.join(clauses)})"
-        else:
-            exclude_postponed = False
-            if exclude_bucket == "postponed":
-                exclude_postponed = True
-            if exclude_buckets and "postponed" in exclude_buckets:
-                exclude_postponed = True
-            if exclude_postponed:
-                query += " AND (postponed_until IS NULL OR postponed_until = '' OR postponed_until <= ?)"
-                args.append(today_str)
+            placeholders = ",".join("?" * len(buckets))
+            query += f" AND bucket IN ({placeholders})"
+            args.extend(buckets)
 
         # Exclude buckets
-        if exclude_bucket and exclude_bucket != "postponed":
+        if exclude_bucket:
             query += " AND bucket != ?"
             args.append(exclude_bucket)
 
         if exclude_buckets:
-            valid_excludes = [b.strip() for b in exclude_buckets if b.strip() and b.strip() != "postponed"]
+            valid_excludes = [b.strip() for b in exclude_buckets if b.strip()]
             if valid_excludes:
                 placeholders = ",".join("?" * len(valid_excludes))
                 query += f" AND bucket NOT IN ({placeholders})"
@@ -249,8 +228,17 @@ class SqliteTaskRepository:
             query += " AND due_date IS NOT NULL AND due_date >= ?"
             args.append(due_after)
         if planned_date:
-            query += " AND planned_date = ?"
-            args.append(planned_date)
+            # `none`, and the old words for no date (`someday`, `thisYear`, ...), find the tasks that are not planned
+            if planned_date.lower() == "none" or (
+                is_planning_keyword(planned_date) and resolve_keyword(planned_date, _today()) is None
+            ):
+                query += " AND planned_start IS NULL"
+            else:
+                span = planned_span(planned_date, _today())
+                if span is None:
+                    return []
+                query += " AND planned_start BETWEEN ? AND ?"
+                args.extend(span)
         if has_due_date is True:
             query += " AND due_date IS NOT NULL AND due_date != ''"
         elif has_due_date is False:
@@ -350,10 +338,9 @@ class SqliteTaskRepository:
             attachments=[str(a) for a in attachments_list if a],
             body=row["body"] or "",
             due_date=DueDate(row["due_date"]),
-            planned_date=DueDate(row["planned_date"]),
+            planned_date=PlannedDate(row["planned_date"]),
             priority=Priority.from_str(row["priority"]),
             color=row["color"],
-            postponed_until=DueDate(row["postponed_until"]),
             repeat=RepeatRule.from_raw(_json_or_none(row["repeat"])),
             reminders=clean_reminders(_json_or_none(row["reminders"])),
             created_at=row["created_at"],

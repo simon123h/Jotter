@@ -33,4 +33,27 @@ describe('BulkActionMenu.vue', () => {
     expect(wrapper.emitted('edit-tag')).toBeUndefined();
     wrapper.unmount();
   });
+
+  it('does not pick an entry while a dialog is open', () => {
+    const wrapper = mountMenu('priority');
+    const dialog = document.createElement('dialog');
+    dialog.setAttribute('open', '');
+    document.body.appendChild(dialog);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '5' }));
+    expect(wrapper.emitted('set-priority')).toBeUndefined();
+    dialog.remove();
+    wrapper.unmount();
+  });
+
+  it('counts the entries of a date menu, not its apply button', () => {
+    const wrapper = mount(BulkActionMenu, {
+      props: { menu: 'dueDate', buckets: [], projects: [], commonTags: [] },
+      attachTo: document.body,
+    });
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }));
+    expect(wrapper.emitted('set-due-date')).toHaveLength(1); // Today, the first preset
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '9' }));
+    expect(wrapper.emitted('set-due-date')).toHaveLength(1); // there is no ninth entry
+    wrapper.unmount();
+  });
 });

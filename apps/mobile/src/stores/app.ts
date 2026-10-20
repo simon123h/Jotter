@@ -1,12 +1,12 @@
 import { ref, shallowRef, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { Task, Project, Bucket } from '@jotter/vault-format';
-import { compareTitles, filterTasks, isEmptyFilter, parseQuery } from '@jotter/task-filter';
+import { compareTitles, filterTasks, isBeyond, isEmptyFilter, parseQuery, today, HORIZONS, type Horizon } from '@jotter/task-filter';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { armDelay, armReminders, localDateTime } from '@/reminders';
 import { useUiStore } from '@/stores/ui';
-import { columnsFor, type Column, type Hidden, type View } from '@/stores/columns';
+import { columnsFor, isHiddenIn, type Column, type Hidden, type View } from '@/stores/columns';
 import {
   defaultHidden,
   recallCollapsed,
@@ -46,6 +46,17 @@ export const useAppStore = defineStore('app', () => {
   const captureProjectId = ref<string | null>(null);
   const view = ref<View>('board');
   const hidden = ref<Record<View, Hidden>>(defaultHidden());
+  /** How far ahead the board and the tags look, from the vault's settings.json (shared with the desktop). The planning view looks ahead anyway. */
+  const planningHorizon = ref<Horizon>('today');
+  const horizonOf = (v: View): Horizon => (v === 'planning' ? 'all' : planningHorizon.value);
+  /** What the views hide: the finished tasks of `hidden`, and those planned beyond the horizon. */
+  const hiding = computed<Record<View, Hidden>>(() => ({
+    board: { ...hidden.value.board, horizon: horizonOf('board') },
+    tags: { ...hidden.value.tags, horizon: horizonOf('tags') },
+    planning: { ...hidden.value.planning, horizon: horizonOf('planning') },
+  }));
+  /** The horizon of the view in sight. */
+  const horizon = computed(() => horizonOf(view.value));
   const layout = ref<Layout>('tabs');
   const collapsed = ref<Record<string, boolean>>({});
   const buckets = ref<Bucket[]>([]);
@@ -83,8 +94,29 @@ export const useAppStore = defineStore('app', () => {
   const visibleTasks = computed(() => filterTasks(allTasks.value, parsedFilter.value));
   const allTags = computed(() => [...new Set(allTasks.value.flatMap((t) => t.tags))].sort());
 
+  /** A query that names planned dates (`planned:2026-11`) is not cut by the horizon: whoever asks about planning wants the answer. */
+  const horizonApplies = computed(() => !parsedFilter.value.planned_date);
+
   /** The columns of the current view. */
-  const columns = computed(() => columnsFor(view.value, buckets.value, visibleTasks.value, hidden.value));
+  const columns = computed(() => columnsFor(view.value, buckets.value, visibleTasks.value, hiding.value, horizonApplies.value));
+
+  /** How many tasks the view leaves out because they are planned beyond its horizon (not the finished ones it hides anyway). */
+  const beyondCount = computed(() => {
+    if (!horizonApplies.value) return 0; // a query that names planned dates is not cut by the horizon
+    const h = hiding.value[view.value];
+    const day = today();
+    return allTasks.value.filter((task) => isBeyond(task.planned_date, h.horizon, day) && !isHiddenIn(task, { ...h, horizon: 'all' }))
+      .length;
+  });
+
+  /** What a search found beyond the horizon of the view: the columns leave it out, and the strip under the app bar says so. */
+  const beyondFound = computed(() => {
+    if (!isFiltering.value || !horizonApplies.value) return 0;
+    const h = hiding.value[view.value];
+    const day = today();
+    return visibleTasks.value.filter((task) => isBeyond(task.planned_date, h.horizon, day) && !isHiddenIn(task, { ...h, horizon: 'all' }))
+      .length;
+  });
 
   function repository(): VaultRepository {
     if (!repo.value) throw new Error('Not initialised');
@@ -133,6 +165,10 @@ export const useAppStore = defineStore('app', () => {
     if (JSON.stringify(next.pinned) !== JSON.stringify(pinned.value)) pinned.value = next.pinned;
     if (JSON.stringify(next.order) !== JSON.stringify(projectOrder.value)) projectOrder.value = next.order;
     sortBy.value = next.sort;
+    // Before the horizon there was a switch for postponed tasks: off showed everything (the desktop reads it the same way)
+    const horizonSetting =
+      HORIZONS.find((h) => h === settings.planningHorizon) ?? (settings.hidePostponedColumn === false ? 'all' : 'today');
+    if (horizonSetting !== planningHorizon.value) planningHorizon.value = horizonSetting;
     const capture = typeof settings.captureProjectId === 'string' && settings.captureProjectId ? settings.captureProjectId : null;
     if (capture !== captureProjectId.value) captureProjectId.value = capture;
   }
@@ -241,11 +277,18 @@ export const useAppStore = defineStore('app', () => {
   }
 
   /** Shows or hides the done or the archived tasks of the current view (on the board, their columns too). */
-  function toggleHidden(which: keyof Hidden) {
+  function toggleHidden(which: 'done' | 'archive') {
     const current = hidden.value[view.value];
     current[which] = !current[which];
     selection.value = [];
     if (vault.value) rememberHidden(vault.value.id, hidden.value);
+  }
+
+  /** How far ahead the board and the tags show planned tasks; those planned further out are left out. Shared with the desktop. */
+  function setHorizon(next: Horizon) {
+    planningHorizon.value = next;
+    selection.value = [];
+    saveSettings({ planningHorizon: next });
   }
 
   /** Shows the columns as tabs or as one list with a section for each. */
@@ -357,7 +400,7 @@ export const useAppStore = defineStore('app', () => {
     await loadProject();
   }
 
-  /** Moves a task to a bucket, to the end of it unless a position is given. A postponement stays. */
+  /** Moves a task to a bucket, to the end of it unless a position is given. */
   async function moveTask(id: string, bucket: string, position?: number) {
     const inBucket = allTasks.value.filter((t) => t.bucket === bucket && t.id !== id);
     const target = position ?? Math.max(0, ...inBucket.map((t) => t.position)) + 1000;
@@ -403,7 +446,6 @@ export const useAppStore = defineStore('app', () => {
               rolled: {
                 due_date: task.due_date,
                 planned_date: task.planned_date,
-                postponed_until: task.postponed_until,
                 // A plain copy: the task is a reactive object, which IndexedDB cannot store
                 reminders: task.reminders ? [...task.reminders] : undefined,
                 body: task.body,
@@ -574,6 +616,8 @@ export const useAppStore = defineStore('app', () => {
     isCollapsed,
     toggleCollapsed,
     toggleHidden,
+    horizon,
+    setHorizon,
     setView,
     navVisible,
     project,
@@ -582,6 +626,8 @@ export const useAppStore = defineStore('app', () => {
     query,
     parsedFilter,
     isFiltering,
+    beyondFound,
+    beyondCount,
     allTags,
     columns,
     unreadable,

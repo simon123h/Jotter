@@ -17,15 +17,17 @@ export interface Task {
   attachments: string[];
   body: string;
   due_date?: string;
+  /** A day `YYYY-MM-DD`, an ISO week `YYYY-Www` or a month `YYYY-MM` (spec/FORMAT.md, "Dates and times"). */
   planned_date?: string;
   priority?: string;
   color?: string | null;
-  postponed_until?: string;
   repeat?: RepeatRule;
   /** Local date-times `YYYY-MM-DDTHH:mm`, sorted, without duplicates. */
   reminders?: string[];
   created_at: string;
   updated_at: string;
+  /** Read from a file with a planning keyword or a running postponement: not written, the scan reads such a file again. */
+  legacy_planned?: boolean;
   /** Frontmatter keys this app does not know. Kept so that saving a task does not delete them. */
   extra_frontmatter?: Record<string, unknown>;
 }

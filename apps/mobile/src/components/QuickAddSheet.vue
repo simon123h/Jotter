@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { Check, ChevronDown } from '@lucide/vue';
 import BottomSheet from './BottomSheet.vue';
+import { useAheadNotice } from '@/composables/useAheadNotice';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -101,6 +102,8 @@ watch(
 );
 onBeforeUnmount(() => clearTimeout(clearTimer));
 
+const notifyAhead = useAheadNotice();
+
 async function submit() {
   const found = smart.resolve();
   const clean = found.title;
@@ -124,6 +127,7 @@ async function submit() {
     title.value = '';
     smart.reset();
     added.value.unshift({ id: task.id, title: clean });
+    notifyAhead(task.planned_date);
     // Stay open for the next one: quick capture is the point of this sheet
     input.value?.focus();
   } catch (err) {

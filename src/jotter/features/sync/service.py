@@ -12,6 +12,7 @@ from jotter.features.buckets.repo import BucketRepository
 from jotter.features.projects.repo import ProjectRepository
 from jotter.features.sync.git_adapter import commit_changes, enable_git_versioning
 from jotter.features.tasks.disk_repo import DiskTaskRepository
+from jotter.features.tasks.planned import planned_start
 from jotter.features.tasks.sqlite_repo import SqliteTaskRepository
 from jotter.shared.db import SCHEMA_VERSION, recreate_schema
 
@@ -49,13 +50,13 @@ def _is_expired(
     created_at: str | None,
     clean_period: int | None,
     now: datetime,
-    postponed_until: str | None = None,
     repeats: bool = False,
+    planned_start: str | None = None,
 ) -> bool:
-    """True if a done task is older than the retention period. A recurring or still postponed task never is."""
+    """True if a done task is older than the retention period. A recurring task never is, nor one planned for a day to come."""
     if not clean_period or clean_period <= 0 or bucket != "done":
         return False
-    if repeats or (postponed_until and postponed_until > now.astimezone().date().isoformat()):
+    if repeats or (planned_start and planned_start > now.astimezone().date().isoformat()):
         return False
     date_str = updated_at or created_at
     if not date_str:
@@ -183,16 +184,22 @@ class SyncApplicationService:
                     file_stat = _file_stat(disk_stat)
 
                     known = indexed.get(file_path.stem)
-                    if known is not None and file_stat is not None and known.file_stat == file_stat:
-                        # Unchanged since it was indexed: no need to open and parse it (retention still applies)
+                    if (
+                        known is not None
+                        and file_stat is not None
+                        and known.file_stat == file_stat
+                        and known.legacy_day in (None, now.astimezone().date().isoformat())
+                    ):
+                        # Unchanged since it was indexed: no need to open and parse it (retention still applies). A file with a
+                        # planning keyword is read again on a new day, since the day it stands for moves on with the calendar
                         if _is_expired(
                             known.bucket,
                             known.updated_at,
                             known.created_at,
                             clean_period,
                             now,
-                            known.postponed_until,
                             known.repeats,
+                            known.planned_start,
                         ):
                             self.disk_task_repo.delete(p_id, file_path.stem)
                             self.sqlite_task_repo.delete_task(file_path.stem)
@@ -201,7 +208,8 @@ class SyncApplicationService:
                             total_synced += 1
                         continue
 
-                    task = self.disk_task_repo.read_task_file(file_path, default_project_id=p_id)
+                    scan_day = now.astimezone().date()
+                    task = self.disk_task_repo.read_task_file(file_path, default_project_id=p_id, today=scan_day)
                     self.last_changes += 1
 
                     # Check if done task should be pruned based on retention period
@@ -211,8 +219,8 @@ class SyncApplicationService:
                         task.created_at,
                         clean_period,
                         now,
-                        task.postponed_until.value,
                         task.repeat is not None,
+                        planned_start(task.planned_date.value).isoformat() if task.planned_date.value else None,
                     ):
                         self.disk_task_repo.delete(p_id, str(task.id))
                         self.sqlite_task_repo.delete_task(str(task.id))
@@ -227,7 +235,8 @@ class SyncApplicationService:
                         known_buckets[task.bucket] = new_b
 
                     # Index task in SQLite
-                    self.sqlite_task_repo.upsert_task(task, file_stat)
+                    # The day of this scan stamps a legacy file, the same day the shortcut above compares with
+                    self.sqlite_task_repo.upsert_task(task, file_stat, scan_day)
                     total_synced += 1
                 except Exception as e:
                     if isinstance(e, OSError):

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { useTasksWithoutPostponed } from '@/composables/useTasksWithoutPostponed';
-import { ref, onMounted, computed, watch, watchEffect } from 'vue';
+import { isBeyond, plannedFor, today } from '@jotter/task-filter';
+import { HorizonAppliesKey } from '@/composables/horizonContext';
+import { useTasksWithinHorizon } from '@/composables/useTasksWithinHorizon';
+import { ref, onMounted, computed, watch, watchEffect, provide } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSettingsStore } from '@/stores/settings';
@@ -59,11 +61,27 @@ const projectId = computed(() => (route.params.projectId as string) || '');
 const isGlobalView = computed(() => !!route.meta.isGlobal);
 
 // Filter state & logic (read-only query sync; MainLayout manages router query state)
-const { filteredTasks } = useTaskFilters(tasks, { syncRoute: false });
+const { filteredTasks, taskFilters, hasActiveFilters } = useTaskFilters(tasks, { syncRoute: false });
 
-// Select all picks what the view shows: the planning view shows postponed tasks, the others may hide them
-const withoutPostponed = useTasksWithoutPostponed(() => filteredTasks.value);
-const selectableTasks = computed(() => (String(route.name).startsWith('time') ? filteredTasks.value : withoutPostponed.value));
+// A query that names planned dates is not cut by the horizon (see horizonContext). The planning views never are.
+const horizonApplies = computed(() => !taskFilters.value.planned_date);
+provide(HorizonAppliesKey, horizonApplies);
+
+/** What a search found beyond the horizon: the views leave it out, and the strip under the toolbar says so. */
+const beyondFound = computed(() => {
+  if (!hasActiveFilters.value || !horizonApplies.value || String(route.name).startsWith('time')) return 0;
+  const day = today();
+  return filteredTasks.value.filter(
+    (task) =>
+      isBeyond(task.planned_date, settingsStore.planningHorizon, day) &&
+      !(task.bucket === 'done' && settingsStore.hideDoneColumn) &&
+      !(task.bucket === 'archive' && settingsStore.hideArchiveColumn)
+  ).length;
+});
+
+// Select all picks what the view shows: the planning view shows tasks planned far ahead, the others leave them out
+const withinHorizon = useTasksWithinHorizon(() => filteredTasks.value);
+const selectableTasks = computed(() => (String(route.name).startsWith('time') ? filteredTasks.value : withinHorizon.value));
 
 const displayedBuckets = computed(() => {
   const list = [...buckets.value];
@@ -172,7 +190,6 @@ const BULK_MENU_KEYS: { key: string; shiftKey?: boolean; menu: Exclude<BulkMenu,
   { key: 'm', menu: 'bucket' },
   { key: 'd', menu: 'dueDate' },
   { key: 's', menu: 'planned' },
-  { key: 'z', menu: 'postponedDate' },
   { key: 'c', menu: 'color' },
   { key: 'm', shiftKey: true, menu: 'project' },
 ];
@@ -194,7 +211,7 @@ useKeyboardShortcuts([
       modalStore.openTaskCreate(defCol?.name || 'todo', {
         priority: 'urgent',
         color: 'red',
-        planned: 'today',
+        planned: plannedFor('today'),
       });
     },
   },
@@ -349,19 +366,6 @@ const handleBulkSetDueDate = async (date: string) => {
   }
 };
 
-const handleBulkSetPostponedDate = async (date: string) => {
-  const ids = Array.from(selectedIds.value);
-  try {
-    for (const id of ids) {
-      const task = tasks.value.find((t) => t.id === id);
-      if (task) await updateTask(task.project_id, id, { postponed_until: date });
-    }
-    await fetchAllData();
-  } catch (err: any) {
-    toast.error(t('toasts.bulkPostponeError', { message: err.message || err }));
-  }
-};
-
 const handleBulkMoveProject = (projId: string) => {
   const ids = Array.from(selectedIds.value);
   if (ids.length > 0) {
@@ -462,6 +466,23 @@ const handleBulkConsolidate = async () => {
 <template>
   <div class="h-full flex overflow-hidden w-full relative">
     <div class="flex-grow flex flex-col p-0 md:p-3 overflow-hidden min-w-0">
+      <!-- A search found tasks planned beyond the horizon: the views leave them out, so they would seem not to exist -->
+      <div
+        v-if="beyondFound"
+        class="mx-3 mb-1 mt-1 flex shrink-0 items-center gap-2 text-xs text-theme-text-muted md:mx-0"
+        data-testid="beyond-hint"
+      >
+        <span>{{ t('planningHorizon.moreFound', { count: beyondFound }) }}</span>
+        <button
+          type="button"
+          class="font-semibold text-theme-accent hover:underline cursor-pointer"
+          data-testid="beyond-show"
+          @click="settingsStore.planningHorizon = 'all'"
+        >
+          {{ t('planningHorizon.show') }}
+        </button>
+      </div>
+
       <div @mousedown="handleDragSelectMouseDown" class="flex-grow overflow-hidden relative">
         <transition name="view-fade" mode="out-in">
           <div v-if="isProjectLoading" key="loading" class="h-full flex flex-col items-center justify-center gap-2">
@@ -517,7 +538,6 @@ const handleBulkConsolidate = async () => {
         @set-due-date="handleBulkSetDueDate"
         @move-project="handleBulkMoveProject"
         @set-color="handleBulkSetColor"
-        @set-postponed-date="handleBulkSetPostponedDate"
       />
 
       <!-- MODAL ROUTER VIEW (Task Detail nested in layout) -->

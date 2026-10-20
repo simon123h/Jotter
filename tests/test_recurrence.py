@@ -38,7 +38,6 @@ def test_roll_over(case: dict[str, Any]) -> None:
         "bucket": task.bucket,
         "due_date": task.due_date.value,
         "planned_date": task.planned_date.value,
-        "postponed_until": task.postponed_until.value,
         "reminders": task.reminders,
         "body": task.body,
     } == case["expected"]

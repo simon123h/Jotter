@@ -17,11 +17,19 @@ fixtures/projects/<case>.json   { description, context, expected }
 compared when `expected` contains them, because they default to "now". The same goes for `repeat` and `reminders`, which
 older fixtures do not mention.
 
+Reading depends on today for legacy values (a planning keyword, `postponed_until`). The runners pass **2026-10-14**
+(a Wednesday) as today unless `context.today` says otherwise.
+
 Each implementation must pass two checks per case:
 
 1. **Read**: parsing the `.md` file gives `expected`.
 2. **Round trip**: writing that result back out and parsing it again still gives `expected`. This is what
    protects unknown frontmatter keys.
+
+### Planned date fixtures
+
+`fixtures/planned/legacy.json` lists legacy planning keywords, a day for today and the planned date a reader gives
+(`FORMAT.md`, *Dates and times*).
 
 ### Slug fixtures
 

@@ -1,6 +1,6 @@
 # ADR 0019: One Time Model: Recurrence Rolls in Place, Reminders Are Floating
 
-- **Status**: Accepted (spec only; no implementation yet)
+- **Status**: Accepted; the use of `postponed_until` is superseded by [ADR 0024](./0024-planned-dates-are-absolute.md)
 - **Date**: 2026-10-12
 - **Supersedes**: [ADR 0002](./0002-decline-recurring-tasks.md)
 - **Related**: `spec/FORMAT.md` (*Dates and times*, *Reminders*, *Recurring tasks*), [ADR 0015](./0015-index-as-disposable-cache.md), [ADR 0017](./0017-mobile-app.md)

@@ -2,6 +2,7 @@ import { reactive, ref, toRefs, watch, nextTick } from 'vue';
 import { defineStore } from 'pinia';
 import { useDebounceFn } from '@vueuse/core';
 import { getSettings, saveSettings } from '@/api';
+import { HORIZONS } from '@jotter/task-filter';
 import type { AppSettings } from '@/types';
 
 export type SortBy = 'alpha' | 'manual';
@@ -19,7 +20,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const state = reactive<AppSettings>({
     hideDoneColumn: true,
     hideArchiveColumn: true,
-    hidePostponedColumn: true,
+    planningHorizon: 'today',
     isSidebarOpen: getStoredBool(SIDEBAR_STORAGE_KEY, true),
     currentTheme: 'nordic-light',
     themeFollowsSystem: false,
@@ -57,7 +58,12 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!state.projectOrder) state.projectOrder = [];
       if (!state.language) state.language = '';
       if (!state.tagColors) state.tagColors = {};
-      if (state.hidePostponedColumn === undefined) state.hidePostponedColumn = true;
+      // Before the horizon there was a switch for postponed tasks: off showed everything. The backend turns it into a horizon;
+      // the static demo keeps whatever was stored in the browser
+      if (!HORIZONS.includes(settings.planningHorizon)) {
+        state.planningHorizon = (settings as unknown as Record<string, unknown>).hidePostponedColumn === false ? 'all' : 'today';
+      }
+      delete (state as unknown as Record<string, unknown>).hidePostponedColumn;
 
       const startHour = state.timeblockStartHour ?? 6;
       state.timeblockStartHour = startHour;

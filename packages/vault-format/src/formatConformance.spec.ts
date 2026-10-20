@@ -13,6 +13,9 @@ import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectM
  */
 const KNOWN_DIVERGENCES: Record<string, string> = {};
 
+// Reading depends on today for legacy values (spec/README.md)
+const FIXTURE_TODAY = '2026-10-14';
+
 // Vitest runs from packages/vault-format
 const fixturesDir = `${resolve(process.cwd(), '../../spec/fixtures')}/`;
 
@@ -48,7 +51,6 @@ function taskView(task: any, expected: Record<string, any>) {
     planned_date: task.planned_date ?? null,
     priority: task.priority ?? 'none',
     color: task.color ?? null,
-    postponed_until: task.postponed_until ?? null,
     extra: task.extra_frontmatter ?? {},
   };
   // Fields that older fixtures leave out, and timestamps (which default to "now"), are only compared when the fixture states them
@@ -96,12 +98,12 @@ describe('format conformance: tasks', () => {
     it(`${c.name}: read and round trip`, () => {
       check(`task/${c.name}`, () => {
         if (c.expected.error) {
-          expect(() => parseTaskMarkdown(c.content, c.context.default_project_id, `${c.context.file_stem}.md`)).toThrow();
+          expect(() => parseTaskMarkdown(c.content, c.context.default_project_id, `${c.context.file_stem}.md`, FIXTURE_TODAY)).toThrow();
           return;
         }
-        const first = parseTaskMarkdown(c.content, c.context.default_project_id, `${c.context.file_stem}.md`);
+        const first = parseTaskMarkdown(c.content, c.context.default_project_id, `${c.context.file_stem}.md`, FIXTURE_TODAY);
         expect(taskView(first, c.expected)).toEqual(c.expected);
-        const second = parseTaskMarkdown(dumpTaskMarkdown(first), c.context.default_project_id, `${c.context.file_stem}.md`);
+        const second = parseTaskMarkdown(dumpTaskMarkdown(first), c.context.default_project_id, `${c.context.file_stem}.md`, FIXTURE_TODAY);
         expect(taskView(second, c.expected)).toEqual(c.expected);
       });
     });

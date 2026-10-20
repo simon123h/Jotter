@@ -185,13 +185,13 @@ function seedDemoData() {
       {
         id: '7',
         project_id: 'demo-project',
-        title: 'Water the plants (postponed)',
+        title: 'Water the plants (planned for next month)',
         bucket: 'todo',
         position: 3000,
         tags: ['demo'],
         attachments: [],
-        body: 'A postponed task stays in its own column and is hidden until its date. Use *Show Postponed* on the board to see it, or open the task and clear the date.',
-        postponed_until: monthStr,
+        body: 'A task planned far ahead stays in its own column and is hidden until then. Change *Show planned tasks up to* on the board to see it, or open the task and change the date.',
+        planned_date: monthStr,
         created_at: now,
         updated_at: now,
       },
@@ -480,14 +480,10 @@ async function updateTask(projectId: string, id: string, task: Partial<Task>): P
   if (idx !== -1) {
     const now = new Date().toISOString();
     const updatedBucket = task.bucket || list[idx].bucket;
-    // An empty date ends the postponement, a missing one leaves it
-    const postponedUntil = task.postponed_until === undefined ? list[idx].postponed_until : task.postponed_until;
-
     list[idx] = {
       ...list[idx],
       ...task,
       bucket: updatedBucket,
-      postponed_until: postponedUntil || undefined,
       updated_at: now,
       tags: task.tags ? task.tags.map((t) => t.toLowerCase()) : list[idx].tags,
     };
@@ -685,7 +681,7 @@ const DEMO_SETTINGS_KEY = 'jotter-demo-settings';
 const DEFAULT_DEMO_SETTINGS: AppSettings = {
   hideDoneColumn: true,
   hideArchiveColumn: true,
-  hidePostponedColumn: true,
+  planningHorizon: 'today',
   isSidebarOpen: true,
   currentTheme: 'nordic-light',
   thresholdDays: 7,

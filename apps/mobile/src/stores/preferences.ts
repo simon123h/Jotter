@@ -16,9 +16,9 @@ const COLLAPSED_KEY = 'jotter_lite_collapsed';
 const save = (key: string, value: string) => void preferences.set(key, value).catch(() => undefined);
 
 export const defaultHidden = (): Record<View, Hidden> => ({
-  board: { done: false, archive: false, postponed: true },
-  tags: { done: true, archive: true, postponed: true },
-  planning: { done: true, archive: true, postponed: true },
+  board: { done: false, archive: false, horizon: 'today' },
+  tags: { done: true, archive: true, horizon: 'today' },
+  planning: { done: true, archive: true, horizon: 'all' },
 });
 
 export const recallHidden = async (vaultId: string): Promise<Record<View, Hidden>> => {
@@ -28,14 +28,18 @@ export const recallHidden = async (vaultId: string): Promise<Record<View, Hidden
     for (const v of VIEWS) {
       if (typeof stored?.[v]?.done === 'boolean') hidden[v].done = stored[v].done;
       if (typeof stored?.[v]?.archive === 'boolean') hidden[v].archive = stored[v].archive;
-      if (typeof stored?.[v]?.postponed === 'boolean') hidden[v].postponed = stored[v].postponed;
     }
   } catch {
     // Unreadable: the defaults apply
   }
   return hidden;
 };
-export const rememberHidden = (vaultId: string, hidden: Record<View, Hidden>) => save(`${HIDDEN_KEY}:${vaultId}`, JSON.stringify(hidden));
+/** The horizon is not kept here: it is a setting of the vault (`planningHorizon` in settings.json). */
+export const rememberHidden = (vaultId: string, hidden: Record<View, Hidden>) =>
+  save(
+    `${HIDDEN_KEY}:${vaultId}`,
+    JSON.stringify(Object.fromEntries(VIEWS.map((v) => [v, { done: hidden[v].done, archive: hidden[v].archive }])))
+  );
 
 export const recallView = async (vaultId: string): Promise<View> => {
   try {

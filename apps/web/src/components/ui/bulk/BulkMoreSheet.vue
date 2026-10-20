@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, type Component } from 'vue';
-import { Flag, Clock, FolderOpen, Calendar, Palette, Hourglass, Archive, ListCollapse, SquareDashed, MoreHorizontal, X } from '@lucide/vue';
+import { Flag, Clock, FolderOpen, Calendar, Palette, Archive, ListCollapse, SquareDashed, MoreHorizontal, X } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { BulkMenu } from './types';
 
@@ -27,13 +27,6 @@ const actions = computed<SheetAction[]>(() => [
   { key: 'color', menu: 'color', icon: Palette, iconClass: 'text-theme-accent', label: t('columnEdit.colorLabel') || 'Color' },
   { key: 'planned', menu: 'planned', icon: Clock, iconClass: 'text-sky-400', label: t('bulkActions.planFor') },
   { key: 'dueDate', menu: 'dueDate', icon: Calendar, iconClass: 'text-rose-400', label: t('bulkActions.setDueDate') },
-  {
-    key: 'postponedDate',
-    menu: 'postponedDate',
-    icon: Hourglass,
-    iconClass: 'text-orange-400',
-    label: t('bulkActions.postpone') || 'Postpone',
-  },
   { key: 'project', menu: 'project', icon: FolderOpen, iconClass: 'text-emerald-400', label: t('bulkActions.moveToProject') },
   { key: 'archive', event: 'archive', icon: Archive, iconClass: 'text-indigo-400', label: t('bulkActions.archive') },
   { key: 'consolidate', event: 'consolidate', icon: ListCollapse, iconClass: 'text-teal-400', label: t('bulkActions.consolidate') },

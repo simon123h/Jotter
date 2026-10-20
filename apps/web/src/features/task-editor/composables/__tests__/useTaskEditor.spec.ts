@@ -1,7 +1,8 @@
 import { beforeAll, describe, it, expect, vi } from 'vitest';
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { useTaskEditor } from '../useTaskEditor';
+import { useToastStore } from '@/stores/toast';
 import { createMockTask } from '@/__tests__/factories';
 import type { Task } from '@/types';
 
@@ -66,15 +67,52 @@ describe('useTaskEditor: repeat rules and reminders', () => {
     expect(editor.form.reminders).toEqual([]);
   });
 
-  it('keeps the postponement when another column is picked, and ends it when the date is cleared', async () => {
-    const { editor, patchTask } = setup(createMockTask({ title: 'Water plants', bucket: 'todo', postponed_until: '2030-05-08' }));
+  it('keeps the planned date when another column is picked, and ends it when the date is cleared', async () => {
+    const { editor, patchTask } = setup(createMockTask({ title: 'Water plants', bucket: 'todo', planned_date: '2030-W19' }));
 
     editor.form.bucket = 'in-progress';
     await editor.handleSave();
-    expect(patchTask.mock.calls[0][1]).toMatchObject({ bucket: 'in-progress', postponed_until: '2030-05-08' });
+    expect(patchTask.mock.calls[0][1]).toMatchObject({ bucket: 'in-progress', planned_date: '2030-W19' });
 
-    editor.form.postponedUntil = '';
+    editor.form.plannedDate = '';
     await editor.handleSave();
-    expect(patchTask.mock.calls[1][1]).toMatchObject({ postponed_until: '' });
+    expect(patchTask.mock.calls[1][1]).toMatchObject({ planned_date: '' });
+  });
+
+  it('says so when the plan moves beyond the horizon, so the task does not seem to vanish', async () => {
+    const { editor } = setup(createMockTask({ title: 'Call mom', bucket: 'todo' }));
+    const toasts = useToastStore();
+
+    editor.form.plannedDate = '2999-01-01';
+    await editor.handleSave();
+    expect(toasts.toasts.map((t) => t.message)).toEqual([expect.stringContaining('hidden on the board')]);
+
+    editor.form.title = 'Call mum';
+    await editor.handleSave();
+    expect(toasts.toasts).toHaveLength(1); // nothing new: the plan did not change
+  });
+
+  it('sets only the date a keyword in the title stands for, and takes back only that one', async () => {
+    const { editor } = setup(createMockTask({ title: 'Call mom', planned_date: '2030-W19' }));
+    editor.isEditing.value = true;
+
+    // A deadline in the title: the plan picked by hand stays
+    editor.form.title = 'Call mom !2.1.2040';
+    await nextTick();
+    expect(editor.form.dueDate).toBe('2040-01-02');
+    expect(editor.form.plannedDate).toBe('2030-W19');
+
+    // Without the "!" it is a plan: the deadline goes, the plan is the day typed
+    editor.form.title = 'Call mom 2.1.2040';
+    await nextTick();
+    expect(editor.form.dueDate).toBe('');
+    expect(editor.form.plannedDate).toBe('2040-01-02');
+
+    // The keyword is gone: the plan picked by hand comes back, and the deadline set by hand stays
+    editor.form.dueDate = '2031-03-04';
+    editor.form.title = 'Call mom';
+    await nextTick();
+    expect(editor.form.plannedDate).toBe('2030-W19');
+    expect(editor.form.dueDate).toBe('2031-03-04');
   });
 });

@@ -12,7 +12,7 @@ import type { Task } from '@/types';
 import GenericColumn from '@/components/ui/GenericColumn.vue';
 import { useI18n } from '@/composables/useI18n';
 import { updateTask } from '@/api';
-import { useTasksWithoutPostponed } from '@/composables/useTasksWithoutPostponed';
+import { useTasksWithinHorizon } from '@/composables/useTasksWithinHorizon';
 
 const { t } = useI18n();
 
@@ -34,7 +34,7 @@ const uiStore = useUiStore();
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
 const { thresholdDays, hideDoneColumn, hideArchiveColumn } = storeToRefs(settingsStore);
 
-const shownTasks = useTasksWithoutPostponed(() => props.tasks);
+const shownTasks = useTasksWithinHorizon(() => props.tasks);
 
 const fetchViewTasks = async () => {
   if (!activeProjectId.value) return;

@@ -87,8 +87,6 @@ export function useTaskActions() {
   const setDue = (ids: string[], date: string) => edit(ids, () => ({ due_date: date || undefined }), 'task.edited', 'tasks.dueChanged');
   const setPlanned = (ids: string[], planned: string) =>
     edit(ids, () => ({ planned_date: planned || undefined }), 'task.edited', 'tasks.plannedChanged');
-  const setPostponed = (ids: string[], date: string) =>
-    edit(ids, () => ({ postponed_until: date || undefined }), 'task.edited', 'tasks.postponedChanged');
   const addTags = (ids: string[], tags: string[]) =>
     edit(ids, (task) => ({ tags: [...new Set([...task.tags, ...tags])] }), 'task.edited', 'tasks.tagAdded');
   const removeTag = (ids: string[], tag: string) =>
@@ -125,7 +123,6 @@ export function useTaskActions() {
     setColor,
     setDue,
     setPlanned,
-    setPostponed,
     addTags,
     removeTag,
     moveToProject,

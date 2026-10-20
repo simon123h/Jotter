@@ -16,8 +16,8 @@ Die [Online-Demo](https://simon123h.github.io/Jotter/demo/) speichert ihre Aufga
 Eine wiederkehrende Aufgabe zu erledigen (in **Erledigt** verschieben, den Kreis abhaken oder eine Sammelaktion) beendet sie nicht. Die Aufgabe **bleibt in ihrer Spalte** und:
 
 * bekommt ihren nächsten Tag als **Fälligkeitsdatum** (wenn sie eines hat),
-* wird bis zu diesem Tag **aufgeschoben** und taucht daher zur rechten Zeit wieder auf (siehe [Aufgaben aufschieben](./postponing)),
-* verschiebt ihr geplantes Datum (wenn es ein Datum ist, kein Stichwort wie *diese Woche*) und ihre Erinnerungen um dieselbe Anzahl von Tagen. Eine Aufgabe, die nur ein geplantes Datum hat, wird auf ihren nächsten Tag geplant,
+* wird für diesen Tag **geplant** und taucht daher auf, wenn der Horizont ihn erreicht (siehe [Aufgaben planen](./planning)). Ein geplanter Tag verschiebt sich um dieselbe Zahl von Tagen wie das Fälligkeitsdatum, eine Woche oder ein Monat wird zum Tag,
+* verschiebt ihre Erinnerungen um dieselbe Anzahl von Tagen,
 * setzt ihre Checkliste zurück.
 
 Es gibt immer **eine** Aufgabe, nie einen Stapel von Kopien. Verpasst du einen Tag, bleibt die Aufgabe einfach überfällig, bis du sie erledigst. Was du erledigt hast, steht in deinem Git-Verlauf, falls du Git nutzt.

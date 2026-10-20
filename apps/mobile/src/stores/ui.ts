@@ -10,6 +10,7 @@ export type Sheet =
   | { type: 'columns' }
   | { type: 'vaults' }
   | { type: 'filter' }
+  | { type: 'horizon' }
   | { type: 'settings' }
   | { type: 'drawer' }
   | { type: 'move'; ids: string[] }

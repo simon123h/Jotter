@@ -1,0 +1,22 @@
+{
+  "description": "A postponement in the past changes nothing.",
+  "context": {
+    "file_stem": "postponed-past-ignored",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "postponed-past-ignored",
+    "project_id": "proj",
+    "title": "Postponed past ignored",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

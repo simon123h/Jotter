@@ -1,42 +1,21 @@
-import { t, type MessageKey } from '@/i18n';
+import { t, locale } from '@/i18n';
+import { dueInfo } from '@/dates';
+import { PLANNED_PRESETS, plannedFor } from '@jotter/task-filter';
 
-/** What the planned date menu offers, as on the desktop. Other values found in files are still shown and kept. */
-export const PLANNED_CHOICES = ['today', 'tomorrow', 'thisWeek', 'thisMonth', 'thisYear', 'sometime'] as const;
-
-const KEYWORDS: Record<string, MessageKey> = {
-  today: 'planned.today',
-  tomorrow: 'planned.tomorrow',
-  thisweek: 'planned.thisWeek',
-  nextweek: 'planned.nextWeek',
-  thismonth: 'planned.thisMonth',
-  nextmonth: 'planned.nextMonth',
-  thisyear: 'planned.thisYear',
-  nextyear: 'planned.nextYear',
-  someday: 'planned.sometime',
-  sometime: 'planned.sometime',
-};
-
-/** A readable label for a stored planned date: a keyword in any spelling (`this-week`), or a date as it is. */
-export function plannedLabel(value: string): string {
-  const key = KEYWORDS[value.trim().toLowerCase().replace(/-/g, '')];
-  return key ? t(key) : value;
-}
-
-const CANONICAL: Record<string, string> = {
-  today: 'today',
-  tomorrow: 'tomorrow',
-  thisweek: 'thisWeek',
-  nextweek: 'nextWeek',
-  thismonth: 'thisMonth',
-  nextmonth: 'nextMonth',
-  thisyear: 'thisYear',
-  nextyear: 'nextYear',
-  someday: 'sometime',
-  sometime: 'sometime',
-};
-
-/** The one spelling of a stored planned date (`this-week` and `thisWeek` are the same). Dates and unknown values stay as they are. */
-export function plannedKey(value: string | undefined): string {
-  const raw = (value ?? '').trim();
-  return CANONICAL[raw.toLowerCase().replace(/-/g, '')] ?? raw;
+/** A readable label for a planned value: "This week" for the week that is on, a date, "Week 43" or the month's name. */
+export function plannedLabel(value: string, now: Date = new Date()): string {
+  const preset = PLANNED_PRESETS.find((p) => plannedFor(p, now) === value);
+  if (preset) return t(`planned.${preset}`);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return dueInfo(value, now).text;
+  const week = /^(\d{4})-W(\d{2})$/.exec(value);
+  if (week) return t('planned.week', { week: Number(week[2]) });
+  const month = /^(\d{4})-(\d{2})$/.exec(value);
+  if (month) {
+    const year = Number(month[1]);
+    return new Date(year, Number(month[2]) - 1, 1).toLocaleDateString(locale.value, {
+      month: 'long',
+      ...(year !== now.getFullYear() ? { year: 'numeric' } : {}),
+    });
+  }
+  return value;
 }

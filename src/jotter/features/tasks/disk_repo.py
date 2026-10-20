@@ -2,12 +2,14 @@
 
 import json
 import os
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Task, clean_reminders, is_planning_keyword
+from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Task, clean_reminders
+from jotter.features.tasks.planned import is_legacy, is_planning_keyword, merge_postponed, read_planned
 from jotter.shared.exceptions import EntityNotFoundError, ValidationError
 from jotter.shared.frontmatter import split_frontmatter
 from jotter.shared.yaml_io import safe_load
@@ -22,7 +24,7 @@ def _is_valid_tag(tag: str) -> bool:
 
 
 def _clean_date(raw: object) -> str | None:
-    """A planning keyword or a YYYY-MM-DD date (a time part is dropped); anything else is dropped."""
+    """A YYYY-MM-DD date (a time part is dropped); anything else is dropped."""
     if not raw:
         return None
     try:
@@ -74,6 +76,8 @@ class DiskTaskRepository:
 
         safe_slug = re.sub(r"[^\w\-.]", "_", str(task.id))
         atomic_write(path, content, encoding="utf-8", prefix=f".{safe_slug}_", suffix=".tmp")
+        # What is written is in the new form: the file no longer holds a planning keyword the index must read again
+        task.legacy_planned = False
 
     def delete(self, project_id: str, task_id: str) -> None:
         path = self.get_task_file_path(project_id, task_id)
@@ -129,8 +133,6 @@ class DiskTaskRepository:
             fm_dict["priority"] = task.priority.value
         if task.color:
             fm_dict["color"] = task.color
-        if task.postponed_until.value:
-            fm_dict["postponed_until"] = task.postponed_until.value
         if task.repeat:
             fm_dict["repeat"] = task.repeat.to_dict()
         if task.reminders:
@@ -155,12 +157,15 @@ class DiskTaskRepository:
 
         return f"---\n{yaml_content}---\n{body_str}"
 
-    def read_task_file(self, file_path: Path, default_project_id: str) -> Task:
+    def read_task_file(self, file_path: Path, default_project_id: str, today: date | None = None) -> Task:
         content = file_path.read_text(encoding="utf-8")
-        return self.parse_task_content(content, file_path.stem, default_project_id)
+        return self.parse_task_content(content, file_path.stem, default_project_id, today)
 
-    def parse_task_content(self, content: str, fallback_id: str, default_project_id: str) -> Task:
-        """Parses frontmatter and body, returning a domain Task entity."""
+    def parse_task_content(
+        self, content: str, fallback_id: str, default_project_id: str, today: date | None = None
+    ) -> Task:
+        """Parses frontmatter and body, returning a domain Task entity. `today` resolves the legacy planning values."""
+        today = today or date.today()
         fm_data: dict[str, Any] = {}
 
         yaml_text, body = split_frontmatter(content)
@@ -210,13 +215,13 @@ class DiskTaskRepository:
         color = fm_data.get("color")
         postponed_until = fm_data.get("postponed_until") or fm_data.get("postponedUntil")
 
-        # A planning keyword in due_date is a planned date. Values that are neither a keyword nor a date are dropped.
+        # A planning keyword in due_date is a planned date. Values that are not usable are dropped. A legacy
+        # postponed_until is folded into the planned date.
         clean_due = _clean_date(due_date)
-        clean_planned = _clean_date(planned_date)
         if due_date and is_planning_keyword(str(due_date)):
             clean_due = None
-            clean_planned = clean_planned or str(due_date).strip()
-        clean_postponed = _clean_date(postponed_until)
+            planned_date = planned_date or due_date
+        clean_planned = merge_postponed(read_planned(planned_date, today), postponed_until, today)
 
         # Collect unknown / extra frontmatter keys
         known_keys = {
@@ -247,6 +252,7 @@ class DiskTaskRepository:
         }
         extra_fm = {k: v for k, v in fm_data.items() if k not in known_keys}
 
+        legacy = is_legacy(planned_date, postponed_until, today)
         task = Task.create(
             project_id=proj_id,
             title=title,
@@ -259,12 +265,13 @@ class DiskTaskRepository:
             planned_date=clean_planned,
             priority=_clean_priority(priority),
             color=str(color) if color else None,
-            postponed_until=clean_postponed,
             repeat=RepeatRule.from_raw(fm_data.get("repeat")),
             reminders=clean_reminders(fm_data.get("reminders")),
             task_id=tid,
             extra_frontmatter=extra_fm,
         )
+
+        task.legacy_planned = legacy
 
         created_val = fm_data.get("created_at") or fm_data.get("createdAt")
         if created_val:

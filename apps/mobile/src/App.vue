@@ -12,6 +12,7 @@ import VaultsSheet from '@/components/VaultsSheet.vue';
 import FilterSheet from '@/components/FilterSheet.vue';
 import MoveSheet from '@/components/MoveSheet.vue';
 import PlannedSheet from '@/components/PlannedSheet.vue';
+import HorizonSheet from '@/components/HorizonSheet.vue';
 import PrioritySheet from '@/components/PrioritySheet.vue';
 import TagsSheet from '@/components/TagsSheet.vue';
 import ProjectPickerSheet from '@/components/ProjectPickerSheet.vue';
@@ -107,6 +108,7 @@ watch(
       <ColumnsSheet v-else-if="ui.sheet?.type === 'columns'" />
       <VaultsSheet v-else-if="ui.sheet?.type === 'vaults'" />
       <FilterSheet v-else-if="ui.sheet?.type === 'filter'" />
+      <HorizonSheet v-else-if="ui.sheet?.type === 'horizon'" />
       <MoveSheet v-else-if="ui.sheet?.type === 'move'" :ids="ui.sheet.ids" />
       <PrioritySheet v-else-if="ui.sheet?.type === 'bulk-priority'" />
       <PlannedSheet v-else-if="ui.sheet?.type === 'bulk-planned'" :ids="ui.sheet.ids ?? [...app.selection]" />

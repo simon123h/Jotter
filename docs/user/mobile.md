@@ -17,7 +17,7 @@ On the first start the app asks for a folder to use as a vault, and for access t
 Each column is a page: swipe sideways, or tap a tab, to change column. One swipe moves one column.
 
 - **Add a task** with the round button. The sheet stays open, so you can capture several in a row.
-- **Smart title**: dates (`tomorrow`, `fri`, `21.5.`), priorities (`p1` to `p4`), tags (`#home`) and columns (`/doing`) in the title are recognised and shown as chips above the field. Tap a chip's cross to keep the words as plain text, or press Backspace right after one to take it back.
+- **Smart title**: dates (`tomorrow`, `fri`, `21.5.`), priorities (`p1` to `p4`), tags (`#home`) and columns (`/doing`) in the title are recognised and shown as chips above the field. A date plans the task; put `!` in front of it (`!21.5.`) or the word `until` (`until friday`) and it is a deadline instead. Tap a chip's cross to keep the words as plain text, or press Backspace right after one to take it back.
 - **Finish a task** with the circle in front of it. A tap on the circle of a finished task reopens it. Every change offers *Undo*.
 - **Open a task** by tapping it. The task page is full screen: title, notes, checklist, column, priority, dates, tags, colour and attachments. Everything is saved as you type; the menu at the top holds *Mark done*, *Archive* and *Delete*.
 
@@ -31,7 +31,7 @@ Press and hold a task to select it, then tap more tasks. The bar at the top show
 | Tag | Adds or removes tags |
 | Priority | Sets the priority |
 | Planned | Sets the planned date |
-| More | Mark done, archive, move to another project, due date, postpone, colour, delete |
+| More | Mark done, archive, move to another project, due date, colour, delete |
 
 To move tasks without the sheet, leave them selected and open another column: the bar at the top then has a *Move here* button that puts the selected tasks at the end of the column you are looking at. In the list view every section header has the same button while tasks are selected, also on a folded one. To move a single card to a place in its column, press, hold and drag it.
 
@@ -41,7 +41,7 @@ The bar at the bottom switches the view. The columns are tabs you can swipe, or,
 
 - **Board**: one tab per column.
 - **Tags**: one tab per tag, and one for tasks without a tag.
-- **Planning**: one tab per planned date (today, tomorrow, this week, ...), and one for tasks without one.
+- **Planning**: one tab for each stretch of time ahead (today, tomorrow, the rest of this week, the rest of this month, later), a *Re-plan* tab while something has slipped, and one for tasks that are not planned.
 
 Adding a task in a tab files it there: with that tag or that planned date.
 
@@ -49,13 +49,11 @@ Adding a task in a tab files it there: with that tag or that planned date.
 
 The search field understands the same query language as the desktop, for example `tag:work+urgent prio:high due:none bucket:todo`. The filter button next to it has selectors for priority, tag and due date, which write into the field and follow what you type. See [Search & Filtering](/user/searching-filtering) for the whole syntax. Words match the beginning of words in the title, notes and tags, so `sat` finds *saturation* as you type.
 
-## Hiding done, archived and postponed tasks
+## Hiding done and archived tasks, and planning ahead
 
-The ⋮ menu in the top bar hides or shows done, archived and postponed tasks, separately for each view. On the board, hiding done or archived tasks hides their columns too. Tags and Planning start with all three hidden. The postponed entry shows how many tasks it keeps out of the way.
+The ⋮ menu in the top bar hides or shows done and archived tasks, separately for each view. On the board, hiding done or archived tasks hides their columns too. Tags and Planning start with both hidden.
 
-## Postponing
-
-A task postponed to a later day stays in its column but is hidden until you switch postponed tasks on in the ⋮ menu. It then shows in its own column, marked with the day it comes back. From the selection toolbar, *More*, *Postpone* offers *Tomorrow*, *Next week*, a date, or to clear it. The task page has a *Postponed until* field. See [Postponing Tasks](/user/postponing).
+*Show planned tasks…* in the same menu sets how far ahead the view shows planned tasks: today, tomorrow, the end of this week, the end of this month, or no limit. A task planned beyond that stays in its column but is hidden until it comes within reach, and the menu says how many are out of the way. It applies to the board and the tags together (*Today* until you change it) and is stored in the vault, so it is the same value as the setting on the desktop. The planning view looks ahead by nature and has no horizon. See [Planning Tasks](/user/planning).
 
 ## Settings
 

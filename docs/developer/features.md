@@ -30,8 +30,8 @@ The classification below is a **proposal** for the maintainer to correct. Move a
 | Vault format and Obsidian/PKM compatibility | yes | yes | ~2k | Core | `spec/`, `packages/vault-format`, `index.md` manifests |
 | Themes (light and dark theme follow the device) and languages (English, German) | yes | yes | ~1.9k | Core | `packages/themes` (shared), `locales` |
 | Indexing and periodic scan | yes | own | ~1.8k | Core | `features/sync` (SQLite index, ADR 0014/0015); mobile scans through its repository |
-| Postponing tasks | yes | yes | ~0.3k | Core | stays in its own column, hidden by default |
-| Recurring tasks: `repeat` rule, rolled over in place on completion | yes | yes | ~0.8k | Core | `spec/FORMAT.md` (*Recurring tasks*), ADR 0019; reuses `postponed_until` |
+| Planned date (a day, a week or a month) and the planning horizon: planned tasks beyond it stay in their column, hidden | yes | yes | ~0.6k | Core | `spec/FORMAT.md` (*Dates and times*), ADR 0024; `packages/task-filter/planned.ts` (shared), `useTasksWithinHorizon`, `HorizonSheet` |
+| Recurring tasks: `repeat` rule, rolled over in place on completion | yes | yes | ~0.8k | Core | `spec/FORMAT.md` (*Recurring tasks*), ADR 0019, 0024 |
 | Readable file names: new tasks are named after their title (`grocery-shopping.md`) | yes | yes | ~0.3k | Core | `spec/FORMAT.md` (*File names of new tasks*), ADR 0020; the slug is written twice (`shared/slug.py`, `packages/vault-format/src/taskName.ts`) and checked by `spec/fixtures/filenames/slug.json` |
 | Archiving projects: a project is put away with `archived: true`, out of the lists, the "all" view, reminders and the MCP server | yes | yes | ~0.5k | Optional | `spec/FORMAT.md` (*Project manifest*), ADR 0021; the flag lives in `index.md`, so it syncs |
 | Reminders: notifications at a floating local time | edit only | yes | ~0.8k | Optional | `spec/FORMAT.md` (*Reminders*), ADR 0019; mobile arms Android notifications (`src/reminders.ts`); the desktop sets and shows them but does not notify (browser notifications only work while the page is open: branch `feat/desktop-reminder-notifications`) |

@@ -106,7 +106,7 @@ Alternatively, you can refer to the raw Markdown source files in the `docs/` fol
   - [Search & Filtering DSL](docs/user/searching-filtering.md)
   - [Moving Tasks In and Out](docs/user/migrating.md)
   - [Keyboard Shortcuts](docs/user/shortcuts.md)
-  - [Postponing Tasks](docs/user/postponing.md)
+  - [Planning Tasks](docs/user/planning.md)
   - [Markdown File Format Specification](docs/user/format-spec.md)
   - [Obsidian & PKM Sync](docs/user/obsidian.md)
   - [Git Versioning & Time Machine](docs/user/git-sync.md)

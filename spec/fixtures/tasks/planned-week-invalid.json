@@ -1,0 +1,22 @@
+{
+  "description": "2027 has no week 53, so the value is dropped and the task is still read.",
+  "context": {
+    "file_stem": "planned-week-invalid",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "planned-week-invalid",
+    "project_id": "proj",
+    "title": "Planned week invalid",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

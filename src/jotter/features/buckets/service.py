@@ -88,9 +88,7 @@ class BucketApplicationService:
     def delete_bucket(self, project_id: str, name: str) -> None:
         cnt = self.bucket_repo.count_tasks_in_bucket(project_id, name)
         if cnt > 0:
-            raise ValidationError(
-                f"Cannot delete column '{name}': {cnt} task(s) are still in it, postponed ones included"
-            )
+            raise ValidationError(f"Cannot delete column '{name}': {cnt} task(s) are still in it")
 
         self.bucket_repo.delete(project_id, name)
 

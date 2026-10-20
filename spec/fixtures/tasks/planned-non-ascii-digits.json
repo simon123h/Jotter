@@ -1,0 +1,22 @@
+{
+  "description": "Only ASCII digits make a planned date: these are Arabic-Indic digits.",
+  "context": {
+    "file_stem": "planned-non-ascii-digits",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "planned-non-ascii-digits",
+    "project_id": "proj",
+    "title": "Planned non ascii digits",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

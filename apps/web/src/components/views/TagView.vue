@@ -10,7 +10,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useBuckets } from '@/composables/useBuckets';
-import { useTasksWithoutPostponed } from '@/composables/useTasksWithoutPostponed';
+import { useTasksWithinHorizon } from '@/composables/useTasksWithinHorizon';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -31,7 +31,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
 
-const shownTasks = useTasksWithoutPostponed(() => props.tasks);
+const shownTasks = useTasksWithinHorizon(() => props.tasks);
 
 const fetchViewTasks = async () => {
   if (!activeProjectId.value) return;

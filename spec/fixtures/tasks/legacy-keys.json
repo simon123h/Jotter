@@ -14,10 +14,9 @@
     "attachments": [],
     "body": "Old files used `bucket` and camelCase keys.\n",
     "due_date": "2026-01-02",
-    "planned_date": "today",
+    "planned_date": "2026-10-14",
     "priority": "none",
     "color": null,
-    "postponed_until": "2026-02-03",
     "extra": {}
   }
 }

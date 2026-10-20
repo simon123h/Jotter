@@ -34,7 +34,6 @@ Sind eine oder mehrere Aufgaben ausgewählt, öffnet eine Taste das passende Men
 | <kbd>Umschalt</kbd> + <kbd>M</kbd> | **In Projekt verschieben** |
 | <kbd>d</kbd> | **Fälligkeit** |
 | <kbd>s</kbd> | **Geplantes Datum** |
-| <kbd>z</kbd> | **Zurückstellen** |
 | <kbd>c</kbd> | **Farbe** |
 
 ---

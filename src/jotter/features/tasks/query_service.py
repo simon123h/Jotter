@@ -89,7 +89,6 @@ class TaskQueryService:
             planned_date=task.planned_date.value,
             priority=task.priority.value if task.priority != Priority.NONE else None,
             color=task.color,
-            postponed_until=task.postponed_until.value,
             repeat=to_repeat_schema(task.repeat),
             reminders=list(task.reminders),
             created_at=task.created_at,

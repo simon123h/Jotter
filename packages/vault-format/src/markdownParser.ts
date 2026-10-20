@@ -1,5 +1,6 @@
 import yaml from 'yaml';
 import type { Task, Project, Bucket, RepeatRule } from './types';
+import { isLegacyPlanned, isPlanningKeyword, mergePostponed, readPlanned, today as localToday } from '@jotter/task-filter';
 
 /**
  * Reads and writes the vault format defined in spec/FORMAT.md. The Python backend implements the same format;
@@ -25,22 +26,6 @@ export const DEFAULT_MOBILE_BUCKETS: Bucket[] = [
 ];
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
-
-// Planning keywords, compared ignoring case and hyphens (`this-week` is `thisWeek`)
-const PLANNING_KEYWORDS = new Set([
-  'today',
-  'tomorrow',
-  'someday',
-  'sometime',
-  'thisweek',
-  'nextweek',
-  'thismonth',
-  'nextmonth',
-  'thisyear',
-  'nextyear',
-]);
-
-const isPlanningKeyword = (text: string) => PLANNING_KEYWORDS.has(text.trim().toLowerCase().replace(/-/g, ''));
 
 const KNOWN_TASK_KEYS = new Set([
   'type',
@@ -107,14 +92,6 @@ function isoDate(value: string): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
   const parsed = new Date(`${day}T00:00:00Z`);
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === day ? day : null;
-}
-
-/** A planning keyword (kept as written) or a YYYY-MM-DD date. Anything else is dropped. */
-function planningValue(raw: unknown): string | null {
-  if (raw === undefined || raw === null || raw === '') return null;
-  const text = String(raw).trim();
-  if (isPlanningKeyword(text)) return text;
-  return isoDate(text);
 }
 
 function dateValue(raw: unknown): string | null {
@@ -188,9 +165,10 @@ function timestamp(raw: unknown, fallback: string): string {
 }
 
 /**
- * Parses a Task markdown file with YAML frontmatter. Throws when the frontmatter is not valid YAML.
+ * Parses a Task markdown file with YAML frontmatter. Throws when the frontmatter is not valid YAML. `today` (a local
+ * `YYYY-MM-DD`) resolves the legacy planning values.
  */
-export function parseTaskMarkdown(content: string, defaultProjectId = 'default', filename = ''): Task {
+export function parseTaskMarkdown(content: string, defaultProjectId = 'default', filename = '', today = localToday()): Task {
   const { data: fm, body } = splitFrontmatter(content);
 
   const id = String(fm.id || filename.replace(/\.md$/i, '') || `task_${Date.now()}`).trim();
@@ -199,14 +177,17 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
   const bucket = String(fm.status || fm.bucket || '').trim() || 'todo';
   const position = typeof fm.position === 'number' ? fm.position : parseFloat(String(fm.position ?? '')) || 1000.0;
 
-  // A planning keyword in due_date is a planned date
-  let dueDate = dateValue(fm.due_date ?? fm.dueDate);
-  let plannedDate = planningValue(fm.planned_date ?? fm.plannedDate);
-  const rawDue = fm.due_date ?? fm.dueDate;
+  // A planning keyword in due_date is a planned date. A legacy postponed_until is folded into the planned date.
+  // An empty value falls through to the other spelling of the key, as in the Python reader
+  const rawDue = fm.due_date || fm.dueDate;
+  let dueDate = dateValue(rawDue);
+  let rawPlanned = fm.planned_date || fm.plannedDate;
+  const rawPostponed = fm.postponed_until || fm.postponedUntil;
   if (rawDue && !dueDate && isPlanningKeyword(String(rawDue))) {
-    plannedDate = plannedDate ?? String(rawDue).trim();
+    rawPlanned = rawPlanned || rawDue;
     dueDate = null;
   }
+  const plannedDate = mergePostponed(readPlanned(rawPlanned, today), rawPostponed, today);
 
   const priority = String(fm.priority ?? '')
     .trim()
@@ -225,9 +206,9 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
     body,
     due_date: dueDate ?? undefined,
     planned_date: plannedDate ?? undefined,
+    legacy_planned: isLegacyPlanned(rawPlanned, rawPostponed, today) || undefined,
     priority: PRIORITIES.includes(priority) ? priority : undefined,
     color: fm.color ? String(fm.color).trim() : undefined,
-    postponed_until: dateValue(fm.postponed_until ?? fm.postponedUntil) ?? undefined,
     repeat: parseRepeat(fm.repeat),
     reminders: parseReminders(fm.reminders),
     created_at: timestamp(fm.created_at ?? fm.createdAt, nowIso),
@@ -263,7 +244,6 @@ export function dumpTaskMarkdown(task: Task): string {
   if (task.planned_date) fmDict.planned_date = task.planned_date;
   if (task.priority && task.priority !== 'none') fmDict.priority = task.priority;
   if (task.color) fmDict.color = task.color;
-  if (task.postponed_until) fmDict.postponed_until = task.postponed_until;
   if (task.repeat) fmDict.repeat = { every: task.repeat.every, unit: task.repeat.unit, from: task.repeat.from };
   if (task.reminders && task.reminders.length > 0) fmDict.reminders = task.reminders;
 

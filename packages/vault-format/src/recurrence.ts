@@ -52,7 +52,7 @@ export function nextOccurrence(
   return addUnits(today, rule.every, rule.unit);
 }
 
-/** The task as it is after its completion: it comes back on the next day and stays out of the way until then. */
+/** The task as it is after its completion: it comes back on the next day, planned for a day again. */
 export function rollOver(
   task: Task,
   today: string,
@@ -70,7 +70,6 @@ export function rollOver(
   const rolled: Task = {
     ...task,
     bucket: previousBucket || defaultBucket,
-    postponed_until: following,
     reminders: reminders.map(
       (r) => `${addUnits(r.slice(0, 10), shift, "day")}T${r.slice(11, 16)}`,
     ),
@@ -78,6 +77,8 @@ export function rollOver(
     updated_at: new Date().toISOString(),
   };
   if (task.due_date) rolled.due_date = following;
-  if (plannedDay) rolled.planned_date = addUnits(plannedDay, shift, "day");
+  // By decision (ADR 0024), not an oversight: the task reappears when its planned day comes, so it must have one. A planned
+  // day keeps its distance to the due date; a week, a month or no plan becomes `following`.
+  rolled.planned_date = plannedDay ? addUnits(plannedDay, shift, "day") : following;
   return rolled;
 }

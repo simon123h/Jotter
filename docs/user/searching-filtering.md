@@ -22,10 +22,9 @@ A search query is composed of standalone full-text search phrases and optional c
 | **Tag (AND Match)** | `tags:ui+bug` <br> *or* `tag:ui+bug` | Tasks that must have **both** the `ui` tag **and** the `bug` tag |
 | **Tag shorthand** | `#ui` <br> `#ui #bug` | Short form of `tag:`. Several `#` tags must **all** match. Case does not matter, and `issue#12` stays a plain word |
 | **Columns/Buckets** | `bucket:todo` <br> *or* `buckets:todo,progress` | Tasks residing in the specified bucket(s) |
-| **Postponed** | `bucket:postponed` | Tasks postponed to a later day, in whichever column they are. A postponed task also stays in its own column for `bucket:todo`. |
 | **Priorities** | `priority:high` <br> *or* `prio:high,urgent` | Tasks with the specified priority levels |
 | **Projects** | `project:marketing` <br> *or* `proj:frontend` | Tasks belonging to a project by ID or **Project Title** |
-| **Planned Date** | `planned:today` | Tasks planned for that date or keyword |
+| **Planned Date** | `planned:today` <br> `planned:2026-W43` <br> `planned:2026-10` <br> `planned:none` | Tasks planned for that day, week or month: those planned on a day inside it, and weeks or months that start inside it. A week counts for the month it starts in, so `planned:2026-11` does not find a task planned for the week of 26 October. `thisWeek` and `thisMonth` stand for the current week or month, `nextWeek` and `nextMonth` for the next one. `none` finds the tasks that are not planned, and so do the old words for no date (`someday`, `sometime`, `thisYear`, `nextYear`) |
 | **Presence of Due Date** | `due:has` <br> *or* `due:none` | Tasks that have *any* due date, or *no* due date |
 | **Due Date Boundaries** | `due:before:2026-12-31` <br> `due:after:2026-06-01` | Tasks with due dates within the specified date boundaries |
 | **Created / Updated** | `created:after:2026-06-01` <br> `updated:before:2026-06-30` | Tasks created or last changed within the specified date boundaries (`before:` and `after:` include the day itself) |

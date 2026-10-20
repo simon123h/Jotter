@@ -10,6 +10,7 @@ export interface Vault {
 // The entities are defined with the vault format (packages/vault-format), which the mobile app uses as well. Only the
 // types are imported, so nothing of the parser ends up in this app.
 import type { Task as VaultTask, RepeatRule } from '@jotter/vault-format/types';
+import type { Horizon } from '@jotter/task-filter';
 export type { Project, Bucket, BucketName, RepeatRule } from '@jotter/vault-format/types';
 
 /** The backend sends `repeat: null` for a task that does not repeat, and does not pass on the keys it does not know. */
@@ -27,7 +28,8 @@ export interface TaskQuery {
 export interface AppSettings {
   hideDoneColumn: boolean;
   hideArchiveColumn: boolean;
-  hidePostponedColumn: boolean;
+  /** How far ahead planned tasks are shown on the board, list, tags and matrix; those planned further out are left out. */
+  planningHorizon: Horizon;
   isSidebarOpen: boolean;
   currentTheme: string;
   /** Use lightTheme or darkTheme, as the device is light or dark, instead of currentTheme. */

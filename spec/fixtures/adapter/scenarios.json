@@ -34,13 +34,14 @@
       ]
     },
     {
-      "name": "a postponed task stays in its column, and an empty date ends the postponement",
+      "name": "a planned week is kept as it is, and an empty date clears it",
       "steps": [
-        { "op": "createProject", "args": ["Contract postpone"], "save": "project" },
+        { "op": "createProject", "args": ["Contract planned"], "save": "project" },
         { "op": "createTask", "args": [{ "$ref": "project.id" }, { "title": "Later", "bucket": "todo" }], "save": "task" },
-        { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "postponed_until": "2031-05-04" }], "match": { "bucket": "todo", "postponed_until": "2031-05-04" } },
-        { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "postponed_until": "" }], "match": { "bucket": "todo" } },
-        { "op": "getTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }], "absent": ["postponed_until"] }
+        { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "planned_date": "2031-W19" }], "match": { "bucket": "todo", "planned_date": "2031-W19" } },
+        { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "planned_date": "2031-05-04" }], "match": { "planned_date": "2031-05-04" } },
+        { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "planned_date": "" }], "match": { "bucket": "todo" } },
+        { "op": "getTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }], "absent": ["planned_date"] }
       ]
     },
     {

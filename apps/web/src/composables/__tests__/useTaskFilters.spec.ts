@@ -112,6 +112,16 @@ describe('useTaskFilters', () => {
       expect(filters.hasActiveFilters.value).toBe(false);
     });
 
+    it('counts a planned filter as a filter, and keeps it in the address', async () => {
+      const { filters } = setup();
+      filters.applyFilters({ planned_date: '2026-11' });
+      await nextTick();
+      await nextTick();
+      expect(filters.hasActiveFilters.value).toBe(true);
+      expect(filters.searchQuery.value).toBe('planned:2026-11');
+      expect(route.query.planned_date).toBe('2026-11');
+    });
+
     it('searches title and body, ignoring case', async () => {
       const { filters } = setup();
       filters.applyFilters({ search: 'milk' });
@@ -135,8 +145,8 @@ describe('useTaskFilters', () => {
       expect(ids(filters.filteredTasks.value)).toEqual(['a']);
     });
 
-    it('keeps a task postponed to a later day in its own column, and finds it in the postponed one too', async () => {
-      const later = createMockTask({ id: 'p', bucket: 'todo', postponed_until: '2999-01-01' });
+    it('finds a task planned far ahead in its own column', async () => {
+      const later = createMockTask({ id: 'p', bucket: 'todo', planned_date: '2999-01-01' });
       const scope = effectScope();
       const filters = scope.run(() => useTaskFilters(ref([...tasks, later])))!;
       scopes.push(scope);
@@ -144,10 +154,6 @@ describe('useTaskFilters', () => {
       filters.applyFilters({ buckets: 'todo' });
       await nextTick();
       expect(ids(filters.filteredTasks.value)).toEqual(['a', 'c', 'p']);
-
-      filters.applyFilters({ buckets: 'postponed' });
-      await nextTick();
-      expect(ids(filters.filteredTasks.value)).toEqual(['p']);
     });
 
     it('filters by buckets and priorities (none for tasks without one)', async () => {

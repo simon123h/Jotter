@@ -12,6 +12,7 @@ import { useTaskMutations } from '@/composables/useTaskMutations';
 import { useBuckets } from '@/composables/useBuckets';
 import { ChevronLeft, List, LayoutGrid, Grid, MoreHorizontal } from '@lucide/vue';
 import { useSelectionStore } from '@/stores/selection';
+import { PLAN_SLOTS, plannedSlot, slotValue, type PlanSlot } from '@jotter/task-filter';
 
 const props = defineProps<{
   tasks: Task[];
@@ -43,50 +44,58 @@ const { handleMarkTaskDone, handleTimeViewPlannedDateUpdate } = useTaskMutations
   }
 );
 
-// Group tasks into categorical planning columns
-const timeColumns = computed(() => {
-  const groups: Record<string, Task[]> = {
-    notPlanned: [],
-    today: [],
-    tomorrow: [],
-    thisWeek: [],
-    thisMonth: [],
-    thisYear: [],
-    sometime: [],
-  };
+const SLOT_COLORS: Record<PlanSlot, string> = {
+  slipped: 'pink',
+  today: 'red',
+  tomorrow: 'orange',
+  week: 'yellow',
+  month: 'blue',
+  later: 'green',
+  none: 'slate',
+};
+const SLOT_TITLES: Record<PlanSlot, string> = {
+  slipped: 'plannedDateOptions.slipped',
+  today: 'plannedDateOptions.today',
+  tomorrow: 'plannedDateOptions.tomorrow',
+  week: 'plannedDateOptions.thisWeek',
+  month: 'plannedDateOptions.thisMonth',
+  later: 'plannedDateOptions.later',
+  none: 'plannedDateOptions.notPlanned',
+};
 
+// Group tasks into the stretches of time they are planned for; what has slipped only shows when there is something
+const timeColumns = computed(() => {
+  const groups = Object.fromEntries(PLAN_SLOTS.map((slot) => [slot, [] as Task[]])) as Record<PlanSlot, Task[]>;
+  const now = new Date();
   props.tasks.forEach((task) => {
     // Exclude completed or archived tasks
     if (task.bucket === 'done' || task.bucket === 'archive') return;
-
-    const key = task.planned_date || 'notPlanned';
-    if (groups[key]) {
-      groups[key].push(task);
-    } else {
-      groups.notPlanned.push(task);
-    }
+    groups[plannedSlot(task.planned_date, now)].push(task);
   });
 
-  return [
-    { id: 'notPlanned', title: t('plannedDateOptions.notPlanned'), tasks: groups.notPlanned, color: 'slate' },
-    { id: 'today', title: t('plannedDateOptions.today'), tasks: groups.today, color: 'red' },
-    { id: 'tomorrow', title: t('plannedDateOptions.tomorrow'), tasks: groups.tomorrow, color: 'orange' },
-    { id: 'thisWeek', title: t('plannedDateOptions.thisWeek'), tasks: groups.thisWeek, color: 'yellow' },
-    { id: 'thisMonth', title: t('plannedDateOptions.thisMonth'), tasks: groups.thisMonth, color: 'blue' },
-    { id: 'thisYear', title: t('plannedDateOptions.thisYear'), tasks: groups.thisYear, color: 'green' },
-    { id: 'sometime', title: t('plannedDateOptions.sometime'), tasks: groups.sometime, color: 'purple' },
-  ];
+  return PLAN_SLOTS.filter((slot) => slot !== 'slipped' || groups.slipped.length).map((slot) => ({
+    id: slot,
+    title: t(SLOT_TITLES[slot]),
+    tasks: groups[slot],
+    color: SLOT_COLORS[slot],
+  }));
 });
 
 const handleCardDropped = async (payload: { taskId: string; toId: string }) => {
+  const slot = payload.toId as PlanSlot;
+  // Slipped is where a plan ends up, not somewhere to plan to
+  if (slot === 'slipped') return;
+
   const isSelectedTask = selectionStore.isSelected(payload.taskId);
-  const tasksToUpdate = isSelectedTask
-    ? props.tasks.filter((t) => selectionStore.isSelected(t.id))
-    : props.tasks.filter((t) => t.id === payload.taskId);
+  const now = new Date();
+  // A task already in that stretch keeps its own plan: dropping a Wednesday on "This week" must not widen it to the week
+  const tasksToUpdate = (
+    isSelectedTask ? props.tasks.filter((t) => selectionStore.isSelected(t.id)) : props.tasks.filter((t) => t.id === payload.taskId)
+  ).filter((t) => plannedSlot(t.planned_date, now) !== slot);
 
   if (tasksToUpdate.length === 0) return;
 
-  const targetDate = payload.toId === 'notPlanned' ? '' : payload.toId;
+  const targetDate = slotValue(slot, now);
 
   await Promise.all(
     tasksToUpdate.map((t) =>

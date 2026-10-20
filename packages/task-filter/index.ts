@@ -8,6 +8,10 @@
  * run against both, so that they agree.
  */
 
+import { isPlanningKeyword, plannedSpan, plannedStart, resolveKeyword } from "./planned";
+
+export * from "./planned";
+
 /** What a query asks for. Lists are comma-separated strings, as the HTTP API takes them. */
 export interface TaskFilter {
   bucket?: string;
@@ -41,7 +45,6 @@ export interface FilterableTask {
   priority?: string | null;
   due_date?: string | null;
   planned_date?: string | null;
-  postponed_until?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -73,7 +76,8 @@ const quoted = (value: string) => (value.includes(" ") ? `"${value}"` : value);
  * - bucket:todo or buckets:todo,review
  * - priority:high or prio:high,urgent (`none` for tasks without one)
  * - project:work or proj:work
- * - planned:today
+ * - planned:today, planned:2026-W43, planned:2026-10 (the tasks planned in that day, week or month; thisWeek and the
+ *   like stand for the current one), planned:none
  * - due:has, due:none, due:before:YYYY-MM-DD, due:after:YYYY-MM-DD; created: and updated: take before: and after:
  * - a day can be relative to today: -7d, +2w (days or weeks, the sign is required), e.g. created:after:-7d
  * - words and "quoted phrases" for the full-text search
@@ -219,12 +223,6 @@ export function today(now: Date = new Date()): string {
   return isoDay(0, now);
 }
 
-/** Postponed to a day after today: the task is out of the way until then. */
-export const isPostponed = (
-  task: { postponed_until?: string | null },
-  now: Date = new Date(),
-) => !!task.postponed_until && task.postponed_until > today(now);
-
 /** The words of a text, lower case: letters and digits, the rest separates. */
 const words = (text: string) =>
   text
@@ -248,44 +246,25 @@ const startOfDay = (date: string) =>
   date.length === 10 ? `${date}T00:00:00` : date;
 
 /**
- * Whether a task matches. `today` decides which postponements are still running. A postponed task stays in its own
- * column (spec/FORMAT.md): a bucket finds it there, and the pseudo bucket `postponed` finds the ones that are postponed
- * to a later day, whichever column they are in.
+ * Whether a task matches. `day` is today: it resolves relative days and planned keywords.
  */
 export function matchesFilter(
   task: FilterableTask,
   filter: TaskFilter,
   day: string = today(),
 ): boolean {
-  const postponedNow = !!task.postponed_until && task.postponed_until > day;
   const bucket = task.bucket.toLowerCase();
 
   const buckets = list(filter.buckets);
   if (filter.bucket) {
-    if (filter.bucket.toLowerCase() === "postponed") {
-      if (!postponedNow) return false;
-    } else if (bucket !== filter.bucket.toLowerCase()) return false;
-  } else if (buckets.length) {
-    const inRegular = buckets.includes(bucket) && bucket !== "postponed";
-    const inPostponed = buckets.includes("postponed") && postponedNow;
-    if (!inRegular && !inPostponed) return false;
-  } else if (
-    (filter.exclude_bucket?.toLowerCase() === "postponed" ||
-      list(filter.exclude_buckets).includes("postponed")) &&
-    postponedNow
-  ) {
-    return false;
-  }
+    if (bucket !== filter.bucket.toLowerCase()) return false;
+  } else if (buckets.length && !buckets.includes(bucket)) return false;
   if (
     filter.exclude_bucket &&
-    filter.exclude_bucket.toLowerCase() !== "postponed" &&
     bucket === filter.exclude_bucket.toLowerCase()
   )
     return false;
-  if (
-    list(filter.exclude_buckets).some((b) => b !== "postponed" && b === bucket)
-  )
-    return false;
+  if (list(filter.exclude_buckets).includes(bucket)) return false;
 
   const wanted = filter.tags
     ? list(filter.tags)
@@ -322,8 +301,18 @@ export function matchesFilter(
   if (filter.has_due_date === false && due) return false;
   if (dueBefore && !(due && due <= dueBefore)) return false;
   if (dueAfter && !(due && due >= dueAfter)) return false;
-  if (filter.planned_date && task.planned_date !== filter.planned_date)
-    return false;
+  if (filter.planned_date) {
+    const start = task.planned_date ? plannedStart(task.planned_date) : null;
+    // `none`, and the old words for no date (`someday`, `thisYear`, ...), find the tasks that are not planned
+    const word = filter.planned_date;
+    if (word.toLowerCase() === "none" || (isPlanningKeyword(word) && resolveKeyword(word, day) === null)) {
+      if (start) return false;
+    } else {
+      // A day, week or month (or a keyword for one) finds the tasks planned in it: those that start in its span
+      const span = plannedSpan(filter.planned_date, day);
+      if (!span || !start || start < span[0] || start > span[1]) return false;
+    }
+  }
 
   const created = task.created_at ?? "";
   const updated = task.updated_at ?? "";

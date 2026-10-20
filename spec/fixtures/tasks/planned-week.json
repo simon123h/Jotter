@@ -1,0 +1,22 @@
+{
+  "description": "A planned date can be an ISO week. The W is read in either case and written as a capital.",
+  "context": {
+    "file_stem": "planned-week",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "planned-week",
+    "project_id": "proj",
+    "title": "Planned week",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": "2026-W43",
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

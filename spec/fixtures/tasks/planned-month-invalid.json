@@ -1,0 +1,22 @@
+{
+  "description": "There is no month 13, so the value is dropped and the task is still read.",
+  "context": {
+    "file_stem": "planned-month-invalid",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "planned-month-invalid",
+    "project_id": "proj",
+    "title": "Planned month invalid",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": null,
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

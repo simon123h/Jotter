@@ -1,8 +1,10 @@
 interface DateRule {
   pattern: RegExp;
   getDate: (matches: RegExpExecArray) => Date;
-  isExplicit?: boolean;
 }
+
+/** `de`, `de-DE`, `de-AT`, ... */
+const isGerman = (locale: string) => locale.toLowerCase().startsWith('de');
 
 const formatDate = (date: Date): string => {
   const yyyy = date.getFullYear();
@@ -12,7 +14,7 @@ const formatDate = (date: Date): string => {
 };
 
 const getRules = (locale: string): DateRule[] => {
-  const isDe = locale === 'de';
+  const isDe = isGerman(locale);
 
   const rules: DateRule[] = [
     // 1. Explicit dates (German/European style): 21.5.2026, 21.5.26, 21.5.
@@ -39,7 +41,6 @@ const getRules = (locale: string): DateRule[] => {
           return new Date(year, month - 1, day);
         }
       },
-      isExplicit: true,
     },
     // 2. Explicit dates (US style, slash): 5/21/2026, 5/21/26, 5/21
     {
@@ -65,7 +66,6 @@ const getRules = (locale: string): DateRule[] => {
           return new Date(year, month - 1, day);
         }
       },
-      isExplicit: true,
     },
     // 3. Today / Heute
     {
@@ -141,42 +141,46 @@ const getRules = (locale: string): DateRule[] => {
   return rules;
 };
 
-export function getPlanningDateForDueDate(dueDate: Date, now: Date = new Date()): string {
-  const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const tomorrowZero = new Date(todayZero);
-  tomorrowZero.setDate(todayZero.getDate() + 1);
+/** The word that makes the date after it a deadline, in the language of the title: `until friday`, `bis freitag`. */
+const deadlineWord = (locale: string) => (isGerman(locale) ? 'bis' : 'until');
 
-  const targetZero = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+interface DateFound {
+  rule: DateRule;
+  match: RegExpExecArray;
+  /** Where the words that make it a deadline start (`!` or `until `), or the date itself when there are none. */
+  start: number;
+  end: number;
+  /** The start of the date alone. */
+  dateStart: number;
+  deadline: boolean;
+}
 
-  if (targetZero.getTime() <= todayZero.getTime()) {
-    return 'today';
+/**
+ * Where a rule finds its date in the title, and whether a deadline marker stands in front of it: `!` right before the
+ * date (`!friday`), or the word `until` (`bis` in German) and a space. The marker is part of what was found.
+ */
+function locateDate(title: string, rule: DateRule, pattern: RegExp, locale: string): DateFound | null {
+  // `!friday` is written without a space, which the rules need in front of a date: this reads it as ` friday`
+  const readable = title.replace(/(^|\s)!(?=\S)/g, '$1 ');
+  const match = pattern.exec(readable);
+  if (!match) return null;
+  const dateStart = match.index + match[0].length - match[0].trimStart().length;
+  const end = match.index + match[0].length;
+
+  let start = dateStart;
+  if (title[dateStart - 1] === '!' && (dateStart === 1 || /\s/.test(title[dateStart - 2]))) {
+    start = dateStart - 1;
+  } else {
+    const word = new RegExp(`(^|\\s)${deadlineWord(locale)}\\s+$`, 'i').exec(readable.slice(0, dateStart));
+    if (word) start = word.index + word[1].length;
   }
-  if (targetZero.getTime() === tomorrowZero.getTime()) {
-    return 'tomorrow';
-  }
+  return { rule, match, start, end, dateStart, deadline: start !== dateStart };
+}
 
-  // Sunday of this week (Monday = 1, Sunday = 7)
-  const dayOfWeek = todayZero.getDay() === 0 ? 7 : todayZero.getDay();
-  const sundayOfThisWeek = new Date(todayZero);
-  sundayOfThisWeek.setDate(todayZero.getDate() + (7 - dayOfWeek));
-
-  if (targetZero.getTime() <= sundayOfThisWeek.getTime()) {
-    return 'thisWeek';
-  }
-
-  // Last day of this month
-  const lastDayOfThisMonth = new Date(todayZero.getFullYear(), todayZero.getMonth() + 1, 0);
-  if (targetZero.getTime() <= lastDayOfThisMonth.getTime()) {
-    return 'thisMonth';
-  }
-
-  // Last day of this year
-  const lastDayOfThisYear = new Date(todayZero.getFullYear(), 11, 31);
-  if (targetZero.getTime() <= lastDayOfThisYear.getTime()) {
-    return 'thisYear';
-  }
-
-  return 'sometime';
+/** Dismissed with its marker (`until friday`) or without (`friday`): either way the words stay plain text. */
+function isIgnored(title: string, found: DateFound, ignored?: Set<string>): boolean {
+  if (!ignored) return false;
+  return ignored.has(title.slice(found.start, found.end).toLowerCase()) || ignored.has(title.slice(found.dateStart, found.end).toLowerCase());
 }
 
 export function parseDateFromTitle(
@@ -188,31 +192,25 @@ export function parseDateFromTitle(
     return { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null };
   }
 
-  const rules = getRules(locale);
-
-  for (const rule of rules) {
-    const match = rule.pattern.exec(title);
-    if (match) {
-      let matchedText = match[0];
-      if (matchedText.startsWith(' ')) {
-        matchedText = matchedText.substring(1);
-      }
-      const matchedKeyword = matchedText.trim().toLowerCase();
-      if (ignoredKeywords && ignoredKeywords.has(matchedKeyword)) {
-        continue;
-      }
-
-      const date = rule.getDate(match);
-      const dueDate = rule.isExplicit ? formatDate(date) : null;
-
-      // Determine categorical planned date dynamically
-      const plannedDate = getPlanningDateForDueDate(date);
-
-      let cleanTitle = title.replace(rule.pattern, ' ');
-      cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
-
-      return { cleanTitle, dueDate, plannedDate, matchedKeyword: matchedText };
+  for (const rule of getRules(locale)) {
+    const found = locateDate(title, rule, rule.pattern, locale);
+    if (!found) continue;
+    const matchedText = title.slice(found.start, found.end);
+    if (isIgnored(title, found, ignoredKeywords)) {
+      continue;
     }
+
+    // A date in the title is the day the task is planned for. With `!` or `until` in front it is a deadline instead.
+    const day = formatDate(rule.getDate(found.match));
+    const spanStart = found.deadline ? found.start : found.match.index;
+    const cleanTitle = `${title.slice(0, spanStart)} ${title.slice(found.end)}`.replace(/\s+/g, ' ').trim();
+
+    return {
+      cleanTitle,
+      dueDate: found.deadline ? day : null,
+      plannedDate: found.deadline ? null : day,
+      matchedKeyword: matchedText,
+    };
   }
 
   return { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null };
@@ -435,25 +433,18 @@ export function getKeywordMatches(title: string, locale: string, bucketNames: st
     }
   }
 
-  // 4. Dates
-  const rules = getRules(locale);
-  for (const rule of rules) {
+  // 4. Dates, with the marker that makes one a deadline
+  for (const rule of getRules(locale)) {
     const rulePattern = new RegExp(rule.pattern.source, rule.pattern.flags.includes('g') ? rule.pattern.flags : rule.pattern.flags + 'g');
-    while ((match = rulePattern.exec(title)) !== null) {
-      let matchedText = match[0];
-      let start = match.index;
-      if (matchedText.startsWith(' ')) {
-        start += 1;
-        matchedText = matchedText.substring(1);
-      }
-      const end = start + matchedText.length;
-      const keyword = matchedText.toLowerCase();
-
-      if (ignoredKeywords && ignoredKeywords.has(keyword)) {
+    let found: DateFound | null;
+    while ((found = locateDate(title, rule, rulePattern, locale)) !== null) {
+      const text = title.slice(found.start, found.end);
+      const keyword = text.toLowerCase();
+      if (isIgnored(title, found, ignoredKeywords)) {
         continue;
       }
-      if (!hasOverlap(start, end)) {
-        matches.push({ start, end, text: matchedText, type: 'date', keyword });
+      if (!hasOverlap(found.start, found.end)) {
+        matches.push({ start: found.start, end: found.end, text, type: 'date', keyword });
       }
     }
   }

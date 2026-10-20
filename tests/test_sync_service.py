@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -9,7 +9,7 @@ from jotter.features.buckets.service import BucketApplicationService
 from jotter.features.projects.schemas import ProjectCreate, ProjectUpdate
 from jotter.features.projects.service import ProjectApplicationService
 from jotter.features.sync.service import SyncApplicationService
-from jotter.features.tasks.schemas import TaskCreate
+from jotter.features.tasks.schemas import TaskCreate, TaskUpdate
 from jotter.features.tasks.service import TaskApplicationService
 from jotter.shared.db import create_sqlite_connection
 
@@ -129,10 +129,10 @@ def test_sync_retains_tasks_on_transient_read_error(temp_dir, test_env, monkeypa
     # Mock read_task_file to simulate a transient OS permission / sharing error on Windows
     orig_read = sync_svc.disk_task_repo.read_task_file
 
-    def mock_read(file_path, default_project_id=None):
+    def mock_read(file_path, default_project_id=None, today=None):
         if str(task.id) in str(file_path):
             raise OSError("WinError 32: The process cannot access the file because it is being used by another process")
-        return orig_read(file_path, default_project_id)
+        return orig_read(file_path, default_project_id, today)
 
     monkeypatch.setattr(sync_svc.disk_task_repo, "read_task_file", mock_read)
 
@@ -159,7 +159,7 @@ id: legacy123
 project_id: wrong-project
 title: Legacy task with keyword due date
 bucket: backlog
-due_date: thisYear
+due_date: thisMonth
 ---
 Notes
 """,
@@ -175,7 +175,7 @@ Notes
     assert len(tasks) == 1
     assert tasks[0].id == "legacy123"
     assert tasks[0].project_id == "legacy-project"
-    assert tasks[0].planned_date == "thisYear"
+    assert tasks[0].planned_date == date.today().strftime("%Y-%m")
     assert tasks[0].due_date is None
 
 
@@ -414,9 +414,9 @@ def _count_reads(monkeypatch):
     reads = []
     original = DiskTaskRepository.read_task_file
 
-    def counting(self, file_path, default_project_id):
+    def counting(self, file_path, default_project_id, today=None):
         reads.append(Path(file_path).name)
-        return original(self, file_path, default_project_id)
+        return original(self, file_path, default_project_id, today)
 
     monkeypatch.setattr(DiskTaskRepository, "read_task_file", counting)
     return reads
@@ -501,7 +501,7 @@ def test_sync_still_prunes_unchanged_expired_done_tasks(temp_dir, test_env, monk
 
 
 @pytest.mark.parametrize("indexed_first", [False, True])
-def test_retention_never_prunes_postponed_or_recurring_done_tasks(temp_dir, test_env, indexed_first):
+def test_retention_never_prunes_recurring_or_planned_ahead_done_tasks(temp_dir, test_env, indexed_first):
     conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
@@ -509,14 +509,12 @@ def test_retention_never_prunes_postponed_or_recurring_done_tasks(temp_dir, test
     proj_svc.create_project(ProjectCreate(title="Proj", id="proj", done_clean_period=None))
     project_dir = Path(temp_dir) / "proj"
     old_iso = (datetime.now(UTC) - timedelta(days=30)).isoformat()
-    future = (datetime.now() + timedelta(days=30)).date().isoformat()
-    past = (datetime.now() - timedelta(days=30)).date().isoformat()
 
     extras = {
         "plain": "",
-        "postponed": f"postponed_until: '{future}'\n",
-        "lapsed": f"postponed_until: '{past}'\n",
         "recurring": "repeat:\n  every: 1\n  unit: week\n  from: completion\n",
+        "ahead": "planned_date: '2999-01-01'\n",
+        "past": "planned_date: '2000-01-01'\n",
     }
     paths = {}
     for name, extra in extras.items():
@@ -535,8 +533,7 @@ def test_retention_never_prunes_postponed_or_recurring_done_tasks(temp_dir, test
     (Path(temp_dir) / "settings.json").write_text(json.dumps({"doneCleanPeriod": 7}), encoding="utf-8")
     sync_svc.sync_db_only()
 
-    # A lapsed postponement makes it an ordinary old done task again
-    assert {name for name, path in paths.items() if path.exists()} == {"postponed", "recurring"}
+    assert {name for name, path in paths.items() if path.exists()} == {"recurring", "ahead"}
 
 
 def test_startup_sync_rebuilds_only_when_the_app_version_changes(temp_dir, test_env, monkeypatch):
@@ -657,7 +654,7 @@ def test_startup_rebuild_is_retried_when_a_file_could_not_be_read(temp_dir, test
     monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
     original = DiskTaskRepository.read_task_file
 
-    def locked(self, file_path, default_project_id):
+    def locked(self, file_path, default_project_id, today=None):
         raise PermissionError("file is locked")
 
     monkeypatch.setattr(DiskTaskRepository, "read_task_file", locked)
@@ -684,7 +681,7 @@ def test_startup_rebuild_is_recorded_despite_unparseable_files(temp_dir, test_en
     task_svc.create_task("default", TaskCreate(title="One", bucket="todo"))
     monkeypatch.setattr(sync_module, "_app_version", lambda: "1.0.0")
 
-    def broken(self, file_path, default_project_id):
+    def broken(self, file_path, default_project_id, today=None):
         raise ValueError("invalid frontmatter")
 
     monkeypatch.setattr(DiskTaskRepository, "read_task_file", broken)
@@ -852,3 +849,47 @@ def test_schema_version_follows_the_schema_text_but_not_its_whitespace():
     assert version_of(db_module._SCHEMA) == db_module.SCHEMA_VERSION
     assert version_of(db_module._SCHEMA) == version_of(db_module._SCHEMA.replace("\n    ", "\n\n        "))
     assert version_of(db_module._SCHEMA) != version_of(db_module._SCHEMA.replace("tags TEXT", "tags BLOB", 1))
+
+
+def test_a_file_with_a_planning_keyword_is_read_again_on_a_new_day(temp_dir, test_env):
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    proj_dir = Path(temp_dir) / "proj"
+    proj_dir.mkdir(parents=True, exist_ok=True)
+    (proj_dir / "k.md").write_text("---\ntitle: Keyword\nplanned_date: tomorrow\n---\n", encoding="utf-8")
+    (proj_dir / "p.md").write_text("---\ntitle: Plain\nplanned_date: '2031-05-04'\n---\n", encoding="utf-8")
+    _age_files(proj_dir)
+
+    sync_svc.sync_db_only()
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    assert {t.id: t.planned_date for t in task_svc.get_tasks("proj")} == {"k": tomorrow, "p": "2031-05-04"}
+
+    # The same day again: the index is trusted, nothing is read
+    conn.execute("UPDATE tasks SET planned_date = '2000-01-01', planned_start = '2000-01-01'")
+    conn.commit()
+    sync_svc.sync_db_only()
+    assert {t.id: t.planned_date for t in task_svc.get_tasks("proj")} == {"k": "2000-01-01", "p": "2000-01-01"}
+
+    # The keyword file was read yesterday: it is read again, the plain one is left as it is
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    conn.execute("UPDATE tasks SET legacy_day = ? WHERE id = 'k'", (yesterday,))
+    conn.commit()
+    sync_svc.sync_db_only()
+    assert {t.id: t.planned_date for t in task_svc.get_tasks("proj")} == {"k": tomorrow, "p": "2000-01-01"}
+
+
+def test_saving_a_task_that_was_read_from_a_keyword_file_clears_the_flag(temp_dir, test_env):
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    proj_dir = Path(temp_dir) / "proj"
+    proj_dir.mkdir(parents=True, exist_ok=True)
+    (proj_dir / "k.md").write_text("---\ntitle: Keyword\nplanned_date: tomorrow\n---\n", encoding="utf-8")
+    sync_svc.sync_db_only()
+    assert conn.execute("SELECT legacy_day FROM tasks WHERE id = 'k'").fetchone()[0] is not None
+
+    task_svc.update_task("proj", "k", TaskUpdate(title="Renamed"))
+
+    assert conn.execute("SELECT legacy_day FROM tasks WHERE id = 'k'").fetchone()[0] is None
+    assert "planned_date" in (proj_dir / "k.md").read_text(encoding="utf-8")

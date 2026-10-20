@@ -38,6 +38,7 @@ class SettingsApplicationService:
     def update_settings(self, updates: SettingsUpdate) -> AppSettings:
         current = self.load_settings()
         update_data = updates.model_dump(exclude_unset=True)
-        updated = current.model_copy(update=update_data)
+        # Validated again: a copy with `update=` would take any value as it is
+        updated = AppSettings.model_validate({**current.model_dump(), **update_data})
         self.save_settings(updated)
         return updated

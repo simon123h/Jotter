@@ -14,8 +14,8 @@ import {
   Columns3,
   Flag,
   CalendarDays,
+  CalendarPlus,
   Clock,
-  Hourglass,
   Repeat,
   Bell,
   Tag,
@@ -24,12 +24,14 @@ import {
 import MarkdownView from './MarkdownView.vue';
 import FieldRow from './FieldRow.vue';
 import { appendChecklistItem, toggleChecklistItem } from '@jotter/checklist';
+import { useAheadNotice } from '@/composables/useAheadNotice';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS, colorHex } from '@/taskColors';
-import { PLANNED_CHOICES, plannedLabel } from '@/planned';
+import { PLANNED_PRESETS, plannedFor } from '@jotter/task-filter';
+import { plannedLabel } from '@/planned';
 import { REPEAT_UNITS, repeatLabel } from '@/repeat';
 import { dueInfo, stampDay } from '@/dates';
 import { ensureReminderPermission } from '@/reminders';
@@ -62,7 +64,6 @@ const draft = ref({
   priority: initial?.priority ?? '',
   due: initial?.due_date ?? '',
   planned: initial?.planned_date ?? '',
-  postponed: initial?.postponed_until ?? '',
   repeatKind: initial?.repeat ? (initial.repeat.every === 1 ? initial.repeat.unit : 'custom') : '',
   repeatUnit: initial?.repeat?.unit ?? '',
   repeatEvery: initial?.repeat?.every ?? 1,
@@ -87,10 +88,9 @@ function commitTitle() {
     d.title = found.title;
     if (found.bucket) d.bucket = found.bucket;
     if (found.priority) d.priority = found.priority;
-    if (found.due_date !== null || found.planned_date !== null) {
-      d.due = found.due_date ?? '';
-      d.planned = found.planned_date ?? '';
-    }
+    // The keyword sets one of the two dates (a planned day, or a deadline with `!`) and leaves the other as it is
+    if (found.due_date !== null) d.due = found.due_date;
+    else if (found.planned_date !== null) d.planned = found.planned_date;
     if (found.tags.length) d.tags = [...new Set([...parseTags(d.tags), ...found.tags])].join(', ');
   }
   titleEdited.value = false;
@@ -114,8 +114,56 @@ const stamps = computed(() => {
 });
 const clearLabel = (name: MessageKey) => t('task.clearField', { field: t(name) });
 
-function clearDay(which: 'due' | 'postponed') {
-  draft.value[which] = '';
+/** The deadline is the rarer date: its line shows once the task has one, or when asked for with "Add deadline". */
+const addingDeadline = ref(false);
+const showDue = computed(() => !!draft.value.due || addingDeadline.value);
+const dueInput = ref<HTMLInputElement | null>(null);
+async function addDeadline() {
+  addingDeadline.value = true;
+  await nextTick();
+  dueInput.value?.focus();
+  try {
+    dueInput.value?.showPicker?.();
+  } catch {
+    // The picker opens on the next tap where the browser does not allow it from here
+  }
+}
+
+function clearDay() {
+  draft.value.due = '';
+  addingDeadline.value = false;
+  saveSoon();
+}
+
+/** The planned menu: the weeks and months as they are today, and a day to pick. A value from elsewhere stays selectable. */
+const plannedOptions = computed(() => PLANNED_PRESETS.map((p) => plannedFor(p)));
+const pickingDay = ref(false);
+const isDay = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+const plannedChoice = computed({
+  get: () => (pickingDay.value ? '__day' : draft.value.planned),
+  set: (value: string) => {
+    pickingDay.value = value === '__day';
+    if (!pickingDay.value) {
+      draft.value.planned = value;
+      saveSoon();
+    }
+  },
+});
+/** The day field shows while a day is being picked, or when the task is planned for a day the menu does not offer. */
+const showPlannedDay = computed(
+  () => pickingDay.value || (isDay(draft.value.planned) && !plannedOptions.value.includes(draft.value.planned))
+);
+const plannedDay = computed({
+  get: () => (isDay(draft.value.planned) ? draft.value.planned : ''),
+  set: (value: string) => {
+    pickingDay.value = false;
+    draft.value.planned = value;
+    saveSoon();
+  },
+});
+function clearPlanned() {
+  pickingDay.value = false;
+  draft.value.planned = '';
   saveSoon();
 }
 
@@ -163,6 +211,8 @@ function removeReminder(index: number) {
   saveSoon();
 }
 
+const notifyAhead = useAheadNotice();
+
 async function save() {
   const current = task.value;
   if (!current || closing) return;
@@ -172,8 +222,10 @@ async function save() {
   if (d.title.trim() && d.title.trim() !== current.title) changes.title = d.title.trim();
   if ((d.priority || undefined) !== current.priority) changes.priority = d.priority || undefined;
   if ((d.due || undefined) !== current.due_date) changes.due_date = d.due || undefined;
-  if ((d.planned || undefined) !== current.planned_date) changes.planned_date = d.planned || undefined;
-  if ((d.postponed || undefined) !== current.postponed_until) changes.postponed_until = d.postponed || undefined;
+  if ((d.planned || undefined) !== current.planned_date) {
+    changes.planned_date = d.planned || undefined;
+    notifyAhead(d.planned);
+  }
   const repeat = repeatOf(d);
   if (JSON.stringify(repeat ?? null) !== JSON.stringify(current.repeat ?? null)) changes.repeat = repeat;
   const reminders = [...new Set(d.reminders.filter(Boolean))].sort();
@@ -478,43 +530,54 @@ async function removeAttachment(name: string) {
             <h3 :class="heading">{{ t('task.groupTime') }}</h3>
             <div class="divide-y divide-line">
               <FieldRow
+                :icon="Clock"
+                :label="t('task.planned')"
+                :value="draft.planned ? plannedLabel(draft.planned) : t('planned.none')"
+                :clear-label="draft.planned ? clearLabel('task.planned') : undefined"
+                clear-testid="task-planned-clear"
+                @clear="clearPlanned"
+              >
+                <select v-model="plannedChoice" :aria-label="t('task.planned')" data-testid="task-planned">
+                  <option value="">{{ t('planned.none') }}</option>
+                  <option v-for="value in plannedOptions" :key="value" :value="value">{{ plannedLabel(value) }}</option>
+                  <option value="__day">{{ t('planned.pickDay') }}</option>
+                  <!-- A value from elsewhere (a week or month that is not the current one, a day) stays selectable and is kept -->
+                  <option v-if="draft.planned && !pickingDay && !plannedOptions.includes(draft.planned)" :value="draft.planned">
+                    {{ plannedLabel(draft.planned) }}
+                  </option>
+                </select>
+              </FieldRow>
+              <FieldRow v-if="showPlannedDay" :icon="CalendarDays" :label="t('task.plannedDay')" :value="dayText(plannedDay)">
+                <input v-model="plannedDay" type="date" :aria-label="t('task.plannedDay')" data-testid="task-planned-day" />
+              </FieldRow>
+
+              <FieldRow
+                v-if="showDue"
                 :icon="CalendarDays"
                 :label="t('task.due')"
                 :value="dayText(draft.due)"
                 :clear-label="clearLabel('task.due')"
                 clear-testid="task-due-clear"
-                @clear="clearDay('due')"
-              >
-                <input v-model="draft.due" type="date" :aria-label="t('task.due')" data-testid="task-due" @change="saveSoon" />
-              </FieldRow>
-
-              <FieldRow :icon="Clock" :label="t('task.planned')" :value="draft.planned ? plannedLabel(draft.planned) : t('planned.none')">
-                <select v-model="draft.planned" :aria-label="t('task.planned')" data-testid="task-planned" @change="saveSoon">
-                  <option value="">{{ t('planned.none') }}</option>
-                  <option v-for="p in PLANNED_CHOICES" :key="p" :value="p">{{ plannedLabel(p) }}</option>
-                  <!-- A value another tool wrote (next week, a date, ...) stays selectable and is kept -->
-                  <option v-if="draft.planned && !PLANNED_CHOICES.some((p) => p === draft.planned)" :value="draft.planned">
-                    {{ plannedLabel(draft.planned) }}
-                  </option>
-                </select>
-              </FieldRow>
-
-              <FieldRow
-                :icon="Hourglass"
-                :label="t('task.postponed')"
-                :value="dayText(draft.postponed)"
-                :clear-label="clearLabel('task.postponed')"
-                clear-testid="task-postponed-clear"
-                @clear="clearDay('postponed')"
+                @clear="clearDay"
               >
                 <input
-                  v-model="draft.postponed"
+                  ref="dueInput"
+                  v-model="draft.due"
                   type="date"
-                  :aria-label="t('task.postponed')"
-                  data-testid="task-postponed"
+                  :aria-label="t('task.due')"
+                  data-testid="task-due"
                   @change="saveSoon"
                 />
               </FieldRow>
+              <button
+                v-else
+                type="button"
+                class="flex min-h-12 w-full items-center gap-3 px-1 text-left text-base text-muted active:bg-line"
+                data-testid="task-add-deadline"
+                @click="addDeadline"
+              >
+                <CalendarPlus class="h-5 w-5 shrink-0" />{{ t('task.addDeadline') }}
+              </button>
 
               <FieldRow
                 :icon="Repeat"

@@ -4,7 +4,7 @@
   "cases": [
     {
       "name": "completion-weekly-no-dates",
-      "description": "Without dates the task is only hidden until the next occurrence, and goes back to its bucket.",
+      "description": "Without dates the task is planned for the next occurrence, and goes back to its bucket.",
       "today": "2026-10-12",
       "task": {
         "repeat": {
@@ -17,8 +17,7 @@
       "expected": {
         "bucket": "todo",
         "due_date": null,
-        "planned_date": null,
-        "postponed_until": "2026-10-19",
+        "planned_date": "2026-10-19",
         "reminders": [],
         "body": ""
       }
@@ -44,7 +43,6 @@
         "bucket": "in-progress",
         "due_date": "2026-10-19",
         "planned_date": "2026-10-19",
-        "postponed_until": "2026-10-19",
         "reminders": [
           "2026-10-18T18:00"
         ],
@@ -67,8 +65,7 @@
       "expected": {
         "bucket": "in-progress",
         "due_date": "2026-10-26",
-        "planned_date": null,
-        "postponed_until": "2026-10-26",
+        "planned_date": "2026-10-26",
         "reminders": [],
         "body": ""
       }
@@ -89,8 +86,7 @@
       "expected": {
         "bucket": "in-progress",
         "due_date": "2026-10-12",
-        "planned_date": null,
-        "postponed_until": "2026-10-12",
+        "planned_date": "2026-10-12",
         "reminders": [],
         "body": ""
       }
@@ -114,8 +110,7 @@
       "expected": {
         "bucket": "in-progress",
         "due_date": "2026-10-15",
-        "planned_date": null,
-        "postponed_until": "2026-10-15",
+        "planned_date": "2026-10-15",
         "reminders": [
           "2026-10-14T09:00"
         ],
@@ -138,8 +133,7 @@
       "expected": {
         "bucket": "in-progress",
         "due_date": "2026-02-28",
-        "planned_date": null,
-        "postponed_until": "2026-02-28",
+        "planned_date": "2026-02-28",
         "reminders": [],
         "body": ""
       }
@@ -160,15 +154,14 @@
       "expected": {
         "bucket": "in-progress",
         "due_date": "2029-02-28",
-        "planned_date": null,
-        "postponed_until": "2029-02-28",
+        "planned_date": "2029-02-28",
         "reminders": [],
         "body": ""
       }
     },
     {
-      "name": "keyword-stays",
-      "description": "A planning keyword is left alone.",
+      "name": "planned-week-becomes-next",
+      "description": "A planned week is not a day, so the task is planned on the next occurrence.",
       "today": "2026-10-12",
       "task": {
         "repeat": {
@@ -176,14 +169,13 @@
           "unit": "day",
           "from": "completion"
         },
-        "planned_date": "thisWeek",
+        "planned_date": "2026-W42",
         "previous_bucket": "in-progress"
       },
       "expected": {
         "bucket": "in-progress",
         "due_date": null,
-        "planned_date": "thisWeek",
-        "postponed_until": "2026-10-14",
+        "planned_date": "2026-10-14",
         "reminders": [],
         "body": ""
       }
@@ -203,8 +195,7 @@
       "expected": {
         "bucket": "in-progress",
         "due_date": null,
-        "planned_date": null,
-        "postponed_until": "2026-10-13",
+        "planned_date": "2026-10-13",
         "reminders": [],
         "body": ""
       }
@@ -228,8 +219,7 @@
       "expected": {
         "bucket": "in-progress",
         "due_date": null,
-        "planned_date": null,
-        "postponed_until": "2026-10-19",
+        "planned_date": "2026-10-19",
         "reminders": [
           "2026-10-19T09:00",
           "2026-10-20T09:00"
@@ -254,7 +244,6 @@
         "bucket": "todo",
         "due_date": null,
         "planned_date": "2026-10-22",
-        "postponed_until": "2026-10-22",
         "reminders": [],
         "body": ""
       }
@@ -276,7 +265,6 @@
         "bucket": "todo",
         "due_date": null,
         "planned_date": "2026-10-19",
-        "postponed_until": "2026-10-19",
         "reminders": [],
         "body": ""
       }
@@ -297,8 +285,7 @@
       "expected": {
         "bucket": "in-progress",
         "due_date": null,
-        "planned_date": null,
-        "postponed_until": "2026-10-19",
+        "planned_date": "2026-10-19",
         "reminders": [],
         "body": "- [ ] a\n- [ ] b\n  - [ ] nested\n\nText with [x] stays.\n"
       }
@@ -318,8 +305,7 @@
       "expected": {
         "bucket": "backlog",
         "due_date": null,
-        "planned_date": null,
-        "postponed_until": "2026-10-19",
+        "planned_date": "2026-10-19",
         "reminders": [],
         "body": ""
       }

@@ -108,7 +108,6 @@ class TaskCommandService:
             planned_date=req.planned_date,
             priority=req.priority,
             color=req.color,
-            postponed_until=req.postponed_until,
             repeat=_rule_of(req.repeat),
             reminders=clean_reminders(req.reminders),
         )
@@ -142,7 +141,6 @@ class TaskCommandService:
             due_date=req.due_date if "due_date" in fields_set else UNSET,
             planned_date=req.planned_date if "planned_date" in fields_set else UNSET,
             color=req.color if "color" in fields_set else UNSET,
-            postponed_until=req.postponed_until if "postponed_until" in fields_set else UNSET,
             repeat=_rule_of(req.repeat) if "repeat" in fields_set else UNSET,
             reminders=req.reminders if "reminders" in fields_set else None,
             tags=req.tags if "tags" in fields_set else None,
@@ -270,7 +268,6 @@ class TaskCommandService:
             planned_date=task.planned_date.value,
             priority=task.priority.value if task.priority != Priority.NONE else None,
             color=task.color,
-            postponed_until=task.postponed_until.value,
             repeat=to_repeat_schema(task.repeat),
             reminders=list(task.reminders),
             created_at=task.created_at,

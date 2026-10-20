@@ -154,7 +154,7 @@ def test_task_filters_and_queries(test_env):
     ).json()
     t3 = client.post(
         "/api/projects/default/tasks",
-        json={"title": "Task Three", "bucket": "done", "tags": ["frontend"], "postponed_until": "2099-01-01"},
+        json={"title": "Task Three", "bucket": "done", "tags": ["frontend"]},
     ).json()
 
     # Filter by multiple tags (AND mode)
@@ -194,11 +194,6 @@ def test_task_filters_and_queries(test_env):
 
     # Search keyword
     res = client.get("/api/projects/default/tasks", params={"search": "Three"})
-    assert len(res.json()) == 1
-    assert res.json()[0]["id"] == t3["id"]
-
-    # Postponed bucket check
-    res = client.get("/api/projects/default/tasks", params={"bucket": "postponed"})
     assert len(res.json()) == 1
     assert res.json()[0]["id"] == t3["id"]
 
@@ -516,10 +511,10 @@ def test_recurring_task_and_reminders_through_the_api(test_env):
     res = client.put(f"/api/projects/default/tasks/{task['id']}", json={"title": "Water the plants"})
     assert res.json()["repeat"] == rule
 
-    # Moving it to Done rolls it over: it stays in its column and is postponed
+    # Moving it to Done rolls it over: it goes back to its column and is planned for the next occurrence
     res = client.patch(f"/api/projects/default/tasks/{task['id']}/move", json={"bucket": "done"})
     assert res.json()["bucket"] == "todo"
-    assert res.json()["postponed_until"]
+    assert res.json()["planned_date"]
 
     # Null removes the rule, an empty list removes the reminders; a rule the format does not allow is refused
     res = client.put(f"/api/projects/default/tasks/{task['id']}", json={"repeat": None, "reminders": []})
