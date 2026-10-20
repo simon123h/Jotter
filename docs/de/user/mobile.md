@@ -17,7 +17,7 @@ Beim ersten Start fragt die App nach einem Ordner als Vault und nach dem Zugriff
 Jede Spalte ist eine Seite: Wische zur Seite oder tippe auf einen Tab, um die Spalte zu wechseln. Ein Wisch bewegt um eine Spalte.
 
 - **Aufgabe anlegen** mit dem runden Knopf. Das Blatt bleibt offen, du kannst also mehrere hintereinander erfassen.
-- **Smarter Titel**: Datumsangaben (`morgen`, `fr`, `21.5.`), Prioritäten (`p1` bis `p4`), Tags (`#haus`) und Spalten (`/doing`) im Titel werden erkannt und als Chips über dem Feld gezeigt. Tippe auf das Kreuz eines Chips, um die Wörter als normalen Text zu behalten, oder drücke direkt danach die Rücktaste, um die Erkennung zurückzunehmen.
+- **Smarter Titel**: Datumsangaben (`morgen`, `fr`, `21.5.`), Prioritäten (`p1` bis `p4`), Tags (`#haus`) und Spalten (`/doing`) im Titel werden erkannt und als Chips über dem Feld gezeigt. Ein Datum plant die Aufgabe; mit einem `!` davor (`!21.5.`) oder dem Wort `bis` (`bis freitag`) ist es stattdessen eine Frist. Tippe auf das Kreuz eines Chips, um die Wörter als normalen Text zu behalten, oder drücke direkt danach die Rücktaste, um die Erkennung zurückzunehmen.
 - **Aufgabe abschließen** mit dem Kreis vor der Aufgabe. Ein Tipp auf den Kreis einer erledigten Aufgabe öffnet sie wieder. Jede Änderung bietet *Rückgängig* an.
 - **Aufgabe öffnen** per Tipp. Die Aufgabenseite füllt den Bildschirm: Titel, Notizen, Checkliste, Spalte, Priorität, Datum, Tags, Farbe und Anhänge. Alles wird beim Tippen gespeichert; das Menü oben enthält *Als erledigt markieren*, *Archivieren* und *Löschen*.
 

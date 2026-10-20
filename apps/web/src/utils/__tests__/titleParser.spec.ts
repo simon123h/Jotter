@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { parseDateFromTitle, extractTagsFromTitle, extractBucketFromTitle, parseTitleState } from '@jotter/title-parser';
+import { parseDateFromTitle, extractTagsFromTitle, extractBucketFromTitle, parseTitleState, getKeywordMatches } from '@jotter/title-parser';
 
 describe('titleParser', () => {
   beforeEach(() => {
@@ -73,20 +73,20 @@ describe('titleParser', () => {
 
     it('should parse explicit date MM/DD correctly', () => {
       const result = parseDateFromTitle('party 10/24', 'en');
-      expect(result.dueDate).toBe('2026-10-24');
+      expect(result.plannedDate).toBe('2026-10-24');
       expect(result.cleanTitle).toBe('party');
     });
 
     it('should shift explicit date MM/DD to next year if it has already passed in current year', () => {
       // May 21 has already passed on June 3, 2026, so it should resolve to 2027-05-21
       const result = parseDateFromTitle('old event 5/21', 'en');
-      expect(result.dueDate).toBe('2027-05-21');
+      expect(result.plannedDate).toBe('2027-05-21');
       expect(result.cleanTitle).toBe('old event');
     });
 
     it('should parse explicit date MM/DD/YYYY correctly', () => {
       const result = parseDateFromTitle('party 12/31/2028', 'en');
-      expect(result.dueDate).toBe('2028-12-31');
+      expect(result.plannedDate).toBe('2028-12-31');
       expect(result.cleanTitle).toBe('party');
     });
   });
@@ -153,20 +153,20 @@ describe('titleParser', () => {
 
     it('should parse explicit German date DD.MM. correctly', () => {
       const result = parseDateFromTitle('Geburtstag 24.10.', 'de');
-      expect(result.dueDate).toBe('2026-10-24');
+      expect(result.plannedDate).toBe('2026-10-24');
       expect(result.cleanTitle).toBe('Geburtstag');
     });
 
     it('should shift explicit German date DD.MM. to next year if it has already passed', () => {
       // May 21 has already passed on June 3, 2026
       const result = parseDateFromTitle('Event 21.5.', 'de');
-      expect(result.dueDate).toBe('2027-05-21');
+      expect(result.plannedDate).toBe('2027-05-21');
       expect(result.cleanTitle).toBe('Event');
     });
 
     it('should parse explicit German date DD.MM.YYYY correctly', () => {
       const result = parseDateFromTitle('Event 21.5.2028', 'de');
-      expect(result.dueDate).toBe('2028-05-21');
+      expect(result.plannedDate).toBe('2028-05-21');
       expect(result.cleanTitle).toBe('Event');
     });
   });
@@ -308,6 +308,64 @@ describe('titleParser', () => {
       expect(result.bucket).toBeNull();
       expect(result.priority).toBe('high');
       expect(result.cleanTitle).toBe('buy groceries /done');
+    });
+  });
+
+  describe('deadlines', () => {
+    it('plans a date typed on its own, and does not make it a deadline', () => {
+      const result = parseDateFromTitle('File taxes 21.5.', 'en');
+      expect(result.plannedDate).toBe('2027-05-21');
+      expect(result.dueDate).toBeNull();
+    });
+
+    it('makes a date after "!" a deadline, and does not plan it', () => {
+      const result = parseDateFromTitle('File taxes !21.5.', 'en');
+      expect(result.dueDate).toBe('2027-05-21');
+      expect(result.plannedDate).toBeNull();
+      expect(result.cleanTitle).toBe('File taxes');
+      expect(result.matchedKeyword).toBe('!21.5.');
+    });
+
+    it('takes "!" with a word too, at the start of the title', () => {
+      const result = parseDateFromTitle('!friday report', 'en');
+      expect(result.dueDate).toBe('2026-06-05');
+      expect(result.cleanTitle).toBe('report');
+    });
+
+    it('makes a date after "until" a deadline in English', () => {
+      const result = parseDateFromTitle('Submit report until friday', 'en');
+      expect(result.dueDate).toBe('2026-06-05');
+      expect(result.plannedDate).toBeNull();
+      expect(result.cleanTitle).toBe('Submit report');
+      expect(result.matchedKeyword).toBe('until friday');
+    });
+
+    it('makes a date after "bis" a deadline in German, and leaves "until" alone there', () => {
+      const result = parseDateFromTitle('Bericht abgeben bis freitag', 'de');
+      expect(result.dueDate).toBe('2026-06-05');
+      expect(result.cleanTitle).toBe('Bericht abgeben');
+      const other = parseDateFromTitle('Bericht until freitag', 'de');
+      expect(other.dueDate).toBeNull();
+      expect(other.plannedDate).toBe('2026-06-05');
+      expect(other.cleanTitle).toBe('Bericht until');
+    });
+
+    it('leaves a "!" in the middle of a word alone', () => {
+      const result = parseDateFromTitle('Wow!tomorrow', 'en');
+      expect(result.dueDate).toBeNull();
+    });
+
+    it('lets the marker be ignored with the date: the words stay in the title', () => {
+      const result = parseDateFromTitle('Submit report until friday', 'en', new Set(['until friday']));
+      expect(result.matchedKeyword).toBeNull();
+      expect(result.cleanTitle).toBe('Submit report until friday');
+    });
+
+    it('highlights the marker as part of the date', () => {
+      const matches = getKeywordMatches('Submit report until friday', 'en', []);
+      expect(matches).toEqual([{ start: 14, end: 26, text: 'until friday', type: 'date', keyword: 'until friday' }]);
+      const bang = getKeywordMatches('File !21.5.', 'en', []);
+      expect(bang[0]).toMatchObject({ start: 5, end: 11, text: '!21.5.' });
     });
   });
 });

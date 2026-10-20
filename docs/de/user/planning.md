@@ -21,7 +21,7 @@ Das Menü bietet *Heute*, *Morgen*, *Diese Woche*, *Nächste Woche*, *Diesen Mon
 
 Ein geplantes Datum, das vorbei ist, ist **verpasst**. Nichts ändert es für dich. Die Planungsansicht zeigt einen Tab *Verpasst*, solange etwas darin liegt, und mit der Auswahlleiste kannst du solche Aufgaben mit einer Aktion neu planen, etwa für heute.
 
-Du kannst eine Aufgabe auf der Aufgabenseite, im Dialog für neue Aufgaben, in der Auswahlleiste (*Planen für...*), durch Ziehen zwischen den Spalten der Planungsansicht oder mit einem Datum im Titel planen (`freitag`, `21.5.`, `morgen`).
+Du kannst eine Aufgabe auf der Aufgabenseite, im Dialog für neue Aufgaben, in der Auswahlleiste (*Planen für...*), durch Ziehen zwischen den Spalten der Planungsansicht oder mit einem Datum im Titel planen (`freitag`, `21.5.`, `morgen`). Ein Datum im Titel plant die Aufgabe. Für eine **Frist** setzt du ein `!` davor (`!freitag`, `!21.5.`) oder das Wort `bis`: `Bericht abgeben bis freitag`.
 
 ---
 

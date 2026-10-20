@@ -114,18 +114,18 @@ defineExpose({
     <!-- Due Date, Planned Date & Priority Row -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
       <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+          t('form.plannedDateLabel') || 'Planned'
+        }}</label>
+        <PlannedSelect v-model="editor.form.plannedDate" />
+      </div>
+      <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.dueDateLabel') }}</label>
         <input
           v-model="editor.form.dueDate"
           type="date"
           class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
         />
-      </div>
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-          t('form.plannedDateLabel') || 'Planned'
-        }}</label>
-        <PlannedSelect v-model="editor.form.plannedDate" />
       </div>
       <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.priorityLabel') }}</label>

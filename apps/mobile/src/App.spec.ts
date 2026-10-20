@@ -2222,12 +2222,23 @@ describe('smart title input', () => {
     expect(find('quick-add-input').element).toHaveProperty('value', '');
   });
 
-  it('takes an explicit date as the due date', async () => {
+  it('plans a date typed in the title, and takes it as a deadline after "!" or "until"', async () => {
     await start(desktopVault);
     await find('fab').trigger('click');
     await type('quick-add-input', 'File taxes 1.1.2040');
     await submit('quick-add-input');
-    expect(created('File taxes')).toMatch(/due_date: ['"]?2040-01-01/);
+    expect(created('File taxes')).toMatch(/planned_date: ['"]?2040-01-01/);
+    expect(created('File taxes')).not.toContain('due_date');
+
+    await type('quick-add-input', 'Pay rent !1.1.2040');
+    expect(all('title-hint').map((h) => h.text())).toEqual(['Jan 1, 2040']);
+    await submit('quick-add-input');
+    expect(created('Pay rent')).toMatch(/due_date: ['"]?2040-01-01/);
+    expect(created('Pay rent')).not.toContain('planned_date');
+
+    await type('quick-add-input', 'Send report until 2.1.2040');
+    await submit('quick-add-input');
+    expect(created('Send report')).toMatch(/due_date: ['"]?2040-01-02/);
   });
 
   it('keeps words as plain text when their chip is dismissed', async () => {

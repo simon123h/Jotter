@@ -508,17 +508,6 @@ async function removeAttachment(name: string) {
             <h3 :class="heading">{{ t('task.groupTime') }}</h3>
             <div class="divide-y divide-line">
               <FieldRow
-                :icon="CalendarDays"
-                :label="t('task.due')"
-                :value="dayText(draft.due)"
-                :clear-label="clearLabel('task.due')"
-                clear-testid="task-due-clear"
-                @clear="clearDay"
-              >
-                <input v-model="draft.due" type="date" :aria-label="t('task.due')" data-testid="task-due" @change="saveSoon" />
-              </FieldRow>
-
-              <FieldRow
                 :icon="Clock"
                 :label="t('task.planned')"
                 :value="draft.planned ? plannedLabel(draft.planned) : t('planned.none')"
@@ -538,6 +527,17 @@ async function removeAttachment(name: string) {
               </FieldRow>
               <FieldRow v-if="showPlannedDay" :icon="CalendarDays" :label="t('task.plannedDay')" :value="dayText(plannedDay)">
                 <input v-model="plannedDay" type="date" :aria-label="t('task.plannedDay')" data-testid="task-planned-day" />
+              </FieldRow>
+
+              <FieldRow
+                :icon="CalendarDays"
+                :label="t('task.due')"
+                :value="dayText(draft.due)"
+                :clear-label="clearLabel('task.due')"
+                clear-testid="task-due-clear"
+                @clear="clearDay"
+              >
+                <input v-model="draft.due" type="date" :aria-label="t('task.due')" data-testid="task-due" @change="saveSoon" />
               </FieldRow>
 
               <FieldRow

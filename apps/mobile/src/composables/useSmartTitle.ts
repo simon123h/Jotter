@@ -2,6 +2,7 @@ import { computed, ref, type Ref } from 'vue';
 import { parseTitleState, getKeywordMatches } from '@jotter/title-parser';
 import { locale, t, type MessageKey } from '@/i18n';
 import { plannedLabel } from '@/planned';
+import { dueInfo } from '@/dates';
 
 /** One thing found in a title: a date, a priority, a tag or a column. */
 export interface Hint {
@@ -40,7 +41,8 @@ export function useSmartTitle(title: Ref<string>, buckets: () => Array<{ name: s
     const keywordOf = (kind: 'priority' | 'bucket') => matches.find((m) => m.type === kind)?.keyword ?? '';
     const list: Hint[] = [];
     if (p.matchedKeyword) {
-      const label = p.dueDate ?? (p.plannedDate ? plannedLabel(p.plannedDate) : p.matchedKeyword);
+      // A date with `!` or `until` in front is a deadline, any other is planned
+      const label = p.dueDate ? dueInfo(p.dueDate).text : p.plannedDate ? plannedLabel(p.plannedDate) : p.matchedKeyword;
       list.push({ id: 'date', kind: 'date', label, keyword: p.matchedKeyword.toLowerCase() });
     }
     if (p.priority) {

@@ -29,7 +29,7 @@ Most tasks need a planned date. A deadline is the rarer, sharper thing.
 - A week or a month is **coarse on purpose**. It cannot say "Wednesday or Thursday". Use a day for that.
 - A vault read by an older version loses the new values: the old readers drop a `planned_date` they do not know, and drop it for good when they save the task. Update the desktop and the phone together.
 - A keyword is resolved on the day it is first read, so two devices that read the same legacy file on different days can disagree until one of them saves it. This only concerns files nobody has saved since the change.
-- Which day a bare date in a title means (planned or due) is a separate decision, not part of this one.
+- A bare date in a title plans the task; `!` or `until` (`bis`) in front of it makes it a deadline.
 
 ## Alternatives Considered
 

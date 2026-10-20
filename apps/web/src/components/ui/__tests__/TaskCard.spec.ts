@@ -239,6 +239,17 @@ describe('TaskCard.vue', () => {
     expect(wrapper.text()).toContain('Morning Focus');
   });
 
+  it('shows a missed deadline in red, and not a deadline that is still ahead or one of a finished task', () => {
+    const due = (date: string, bucket = 'todo') =>
+      mount(TaskCard, { ...mountOptions, props: { task: createMockTask({ ...mockTask, due_date: date, bucket }) } }).find(
+        '[data-testid="card-due"]'
+      );
+
+    expect(due('2000-01-31').classes()).toContain('text-red-400');
+    expect(due('2999-01-31').classes()).not.toContain('text-red-400');
+    expect(due('2000-01-31', 'done').classes()).not.toContain('text-red-400');
+  });
+
   it('shows the planned date as a day, a week or a month', () => {
     const planned = (date: string) =>
       mount(TaskCard, { ...mountOptions, props: { task: createMockTask({ ...mockTask, planned_date: date }) } });

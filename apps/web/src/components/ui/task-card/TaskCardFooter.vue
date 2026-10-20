@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Calendar, Clock, Paperclip, Box, Repeat, Bell, Link } from '@lucide/vue';
 import { domainOf, taskUrl } from '@jotter/links';
+import { today } from '@jotter/task-filter';
 import { repeatLabel } from '@/utils/repeat';
 import { plannedLabel } from '@/utils/planned';
 import type { Task, Timeblock } from '@/types';
@@ -45,6 +46,11 @@ const hasContent = computed(
       (props.showTags && props.task.tags && props.task.tags.length) ||
       (props.checklistStats && props.showChecklistStats)
     )
+);
+
+/** A deadline that has passed is the loud date: the planned one only slips. */
+const overdue = computed(
+  () => !!props.task.due_date && props.task.due_date < today() && props.task.bucket !== 'done' && props.task.bucket !== 'archive'
 );
 
 const formatDate = (dateStr: string) => {
@@ -104,12 +110,6 @@ const getPriorityClasses = (prio: string) => {
       <span class="max-w-[10rem] truncate" :class="{ 'text-[10px]': compact }">{{ domain }}</span>
     </a>
 
-    <!-- Due Date -->
-    <div v-if="task.due_date" class="flex items-center gap-1 text-theme-text-muted" :title="'Due: ' + formatDate(task.due_date)">
-      <Calendar :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
-      <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.due_date) }}</span>
-    </div>
-
     <!-- Planned date -->
     <div
       v-if="task.planned_date"
@@ -118,6 +118,18 @@ const getPriorityClasses = (prio: string) => {
     >
       <Clock class="w-3 h-3" />
       <span :class="{ 'text-[10px]': compact }">{{ plannedLabel(task.planned_date, t, locale) }}</span>
+    </div>
+
+    <!-- Due Date -->
+    <div
+      v-if="task.due_date"
+      class="flex items-center gap-1"
+      :class="overdue ? 'text-red-400 font-semibold' : 'text-theme-text-muted'"
+      data-testid="card-due"
+      :title="'Due: ' + formatDate(task.due_date)"
+    >
+      <Calendar :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
+      <span :class="{ 'text-[10px]': compact }">{{ formatDate(task.due_date) }}</span>
     </div>
 
     <!-- Repeat rule and reminders -->

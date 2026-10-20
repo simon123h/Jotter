@@ -141,6 +141,42 @@ const getRules = (locale: string): DateRule[] => {
   return rules;
 };
 
+/** The word that makes the date after it a deadline, in the language of the title: `until friday`, `bis freitag`. */
+const deadlineWord = (locale: string) => (locale === 'de' ? 'bis' : 'until');
+
+interface DateFound {
+  rule: DateRule;
+  match: RegExpExecArray;
+  /** Where the words that make it a deadline start (`!` or `until `), or the date itself when there are none. */
+  start: number;
+  end: number;
+  /** The start of the date alone. */
+  dateStart: number;
+  deadline: boolean;
+}
+
+/**
+ * Where a rule finds its date in the title, and whether a deadline marker stands in front of it: `!` right before the
+ * date (`!friday`), or the word `until` (`bis` in German) and a space. The marker is part of what was found.
+ */
+function locateDate(title: string, rule: DateRule, pattern: RegExp, locale: string): DateFound | null {
+  // `!friday` is written without a space, which the rules need in front of a date: this reads it as ` friday`
+  const readable = title.replace(/(^|\s)!(?=\S)/g, '$1 ');
+  const match = pattern.exec(readable);
+  if (!match) return null;
+  const dateStart = match.index + match[0].length - match[0].trimStart().length;
+  const end = match.index + match[0].length;
+
+  let start = dateStart;
+  if (title[dateStart - 1] === '!' && (dateStart === 1 || /\s/.test(title[dateStart - 2]))) {
+    start = dateStart - 1;
+  } else {
+    const word = new RegExp(`(^|\\s)${deadlineWord(locale)}\\s+$`, 'i').exec(readable.slice(0, dateStart));
+    if (word) start = word.index + word[1].length;
+  }
+  return { rule, match, start, end, dateStart, deadline: start !== dateStart };
+}
+
 export function parseDateFromTitle(
   title: string,
   locale: string,
@@ -150,31 +186,25 @@ export function parseDateFromTitle(
     return { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null };
   }
 
-  const rules = getRules(locale);
-
-  for (const rule of rules) {
-    const match = rule.pattern.exec(title);
-    if (match) {
-      let matchedText = match[0];
-      if (matchedText.startsWith(' ')) {
-        matchedText = matchedText.substring(1);
-      }
-      const matchedKeyword = matchedText.trim().toLowerCase();
-      if (ignoredKeywords && ignoredKeywords.has(matchedKeyword)) {
-        continue;
-      }
-
-      const date = rule.getDate(match);
-      const dueDate = rule.isExplicit ? formatDate(date) : null;
-
-      // The date typed is the day the task is planned for (a planned date is always a real day)
-      const plannedDate = formatDate(date);
-
-      let cleanTitle = title.replace(rule.pattern, ' ');
-      cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
-
-      return { cleanTitle, dueDate, plannedDate, matchedKeyword: matchedText };
+  for (const rule of getRules(locale)) {
+    const found = locateDate(title, rule, rule.pattern, locale);
+    if (!found) continue;
+    const matchedText = title.slice(found.start, found.end);
+    if (ignoredKeywords && ignoredKeywords.has(matchedText.toLowerCase())) {
+      continue;
     }
+
+    // A date in the title is the day the task is planned for. With `!` or `until` in front it is a deadline instead.
+    const day = formatDate(rule.getDate(found.match));
+    const spanStart = found.deadline ? found.start : found.match.index;
+    const cleanTitle = `${title.slice(0, spanStart)} ${title.slice(found.end)}`.replace(/\s+/g, ' ').trim();
+
+    return {
+      cleanTitle,
+      dueDate: found.deadline ? day : null,
+      plannedDate: found.deadline ? null : day,
+      matchedKeyword: matchedText,
+    };
   }
 
   return { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null };
@@ -397,25 +427,18 @@ export function getKeywordMatches(title: string, locale: string, bucketNames: st
     }
   }
 
-  // 4. Dates
-  const rules = getRules(locale);
-  for (const rule of rules) {
+  // 4. Dates, with the marker that makes one a deadline
+  for (const rule of getRules(locale)) {
     const rulePattern = new RegExp(rule.pattern.source, rule.pattern.flags.includes('g') ? rule.pattern.flags : rule.pattern.flags + 'g');
-    while ((match = rulePattern.exec(title)) !== null) {
-      let matchedText = match[0];
-      let start = match.index;
-      if (matchedText.startsWith(' ')) {
-        start += 1;
-        matchedText = matchedText.substring(1);
-      }
-      const end = start + matchedText.length;
-      const keyword = matchedText.toLowerCase();
-
+    let found: DateFound | null;
+    while ((found = locateDate(title, rule, rulePattern, locale)) !== null) {
+      const text = title.slice(found.start, found.end);
+      const keyword = text.toLowerCase();
       if (ignoredKeywords && ignoredKeywords.has(keyword)) {
         continue;
       }
-      if (!hasOverlap(start, end)) {
-        matches.push({ start, end, text: matchedText, type: 'date', keyword });
+      if (!hasOverlap(found.start, found.end)) {
+        matches.push({ start: found.start, end: found.end, text, type: 'date', keyword });
       }
     }
   }
