@@ -11,8 +11,6 @@ import {
   defaultHidden,
   recallCollapsed,
   recallHidden,
-  recallHorizons,
-  rememberHorizons,
   recallLayout,
   recallPinned,
   recallProject,
@@ -48,11 +46,9 @@ export const useAppStore = defineStore('app', () => {
   const captureProjectId = ref<string | null>(null);
   const view = ref<View>('board');
   const hidden = ref<Record<View, Hidden>>(defaultHidden());
-  /** How far ahead new views look, from the vault's settings.json (shared with the desktop). The planning view looks ahead anyway. */
-  const defaultHorizon = ref<Horizon>('today');
-  /** The horizon a view was given in the ⋮ menu; without one it follows the default. Kept on the device. */
-  const horizonOverride = ref<Record<View, Horizon | null>>({ board: null, tags: null, planning: null });
-  const horizonOf = (v: View): Horizon => horizonOverride.value[v] ?? (v === 'planning' ? 'all' : defaultHorizon.value);
+  /** How far ahead the board and the tags look, from the vault's settings.json (shared with the desktop). The planning view looks ahead anyway. */
+  const planningHorizon = ref<Horizon>('today');
+  const horizonOf = (v: View): Horizon => (v === 'planning' ? 'all' : planningHorizon.value);
   /** What the views hide: the finished tasks of `hidden`, and those planned beyond the horizon. */
   const hiding = computed<Record<View, Hidden>>(() => ({
     board: { ...hidden.value.board, horizon: horizonOf('board') },
@@ -161,7 +157,7 @@ export const useAppStore = defineStore('app', () => {
     if (JSON.stringify(next.order) !== JSON.stringify(projectOrder.value)) projectOrder.value = next.order;
     sortBy.value = next.sort;
     const horizonSetting = HORIZONS.find((h) => h === settings.planningHorizon) ?? 'today';
-    if (horizonSetting !== defaultHorizon.value) defaultHorizon.value = horizonSetting;
+    if (horizonSetting !== planningHorizon.value) planningHorizon.value = horizonSetting;
     const capture = typeof settings.captureProjectId === 'string' && settings.captureProjectId ? settings.captureProjectId : null;
     if (capture !== captureProjectId.value) captureProjectId.value = capture;
   }
@@ -186,7 +182,6 @@ export const useAppStore = defineStore('app', () => {
     projectId.value = projects.value.find((p) => p.id === remembered && !p.archived)?.id ?? firstProject();
     view.value = await recallView(opened.id);
     hidden.value = await recallHidden(opened.id);
-    horizonOverride.value = await recallHorizons(opened.id);
     layout.value = await recallLayout();
     collapsed.value = await recallCollapsed(opened.id);
     await loadSettings(true);
@@ -278,16 +273,10 @@ export const useAppStore = defineStore('app', () => {
     if (vault.value) rememberHidden(vault.value.id, hidden.value);
   }
 
-  /** How far ahead the current view shows planned tasks; those planned further out are left out. */
+  /** How far ahead the board and the tags show planned tasks; those planned further out are left out. Shared with the desktop. */
   function setHorizon(next: Horizon) {
-    horizonOverride.value[view.value] = next;
+    planningHorizon.value = next;
     selection.value = [];
-    if (vault.value) rememberHorizons(vault.value.id, horizonOverride.value);
-  }
-
-  /** The horizon the board and the tags start with, for every device that opens the vault. */
-  function setDefaultHorizon(next: Horizon) {
-    defaultHorizon.value = next;
     saveSettings({ planningHorizon: next });
   }
 
@@ -617,9 +606,7 @@ export const useAppStore = defineStore('app', () => {
     toggleCollapsed,
     toggleHidden,
     horizon,
-    defaultHorizon,
     setHorizon,
-    setDefaultHorizon,
     setView,
     navVisible,
     project,

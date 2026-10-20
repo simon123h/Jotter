@@ -53,7 +53,7 @@ Das Suchfeld versteht dieselbe Abfragesprache wie der Desktop, zum Beispiel `tag
 
 Das ⋮-Menü oben blendet erledigte und archivierte Aufgaben ein oder aus, getrennt für jede Ansicht. Auf dem Board verschwinden beim Ausblenden auch deren Spalten. Tags und Planung beginnen mit beiden ausgeblendet.
 
-*Vorausgeplant* im selben Menü legt fest, wie weit voraus die Ansicht geplante Aufgaben zeigt: heute, morgen, bis Ende der Woche, bis Ende des Monats oder alles. Eine Aufgabe, die dahinter geplant ist, bleibt in ihrer Spalte, ist aber ausgeblendet, bis sie in Reichweite kommt, und das Menü sagt, wie viele aus dem Weg sind. Board und Tags beginnen mit dem *Geplante Aufgaben zeigen bis* der Einstellungen (*Heute*, bis du es änderst; es steht im Vault, der Desktop nutzt es also auch), die Planungsansicht mit *Alles*. Eine Ansicht, der du einen eigenen Horizont gegeben hast, behält ihn. Siehe [Aufgaben planen](/de/user/planning).
+*Vorausgeplant* im selben Menü legt fest, wie weit voraus die Ansicht geplante Aufgaben zeigt: heute, morgen, bis Ende der Woche, bis Ende des Monats oder alles. Eine Aufgabe, die dahinter geplant ist, bleibt in ihrer Spalte, ist aber ausgeblendet, bis sie in Reichweite kommt, und das Menü sagt, wie viele aus dem Weg sind. Er gilt für Board und Tags zusammen (*Heute*, bis du ihn änderst) und steht im Vault, ist also derselbe Wert wie *Geplant bis* am Desktop. Die Planungsansicht schaut von Natur aus voraus und hat keinen Horizont. Siehe [Aufgaben planen](/de/user/planning).
 
 ## Einstellungen
 

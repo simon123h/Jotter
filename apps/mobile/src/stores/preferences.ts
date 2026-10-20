@@ -1,5 +1,4 @@
 import { capacitorKeyValue as preferences } from '@/data/keyValue';
-import { HORIZONS, type Horizon } from '@jotter/task-filter';
 import { VIEWS, type Hidden, type View } from '@/stores/columns';
 
 /**
@@ -35,31 +34,12 @@ export const recallHidden = async (vaultId: string): Promise<Record<View, Hidden
   }
   return hidden;
 };
-/** The horizon is not kept here: it follows the default of the vault unless a view has its own (see `recallHorizons`). */
+/** The horizon is not kept here: it is a setting of the vault (`planningHorizon` in settings.json). */
 export const rememberHidden = (vaultId: string, hidden: Record<View, Hidden>) =>
   save(
     `${HIDDEN_KEY}:${vaultId}`,
     JSON.stringify(Object.fromEntries(VIEWS.map((v) => [v, { done: hidden[v].done, archive: hidden[v].archive }])))
   );
-
-const HORIZONS_KEY = 'jotter_lite_horizons';
-
-/** The horizons the user set for a view; a view without one follows the default of the vault. */
-export const recallHorizons = async (vaultId: string): Promise<Record<View, Horizon | null>> => {
-  const horizons: Record<View, Horizon | null> = { board: null, tags: null, planning: null };
-  try {
-    const stored = JSON.parse((await preferences.get(`${HORIZONS_KEY}:${vaultId}`)) ?? '{}');
-    for (const v of VIEWS) if (HORIZONS.includes(stored?.[v])) horizons[v] = stored[v] as Horizon;
-    // Before the horizon there was a switch for postponed tasks: off showed everything. The planning view looks ahead anyway.
-    const legacy = JSON.parse((await preferences.get(`${HIDDEN_KEY}:${vaultId}`)) ?? '{}');
-    for (const v of VIEWS) if (v !== 'planning' && horizons[v] === null && legacy?.[v]?.postponed === false) horizons[v] = 'all';
-  } catch {
-    // Unreadable: the views follow the default
-  }
-  return horizons;
-};
-export const rememberHorizons = (vaultId: string, horizons: Record<View, Horizon | null>) =>
-  save(`${HORIZONS_KEY}:${vaultId}`, JSON.stringify(horizons));
 
 export const recallView = async (vaultId: string): Promise<View> => {
   try {

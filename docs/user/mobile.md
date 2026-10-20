@@ -53,7 +53,7 @@ The search field understands the same query language as the desktop, for example
 
 The ⋮ menu in the top bar hides or shows done and archived tasks, separately for each view. On the board, hiding done or archived tasks hides their columns too. Tags and Planning start with both hidden.
 
-*Planned ahead* in the same menu sets how far ahead the view shows planned tasks: today, tomorrow, the end of this week, the end of this month, or everything. A task planned beyond that stays in its column but is hidden until it comes within reach, and the menu says how many are out of the way. The board and the tags start with the *Planned tasks shown up to* of the settings (*Today* until you change it; it is stored in the vault, so the desktop uses it too), the planning view with *Everything*. A view you gave its own horizon keeps it. See [Planning Tasks](/user/planning).
+*Planned ahead* in the same menu sets how far ahead the view shows planned tasks: today, tomorrow, the end of this week, the end of this month, or everything. A task planned beyond that stays in its column but is hidden until it comes within reach, and the menu says how many are out of the way. It applies to the board and the tags together (*Today* until you change it) and is stored in the vault, so it is the same value as *Planned up to* on the desktop. The planning view looks ahead by nature and has no horizon. See [Planning Tasks](/user/planning).
 
 ## Settings
 

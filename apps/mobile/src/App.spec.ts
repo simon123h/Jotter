@@ -1943,7 +1943,7 @@ describe('planning ahead', () => {
     expect(find('board').text()).toContain('Later task');
   });
 
-  it('looks as far ahead as the horizon says, and remembers it for each view on its own', async () => {
+  it('looks as far ahead as the horizon says, for the board and the tags together, and the planning view looks ahead anyway', async () => {
     await start((f) => {
       vault(f);
       f.put('Jotter/work/g.md', `---\ntitle: Next week task\nstatus: todo\nposition: 5000\nplanned_date: "${isoDay(7)}"\n---\n`);
@@ -1951,14 +1951,17 @@ describe('planning ahead', () => {
     expect(find('board').text()).not.toContain('Next week task');
     await setHorizon('month');
     expect(useAppStore().horizon).toBe('month');
-    // The planning view looks ahead by default, and leaves the board alone
+    // The tags look as far as the board does
+    await find('view-tags').trigger('click');
+    await settle();
+    expect(useAppStore().horizon).toBe('month');
+    // The planning view looks ahead by nature: no horizon to set
     await find('view-planning').trigger('click');
     await settle();
     expect(useAppStore().horizon).toBe('all');
     expect(find('board').text()).toContain('Later task');
-    await find('view-board').trigger('click');
-    await settle();
-    expect(find('board').text()).not.toContain('Later task');
+    await find('view-menu').trigger('click');
+    expect(find('open-horizon').exists()).toBe(false);
   });
 
   it('says how many tasks a search found beyond the horizon, and shows them on request', async () => {
@@ -1984,39 +1987,18 @@ describe('planning ahead', () => {
     expect(find('beyond-hint').exists()).toBe(false);
   });
 
-  it('starts the board and the tags with the horizon of the vault, and lets a view keep its own', async () => {
+  it('keeps the horizon in the vault for the desktop, and reads the one the desktop wrote', async () => {
     const { app } = await start((f) => {
       vault(f);
-      f.put('Jotter/settings.json', JSON.stringify({ planningHorizon: 'all' }));
+      f.put('Jotter/settings.json', JSON.stringify({ planningHorizon: 'all', hideDoneColumn: true }));
     });
-    expect(app.defaultHorizon).toBe('all');
+    expect(app.horizon).toBe('all');
     expect(find('board').text()).toContain('Later task');
 
-    // The tags follow the default too; a horizon set on the board is the board's own
-    await find('view-tags').trigger('click');
-    await settle();
-    expect(app.horizon).toBe('all');
-    await find('view-board').trigger('click');
-    await settle();
-    await setHorizon('today');
-    expect(find('board').text()).not.toContain('Later task');
-    app.setDefaultHorizon('month');
-    await settle();
-    expect(app.horizon).toBe('today'); // the board keeps what it was given
-    await find('view-tags').trigger('click');
-    await settle();
-    expect(app.horizon).toBe('month'); // the tags follow the new default
-  });
-
-  it('sets the default horizon in the settings, and writes it to the vault for the desktop', async () => {
-    await start(vault);
-    await openDrawer();
-    await find('drawer-settings').trigger('click');
-    await settle();
-    expect((find('setting-horizon').element as HTMLSelectElement).value).toBe('today');
-    await type('setting-horizon', 'week', 'change');
-    expect(JSON.parse(fs.files.get('Jotter/settings.json')!.data).planningHorizon).toBe('week');
-    expect(useAppStore().horizon).toBe('week');
+    await setHorizon('week');
+    const settings = JSON.parse(fs.files.get('Jotter/settings.json')!.data);
+    expect(settings.planningHorizon).toBe('week');
+    expect(settings.hideDoneColumn).toBe(true); // the other settings are kept
   });
 
   it('leaves tasks planned ahead out of the tag view until the horizon is wider', async () => {

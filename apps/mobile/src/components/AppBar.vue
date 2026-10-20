@@ -182,7 +182,8 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
             <Check class="h-5 w-5 shrink-0" :class="option.on ? 'text-accent' : 'text-transparent'" />
             <span class="min-w-0 flex-1 truncate">{{ option.label }}</span>
           </button>
-          <button :class="menuItem" role="menuitem" data-testid="open-horizon" @click="openHorizon">
+          <!-- The planning view looks ahead by nature: it has no horizon -->
+          <button v-if="app.view !== 'planning'" :class="menuItem" role="menuitem" data-testid="open-horizon" @click="openHorizon">
             <Calendar class="h-5 w-5 shrink-0 text-muted" />
             <span class="min-w-0 flex-1 truncate">{{ t('view.horizon') }}</span>
             <span class="text-sm text-muted"

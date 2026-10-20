@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Database } from '@lucide/vue';
 import { THEMES } from '@jotter/themes';
-import { HORIZONS, type Horizon } from '@jotter/task-filter';
 import BottomSheet from './BottomSheet.vue';
 import { t, type MessageKey } from '@/i18n';
 import { useSettingsStore } from '@/stores/settings';
@@ -63,18 +62,6 @@ const version = __APP_VERSION__;
           <option v-for="p in app.orderedProjects" :key="p.id" :value="p.id">{{ p.title }}</option>
         </select>
         <span class="mt-1 block text-xs text-muted">{{ t('settings.captureHint') }}</span>
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-medium text-muted">{{ t('settings.horizon') }}</span>
-        <select
-          :value="app.defaultHorizon"
-          :class="field"
-          data-testid="setting-horizon"
-          @change="app.setDefaultHorizon(($event.target as HTMLSelectElement).value as Horizon)"
-        >
-          <option v-for="horizon in HORIZONS" :key="horizon" :value="horizon">{{ t(`horizon.${horizon}` as MessageKey) }}</option>
-        </select>
-        <span class="mt-1 block text-xs text-muted">{{ t('settings.horizonHint') }}</span>
       </label>
       <button
         class="inline-flex items-center gap-2 text-sm font-medium text-accent"
