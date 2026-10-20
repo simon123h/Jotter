@@ -155,8 +155,8 @@ A task has four fields about time. Each answers a different question, and none s
   (or in `due_date`, see section 3) and may hold `postponed_until`. A reader resolves them against *today*, and
   everything after that sees only the forms above. A writer never writes a keyword or `postponed_until`; a file
   that is saved loses them. A file that is only read is not rewritten. A reader that keeps an index MUST read a file
-  with a planning keyword (or a postponement still ahead) again on every scan until it is saved, so that the day it
-  stands for follows the calendar, the same on every device.
+  with a planning keyword (or a postponement still ahead) again on a new day, at most once a day, until it is saved, so
+  that the day it stands for follows the calendar, the same on every device.
   - **Keywords** are compared ignoring case and hyphens (`this-week`, `thisWeek` and `THISWEEK` are the same
     keyword). `today` and `tomorrow` become that day, `thisWeek` and `nextWeek` the ISO week, `thisMonth` and
     `nextMonth` the month. `thisYear`, `nextYear`, `someday` and `sometime` have no date: the task reads as not

@@ -156,7 +156,9 @@ export const useAppStore = defineStore('app', () => {
     if (JSON.stringify(next.pinned) !== JSON.stringify(pinned.value)) pinned.value = next.pinned;
     if (JSON.stringify(next.order) !== JSON.stringify(projectOrder.value)) projectOrder.value = next.order;
     sortBy.value = next.sort;
-    const horizonSetting = HORIZONS.find((h) => h === settings.planningHorizon) ?? 'today';
+    // Before the horizon there was a switch for postponed tasks: off showed everything (the desktop reads it the same way)
+    const horizonSetting =
+      HORIZONS.find((h) => h === settings.planningHorizon) ?? (settings.hidePostponedColumn === false ? 'all' : 'today');
     if (horizonSetting !== planningHorizon.value) planningHorizon.value = horizonSetting;
     const capture = typeof settings.captureProjectId === 'string' && settings.captureProjectId ? settings.captureProjectId : null;
     if (capture !== captureProjectId.value) captureProjectId.value = capture;

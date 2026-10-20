@@ -851,7 +851,7 @@ def test_schema_version_follows_the_schema_text_but_not_its_whitespace():
     assert version_of(db_module._SCHEMA) != version_of(db_module._SCHEMA.replace("tags TEXT", "tags BLOB", 1))
 
 
-def test_a_file_with_a_planning_keyword_is_read_again_at_every_scan(temp_dir, test_env):
+def test_a_file_with_a_planning_keyword_is_read_again_on_a_new_day(temp_dir, test_env):
     conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
     sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
@@ -865,8 +865,15 @@ def test_a_file_with_a_planning_keyword_is_read_again_at_every_scan(temp_dir, te
     tomorrow = (date.today() + timedelta(days=1)).isoformat()
     assert {t.id: t.planned_date for t in task_svc.get_tasks("proj")} == {"k": tomorrow, "p": "2031-05-04"}
 
-    # The index holds a day from an earlier scan: the keyword file is read again, the plain one is left as it is
+    # The same day again: the index is trusted, nothing is read
     conn.execute("UPDATE tasks SET planned_date = '2000-01-01', planned_start = '2000-01-01'")
+    conn.commit()
+    sync_svc.sync_db_only()
+    assert {t.id: t.planned_date for t in task_svc.get_tasks("proj")} == {"k": "2000-01-01", "p": "2000-01-01"}
+
+    # The keyword file was read yesterday: it is read again, the plain one is left as it is
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    conn.execute("UPDATE tasks SET legacy_day = ? WHERE id = 'k'", (yesterday,))
     conn.commit()
     sync_svc.sync_db_only()
     assert {t.id: t.planned_date for t in task_svc.get_tasks("proj")} == {"k": tomorrow, "p": "2000-01-01"}

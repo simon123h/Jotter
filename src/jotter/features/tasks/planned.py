@@ -11,9 +11,9 @@ from datetime import date, timedelta
 from jotter.shared.exceptions import ValidationError
 
 # ASCII digits only, and years from 1000 on: both readers agree on what a planned value is (spec/FORMAT.md)
-_DAY = re.compile(r"^([1-9][0-9]{3}-[0-9]{2}-[0-9]{2})(?:[T ].*)?$")
-_WEEK = re.compile(r"^([1-9][0-9]{3})-[Ww]([0-9]{2})$")
-_MONTH = re.compile(r"^([1-9][0-9]{3})-([0-9]{2})$")
+_DAY = re.compile(r"^([1-9][0-9]{3}-[0-9]{2}-[0-9]{2})(?:[T ].*)?\Z")
+_WEEK = re.compile(r"^([1-9][0-9]{3})-[Ww]([0-9]{2})\Z")
+_MONTH = re.compile(r"^([1-9][0-9]{3})-([0-9]{2})\Z")
 
 # Legacy planning keywords, compared case-insensitively and ignoring hyphens (`this-week` is `thisWeek`).
 _NO_DATE = frozenset({"thisyear", "nextyear", "someday", "sometime"})

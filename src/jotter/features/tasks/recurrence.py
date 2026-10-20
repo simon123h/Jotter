@@ -53,6 +53,8 @@ def roll_over(task: Task, today: date, default_bucket: str, previous_bucket: str
 
     if due is not None:
         task.due_date = DueDate(following.isoformat())
+    # By decision (ADR 0024), not an oversight: the task reappears when its planned day comes, so it must have one. A planned
+    # day keeps its distance to the due date; a week, a month or no plan becomes `following`.
     task.planned_date = PlannedDate((planned + shift if planned is not None else following).isoformat())
     task.reminders = [(datetime.fromisoformat(r) + shift).strftime("%Y-%m-%dT%H:%M") for r in task.reminders]
     task.bucket = previous_bucket or default_bucket

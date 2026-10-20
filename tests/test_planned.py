@@ -33,3 +33,9 @@ def test_legacy_keyword(case: dict[str, str | None]) -> None:
 )
 def test_a_value_with_a_year_before_1000_or_non_ascii_digits_is_no_planned_date(value: str) -> None:
     assert read_planned(value, date(2026, 10, 14)) is None
+
+
+def test_a_value_is_trimmed_as_the_typescript_reader_does() -> None:
+    assert read_planned(" 2026-10\n", date(2026, 10, 14)) == "2026-10"
+    assert read_planned("2026-w43\n", date(2026, 10, 14)) == "2026-W43"
+    assert read_planned("2026-13", date(2026, 10, 14)) is None

@@ -29,3 +29,17 @@ describe('weeks', () => {
     expect(plannedStart('2027-W53')).toBeNull();
   });
 });
+
+describe('what is no planned value', () => {
+  it('is read the same as the Python reader does', () => {
+    for (const value of ['2026-13', '0999-12-31', '0000-W01', '0999-01']) {
+      expect(plannedStart(value), value).toBeNull();
+      expect(readPlanned(value, '2026-10-14'), value).toBeNull();
+    }
+  });
+
+  it('trims the value, as the Python reader does', () => {
+    expect(readPlanned(' 2026-10\n', '2026-10-14')).toBe('2026-10');
+    expect(readPlanned('2026-w43\n', '2026-10-14')).toBe('2026-W43');
+  });
+});

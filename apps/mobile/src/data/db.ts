@@ -8,7 +8,8 @@ export interface FileStamp {
   mtime: number;
 }
 
-export type CachedTask = Task & FileStamp;
+/** `legacy_day`: the day a file with a planning keyword was read, since the day it stands for moves with the calendar. */
+export type CachedTask = Task & FileStamp & { legacy_day?: string };
 export type CachedProject = Project & { size: number; mtime: number };
 export type CachedBucket = Bucket & { project_id: string };
 

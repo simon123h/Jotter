@@ -77,6 +77,8 @@ export function rollOver(
     updated_at: new Date().toISOString(),
   };
   if (task.due_date) rolled.due_date = following;
+  // By decision (ADR 0024), not an oversight: the task reappears when its planned day comes, so it must have one. A planned
+  // day keeps its distance to the due date; a week, a month or no plan becomes `following`.
   rolled.planned_date = plannedDay ? addUnits(plannedDay, shift, "day") : following;
   return rolled;
 }

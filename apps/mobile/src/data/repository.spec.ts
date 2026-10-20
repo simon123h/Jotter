@@ -119,18 +119,18 @@ describe('scan', () => {
     expect((await repo.getTask('work', 'a')).title).toBe('Alpha 2');
   });
 
-  it('reads a file with a planning keyword again at every scan, so that its day follows the calendar until it is saved', async () => {
+  it('reads a file with a planning keyword again on a new day, so that its day follows the calendar until it is saved', async () => {
     fs.put('Jotter/work/k.md', '---\ntitle: Keyword\nstatus: todo\nplanned_date: tomorrow\n---\n');
     fs.put('Jotter/work/p.md', '---\ntitle: Plain\nstatus: todo\nplanned_date: 2031-05-04\n---\n');
     await repo.sync();
     const planned = async () => Object.fromEntries((await repo.listTasks('work')).map((t) => [t.id, t.planned_date]));
     expect(await planned()).toEqual({ k: isoDay(1), p: '2031-05-04' });
-    expect((await repo.sync()).read).toBe(1); // the keyword file is read again, the other is not
+    expect((await repo.sync()).read).toBe(0); // the same day: nothing is read again
 
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
       vi.setSystemTime(Date.now() + 3 * 86_400_000);
-      expect((await repo.sync()).read).toBe(1);
+      expect((await repo.sync()).read).toBe(1); // the keyword file only
       expect((await planned()).k).toBe(isoDay(1)); // "tomorrow", counted from the new day
       expect((await planned()).p).toBe('2031-05-04');
     } finally {

@@ -50,10 +50,12 @@ export function canonicalPlanned(raw: string): string | null {
 
 /** The first day of a planned value (a day is its own first day). Null when it is not a planned value. */
 export function plannedStart(value: string): string | null {
-  const week = /^(\d{4})-W(\d{2})$/.exec(value);
+  const canonical = canonicalPlanned(value);
+  if (!canonical) return null;
+  const week = /^(\d{4})-W(\d{2})$/.exec(canonical);
   if (week) return weekStart(Number(week[1]), Number(week[2]));
-  if (/^\d{4}-\d{2}$/.test(value)) return `${value}-01`;
-  return validDay(value);
+  if (/^\d{4}-\d{2}$/.test(canonical)) return `${canonical}-01`;
+  return canonical;
 }
 
 // Legacy planning keywords, compared ignoring case and hyphens (`this-week` is `thisWeek`)

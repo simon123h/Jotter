@@ -188,10 +188,10 @@ class SyncApplicationService:
                         known is not None
                         and file_stat is not None
                         and known.file_stat == file_stat
-                        and not known.legacy_planned
+                        and known.legacy_day in (None, now.astimezone().date().isoformat())
                     ):
                         # Unchanged since it was indexed: no need to open and parse it (retention still applies). A file with a
-                        # planning keyword is read again, since the day it stands for moves on with the calendar
+                        # planning keyword is read again on a new day, since the day it stands for moves on with the calendar
                         if _is_expired(
                             known.bucket,
                             known.updated_at,

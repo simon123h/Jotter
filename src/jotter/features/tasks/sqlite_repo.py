@@ -56,7 +56,7 @@ class IndexedFile(NamedTuple):
     file_stat: tuple[int, int] | None
     repeats: bool = False
     planned_start: str | None = None
-    legacy_planned: bool = False
+    legacy_day: str | None = None
 
 
 class SqliteTaskRepository:
@@ -120,7 +120,7 @@ class SqliteTaskRepository:
     def get_index_state(self, project_id: str) -> dict[str, IndexedFile]:
         """Returns what the index knows about each task file of a project, keyed by task ID."""
         rows = self.conn.execute(
-            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size, repeat, planned_start, legacy_planned "
+            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size, repeat, planned_start, legacy_day "
             "FROM tasks WHERE project_id = ?",
             (project_id,),
         ).fetchall()
@@ -132,7 +132,7 @@ class SqliteTaskRepository:
                 file_stat=(row["file_mtime_ns"], row["file_size"]) if row["file_mtime_ns"] is not None else None,
                 repeats=bool(row["repeat"]),
                 planned_start=row["planned_start"],
-                legacy_planned=bool(row["legacy_planned"]),
+                legacy_day=row["legacy_day"],
             )
             for row in rows
         }

@@ -2001,6 +2001,15 @@ describe('planning ahead', () => {
     expect(settings.hideDoneColumn).toBe(true); // the other settings are kept
   });
 
+  it('reads the old switch for postponed tasks as a horizon, as the desktop does', async () => {
+    const { app } = await start((f) => {
+      vault(f);
+      f.put('Jotter/settings.json', JSON.stringify({ hidePostponedColumn: false }));
+    });
+    expect(app.horizon).toBe('all');
+    expect(find('board').text()).toContain('Later task');
+  });
+
   it('leaves tasks planned ahead out of the tag view until the horizon is wider', async () => {
     await start(vault);
     await find('view-tags').trigger('click');
