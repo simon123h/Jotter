@@ -1,0 +1,90 @@
+{
+  "description": "Legacy planning keywords in planned_date are resolved against today when a file is read (spec/FORMAT.md, Dates and times). `expected` is the planned date the reader gives, null when the keyword has no date.",
+  "cases": [
+    {
+      "value": "today",
+      "today": "2026-10-14",
+      "expected": "2026-10-14"
+    },
+    {
+      "value": "tomorrow",
+      "today": "2026-10-14",
+      "expected": "2026-10-15"
+    },
+    {
+      "value": "tomorrow",
+      "today": "2026-12-31",
+      "expected": "2027-01-01"
+    },
+    {
+      "value": "thisWeek",
+      "today": "2026-10-14",
+      "expected": "2026-W42"
+    },
+    {
+      "value": "nextWeek",
+      "today": "2026-10-14",
+      "expected": "2026-W43"
+    },
+    {
+      "value": "this-week",
+      "today": "2026-10-14",
+      "expected": "2026-W42"
+    },
+    {
+      "value": "THISWEEK",
+      "today": "2026-10-14",
+      "expected": "2026-W42"
+    },
+    {
+      "value": "thisWeek",
+      "today": "2027-01-01",
+      "expected": "2026-W53"
+    },
+    {
+      "value": "nextWeek",
+      "today": "2026-12-28",
+      "expected": "2027-W01"
+    },
+    {
+      "value": "thisWeek",
+      "today": "2024-12-30",
+      "expected": "2025-W01"
+    },
+    {
+      "value": "thisMonth",
+      "today": "2026-10-14",
+      "expected": "2026-10"
+    },
+    {
+      "value": "nextMonth",
+      "today": "2026-10-14",
+      "expected": "2026-11"
+    },
+    {
+      "value": "nextMonth",
+      "today": "2026-12-14",
+      "expected": "2027-01"
+    },
+    {
+      "value": "thisYear",
+      "today": "2026-10-14",
+      "expected": null
+    },
+    {
+      "value": "nextYear",
+      "today": "2026-10-14",
+      "expected": null
+    },
+    {
+      "value": "someday",
+      "today": "2026-10-14",
+      "expected": null
+    },
+    {
+      "value": "sometime",
+      "today": "2026-10-14",
+      "expected": null
+    }
+  ]
+}

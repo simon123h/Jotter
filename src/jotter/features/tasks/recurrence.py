@@ -9,6 +9,7 @@ import re
 from datetime import date, datetime, timedelta
 
 from jotter.features.tasks.domain import DueDate, RepeatRule, Task
+from jotter.features.tasks.planned import PlannedDate
 
 _UNTICK = re.compile(r"(?m)^(\s*[-*+] \[)[xX](\])")
 
@@ -52,10 +53,8 @@ def roll_over(task: Task, today: date, default_bucket: str, previous_bucket: str
 
     if due is not None:
         task.due_date = DueDate(following.isoformat())
-    if planned is not None:
-        task.planned_date = DueDate((planned + shift).isoformat())
+    task.planned_date = PlannedDate((planned + shift if planned is not None else following).isoformat())
     task.reminders = [(datetime.fromisoformat(r) + shift).strftime("%Y-%m-%dT%H:%M") for r in task.reminders]
-    task.postponed_until = DueDate(following.isoformat())
     task.bucket = previous_bucket or default_bucket
     task.body = _UNTICK.sub(r"\1 \2", task.body)
     task.touch()

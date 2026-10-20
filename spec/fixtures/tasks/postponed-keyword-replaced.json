@@ -1,0 +1,22 @@
+{
+  "description": "A legacy keyword resolves first (thisWeek is 2026-W42, which starts on 2026-10-12), then the later postponement wins.",
+  "context": {
+    "file_stem": "postponed-keyword-replaced",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "postponed-keyword-replaced",
+    "project_id": "proj",
+    "title": "Postponed keyword replaced",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": "2026-10-20",
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

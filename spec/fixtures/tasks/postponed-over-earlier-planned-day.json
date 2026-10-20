@@ -1,0 +1,22 @@
+{
+  "description": "A planned day before the postponement is replaced by it.",
+  "context": {
+    "file_stem": "postponed-over-earlier-planned-day",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "postponed-over-earlier-planned-day",
+    "project_id": "proj",
+    "title": "Postponed over earlier planned day",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": "2026-10-20",
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

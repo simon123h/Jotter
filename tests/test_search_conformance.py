@@ -56,7 +56,6 @@ def repo() -> SqliteTaskRepository:
             due_date=row["due_date"],
             planned_date=row["planned_date"],
             priority=row["priority"],
-            postponed_until=row["postponed_until"],
             task_id=row["id"].upper().ljust(26, "0"),
         )
         task.created_at = row["created_at"]

@@ -1,5 +1,5 @@
 {
-  "description": "Values a reader cannot use are dropped and the task is still read: an unknown priority, a tag with a space, a planning value or date it does not know, a position that is not a number.",
+  "description": "Values a reader cannot use are dropped and the task is still read: an unknown priority, a tag with a space, a planned date or date it does not know, a position that is not a number. A postponed_until that is no date is ignored.",
   "context": {
     "file_stem": "invalid-values-dropped",
     "default_project_id": "proj"
@@ -19,7 +19,6 @@
     "planned_date": null,
     "priority": "none",
     "color": null,
-    "postponed_until": null,
     "extra": {}
   }
 }

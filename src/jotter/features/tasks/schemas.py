@@ -35,7 +35,6 @@ class TaskCreate(BaseModel):
     planned_date: str | None = None
     priority: str | None = None
     color: str | None = None
-    postponed_until: str | None = None
     repeat: RepeatRuleSchema | None = None
     reminders: list[str] = []
     position: float | None = None
@@ -62,7 +61,6 @@ class TaskUpdate(BaseModel):
     planned_date: str | None = None
     priority: str | None = None
     color: str | None = None
-    postponed_until: str | None = None
     repeat: RepeatRuleSchema | None = None
     reminders: list[str] | None = None
 
@@ -89,7 +87,6 @@ class TaskResponse(BaseModel):
     planned_date: str | None = None
     priority: str | None = None
     color: str | None = None
-    postponed_until: str | None = None
     repeat: RepeatRuleSchema | None = None
     reminders: list[str] = []
     created_at: str
@@ -110,7 +107,6 @@ class TaskFrontmatter(BaseModel):
     planned_date: str | None = None
     priority: str | None = None
     color: str | None = None
-    postponed_until: str | None = None
     created_at: str
     updated_at: str
 

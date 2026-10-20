@@ -426,9 +426,9 @@ def test_moving_a_recurring_task_to_done_rolls_it_over(temp_dir, test_env):
     moved = task_svc.move_task("default", "water", TaskMove(bucket="done"))
 
     assert moved.bucket == "in-progress"
-    assert moved.postponed_until == tomorrow
+    assert moved.planned_date == tomorrow
     assert "- [ ] fill can" in moved.body
-    assert task_svc.get_task("default", "water").postponed_until == tomorrow
+    assert task_svc.get_task("default", "water").planned_date == tomorrow
 
 
 def test_updating_a_recurring_task_into_done_rolls_it_over_and_keeps_the_other_changes(temp_dir, test_env):
@@ -437,11 +437,11 @@ def test_updating_a_recurring_task_into_done_rolls_it_over_and_keeps_the_other_c
     updated = task_svc.update_task("default", "water", TaskUpdate(title="Water the plants", bucket="done"))
 
     assert (updated.title, updated.bucket) == ("Water the plants", "in-progress")
-    assert updated.postponed_until == (date.today() + timedelta(days=1)).isoformat()
+    assert updated.planned_date == (date.today() + timedelta(days=1)).isoformat()
 
 
 def test_only_the_move_into_done_rolls_a_recurring_task_over(temp_dir, test_env):
     task_svc = _recurring_task_service(temp_dir)
 
     assert task_svc.move_task("default", "water", TaskMove(bucket="todo")).bucket == "todo"
-    assert task_svc.move_task("default", "water", TaskMove(bucket="todo")).postponed_until is None
+    assert task_svc.move_task("default", "water", TaskMove(bucket="todo")).planned_date is None

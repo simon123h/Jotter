@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -159,7 +159,7 @@ id: legacy123
 project_id: wrong-project
 title: Legacy task with keyword due date
 bucket: backlog
-due_date: thisYear
+due_date: thisMonth
 ---
 Notes
 """,
@@ -175,7 +175,7 @@ Notes
     assert len(tasks) == 1
     assert tasks[0].id == "legacy123"
     assert tasks[0].project_id == "legacy-project"
-    assert tasks[0].planned_date == "thisYear"
+    assert tasks[0].planned_date == date.today().strftime("%Y-%m")
     assert tasks[0].due_date is None
 
 
@@ -501,7 +501,7 @@ def test_sync_still_prunes_unchanged_expired_done_tasks(temp_dir, test_env, monk
 
 
 @pytest.mark.parametrize("indexed_first", [False, True])
-def test_retention_never_prunes_postponed_or_recurring_done_tasks(temp_dir, test_env, indexed_first):
+def test_retention_never_prunes_recurring_done_tasks(temp_dir, test_env, indexed_first):
     conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
     proj_svc = ProjectApplicationService.from_data_dir(temp_dir, conn)
     task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
@@ -509,13 +509,9 @@ def test_retention_never_prunes_postponed_or_recurring_done_tasks(temp_dir, test
     proj_svc.create_project(ProjectCreate(title="Proj", id="proj", done_clean_period=None))
     project_dir = Path(temp_dir) / "proj"
     old_iso = (datetime.now(UTC) - timedelta(days=30)).isoformat()
-    future = (datetime.now() + timedelta(days=30)).date().isoformat()
-    past = (datetime.now() - timedelta(days=30)).date().isoformat()
 
     extras = {
         "plain": "",
-        "postponed": f"postponed_until: '{future}'\n",
-        "lapsed": f"postponed_until: '{past}'\n",
         "recurring": "repeat:\n  every: 1\n  unit: week\n  from: completion\n",
     }
     paths = {}
@@ -535,8 +531,7 @@ def test_retention_never_prunes_postponed_or_recurring_done_tasks(temp_dir, test
     (Path(temp_dir) / "settings.json").write_text(json.dumps({"doneCleanPeriod": 7}), encoding="utf-8")
     sync_svc.sync_db_only()
 
-    # A lapsed postponement makes it an ordinary old done task again
-    assert {name for name, path in paths.items() if path.exists()} == {"postponed", "recurring"}
+    assert {name for name, path in paths.items() if path.exists()} == {"recurring"}
 
 
 def test_startup_sync_rebuilds_only_when_the_app_version_changes(temp_dir, test_env, monkeypatch):

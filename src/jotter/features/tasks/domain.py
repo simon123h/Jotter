@@ -6,6 +6,7 @@ from datetime import UTC, date, datetime
 from enum import StrEnum
 from typing import Self
 
+from jotter.features.tasks.planned import PlannedDate
 from jotter.shared.exceptions import ValidationError
 from jotter.shared.ulid import generate_ulid
 from jotter.shared.unset import UNSET, Unset
@@ -50,38 +51,15 @@ class TaskId:
         return self.value
 
 
-# Planning keywords, compared case-insensitively and ignoring hyphens (`this-week` is `thisWeek`)
-PLANNING_KEYWORDS = frozenset(
-    {
-        "today",
-        "tomorrow",
-        "someday",
-        "sometime",
-        "thisweek",
-        "nextweek",
-        "thismonth",
-        "nextmonth",
-        "thisyear",
-        "nextyear",
-    }
-)
-
-
-def is_planning_keyword(val: str) -> bool:
-    return val.strip().lower().replace("-", "") in PLANNING_KEYWORDS
-
-
 @dataclass(frozen=True)
 class DueDate:
-    value: str | None  # "YYYY-MM-DD" or a planning keyword like "today", "thisWeek", "someday"
+    value: str | None  # "YYYY-MM-DD"
 
     @classmethod
     def from_str(cls, val: str | None) -> Self:
         if not val or not str(val).strip():
             return cls(value=None)
         clean = str(val).strip()
-        if is_planning_keyword(clean):
-            return cls(value=clean)
         if len(clean) >= 10 and clean[4] == "-" and clean[7] == "-":
             clean_date = clean[:10]
             try:
@@ -112,10 +90,6 @@ class DueDate:
         return d < ref
 
     def is_today(self, reference_date: date | None = None) -> bool:
-        if not self.value:
-            return False
-        if self.value.strip().lower() == "today":
-            return True
         d = self.as_date
         if not d:
             return False
@@ -213,10 +187,9 @@ class Task:
     attachments: list[str] = field(default_factory=list)
     body: str = ""
     due_date: DueDate = field(default_factory=lambda: DueDate(None))
-    planned_date: DueDate = field(default_factory=lambda: DueDate(None))
+    planned_date: PlannedDate = field(default_factory=lambda: PlannedDate(None))
     priority: Priority = Priority.NONE
     color: str | None = None
-    postponed_until: DueDate = field(default_factory=lambda: DueDate(None))
     repeat: RepeatRule | None = None
     reminders: list[str] = field(default_factory=list)
     extra_frontmatter: dict[str, object] = field(default_factory=dict)
@@ -245,7 +218,6 @@ class Task:
         planned_date: str | None = None,
         priority: str | None = None,
         color: str | None = None,
-        postponed_until: str | None = None,
         repeat: RepeatRule | None = None,
         reminders: list[str] | None = None,
         task_id: str | None = None,
@@ -271,10 +243,9 @@ class Task:
             attachments=clean_attachments,
             body=body or "",
             due_date=DueDate.from_str(due_date),
-            planned_date=DueDate.from_str(planned_date),
+            planned_date=PlannedDate.from_str(planned_date),
             priority=Priority.from_str(priority),
             color=color.strip() if color else None,
-            postponed_until=DueDate.from_str(postponed_until),
             repeat=repeat,
             reminders=list(reminders) if reminders else [],
             extra_frontmatter=dict(extra_frontmatter) if extra_frontmatter else {},
@@ -298,7 +269,6 @@ class Task:
         due_date: str | Unset | None = UNSET,
         planned_date: str | Unset | None = UNSET,
         color: str | Unset | None = UNSET,
-        postponed_until: str | Unset | None = UNSET,
         repeat: RepeatRule | Unset | None = UNSET,
         reminders: list[str] | None = None,
         tags: list[str] | None = None,
@@ -319,13 +289,10 @@ class Task:
             self.due_date = DueDate.from_str(due_date)
 
         if planned_date is not UNSET:
-            self.planned_date = DueDate.from_str(planned_date)
+            self.planned_date = PlannedDate.from_str(planned_date)
 
         if color is not UNSET:
             self.color = color.strip() if color else None
-
-        if postponed_until is not UNSET:
-            self.postponed_until = DueDate.from_str(postponed_until)
 
         if repeat is not UNSET:
             self.repeat = repeat

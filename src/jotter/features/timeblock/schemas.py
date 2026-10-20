@@ -83,7 +83,6 @@ class TimeblockResponse(BaseModel):
                 planned_date=t.planned_date.value,
                 priority=t.priority.value if t.priority.value != "none" else None,
                 color=t.color,
-                postponed_until=t.postponed_until.value,
                 created_at=t.created_at,
                 updated_at=t.updated_at,
             )

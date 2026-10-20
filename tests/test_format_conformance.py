@@ -5,6 +5,7 @@ Other implementations (the TypeScript parser used by the mobile app, experiments
 
 import json
 import tempfile
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,9 @@ from jotter.features.tasks.disk_repo import DiskTaskRepository
 from jotter.shared.exceptions import ValidationError
 from jotter.shared.frontmatter import split_frontmatter
 from jotter.shared.yaml_io import safe_load
+
+# Reading depends on today for legacy values (spec/README.md)
+FIXTURE_TODAY = date(2026, 10, 14)
 
 FIXTURES = Path(__file__).resolve().parent.parent / "spec" / "fixtures"
 TASK_CASES = sorted((FIXTURES / "tasks").glob("*.json"))
@@ -43,7 +47,6 @@ def _task_view(task: Any, expected: dict[str, Any]) -> dict[str, Any]:
         "planned_date": task.planned_date.value,
         "priority": task.priority.value,
         "color": task.color,
-        "postponed_until": task.postponed_until.value,
         "extra": dict(task.extra_frontmatter),
     }
     # Fields that older fixtures leave out are only compared when the fixture states them
@@ -69,9 +72,9 @@ def test_task_read(case: Path, request: pytest.FixtureRequest) -> None:
 
     if expected.get("error"):
         with pytest.raises(ValidationError):
-            repo.parse_task_content(content, ctx["file_stem"], ctx["default_project_id"])
+            repo.parse_task_content(content, ctx["file_stem"], ctx["default_project_id"], FIXTURE_TODAY)
         return
-    task = repo.parse_task_content(content, ctx["file_stem"], ctx["default_project_id"])
+    task = repo.parse_task_content(content, ctx["file_stem"], ctx["default_project_id"], FIXTURE_TODAY)
 
     assert _task_view(task, expected) == expected
 
@@ -88,7 +91,7 @@ def test_task_round_trip(case: Path, request: pytest.FixtureRequest) -> None:
     repo = DiskTaskRepository(tempfile.gettempdir())
     content = case.with_suffix(".md").read_text(encoding="utf-8")
 
-    first = repo.parse_task_content(content, ctx["file_stem"], ctx["default_project_id"])
+    first = repo.parse_task_content(content, ctx["file_stem"], ctx["default_project_id"], FIXTURE_TODAY)
     written = repo.serialize_task(first)
     second = repo.parse_task_content(written, ctx["file_stem"], ctx["default_project_id"])
 

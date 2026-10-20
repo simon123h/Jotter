@@ -74,10 +74,9 @@ Body text
 | `tags` | list of strings | `[]`. A comma separated string is accepted. | when not empty |
 | `attachments` | list of file names | `[]`. A JSON list inside a string is accepted. | when not empty |
 | `due_date` | `YYYY-MM-DD` | none. A time part is dropped. Unquoted YAML dates are accepted. | when set |
-| `planned_date` | planning keyword or `YYYY-MM-DD` | none | when set |
+| `planned_date` | `YYYY-MM-DD`, `YYYY-Www` or `YYYY-MM` (see *Dates and times*) | none | when set |
 | `priority` | `low` `medium` `high` `urgent` | `none`. Case-insensitive. | when not `none` |
 | `color` | string: a palette name | none | when set |
-| `postponed_until` | `YYYY-MM-DD` | none | when set |
 | `repeat` | mapping: `every`, `unit`, `from` (see *Recurring tasks*) | none | when set |
 | `reminders` | list of `YYYY-MM-DDTHH:mm` (see *Reminders*) | `[]`. A single string is accepted. | when not empty |
 | `created_at` | ISO 8601 timestamp | the time the file was read | always |
@@ -86,16 +85,12 @@ Body text
 Further rules:
 
 - **Aliases.** Readers MUST accept the legacy keys `bucket` (for `status`), `projectId`, `dueDate`,
-  `plannedDate`, `postponedUntil`, `createdAt` and `updatedAt`. Writers MUST use the names in the table.
+  `plannedDate`, `createdAt` and `updatedAt`. Writers MUST use the names in the table.
 - **Tags** are lower-cased and lose a leading `#`. A tag may not contain a space.
-- **Planning keywords** are `today`, `tomorrow`, `thisWeek`, `nextWeek`, `thisMonth`, `nextMonth`, `thisYear`,
-  `nextYear`, `someday` and `sometime`. Readers compare them ignoring case and hyphens (`this-week`, `thisWeek`
-  and `THISWEEK` are the same keyword). Writers keep the spelling they were given. The apps write the camelCase
-  form.
-- **Keyword in `due_date`.** Any planning keyword found in `due_date` is read as `planned_date`.
+- **Keyword in `due_date`.** Any legacy planning keyword (see *Dates and times*) found in `due_date` is read as
+  `planned_date`.
 - **Values a reader cannot use are dropped, the task is still read.** This covers an unknown `priority`, a tag
-  with a space, a `planned_date`, `due_date` or `postponed_until` that is neither a keyword (planned only) nor a
-  date, a `position` that is not a number, a `repeat` that does not follow the rules below and a reminder that
+  with a space, a `planned_date` that is none of the forms below, a `due_date` that is not a date, a `position` that is not a number, a `repeat` that does not follow the rules below and a reminder that
   is not a local date-time. See the `invalid-values-dropped` and `repeat-invalid` fixtures. (A writer that finds
   such a value in a file it rewrites drops it as well, which is why these are not preserved.)
 - **Colour.** The apps write the name of a palette colour: `red`, `orange`, `yellow`, `green`, `blue`, `purple`
@@ -134,25 +129,38 @@ from other tools keep theirs. Writers MUST NOT rename an existing file because i
 
 ### Dates and times
 
-A task has five fields about time. Each answers a different question, and none stands in for another:
+A task has four fields about time. Each answers a different question, and none stands in for another:
 
 | Field | Question | Value |
 | :-- | :-- | :-- |
 | `due_date` | When must it be done? | a day |
-| `planned_date` | When do I intend to do it? | a keyword or a day |
-| `postponed_until` | Until when should it stay out of my way? | a day |
+| `planned_date` | When do I intend to do it? | a day, a week or a month |
 | `reminders` | When should something nudge me? | local date-times |
 | `repeat` | How does it come back? | a rule |
 
 - **Days** (`YYYY-MM-DD`) are local calendar days with no time zone. "Today" is the day on the reader's clock.
-- **Planning keywords** are relative to today. A writer MUST NOT turn a keyword into a date, and recurrence
-  leaves keywords as they are.
-- **A task is postponed** while `postponed_until` is after today. Readers show it out of the way and show it
-  normally again from that day on. A postponed task stays in its own column (`status` is not touched): the
-  apps hide such tasks by default and can show them, in that column, marked with the day they come back. A
-  reader MUST NOT show a postponed task under a column other than its `status`, and a writer MUST NOT change
-  `status` to postpone a task or to bring it back. Moving a postponed task to another column keeps the
-  postponement.
+- **A planned date is absolute.** It is one of:
+  - a day, `2026-10-21`;
+  - an ISO 8601 week, `2026-W43`: "some day in that week", Monday to Sunday. `W` is compared ignoring case, the
+    week number is two digits, and week 53 exists only in the years that have one (2026 does, 2027 does not);
+  - a month, `2026-10`: "some day in that month".
+
+  A week or a month **starts on its first day**. That is the day readers use to order tasks and to decide
+  whether a planned task is still in the future. A planned date that lies in the past, a passed week or month
+  included, is *slipped*: nothing changes it by itself. Whether a planned date in the future is shown or kept out
+  of the way is a setting of the app, not part of the file.
+- **Legacy values are resolved when a file is read.** Older files may hold a planning keyword in `planned_date`
+  (or in `due_date`, see section 3) and may hold `postponed_until`. A reader resolves them against *today*, and
+  everything after that sees only the forms above. A writer never writes a keyword or `postponed_until`; a file
+  that is saved loses them. A file that is only read is not rewritten.
+  - **Keywords** are compared ignoring case and hyphens (`this-week`, `thisWeek` and `THISWEEK` are the same
+    keyword). `today` and `tomorrow` become that day, `thisWeek` and `nextWeek` the ISO week, `thisMonth` and
+    `nextMonth` the month. `thisYear`, `nextYear`, `someday` and `sometime` have no date: the task reads as not
+    planned. See `fixtures/planned/legacy.json`.
+  - **`postponed_until`** (`YYYY-MM-DD`, ignored when it is not a date) used to keep a task out of the way until a
+    day. A postponement that lies after today is merged into `planned_date`: the planned date becomes that day,
+    unless it is a day or a period that starts on or after it. A postponement that is today or in the past is
+    ignored.
 - **Only reminders have a time of day**, and it is *floating*: `09:00` means 09:00 on the wall clock wherever
   the reader is, with no time zone and no UTC. `created_at` and `updated_at` are the only instants.
 - `due_date` is date-only on purpose. A time of day belongs in a reminder (or a time block).
@@ -208,10 +216,10 @@ app (moving the task to `done`, ticking it on a card, a bulk action). Given `tod
    planned on `next`, however late or early it was completed.
 3. **The task** is rewritten:
    - `due_date`, when set, becomes `next`.
-   - `planned_date`, when it is a day, and `reminders` (the time of day is kept) move by the shift. A planning
-     keyword stays. An empty field stays empty.
-   - `postponed_until` becomes `next`, so the task stays out of the way until its next occurrence. That is how
-     a recurring task "reappears". (When `next` is today, the task is not postponed at all.)
+   - `planned_date`, when it is a day, and `reminders` (the time of day is kept) move by the shift. Any other
+     planned date (empty, a week or a month) becomes `next`. So the task is planned for a day again, and apps
+     that keep planned days in the future out of the way show it again from then on. That is how a recurring task
+     "reappears". An empty `reminders` stays empty.
    - `status` goes back to the bucket the task was in before it was completed. An app that does not know it
      uses the default bucket of the project.
    - Checklist items in the body are unticked (`- [x]` becomes `- [ ]`). The rest of the body is kept.

@@ -1,5 +1,5 @@
 {
-  "description": "Planning keywords are compared ignoring case and hyphens (next-month, nextMonth, NEXTMONTH are the same keyword). The value is kept as written.",
+  "description": "A legacy planning keyword is compared ignoring case and hyphens (next-month, nextMonth, NEXTMONTH are the same keyword) and is resolved against today (2026-10-14) when the file is read: next month is 2026-11.",
   "context": {
     "file_stem": "planning-keywords",
     "default_project_id": "proj"
@@ -14,10 +14,9 @@
     "attachments": [],
     "body": "",
     "due_date": null,
-    "planned_date": "next-month",
+    "planned_date": "2026-11",
     "priority": "none",
     "color": null,
-    "postponed_until": null,
     "extra": {}
   }
 }

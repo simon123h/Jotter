@@ -55,9 +55,9 @@ class TaskProjector:
                 """
                 INSERT INTO tasks (
                     id, project_id, title, bucket, position, tags, attachments, filename, body,
-                    due_date, planned_date, priority, color, postponed_until, repeat, reminders, created_at, updated_at,
+                    due_date, planned_date, priority, color, repeat, reminders, created_at, updated_at,
                     file_mtime_ns, file_size
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     project_id = excluded.project_id,
                     title = excluded.title,
@@ -71,7 +71,6 @@ class TaskProjector:
                     planned_date = excluded.planned_date,
                     priority = excluded.priority,
                     color = excluded.color,
-                    postponed_until = excluded.postponed_until,
                     repeat = excluded.repeat,
                     reminders = excluded.reminders,
                     updated_at = excluded.updated_at,
@@ -80,12 +79,12 @@ class TaskProjector:
                 WHERE (
                     tasks.project_id, tasks.title, tasks.bucket, tasks.position, tasks.tags, tasks.attachments,
                     tasks.filename, tasks.body, tasks.due_date, tasks.planned_date, tasks.priority, tasks.color,
-                    tasks.postponed_until, tasks.repeat, tasks.reminders, tasks.updated_at,
+                    tasks.repeat, tasks.reminders, tasks.updated_at,
                     tasks.file_mtime_ns, tasks.file_size
                 ) IS NOT (
                     excluded.project_id, excluded.title, excluded.bucket, excluded.position, excluded.tags,
                     excluded.attachments, excluded.filename, excluded.body, excluded.due_date,
-                    excluded.planned_date, excluded.priority, excluded.color, excluded.postponed_until,
+                    excluded.planned_date, excluded.priority, excluded.color,
                     excluded.repeat, excluded.reminders, excluded.updated_at, excluded.file_mtime_ns, excluded.file_size
                 )
                 """,
@@ -103,7 +102,6 @@ class TaskProjector:
                     task.planned_date.value,
                     task.priority.value if task.priority != Priority.NONE else None,
                     task.color,
-                    task.postponed_until.value,
                     repeat_json,
                     reminders_json,
                     task.created_at,

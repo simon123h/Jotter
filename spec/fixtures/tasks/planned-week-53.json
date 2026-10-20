@@ -1,0 +1,22 @@
+{
+  "description": "2026 has 53 ISO weeks.",
+  "context": {
+    "file_stem": "planned-week-53",
+    "default_project_id": "proj"
+  },
+  "expected": {
+    "id": "planned-week-53",
+    "project_id": "proj",
+    "title": "Planned week 53",
+    "bucket": "todo",
+    "position": 1000.0,
+    "tags": [],
+    "attachments": [],
+    "body": "",
+    "due_date": null,
+    "planned_date": "2026-W53",
+    "priority": "none",
+    "color": null,
+    "extra": {}
+  }
+}

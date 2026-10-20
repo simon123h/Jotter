@@ -49,13 +49,12 @@ def _is_expired(
     created_at: str | None,
     clean_period: int | None,
     now: datetime,
-    postponed_until: str | None = None,
     repeats: bool = False,
 ) -> bool:
-    """True if a done task is older than the retention period. A recurring or still postponed task never is."""
+    """True if a done task is older than the retention period. A recurring task never is."""
     if not clean_period or clean_period <= 0 or bucket != "done":
         return False
-    if repeats or (postponed_until and postponed_until > now.astimezone().date().isoformat()):
+    if repeats:
         return False
     date_str = updated_at or created_at
     if not date_str:
@@ -191,7 +190,6 @@ class SyncApplicationService:
                             known.created_at,
                             clean_period,
                             now,
-                            known.postponed_until,
                             known.repeats,
                         ):
                             self.disk_task_repo.delete(p_id, file_path.stem)
@@ -211,7 +209,6 @@ class SyncApplicationService:
                         task.created_at,
                         clean_period,
                         now,
-                        task.postponed_until.value,
                         task.repeat is not None,
                     ):
                         self.disk_task_repo.delete(p_id, str(task.id))
