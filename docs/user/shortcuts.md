@@ -34,7 +34,6 @@ With one or more tasks selected, a key opens the matching menu of the bulk actio
 | <kbd>Shift</kbd> + <kbd>M</kbd> | **Move to project** |
 | <kbd>d</kbd> | **Due date** |
 | <kbd>s</kbd> | **Planned date** |
-| <kbd>z</kbd> | **Postpone** |
 | <kbd>c</kbd> | **Color** |
 
 ---

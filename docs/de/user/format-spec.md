@@ -28,10 +28,9 @@ tags:
 attachments:
   - design_mockup.png
 due_date: "2026-06-15"
-planned_date: thisWeek
+planned_date: 2026-W24
 priority: high
 color: blue
-postponed_until: "2026-07-09"
 created_at: "2026-06-07T12:00:00Z"
 updated_at: "2026-06-07T14:30:00Z"
 ---
@@ -64,10 +63,9 @@ Der YAML-Frontmatter-Block unterstützt die folgenden Schlüssel-Wert-Paare. All
 | `tags` | String-Array | Nein | Eine Liste von Begriffen zur Kategorisierung der Aufgabe. Tags werden automatisch kleingeschrieben. |
 | `attachments` | String-Array | Nein | Dateinamen der Dateien, die dieser Aufgabe angehängt sind. Die Dateien liegen in `<Projekt>/attachments/<Aufgaben-ID>/`. |
 | `due_date` | String | Nein | Das Fälligkeitsdatum im ISO-Format `YYYY-MM-DD` (oder `null`, wenn keines vorhanden ist). |
-| `planned_date`| String | Nein | Planungsmarker für die Wochenplanung. Unterstützte Werte: `today`, `tomorrow`, `thisWeek`, `nextWeek`, `thisMonth`, `nextMonth`, `thisYear`, `nextYear`, `someday`, `sometime` oder ein Datum `YYYY-MM-DD` (Schreibweisen mit Bindestrich wie `this-week` werden ebenfalls gelesen). |
+| `planned_date`| String | Nein | Der Tag, die Woche oder der Monat, für den du die Aufgabe planst: `YYYY-MM-DD`, eine ISO-Woche `YYYY-Www` ("irgendwann in dieser Woche") oder ein Monat `YYYY-MM`. Siehe [Aufgaben planen](./planning). Ältere Dateien können Wörter wie `thisWeek` oder ein Datum `postponed_until` enthalten; sie werden gelesen und in ein Datum umgewandelt und beim Speichern der Aufgabe weggelassen. |
 | `priority` | String | Nein | Die Priorität der Aufgabe. Unterstützte Werte: `low`, `medium`, `high`, `urgent` oder `null`. |
 | `color` | String | Nein | Der Name einer Palettenfarbe (`red`, `orange`, `yellow`, `green`, `blue`, `purple` oder `pink`), die die Aufgabenkarte einfärbt. Andere Werte, etwa ein Hex-Code aus einem anderen Werkzeug, bleiben unverändert erhalten. |
-| `postponed_until` | String | Nein | Das Datum, bis zu dem die Aufgabe aufgeschoben ist, im ISO-Format `YYYY-MM-DD` (oder `null`, wenn keines vorhanden ist). |
 | `repeat` | Mapping | Nein | Wie die Aufgabe beim Erledigen wiederkommt: `every` (eine ganze Zahl, mindestens 1), `unit` (`day`, `week`, `month` oder `year`) und `from` (`completion`, Standard, oder `due`). Siehe [Wiederkehrende Aufgaben und Erinnerungen](./recurring-and-reminders). |
 | `reminders` | Liste von Strings | Nein | Lokale Datum-Uhrzeit-Angaben `YYYY-MM-DDTHH:mm` (ohne Zeitzone), zu denen die App erinnert. |
 | `created_at` | String | Nein | ISO 8601 UTC-Zeitstempel der Erstellung (z. B. `2026-06-07T12:00:00Z`). |

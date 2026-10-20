@@ -31,7 +31,7 @@ Press and hold a task to select it, then tap more tasks. The bar at the top show
 | Tag | Adds or removes tags |
 | Priority | Sets the priority |
 | Planned | Sets the planned date |
-| More | Mark done, archive, move to another project, due date, postpone, colour, delete |
+| More | Mark done, archive, move to another project, due date, colour, delete |
 
 To move tasks without the sheet, leave them selected and open another column: the bar at the top then has a *Move here* button that puts the selected tasks at the end of the column you are looking at. In the list view every section header has the same button while tasks are selected, also on a folded one. To move a single card to a place in its column, press, hold and drag it.
 
@@ -41,7 +41,7 @@ The bar at the bottom switches the view. The columns are tabs you can swipe, or,
 
 - **Board**: one tab per column.
 - **Tags**: one tab per tag, and one for tasks without a tag.
-- **Planning**: one tab per planned date (today, tomorrow, this week, ...), and one for tasks without one.
+- **Planning**: one tab for each stretch of time ahead (today, tomorrow, the rest of this week, the rest of this month, later), a *Slipped* tab while something has slipped, and one for tasks that are not planned.
 
 Adding a task in a tab files it there: with that tag or that planned date.
 
@@ -49,13 +49,11 @@ Adding a task in a tab files it there: with that tag or that planned date.
 
 The search field understands the same query language as the desktop, for example `tag:work+urgent prio:high due:none bucket:todo`. The filter button next to it has selectors for priority, tag and due date, which write into the field and follow what you type. See [Search & Filtering](/user/searching-filtering) for the whole syntax. Words match the beginning of words in the title, notes and tags, so `sat` finds *saturation* as you type.
 
-## Hiding done, archived and postponed tasks
+## Hiding done and archived tasks, and planning ahead
 
-The ⋮ menu in the top bar hides or shows done, archived and postponed tasks, separately for each view. On the board, hiding done or archived tasks hides their columns too. Tags and Planning start with all three hidden. The postponed entry shows how many tasks it keeps out of the way.
+The ⋮ menu in the top bar hides or shows done and archived tasks, separately for each view. On the board, hiding done or archived tasks hides their columns too. Tags and Planning start with both hidden.
 
-## Postponing
-
-A task postponed to a later day stays in its column but is hidden until you switch postponed tasks on in the ⋮ menu. It then shows in its own column, marked with the day it comes back. From the selection toolbar, *More*, *Postpone* offers *Tomorrow*, *Next week*, a date, or to clear it. The task page has a *Postponed until* field. See [Postponing Tasks](/user/postponing).
+*Planned ahead* in the same menu sets how far ahead the view shows planned tasks: today, tomorrow, the end of this week, the end of this month, or everything. A task planned beyond that stays in its column but is hidden until it comes within reach, and the menu says how many are out of the way. The board and the tags start with *Today*, the planning view with *Everything*. See [Planning Tasks](/user/planning).
 
 ## Settings
 

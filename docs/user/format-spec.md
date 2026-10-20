@@ -28,10 +28,9 @@ tags:
 attachments:
   - design_mockup.png
 due_date: "2026-06-15"
-planned_date: thisWeek
+planned_date: 2026-W24
 priority: high
 color: blue
-postponed_until: "2026-07-09"
 created_at: "2026-06-07T12:00:00Z"
 updated_at: "2026-06-07T14:30:00Z"
 ---
@@ -64,10 +63,9 @@ The YAML frontmatter block supports the following key-value pairs. All key names
 | `tags` | Array of Strings | No | A list of labels categorizing this task. Tags are normalized to lowercase by Jotter's parser. |
 | `attachments` | Array of Strings | No | File names of the files attached to this task. The files are stored in `<project>/attachments/<task id>/`. |
 | `due_date` | String | No | The date the task is due, formatted in ISO standard date format `YYYY-MM-DD` (or `null` if none). |
-| `planned_date`| String | No | A relative scheduling marker used by the planning engine. Supported values: `today`, `tomorrow`, `thisWeek`, `nextWeek`, `thisMonth`, `nextMonth`, `thisYear`, `nextYear`, `someday`, `sometime`, or a `YYYY-MM-DD` date (hyphenated spellings such as `this-week` are read too). |
+| `planned_date`| String | No | The day, week or month you plan to do the task: `YYYY-MM-DD`, an ISO week `YYYY-Www` ("some day that week") or a month `YYYY-MM`. See [Planning Tasks](./planning). Older files may hold words like `thisWeek` or a `postponed_until` date; they are read and turned into a date, and dropped when the task is saved. |
 | `priority` | String | No | The task's priority level. Supported values: `low`, `medium`, `high`, `urgent`, or `null`. |
 | `color` | String | No | The name of a palette color (`red`, `orange`, `yellow`, `green`, `blue`, `purple` or `pink`) that tints the task card. Other values, such as a hex code written by another tool, are kept as they are. |
-| `postponed_until` | String | No | The date until which the task is postponed, formatted in ISO standard date format `YYYY-MM-DD` (or `null` if none). |
 | `repeat` | Mapping | No | How the task comes back when it is completed: `every` (a whole number, at least 1), `unit` (`day`, `week`, `month` or `year`) and `from` (`completion`, the default, or `due`). See [Recurring Tasks and Reminders](./recurring-and-reminders). |
 | `reminders` | List of strings | No | Local date-times `YYYY-MM-DDTHH:mm` (no time zone) at which the app reminds you. |
 | `created_at` | String | No | ISO 8601 UTC timestamp of task creation (e.g., `2026-06-07T12:00:00Z`). |

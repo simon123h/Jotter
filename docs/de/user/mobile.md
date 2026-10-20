@@ -31,7 +31,7 @@ Halte eine Aufgabe gedrückt, um sie auszuwählen, und tippe dann weitere an. Di
 | Tag | Fügt Tags hinzu oder entfernt sie |
 | Priorität | Setzt die Priorität |
 | Planung | Setzt das geplante Datum |
-| Mehr | Erledigen, archivieren, in ein anderes Projekt verschieben, Fälligkeit, zurückstellen, Farbe, löschen |
+| Mehr | Erledigen, archivieren, in ein anderes Projekt verschieben, Fälligkeit, Farbe, löschen |
 
 Um Aufgaben ohne das Auswahlfenster zu verschieben, lass sie ausgewählt und öffne eine andere Spalte: Die Leiste oben zeigt dann die Taste *Hierher*, die die ausgewählten Aufgaben ans Ende der Spalte setzt, die du gerade siehst. In der Listenansicht hat jede Abschnittskopfzeile dieselbe Taste, solange Aufgaben ausgewählt sind, auch eine zugeklappte. Um eine einzelne Karte an eine bestimmte Stelle ihrer Spalte zu setzen, halte sie gedrückt und ziehe sie.
 
@@ -41,7 +41,7 @@ Die Leiste unten wechselt die Ansicht. Die Spalten sind Tabs, zwischen denen du 
 
 - **Board**: ein Tab pro Spalte.
 - **Tags**: ein Tab pro Tag und einer für Aufgaben ohne Tag.
-- **Planung**: ein Tab pro geplantem Datum (heute, morgen, diese Woche, ...) und einer für Aufgaben ohne.
+- **Planung**: ein Tab für jede Zeitspanne voraus (heute, morgen, Rest dieser Woche, Rest dieses Monats, später), ein Tab *Verpasst*, solange etwas verpasst ist, und einer für Aufgaben ohne Planung.
 
 Eine Aufgabe, die du in einem Tab anlegst, wird dort eingeordnet: mit diesem Tag oder diesem geplanten Datum.
 
@@ -49,13 +49,11 @@ Eine Aufgabe, die du in einem Tab anlegst, wird dort eingeordnet: mit diesem Tag
 
 Das Suchfeld versteht dieselbe Abfragesprache wie der Desktop, zum Beispiel `tag:arbeit+dringend prio:high due:none bucket:todo`. Die Filtertaste daneben hat Auswahlfelder für Priorität, Tag und Fälligkeit, die ins Feld schreiben und dem folgen, was du tippst. Die ganze Syntax steht unter [Suche & Filter](/de/user/searching-filtering). Wörter passen auf den Anfang von Wörtern in Titel, Notizen und Tags, `sat` findet also schon beim Tippen *Saturation*.
 
-## Erledigte, archivierte und zurückgestellte Aufgaben ausblenden
+## Erledigte und archivierte Aufgaben ausblenden, und vorausplanen
 
-Das ⋮-Menü oben blendet erledigte, archivierte und zurückgestellte Aufgaben ein oder aus, getrennt für jede Ansicht. Auf dem Board verschwinden beim Ausblenden erledigter oder archivierter Aufgaben auch deren Spalten. Tags und Planung beginnen mit allen dreien ausgeblendet. Der Eintrag für zurückgestellte Aufgaben zeigt, wie viele er aus dem Weg hält.
+Das ⋮-Menü oben blendet erledigte und archivierte Aufgaben ein oder aus, getrennt für jede Ansicht. Auf dem Board verschwinden beim Ausblenden auch deren Spalten. Tags und Planung beginnen mit beiden ausgeblendet.
 
-## Aufgaben aufschieben
-
-Eine Aufgabe, die auf einen späteren Tag zurückgestellt ist, bleibt in ihrer Spalte, ist aber ausgeblendet, bis du zurückgestellte Aufgaben im ⋮-Menü einschaltest. Dann steht sie in ihrer Spalte, mit dem Tag markiert, an dem sie zurückkommt. In der Werkzeugleiste bietet *Mehr*, *Zurückstellen* an: *Morgen*, *Nächste Woche*, ein Datum, oder die Zurückstellung aufheben. Die Aufgabenseite hat ein Feld *Zurückgestellt bis*. Siehe [Aufgaben aufschieben](/de/user/postponing).
+*Vorausgeplant* im selben Menü legt fest, wie weit voraus die Ansicht geplante Aufgaben zeigt: heute, morgen, bis Ende der Woche, bis Ende des Monats oder alles. Eine Aufgabe, die dahinter geplant ist, bleibt in ihrer Spalte, ist aber ausgeblendet, bis sie in Reichweite kommt, und das Menü sagt, wie viele aus dem Weg sind. Board und Tags beginnen mit *Heute*, die Planungsansicht mit *Alles*. Siehe [Aufgaben planen](/de/user/planning).
 
 ## Einstellungen
 
