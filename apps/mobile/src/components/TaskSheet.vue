@@ -88,10 +88,9 @@ function commitTitle() {
     d.title = found.title;
     if (found.bucket) d.bucket = found.bucket;
     if (found.priority) d.priority = found.priority;
-    if (found.due_date !== null || found.planned_date !== null) {
-      d.due = found.due_date ?? '';
-      d.planned = found.planned_date ?? '';
-    }
+    // The keyword sets one of the two dates (a planned day, or a deadline with `!`) and leaves the other as it is
+    if (found.due_date !== null) d.due = found.due_date;
+    else if (found.planned_date !== null) d.planned = found.planned_date;
     if (found.tags.length) d.tags = [...new Set([...parseTags(d.tags), ...found.tags])].join(', ');
   }
   titleEdited.value = false;

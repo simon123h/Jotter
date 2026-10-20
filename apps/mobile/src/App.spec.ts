@@ -2372,6 +2372,23 @@ describe('smart title input', () => {
     expect(data).toContain('urgent-ish');
     expect(all('title-hint')).toHaveLength(0);
   });
+
+  it('sets only the date a keyword in the title stands for: a deadline typed with "!" leaves the plan alone', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/a.md', `---\ntitle: Write report\nstatus: todo\nposition: 1000\nplanned_date: ${isoDay(0)}\n---\n`);
+    });
+    await find('task-card').trigger('click');
+    (find('task-title').element as HTMLTextAreaElement).value = 'Write the report !1.1.2040';
+    await find('task-title').trigger('input');
+    await settle();
+    await find('task-title').trigger('change');
+    await settle();
+
+    expect(file('a')).toMatch(/due_date: ['"]?2040-01-01/);
+    expect(file('a')).toContain(`planned_date: ${isoDay(0)}`);
+    expect(file('a')).toContain('title: Write the report');
+  });
 });
 
 describe('launcher shortcuts', () => {

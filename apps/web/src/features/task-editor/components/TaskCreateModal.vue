@@ -77,6 +77,9 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 const lastMatchedKeyword = ref<string | null>(null);
+/** The date the keyword in the title set (a planned day, or a deadline with `!`), so that only that one is taken back. */
+const lastKeywordField = ref<'due' | 'planned' | null>(null);
+const dateRef = (field: 'due' | 'planned') => (field === 'due' ? dueDate : plannedDate);
 const lastMatchedPriority = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
@@ -100,6 +103,7 @@ watch(
       color.value = props.initialColor || null;
       error.value = null;
       lastMatchedKeyword.value = null;
+      lastKeywordField.value = null;
       lastMatchedPriority.value = null;
       lastExtractedTags.value = [];
       showAutocomplete.value = false;
@@ -129,15 +133,15 @@ watch([title, () => ignoredKeywords.value], ([newTitle, newIgnored]) => {
   // 1. Due & Planned Date Sync
   if (result.matchedKeyword) {
     if (result.matchedKeyword !== lastMatchedKeyword.value) {
-      dueDate.value = result.dueDate || '';
-      plannedDate.value = result.plannedDate || '';
+      // The keyword sets one of the two dates and leaves the other as it is: a date picked by hand is not wiped
+      if (lastKeywordField.value) dateRef(lastKeywordField.value).value = '';
+      lastKeywordField.value = result.dueDate ? 'due' : 'planned';
+      dateRef(lastKeywordField.value).value = (result.dueDate || result.plannedDate) ?? '';
       lastMatchedKeyword.value = result.matchedKeyword;
     }
   } else {
-    if (lastMatchedKeyword.value) {
-      dueDate.value = '';
-      plannedDate.value = '';
-    }
+    if (lastKeywordField.value) dateRef(lastKeywordField.value).value = '';
+    lastKeywordField.value = null;
     lastMatchedKeyword.value = null;
   }
 

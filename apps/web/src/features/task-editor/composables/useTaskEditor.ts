@@ -59,6 +59,8 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
   });
 
   const lastMatchedKeyword = ref<string | null>(null);
+  /** The date the keyword in the title set (a planned day, or a deadline with `!`), so that only that one is taken back. */
+  const lastKeywordField = ref<'dueDate' | 'plannedDate' | null>(null);
   const lastMatchedPriority = ref<string | null>(null);
   const lastExtractedTags = ref<string[]>([]);
 
@@ -107,6 +109,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       form.reminders = [];
     }
     lastMatchedKeyword.value = null;
+    lastKeywordField.value = null;
     lastMatchedPriority.value = null;
     lastExtractedTags.value = [];
   };
@@ -122,15 +125,15 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       // 1. Due & Planned Date Sync
       if (result.matchedKeyword) {
         if (result.matchedKeyword !== lastMatchedKeyword.value) {
-          form.dueDate = result.dueDate || '';
-          form.plannedDate = result.plannedDate || '';
+          // The keyword sets one of the two dates and leaves the other as it is: a date picked by hand is not wiped
+          if (lastKeywordField.value) form[lastKeywordField.value] = '';
+          lastKeywordField.value = result.dueDate ? 'dueDate' : 'plannedDate';
+          form[lastKeywordField.value] = (result.dueDate || result.plannedDate) ?? '';
           lastMatchedKeyword.value = result.matchedKeyword;
         }
       } else {
-        if (lastMatchedKeyword.value) {
-          form.dueDate = '';
-          form.plannedDate = '';
-        }
+        if (lastKeywordField.value) form[lastKeywordField.value] = '';
+        lastKeywordField.value = null;
         lastMatchedKeyword.value = null;
       }
 

@@ -1,5 +1,5 @@
 import { beforeAll, describe, it, expect, vi } from 'vitest';
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { useTaskEditor } from '../useTaskEditor';
 import { useToastStore } from '@/stores/toast';
@@ -90,5 +90,29 @@ describe('useTaskEditor: repeat rules and reminders', () => {
     editor.form.title = 'Call mum';
     await editor.handleSave();
     expect(toasts.toasts).toHaveLength(1); // nothing new: the plan did not change
+  });
+
+  it('sets only the date a keyword in the title stands for, and takes back only that one', async () => {
+    const { editor } = setup(createMockTask({ title: 'Call mom', planned_date: '2030-W19' }));
+    editor.isEditing.value = true;
+
+    // A deadline in the title: the plan picked by hand stays
+    editor.form.title = 'Call mom !2.1.2040';
+    await nextTick();
+    expect(editor.form.dueDate).toBe('2040-01-02');
+    expect(editor.form.plannedDate).toBe('2030-W19');
+
+    // Without the "!" it is a plan: the deadline goes, the plan is the day typed
+    editor.form.title = 'Call mom 2.1.2040';
+    await nextTick();
+    expect(editor.form.dueDate).toBe('');
+    expect(editor.form.plannedDate).toBe('2040-01-02');
+
+    // The keyword is gone: what it set goes, nothing else
+    editor.form.dueDate = '2031-03-04';
+    editor.form.title = 'Call mom';
+    await nextTick();
+    expect(editor.form.plannedDate).toBe('');
+    expect(editor.form.dueDate).toBe('2031-03-04');
   });
 });

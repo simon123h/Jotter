@@ -1,8 +1,10 @@
 interface DateRule {
   pattern: RegExp;
   getDate: (matches: RegExpExecArray) => Date;
-  isExplicit?: boolean;
 }
+
+/** `de`, `de-DE`, `de-AT`, ... */
+const isGerman = (locale: string) => locale.toLowerCase().startsWith('de');
 
 const formatDate = (date: Date): string => {
   const yyyy = date.getFullYear();
@@ -12,7 +14,7 @@ const formatDate = (date: Date): string => {
 };
 
 const getRules = (locale: string): DateRule[] => {
-  const isDe = locale === 'de';
+  const isDe = isGerman(locale);
 
   const rules: DateRule[] = [
     // 1. Explicit dates (German/European style): 21.5.2026, 21.5.26, 21.5.
@@ -39,7 +41,6 @@ const getRules = (locale: string): DateRule[] => {
           return new Date(year, month - 1, day);
         }
       },
-      isExplicit: true,
     },
     // 2. Explicit dates (US style, slash): 5/21/2026, 5/21/26, 5/21
     {
@@ -65,7 +66,6 @@ const getRules = (locale: string): DateRule[] => {
           return new Date(year, month - 1, day);
         }
       },
-      isExplicit: true,
     },
     // 3. Today / Heute
     {
@@ -142,7 +142,7 @@ const getRules = (locale: string): DateRule[] => {
 };
 
 /** The word that makes the date after it a deadline, in the language of the title: `until friday`, `bis freitag`. */
-const deadlineWord = (locale: string) => (locale === 'de' ? 'bis' : 'until');
+const deadlineWord = (locale: string) => (isGerman(locale) ? 'bis' : 'until');
 
 interface DateFound {
   rule: DateRule;

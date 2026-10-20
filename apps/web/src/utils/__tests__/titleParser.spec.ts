@@ -340,6 +340,10 @@ describe('titleParser', () => {
       expect(result.matchedKeyword).toBe('until friday');
     });
 
+    it('takes the German marker for any German locale, de-DE included', () => {
+      expect(parseDateFromTitle('Bericht bis freitag', 'de-DE').dueDate).toBe('2026-06-05');
+    });
+
     it('makes a date after "bis" a deadline in German, and leaves "until" alone there', () => {
       const result = parseDateFromTitle('Bericht abgeben bis freitag', 'de');
       expect(result.dueDate).toBe('2026-06-05');

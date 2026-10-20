@@ -50,7 +50,8 @@ const hasContent = computed(
 
 /** A deadline that has passed is the loud date: the planned one only slips. */
 const overdue = computed(
-  () => !!props.task.due_date && props.task.due_date < today() && props.task.bucket !== 'done' && props.task.bucket !== 'archive'
+  () =>
+    !!props.task.due_date && props.task.due_date.slice(0, 10) < today() && props.task.bucket !== 'done' && props.task.bucket !== 'archive'
 );
 
 const formatDate = (dateStr: string) => {
