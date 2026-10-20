@@ -112,6 +112,16 @@ describe('useTaskFilters', () => {
       expect(filters.hasActiveFilters.value).toBe(false);
     });
 
+    it('counts a planned filter as a filter, and keeps it in the address', async () => {
+      const { filters } = setup();
+      filters.applyFilters({ planned_date: '2026-11' });
+      await nextTick();
+      await nextTick();
+      expect(filters.hasActiveFilters.value).toBe(true);
+      expect(filters.searchQuery.value).toBe('planned:2026-11');
+      expect(route.query.planned_date).toBe('2026-11');
+    });
+
     it('searches title and body, ignoring case', async () => {
       const { filters } = setup();
       filters.applyFilters({ search: 'milk' });

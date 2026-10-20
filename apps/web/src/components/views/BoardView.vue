@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { HORIZONS, isBeyond, today } from '@jotter/task-filter';
+import { useHorizonApplies } from '@/composables/horizonContext';
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useMediaQuery } from '@vueuse/core';
 import { useRoute } from 'vue-router';
@@ -27,6 +28,7 @@ const projectStore = useProjectStore();
 const uiStore = useUiStore();
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
 const { hideDoneColumn, hideArchiveColumn, planningHorizon } = storeToRefs(settingsStore);
+const horizonApplies = useHorizonApplies();
 
 const isCollapsed = (bucketName: string) => {
   return (
@@ -73,7 +75,7 @@ const tasksByBucket = computed(() => {
   // A task planned beyond the horizon stays in its own column; it is only left out while the horizon is short
   const day = today();
   props.tasks.forEach((task) => {
-    if (isBeyond(task.planned_date, planningHorizon.value, day)) return;
+    if (horizonApplies.value && isBeyond(task.planned_date, planningHorizon.value, day)) return;
     const b = task.bucket;
     if (groups[b] === undefined) {
       groups[b] = [];
@@ -139,7 +141,9 @@ const onSaveColumn = async (payload: any) => {
 /** The tasks that keep a column from being deleted: the ones in it, hidden ones included. */
 const tasksInColumn = (name: string) => props.tasks.filter((task) => task.bucket === name).length;
 
-const beyondCount = computed(() => props.tasks.filter((task) => isBeyond(task.planned_date, planningHorizon.value, today())).length);
+const beyondCount = computed(() =>
+  horizonApplies.value ? props.tasks.filter((task) => isBeyond(task.planned_date, planningHorizon.value, today())).length : 0
+);
 
 const onColumnDeleted = async (name: string) => {
   bucketError.value = null;

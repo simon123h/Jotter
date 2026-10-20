@@ -24,6 +24,7 @@ import {
 import MarkdownView from './MarkdownView.vue';
 import FieldRow from './FieldRow.vue';
 import { appendChecklistItem, toggleChecklistItem } from '@jotter/checklist';
+import { useAheadNotice } from '@/composables/useAheadNotice';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -211,6 +212,8 @@ function removeReminder(index: number) {
   saveSoon();
 }
 
+const notifyAhead = useAheadNotice();
+
 async function save() {
   const current = task.value;
   if (!current || closing) return;
@@ -220,7 +223,10 @@ async function save() {
   if (d.title.trim() && d.title.trim() !== current.title) changes.title = d.title.trim();
   if ((d.priority || undefined) !== current.priority) changes.priority = d.priority || undefined;
   if ((d.due || undefined) !== current.due_date) changes.due_date = d.due || undefined;
-  if ((d.planned || undefined) !== current.planned_date) changes.planned_date = d.planned || undefined;
+  if ((d.planned || undefined) !== current.planned_date) {
+    changes.planned_date = d.planned || undefined;
+    notifyAhead(d.planned);
+  }
   const repeat = repeatOf(d);
   if (JSON.stringify(repeat ?? null) !== JSON.stringify(current.repeat ?? null)) changes.repeat = repeat;
   const reminders = [...new Set(d.reminders.filter(Boolean))].sort();

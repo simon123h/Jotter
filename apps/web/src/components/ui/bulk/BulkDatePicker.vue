@@ -30,6 +30,7 @@ const selectPreset = (preset: DatePreset) => {
     <!-- Presets -->
     <div class="grid grid-cols-2 gap-1.5">
       <button
+        data-entry
         v-for="preset in presets"
         :key="preset.id"
         @click="selectPreset(preset)"

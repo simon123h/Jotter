@@ -157,6 +157,7 @@ export const en = {
     gitEnableError: 'Could not enable Git: {message}',
     gitEnableErrorTitle: 'Git Error',
     projectCreateError: 'Failed to create project: {message}',
+    plannedAhead: 'Planned for {when}: it is hidden on the board until then. Change "Planned up to" to see it now.',
     bulkDeleteError: 'Bulk delete failed: {message}',
     bulkMoveError: 'Bulk move failed: {message}',
     bulkTagError: 'Bulk tagging failed: {message}',
@@ -223,6 +224,8 @@ export const en = {
   },
   planningHorizon: {
     label: 'Planned up to',
+    moreFound: '{count} more found, planned beyond the horizon',
+    show: 'Show',
     today: 'Today',
     tomorrow: 'Tomorrow',
     week: 'End of this week',

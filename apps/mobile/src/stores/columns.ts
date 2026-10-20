@@ -31,16 +31,17 @@ const byUrgency = (a: Task, b: Task) =>
   a.position - b.position;
 
 /** A task planned beyond the horizon stays in its own column; it is only left out while the view's horizon is short. */
-export const isHiddenIn = (task: Task, hidden: Hidden) =>
+export const isHiddenIn = (task: Task, hidden: Hidden, horizonApplies = true) =>
   (task.bucket === 'done' && hidden.done) ||
   (task.bucket === 'archive' && hidden.archive) ||
-  isBeyond(task.planned_date, hidden.horizon, today());
+  (horizonApplies && isBeyond(task.planned_date, hidden.horizon, today()));
 
 /** Tasks the tag and planning views list, most urgent first. */
-export const openTasksOf = (tasks: Task[], hidden: Hidden): Task[] => tasks.filter((task) => !isHiddenIn(task, hidden)).sort(byUrgency);
+export const openTasksOf = (tasks: Task[], hidden: Hidden, horizonApplies = true): Task[] =>
+  tasks.filter((task) => !isHiddenIn(task, hidden, horizonApplies)).sort(byUrgency);
 
 /** One column per bucket, plus one for tasks that name a bucket the project does not have. */
-export function boardColumns(buckets: Bucket[], tasks: Task[], hidden: Hidden): Column[] {
+export function boardColumns(buckets: Bucket[], tasks: Task[], hidden: Hidden, horizonApplies = true): Column[] {
   const known = new Set(buckets.map((b) => b.name));
   const cols: Column[] = buckets
     .filter((b) => !(b.name === 'done' && hidden.done) && !(b.name === 'archive' && hidden.archive))
@@ -48,9 +49,9 @@ export function boardColumns(buckets: Bucket[], tasks: Task[], hidden: Hidden): 
       key: b.name,
       title: b.title,
       bucket: b.name,
-      tasks: tasks.filter((task) => task.bucket === b.name && !isHiddenIn(task, hidden)),
+      tasks: tasks.filter((task) => task.bucket === b.name && !isHiddenIn(task, hidden, horizonApplies)),
     }));
-  const orphans = tasks.filter((task) => !known.has(task.bucket) && !isHiddenIn(task, hidden));
+  const orphans = tasks.filter((task) => !known.has(task.bucket) && !isHiddenIn(task, hidden, horizonApplies));
   if (orphans.length) cols.push({ key: '__other', title: '', bucket: null, tasks: orphans });
   return cols;
 }
@@ -95,8 +96,8 @@ export function planningColumns(open: Task[], now: Date = new Date()): Column[] 
 }
 
 /** The columns a view shows for the given tasks (already narrowed by the search filter). */
-export function columnsFor(view: View, buckets: Bucket[], tasks: Task[], hidden: Record<View, Hidden>): Column[] {
-  if (view === 'board') return boardColumns(buckets, tasks, hidden.board);
-  const open = openTasksOf(tasks, hidden[view]);
+export function columnsFor(view: View, buckets: Bucket[], tasks: Task[], hidden: Record<View, Hidden>, horizonApplies = true): Column[] {
+  if (view === 'board') return boardColumns(buckets, tasks, hidden.board, horizonApplies);
+  const open = openTasksOf(tasks, hidden[view], horizonApplies);
   return view === 'tags' ? tagColumns(open) : planningColumns(open);
 }

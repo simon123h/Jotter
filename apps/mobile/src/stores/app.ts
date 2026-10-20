@@ -1,12 +1,12 @@
 import { ref, shallowRef, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { Task, Project, Bucket } from '@jotter/vault-format';
-import { compareTitles, filterTasks, isEmptyFilter, parseQuery, type Horizon } from '@jotter/task-filter';
+import { compareTitles, filterTasks, isBeyond, isEmptyFilter, parseQuery, today, type Horizon } from '@jotter/task-filter';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { armDelay, armReminders, localDateTime } from '@/reminders';
 import { useUiStore } from '@/stores/ui';
-import { columnsFor, type Column, type Hidden, type View } from '@/stores/columns';
+import { columnsFor, isHiddenIn, type Column, type Hidden, type View } from '@/stores/columns';
 import {
   defaultHidden,
   recallCollapsed,
@@ -83,8 +83,20 @@ export const useAppStore = defineStore('app', () => {
   const visibleTasks = computed(() => filterTasks(allTasks.value, parsedFilter.value));
   const allTags = computed(() => [...new Set(allTasks.value.flatMap((t) => t.tags))].sort());
 
+  /** A query that names planned dates (`planned:2026-11`) is not cut by the horizon: whoever asks about planning wants the answer. */
+  const horizonApplies = computed(() => !parsedFilter.value.planned_date);
+
   /** The columns of the current view. */
-  const columns = computed(() => columnsFor(view.value, buckets.value, visibleTasks.value, hidden.value));
+  const columns = computed(() => columnsFor(view.value, buckets.value, visibleTasks.value, hidden.value, horizonApplies.value));
+
+  /** What a search found beyond the horizon of the view: the columns leave it out, and the strip under the app bar says so. */
+  const beyondFound = computed(() => {
+    if (!isFiltering.value || !horizonApplies.value) return 0;
+    const h = hidden.value[view.value];
+    const day = today();
+    return visibleTasks.value.filter((task) => isBeyond(task.planned_date, h.horizon, day) && !isHiddenIn(task, { ...h, horizon: 'all' }))
+      .length;
+  });
 
   function repository(): VaultRepository {
     if (!repo.value) throw new Error('Not initialised');
@@ -589,6 +601,7 @@ export const useAppStore = defineStore('app', () => {
     query,
     parsedFilter,
     isFiltering,
+    beyondFound,
     allTags,
     columns,
     unreadable,

@@ -1,6 +1,7 @@
 import { ref, reactive, watch, computed, nextTick, provide, inject, type Ref, type InjectionKey } from 'vue';
 import type { Task, Bucket, RepeatRule } from '@/types';
 import { parseTitleState, getKeywordMatches } from '@jotter/title-parser';
+import { useAheadNotice } from '@/composables/useAheadNotice';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import { sanitizeTags } from '@/utils/tagUtils';
 import { isoDay } from '@jotter/task-filter';
@@ -228,6 +229,8 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
     form.reminders.splice(index, 1);
   };
 
+  const notifyAhead = useAheadNotice();
+
   const handleSave = async (onSuccess?: (updated: Task) => void, onError?: (err: any) => void) => {
     if (!task.value) return;
 
@@ -244,6 +247,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
 
     try {
       const tagArray = sanitizeTags(form.tags);
+      const plannedBefore = task.value.planned_date || '';
 
       const updated = await patchTask(task.value, {
         title: finalTitle,
@@ -258,6 +262,8 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
         reminders: [...new Set(form.reminders.filter(Boolean))].sort(),
       });
 
+      // A plan that moved beyond the horizon hides the task: say so
+      if (form.plannedDate !== plannedBefore) notifyAhead(form.plannedDate);
       isEditing.value = false;
       if (onSuccess) {
         onSuccess(updated);

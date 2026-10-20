@@ -57,9 +57,12 @@ const rootRef = ref<HTMLElement | null>(null);
 useEventListener(window, 'keydown', (event: KeyboardEvent) => {
   if (props.menu === 'tag' || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
   if (!/^[1-9]$/.test(event.key)) return;
-  const tag = (document.activeElement as HTMLElement | null)?.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-  const entry = rootRef.value?.querySelectorAll('button')[Number(event.key) - 1];
+  // Not while something is being typed, or while a dialog is open
+  const active = document.activeElement as HTMLElement | null;
+  if (active && (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable)) return;
+  if (document.querySelector('dialog[open]')) return;
+  // The entries of the menu, not its other buttons (the apply button of a date field)
+  const entry = rootRef.value?.querySelectorAll('[data-entry]')[Number(event.key) - 1] as HTMLElement | undefined;
   if (entry) {
     event.preventDefault();
     entry.click();
@@ -81,6 +84,7 @@ defineExpose({
     <!-- Bucket Menu -->
     <div v-if="menu === 'bucket'" class="flex flex-col">
       <button
+        data-entry
         v-for="b in buckets"
         :key="b.name"
         @click="
@@ -105,6 +109,7 @@ defineExpose({
     <!-- Priority Menu -->
     <div v-if="menu === 'priority'" class="flex flex-col">
       <button
+        data-entry
         v-for="p in ['none', 'low', 'medium', 'high', 'urgent']"
         :key="p"
         @click="
@@ -156,6 +161,7 @@ defineExpose({
     <!-- Project Menu -->
     <div v-if="menu === 'project'" class="flex flex-col">
       <button
+        data-entry
         v-for="p in projects"
         :key="p.id"
         @click="
@@ -173,6 +179,7 @@ defineExpose({
     <div v-if="menu === 'color'" class="p-2">
       <div class="flex items-center gap-1.5">
         <button
+          data-entry
           @click="
             emit('set-color', null);
             emit('close');
@@ -183,6 +190,7 @@ defineExpose({
           <Slash class="w-3 h-3" />
         </button>
         <button
+          data-entry
           v-for="c in colors"
           :key="c.id"
           @click="

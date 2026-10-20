@@ -14,6 +14,7 @@ import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import PlannedSelect from '@/components/ui/PlannedSelect.vue';
+import { useAheadNotice } from '@/composables/useAheadNotice';
 import DeadlineField from '@/components/ui/DeadlineField.vue';
 import { TASK_COLORS } from '@/utils/constants';
 import { sanitizeTags } from '@/utils/tagUtils';
@@ -182,6 +183,8 @@ watch([title, () => ignoredKeywords.value], ([newTitle, newIgnored]) => {
   }
 });
 
+const notifyAhead = useAheadNotice();
+
 const handleSubmit = async () => {
   if (loading.value) return;
 
@@ -210,6 +213,7 @@ const handleSubmit = async () => {
       planned_date: plannedDate.value || undefined,
     });
 
+    notifyAhead(plannedDate.value);
     emit('success');
     emit('close');
   } catch (err: any) {

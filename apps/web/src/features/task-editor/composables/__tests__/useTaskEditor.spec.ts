@@ -2,6 +2,7 @@ import { beforeAll, describe, it, expect, vi } from 'vitest';
 import { ref } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { useTaskEditor } from '../useTaskEditor';
+import { useToastStore } from '@/stores/toast';
 import { createMockTask } from '@/__tests__/factories';
 import type { Task } from '@/types';
 
@@ -76,5 +77,18 @@ describe('useTaskEditor: repeat rules and reminders', () => {
     editor.form.plannedDate = '';
     await editor.handleSave();
     expect(patchTask.mock.calls[1][1]).toMatchObject({ planned_date: '' });
+  });
+
+  it('says so when the plan moves beyond the horizon, so the task does not seem to vanish', async () => {
+    const { editor } = setup(createMockTask({ title: 'Call mom', bucket: 'todo' }));
+    const toasts = useToastStore();
+
+    editor.form.plannedDate = '2999-01-01';
+    await editor.handleSave();
+    expect(toasts.toasts.map((t) => t.message)).toEqual([expect.stringContaining('hidden on the board')]);
+
+    editor.form.title = 'Call mum';
+    await editor.handleSave();
+    expect(toasts.toasts).toHaveLength(1); // nothing new: the plan did not change
   });
 });

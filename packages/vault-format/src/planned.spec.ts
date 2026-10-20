@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { readPlanned, weekOf, plannedStart } from '../../task-filter/planned';
+import { readPlanned, weekOf, plannedStart } from '@jotter/task-filter';
 
 // Vitest runs from packages/vault-format
 const legacy = JSON.parse(readFileSync(resolve(process.cwd(), '../../spec/fixtures/planned/legacy.json'), 'utf-8'));

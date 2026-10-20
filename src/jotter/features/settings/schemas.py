@@ -1,6 +1,11 @@
 """Pydantic schemas and DTOs for Application Settings."""
 
-from pydantic import BaseModel, ConfigDict
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, model_validator
+
+# How far ahead planned tasks are shown (spec/FORMAT.md does not know it: it is a setting of the views)
+PlanningHorizon = Literal["today", "tomorrow", "week", "month", "all"]
 
 
 class AppSettings(BaseModel):
@@ -8,7 +13,7 @@ class AppSettings(BaseModel):
 
     hideDoneColumn: bool = True
     hideArchiveColumn: bool = True
-    planningHorizon: str = "today"
+    planningHorizon: PlanningHorizon = "today"
     isSidebarOpen: bool = True
     currentTheme: str = "nordic-light"
     thresholdDays: int = 7
@@ -27,13 +32,26 @@ class AppSettings(BaseModel):
     doneCleanPeriod: int | None = None
     autoCommit: bool = True
 
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_hide_postponed(cls, data: Any) -> Any:
+        """Before the horizon there was a switch for postponed tasks: off showed everything. A value that is not a
+        horizon falls back to the default."""
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        legacy = data.pop("hidePostponedColumn", None)
+        if data.get("planningHorizon") not in ("today", "tomorrow", "week", "month", "all"):
+            data["planningHorizon"] = "all" if legacy is False else "today"
+        return data
+
 
 class SettingsUpdate(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     hideDoneColumn: bool | None = None
     hideArchiveColumn: bool | None = None
-    planningHorizon: str | None = None
+    planningHorizon: PlanningHorizon | None = None
     isSidebarOpen: bool | None = None
     currentTheme: str | None = None
     thresholdDays: int | None = None

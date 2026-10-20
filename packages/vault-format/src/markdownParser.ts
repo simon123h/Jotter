@@ -1,6 +1,6 @@
 import yaml from 'yaml';
 import type { Task, Project, Bucket, RepeatRule } from './types';
-import { isPlanningKeyword, mergePostponed, readPlanned } from '../../task-filter/planned';
+import { isPlanningKeyword, mergePostponed, readPlanned } from '@jotter/task-filter';
 
 /**
  * Reads and writes the vault format defined in spec/FORMAT.md. The Python backend implements the same format;

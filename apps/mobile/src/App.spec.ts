@@ -1961,6 +1961,29 @@ describe('planning ahead', () => {
     expect(find('board').text()).not.toContain('Later task');
   });
 
+  it('says how many tasks a search found beyond the horizon, and shows them on request', async () => {
+    await start(vault);
+    expect(find('beyond-hint').exists()).toBe(false); // nothing is searched for
+
+    await find('open-search').trigger('click');
+    await type('search-input', 'Later');
+    expect(find('board').text()).not.toContain('Later task');
+    expect(find('beyond-hint').text()).toContain('1 more found');
+
+    await find('beyond-show').trigger('click');
+    await settle();
+    expect(find('board').text()).toContain('Later task');
+    expect(find('beyond-hint').exists()).toBe(false);
+  });
+
+  it('does not cut a query that names planned dates by the horizon', async () => {
+    await start(vault);
+    await find('open-search').trigger('click');
+    await type('search-input', 'planned:2999-01-01');
+    expect(find('board').text()).toContain('Later task');
+    expect(find('beyond-hint').exists()).toBe(false);
+  });
+
   it('leaves tasks planned ahead out of the tag view until the horizon is wider', async () => {
     await start(vault);
     await find('view-tags').trigger('click');
@@ -2256,6 +2279,19 @@ describe('smart title input', () => {
     await type('quick-add-input', 'Send report until 2.1.2040');
     await submit('quick-add-input');
     expect(created('Send report')).toMatch(/due_date: ['"]?2040-01-02/);
+  });
+
+  it('says so when a new task is planned beyond the horizon, so it does not seem to vanish', async () => {
+    await start(desktopVault);
+    await find('fab').trigger('click');
+    await type('quick-add-input', 'Call mom 1.1.2040');
+    await submit('quick-add-input');
+    expect(find('toast').text()).toContain('Planned for');
+    expect(find('toast').text()).toContain('hidden here until then');
+
+    await type('quick-add-input', 'Call dad');
+    await submit('quick-add-input');
+    expect(find('toast').exists() ? find('toast').text() : '').not.toContain('Call dad');
   });
 
   it('keeps words as plain text when their chip is dismissed', async () => {

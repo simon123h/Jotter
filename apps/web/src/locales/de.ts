@@ -158,6 +158,7 @@ export const de = {
     gitEnableError: 'Git konnte nicht aktiviert werden: {message}',
     gitEnableErrorTitle: 'Git-Fehler',
     projectCreateError: 'Projekt konnte nicht erstellt werden: {message}',
+    plannedAhead: 'Geplant für {when}: Sie ist bis dahin auf dem Board ausgeblendet. Ändere "Geplant bis", um sie jetzt zu sehen.',
     bulkDeleteError: 'Massenlöschung fehlgeschlagen: {message}',
     bulkMoveError: 'Massenverschiebung fehlgeschlagen: {message}',
     bulkTagError: 'Massen-Tagging fehlgeschlagen: {message}',
@@ -224,6 +225,8 @@ export const de = {
   },
   planningHorizon: {
     label: 'Geplant bis',
+    moreFound: '{count} weitere gefunden, geplant hinter dem Horizont',
+    show: 'Anzeigen',
     today: 'Heute',
     tomorrow: 'Morgen',
     week: 'Ende dieser Woche',
