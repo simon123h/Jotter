@@ -190,7 +190,7 @@ function seedDemoData() {
         position: 3000,
         tags: ['demo'],
         attachments: [],
-        body: 'A task planned beyond the horizon stays in its own column and is hidden until then. Change *Show planned tasks up to* on the board to see it, or open the task and change the date.',
+        body: 'A task planned far ahead stays in its own column and is hidden until then. Change *Show planned tasks up to* on the board to see it, or open the task and change the date.',
         planned_date: monthStr,
         created_at: now,
         updated_at: now,

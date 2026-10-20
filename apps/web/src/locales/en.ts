@@ -224,7 +224,7 @@ export const en = {
   },
   planningHorizon: {
     label: 'Show planned tasks up to',
-    moreFound: '{count} more found, planned beyond the horizon',
+    moreFound: '{count} more found, planned further ahead',
     show: 'Show',
     today: 'Today',
     tomorrow: 'Tomorrow',

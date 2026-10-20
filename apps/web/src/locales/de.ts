@@ -226,7 +226,7 @@ export const de = {
   },
   planningHorizon: {
     label: 'Geplante Aufgaben zeigen bis',
-    moreFound: '{count} weitere gefunden, geplant hinter dem Horizont',
+    moreFound: '{count} weitere gefunden, weiter in der Zukunft geplant',
     show: 'Anzeigen',
     today: 'Heute',
     tomorrow: 'Morgen',

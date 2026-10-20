@@ -42,7 +42,7 @@ A week or a month starts on its first day: a task planned for *next week* is hid
 * **Web**: the setting *Show planned tasks up to* is in the toolbar of the board, and in the filter dialog. It applies to the board, the list, the tags and the matrix. The planning view always shows everything. The number next to it says how many tasks it keeps out of the way.
 * **Android**: the ⋮ menu has *Show planned tasks…*, for the board and the tags together. It is stored in the vault, so it is the same value as the setting on the web. The planning view looks ahead by nature and has none.
 
-**Searching and the horizon.** A query that names planned dates (`planned:2026-11`) is not cut by the horizon: you asked about planning, so you get the answer. For any other search, the tasks planned beyond the horizon stay hidden, and a line under the toolbar says *"3 more found, planned beyond the horizon"* with a button to show them. A task you have just planned beyond the horizon is announced the same way, so it does not seem to have vanished.
+**Searching and the horizon.** A query that names planned dates (`planned:2026-11`) is not cut by the horizon: you asked about planning, so you get the answer. For any other search, the tasks planned beyond the horizon stay hidden, and a line under the toolbar says *"3 more found, planned further ahead"* with a button to show them. A task you have just planned beyond the horizon is announced the same way, so it does not seem to have vanished.
 
 ---
 
