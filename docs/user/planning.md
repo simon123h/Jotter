@@ -40,7 +40,7 @@ Tasks planned a long way off would crowd the board. The **horizon** decides how 
 A week or a month starts on its first day: a task planned for *next week* is hidden by a horizon of today, and shown by a horizon of *End of this week* only once it falls within it.
 
 * **Web**: the setting *Planned up to* is in the toolbar of the board, and in the filter dialog. It applies to the board, the list, the tags and the matrix. The planning view always shows everything. The number next to it says how many tasks it keeps out of the way.
-* **Android**: the ⋮ menu has *Planned ahead*, separately for each view. The planning view looks ahead by default.
+* **Android**: the ⋮ menu has *Planned ahead*, separately for each view. The settings have *Planned tasks shown up to*, the horizon the board and the tags start with. It is stored in the vault, so it is the same value as *Planned up to* on the web. The planning view looks ahead by default.
 
 **Searching and the horizon.** A query that names planned dates (`planned:2026-11`) is not cut by the horizon: you asked about planning, so you get the answer. For any other search, the tasks planned beyond the horizon stay hidden, and a line under the toolbar says *"3 more found, planned beyond the horizon"* with a button to show them. A task you have just planned beyond the horizon is announced the same way, so it does not seem to have vanished.
 

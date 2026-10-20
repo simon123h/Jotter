@@ -23,7 +23,7 @@ const ui = useUiStore();
           "
         >
           <span class="min-w-0 flex-1">{{ t(`horizon.${horizon}` as MessageKey) }}</span>
-          <Check v-if="app.hidden[app.view].horizon === horizon" class="h-5 w-5 text-accent" />
+          <Check v-if="app.horizon === horizon" class="h-5 w-5 text-accent" />
         </button>
       </li>
     </ul>

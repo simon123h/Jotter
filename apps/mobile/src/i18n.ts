@@ -245,6 +245,9 @@ const en = {
   'theme.sakura': 'Sakura Rose',
   'theme.true-black': 'True Black',
   'settings.captureProject': 'Project for quick capture',
+  'settings.horizon': 'Planned tasks shown up to',
+  'settings.horizonHint':
+    'How far ahead the board and the tags look; tasks planned further out stay hidden. A view can have its own in the ⋮ menu. A longer horizon brings daily recurring tasks back right after you tick them off. Shared with the desktop.',
   'settings.captureNone': 'None (the project you were last in)',
   'settings.captureHint': 'Shared text and the new-task shortcut go here. The desktop app uses it for the "i" shortcut.',
   'settings.vaults': 'Manage vaults',
@@ -502,6 +505,9 @@ const de: Record<MessageKey, string> = {
   'theme.sakura': 'Sakura Rose',
   'theme.true-black': 'True Black',
   'settings.captureProject': 'Projekt für schnelles Erfassen',
+  'settings.horizon': 'Geplante Aufgaben zeigen bis',
+  'settings.horizonHint':
+    'Wie weit voraus das Board und die Tags schauen; weiter hinaus Geplantes bleibt ausgeblendet. Eine Ansicht kann im ⋮-Menü ihren eigenen haben. Ein längerer Horizont bringt tägliche wiederkehrende Aufgaben gleich nach dem Abhaken zurück. Gilt auch am Desktop.',
   'settings.captureNone': 'Keines (das zuletzt geöffnete Projekt)',
   'settings.captureHint': 'Geteilter Text und die Verknüpfung „Neue Aufgabe“ landen hier. Die Desktop-App nutzt es für das Kürzel „i“.',
   'settings.vaults': 'Vaults verwalten',

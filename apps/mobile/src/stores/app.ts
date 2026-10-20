@@ -1,7 +1,7 @@
 import { ref, shallowRef, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { Task, Project, Bucket } from '@jotter/vault-format';
-import { compareTitles, filterTasks, isBeyond, isEmptyFilter, parseQuery, today, type Horizon } from '@jotter/task-filter';
+import { compareTitles, filterTasks, isBeyond, isEmptyFilter, parseQuery, today, HORIZONS, type Horizon } from '@jotter/task-filter';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { armDelay, armReminders, localDateTime } from '@/reminders';
@@ -11,6 +11,8 @@ import {
   defaultHidden,
   recallCollapsed,
   recallHidden,
+  recallHorizons,
+  rememberHorizons,
   recallLayout,
   recallPinned,
   recallProject,
@@ -46,6 +48,19 @@ export const useAppStore = defineStore('app', () => {
   const captureProjectId = ref<string | null>(null);
   const view = ref<View>('board');
   const hidden = ref<Record<View, Hidden>>(defaultHidden());
+  /** How far ahead new views look, from the vault's settings.json (shared with the desktop). The planning view looks ahead anyway. */
+  const defaultHorizon = ref<Horizon>('today');
+  /** The horizon a view was given in the ⋮ menu; without one it follows the default. Kept on the device. */
+  const horizonOverride = ref<Record<View, Horizon | null>>({ board: null, tags: null, planning: null });
+  const horizonOf = (v: View): Horizon => horizonOverride.value[v] ?? (v === 'planning' ? 'all' : defaultHorizon.value);
+  /** What the views hide: the finished tasks of `hidden`, and those planned beyond the horizon. */
+  const hiding = computed<Record<View, Hidden>>(() => ({
+    board: { ...hidden.value.board, horizon: horizonOf('board') },
+    tags: { ...hidden.value.tags, horizon: horizonOf('tags') },
+    planning: { ...hidden.value.planning, horizon: horizonOf('planning') },
+  }));
+  /** The horizon of the view in sight. */
+  const horizon = computed(() => horizonOf(view.value));
   const layout = ref<Layout>('tabs');
   const collapsed = ref<Record<string, boolean>>({});
   const buckets = ref<Bucket[]>([]);
@@ -87,12 +102,12 @@ export const useAppStore = defineStore('app', () => {
   const horizonApplies = computed(() => !parsedFilter.value.planned_date);
 
   /** The columns of the current view. */
-  const columns = computed(() => columnsFor(view.value, buckets.value, visibleTasks.value, hidden.value, horizonApplies.value));
+  const columns = computed(() => columnsFor(view.value, buckets.value, visibleTasks.value, hiding.value, horizonApplies.value));
 
   /** What a search found beyond the horizon of the view: the columns leave it out, and the strip under the app bar says so. */
   const beyondFound = computed(() => {
     if (!isFiltering.value || !horizonApplies.value) return 0;
-    const h = hidden.value[view.value];
+    const h = hiding.value[view.value];
     const day = today();
     return visibleTasks.value.filter((task) => isBeyond(task.planned_date, h.horizon, day) && !isHiddenIn(task, { ...h, horizon: 'all' }))
       .length;
@@ -145,6 +160,8 @@ export const useAppStore = defineStore('app', () => {
     if (JSON.stringify(next.pinned) !== JSON.stringify(pinned.value)) pinned.value = next.pinned;
     if (JSON.stringify(next.order) !== JSON.stringify(projectOrder.value)) projectOrder.value = next.order;
     sortBy.value = next.sort;
+    const horizonSetting = HORIZONS.find((h) => h === settings.planningHorizon) ?? 'today';
+    if (horizonSetting !== defaultHorizon.value) defaultHorizon.value = horizonSetting;
     const capture = typeof settings.captureProjectId === 'string' && settings.captureProjectId ? settings.captureProjectId : null;
     if (capture !== captureProjectId.value) captureProjectId.value = capture;
   }
@@ -169,6 +186,7 @@ export const useAppStore = defineStore('app', () => {
     projectId.value = projects.value.find((p) => p.id === remembered && !p.archived)?.id ?? firstProject();
     view.value = await recallView(opened.id);
     hidden.value = await recallHidden(opened.id);
+    horizonOverride.value = await recallHorizons(opened.id);
     layout.value = await recallLayout();
     collapsed.value = await recallCollapsed(opened.id);
     await loadSettings(true);
@@ -261,10 +279,16 @@ export const useAppStore = defineStore('app', () => {
   }
 
   /** How far ahead the current view shows planned tasks; those planned further out are left out. */
-  function setHorizon(horizon: Horizon) {
-    hidden.value[view.value].horizon = horizon;
+  function setHorizon(next: Horizon) {
+    horizonOverride.value[view.value] = next;
     selection.value = [];
-    if (vault.value) rememberHidden(vault.value.id, hidden.value);
+    if (vault.value) rememberHorizons(vault.value.id, horizonOverride.value);
+  }
+
+  /** The horizon the board and the tags start with, for every device that opens the vault. */
+  function setDefaultHorizon(next: Horizon) {
+    defaultHorizon.value = next;
+    saveSettings({ planningHorizon: next });
   }
 
   /** Shows the columns as tabs or as one list with a section for each. */
@@ -592,7 +616,10 @@ export const useAppStore = defineStore('app', () => {
     isCollapsed,
     toggleCollapsed,
     toggleHidden,
+    horizon,
+    defaultHorizon,
     setHorizon,
+    setDefaultHorizon,
     setView,
     navVisible,
     project,

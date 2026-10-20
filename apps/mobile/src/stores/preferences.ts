@@ -29,18 +29,37 @@ export const recallHidden = async (vaultId: string): Promise<Record<View, Hidden
     for (const v of VIEWS) {
       if (typeof stored?.[v]?.done === 'boolean') hidden[v].done = stored[v].done;
       if (typeof stored?.[v]?.archive === 'boolean') hidden[v].archive = stored[v].archive;
-      const horizon = stored?.[v]?.horizon;
-      if (HORIZONS.includes(horizon)) hidden[v].horizon = horizon as Horizon;
-      // Before the horizon there was a switch for postponed tasks: on is a horizon of today, off shows everything. The
-      // planning view looks ahead, so it keeps its default.
-      else if (v !== 'planning' && typeof stored?.[v]?.postponed === 'boolean') hidden[v].horizon = stored[v].postponed ? 'today' : 'all';
     }
   } catch {
     // Unreadable: the defaults apply
   }
   return hidden;
 };
-export const rememberHidden = (vaultId: string, hidden: Record<View, Hidden>) => save(`${HIDDEN_KEY}:${vaultId}`, JSON.stringify(hidden));
+/** The horizon is not kept here: it follows the default of the vault unless a view has its own (see `recallHorizons`). */
+export const rememberHidden = (vaultId: string, hidden: Record<View, Hidden>) =>
+  save(
+    `${HIDDEN_KEY}:${vaultId}`,
+    JSON.stringify(Object.fromEntries(VIEWS.map((v) => [v, { done: hidden[v].done, archive: hidden[v].archive }])))
+  );
+
+const HORIZONS_KEY = 'jotter_lite_horizons';
+
+/** The horizons the user set for a view; a view without one follows the default of the vault. */
+export const recallHorizons = async (vaultId: string): Promise<Record<View, Horizon | null>> => {
+  const horizons: Record<View, Horizon | null> = { board: null, tags: null, planning: null };
+  try {
+    const stored = JSON.parse((await preferences.get(`${HORIZONS_KEY}:${vaultId}`)) ?? '{}');
+    for (const v of VIEWS) if (HORIZONS.includes(stored?.[v])) horizons[v] = stored[v] as Horizon;
+    // Before the horizon there was a switch for postponed tasks: off showed everything. The planning view looks ahead anyway.
+    const legacy = JSON.parse((await preferences.get(`${HIDDEN_KEY}:${vaultId}`)) ?? '{}');
+    for (const v of VIEWS) if (v !== 'planning' && horizons[v] === null && legacy?.[v]?.postponed === false) horizons[v] = 'all';
+  } catch {
+    // Unreadable: the views follow the default
+  }
+  return horizons;
+};
+export const rememberHorizons = (vaultId: string, horizons: Record<View, Horizon | null>) =>
+  save(`${HORIZONS_KEY}:${vaultId}`, JSON.stringify(horizons));
 
 export const recallView = async (vaultId: string): Promise<View> => {
   try {

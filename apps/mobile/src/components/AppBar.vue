@@ -65,9 +65,7 @@ const menuOpen = ref(false);
 const menuItem = 'flex h-12 w-full items-center gap-3 px-4 text-left text-base active:bg-line';
 
 /** How many tasks the view leaves out because they are planned beyond its horizon. */
-const beyondCount = computed(
-  () => app.allTasks.filter((task) => isBeyond(task.planned_date, app.hidden[app.view].horizon, today())).length
-);
+const beyondCount = computed(() => app.allTasks.filter((task) => isBeyond(task.planned_date, app.horizon, today())).length);
 
 const viewOptions = computed(() => [
   { id: 'done' as const, label: t('view.hideDone'), on: app.hidden[app.view].done },
@@ -188,7 +186,7 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
             <Calendar class="h-5 w-5 shrink-0 text-muted" />
             <span class="min-w-0 flex-1 truncate">{{ t('view.horizon') }}</span>
             <span class="text-sm text-muted"
-              >{{ beyondCount ? beyondCount + ' · ' : '' }}{{ t(`horizon.${app.hidden[app.view].horizon}` as MessageKey) }}</span
+              >{{ beyondCount ? beyondCount + ' · ' : '' }}{{ t(`horizon.${app.horizon}` as MessageKey) }}</span
             >
           </button>
         </div>

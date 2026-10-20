@@ -40,7 +40,7 @@ Aufgaben, die weit voraus geplant sind, würden das Board überfüllen. Der **Ho
 Eine Woche oder ein Monat beginnt an ihrem ersten Tag: Eine Aufgabe für *nächste Woche* ist bei einem Horizont von heute ausgeblendet und erscheint bei *Ende dieser Woche* erst, wenn sie hineinfällt.
 
 * **Web**: Die Einstellung *Geplant bis* steht in der Leiste des Boards und im Filterdialog. Sie gilt für Board, Liste, Tags und Matrix. Die Planungsansicht zeigt immer alles. Die Zahl daneben sagt, wie viele Aufgaben aus dem Weg sind.
-* **Android**: Das ⋮-Menü hat *Vorausgeplant*, für jede Ansicht einzeln. Die Planungsansicht schaut standardmäßig voraus.
+* **Android**: Das ⋮-Menü hat *Vorausgeplant*, für jede Ansicht einzeln. Die Einstellungen haben *Geplante Aufgaben zeigen bis*, den Horizont, mit dem Board und Tags beginnen. Er steht im Vault und ist derselbe Wert wie *Geplant bis* im Web. Die Planungsansicht schaut standardmäßig voraus.
 
 **Suchen und der Horizont.** Eine Abfrage, die geplante Daten nennt (`planned:2026-11`), wird vom Horizont nicht beschnitten: Du hast nach der Planung gefragt, also bekommst du die Antwort. Bei jeder anderen Suche bleiben Aufgaben hinter dem Horizont ausgeblendet, und eine Zeile unter der Leiste sagt *„3 weitere gefunden, geplant hinter dem Horizont“* mit einer Taste, sie zu zeigen. Eine Aufgabe, die du gerade hinter den Horizont geplant hast, wird auf dieselbe Weise gemeldet, damit sie nicht verschwunden wirkt.
 

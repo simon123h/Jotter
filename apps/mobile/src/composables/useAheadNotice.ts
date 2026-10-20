@@ -12,7 +12,7 @@ export function useAheadNotice() {
   const app = useAppStore();
   const ui = useUiStore();
   return (planned: string | null | undefined) => {
-    if (!planned || !isBeyond(planned, app.hidden[app.view].horizon, today())) return;
+    if (!planned || !isBeyond(planned, app.horizon, today())) return;
     ui.showToast(t('tasks.plannedAhead', { when: plannedLabel(planned) }));
   };
 }
