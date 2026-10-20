@@ -8,6 +8,7 @@ import { useTaskEditorContext } from '../composables/useTaskEditor';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import PlannedSelect from '@/components/ui/PlannedSelect.vue';
+import DeadlineField from '@/components/ui/DeadlineField.vue';
 import { TASK_COLORS } from '@/utils/constants';
 
 const MarkdownEditor = defineAsyncComponent(() => import('@/components/ui/MarkdownEditor.vue'));
@@ -119,14 +120,7 @@ defineExpose({
         }}</label>
         <PlannedSelect v-model="editor.form.plannedDate" />
       </div>
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.dueDateLabel') }}</label>
-        <input
-          v-model="editor.form.dueDate"
-          type="date"
-          class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-        />
-      </div>
+      <DeadlineField v-model="editor.form.dueDate" />
       <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.priorityLabel') }}</label>
         <select

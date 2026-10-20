@@ -86,6 +86,7 @@ export const de = {
     splitSubtasksConfirm:
       'Möchtest du wirklich {count} Checklisten-Eintrag/-Einträge in eigenständige Aufgabenkarten umwandeln? Sie werden aus dieser Beschreibung entfernt.',
     dueDateLabel: 'Fälligkeitsdatum',
+    addDeadline: 'Frist hinzufügen',
     plannedDateLabel: 'Geplant für',
     priorityLabel: 'Priorität',
     noBucketsFound: 'Keine Spalten gefunden',

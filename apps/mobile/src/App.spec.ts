@@ -2048,11 +2048,17 @@ describe('task page', () => {
     expect(file('a')).toContain('status: todo');
   });
 
-  it('sets a date and clears it with the button beside it', async () => {
+  it('sets a deadline after "Add deadline" and clears it with the button beside it', async () => {
     await start(desktopVault);
     await find('task-card').trigger('click');
-    expect(find('group-time').text()).toContain('Not set');
+    // The deadline is the rare date: no line for it until it is asked for
+    expect(find('task-due').exists()).toBe(false);
     expect(find('task-due-clear').exists()).toBe(false);
+
+    await find('task-add-deadline').trigger('click');
+    await settle();
+    expect(find('task-add-deadline').exists()).toBe(false);
+    expect(find('task-due').exists()).toBe(true);
 
     await find('task-due').setValue(isoDay(1));
     await settle();
@@ -2062,7 +2068,18 @@ describe('task page', () => {
     await find('task-due-clear').trigger('click');
     await settle();
     expect(file('a')).not.toContain('due_date');
-    expect(find('task-due-clear').exists()).toBe(false);
+    expect(find('task-due').exists()).toBe(false);
+    expect(find('task-add-deadline').exists()).toBe(true);
+  });
+
+  it('shows the deadline line of a task that has one', async () => {
+    await start((f) => {
+      desktopVault(f);
+      f.put('Jotter/work/a.md', `---\ntitle: Write report\nstatus: todo\nposition: 1000\ndue_date: "${isoDay(3)}"\n---\n`);
+    });
+    await find('task-card').trigger('click');
+    expect(find('task-due').exists()).toBe(true);
+    expect(find('task-add-deadline').exists()).toBe(false);
   });
 
   it('says when the task was made and last changed, and does not touch it by opening it', async () => {

@@ -85,6 +85,7 @@ export const en = {
     splitSubtasksConfirm:
       'Are you sure you want to convert {count} checklist item(s) into separate task cards? They will be removed from this description.',
     dueDateLabel: 'Due Date',
+    addDeadline: 'Add deadline',
     plannedDateLabel: 'Planned For',
     priorityLabel: 'Priority',
     noBucketsFound: 'No columns found',

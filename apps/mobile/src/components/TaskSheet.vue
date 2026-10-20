@@ -14,6 +14,7 @@ import {
   Columns3,
   Flag,
   CalendarDays,
+  CalendarPlus,
   Clock,
   Repeat,
   Bell,
@@ -113,8 +114,24 @@ const stamps = computed(() => {
 });
 const clearLabel = (name: MessageKey) => t('task.clearField', { field: t(name) });
 
+/** The deadline is the rarer date: its line shows once the task has one, or when asked for with "Add deadline". */
+const addingDeadline = ref(false);
+const showDue = computed(() => !!draft.value.due || addingDeadline.value);
+const dueInput = ref<HTMLInputElement | null>(null);
+async function addDeadline() {
+  addingDeadline.value = true;
+  await nextTick();
+  dueInput.value?.focus();
+  try {
+    dueInput.value?.showPicker?.();
+  } catch {
+    // The picker opens on the next tap where the browser does not allow it from here
+  }
+}
+
 function clearDay() {
   draft.value.due = '';
+  addingDeadline.value = false;
   saveSoon();
 }
 
@@ -530,6 +547,7 @@ async function removeAttachment(name: string) {
               </FieldRow>
 
               <FieldRow
+                v-if="showDue"
                 :icon="CalendarDays"
                 :label="t('task.due')"
                 :value="dayText(draft.due)"
@@ -537,8 +555,24 @@ async function removeAttachment(name: string) {
                 clear-testid="task-due-clear"
                 @clear="clearDay"
               >
-                <input v-model="draft.due" type="date" :aria-label="t('task.due')" data-testid="task-due" @change="saveSoon" />
+                <input
+                  ref="dueInput"
+                  v-model="draft.due"
+                  type="date"
+                  :aria-label="t('task.due')"
+                  data-testid="task-due"
+                  @change="saveSoon"
+                />
               </FieldRow>
+              <button
+                v-else
+                type="button"
+                class="flex min-h-12 w-full items-center gap-3 px-1 text-left text-base text-muted active:bg-line"
+                data-testid="task-add-deadline"
+                @click="addDeadline"
+              >
+                <CalendarPlus class="h-5 w-5 shrink-0" />{{ t('task.addDeadline') }}
+              </button>
 
               <FieldRow
                 :icon="Repeat"
