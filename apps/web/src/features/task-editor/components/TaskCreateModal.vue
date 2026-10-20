@@ -15,6 +15,7 @@ import TagInput from '@/components/ui/TagInput.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import PlannedSelect from '@/components/ui/PlannedSelect.vue';
 import { useAheadNotice } from '@/composables/useAheadNotice';
+import { keywordDates } from '@/utils/keywordDates';
 import DeadlineField from '@/components/ui/DeadlineField.vue';
 import { TASK_COLORS } from '@/utils/constants';
 import { sanitizeTags } from '@/utils/tagUtils';
@@ -77,9 +78,11 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 const lastMatchedKeyword = ref<string | null>(null);
-/** The date the keyword in the title set (a planned day, or a deadline with `!`), so that only that one is taken back. */
-const lastKeywordField = ref<'due' | 'planned' | null>(null);
-const dateRef = (field: 'due' | 'planned') => (field === 'due' ? dueDate : plannedDate);
+/** The date the keyword in the title stands for, and taking it back (see keywordDates). */
+const keywordDate = keywordDates(
+  (field) => (field === 'dueDate' ? dueDate : plannedDate).value,
+  (field, value) => ((field === 'dueDate' ? dueDate : plannedDate).value = value)
+);
 const lastMatchedPriority = ref<string | null>(null);
 const lastExtractedTags = ref<string[]>([]);
 
@@ -103,7 +106,7 @@ watch(
       color.value = props.initialColor || null;
       error.value = null;
       lastMatchedKeyword.value = null;
-      lastKeywordField.value = null;
+      keywordDate.reset();
       lastMatchedPriority.value = null;
       lastExtractedTags.value = [];
       showAutocomplete.value = false;
@@ -133,15 +136,12 @@ watch([title, () => ignoredKeywords.value], ([newTitle, newIgnored]) => {
   // 1. Due & Planned Date Sync
   if (result.matchedKeyword) {
     if (result.matchedKeyword !== lastMatchedKeyword.value) {
-      // The keyword sets one of the two dates and leaves the other as it is: a date picked by hand is not wiped
-      if (lastKeywordField.value) dateRef(lastKeywordField.value).value = '';
-      lastKeywordField.value = result.dueDate ? 'due' : 'planned';
-      dateRef(lastKeywordField.value).value = (result.dueDate || result.plannedDate) ?? '';
+      // The keyword sets one of the two dates and leaves the other as it is; going away it gives the old value back
+      keywordDate.apply(result);
       lastMatchedKeyword.value = result.matchedKeyword;
     }
   } else {
-    if (lastKeywordField.value) dateRef(lastKeywordField.value).value = '';
-    lastKeywordField.value = null;
+    keywordDate.clear();
     lastMatchedKeyword.value = null;
   }
 

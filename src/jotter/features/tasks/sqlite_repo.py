@@ -66,9 +66,9 @@ class SqliteTaskRepository:
 
         self._projector = TaskProjector(conn)
 
-    def upsert_task(self, task: Task, file_stat: tuple[int, int] | None = None) -> None:
+    def upsert_task(self, task: Task, file_stat: tuple[int, int] | None = None, today: date | None = None) -> None:
         """Indexes or updates a task in SQLite via TaskProjector."""
-        self._projector.project_task_upsert(task, file_stat)
+        self._projector.project_task_upsert(task, file_stat, today)
 
     def delete_task(self, task_id: str) -> None:
         """Deletes a task from SQLite via TaskProjector."""

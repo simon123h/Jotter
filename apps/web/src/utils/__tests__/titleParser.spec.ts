@@ -373,6 +373,12 @@ describe('titleParser', () => {
       expect(result.cleanTitle).toBe('Submit report until friday');
     });
 
+    it('keeps a dismissed date dismissed when a marker is put in front of it', () => {
+      const result = parseDateFromTitle('Submit report until friday', 'en', new Set(['friday']));
+      expect(result.matchedKeyword).toBeNull();
+      expect(result.cleanTitle).toBe('Submit report until friday');
+    });
+
     it('highlights the marker as part of the date', () => {
       const matches = getKeywordMatches('Submit report until friday', 'en', []);
       expect(matches).toEqual([{ start: 14, end: 26, text: 'until friday', type: 'date', keyword: 'until friday' }]);

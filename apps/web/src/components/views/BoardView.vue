@@ -141,8 +141,16 @@ const onSaveColumn = async (payload: any) => {
 /** The tasks that keep a column from being deleted: the ones in it, hidden ones included. */
 const tasksInColumn = (name: string) => props.tasks.filter((task) => task.bucket === name).length;
 
+/** Tasks the horizon keeps out of the way. Done and archived ones that are hidden anyway are not counted: a wider horizon would not show them. */
 const beyondCount = computed(() =>
-  horizonApplies.value ? props.tasks.filter((task) => isBeyond(task.planned_date, planningHorizon.value, today())).length : 0
+  horizonApplies.value
+    ? props.tasks.filter(
+        (task) =>
+          isBeyond(task.planned_date, planningHorizon.value, today()) &&
+          !(task.bucket === 'done' && hideDoneColumn.value) &&
+          !(task.bucket === 'archive' && hideArchiveColumn.value)
+      ).length
+    : 0
 );
 
 const onColumnDeleted = async (name: string) => {

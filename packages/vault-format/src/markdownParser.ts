@@ -178,14 +178,16 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
   const position = typeof fm.position === 'number' ? fm.position : parseFloat(String(fm.position ?? '')) || 1000.0;
 
   // A planning keyword in due_date is a planned date. A legacy postponed_until is folded into the planned date.
-  let dueDate = dateValue(fm.due_date ?? fm.dueDate);
-  const rawDue = fm.due_date ?? fm.dueDate;
-  let rawPlanned = fm.planned_date ?? fm.plannedDate;
+  // An empty value falls through to the other spelling of the key, as in the Python reader
+  const rawDue = fm.due_date || fm.dueDate;
+  let dueDate = dateValue(rawDue);
+  let rawPlanned = fm.planned_date || fm.plannedDate;
+  const rawPostponed = fm.postponed_until || fm.postponedUntil;
   if (rawDue && !dueDate && isPlanningKeyword(String(rawDue))) {
     rawPlanned = rawPlanned || rawDue;
     dueDate = null;
   }
-  const plannedDate = mergePostponed(readPlanned(rawPlanned, today), fm.postponed_until ?? fm.postponedUntil, today);
+  const plannedDate = mergePostponed(readPlanned(rawPlanned, today), rawPostponed, today);
 
   const priority = String(fm.priority ?? '')
     .trim()
@@ -204,7 +206,7 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
     body,
     due_date: dueDate ?? undefined,
     planned_date: plannedDate ?? undefined,
-    legacy_planned: isLegacyPlanned(rawPlanned, fm.postponed_until ?? fm.postponedUntil, today) || undefined,
+    legacy_planned: isLegacyPlanned(rawPlanned, rawPostponed, today) || undefined,
     priority: PRIORITIES.includes(priority) ? priority : undefined,
     color: fm.color ? String(fm.color).trim() : undefined,
     repeat: parseRepeat(fm.repeat),

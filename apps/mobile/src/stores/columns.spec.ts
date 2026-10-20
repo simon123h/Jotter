@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Bucket, Task } from '@jotter/vault-format';
 import { isoDay } from '@jotter/task-filter';
 import { columnsFor, planningColumns } from '@/stores/columns';
+import { plannedSlot, slotValue, PLAN_SLOTS } from '@jotter/task-filter';
 import { defaultHidden } from '@/stores/preferences';
 
 const task = (id: string, extra: Partial<Task> = {}): Task => ({
@@ -80,6 +81,11 @@ describe('columnsFor', () => {
     expect(ids('planned:later')).toEqual(['2026-W44', '2026-12']);
     expect(ids('planned:none')).toEqual(['undefined']);
     expect(planningColumns([planned('2026-10-14')], now).map((c) => c.key)).not.toContain('planned:slipped');
+  });
+
+  it('files every stretch of time under itself, also a month in its last days when the week reaches into the next month', () => {
+    const now = new Date(2026, 9, 29); // Thursday 29 October: the week goes on to Sunday 1 November
+    for (const slot of PLAN_SLOTS.filter((s) => s !== 'slipped')) expect(plannedSlot(slotValue(slot, now) || undefined, now)).toBe(slot);
   });
 
   it('leaves done tasks out of the tag and planning views unless they are shown', () => {

@@ -2,6 +2,7 @@ import { ref, reactive, watch, computed, nextTick, provide, inject, type Ref, ty
 import type { Task, Bucket, RepeatRule } from '@/types';
 import { parseTitleState, getKeywordMatches } from '@jotter/title-parser';
 import { useAheadNotice } from '@/composables/useAheadNotice';
+import { keywordDates } from '@/utils/keywordDates';
 import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import { sanitizeTags } from '@/utils/tagUtils';
 import { isoDay } from '@jotter/task-filter';
@@ -59,8 +60,11 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
   });
 
   const lastMatchedKeyword = ref<string | null>(null);
-  /** The date the keyword in the title set (a planned day, or a deadline with `!`), so that only that one is taken back. */
-  const lastKeywordField = ref<'dueDate' | 'plannedDate' | null>(null);
+  /** The date the keyword in the title stands for, and taking it back (see keywordDates). */
+  const keywordDate = keywordDates(
+    (field) => form[field],
+    (field, value) => (form[field] = value)
+  );
   const lastMatchedPriority = ref<string | null>(null);
   const lastExtractedTags = ref<string[]>([]);
 
@@ -109,7 +113,7 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       form.reminders = [];
     }
     lastMatchedKeyword.value = null;
-    lastKeywordField.value = null;
+    keywordDate.reset();
     lastMatchedPriority.value = null;
     lastExtractedTags.value = [];
   };
@@ -125,15 +129,12 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       // 1. Due & Planned Date Sync
       if (result.matchedKeyword) {
         if (result.matchedKeyword !== lastMatchedKeyword.value) {
-          // The keyword sets one of the two dates and leaves the other as it is: a date picked by hand is not wiped
-          if (lastKeywordField.value) form[lastKeywordField.value] = '';
-          lastKeywordField.value = result.dueDate ? 'dueDate' : 'plannedDate';
-          form[lastKeywordField.value] = (result.dueDate || result.plannedDate) ?? '';
+          // The keyword sets one of the two dates and leaves the other as it is; going away it gives the old value back
+          keywordDate.apply(result);
           lastMatchedKeyword.value = result.matchedKeyword;
         }
       } else {
-        if (lastKeywordField.value) form[lastKeywordField.value] = '';
-        lastKeywordField.value = null;
+        keywordDate.clear();
         lastMatchedKeyword.value = null;
       }
 

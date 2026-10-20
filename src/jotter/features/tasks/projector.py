@@ -38,7 +38,9 @@ class TaskProjector:
         ).fetchone()
         return None if row is None or row[0] is None else float(row[0])
 
-    def project_task_upsert(self, task: Task, file_stat: tuple[int, int] | None = None) -> None:
+    def project_task_upsert(
+        self, task: Task, file_stat: tuple[int, int] | None = None, today: date | None = None
+    ) -> None:
         """Projects a Task domain aggregate into the tasks table and FTS5 search index.
 
         An unchanged task is left untouched, so re-projecting it does not rewrite its FTS entry.
@@ -105,7 +107,7 @@ class TaskProjector:
                     task.due_date.value,
                     task.planned_date.value,
                     planned_start(task.planned_date.value).isoformat() if task.planned_date.value else None,
-                    date.today().isoformat() if task.legacy_planned else None,
+                    (today or date.today()).isoformat() if task.legacy_planned else None,
                     task.priority.value if task.priority != Priority.NONE else None,
                     task.color,
                     repeat_json,

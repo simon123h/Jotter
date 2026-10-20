@@ -234,7 +234,8 @@ class SyncApplicationService:
                         known_buckets[task.bucket] = new_b
 
                     # Index task in SQLite
-                    self.sqlite_task_repo.upsert_task(task, file_stat)
+                    # The day of this scan stamps a legacy file, the same day the shortcut above compares with
+                    self.sqlite_task_repo.upsert_task(task, file_stat, now.astimezone().date())
                     total_synced += 1
                 except Exception as e:
                     if isinstance(e, OSError):

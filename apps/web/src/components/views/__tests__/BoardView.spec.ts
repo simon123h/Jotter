@@ -168,3 +168,28 @@ describe('BoardView.vue lower pane', () => {
     wrapper.unmount();
   });
 });
+
+describe('BoardView.vue horizon', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+  });
+
+  it('counts the tasks the horizon keeps out of the way, not the finished ones that are hidden anyway', async () => {
+    const done: Bucket = { name: 'done', title: 'Done', subtitle: '', position: 3000, is_default: false };
+    const tasks = [
+      createMockTask({ id: 'a', bucket: 'todo', planned_date: '2999-01-01' }),
+      createMockTask({ id: 'b', bucket: 'todo', planned_date: '2999-01-02' }),
+      createMockTask({ id: 'c', bucket: 'done', planned_date: '2999-01-03' }),
+      createMockTask({ id: 'd', bucket: 'todo' }),
+    ];
+    const wrapper = mount(BoardView, {
+      props: { buckets: [todo, done], tasks },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    expect(wrapper.find('[data-testid="beyond-count"]').text()).toBe('2');
+    wrapper.unmount();
+  });
+});

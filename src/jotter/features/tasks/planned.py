@@ -104,12 +104,15 @@ def planned_span(value: str, today: date) -> tuple[str, str] | None:
     if text is None:
         return None
     start = planned_start(text)
-    if len(text) == 10:
-        end = start
-    elif "W" in text:
-        end = start + timedelta(days=6)
-    else:
-        end = date(start.year + start.month // 12, start.month % 12 + 1, 1) - timedelta(days=1)
+    try:
+        if len(text) == 10:
+            end = start
+        elif "W" in text:
+            end = start + timedelta(days=6)
+        else:
+            end = date(start.year + start.month // 12, start.month % 12 + 1, 1) - timedelta(days=1)
+    except (OverflowError, ValueError):
+        end = date.max  # the last month or week of year 9999 reaches past the calendar
     return start.isoformat(), end.isoformat()
 
 

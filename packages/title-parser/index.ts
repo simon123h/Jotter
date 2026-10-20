@@ -177,6 +177,12 @@ function locateDate(title: string, rule: DateRule, pattern: RegExp, locale: stri
   return { rule, match, start, end, dateStart, deadline: start !== dateStart };
 }
 
+/** Dismissed with its marker (`until friday`) or without (`friday`): either way the words stay plain text. */
+function isIgnored(title: string, found: DateFound, ignored?: Set<string>): boolean {
+  if (!ignored) return false;
+  return ignored.has(title.slice(found.start, found.end).toLowerCase()) || ignored.has(title.slice(found.dateStart, found.end).toLowerCase());
+}
+
 export function parseDateFromTitle(
   title: string,
   locale: string,
@@ -190,7 +196,7 @@ export function parseDateFromTitle(
     const found = locateDate(title, rule, rule.pattern, locale);
     if (!found) continue;
     const matchedText = title.slice(found.start, found.end);
-    if (ignoredKeywords && ignoredKeywords.has(matchedText.toLowerCase())) {
+    if (isIgnored(title, found, ignoredKeywords)) {
       continue;
     }
 
@@ -434,7 +440,7 @@ export function getKeywordMatches(title: string, locale: string, bucketNames: st
     while ((found = locateDate(title, rule, rulePattern, locale)) !== null) {
       const text = title.slice(found.start, found.end);
       const keyword = text.toLowerCase();
-      if (ignoredKeywords && ignoredKeywords.has(keyword)) {
+      if (isIgnored(title, found, ignoredKeywords)) {
         continue;
       }
       if (!hasOverlap(found.start, found.end)) {

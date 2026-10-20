@@ -198,7 +198,9 @@ export function plannedSlot(value: string | null | undefined, now: Date = new Da
   if (to < day) return 'slipped';
   if (from === to && from === day) return 'today';
   if (from === to && from === localDay(now, 1)) return 'tomorrow';
-  if (to <= horizonEnd('week', day)!) return 'week';
+  // A month plan is "some day this month" even in the last days of it, when the week reaches past the end of the month
+  const isMonth = canonicalPlanned(value!)?.length === 7;
+  if (!isMonth && to <= horizonEnd('week', day)!) return 'week';
   if (to <= horizonEnd('month', day)!) return 'month';
   return 'later';
 }

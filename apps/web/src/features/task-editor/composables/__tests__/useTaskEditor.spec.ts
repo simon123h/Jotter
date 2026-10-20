@@ -108,11 +108,11 @@ describe('useTaskEditor: repeat rules and reminders', () => {
     expect(editor.form.dueDate).toBe('');
     expect(editor.form.plannedDate).toBe('2040-01-02');
 
-    // The keyword is gone: what it set goes, nothing else
+    // The keyword is gone: the plan picked by hand comes back, and the deadline set by hand stays
     editor.form.dueDate = '2031-03-04';
     editor.form.title = 'Call mom';
     await nextTick();
-    expect(editor.form.plannedDate).toBe('');
+    expect(editor.form.plannedDate).toBe('2030-W19');
     expect(editor.form.dueDate).toBe('2031-03-04');
   });
 });
