@@ -8,7 +8,8 @@ import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
 import { useSelectionStore } from '@/stores/selection';
 import { storeToRefs } from 'pinia';
-import { useTasksWithoutPostponed } from '@/composables/useTasksWithoutPostponed';
+import { useTasksWithinHorizon } from '@/composables/useTasksWithinHorizon';
+import { plannedLabel } from '@/utils/planned';
 
 const { t, locale, tBucket } = useI18n();
 const route = useRoute();
@@ -43,7 +44,7 @@ const emit = defineEmits<{
   (e: 'toggle-select', task: Task): void;
 }>();
 
-const shownTasks = useTasksWithoutPostponed(() => props.tasks);
+const shownTasks = useTasksWithinHorizon(() => props.tasks);
 
 const fetchViewTasks = async () => {
   if (!activeProjectId.value) return;
@@ -269,7 +270,7 @@ const getBucketTitle = (name: string) => {
             </td>
             <td class="px-4 py-2.5 text-center text-xs font-semibold">
               <span v-if="task.planned_date" class="text-theme-accent/80">
-                {{ t('plannedDateOptions.' + task.planned_date) }}
+                {{ plannedLabel(task.planned_date, t, locale) }}
               </span>
               <span v-else class="text-theme-text-muted opacity-50">-</span>
             </td>

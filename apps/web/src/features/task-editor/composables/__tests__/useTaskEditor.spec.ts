@@ -66,15 +66,15 @@ describe('useTaskEditor: repeat rules and reminders', () => {
     expect(editor.form.reminders).toEqual([]);
   });
 
-  it('keeps the postponement when another column is picked, and ends it when the date is cleared', async () => {
-    const { editor, patchTask } = setup(createMockTask({ title: 'Water plants', bucket: 'todo', postponed_until: '2030-05-08' }));
+  it('keeps the planned date when another column is picked, and ends it when the date is cleared', async () => {
+    const { editor, patchTask } = setup(createMockTask({ title: 'Water plants', bucket: 'todo', planned_date: '2030-W19' }));
 
     editor.form.bucket = 'in-progress';
     await editor.handleSave();
-    expect(patchTask.mock.calls[0][1]).toMatchObject({ bucket: 'in-progress', postponed_until: '2030-05-08' });
+    expect(patchTask.mock.calls[0][1]).toMatchObject({ bucket: 'in-progress', planned_date: '2030-W19' });
 
-    editor.form.postponedUntil = '';
+    editor.form.plannedDate = '';
     await editor.handleSave();
-    expect(patchTask.mock.calls[1][1]).toMatchObject({ postponed_until: '' });
+    expect(patchTask.mock.calls[1][1]).toMatchObject({ planned_date: '' });
   });
 });

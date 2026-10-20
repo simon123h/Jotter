@@ -6,6 +6,7 @@ import type { Task } from '@/types';
 import { repeatLabel } from '@/utils/repeat';
 import TaskChecklist from './TaskChecklist.vue';
 import TaskAttachments from './TaskAttachments.vue';
+import { plannedLabel } from '@/utils/planned';
 
 defineProps<{
   task: Task;
@@ -23,7 +24,7 @@ const emit = defineEmits<{
   (e: 'preview-image', filename: string): void;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const attachmentsRef = ref<InstanceType<typeof TaskAttachments> | null>(null);
 
 const formatTimestamp = (isoString?: string | null): string => {
@@ -87,13 +88,7 @@ defineExpose({
         <div v-if="task.planned_date" class="flex items-center gap-1.5 text-xs">
           <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.plannedLabel') }}</span>
           <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-            {{ t('plannedDateOptions.' + task.planned_date) }}
-          </span>
-        </div>
-        <div v-if="task.postponed_until" class="flex items-center gap-1.5 text-xs">
-          <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.postponedUntilLabel') }}</span>
-          <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-            {{ new Date(task.postponed_until).toLocaleDateString() }}
+            {{ plannedLabel(task.planned_date, t, locale) }}
           </span>
         </div>
         <div v-if="task.repeat" class="flex items-center gap-1.5 text-xs" data-testid="detail-repeat">

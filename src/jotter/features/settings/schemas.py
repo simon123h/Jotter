@@ -8,7 +8,7 @@ class AppSettings(BaseModel):
 
     hideDoneColumn: bool = True
     hideArchiveColumn: bool = True
-    hidePostponedColumn: bool = True
+    planningHorizon: str = "today"
     isSidebarOpen: bool = True
     currentTheme: str = "nordic-light"
     thresholdDays: int = 7
@@ -33,7 +33,7 @@ class SettingsUpdate(BaseModel):
 
     hideDoneColumn: bool | None = None
     hideArchiveColumn: bool | None = None
-    hidePostponedColumn: bool | None = None
+    planningHorizon: str | None = None
     isSidebarOpen: bool | None = None
     currentTheme: str | None = None
     thresholdDays: int | None = None

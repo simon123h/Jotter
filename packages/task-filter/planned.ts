@@ -143,3 +143,65 @@ export function isBeyond(planned: string | null | undefined, horizon: Horizon, t
   const start = planned ? plannedStart(planned) : null;
   return end !== null && start !== null && start > end;
 }
+
+/** What the planned date menus offer. Each stands for a day, a week or a month, written into the file when it is picked. */
+export const PLANNED_PRESETS = ['today', 'tomorrow', 'thisWeek', 'nextWeek', 'thisMonth', 'nextMonth'] as const;
+export type PlannedPreset = (typeof PLANNED_PRESETS)[number];
+
+const localDay = (now: Date, offset = 0) =>
+  formatDay(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + offset)));
+
+/** The planned value a preset stands for on a day: a day, an ISO week (`2026-W43`) or a month (`2026-10`). */
+export function plannedFor(preset: PlannedPreset, now: Date = new Date()): string {
+  const day = localDay(now);
+  switch (preset) {
+    case 'today':
+      return day;
+    case 'tomorrow':
+      return localDay(now, 1);
+    case 'thisWeek':
+      return weekOf(day);
+    case 'nextWeek':
+      return weekOf(localDay(now, 7));
+    case 'thisMonth':
+      return monthOf(day);
+    case 'nextMonth':
+      return monthOf(formatDay(new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1))));
+  }
+}
+
+/** The stretches of time a planning view groups by, in order. */
+export const PLAN_SLOTS = ['slipped', 'today', 'tomorrow', 'week', 'month', 'later', 'none'] as const;
+export type PlanSlot = (typeof PLAN_SLOTS)[number];
+
+/**
+ * The stretch of time a planned value belongs to, by the last day it covers: a day that has passed or a week or month
+ * that is over has slipped, the current week is "week", the current month "month".
+ */
+export function plannedSlot(value: string | null | undefined, now: Date = new Date()): PlanSlot {
+  const day = localDay(now);
+  const span = value ? plannedSpan(value, day) : null;
+  if (!span) return 'none';
+  const [from, to] = span;
+  if (to < day) return 'slipped';
+  if (from === to && from === day) return 'today';
+  if (from === to && from === localDay(now, 1)) return 'tomorrow';
+  if (to <= horizonEnd('week', day)!) return 'week';
+  if (to <= horizonEnd('month', day)!) return 'month';
+  return 'later';
+}
+
+/** The planned value for a task made or dropped in a stretch of time. Empty for none. */
+export function slotValue(slot: PlanSlot, now: Date = new Date()): string {
+  const preset: Record<PlanSlot, PlannedPreset | null> = {
+    slipped: 'today',
+    today: 'today',
+    tomorrow: 'tomorrow',
+    week: 'thisWeek',
+    month: 'thisMonth',
+    later: 'nextMonth',
+    none: null,
+  };
+  const found = preset[slot];
+  return found ? plannedFor(found, now) : '';
+}

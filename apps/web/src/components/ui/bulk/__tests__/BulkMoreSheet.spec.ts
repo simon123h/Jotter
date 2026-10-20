@@ -16,16 +16,16 @@ describe('BulkMoreSheet.vue', () => {
     expect(document.body.querySelector('.grid')).toBeNull();
   });
 
-  it('lists all nine actions when open', () => {
+  it('lists all eight actions when open', () => {
     mountSheet(true);
-    expect(sheetButtons()).toHaveLength(9);
+    expect(sheetButtons()).toHaveLength(8);
   });
 
   it('emits menu for menu-backed actions', async () => {
     const wrapper = mountSheet(true);
     findByText('Priority')?.click();
-    findByText('Postpone')?.click();
-    expect(wrapper.emitted('menu')).toEqual([['priority'], ['postponedDate']]);
+    findByText('Due')?.click();
+    expect(wrapper.emitted('menu')).toEqual([['priority'], ['dueDate']]);
   });
 
   it('emits plain events for archive, consolidate and select-all', async () => {

@@ -1,7 +1,6 @@
 import type { Task, Bucket } from '@jotter/vault-format';
 import { t } from '@/i18n';
-import { isBeyond, today, type Horizon } from '@jotter/task-filter';
-import { PLAN_SLOTS, plannedSlot, slotValue, type PlanSlot } from '@/planned';
+import { PLAN_SLOTS, isBeyond, plannedSlot, slotValue, today, type Horizon, type PlanSlot } from '@jotter/task-filter';
 
 /** How the tabs group the tasks: by column of the board, by tag, or by planned date. */
 export type View = 'board' | 'tags' | 'planning';

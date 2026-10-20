@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isPostponed } from '@jotter/task-filter';
+import { HORIZONS, isBeyond, today } from '@jotter/task-filter';
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useMediaQuery } from '@vueuse/core';
 import { useRoute } from 'vue-router';
@@ -26,7 +26,7 @@ const toast = useToast();
 const projectStore = useProjectStore();
 const uiStore = useUiStore();
 const activeProjectId = computed(() => (route.params.projectId as string) || '');
-const { hideDoneColumn, hideArchiveColumn, hidePostponedColumn } = storeToRefs(settingsStore);
+const { hideDoneColumn, hideArchiveColumn, planningHorizon } = storeToRefs(settingsStore);
 
 const isCollapsed = (bucketName: string) => {
   return (
@@ -70,9 +70,10 @@ const tasksByBucket = computed(() => {
     groups[b.name] = [];
   });
 
-  // A postponed task stays in its own column; it is only left out while postponed tasks are hidden
+  // A task planned beyond the horizon stays in its own column; it is only left out while the horizon is short
+  const day = today();
   props.tasks.forEach((task) => {
-    if (hidePostponedColumn.value && isPostponed(task)) return;
+    if (isBeyond(task.planned_date, planningHorizon.value, day)) return;
     const b = task.bucket;
     if (groups[b] === undefined) {
       groups[b] = [];
@@ -135,10 +136,10 @@ const onSaveColumn = async (payload: any) => {
   emit('refresh');
 };
 
-/** The tasks that keep a column from being deleted: the ones in it, hidden postponed ones included. */
+/** The tasks that keep a column from being deleted: the ones in it, hidden ones included. */
 const tasksInColumn = (name: string) => props.tasks.filter((task) => task.bucket === name).length;
 
-const postponedCount = computed(() => props.tasks.filter((task) => isPostponed(task)).length);
+const beyondCount = computed(() => props.tasks.filter((task) => isBeyond(task.planned_date, planningHorizon.value, today())).length);
 
 const onColumnDeleted = async (name: string) => {
   bucketError.value = null;
@@ -389,18 +390,19 @@ useBoardNavigation({
               <span class="font-semibold">{{ t('archiveBucket.hide') }}</span>
             </label>
 
-            <!-- hide postponed tasks check -->
+            <!-- how far ahead planned tasks are shown -->
             <label
-              class="flex items-center gap-2 px-3 py-2.5 select-none cursor-pointer hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
+              class="flex items-center gap-2 px-3 py-2.5 select-none hover:bg-theme-column/20 hover:text-theme-text-main transition-all"
             >
-              <input
-                type="checkbox"
-                :checked="settingsStore.hidePostponedColumn"
-                @change="settingsStore.hidePostponedColumn = ($event.target as HTMLInputElement).checked"
-                class="rounded text-theme-primary focus:ring-theme-ring cursor-pointer"
-              />
-              <span class="font-semibold">{{ t('postponedBucket.hide') }}</span>
-              <span v-if="postponedCount" class="text-theme-text-muted" data-testid="postponed-count">{{ postponedCount }}</span>
+              <span class="font-semibold">{{ t('planningHorizon.label') }}</span>
+              <select
+                v-model="settingsStore.planningHorizon"
+                class="rounded bg-transparent text-theme-text-main focus:ring-theme-ring cursor-pointer"
+                data-testid="planning-horizon"
+              >
+                <option v-for="horizon in HORIZONS" :key="horizon" :value="horizon">{{ t('planningHorizon.' + horizon) }}</option>
+              </select>
+              <span v-if="beyondCount" class="text-theme-text-muted" data-testid="beyond-count">{{ beyondCount }}</span>
             </label>
           </div>
         </div>

@@ -2,7 +2,7 @@
 import { ref, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { X, SlidersHorizontal, Calendar, Tag, Trash2, Check } from '@lucide/vue';
-import { isoDay } from '@jotter/task-filter';
+import { HORIZONS, isoDay, type Horizon } from '@jotter/task-filter';
 import { useI18n } from '@/composables/useI18n';
 import { useSettingsStore } from '@/stores/settings';
 import { useProjectStore } from '@/stores/project';
@@ -49,7 +49,7 @@ const updatedAfter = ref('');
 const updatedBefore = ref('');
 const hideDoneColumnLocal = ref(false);
 const hideArchiveColumnLocal = ref(false);
-const hidePostponedColumnLocal = ref(false);
+const planningHorizonLocal = ref<Horizon>('today');
 
 // Watch for isOpen changes to call showModal() / close()
 watch(
@@ -99,7 +99,7 @@ watch(
       updatedBefore.value = filters.updated_before || '';
       hideDoneColumnLocal.value = settingsStore.hideDoneColumn;
       hideArchiveColumnLocal.value = settingsStore.hideArchiveColumn;
-      hidePostponedColumnLocal.value = settingsStore.hidePostponedColumn;
+      planningHorizonLocal.value = settingsStore.planningHorizon;
     }
   },
   { immediate: true }
@@ -137,7 +137,7 @@ const handleClear = () => {
   updatedBefore.value = '';
   hideDoneColumnLocal.value = true;
   hideArchiveColumnLocal.value = true;
-  hidePostponedColumnLocal.value = true;
+  planningHorizonLocal.value = 'today';
 };
 
 const handleApply = () => {
@@ -162,7 +162,7 @@ const handleApply = () => {
 
   settingsStore.hideDoneColumn = hideDoneColumnLocal.value;
   settingsStore.hideArchiveColumn = hideArchiveColumnLocal.value;
-  settingsStore.hidePostponedColumn = hidePostponedColumnLocal.value;
+  settingsStore.planningHorizon = planningHorizonLocal.value;
 
   emit('apply', filters);
   emit('close');
@@ -463,10 +463,16 @@ const handleApply = () => {
               <span>{{ t('archiveBucket.hide') }}</span>
             </label>
             <label
-              class="flex items-center gap-2 px-3 py-2 mt-2 rounded border border-theme-border/50 bg-theme-card/30 hover:bg-theme-column/30 transition-all cursor-pointer text-xs text-theme-text-main w-full"
+              class="flex items-center gap-2 px-3 py-2 mt-2 rounded border border-theme-border/50 bg-theme-card/30 transition-all text-xs text-theme-text-main w-full"
             >
-              <input id="hide-postponed-column-checkbox" type="checkbox" v-model="hidePostponedColumnLocal" class="accent-theme-primary" />
-              <span>{{ t('postponedBucket.hide') }}</span>
+              <span>{{ t('planningHorizon.label') }}</span>
+              <select
+                id="planning-horizon-select"
+                v-model="planningHorizonLocal"
+                class="ml-auto bg-transparent text-theme-text-main cursor-pointer"
+              >
+                <option v-for="horizon in HORIZONS" :key="horizon" :value="horizon">{{ t('planningHorizon.' + horizon) }}</option>
+              </select>
             </label>
           </div>
         </div>

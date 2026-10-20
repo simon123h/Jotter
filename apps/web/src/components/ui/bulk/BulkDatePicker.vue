@@ -18,7 +18,7 @@ const { t } = useI18n();
 const customDate = ref('');
 
 const selectPreset = (preset: DatePreset) => {
-  emit('select', preset.offsetDays === null ? '' : isoDay(preset.offsetDays));
+  emit('select', preset.value ?? (preset.offsetDays === null ? '' : isoDay(preset.offsetDays)));
 };
 </script>
 

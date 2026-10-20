@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useTasksWithoutPostponed } from '@/composables/useTasksWithoutPostponed';
+import { plannedFor } from '@jotter/task-filter';
+import { useTasksWithinHorizon } from '@/composables/useTasksWithinHorizon';
 import { ref, onMounted, computed, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -61,9 +62,9 @@ const isGlobalView = computed(() => !!route.meta.isGlobal);
 // Filter state & logic (read-only query sync; MainLayout manages router query state)
 const { filteredTasks } = useTaskFilters(tasks, { syncRoute: false });
 
-// Select all picks what the view shows: the planning view shows postponed tasks, the others may hide them
-const withoutPostponed = useTasksWithoutPostponed(() => filteredTasks.value);
-const selectableTasks = computed(() => (String(route.name).startsWith('time') ? filteredTasks.value : withoutPostponed.value));
+// Select all picks what the view shows: the planning view shows tasks planned far ahead, the others leave them out
+const withinHorizon = useTasksWithinHorizon(() => filteredTasks.value);
+const selectableTasks = computed(() => (String(route.name).startsWith('time') ? filteredTasks.value : withinHorizon.value));
 
 const displayedBuckets = computed(() => {
   const list = [...buckets.value];
@@ -172,7 +173,6 @@ const BULK_MENU_KEYS: { key: string; shiftKey?: boolean; menu: Exclude<BulkMenu,
   { key: 'm', menu: 'bucket' },
   { key: 'd', menu: 'dueDate' },
   { key: 's', menu: 'planned' },
-  { key: 'z', menu: 'postponedDate' },
   { key: 'c', menu: 'color' },
   { key: 'm', shiftKey: true, menu: 'project' },
 ];
@@ -194,7 +194,7 @@ useKeyboardShortcuts([
       modalStore.openTaskCreate(defCol?.name || 'todo', {
         priority: 'urgent',
         color: 'red',
-        planned: 'today',
+        planned: plannedFor('today'),
       });
     },
   },
@@ -346,19 +346,6 @@ const handleBulkSetDueDate = async (date: string) => {
     await fetchAllData();
   } catch (err: any) {
     toast.error(t('toasts.bulkDueDateError', { message: err.message || err }));
-  }
-};
-
-const handleBulkSetPostponedDate = async (date: string) => {
-  const ids = Array.from(selectedIds.value);
-  try {
-    for (const id of ids) {
-      const task = tasks.value.find((t) => t.id === id);
-      if (task) await updateTask(task.project_id, id, { postponed_until: date });
-    }
-    await fetchAllData();
-  } catch (err: any) {
-    toast.error(t('toasts.bulkPostponeError', { message: err.message || err }));
   }
 };
 
@@ -517,7 +504,6 @@ const handleBulkConsolidate = async () => {
         @set-due-date="handleBulkSetDueDate"
         @move-project="handleBulkMoveProject"
         @set-color="handleBulkSetColor"
-        @set-postponed-date="handleBulkSetPostponedDate"
       />
 
       <!-- MODAL ROUTER VIEW (Task Detail nested in layout) -->

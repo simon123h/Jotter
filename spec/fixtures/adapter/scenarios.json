@@ -40,7 +40,8 @@
         { "op": "createTask", "args": [{ "$ref": "project.id" }, { "title": "Later", "bucket": "todo" }], "save": "task" },
         { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "planned_date": "2031-W19" }], "match": { "bucket": "todo", "planned_date": "2031-W19" } },
         { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "planned_date": "2031-05-04" }], "match": { "planned_date": "2031-05-04" } },
-        { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "planned_date": "" }], "match": { "bucket": "todo", "planned_date": null } }
+        { "op": "updateTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }, { "planned_date": "" }], "match": { "bucket": "todo" } },
+        { "op": "getTask", "args": [{ "$ref": "project.id" }, { "$ref": "task.id" }], "absent": ["planned_date"] }
       ]
     },
     {

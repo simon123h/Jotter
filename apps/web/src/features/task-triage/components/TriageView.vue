@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { plannedFor } from '@jotter/task-filter';
 import { ref, toRef } from 'vue';
 import { Sparkles, Keyboard } from '@lucide/vue';
 import type { Task, Bucket } from '@/types';
@@ -69,10 +70,9 @@ useKeyboardShortcuts(
     { key: '3', callback: () => patchCurrentTask({ priority: 'medium' }) },
     { key: '4', callback: () => patchCurrentTask({ priority: 'low' }) },
     { key: '0', callback: () => patchCurrentTask({ priority: 'none' }) },
-    { key: 't', callback: () => patchCurrentTask({ planned_date: 'today' }) },
-    { key: 'o', callback: () => patchCurrentTask({ planned_date: 'tomorrow' }) },
-    { key: 'w', callback: () => patchCurrentTask({ planned_date: 'thisWeek' }) },
-    { key: 's', callback: () => patchCurrentTask({ planned_date: 'sometime' }) },
+    { key: 't', callback: () => patchCurrentTask({ planned_date: plannedFor('today') }) },
+    { key: 'o', callback: () => patchCurrentTask({ planned_date: plannedFor('tomorrow') }) },
+    { key: 'w', callback: () => patchCurrentTask({ planned_date: plannedFor('thisWeek') }) },
     { key: 'u', callback: () => patchCurrentTask({ planned_date: '' }) },
     { key: 'c', callback: cycleColor },
     { key: 'v', callback: markTaskDone },

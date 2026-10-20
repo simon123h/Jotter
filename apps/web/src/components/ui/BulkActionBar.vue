@@ -13,7 +13,6 @@ import {
   FolderOpen,
   Calendar,
   Palette,
-  Hourglass,
   ListCollapse,
   MoreHorizontal,
 } from '@lucide/vue';
@@ -48,7 +47,6 @@ const emit = defineEmits<{
   (e: 'set-due-date', date: string): void;
   (e: 'move-project', projectId: string): void;
   (e: 'set-color', color: string | null): void;
-  (e: 'set-postponed-date', date: string): void;
 }>();
 
 const activeMenu = ref<BulkMenu>('none');
@@ -108,7 +106,6 @@ defineExpose({
         @set-due-date="(date) => emit('set-due-date', date)"
         @move-project="(projectId) => emit('move-project', projectId)"
         @set-color="(color) => emit('set-color', color)"
-        @set-postponed-date="(date) => emit('set-postponed-date', date)"
       />
 
       <!-- Main Action Bar (Desktop + Mobile Compact) -->
@@ -241,14 +238,6 @@ defineExpose({
             :title="t('bulkActions.setDueDate')"
           >
             <Calendar class="w-4.5 h-4.5" />
-          </button>
-
-          <button
-            @click="toggleMenu('postponedDate')"
-            class="p-2 text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/40 rounded-full transition-all cursor-pointer"
-            :title="t('bulkActions.postpone') || 'Postpone'"
-          >
-            <Hourglass class="w-4.5 h-4.5" />
           </button>
 
           <button

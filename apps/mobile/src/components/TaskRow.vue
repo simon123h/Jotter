@@ -6,7 +6,8 @@ import { t, type MessageKey } from '@/i18n';
 import { dueInfo } from '@/dates';
 import { checklistProgress } from '@jotter/checklist';
 import { domainOf, taskUrl } from '@jotter/links';
-import { plannedLabel, plannedSlot } from '@/planned';
+import { plannedSlot } from '@jotter/task-filter';
+import { plannedLabel } from '@/planned';
 import { repeatLabel } from '@/repeat';
 import { colorHex } from '@/taskColors';
 

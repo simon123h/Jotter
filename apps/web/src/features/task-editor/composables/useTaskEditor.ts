@@ -15,7 +15,6 @@ export interface TaskEditorForm {
   plannedDate: string;
   priority: string;
   color: string | null;
-  postponedUntil: string;
   /** '' for never, a unit for daily, weekly, ..., or 'custom' (then `repeatEvery` and `repeatUnit` apply). */
   repeatKind: string;
   repeatUnit: string;
@@ -51,7 +50,6 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
     plannedDate: '',
     priority: '',
     color: null,
-    postponedUntil: '',
     repeatKind: '',
     repeatUnit: '',
     repeatEvery: 1,
@@ -86,7 +84,6 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       form.plannedDate = taskVal.planned_date || '';
       form.priority = taskVal.priority || '';
       form.color = taskVal.color || null;
-      form.postponedUntil = taskVal.postponed_until || '';
       form.repeatKind = taskVal.repeat ? (taskVal.repeat.every === 1 ? taskVal.repeat.unit : 'custom') : '';
       form.repeatUnit = taskVal.repeat?.unit ?? '';
       form.repeatEvery = taskVal.repeat?.every ?? 1;
@@ -102,7 +99,6 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
       form.plannedDate = '';
       form.priority = '';
       form.color = null;
-      form.postponedUntil = '';
       form.repeatKind = '';
       form.repeatUnit = '';
       form.repeatEvery = 1;
@@ -258,7 +254,6 @@ export function useTaskEditor({ task, buckets, locale, patchTask, titleInput }: 
         planned_date: form.plannedDate,
         priority: form.priority,
         color: form.color,
-        postponed_until: form.postponedUntil,
         repeat: repeatOf(form),
         reminders: [...new Set(form.reminders.filter(Boolean))].sort(),
       });

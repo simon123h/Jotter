@@ -7,6 +7,7 @@ import { useI18n } from '@/composables/useI18n';
 import TagInput from '@/components/ui/TagInput.vue';
 import { TRIAGE_COLORS, PRIORITY_OPTIONS } from '@/utils/constants';
 import { sanitizeTags } from '@/utils/tagUtils';
+import { plannedLabel } from '@/utils/planned';
 
 const props = defineProps<{
   task: Task;
@@ -24,7 +25,7 @@ const emit = defineEmits<{
   (e: 'prev'): void;
 }>();
 
-const { t, tBucket } = useI18n();
+const { t, tBucket, locale } = useI18n();
 
 // Highlight card colors configuration
 const colorsList = TRIAGE_COLORS;
@@ -164,7 +165,7 @@ defineExpose({
           class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-theme-accent/10 border border-theme-accent/20 text-theme-accent shadow-sm"
         >
           <Clock class="w-3 h-3 text-theme-accent" />
-          {{ t('plannedDateOptions.' + task.planned_date) }}
+          {{ plannedLabel(task.planned_date, t, locale) }}
         </span>
         <span
           v-if="task.due_date"

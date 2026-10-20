@@ -72,8 +72,8 @@ describe('BoardView.vue deleting a column', () => {
     wrapper.unmount();
   });
 
-  it('counts the tasks of a column that sit postponed in the Postponed column, so that the delete button is off', async () => {
-    const postponed = createMockTask({ id: 'p', project_id: 'work', bucket: 'review', postponed_until: '2999-01-01' });
+  it('counts the tasks of a column that are planned beyond the horizon, so that the delete button is off', async () => {
+    const postponed = createMockTask({ id: 'p', project_id: 'work', bucket: 'review', planned_date: '2999-01-01' });
     const wrapper = await openEditor({ buckets: [todo, review], tasks: [postponed] });
 
     expect(wrapper.findComponent(ColumnEditModal).props('tasksCount')).toBe(1);

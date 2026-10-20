@@ -13,6 +13,7 @@ import { useTaskAutocomplete } from '@/composables/useTaskAutocomplete';
 import KeywordHighlightInput from '@/components/ui/KeywordHighlightInput.vue';
 import TagInput from '@/components/ui/TagInput.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
+import PlannedSelect from '@/components/ui/PlannedSelect.vue';
 import { TASK_COLORS } from '@/utils/constants';
 import { sanitizeTags } from '@/utils/tagUtils';
 
@@ -314,18 +315,7 @@ const handleSubmit = async () => {
           <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
             t('form.plannedDateLabel') || 'Planned'
           }}</label>
-          <select
-            v-model="plannedDate"
-            class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-          >
-            <option value="">{{ t('plannedDateOptions.none') }}</option>
-            <option value="today">{{ t('plannedDateOptions.today') }}</option>
-            <option value="tomorrow">{{ t('plannedDateOptions.tomorrow') }}</option>
-            <option value="thisWeek">{{ t('plannedDateOptions.thisWeek') }}</option>
-            <option value="thisMonth">{{ t('plannedDateOptions.thisMonth') }}</option>
-            <option value="thisYear">{{ t('plannedDateOptions.thisYear') }}</option>
-            <option value="sometime">{{ t('plannedDateOptions.sometime') }}</option>
-          </select>
+          <PlannedSelect v-model="plannedDate" />
         </div>
       </div>
 

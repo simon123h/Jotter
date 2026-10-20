@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Calendar, Clock, Paperclip, Hourglass, Box, Repeat, Bell, Link } from '@lucide/vue';
-import { isPostponed } from '@jotter/task-filter';
+import { Calendar, Clock, Paperclip, Box, Repeat, Bell, Link } from '@lucide/vue';
 import { domainOf, taskUrl } from '@jotter/links';
 import { repeatLabel } from '@/utils/repeat';
+import { plannedLabel } from '@/utils/planned';
 import type { Task, Timeblock } from '@/types';
 import type { ChecklistStats } from '@/utils/checklist';
 import { useI18n } from '@/composables/useI18n';
@@ -28,9 +28,6 @@ const emit = defineEmits<{
 const { t, locale } = useI18n();
 const settingsStore = useSettingsStore();
 
-/** Only a date still ahead is shown: once it has passed, the task is back and the date means nothing. */
-const postponedUntil = computed(() => (isPostponed(props.task) ? props.task.postponed_until : null));
-
 /** The address in the title or the notes: the task is a bookmark, and the card links to it. */
 const url = computed(() => taskUrl(props.task));
 const domain = computed(() => (url.value ? domainOf(url.value) : null));
@@ -42,7 +39,6 @@ const hasContent = computed(
       props.task.due_date ||
       props.task.planned_date ||
       props.task.priority ||
-      postponedUntil.value ||
       props.task.repeat ||
       (props.task.reminders && props.task.reminders.length) ||
       (props.task.attachments && props.task.attachments.length) ||
@@ -118,16 +114,10 @@ const getPriorityClasses = (prio: string) => {
     <div
       v-if="task.planned_date"
       class="flex items-center gap-1 text-theme-accent/80"
-      :title="'Planned: ' + t('plannedDateOptions.' + task.planned_date)"
+      :title="'Planned: ' + plannedLabel(task.planned_date, t, locale)"
     >
       <Clock class="w-3 h-3" />
-      <span :class="{ 'text-[10px]': compact }">{{ t('plannedDateOptions.' + task.planned_date) }}</span>
-    </div>
-
-    <!-- Postponed date -->
-    <div v-if="postponedUntil" class="flex items-center gap-1 text-yellow-500/80" :title="'Postponed Until: ' + formatDate(postponedUntil)">
-      <Hourglass :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0" />
-      <span :class="{ 'text-[10px]': compact }">{{ formatDate(postponedUntil) }}</span>
+      <span :class="{ 'text-[10px]': compact }">{{ plannedLabel(task.planned_date, t, locale) }}</span>
     </div>
 
     <!-- Repeat rule and reminders -->

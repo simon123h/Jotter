@@ -1,3 +1,4 @@
+import { plannedFor } from '@jotter/task-filter';
 import { useDialog } from '@/composables/useDialog';
 import { afterEach, beforeAll, describe, it, expect, vi, beforeEach } from 'vitest';
 import { flushPromises, mount, enableAutoUnmount } from '@vue/test-utils';
@@ -183,17 +184,17 @@ describe('TriageView.vue', () => {
     // Dispatch keydown 't' on window (Plan for Today)
     const eventT = new KeyboardEvent('keydown', { key: 't' });
     window.dispatchEvent(eventT);
-    expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { planned_date: 'today' });
+    expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { planned_date: plannedFor('today') });
 
     // Dispatch keydown 'w' on window (Plan for This Week)
     const eventW = new KeyboardEvent('keydown', { key: 'w' });
     window.dispatchEvent(eventW);
-    expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { planned_date: 'thisWeek' });
+    expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { planned_date: plannedFor('thisWeek') });
 
-    // Dispatch keydown 's' on window (Plan for Sometime)
-    const eventS = new KeyboardEvent('keydown', { key: 's' });
-    window.dispatchEvent(eventS);
-    expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { planned_date: 'sometime' });
+    // Dispatch keydown 'u' on window (Not planned)
+    const eventU = new KeyboardEvent('keydown', { key: 'u' });
+    window.dispatchEvent(eventU);
+    expect(updateTask).toHaveBeenCalledWith('proj-1', 'task-1', { planned_date: '' });
   });
 
   it('completes the task when pressing key v', async () => {

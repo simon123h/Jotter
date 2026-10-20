@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import { Flag, Clock, FolderOpen, Slash } from '@lucide/vue';
+import { Flag, FolderOpen, Slash } from '@lucide/vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Bucket, Project } from '@/types';
 import BulkDatePicker from './BulkDatePicker.vue';
+import { plannedChoices } from '@/utils/planned';
 import BulkTagMenu from './BulkTagMenu.vue';
 import type { BulkMenu, DatePreset } from './types';
 
@@ -24,7 +25,6 @@ const emit = defineEmits<{
   (e: 'set-due-date', date: string): void;
   (e: 'move-project', projectId: string): void;
   (e: 'set-color', color: string | null): void;
-  (e: 'set-postponed-date', date: string): void;
 }>();
 
 const { t, tBucket } = useI18n();
@@ -47,10 +47,9 @@ const dueDatePresets = computed<DatePreset[]>(() => [
   { id: 'clear', label: t('bulkActions.dueDateClear') || 'Clear Due Date', offsetDays: null },
 ]);
 
-const postponedPresets = computed<DatePreset[]>(() => [
-  { id: 'tomorrow', label: t('bulkActions.postponedTomorrow') || 'Tomorrow', offsetDays: 1 },
-  { id: 'nextWeek', label: t('bulkActions.postponedNextWeek') || 'Next Week', offsetDays: 7 },
-  { id: 'clear', label: t('bulkActions.postponedClear') || 'Clear Postponement', offsetDays: null, wide: true },
+const plannedPresets = computed<DatePreset[]>(() => [
+  ...plannedChoices().map(({ preset, value }) => ({ id: preset, label: t('plannedDateOptions.' + preset), offsetDays: null, value })),
+  { id: 'none', label: t('plannedDateOptions.none'), offsetDays: null, value: '', wide: true },
 ]);
 
 // The number keys 1-9 pick the entry in that position, so a menu opened by its hotkey works without the mouse.
@@ -129,20 +128,17 @@ defineExpose({
     </div>
 
     <!-- Planned Menu -->
-    <div v-if="menu === 'planned'" class="flex flex-col">
-      <button
-        v-for="p in ['', 'today', 'tomorrow', 'thisWeek', 'thisMonth', 'sometime']"
-        :key="p"
-        @click="
-          emit('set-planned', p);
+    <BulkDatePicker
+      v-if="menu === 'planned'"
+      :title="t('bulkActions.planFor')"
+      :presets="plannedPresets"
+      @select="
+        (value) => {
+          emit('set-planned', value);
           emit('close');
-        "
-        class="flex items-center gap-2 px-3 py-2 hover:bg-theme-column rounded text-sm text-theme-text-main transition-colors text-left cursor-pointer"
-      >
-        <Clock class="w-3.5 h-3.5 text-theme-text-muted" />
-        {{ p === '' ? t('plannedDateOptions.none') : t('plannedDateOptions.' + p) }}
-      </button>
-    </div>
+        }
+      "
+    />
 
     <!-- Due Date Menu -->
     <BulkDatePicker
@@ -198,18 +194,5 @@ defineExpose({
         ></button>
       </div>
     </div>
-
-    <!-- Postponed Date Menu -->
-    <BulkDatePicker
-      v-if="menu === 'postponedDate'"
-      :title="t('bulkActions.postpone') || 'Postpone'"
-      :presets="postponedPresets"
-      @select="
-        (date) => {
-          emit('set-postponed-date', date);
-          emit('close');
-        }
-      "
-    />
   </div>
 </template>

@@ -39,9 +39,9 @@ describe('DemoStorageAdapter', () => {
     expect(links.filter((t) => taskUrl(t)).length).toBeGreaterThanOrEqual(3);
     expect(duplicateOf('https://www.obsidian.md/?utm_source=x', links)?.title).toContain('Obsidian');
 
-    // A postponed task in its own column, a column with a limit, and nothing of the archived project in the "all" view
+    // A task planned far ahead in its own column, a column with a limit, and nothing of the archived project in the "all" view
     const demo = await adapter.getTasks('demo-project');
-    expect(demo.find((t) => t.postponed_until)?.bucket).toBe('todo');
+    expect(demo.find((t) => t.planned_date?.startsWith('20') && t.title.includes('planned for next month'))?.bucket).toBe('todo');
     expect((await adapter.getBuckets('demo-project')).find((b) => b.name === 'in-progress')?.max_tasks).toBe(3);
     expect((await adapter.getAllTasks()).some((t) => t.project_id === 'summer-trip')).toBe(false);
   });

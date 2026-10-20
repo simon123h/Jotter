@@ -239,11 +239,12 @@ describe('TaskCard.vue', () => {
     expect(wrapper.text()).toContain('Morning Focus');
   });
 
-  it('shows the postponed date only while it is still ahead', () => {
-    const postponed = (date: string) =>
-      mount(TaskCard, { ...mountOptions, props: { task: createMockTask({ ...mockTask, postponed_until: date }) } });
+  it('shows the planned date as a day, a week or a month', () => {
+    const planned = (date: string) =>
+      mount(TaskCard, { ...mountOptions, props: { task: createMockTask({ ...mockTask, planned_date: date }) } });
 
-    expect(postponed('2999-01-31').find('[title^="Postponed Until"]').exists()).toBe(true);
-    expect(postponed('2000-01-31').find('[title^="Postponed Until"]').exists()).toBe(false);
+    expect(planned('2999-01-31').find('[title^="Planned"]').exists()).toBe(true);
+    expect(planned('2999-W05').find('[title^="Planned"]').text()).toContain('Week 5');
+    expect(planned('2999-02').find('[title^="Planned"]').text()).toContain('February 2999');
   });
 });
