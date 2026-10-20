@@ -76,6 +76,8 @@ class DiskTaskRepository:
 
         safe_slug = re.sub(r"[^\w\-.]", "_", str(task.id))
         atomic_write(path, content, encoding="utf-8", prefix=f".{safe_slug}_", suffix=".tmp")
+        # What is written is in the new form: the file no longer holds a planning keyword the index must read again
+        task.legacy_planned = False
 
     def delete(self, project_id: str, task_id: str) -> None:
         path = self.get_task_file_path(project_id, task_id)

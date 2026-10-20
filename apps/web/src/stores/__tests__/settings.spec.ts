@@ -59,6 +59,19 @@ describe('Settings Store', () => {
     expect(store.projectOrder).toEqual(['project-2', 'project-1']);
   });
 
+  it('reads the old switch for postponed tasks as a horizon when none is stored (the static demo keeps its settings in the browser)', async () => {
+    const { getSettings } = await import('@/api');
+    // The store loads its settings when it is made
+    vi.mocked(getSettings).mockResolvedValueOnce({ hidePostponedColumn: false } as any);
+    const store = useSettingsStore();
+    await vi.waitFor(() => expect(store.planningHorizon).toBe('all'));
+    expect((store as any).hidePostponedColumn).toBeUndefined();
+
+    vi.mocked(getSettings).mockResolvedValueOnce({ hidePostponedColumn: false, planningHorizon: 'week' } as any);
+    await store.loadSettings();
+    expect(store.planningHorizon).toBe('week');
+  });
+
   it('drops obsolete auto-commit interval settings on load', async () => {
     const { getSettings } = await import('@/api');
     vi.mocked(getSettings).mockResolvedValueOnce({ autoSyncInterval: 30, autoCommitInterval: 60 } as any);

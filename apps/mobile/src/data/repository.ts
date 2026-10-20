@@ -230,9 +230,10 @@ export class VaultRepository {
       // A file with a planning keyword is read again on a new day: the day it stands for moves on with the calendar
       if (row && row.size === entry.size && row.mtime === entry.mtime && (!row.legacy_day || row.legacy_day === today())) continue;
       try {
-        const task = parseTaskMarkdown(await this.fs.readText(`${dir}/${entry.name}`), id, entry.name);
+        const day = today(); // the same day resolves the old words and stamps the row
+        const task = parseTaskMarkdown(await this.fs.readText(`${dir}/${entry.name}`), id, entry.name, day);
         if (row && row.id !== task.id) await db.tasks.delete([id, row.id]);
-        await db.tasks.put({ ...task, legacy_day: task.legacy_planned ? today() : undefined, file, size: entry.size, mtime: entry.mtime });
+        await db.tasks.put({ ...task, legacy_day: task.legacy_planned ? day : undefined, file, size: entry.size, mtime: entry.mtime });
         result.read++;
         result.changed = true;
       } catch {

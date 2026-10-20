@@ -1991,6 +1991,17 @@ describe('planning ahead', () => {
     expect(find('beyond-hint').exists()).toBe(false);
   });
 
+  it('counts nothing as hidden while a query names planned dates', async () => {
+    await start(vault);
+    await find('open-search').trigger('click');
+    await type('search-input', 'planned:2999-01-01');
+    await find('close-search').trigger('click');
+    await settle();
+    await find('open-search').trigger('click');
+    await type('search-input', 'planned:2999-01-01');
+    expect(useAppStore().beyondCount).toBe(0);
+  });
+
   it('does not cut a query that names planned dates by the horizon', async () => {
     await start(vault);
     await find('open-search').trigger('click');

@@ -102,6 +102,7 @@ export const useAppStore = defineStore('app', () => {
 
   /** How many tasks the view leaves out because they are planned beyond its horizon (not the finished ones it hides anyway). */
   const beyondCount = computed(() => {
+    if (!horizonApplies.value) return 0; // a query that names planned dates is not cut by the horizon
     const h = hiding.value[view.value];
     const day = today();
     return allTasks.value.filter((task) => isBeyond(task.planned_date, h.horizon, day) && !isHiddenIn(task, { ...h, horizon: 'all' }))

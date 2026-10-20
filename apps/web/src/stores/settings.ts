@@ -58,7 +58,12 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!state.projectOrder) state.projectOrder = [];
       if (!state.language) state.language = '';
       if (!state.tagColors) state.tagColors = {};
-      if (!HORIZONS.includes(state.planningHorizon)) state.planningHorizon = 'today';
+      // Before the horizon there was a switch for postponed tasks: off showed everything. The backend turns it into a horizon;
+      // the static demo keeps whatever was stored in the browser
+      if (!HORIZONS.includes(settings.planningHorizon)) {
+        state.planningHorizon = (settings as unknown as Record<string, unknown>).hidePostponedColumn === false ? 'all' : 'today';
+      }
+      delete (state as unknown as Record<string, unknown>).hidePostponedColumn;
 
       const startHour = state.timeblockStartHour ?? 6;
       state.timeblockStartHour = startHour;

@@ -29,7 +29,7 @@ describe('DemoStorageAdapter', () => {
     expect(all.length).toBe(perProject.length + 1);
   });
 
-  it('starts with projects that show links, postponing and archiving', async () => {
+  it('starts with projects that show links, planning ahead and archiving', async () => {
     const projects = await adapter.getProjects();
     expect(projects.map((p) => p.id)).toEqual(['demo-project', 'reading-list', 'summer-trip']);
     expect(projects.filter((p) => p.archived).map((p) => p.id)).toEqual(['summer-trip']);

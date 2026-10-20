@@ -9,7 +9,7 @@ from jotter.features.buckets.service import BucketApplicationService
 from jotter.features.projects.schemas import ProjectCreate, ProjectUpdate
 from jotter.features.projects.service import ProjectApplicationService
 from jotter.features.sync.service import SyncApplicationService
-from jotter.features.tasks.schemas import TaskCreate
+from jotter.features.tasks.schemas import TaskCreate, TaskUpdate
 from jotter.features.tasks.service import TaskApplicationService
 from jotter.shared.db import create_sqlite_connection
 
@@ -877,3 +877,19 @@ def test_a_file_with_a_planning_keyword_is_read_again_on_a_new_day(temp_dir, tes
     conn.commit()
     sync_svc.sync_db_only()
     assert {t.id: t.planned_date for t in task_svc.get_tasks("proj")} == {"k": tomorrow, "p": "2000-01-01"}
+
+
+def test_saving_a_task_that_was_read_from_a_keyword_file_clears_the_flag(temp_dir, test_env):
+    conn = create_sqlite_connection(str(Path(temp_dir) / "tasks.db"))
+    task_svc = TaskApplicationService.from_data_dir(temp_dir, conn)
+    sync_svc = SyncApplicationService.from_data_dir(temp_dir, conn)
+    proj_dir = Path(temp_dir) / "proj"
+    proj_dir.mkdir(parents=True, exist_ok=True)
+    (proj_dir / "k.md").write_text("---\ntitle: Keyword\nplanned_date: tomorrow\n---\n", encoding="utf-8")
+    sync_svc.sync_db_only()
+    assert conn.execute("SELECT legacy_day FROM tasks WHERE id = 'k'").fetchone()[0] is not None
+
+    task_svc.update_task("proj", "k", TaskUpdate(title="Renamed"))
+
+    assert conn.execute("SELECT legacy_day FROM tasks WHERE id = 'k'").fetchone()[0] is None
+    assert "planned_date" in (proj_dir / "k.md").read_text(encoding="utf-8")

@@ -1,7 +1,7 @@
 # Jotter (mobile)
 
 The mobile app with Jotter's core feature set: vaults, projects, buckets and tasks, attachments, board, tag and planning
-views, the desktop's search language, pinned projects and postponing. See [ADR 0017](../../docs/developer/adr/0017-mobile-app.md)
+views, the desktop's search language, pinned projects and planning ahead (a horizon for planned tasks). See [ADR 0017](../../docs/developer/adr/0017-mobile-app.md)
 for scope and decisions, [the user guide](../../docs/user/mobile.md) for how it is used.
 
 App id `io.github.simon123h.jotter_lite`. It reads and writes vaults through
