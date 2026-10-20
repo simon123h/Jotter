@@ -23,10 +23,16 @@ export class VaultDb extends Dexie {
 
   constructor(name: string) {
     super(name);
-    this.version(1).stores({
+    const stores = {
       tasks: '[project_id+id], [project_id+file], project_id, bucket, *tags',
       projects: 'id',
       buckets: '[project_id+name], project_id',
-    });
+    };
+    this.version(1).stores(stores);
+    // The planned date changed shape (a day, a week or a month, no keywords, no postponed_until): rows read by the older
+    // parser are dropped, so that the next scan reads every file again.
+    this.version(2)
+      .stores(stores)
+      .upgrade((tx) => tx.table('tasks').clear());
   }
 }
