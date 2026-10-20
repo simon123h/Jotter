@@ -25,7 +25,6 @@ export interface NewTask {
   tags?: string[];
   due_date?: string;
   planned_date?: string;
-  postponed_until?: string;
   priority?: string;
   color?: string | null;
 }
@@ -350,7 +349,7 @@ export class VaultRepository {
       .equals(projectId)
       .filter((t) => t.bucket === name)
       .count();
-    if (inUse > 0) throw new Error(`${inUse} task(s) are still in this column, postponed ones included. Move or delete them first`);
+    if (inUse > 0) throw new Error(`${inUse} task(s) are still in this column. Move or delete them first`);
     await db.buckets.delete([projectId, name]);
     await this.persistManifest(projectId);
   }
@@ -456,7 +455,6 @@ export class VaultRepository {
       body: input.body ?? '',
       due_date: input.due_date,
       planned_date: input.planned_date,
-      postponed_until: input.postponed_until,
       priority: input.priority,
       color: input.color ?? undefined,
       created_at: now,

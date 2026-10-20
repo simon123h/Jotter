@@ -1,4 +1,5 @@
 import { capacitorKeyValue as preferences } from '@/data/keyValue';
+import { HORIZONS, type Horizon } from '@jotter/task-filter';
 import { VIEWS, type Hidden, type View } from '@/stores/columns';
 
 /**
@@ -16,9 +17,9 @@ const COLLAPSED_KEY = 'jotter_lite_collapsed';
 const save = (key: string, value: string) => void preferences.set(key, value).catch(() => undefined);
 
 export const defaultHidden = (): Record<View, Hidden> => ({
-  board: { done: false, archive: false, postponed: true },
-  tags: { done: true, archive: true, postponed: true },
-  planning: { done: true, archive: true, postponed: true },
+  board: { done: false, archive: false, horizon: 'today' },
+  tags: { done: true, archive: true, horizon: 'today' },
+  planning: { done: true, archive: true, horizon: 'all' },
 });
 
 export const recallHidden = async (vaultId: string): Promise<Record<View, Hidden>> => {
@@ -28,7 +29,11 @@ export const recallHidden = async (vaultId: string): Promise<Record<View, Hidden
     for (const v of VIEWS) {
       if (typeof stored?.[v]?.done === 'boolean') hidden[v].done = stored[v].done;
       if (typeof stored?.[v]?.archive === 'boolean') hidden[v].archive = stored[v].archive;
-      if (typeof stored?.[v]?.postponed === 'boolean') hidden[v].postponed = stored[v].postponed;
+      const horizon = stored?.[v]?.horizon;
+      if (HORIZONS.includes(horizon)) hidden[v].horizon = horizon as Horizon;
+      // Before the horizon there was a switch for postponed tasks: on is a horizon of today, off shows everything. The
+      // planning view looks ahead, so it keeps its default.
+      else if (v !== 'planning' && typeof stored?.[v]?.postponed === 'boolean') hidden[v].horizon = stored[v].postponed ? 'today' : 'all';
     }
   } catch {
     // Unreadable: the defaults apply

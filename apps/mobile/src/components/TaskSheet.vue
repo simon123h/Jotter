@@ -15,7 +15,6 @@ import {
   Flag,
   CalendarDays,
   Clock,
-  Hourglass,
   Repeat,
   Bell,
   Tag,
@@ -29,7 +28,7 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { useTaskActions } from '@/composables/useTaskActions';
 import { TASK_COLORS, colorHex } from '@/taskColors';
-import { PLANNED_CHOICES, plannedLabel } from '@/planned';
+import { PLANNED_PRESETS, plannedFor, plannedLabel } from '@/planned';
 import { REPEAT_UNITS, repeatLabel } from '@/repeat';
 import { dueInfo, stampDay } from '@/dates';
 import { ensureReminderPermission } from '@/reminders';
@@ -62,7 +61,6 @@ const draft = ref({
   priority: initial?.priority ?? '',
   due: initial?.due_date ?? '',
   planned: initial?.planned_date ?? '',
-  postponed: initial?.postponed_until ?? '',
   repeatKind: initial?.repeat ? (initial.repeat.every === 1 ? initial.repeat.unit : 'custom') : '',
   repeatUnit: initial?.repeat?.unit ?? '',
   repeatEvery: initial?.repeat?.every ?? 1,
@@ -114,8 +112,40 @@ const stamps = computed(() => {
 });
 const clearLabel = (name: MessageKey) => t('task.clearField', { field: t(name) });
 
-function clearDay(which: 'due' | 'postponed') {
-  draft.value[which] = '';
+function clearDay() {
+  draft.value.due = '';
+  saveSoon();
+}
+
+/** The planned menu: the weeks and months as they are today, and a day to pick. A value from elsewhere stays selectable. */
+const plannedOptions = computed(() => PLANNED_PRESETS.map((p) => plannedFor(p)));
+const pickingDay = ref(false);
+const isDay = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+const plannedChoice = computed({
+  get: () => (pickingDay.value ? '__day' : draft.value.planned),
+  set: (value: string) => {
+    pickingDay.value = value === '__day';
+    if (!pickingDay.value) {
+      draft.value.planned = value;
+      saveSoon();
+    }
+  },
+});
+/** The day field shows while a day is being picked, or when the task is planned for a day the menu does not offer. */
+const showPlannedDay = computed(
+  () => pickingDay.value || (isDay(draft.value.planned) && !plannedOptions.value.includes(draft.value.planned))
+);
+const plannedDay = computed({
+  get: () => (isDay(draft.value.planned) ? draft.value.planned : ''),
+  set: (value: string) => {
+    pickingDay.value = false;
+    draft.value.planned = value;
+    saveSoon();
+  },
+});
+function clearPlanned() {
+  pickingDay.value = false;
+  draft.value.planned = '';
   saveSoon();
 }
 
@@ -173,7 +203,6 @@ async function save() {
   if ((d.priority || undefined) !== current.priority) changes.priority = d.priority || undefined;
   if ((d.due || undefined) !== current.due_date) changes.due_date = d.due || undefined;
   if ((d.planned || undefined) !== current.planned_date) changes.planned_date = d.planned || undefined;
-  if ((d.postponed || undefined) !== current.postponed_until) changes.postponed_until = d.postponed || undefined;
   const repeat = repeatOf(d);
   if (JSON.stringify(repeat ?? null) !== JSON.stringify(current.repeat ?? null)) changes.repeat = repeat;
   const reminders = [...new Set(d.reminders.filter(Boolean))].sort();
@@ -483,37 +512,31 @@ async function removeAttachment(name: string) {
                 :value="dayText(draft.due)"
                 :clear-label="clearLabel('task.due')"
                 clear-testid="task-due-clear"
-                @clear="clearDay('due')"
+                @clear="clearDay"
               >
                 <input v-model="draft.due" type="date" :aria-label="t('task.due')" data-testid="task-due" @change="saveSoon" />
               </FieldRow>
 
-              <FieldRow :icon="Clock" :label="t('task.planned')" :value="draft.planned ? plannedLabel(draft.planned) : t('planned.none')">
-                <select v-model="draft.planned" :aria-label="t('task.planned')" data-testid="task-planned" @change="saveSoon">
+              <FieldRow
+                :icon="Clock"
+                :label="t('task.planned')"
+                :value="draft.planned ? plannedLabel(draft.planned) : t('planned.none')"
+                :clear-label="draft.planned ? clearLabel('task.planned') : undefined"
+                clear-testid="task-planned-clear"
+                @clear="clearPlanned"
+              >
+                <select v-model="plannedChoice" :aria-label="t('task.planned')" data-testid="task-planned">
                   <option value="">{{ t('planned.none') }}</option>
-                  <option v-for="p in PLANNED_CHOICES" :key="p" :value="p">{{ plannedLabel(p) }}</option>
-                  <!-- A value another tool wrote (next week, a date, ...) stays selectable and is kept -->
-                  <option v-if="draft.planned && !PLANNED_CHOICES.some((p) => p === draft.planned)" :value="draft.planned">
+                  <option v-for="value in plannedOptions" :key="value" :value="value">{{ plannedLabel(value) }}</option>
+                  <option value="__day">{{ t('planned.pickDay') }}</option>
+                  <!-- A value from elsewhere (a week or month that is not the current one, a day) stays selectable and is kept -->
+                  <option v-if="draft.planned && !pickingDay && !plannedOptions.includes(draft.planned)" :value="draft.planned">
                     {{ plannedLabel(draft.planned) }}
                   </option>
                 </select>
               </FieldRow>
-
-              <FieldRow
-                :icon="Hourglass"
-                :label="t('task.postponed')"
-                :value="dayText(draft.postponed)"
-                :clear-label="clearLabel('task.postponed')"
-                clear-testid="task-postponed-clear"
-                @clear="clearDay('postponed')"
-              >
-                <input
-                  v-model="draft.postponed"
-                  type="date"
-                  :aria-label="t('task.postponed')"
-                  data-testid="task-postponed"
-                  @change="saveSoon"
-                />
+              <FieldRow v-if="showPlannedDay" :icon="CalendarDays" :label="t('task.plannedDay')" :value="dayText(plannedDay)">
+                <input v-model="plannedDay" type="date" :aria-label="t('task.plannedDay')" data-testid="task-planned-day" />
               </FieldRow>
 
               <FieldRow

@@ -1,14 +1,17 @@
 import type { Task, Bucket } from '@jotter/vault-format';
 import { t } from '@/i18n';
-import { isPostponed } from '@jotter/task-filter';
-import { PLANNED_CHOICES, plannedKey, plannedLabel } from '@/planned';
+import { isBeyond, today, type Horizon } from '@jotter/task-filter';
+import { PLAN_SLOTS, plannedSlot, slotValue, type PlanSlot } from '@/planned';
 
 /** How the tabs group the tasks: by column of the board, by tag, or by planned date. */
 export type View = 'board' | 'tags' | 'planning';
 export const VIEWS: View[] = ['board', 'tags', 'planning'];
 
-/** Which finished tasks a view leaves out. The tag and planning views list what is still to do, the board everything. */
-export type Hidden = { done: boolean; archive: boolean; postponed: boolean };
+/**
+ * Which tasks a view leaves out: the finished ones (the tag and planning views list what is still to do, the board
+ * everything) and those planned further ahead than the horizon.
+ */
+export type Hidden = { done: boolean; archive: boolean; horizon: Horizon };
 
 export interface Column {
   key: string;
@@ -28,9 +31,11 @@ const byUrgency = (a: Task, b: Task) =>
   (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999') ||
   a.position - b.position;
 
-/** Postponed tasks stay in their own column; they are only left out while the view hides them. */
+/** A task planned beyond the horizon stays in its own column; it is only left out while the view's horizon is short. */
 export const isHiddenIn = (task: Task, hidden: Hidden) =>
-  (task.bucket === 'done' && hidden.done) || (task.bucket === 'archive' && hidden.archive) || (hidden.postponed && isPostponed(task));
+  (task.bucket === 'done' && hidden.done) ||
+  (task.bucket === 'archive' && hidden.archive) ||
+  isBeyond(task.planned_date, hidden.horizon, today());
 
 /** Tasks the tag and planning views list, most urgent first. */
 export const openTasksOf = (tasks: Task[], hidden: Hidden): Task[] => tasks.filter((task) => !isHiddenIn(task, hidden)).sort(byUrgency);
@@ -66,20 +71,28 @@ export function tagColumns(open: Task[]): Column[] {
   ];
 }
 
-/** One column per planned date the menu offers, the dates tasks carry besides those, then the unplanned tasks. */
-export function planningColumns(open: Task[]): Column[] {
-  const used = [...new Set(open.map((task) => plannedKey(task.planned_date)).filter(Boolean))];
-  const extra = used.filter((key) => !(PLANNED_CHOICES as readonly string[]).includes(key)).sort();
-  return [
-    ...[...PLANNED_CHOICES, ...extra].map((key) => ({
-      key: `planned:${key}`,
-      title: plannedLabel(key),
-      bucket: null,
-      value: key,
-      tasks: open.filter((task) => plannedKey(task.planned_date) === key),
-    })),
-    { key: 'planned:', title: t('planned.none'), bucket: null, value: '', tasks: open.filter((task) => !task.planned_date?.trim()) },
-  ];
+const SLOT_TITLES: Record<PlanSlot, () => string> = {
+  slipped: () => t('planned.slipped'),
+  today: () => t('planned.today'),
+  tomorrow: () => t('planned.tomorrow'),
+  week: () => t('planned.thisWeek'),
+  month: () => t('planned.thisMonth'),
+  later: () => t('planned.later'),
+  none: () => t('planned.none'),
+};
+
+/**
+ * One column for each stretch of time ahead: what has slipped (only when something has), today, tomorrow, the rest of the
+ * week, the rest of the month, later, and the tasks that are not planned.
+ */
+export function planningColumns(open: Task[], now: Date = new Date()): Column[] {
+  return PLAN_SLOTS.map((slot) => ({
+    key: `planned:${slot}`,
+    title: SLOT_TITLES[slot](),
+    bucket: null,
+    value: slotValue(slot, now),
+    tasks: open.filter((task) => plannedSlot(task.planned_date, now) === slot),
+  })).filter((column) => column.key !== 'planned:slipped' || column.tasks.length);
 }
 
 /** The columns a view shows for the given tasks (already narrowed by the search filter). */

@@ -5,7 +5,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import App from './App.vue';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
-import { isoDay } from '@jotter/task-filter';
+import { isoDay, today, weekOf } from '@jotter/task-filter';
 import { capacitorKeyValue } from '@/data/keyValue';
 import { runShortcut, shortcutAction, sharedDraft } from '@/shortcuts';
 import { useSettingsStore } from '@/stores/settings';
@@ -276,12 +276,12 @@ describe('capturing and editing tasks', () => {
     await find('task-card').trigger('click');
 
     await find('color-blue').trigger('click');
-    await type('task-planned', 'thisWeek', 'change');
+    await type('task-planned', weekOf(today()), 'change');
     await settle();
 
     const file = () => fs.files.get('Jotter/work/a.md')!.data;
     expect(file()).toContain('color: blue');
-    expect(file()).toContain('planned_date: thisWeek');
+    expect(file()).toContain(`planned_date: ${weekOf(today())}`);
     expect(find('color-blue').attributes('aria-checked')).toBe('true');
 
     await closeSheet();
@@ -396,23 +396,23 @@ describe('capturing and editing tasks', () => {
     expect(find('task-title').exists()).toBe(false);
   });
 
-  it('keeps the next postponement of a postponed recurring task that is completed in bulk, and undo restores it', async () => {
+  it('plans a recurring task for its next occurrence when it is completed in bulk, and undo restores the plan', async () => {
     const { app } = await start((f) => {
       desktopVault(f);
       f.put(
         'Jotter/work/a.md',
-        `---\ntitle: Write report\nstatus: todo\nposition: 1000\npostponed_until: "${isoDay(2)}"\nrepeat:\n  every: 1\n  unit: week\n---\n`
+        `---\ntitle: Write report\nstatus: todo\nposition: 1000\nplanned_date: "${isoDay(2)}"\nrepeat:\n  every: 1\n  unit: week\n---\n`
       );
     });
 
     const before = await app.moveManyToBucket(['a'], 'done');
     await settle();
     expect(file('a')).toContain('status: todo');
-    expect(file('a')).toContain(`postponed_until: ${isoDay(7)}`);
+    expect(file('a')).toContain(`planned_date: ${isoDay(7)}`);
 
     await app.restoreMany(before);
     await settle();
-    expect(file('a')).toContain(`postponed_until: ${isoDay(2)}`);
+    expect(file('a')).toContain(`planned_date: ${isoDay(2)}`);
   });
 
   it('does not arm a reminder of the current minute, which is already past', async () => {
@@ -428,50 +428,22 @@ describe('capturing and editing tasks', () => {
   it('keeps a planned date and a colour that another tool wrote outside the menus', async () => {
     await start((f) => {
       desktopVault(f);
-      f.put('Jotter/work/a.md', '---\ntitle: Odd values\nstatus: todo\nplanned_date: next-week\ncolor: "#12ab34"\n---\n');
+      f.put('Jotter/work/a.md', '---\ntitle: Odd values\nstatus: todo\nplanned_date: 2031-W19\ncolor: "#12ab34"\n---\n');
     });
+    // A plan so far ahead is kept out of the board until the view looks that far
+    useAppStore().setHorizon('all');
+    await settle();
     await find('task-card').trigger('click');
-
-    expect((find('task-planned').element as HTMLSelectElement).value).toBe('next-week');
-    expect(find('task-planned').text()).toContain('Next week');
+    expect((find('task-planned').element as HTMLSelectElement).value).toBe('2031-W19');
+    expect(find('task-planned').text()).toContain('Week 19');
     expect(find('color-custom').exists()).toBe(true);
 
     // Editing something else must not touch them
     await find('task-title').setValue('Odd values, renamed');
     await closeSheet();
     await settle();
-    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('planned_date: next-week');
+    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('planned_date: 2031-W19');
     expect(fs.files.get('Jotter/work/a.md')?.data).toMatch(/color: ['"]?#12ab34/);
-  });
-
-  it('hides the postponed date once it has passed', async () => {
-    await start((f) => {
-      f.put('Jotter/work/index.md', '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n---\n');
-      f.put('Jotter/work/a.md', '---\ntitle: Back\nstatus: todo\npostponed_until: "2020-01-31"\n---\n');
-    });
-    expect(all('task-card')).toHaveLength(1);
-    expect(find('card-postponed').exists()).toBe(false);
-  });
-
-  it('shows the postponed date for a task in the postponed bucket', async () => {
-    await start((f) => {
-      f.put(
-        'Jotter/work/index.md',
-        '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: postponed\n    title: Postponed\n---\n'
-      );
-      f.put('Jotter/work/a.md', '---\ntitle: Later\nstatus: postponed\npostponed_until: "2030-01-31"\n---\n');
-    });
-    // The column of postponed tasks is hidden until it is switched on
-    await find('view-menu').trigger('click');
-    await find('hide-postponed').trigger('click');
-    await settle();
-    expect(find('card-postponed').text()).toBe('2030-01-31');
-
-    await find('task-card').trigger('click');
-    expect((find('task-postponed').element as HTMLInputElement).value).toBe('2030-01-31');
-    await type('task-postponed', '2031-02-01', 'change');
-    await settle();
-    expect(fs.files.get('Jotter/work/a.md')?.data).toContain('postponed_until: 2031-02-01');
   });
 
   it('adds and removes an attachment', async () => {
@@ -1170,12 +1142,12 @@ describe('finishing, archiving and moving', () => {
 
     expect(file('a')).toContain('status: todo');
     expect(file('a')).toContain('due_date: 2030-01-08');
-    expect(file('a')).toContain('postponed_until: 2030-01-08');
+    expect(file('a')).toContain('planned_date: 2030-01-08');
 
     await find('toast-action').trigger('click');
     await settle();
     expect(file('a')).toContain('due_date: 2030-01-01');
-    expect(file('a')).not.toContain('postponed_until');
+    expect(file('a')).not.toContain('planned_date');
   });
 
   it('takes a done task back to the inbox with its circle, and can undo', async () => {
@@ -1656,10 +1628,18 @@ describe('bulk actions on the selection', () => {
     await pick('Write report', 'Book flights');
     await find('bulk-planned').trigger('click');
     await settle();
-    await find('planned-thisWeek').trigger('click');
+    await find(`planned-${weekOf(today())}`).trigger('click');
     await settle();
-    expect(file('a')).toContain('planned_date: thisWeek');
-    expect(file('b')).toContain('planned_date: thisWeek');
+    expect(file('a')).toContain(`planned_date: ${weekOf(today())}`);
+    expect(file('b')).toContain(`planned_date: ${weekOf(today())}`);
+
+    // A day of its own choosing
+    await find('bulk-planned').trigger('click');
+    await settle();
+    await type('planned-day-input', '2031-05-06', 'input');
+    await find('planned-day-apply').trigger('click');
+    await settle();
+    expect(file('a')).toContain('planned_date: 2031-05-06');
   });
 
   it('offers more bulk actions: archive, due date, colour, delete', async () => {
@@ -1806,7 +1786,7 @@ describe('tag and planning views', () => {
     expect(column(2)).toContain('Loose end');
   });
 
-  it('groups the open tasks by planned date, whatever the spelling in the file', async () => {
+  it('groups the open tasks by when they are planned, whatever the spelling in the file', async () => {
     await start(viewsVault);
     await switchTo('planning');
 
@@ -1815,14 +1795,24 @@ describe('tag and planning views', () => {
       'Tomorrow',
       'This week',
       'This month',
-      'This year',
-      'Sometime maybe',
+      'Later',
       'Not planned',
     ]);
     expect(column(0)).toContain('Write report');
     expect(column(0)).not.toContain('Ship release');
     expect(column(2)).toContain('Book flights');
-    expect(column(6)).toContain('Loose end');
+    expect(column(5)).toContain('Loose end');
+  });
+
+  it('shows a tab for what has slipped, once something has', async () => {
+    await start((f) => {
+      viewsVault(f);
+      f.put('Jotter/work/e.md', '---\ntitle: Missed it\nstatus: todo\nposition: 4000\nplanned_date: 2020-01-31\n---\n');
+    });
+    await switchTo('planning');
+
+    expect(tabs().map((t) => t.replace(/\d+$/, '').trim())[0]).toBe('Slipped');
+    expect(column(0)).toContain('Missed it');
   });
 
   it('remembers the view and goes back to the board', async () => {
@@ -1864,7 +1854,7 @@ describe('tag and planning views', () => {
     await submit('quick-add-input');
     await closeSheet();
     await settle();
-    expect([...fs.files.entries()].find(([, f]) => f.data.includes('Call back'))![1].data).toContain('planned_date: tomorrow');
+    expect([...fs.files.entries()].find(([, f]) => f.data.includes('Call back'))![1].data).toContain(`planned_date: ${isoDay(1)}`);
   });
 });
 
@@ -1925,98 +1915,90 @@ describe('view options in the app bar', () => {
   });
 });
 
-describe('postponing tasks', () => {
-  const tomorrow = () => isoDay(1);
+describe('planning ahead', () => {
   const vault = (f: MemoryFs) => {
     desktopVault(f);
-    f.put('Jotter/work/d.md', '---\ntitle: Later task\nstatus: todo\nposition: 3000\npostponed_until: "2999-01-01"\n---\n');
-    f.put('Jotter/work/e.md', '---\ntitle: Back again\nstatus: todo\nposition: 4000\npostponed_until: "2020-01-01"\n---\n');
+    f.put('Jotter/work/d.md', '---\ntitle: Later task\nstatus: todo\nposition: 3000\nplanned_date: "2999-01-01"\n---\n');
+    f.put('Jotter/work/e.md', '---\ntitle: Back again\nstatus: todo\nposition: 4000\nplanned_date: "2020-01-01"\n---\n');
   };
   const tabs = () => all('bucket-tab').map((t) => t.text().replace(/\d+$/, '').trim());
-  const showPostponed = async () => {
+  const setHorizon = async (horizon: string) => {
     await find('view-menu').trigger('click');
-    await find('hide-postponed').trigger('click');
+    await find('open-horizon').trigger('click');
+    await find(`horizon-${horizon}`).trigger('click');
     await settle();
   };
 
-  it('keeps tasks postponed to a later day out of their column, and brings back those whose day has come', async () => {
+  it('keeps tasks planned beyond the horizon out of their column, and shows those whose day has come', async () => {
     await start(vault);
     expect(tabs()).toEqual(['To Do', 'Done']);
     expect(find('board').text()).not.toContain('Later task');
-    // The menu says how many tasks are out of the way
+    // The menu says how many tasks are out of the way, and how far ahead the view looks
     await find('view-menu').trigger('click');
-    expect(find('hide-postponed').text()).toContain('1');
+    expect(find('open-horizon').text()).toContain('1 · Today');
     await find('view-menu').trigger('click');
     expect(find('board').text()).toContain('Back again');
 
-    await showPostponed();
-    expect(tabs()).toEqual(['To Do', 'Done']);
+    await setHorizon('all');
     expect(find('board').text()).toContain('Later task');
-    expect(find('card-postponed').text()).toBe('2999-01-01');
   });
 
-  it('leaves postponed tasks out of the tag and planning views until they are shown', async () => {
+  it('looks as far ahead as the horizon says, and remembers it for each view on its own', async () => {
+    await start((f) => {
+      vault(f);
+      f.put('Jotter/work/g.md', `---\ntitle: Next week task\nstatus: todo\nposition: 5000\nplanned_date: "${isoDay(7)}"\n---\n`);
+    });
+    expect(find('board').text()).not.toContain('Next week task');
+    await setHorizon('month');
+    expect(useAppStore().hidden.board.horizon).toBe('month');
+    // The planning view looks ahead by default, and leaves the board alone
+    await find('view-planning').trigger('click');
+    await settle();
+    expect(useAppStore().hidden.planning.horizon).toBe('all');
+    expect(find('board').text()).toContain('Later task');
+    await find('view-board').trigger('click');
+    await settle();
+    expect(find('board').text()).not.toContain('Later task');
+  });
+
+  it('leaves tasks planned ahead out of the tag view until the horizon is wider', async () => {
     await start(vault);
     await find('view-tags').trigger('click');
     await settle();
     expect(find('board').text()).not.toContain('Later task');
-    await showPostponed();
+    await setHorizon('all');
     expect(find('board').text()).toContain('Later task');
   });
 
-  it('postpones the selected tasks from the overflow menu, and can undo it', async () => {
-    await start(desktopVault);
-    await holdSelect('Write report');
-    await find('bulk-more').trigger('click');
-    await settle();
-    await find('more-postpone').trigger('click');
-    await find('more-postpone-tomorrow').trigger('click');
-    await settle();
-
-    expect(file('a')).toContain(`postponed_until: ${tomorrow()}`);
-    expect(file('a')).toContain('status: todo');
-    expect(find('board').text()).not.toContain('Write report');
-
-    await find('toast-action').trigger('click');
-    await settle();
-    expect(file('a')).not.toContain('postponed_until');
-  });
-
-  it('clears the postponement from the overflow menu', async () => {
+  it('keeps the plan when a task planned ahead is moved to another column, and undo puts it back', async () => {
     await start(vault);
-    await showPostponed();
-    await holdSelect('Later task');
-    await find('bulk-more').trigger('click');
-    await settle();
-    await find('more-postpone').trigger('click');
-    await find('more-postpone-clear').trigger('click');
-    await settle();
-    expect(file('d')).not.toContain('postponed_until');
-  });
-
-  it('keeps the postponement when a postponed task is moved to another column, and undo puts it back', async () => {
-    await start(vault);
-    await showPostponed();
+    await setHorizon('all');
     await holdSelect('Later task');
     await find('bulk-move').trigger('click');
     await settle();
     await find('move-to-done').trigger('click');
     await settle();
-    expect(file('d')).toContain('postponed_until: 2999-01-01');
+    expect(file('d')).toContain('planned_date: 2999-01-01');
     expect(file('d')).toContain('status: done');
 
     await find('toast-action').trigger('click');
     await settle();
-    expect(file('d')).toContain('postponed_until: 2999-01-01');
+    expect(file('d')).toContain('planned_date: 2999-01-01');
     expect(file('d')).toContain('status: todo');
   });
 
-  it('sets the postponed date on the task page, for any task', async () => {
+  it('plans a task for a day on the task page, and clears it with the button beside it', async () => {
     await start(desktopVault);
     await row('Write report').find('[data-testid="task-card"]').trigger('click');
-    await type('task-postponed', '2999-05-05', 'change');
+    expect(find('task-planned-day').exists()).toBe(false);
+    await type('task-planned', '__day', 'change');
+    await type('task-planned-day', '2999-05-05', 'change');
     await settle();
-    expect(file('a')).toContain('postponed_until: 2999-05-05');
+    expect(file('a')).toContain('planned_date: 2999-05-05');
+
+    await find('task-planned-clear').trigger('click');
+    await settle();
+    expect(file('a')).not.toContain('planned_date');
   });
 });
 
@@ -2232,7 +2214,7 @@ describe('smart title input', () => {
 
     await submit('quick-add-input');
     const data = created('Call mom');
-    expect(data).toContain('planned_date: tomorrow');
+    expect(data).toContain(`planned_date: ${isoDay(1)}`);
     expect(data).toContain('priority: urgent');
     expect(data).toContain('status: done');
     expect(data).toContain('family');
@@ -2305,7 +2287,7 @@ describe('smart title input', () => {
     const data = file('a');
     expect(data).toContain('title: Write the report');
     expect(data).toContain('priority: high');
-    expect(data).toContain('planned_date: today');
+    expect(data).toContain(`planned_date: ${isoDay(0)}`);
     expect(data).toContain('urgent-ish');
     expect(all('title-hint')).toHaveLength(0);
   });

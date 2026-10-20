@@ -1,7 +1,7 @@
 import { ref, shallowRef, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { Task, Project, Bucket } from '@jotter/vault-format';
-import { compareTitles, filterTasks, isEmptyFilter, parseQuery } from '@jotter/task-filter';
+import { compareTitles, filterTasks, isEmptyFilter, parseQuery, type Horizon } from '@jotter/task-filter';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { armDelay, armReminders, localDateTime } from '@/reminders';
@@ -241,9 +241,16 @@ export const useAppStore = defineStore('app', () => {
   }
 
   /** Shows or hides the done or the archived tasks of the current view (on the board, their columns too). */
-  function toggleHidden(which: keyof Hidden) {
+  function toggleHidden(which: 'done' | 'archive') {
     const current = hidden.value[view.value];
     current[which] = !current[which];
+    selection.value = [];
+    if (vault.value) rememberHidden(vault.value.id, hidden.value);
+  }
+
+  /** How far ahead the current view shows planned tasks; those planned further out are left out. */
+  function setHorizon(horizon: Horizon) {
+    hidden.value[view.value].horizon = horizon;
     selection.value = [];
     if (vault.value) rememberHidden(vault.value.id, hidden.value);
   }
@@ -357,7 +364,7 @@ export const useAppStore = defineStore('app', () => {
     await loadProject();
   }
 
-  /** Moves a task to a bucket, to the end of it unless a position is given. A postponement stays. */
+  /** Moves a task to a bucket, to the end of it unless a position is given. */
   async function moveTask(id: string, bucket: string, position?: number) {
     const inBucket = allTasks.value.filter((t) => t.bucket === bucket && t.id !== id);
     const target = position ?? Math.max(0, ...inBucket.map((t) => t.position)) + 1000;
@@ -403,7 +410,6 @@ export const useAppStore = defineStore('app', () => {
               rolled: {
                 due_date: task.due_date,
                 planned_date: task.planned_date,
-                postponed_until: task.postponed_until,
                 // A plain copy: the task is a reactive object, which IndexedDB cannot store
                 reminders: task.reminders ? [...task.reminders] : undefined,
                 body: task.body,
@@ -574,6 +580,7 @@ export const useAppStore = defineStore('app', () => {
     isCollapsed,
     toggleCollapsed,
     toggleHidden,
+    setHorizon,
     setView,
     navVisible,
     project,

@@ -243,8 +243,8 @@ describe('tasks', () => {
     const rolled = await repo.moveTask('work', 'r', 'done', 9000);
 
     expect(rolled).toMatchObject({ bucket: 'todo', position: 1000, body: '- [ ] fill can\n' });
-    expect(rolled.postponed_until).toBe(isoDay(1));
-    expect(fs.files.get('Jotter/work/r.md')?.data).toContain(`postponed_until: ${isoDay(1)}`);
+    expect(rolled.planned_date).toBe(isoDay(1));
+    expect(fs.files.get('Jotter/work/r.md')?.data).toContain(`planned_date: ${isoDay(1)}`);
     expect((await repo.moveTask('work', 'a', 'done', 9000)).bucket).toBe('done');
   });
 

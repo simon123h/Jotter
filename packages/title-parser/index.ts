@@ -141,44 +141,6 @@ const getRules = (locale: string): DateRule[] => {
   return rules;
 };
 
-export function getPlanningDateForDueDate(dueDate: Date, now: Date = new Date()): string {
-  const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const tomorrowZero = new Date(todayZero);
-  tomorrowZero.setDate(todayZero.getDate() + 1);
-
-  const targetZero = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-
-  if (targetZero.getTime() <= todayZero.getTime()) {
-    return 'today';
-  }
-  if (targetZero.getTime() === tomorrowZero.getTime()) {
-    return 'tomorrow';
-  }
-
-  // Sunday of this week (Monday = 1, Sunday = 7)
-  const dayOfWeek = todayZero.getDay() === 0 ? 7 : todayZero.getDay();
-  const sundayOfThisWeek = new Date(todayZero);
-  sundayOfThisWeek.setDate(todayZero.getDate() + (7 - dayOfWeek));
-
-  if (targetZero.getTime() <= sundayOfThisWeek.getTime()) {
-    return 'thisWeek';
-  }
-
-  // Last day of this month
-  const lastDayOfThisMonth = new Date(todayZero.getFullYear(), todayZero.getMonth() + 1, 0);
-  if (targetZero.getTime() <= lastDayOfThisMonth.getTime()) {
-    return 'thisMonth';
-  }
-
-  // Last day of this year
-  const lastDayOfThisYear = new Date(todayZero.getFullYear(), 11, 31);
-  if (targetZero.getTime() <= lastDayOfThisYear.getTime()) {
-    return 'thisYear';
-  }
-
-  return 'sometime';
-}
-
 export function parseDateFromTitle(
   title: string,
   locale: string,
@@ -205,8 +167,8 @@ export function parseDateFromTitle(
       const date = rule.getDate(match);
       const dueDate = rule.isExplicit ? formatDate(date) : null;
 
-      // Determine categorical planned date dynamically
-      const plannedDate = getPlanningDateForDueDate(date);
+      // The date typed is the day the task is planned for (a planned date is always a real day)
+      const plannedDate = formatDate(date);
 
       let cleanTitle = title.replace(rule.pattern, ' ');
       cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
