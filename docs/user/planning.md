@@ -19,7 +19,7 @@ A planned date is always a real point in time, never "whenever the app thinks":
 
 The menu offers *Today*, *Tomorrow*, *This week*, *Next week*, *This month* and *Next month*, and a day of your own choosing. Choosing *This week* writes the week that is on today; next week it is a past week.
 
-A planned date that has passed is **slipped**. Nothing changes it for you. The planning view shows a *Slipped* tab as long as there is something in it, and from the selection toolbar you can plan those tasks again with one action, for example for today.
+A planned date that has passed is **slipped**. Nothing changes it for you. The planning view shows a *Re-plan* tab as long as there is something in it, and from the selection toolbar you can plan those tasks again with one action, for example for today.
 
 You can plan a task from the task page, the new-task dialog, the selection toolbar (*Plan for...*), by dragging a task between the columns of the planning view, or by typing a date into the title (`friday`, `21.5.`, `tomorrow`). A date in the title plans the task. To set a **deadline** instead, put `!` in front of it (`!friday`, `!21.5.`) or the word `until` (`bis` in German): `Send report until friday`.
 
@@ -35,12 +35,12 @@ Tasks planned a long way off would crowd the board. The **horizon** decides how 
 | **Tomorrow** | tomorrow |
 | **End of this week** | the last day of this week (Monday to Sunday) |
 | **End of this month** | the last day of this month |
-| **Everything** | no limit |
+| **No limit** | everything |
 
 A week or a month starts on its first day: a task planned for *next week* is hidden by a horizon of today, and shown by a horizon of *End of this week* only once it falls within it.
 
-* **Web**: the setting *Planned up to* is in the toolbar of the board, and in the filter dialog. It applies to the board, the list, the tags and the matrix. The planning view always shows everything. The number next to it says how many tasks it keeps out of the way.
-* **Android**: the ⋮ menu has *Planned ahead*, for the board and the tags together. It is stored in the vault, so it is the same value as *Planned up to* on the web. The planning view looks ahead by nature and has none.
+* **Web**: the setting *Show planned tasks up to* is in the toolbar of the board, and in the filter dialog. It applies to the board, the list, the tags and the matrix. The planning view always shows everything. The number next to it says how many tasks it keeps out of the way.
+* **Android**: the ⋮ menu has *Show planned tasks…*, for the board and the tags together. It is stored in the vault, so it is the same value as the setting on the web. The planning view looks ahead by nature and has none.
 
 **Searching and the horizon.** A query that names planned dates (`planned:2026-11`) is not cut by the horizon: you asked about planning, so you get the answer. For any other search, the tasks planned beyond the horizon stay hidden, and a line under the toolbar says *"3 more found, planned beyond the horizon"* with a button to show them. A task you have just planned beyond the horizon is announced the same way, so it does not seem to have vanished.
 

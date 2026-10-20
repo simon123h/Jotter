@@ -41,7 +41,7 @@ Die Leiste unten wechselt die Ansicht. Die Spalten sind Tabs, zwischen denen du 
 
 - **Board**: ein Tab pro Spalte.
 - **Tags**: ein Tab pro Tag und einer für Aufgaben ohne Tag.
-- **Planung**: ein Tab für jede Zeitspanne voraus (heute, morgen, Rest dieser Woche, Rest dieses Monats, später), ein Tab *Verpasst*, solange etwas verpasst ist, und einer für Aufgaben ohne Planung.
+- **Planung**: ein Tab für jede Zeitspanne voraus (heute, morgen, Rest dieser Woche, Rest dieses Monats, später), ein Tab *Umplanen*, solange etwas verpasst ist, und einer für Aufgaben ohne Planung.
 
 Eine Aufgabe, die du in einem Tab anlegst, wird dort eingeordnet: mit diesem Tag oder diesem geplanten Datum.
 
@@ -53,7 +53,7 @@ Das Suchfeld versteht dieselbe Abfragesprache wie der Desktop, zum Beispiel `tag
 
 Das ⋮-Menü oben blendet erledigte und archivierte Aufgaben ein oder aus, getrennt für jede Ansicht. Auf dem Board verschwinden beim Ausblenden auch deren Spalten. Tags und Planung beginnen mit beiden ausgeblendet.
 
-*Vorausgeplant* im selben Menü legt fest, wie weit voraus die Ansicht geplante Aufgaben zeigt: heute, morgen, bis Ende der Woche, bis Ende des Monats oder alles. Eine Aufgabe, die dahinter geplant ist, bleibt in ihrer Spalte, ist aber ausgeblendet, bis sie in Reichweite kommt, und das Menü sagt, wie viele aus dem Weg sind. Er gilt für Board und Tags zusammen (*Heute*, bis du ihn änderst) und steht im Vault, ist also derselbe Wert wie *Geplant bis* am Desktop. Die Planungsansicht schaut von Natur aus voraus und hat keinen Horizont. Siehe [Aufgaben planen](/de/user/planning).
+*Geplante Aufgaben zeigen …* im selben Menü legt fest, wie weit voraus die Ansicht geplante Aufgaben zeigt: heute, morgen, bis Ende der Woche, bis Ende des Monats oder alles. Eine Aufgabe, die dahinter geplant ist, bleibt in ihrer Spalte, ist aber ausgeblendet, bis sie in Reichweite kommt, und das Menü sagt, wie viele aus dem Weg sind. Er gilt für Board und Tags zusammen (*Heute*, bis du ihn änderst) und steht im Vault, ist also derselbe Wert wie die Einstellung am Desktop. Die Planungsansicht schaut von Natur aus voraus und hat keinen Horizont. Siehe [Aufgaben planen](/de/user/planning).
 
 ## Einstellungen
 

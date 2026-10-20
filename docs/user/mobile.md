@@ -41,7 +41,7 @@ The bar at the bottom switches the view. The columns are tabs you can swipe, or,
 
 - **Board**: one tab per column.
 - **Tags**: one tab per tag, and one for tasks without a tag.
-- **Planning**: one tab for each stretch of time ahead (today, tomorrow, the rest of this week, the rest of this month, later), a *Slipped* tab while something has slipped, and one for tasks that are not planned.
+- **Planning**: one tab for each stretch of time ahead (today, tomorrow, the rest of this week, the rest of this month, later), a *Re-plan* tab while something has slipped, and one for tasks that are not planned.
 
 Adding a task in a tab files it there: with that tag or that planned date.
 
@@ -53,7 +53,7 @@ The search field understands the same query language as the desktop, for example
 
 The ⋮ menu in the top bar hides or shows done and archived tasks, separately for each view. On the board, hiding done or archived tasks hides their columns too. Tags and Planning start with both hidden.
 
-*Planned ahead* in the same menu sets how far ahead the view shows planned tasks: today, tomorrow, the end of this week, the end of this month, or everything. A task planned beyond that stays in its column but is hidden until it comes within reach, and the menu says how many are out of the way. It applies to the board and the tags together (*Today* until you change it) and is stored in the vault, so it is the same value as *Planned up to* on the desktop. The planning view looks ahead by nature and has no horizon. See [Planning Tasks](/user/planning).
+*Show planned tasks…* in the same menu sets how far ahead the view shows planned tasks: today, tomorrow, the end of this week, the end of this month, or no limit. A task planned beyond that stays in its column but is hidden until it comes within reach, and the menu says how many are out of the way. It applies to the board and the tags together (*Today* until you change it) and is stored in the vault, so it is the same value as the setting on the desktop. The planning view looks ahead by nature and has no horizon. See [Planning Tasks](/user/planning).
 
 ## Settings
 

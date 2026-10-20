@@ -1811,7 +1811,7 @@ describe('tag and planning views', () => {
     });
     await switchTo('planning');
 
-    expect(tabs().map((t) => t.replace(/\d+$/, '').trim())[0]).toBe('Slipped');
+    expect(tabs().map((t) => t.replace(/\d+$/, '').trim())[0]).toBe('Re-plan');
     expect(column(0)).toContain('Missed it');
   });
 
@@ -1935,7 +1935,7 @@ describe('planning ahead', () => {
     expect(find('board').text()).not.toContain('Later task');
     // The menu says how many tasks are out of the way, and how far ahead the view looks
     await find('view-menu').trigger('click');
-    expect(find('open-horizon').text()).toContain('1 · Today');
+    expect(find('open-horizon').text()).toContain('up to today · 1 hidden');
     await find('view-menu').trigger('click');
     expect(find('board').text()).toContain('Back again');
 

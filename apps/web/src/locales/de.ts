@@ -158,7 +158,8 @@ export const de = {
     gitEnableError: 'Git konnte nicht aktiviert werden: {message}',
     gitEnableErrorTitle: 'Git-Fehler',
     projectCreateError: 'Projekt konnte nicht erstellt werden: {message}',
-    plannedAhead: 'Geplant für {when}: Sie ist bis dahin auf dem Board ausgeblendet. Ändere "Geplant bis", um sie jetzt zu sehen.',
+    plannedAhead:
+      'Geplant für {when}: Die Aufgabe ist bis dahin auf dem Board ausgeblendet. Mit „Geplante Aufgaben zeigen bis“ siehst du sie schon jetzt.',
     bulkDeleteError: 'Massenlöschung fehlgeschlagen: {message}',
     bulkMoveError: 'Massenverschiebung fehlgeschlagen: {message}',
     bulkTagError: 'Massen-Tagging fehlgeschlagen: {message}',
@@ -224,14 +225,14 @@ export const de = {
     hideText: 'Archiv ausblenden',
   },
   planningHorizon: {
-    label: 'Geplant bis',
+    label: 'Geplante Aufgaben zeigen bis',
     moreFound: '{count} weitere gefunden, geplant hinter dem Horizont',
     show: 'Anzeigen',
     today: 'Heute',
     tomorrow: 'Morgen',
     week: 'Ende dieser Woche',
     month: 'Ende dieses Monats',
-    all: 'Alles',
+    all: 'Unbegrenzt',
   },
 
   projects: {
@@ -513,7 +514,7 @@ export const de = {
     nextMonth: 'Nächster Monat',
     week: 'KW {week}',
     pickDay: 'Ein bestimmter Tag ...',
-    slipped: 'Verpasst',
+    slipped: 'Umplanen',
     later: 'Später',
     notPlanned: 'Nicht geplant',
   },

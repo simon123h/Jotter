@@ -183,12 +183,22 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
             <span class="min-w-0 flex-1 truncate">{{ option.label }}</span>
           </button>
           <!-- The planning view looks ahead by nature: it has no horizon -->
-          <button v-if="app.view !== 'planning'" :class="menuItem" role="menuitem" data-testid="open-horizon" @click="openHorizon">
+          <button
+            v-if="app.view !== 'planning'"
+            class="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-line"
+            role="menuitem"
+            data-testid="open-horizon"
+            @click="openHorizon"
+          >
             <Calendar class="h-5 w-5 shrink-0 text-muted" />
-            <span class="min-w-0 flex-1 truncate">{{ t('view.horizon') }}</span>
-            <span class="text-sm text-muted"
-              >{{ beyondCount ? beyondCount + ' · ' : '' }}{{ t(`horizon.${app.horizon}` as MessageKey) }}</span
-            >
+            <!-- Two lines read as one sentence: "Show planned tasks… up to today · 3 hidden" -->
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-base">{{ t('view.horizon') }}</span>
+              <span class="block truncate text-sm text-muted"
+                >{{ t(`horizon.upTo.${app.horizon}` as MessageKey)
+                }}{{ beyondCount ? ' · ' + t('horizon.hidden', { count: beyondCount }) : '' }}</span
+              >
+            </span>
           </button>
         </div>
       </template>
