@@ -9,7 +9,7 @@ from itertools import batched
 from typing import Any, NamedTuple
 
 from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Task, TaskId, clean_reminders
-from jotter.features.tasks.planned import PlannedDate
+from jotter.features.tasks.planned import PlannedDate, planned_span
 from jotter.shared.exceptions import EntityNotFoundError
 
 _sqlite_write_lock = threading.Lock()
@@ -224,8 +224,14 @@ class SqliteTaskRepository:
             query += " AND due_date IS NOT NULL AND due_date >= ?"
             args.append(due_after)
         if planned_date:
-            query += " AND planned_date = ?"
-            args.append(planned_date)
+            if planned_date.lower() == "none":
+                query += " AND planned_start IS NULL"
+            else:
+                span = planned_span(planned_date, _today())
+                if span is None:
+                    return []
+                query += " AND planned_start BETWEEN ? AND ?"
+                args.extend(span)
         if has_due_date is True:
             query += " AND due_date IS NOT NULL AND due_date != ''"
         elif has_due_date is False:

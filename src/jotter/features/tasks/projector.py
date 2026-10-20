@@ -5,6 +5,7 @@ import sqlite3
 import threading
 
 from jotter.features.tasks.domain import Priority, Task
+from jotter.features.tasks.planned import planned_start
 
 _sqlite_write_lock = threading.Lock()
 
@@ -55,9 +56,9 @@ class TaskProjector:
                 """
                 INSERT INTO tasks (
                     id, project_id, title, bucket, position, tags, attachments, filename, body,
-                    due_date, planned_date, priority, color, repeat, reminders, created_at, updated_at,
+                    due_date, planned_date, planned_start, priority, color, repeat, reminders, created_at, updated_at,
                     file_mtime_ns, file_size
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     project_id = excluded.project_id,
                     title = excluded.title,
@@ -69,6 +70,7 @@ class TaskProjector:
                     body = excluded.body,
                     due_date = excluded.due_date,
                     planned_date = excluded.planned_date,
+                    planned_start = excluded.planned_start,
                     priority = excluded.priority,
                     color = excluded.color,
                     repeat = excluded.repeat,
@@ -78,13 +80,13 @@ class TaskProjector:
                     file_size = excluded.file_size
                 WHERE (
                     tasks.project_id, tasks.title, tasks.bucket, tasks.position, tasks.tags, tasks.attachments,
-                    tasks.filename, tasks.body, tasks.due_date, tasks.planned_date, tasks.priority, tasks.color,
+                    tasks.filename, tasks.body, tasks.due_date, tasks.planned_date, tasks.planned_start, tasks.priority, tasks.color,
                     tasks.repeat, tasks.reminders, tasks.updated_at,
                     tasks.file_mtime_ns, tasks.file_size
                 ) IS NOT (
                     excluded.project_id, excluded.title, excluded.bucket, excluded.position, excluded.tags,
                     excluded.attachments, excluded.filename, excluded.body, excluded.due_date,
-                    excluded.planned_date, excluded.priority, excluded.color,
+                    excluded.planned_date, excluded.planned_start, excluded.priority, excluded.color,
                     excluded.repeat, excluded.reminders, excluded.updated_at, excluded.file_mtime_ns, excluded.file_size
                 )
                 """,
@@ -100,6 +102,7 @@ class TaskProjector:
                     task.body or "",
                     task.due_date.value,
                     task.planned_date.value,
+                    planned_start(task.planned_date.value).isoformat() if task.planned_date.value else None,
                     task.priority.value if task.priority != Priority.NONE else None,
                     task.color,
                     repeat_json,

@@ -17,10 +17,10 @@ export interface Task {
   attachments: string[];
   body: string;
   due_date?: string;
+  /** A day `YYYY-MM-DD`, an ISO week `YYYY-Www` or a month `YYYY-MM` (spec/FORMAT.md, "Dates and times"). */
   planned_date?: string;
   priority?: string;
   color?: string | null;
-  postponed_until?: string;
   repeat?: RepeatRule;
   /** Local date-times `YYYY-MM-DDTHH:mm`, sorted, without duplicates. */
   reminders?: string[];

@@ -82,6 +82,7 @@ _SCHEMA = """
         body TEXT DEFAULT '',
         due_date TEXT DEFAULT NULL,
         planned_date TEXT DEFAULT NULL,
+        planned_start TEXT DEFAULT NULL,
         priority TEXT DEFAULT NULL,
         color TEXT DEFAULT NULL,
         repeat TEXT DEFAULT NULL,

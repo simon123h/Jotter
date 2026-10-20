@@ -1,0 +1,145 @@
+/**
+ * The planned date: a day, an ISO week or a month (spec/FORMAT.md, "Dates and times"). It is always absolute. The legacy
+ * values of older files (a planning keyword, `postponed_until`) are resolved against today when a file is read, so
+ * nothing else has to know about them. Days are `YYYY-MM-DD` strings, calculated in UTC so that no time zone shifts them.
+ */
+
+const DAY_MS = 86_400_000;
+const pad = (n: number) => String(n).padStart(2, '0');
+const parseDay = (day: string) => new Date(`${day}T00:00:00Z`);
+const formatDay = (date: Date) => date.toISOString().slice(0, 10);
+const addDays = (date: Date, days: number) => new Date(date.getTime() + days * DAY_MS);
+
+/** The ISO week a day lies in, as `YYYY-Www`. */
+export function weekOf(day: string): string {
+  const date = parseDay(day);
+  const thursday = addDays(date, 3 - ((date.getUTCDay() + 6) % 7));
+  const year = thursday.getUTCFullYear();
+  const ordinal = Math.round((thursday.getTime() - Date.UTC(year, 0, 1)) / DAY_MS) + 1;
+  return `${year}-W${pad(Math.ceil(ordinal / 7))}`;
+}
+
+/** The month a day lies in, as `YYYY-MM`. */
+export const monthOf = (day: string) => day.slice(0, 7);
+
+/** The Monday of an ISO week, or null when the year has no such week. */
+function weekStart(year: number, week: number): string | null {
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const monday = addDays(jan4, -((jan4.getUTCDay() + 6) % 7) + (week - 1) * 7);
+  const start = formatDay(monday);
+  return week >= 1 && weekOf(start) === `${year}-W${pad(week)}` ? start : null;
+}
+
+function validDay(text: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  const date = parseDay(text);
+  return !Number.isNaN(date.getTime()) && formatDay(date) === text ? text : null;
+}
+
+/** The day, week or month `raw` stands for, in its written form. Null when it is none of them. */
+export function canonicalPlanned(raw: string): string | null {
+  const text = raw.trim();
+  const day = /^(\d{4}-\d{2}-\d{2})(?:[T ].*)?$/.exec(text);
+  if (day) return validDay(day[1]);
+  const week = /^(\d{4})-[Ww](\d{2})$/.exec(text);
+  if (week) return weekStart(Number(week[1]), Number(week[2])) ? `${week[1]}-W${week[2]}` : null;
+  const month = /^(\d{4})-(\d{2})$/.exec(text);
+  if (month) return Number(month[2]) >= 1 && Number(month[2]) <= 12 ? text : null;
+  return null;
+}
+
+/** The first day of a planned value (a day is its own first day). Null when it is not a planned value. */
+export function plannedStart(value: string): string | null {
+  const week = /^(\d{4})-W(\d{2})$/.exec(value);
+  if (week) return weekStart(Number(week[1]), Number(week[2]));
+  if (/^\d{4}-\d{2}$/.test(value)) return `${value}-01`;
+  return validDay(value);
+}
+
+// Legacy planning keywords, compared ignoring case and hyphens (`this-week` is `thisWeek`)
+const KEYWORDS = new Set(['today', 'tomorrow', 'thisweek', 'nextweek', 'thismonth', 'nextmonth', 'thisyear', 'nextyear', 'someday', 'sometime']);
+const keyword = (text: string) => text.trim().toLowerCase().replace(/-/g, '');
+
+/** True for a legacy planning keyword (`today`, `thisWeek`, `someday`, ...). */
+export const isPlanningKeyword = (text: string) => KEYWORDS.has(keyword(text));
+
+/** The planned date a legacy keyword stands for on `today`. Null for those without a date. */
+export function resolveKeyword(text: string, today: string): string | null {
+  const now = parseDay(today);
+  switch (keyword(text)) {
+    case 'today':
+      return today;
+    case 'tomorrow':
+      return formatDay(addDays(now, 1));
+    case 'thisweek':
+      return weekOf(today);
+    case 'nextweek':
+      return weekOf(formatDay(addDays(now, 7)));
+    case 'thismonth':
+      return monthOf(today);
+    case 'nextmonth':
+      return monthOf(formatDay(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))));
+    default:
+      return null;
+  }
+}
+
+/** A planned date as found in a file: a canonical value, a legacy keyword resolved, anything else dropped. */
+export function readPlanned(raw: unknown, today: string): string | null {
+  if (raw === undefined || raw === null || raw === '') return null;
+  const text = String(raw).trim();
+  return isPlanningKeyword(text) ? resolveKeyword(text, today) : canonicalPlanned(text);
+}
+
+/** Folds a legacy `postponed_until` into the planned date: it wins when it lies after today and the planned date
+ * starts before it. */
+export function mergePostponed(planned: string | null, postponedRaw: unknown, today: string): string | null {
+  if (postponedRaw === undefined || postponedRaw === null || postponedRaw === '') return planned;
+  const match = /^(\d{4}-\d{2}-\d{2})(?:[T ].*)?$/.exec(String(postponedRaw).trim());
+  const postponed = match ? validDay(match[1]) : null;
+  if (!postponed || postponed <= today) return planned;
+  if (planned !== null) {
+    const start = plannedStart(planned);
+    if (start !== null && start >= postponed) return planned;
+  }
+  return postponed;
+}
+
+/** The first and last day a search for `value` covers: a day, a week, a month, or a legacy keyword for one. */
+export function plannedSpan(value: string, today: string): [string, string] | null {
+  const text = isPlanningKeyword(value) ? resolveKeyword(value, today) : canonicalPlanned(value);
+  const start = text ? plannedStart(text) : null;
+  if (!text || !start) return null;
+  if (text.length === 10) return [start, start];
+  if (text.includes('W')) return [start, formatDay(addDays(parseDay(start), 6))];
+  const [year, month] = start.split('-').map(Number);
+  return [start, formatDay(new Date(Date.UTC(year, month, 0)))];
+}
+
+/** How far ahead an app shows planned tasks. A task planned beyond it is kept out of the way. */
+export type Horizon = 'today' | 'tomorrow' | 'week' | 'month' | 'all';
+
+export const HORIZONS: Horizon[] = ['today', 'tomorrow', 'week', 'month', 'all'];
+
+/** The last day a horizon covers (null for no limit). A week is an ISO week, Monday to Sunday. */
+export function horizonEnd(horizon: Horizon, today: string): string | null {
+  switch (horizon) {
+    case 'today':
+      return today;
+    case 'tomorrow':
+      return formatDay(addDays(parseDay(today), 1));
+    case 'week':
+      return plannedSpan(weekOf(today), today)![1];
+    case 'month':
+      return plannedSpan(monthOf(today), today)![1];
+    default:
+      return null;
+  }
+}
+
+/** Whether a planned value starts after the horizon: the task is planned further ahead than the app shows. */
+export function isBeyond(planned: string | null | undefined, horizon: Horizon, today: string): boolean {
+  const end = horizonEnd(horizon, today);
+  const start = planned ? plannedStart(planned) : null;
+  return end !== null && start !== null && start > end;
+}

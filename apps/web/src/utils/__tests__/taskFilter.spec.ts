@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filterTasks, parseQuery, stringifyQuery, isEmptyFilter, isoDay, isPostponed, today, type TaskFilter } from '@jotter/task-filter';
+import { filterTasks, parseQuery, stringifyQuery, isEmptyFilter, isoDay, isBeyond, today, type TaskFilter } from '@jotter/task-filter';
 
 // The same cases run against the Python backend (tests/test_search_conformance.py)
 import matchFixture from '../../../../../spec/fixtures/search/match.json';
@@ -62,10 +62,18 @@ describe('days in the local calendar', () => {
     expect(isoDay(1, new Date(2026, 9, 31, 12))).toBe('2026-11-01');
   });
 
-  it('postpones a task only to a day after today', () => {
-    expect(isPostponed({ postponed_until: '2026-10-14' }, justAfterMidnight)).toBe(true);
-    expect(isPostponed({ postponed_until: '2026-10-13' }, justAfterMidnight)).toBe(false);
-    expect(isPostponed({ postponed_until: null }, justAfterMidnight)).toBe(false);
-    expect(isPostponed({}, justAfterMidnight)).toBe(false);
+  it('keeps a task out of the way when it is planned beyond the horizon', () => {
+    // 2026-10-13 is a Tuesday: its week ends on 2026-10-18, its month on 2026-10-31
+    const day = today(justAfterMidnight);
+    expect(isBeyond('2026-10-14', 'today', day)).toBe(true);
+    expect(isBeyond('2026-10-13', 'today', day)).toBe(false);
+    expect(isBeyond('2026-10-14', 'tomorrow', day)).toBe(false);
+    expect(isBeyond('2026-10-18', 'week', day)).toBe(false);
+    expect(isBeyond('2026-W43', 'week', day)).toBe(true);
+    expect(isBeyond('2026-W42', 'today', day)).toBe(false); // a week that has begun is not ahead
+    expect(isBeyond('2026-11', 'month', day)).toBe(true);
+    expect(isBeyond('2026-10', 'today', day)).toBe(false);
+    expect(isBeyond('2099-01-01', 'all', day)).toBe(false);
+    expect(isBeyond(null, 'today', day)).toBe(false);
   });
 });

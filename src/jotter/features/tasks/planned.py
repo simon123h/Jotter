@@ -84,6 +84,22 @@ def planned_start(value: str) -> date:
     return date.fromisoformat(value)
 
 
+def planned_span(value: str, today: date) -> tuple[str, str] | None:
+    """The first and last day a search for `value` covers: a day, a week, a month, or a legacy keyword for one.
+    `None` when `value` is none of them."""
+    text = read_planned(value, today) if is_planning_keyword(value) else canonical_planned(value)
+    if text is None:
+        return None
+    start = planned_start(text)
+    if len(text) == 10:
+        end = start
+    elif "W" in text:
+        end = start + timedelta(days=6)
+    else:
+        end = date(start.year + start.month // 12, start.month % 12 + 1, 1) - timedelta(days=1)
+    return start.isoformat(), end.isoformat()
+
+
 def read_planned(raw: object, today: date) -> str | None:
     """A planned date as found in a file: a canonical value, a legacy keyword resolved, anything else dropped."""
     if not raw:

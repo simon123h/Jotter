@@ -30,7 +30,7 @@ updated_at: '2026-09-20T11:00:00.000Z'
 - [ ] Test on Android emulator
 `;
 
-    const task = parseTaskMarkdown(rawMarkdown, 'default', 'task-123.md');
+    const task = parseTaskMarkdown(rawMarkdown, 'default', 'task-123.md', '2026-10-14');
     expect(task.id).toBe('task-123');
     expect(task.project_id).toBe('default');
     expect(task.title).toBe('Implement mobile storage');
@@ -39,10 +39,10 @@ updated_at: '2026-09-20T11:00:00.000Z'
     expect(task.tags).toEqual(['mobile', 'capacitor']);
     expect(task.attachments).toEqual(['uploads/photo.png']);
     expect(task.due_date).toBe('2026-10-01');
-    expect(task.planned_date).toBe('this-week');
+    // this-week starts before the postponement, which is folded into the planned date
+    expect(task.planned_date).toBe('2026-10-15');
     expect(task.priority).toBe('high');
     expect(task.color).toBe('#3b82f6');
-    expect(task.postponed_until).toBe('2026-10-15');
     expect(task.body).toContain('# Notes on mobile implementation');
 
     const serialized = dumpTaskMarkdown(task);

@@ -43,7 +43,6 @@ describe("rolling a recurring task over", () => {
         bucket: rolled.bucket,
         due_date: rolled.due_date ?? null,
         planned_date: rolled.planned_date ?? null,
-        postponed_until: rolled.postponed_until ?? null,
         reminders: rolled.reminders,
         body: rolled.body,
       }).toEqual(c.expected);

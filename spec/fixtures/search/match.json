@@ -40,7 +40,7 @@
       ],
       "priority": "urgent",
       "due_date": "2026-05-01",
-      "planned_date": null,
+      "planned_date": "2026-W25",
       "created_at": "2026-02-01T09:00:00+00:00",
       "updated_at": "2026-02-02T10:00:00+00:00"
     },
@@ -67,7 +67,7 @@
       ],
       "priority": "medium",
       "due_date": null,
-      "planned_date": null,
+      "planned_date": "2026-06",
       "created_at": "2026-03-01T09:00:00+00:00",
       "updated_at": "2026-03-02T10:00:00+00:00"
     },
@@ -312,13 +312,68 @@
       ]
     },
     {
-      "name": "planned date",
+      "name": "planned on a day",
       "filter": {
         "planned_date": "2026-03-12"
       },
       "ids": [
         "a"
       ]
+    },
+    {
+      "name": "planned in a week: a week that starts in it counts",
+      "filter": {
+        "planned_date": "2026-W25"
+      },
+      "ids": [
+        "c"
+      ]
+    },
+    {
+      "name": "planned in a month: days, weeks and months that start in it count",
+      "filter": {
+        "planned_date": "2026-06"
+      },
+      "ids": [
+        "c",
+        "e"
+      ]
+    },
+    {
+      "name": "a keyword stands for its day, week or month on today",
+      "filter": {
+        "planned_date": "thisWeek"
+      },
+      "ids": [
+        "c"
+      ]
+    },
+    {
+      "name": "today is a day",
+      "filter": {
+        "planned_date": "today"
+      },
+      "ids": [
+        "c"
+      ]
+    },
+    {
+      "name": "none finds the tasks without a planned date",
+      "filter": {
+        "planned_date": "none"
+      },
+      "ids": [
+        "b",
+        "d",
+        "f"
+      ]
+    },
+    {
+      "name": "a value that is no planned date finds nothing",
+      "filter": {
+        "planned_date": "soon"
+      },
+      "ids": []
     },
     {
       "name": "created before covers the whole day",
