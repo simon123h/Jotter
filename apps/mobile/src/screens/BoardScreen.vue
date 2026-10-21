@@ -143,16 +143,23 @@ function goTo(index: number) {
   el.scrollTo({ left, behavior: 'smooth' });
 }
 
-// A different project or view starts at its first tab
+// A different project or view starts at its first tab, the planning view at today (Not planned is one tab to the left)
 watch(
   () => [app.projectId, app.view],
   async () => {
     stopNavigating();
-    active.value = 0;
-    ui.columnProgress = 0;
+    const start =
+      app.view === 'planning'
+        ? Math.max(
+            0,
+            app.columns.findIndex((column) => column.key === 'planned:today')
+          )
+        : 0;
+    active.value = start;
+    ui.columnProgress = start;
     ui.navHidden = false;
     await nextTick();
-    scroller.value?.scrollTo({ left: 0, top: 0 });
+    scroller.value?.scrollTo({ left: start * (scroller.value.clientWidth || 0), top: 0 });
   }
 );
 

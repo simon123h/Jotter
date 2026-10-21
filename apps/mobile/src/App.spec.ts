@@ -1810,6 +1810,14 @@ describe('tag and planning views', () => {
     expect(column(3)).toContain('Book flights');
   });
 
+  it('opens the planning view on the Today tab, with Not planned one tab to the left', async () => {
+    await start(viewsVault);
+    await switchTo('planning');
+
+    expect(useUiStore().activeColumn).toBe(1);
+    expect(useAppStore().columns[useUiStore().activeColumn].key).toBe('planned:today');
+  });
+
   it('shows a tab for what has slipped, once something has', async () => {
     await start((f) => {
       viewsVault(f);
