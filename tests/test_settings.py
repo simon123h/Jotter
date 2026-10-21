@@ -49,7 +49,7 @@ def test_a_view_needs_an_id_a_name_and_a_query() -> None:
         SettingsUpdate(views=[{"id": "x", "name": "No query"}])
 
 
-def test_a_view_that_is_malformed_is_dropped_and_the_other_settings_stay() -> None:
+def test_a_view_that_is_malformed_is_dropped_and_the_other_settings_stay(caplog) -> None:
     settings = AppSettings(
         planningHorizon="week",
         views=[
@@ -61,4 +61,6 @@ def test_a_view_that_is_malformed_is_dropped_and_the_other_settings_stay() -> No
     )
     assert settings.planningHorizon == "week"
     assert [v.id for v in settings.views or []] == ["ok"]
+    assert "Dropping 3 view(s)" in caplog.text
     assert AppSettings(views="junk").views is None
+    assert "not a list" in caplog.text

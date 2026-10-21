@@ -1,8 +1,11 @@
 """Pydantic schemas and DTOs for Application Settings."""
 
+import logging
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+
+logger = logging.getLogger(__name__)
 
 # How far ahead planned tasks are shown (spec/FORMAT.md does not know it: it is a setting of the views)
 PlanningHorizon = Literal["today", "tomorrow", "week", "month", "all"]
@@ -46,13 +49,21 @@ class AppSettings(BaseModel):
     @classmethod
     def _keep_the_valid_views(cls, value: Any) -> Any:
         """A view without an id, a name or a query is dropped, instead of failing all the settings."""
-        if not isinstance(value, list):
+        if value is None:
             return None
-        return [
+        if not isinstance(value, list):
+            logger.warning("Ignoring 'views' in settings.json: not a list")
+            return None
+        valid = [
             v
             for v in value
             if isinstance(v, dict) and all(isinstance(v.get(key), str) for key in ("id", "name", "query"))
         ]
+        if len(valid) < len(value):
+            logger.warning(
+                "Dropping %d view(s) in settings.json without an id, a name or a query", len(value) - len(valid)
+            )
+        return valid
 
     @model_validator(mode="before")
     @classmethod
