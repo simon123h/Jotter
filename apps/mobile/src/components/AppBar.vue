@@ -1,27 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import {
-  Menu,
-  Search,
-  ArrowLeft,
-  X,
-  SlidersHorizontal,
-  ListChecks,
-  EllipsisVertical,
-  Check,
-  ChevronDown,
-  ArrowDownToLine,
-  Calendar,
-} from '@lucide/vue';
+import { Menu, Search, ArrowLeft, X, SlidersHorizontal, ListChecks, EllipsisVertical, Check, ChevronDown, Calendar } from '@lucide/vue';
 import { isEmptyFilter } from '@jotter/task-filter';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
-import { useTaskActions } from '@/composables/useTaskActions';
+import ColumnTargets from '@/components/ColumnTargets.vue';
 
 const app = useAppStore();
 const ui = useUiStore();
-const actions = useTaskActions();
 
 const input = ref<HTMLInputElement | null>(null);
 const title = computed(() => app.project?.title ?? t('app.name'));
@@ -50,16 +37,8 @@ function selectAllHere() {
   app.selectOnly([...new Set(columns.flatMap((column) => column.tasks.map((task) => task.id)))]);
 }
 
-/**
- * The column in view, when the selected tasks can be put into it: the tabs of a board, with at least one task from elsewhere.
- * Select, open another column, tap here.
- */
-const moveHere = computed(() => {
-  if (app.view !== 'board' || app.layout !== 'tabs') return null;
-  const bucket = app.columns[ui.activeColumn]?.bucket;
-  if (!bucket) return null;
-  return app.selection.some((id) => app.taskById(id)?.bucket !== bucket) ? bucket : null;
-});
+/** The column in view in the tabs layout: the list layout has the buttons in the section headers. */
+const columnInView = computed(() => (app.layout === 'tabs' ? app.columns[ui.activeColumn] : undefined));
 
 const menuOpen = ref(false);
 const menuItem = 'flex h-12 w-full items-center gap-3 px-4 text-left text-base active:bg-line';
@@ -101,14 +80,7 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
       <h1 class="min-w-0 flex-1 truncate px-2 text-[1.35rem] font-normal leading-7" data-testid="selection-count">
         {{ t('select.count', { count: app.selectedCount }) }}
       </h1>
-      <button
-        v-if="moveHere"
-        class="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-accent/50 px-3 text-sm font-medium text-accent active:bg-accent/15"
-        data-testid="move-here"
-        @click="actions.moveTo([...app.selection], moveHere)"
-      >
-        <ArrowDownToLine class="h-4 w-4" />{{ t('move.here') }}
-      </button>
+      <ColumnTargets v-if="columnInView" :column="columnInView" size="bar" />
       <button :class="iconButton" :aria-label="t('select.all')" data-testid="select-all" @click="selectAllHere">
         <ListChecks class="h-6 w-6" />
       </button>

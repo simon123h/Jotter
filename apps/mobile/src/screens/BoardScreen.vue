@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { ArrowDownToLine, ChevronDown, Plus, TriangleAlert } from '@lucide/vue';
+import { ChevronDown, Plus, TriangleAlert } from '@lucide/vue';
 import AppBar from '@/components/AppBar.vue';
 import BottomNav from '@/components/BottomNav.vue';
 import BulkToolbar from '@/components/BulkToolbar.vue';
 import ColumnTabs from '@/components/ColumnTabs.vue';
+import ColumnTargets from '@/components/ColumnTargets.vue';
 import TaskRow from '@/components/TaskRow.vue';
 import { useCardDrag } from '@/composables/useCardDrag';
 import { useTaskActions } from '@/composables/useTaskActions';
@@ -49,10 +50,6 @@ const drag = useCardDrag({
 const isDragged = (task: Task) => task.id === drag.dragging.value?.id;
 const shown = (tasks: Task[]) => tasks.filter((t) => !isDragged(t));
 const dropIndex = (key: string) => (drag.target.value?.columnKey === key ? drag.target.value.index : -1);
-
-/** The selected tasks can be put into this section: on the board, with one of them from elsewhere. */
-const canMoveHere = (col: Column) =>
-  app.view === 'board' && !!col.bucket && app.selection.some((id) => app.taskById(id)?.bucket !== col.bucket);
 
 /** A tap opens a task, or ticks it while others are selected. */
 function onTap(task: Task) {
@@ -246,14 +243,7 @@ watch(
               <span class="min-w-0 flex-1 truncate">{{ columnTitle(col) }}</span>
             </button>
             <!-- While tasks are selected, a section takes them: it works on a folded one too -->
-            <button
-              v-if="canMoveHere(col)"
-              class="flex h-7 shrink-0 items-center gap-1 rounded-full border border-accent/50 px-2.5 text-xs font-medium text-accent active:bg-accent/15"
-              :data-testid="`move-here-${col.key}`"
-              @click="actions.moveTo([...app.selection], col.bucket!)"
-            >
-              <ArrowDownToLine class="h-3.5 w-3.5" />{{ t('move.here') }}
-            </button>
+            <ColumnTargets :column="col" size="section" />
             <!-- The count stays at the right edge, after the button; a tap on it folds the section like the title does -->
             <span
               class="w-12 shrink-0 self-stretch py-2.5 pr-4 text-right text-sm font-normal text-muted"
