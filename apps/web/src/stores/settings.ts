@@ -2,7 +2,7 @@ import { reactive, ref, toRefs, watch, nextTick } from 'vue';
 import { defineStore } from 'pinia';
 import { useDebounceFn } from '@vueuse/core';
 import { getSettings, saveSettings } from '@/api';
-import { HORIZONS } from '@jotter/task-filter';
+import { HORIZONS, exampleViews, newViewId, type SavedView } from '@jotter/task-filter';
 import type { AppSettings } from '@/types';
 
 export type SortBy = 'alpha' | 'manual';
@@ -21,6 +21,7 @@ export const useSettingsStore = defineStore('settings', () => {
     hideDoneColumn: true,
     hideArchiveColumn: true,
     planningHorizon: 'today',
+    views: null,
     isSidebarOpen: getStoredBool(SIDEBAR_STORAGE_KEY, true),
     currentTheme: 'nordic-light',
     themeFollowsSystem: false,
@@ -42,6 +43,8 @@ export const useSettingsStore = defineStore('settings', () => {
   });
 
   let skipSave = false;
+  // The settings of the vault are read: what is missing in them (the views) can be offered now
+  const loaded = ref(false);
 
   const loadSettings = async () => {
     try {
@@ -76,6 +79,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       await nextTick();
       skipSave = false;
+      loaded.value = true;
     } catch (err) {
       const isTest = typeof globalThis !== 'undefined' && (globalThis as any).process?.env?.NODE_ENV === 'test';
       if (!isTest) {
@@ -215,6 +219,26 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   };
 
+  // Saved views. A vault that never had any gets the examples once; the list is the user's after that, also when empty.
+  const offerExampleViews = (names: { upcoming: string; recent: string }) => {
+    if (!state.views) state.views = exampleViews(names);
+  };
+
+  const addView = (name: string, query: string): SavedView => {
+    const views = state.views ?? [];
+    const view = { id: newViewId(name, views), name: name.trim(), query: query.trim() };
+    state.views = [...views, view];
+    return view;
+  };
+
+  const updateView = (id: string, changes: Partial<Pick<SavedView, 'name' | 'query'>>) => {
+    state.views = (state.views ?? []).map((view) => (view.id === id ? { ...view, ...changes } : view));
+  };
+
+  const removeView = (id: string) => {
+    state.views = (state.views ?? []).filter((view) => view.id !== id);
+  };
+
   const updateSettings = (updates: Partial<AppSettings>) => {
     Object.assign(state, updates);
   };
@@ -222,6 +246,7 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     ...toRefs(state),
     settings: state,
+    loaded,
     updateSettings,
     loadSettings,
     toggleHideDoneColumn,
@@ -236,5 +261,9 @@ export const useSettingsStore = defineStore('settings', () => {
     toggleHideAddTaskButton,
     setTagColor,
     removeTagColor,
+    offerExampleViews,
+    addView,
+    updateView,
+    removeView,
   };
 });

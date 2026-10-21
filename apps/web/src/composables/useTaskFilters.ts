@@ -4,6 +4,7 @@ import type { Task, TaskFilterParams } from '@/types';
 import { filterTasks, parseTags } from '@jotter/task-filter';
 import { parseDSL, stringifyDSL } from '@/utils/dsl';
 import { useProjectStore } from '@/stores/project';
+import { FILTER_QUERY_KEYS, filtersToRouteQuery, routeQueryToFilters } from '@/utils/filterRoute';
 
 export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolean } = {}) {
   const syncRoute = options.syncRoute ?? true;
@@ -29,6 +30,8 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
       f.updated_before ||
       f.project ||
       f.planned_date ||
+      f.planned_before ||
+      f.planned_after ||
       (f.has_due_date !== undefined && f.has_due_date !== null)
     );
   });
@@ -89,26 +92,7 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
 
   // Parse URL query parameters to taskFilters
   const parseFiltersFromQuery = (q: any) => {
-    let has_due_date: boolean | null = null;
-    if (q.has_due_date === 'true') has_due_date = true;
-    else if (q.has_due_date === 'false') has_due_date = false;
-
-    const filters: TaskFilterParams = {
-      search: (q.search as string) || undefined,
-      buckets: (q.buckets as string) || undefined,
-      priorities: (q.priorities as string) || undefined,
-      tags: (q.tags as string) || undefined,
-      tag_mode: (q.tag_mode as 'any' | 'all') || undefined,
-      has_due_date,
-      due_after: (q.due_after as string) || undefined,
-      due_before: (q.due_before as string) || undefined,
-      created_after: (q.created_after as string) || undefined,
-      created_before: (q.created_before as string) || undefined,
-      updated_after: (q.updated_after as string) || undefined,
-      updated_before: (q.updated_before as string) || undefined,
-      project: (q.project as string) || undefined,
-      planned_date: (q.planned_date as string) || undefined,
-    };
+    const filters = routeQueryToFilters(q);
 
     // The address is the filters written down: when it says what the field already says, the field is left as typed
     if (stringifyDSL(taskFilters.value) !== stringifyDSL(filters)) {
@@ -137,45 +121,9 @@ export function useTaskFilters(tasks: Ref<Task[]>, options: { syncRoute?: boolea
   watch(
     taskFilters,
     (newFilters) => {
-      const query = { ...(route?.query || {}) };
-
-      if (newFilters.search) query.search = newFilters.search;
-      else delete query.search;
-
-      if (newFilters.buckets) query.buckets = newFilters.buckets;
-      else delete query.buckets;
-
-      if (newFilters.priorities) query.priorities = newFilters.priorities;
-      else delete query.priorities;
-
-      if (newFilters.tags) query.tags = newFilters.tags;
-      else delete query.tags;
-
-      if (newFilters.tag_mode) query.tag_mode = newFilters.tag_mode;
-      else delete query.tag_mode;
-
-      if (newFilters.has_due_date !== undefined && newFilters.has_due_date !== null) {
-        query.has_due_date = String(newFilters.has_due_date);
-      } else {
-        delete query.has_due_date;
-      }
-
-      if (newFilters.due_after) query.due_after = newFilters.due_after;
-      else delete query.due_after;
-
-      if (newFilters.due_before) query.due_before = newFilters.due_before;
-      else delete query.due_before;
-
-      for (const key of ['created_after', 'created_before', 'updated_after', 'updated_before'] as const) {
-        if (newFilters[key]) query[key] = newFilters[key];
-        else delete query[key];
-      }
-
-      if (newFilters.project) query.project = newFilters.project;
-      else delete query.project;
-
-      if (newFilters.planned_date) query.planned_date = newFilters.planned_date;
-      else delete query.planned_date;
+      const query: Record<string, any> = { ...(route?.query || {}) };
+      for (const key of FILTER_QUERY_KEYS) delete query[key];
+      Object.assign(query, filtersToRouteQuery(newFilters));
 
       if (syncRoute && route && JSON.stringify(route.query) !== JSON.stringify(query)) {
         router.replace({ query });

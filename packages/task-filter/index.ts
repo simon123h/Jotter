@@ -11,6 +11,7 @@
 import { plannedSpan, plannedStart } from "./planned";
 
 export * from "./planned";
+export * from "./views";
 
 /** What a query asks for. Lists are comma-separated strings, as the HTTP API takes them. */
 export interface TaskFilter {

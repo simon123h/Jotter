@@ -8,12 +8,22 @@ from pydantic import BaseModel, ConfigDict, model_validator
 PlanningHorizon = Literal["today", "tomorrow", "week", "month", "all"]
 
 
+class SavedView(BaseModel):
+    """A saved search: a name and a query of the search language (packages/task-filter), shown in the sidebar."""
+
+    id: str
+    name: str
+    query: str
+
+
 class AppSettings(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     hideDoneColumn: bool = True
     hideArchiveColumn: bool = True
     planningHorizon: PlanningHorizon = "today"
+    # None: never set, so the apps offer their example views once; a list (also an empty one) is the user's choice
+    views: list[SavedView] | None = None
     isSidebarOpen: bool = True
     currentTheme: str = "nordic-light"
     thresholdDays: int = 7
@@ -50,6 +60,7 @@ class SettingsUpdate(BaseModel):
     hideDoneColumn: bool | None = None
     hideArchiveColumn: bool | None = None
     planningHorizon: PlanningHorizon | None = None
+    views: list[SavedView] | None = None
     isSidebarOpen: bool | None = None
     currentTheme: str | None = None
     thresholdDays: int | None = None

@@ -12,6 +12,7 @@ import {
   BookOpen,
   History,
   Layers,
+  ListFilter,
   Database,
   Settings2,
   ChevronDown,
@@ -28,9 +29,12 @@ import type { Project } from '@/types';
 import { useI18n } from '@/composables/useI18n';
 import { isServerOnline, checkServerStatus } from '@/api';
 import { useSelectionStore } from '@/stores/selection';
-import { compareTitles } from '@jotter/task-filter';
+import { compareTitles, normalizedQuery, parseQuery, stringifyQuery } from '@jotter/task-filter';
+import { useRoute } from 'vue-router';
+import { filtersToRouteQuery, routeQueryToFilters } from '@/utils/filterRoute';
 
 const { t } = useI18n();
+const route = useRoute();
 
 const props = defineProps<{
   projects: Project[];
@@ -225,6 +229,19 @@ const handleCreateProject = () => {
 
 const modalStore = useModalStore();
 
+// The saved views of the vault, and the one whose search is in the address. Until the vault has a list of its own, the
+// example views are offered once its settings are read.
+const savedViews = computed(() => settingsStore.views ?? []);
+watch(
+  () => settingsStore.loaded,
+  (loaded) => {
+    if (loaded) settingsStore.offerExampleViews({ upcoming: t('savedViews.upcoming'), recent: t('savedViews.recent') });
+  },
+  { immediate: true }
+);
+const currentQuery = computed(() => stringifyQuery(routeQueryToFilters(route.query as Record<string, unknown>)));
+const isViewActive = (query: string) => props.activeProjectId === 'all' && currentQuery.value === normalizedQuery(query);
+
 const openTimeMachineModal = () => {
   modalStore.openTimeMachine(props.activeProjectId || undefined);
 };
@@ -287,6 +304,37 @@ const onVaultSelected = async (event: Event) => {
       >
         <Settings2 class="w-3.5 h-3.5" />
       </button>
+    </div>
+
+    <!-- Saved views: searches kept under a name -->
+    <div v-if="savedViews.length" class="px-2 pt-2 pb-1 space-y-0.5 border-b border-theme-border shrink-0" data-testid="saved-views">
+      <div class="px-2 pb-0.5 text-[10px] font-bold uppercase tracking-wider text-theme-text-muted/70">{{ t('savedViews.title') }}</div>
+      <router-link
+        v-for="view in savedViews"
+        :key="view.id"
+        :to="{ name: 'list', params: { projectId: 'all' }, query: filtersToRouteQuery(parseQuery(view.query)) }"
+        class="group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all duration-200 font-medium border"
+        :class="
+          isViewActive(view.query)
+            ? 'bg-theme-primary/10 text-theme-accent border-theme-primary/15'
+            : 'text-theme-text-muted hover:bg-theme-column/30 hover:text-theme-text-main border-transparent'
+        "
+        data-testid="saved-view"
+      >
+        <div class="flex items-center gap-2 overflow-hidden flex-grow mr-2">
+          <ListFilter class="w-3.5 h-3.5 shrink-0" :class="isViewActive(view.query) ? 'text-theme-accent' : 'text-theme-text-muted'" />
+          <span class="truncate font-sans font-semibold">{{ view.name }}</span>
+        </div>
+        <button
+          type="button"
+          class="opacity-0 group-hover:opacity-100 p-0.5 rounded text-theme-text-muted hover:text-theme-text-main transition-opacity cursor-pointer"
+          :title="t('savedViews.edit')"
+          data-testid="saved-view-edit"
+          @click.stop.prevent="modalStore.openViewEdit(view)"
+        >
+          <MoreHorizontal class="w-3.5 h-3.5" />
+        </button>
+      </router-link>
     </div>
 
     <!-- Sidebar Header -->

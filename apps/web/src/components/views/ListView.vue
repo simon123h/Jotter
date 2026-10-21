@@ -48,8 +48,17 @@ const shownTasks = useTasksWithinHorizon(() => props.tasks);
 
 const fetchViewTasks = async () => {
   if (!activeProjectId.value) return;
+  // Done and archived tasks stay out, unless the search names their column (bucket:done)
+  const named = String(route.query.buckets ?? '')
+    .toLowerCase()
+    .split(',');
+  const excluded = [
+    hideDoneColumn.value && !named.includes('done') ? 'done' : '',
+    hideArchiveColumn.value && !named.includes('archive') ? 'archive' : '',
+  ].filter(Boolean);
   await projectStore.fetchTasks({
     projectId: activeProjectId.value,
+    excludeBuckets: excluded.join(','),
   });
 };
 
@@ -57,7 +66,7 @@ onMounted(async () => {
   await fetchViewTasks();
 });
 
-watch([activeProjectId, hideDoneColumn, hideArchiveColumn], async () => {
+watch([activeProjectId, hideDoneColumn, hideArchiveColumn, () => route.query.buckets], async () => {
   await fetchViewTasks();
 });
 
@@ -90,12 +99,16 @@ const handleTagClick = (tag: string) => {
 type SortKey = 'title' | 'bucket' | 'priority' | 'due_date' | 'planned_date' | 'updated_at';
 const sortKey = ref<SortKey>('updated_at');
 const sortOrder = ref<'asc' | 'desc'>('desc');
+// A search with `sort:` (a saved view) arrives in its order, which stays until a column header is clicked
+const clickedHeader = ref(false);
+const searchSorted = computed(() => !clickedHeader.value && !!route.query.sort);
 
 const isAllSelected = computed(() => {
   return shownTasks.value.length > 0 && shownTasks.value.every((t) => props.isSelected(t.id));
 });
 
 const sortedTasks = computed(() => {
+  if (searchSorted.value) return shownTasks.value;
   return [...shownTasks.value].sort((a, b) => {
     let valA: any = a[sortKey.value] || '';
     let valB: any = b[sortKey.value] || '';
@@ -113,6 +126,7 @@ const sortedTasks = computed(() => {
 });
 
 const toggleSort = (key: SortKey) => {
+  clickedHeader.value = true;
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
   } else {

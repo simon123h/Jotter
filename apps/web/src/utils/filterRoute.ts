@@ -1,0 +1,50 @@
+import type { TaskFilterParams } from '@/types';
+
+/** The filters that go into the address as they are: one query parameter each. */
+const TEXT_KEYS = [
+  'search',
+  'buckets',
+  'priorities',
+  'tags',
+  'tag_mode',
+  'due_after',
+  'due_before',
+  'created_after',
+  'created_before',
+  'updated_after',
+  'updated_before',
+  'project',
+  'planned_date',
+  'planned_before',
+  'planned_after',
+  'sort',
+] as const;
+
+/** Every query parameter the filters use, so that a page can take them out of an address before it puts its own in. */
+export const FILTER_QUERY_KEYS: readonly string[] = [...TEXT_KEYS, 'has_due_date'];
+
+/** The filters as query parameters of the address (only those that are set). */
+export function filtersToRouteQuery(filters: TaskFilterParams): Record<string, string> {
+  const query: Record<string, string> = {};
+  for (const key of TEXT_KEYS) {
+    const value = filters[key];
+    if (value) query[key] = value;
+  }
+  if (filters.has_due_date !== undefined && filters.has_due_date !== null) query.has_due_date = String(filters.has_due_date);
+  return query;
+}
+
+/** The filters an address holds. */
+export function routeQueryToFilters(q: Record<string, unknown>): TaskFilterParams {
+  let has_due_date: boolean | null = null;
+  if (q.has_due_date === 'true') has_due_date = true;
+  else if (q.has_due_date === 'false') has_due_date = false;
+
+  const filters: TaskFilterParams = { has_due_date };
+  for (const key of TEXT_KEYS) {
+    const value = q[key] as string | undefined;
+    if (value) (filters as Record<string, unknown>)[key] = value;
+    else (filters as Record<string, unknown>)[key] = undefined;
+  }
+  return filters;
+}

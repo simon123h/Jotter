@@ -462,6 +462,20 @@ export const de = {
   shortcuts: {
     createTask: 'Taste Q drücken, um eine neue Aufgabe hinzuzufügen',
   },
+  savedViews: {
+    title: 'Ansichten',
+    upcoming: 'Demnächst',
+    recent: 'Zuletzt hinzugefügt',
+    save: 'Diese Suche als Ansicht speichern',
+    saveTitle: 'Ansicht speichern',
+    editTitle: 'Ansicht bearbeiten',
+    edit: 'Ansicht bearbeiten',
+    name: 'Name',
+    namePlaceholder: 'z. B. Demnächst',
+    query: 'Suche',
+    queryHelp: 'Geschrieben wie im Suchfeld, z. B. tag:ui sort:-created.',
+    delete: 'Ansicht löschen',
+  },
   sidebar: {
     collapse: 'Seitenleiste einklappen',
     expand: 'Seitenleiste ausklappen',
