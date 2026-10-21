@@ -93,6 +93,24 @@ describe('Settings Store', () => {
     expect(store.views).toEqual([]);
   });
 
+  it('reads the settings again for another vault, and offers the examples if it has no views', async () => {
+    const { getSettings } = await import('@/api');
+    const store = useSettingsStore();
+    await vi.waitFor(() => expect(store.loaded).toBe(true));
+    store.addView('Old vault view', 'tag:x');
+
+    vi.mocked(getSettings).mockResolvedValueOnce({ views: null } as any);
+    const reading = store.loadSettings();
+    expect(store.loaded).toBe(false);
+    await reading;
+    expect(store.loaded).toBe(true);
+    expect(store.views).toBeNull(); // nothing of the vault before is left; the sidebar offers the examples now
+
+    vi.mocked(getSettings).mockResolvedValueOnce({} as any); // a source that does not know views
+    await store.loadSettings();
+    expect(store.views).toBeNull();
+  });
+
   it('knows when the settings are read', async () => {
     const store = useSettingsStore();
     await vi.waitFor(() => expect(store.loaded).toBe(true));

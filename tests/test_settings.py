@@ -47,3 +47,18 @@ def test_views_are_none_until_the_user_has_a_list_and_survive_an_update(tmp_path
 def test_a_view_needs_an_id_a_name_and_a_query() -> None:
     with pytest.raises(ValidationError):
         SettingsUpdate(views=[{"id": "x", "name": "No query"}])
+
+
+def test_a_view_that_is_malformed_is_dropped_and_the_other_settings_stay() -> None:
+    settings = AppSettings(
+        planningHorizon="week",
+        views=[
+            {"id": "ok", "name": "Fine", "query": "tag:ui"},
+            {"name": "No id", "query": "x"},
+            "junk",
+            {"id": 1, "name": "n", "query": "q"},
+        ],
+    )
+    assert settings.planningHorizon == "week"
+    assert [v.id for v in settings.views or []] == ["ok"]
+    assert AppSettings(views="junk").views is None

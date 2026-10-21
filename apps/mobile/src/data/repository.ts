@@ -164,13 +164,16 @@ export class VaultRepository {
 
   /**
    * Changes some keys of settings.json and keeps all others (the desktop app has many more). A file that cannot be
-   * read is not overwritten. Writes run one after the other, so two quick changes do not lose each other.
+   * read is not overwritten. Writes run one after the other, so two quick changes do not lose each other. The patch can
+   * be a function of the settings as they are when the write runs; it answers null to write nothing.
    */
-  updateSettings(patch: Record<string, unknown>): Promise<void> {
+  updateSettings(patch: Record<string, unknown> | ((current: Record<string, unknown>) => Record<string, unknown> | null)): Promise<void> {
     const path = `${this.current().vault.path}/settings.json`;
     const write = this.settingsWrites.then(async () => {
       const current = await this.readSettingsFile(path);
-      await this.fs.writeText(path, `${JSON.stringify({ ...current, ...patch }, null, 2)}\n`);
+      const change = typeof patch === 'function' ? patch(current) : patch;
+      if (!change) return;
+      await this.fs.writeText(path, `${JSON.stringify({ ...current, ...change }, null, 2)}\n`);
     });
     this.settingsWrites = write.catch(() => undefined);
     return write;

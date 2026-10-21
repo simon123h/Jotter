@@ -49,6 +49,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const loadSettings = async () => {
     try {
       skipSave = true;
+      loaded.value = false; // a vault switch reads them again, and the examples are offered again if it has no views
       const settings = await getSettings();
       Object.assign(state, settings);
 
@@ -57,6 +58,8 @@ export const useSettingsStore = defineStore('settings', () => {
       delete (state as unknown as Record<string, unknown>).autoCommitInterval;
 
       // Ensure defaults for optional/partial loads
+      // A source that does not know views (the static demo) must not leave the ones of the vault before
+      if (!('views' in settings)) state.views = null;
       if (!state.pinnedProjectIds) state.pinnedProjectIds = [];
       if (!state.projectOrder) state.projectOrder = [];
       if (!state.language) state.language = '';

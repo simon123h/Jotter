@@ -7,7 +7,7 @@ import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
 import { isoDay, today, weekOf } from '@jotter/task-filter';
 import { capacitorKeyValue } from '@/data/keyValue';
-import { runShortcut, shortcutAction, sharedDraft } from '@/shortcuts';
+import { runShortcut, openReminder, shortcutAction, sharedDraft } from '@/shortcuts';
 import { useSettingsStore } from '@/stores/settings';
 import { linkTitles } from '@/linkTitle';
 import { locale } from '@/i18n';
@@ -2952,6 +2952,52 @@ describe('saved views', () => {
     expect(saved.query).toBe(`project:${app.projectId} planned:after:today`);
     expect(app.savedViewId).toBe(saved.id);
     expect(JSON.parse(await fs.readText('Jotter/settings.json')).views.map((v: { id: string }) => v.id)).toContain(saved.id);
+  });
+
+  it('does not offer the examples over a list the file got in the meantime, nor when it cannot be read', async () => {
+    const { repo } = await start((f) => projects(f, [recent]));
+    // The write checks the file as it is when it runs: a list is never replaced
+    await repo.updateSettings((current) => (Array.isArray(current.views) ? null : { views: [] }));
+    expect(JSON.parse(await fs.readText('Jotter/settings.json')).views).toEqual([recent]);
+
+    const { app } = await start((f) => {
+      projects(f);
+      f.put('Jotter/settings.json', '{ not json');
+    });
+    expect(app.views).toEqual([]);
+    expect(await fs.readText('Jotter/settings.json')).toBe('{ not json');
+  });
+
+  it('opens the task of a reminder in its project, also from a view with ids of its own', async () => {
+    const { app } = await start((f) => projects(f, [ahead, recent], { planningHorizon: 'all' }));
+    await open(1);
+    expect(app.scoped).toBe(true);
+
+    await openReminder({ projectId: 'home', taskId: 'a' });
+    await settle();
+
+    expect(app.scoped).toBe(false);
+    expect(app.projectId).toBe('home');
+    expect(useUiStore().sheet).toEqual({ type: 'task', id: 'a' });
+  });
+
+  it('moves no task to a column that its project does not have', async () => {
+    const { app, ui } = await start((f) => {
+      projects(f, [recent], { planningHorizon: 'all' });
+      f.put(
+        'Jotter/home/index.md',
+        '---\ntitle: Home\nbuckets:\n  - name: todo\n    title: To Do\n  - name: review\n    title: Review\n---\n'
+      );
+    });
+    await open(0);
+
+    // work has no review column, home has
+    const placements = await app.moveManyToBucket(['work/a', 'home/a'], 'review');
+
+    expect(placements.map((p) => p.id)).toEqual(['home/a']);
+    expect(fs.files.get('Jotter/home/a.md')!.data).toContain('status: review');
+    expect(fs.files.get('Jotter/work/a.md')!.data).toContain('status: todo');
+    expect(ui.toast?.message).toContain('1');
   });
 
   it('leaves the view when a project is chosen', async () => {

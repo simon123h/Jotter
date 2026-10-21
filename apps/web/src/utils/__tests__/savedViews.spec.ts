@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { exampleViews, newViewId, sameQuery, scopedQuery } from '@jotter/task-filter';
-import { filtersToRouteQuery, routeQueryToFilters, viewRouteName } from '@/utils/filterRoute';
+import { filtersToRouteQuery, routeQueryToFilters, routeSort, viewRouteName } from '@/utils/filterRoute';
 import { parseQuery } from '@jotter/task-filter';
 
 describe('saved views', () => {
@@ -50,6 +50,16 @@ describe('filters in the address', () => {
     expect(query).toMatchObject({ planned_after: 'today', planned_before: '+2w', sort: '-created', has_due_date: 'true' });
     expect(filtersToRouteQuery(parseQuery('group:tag'))).toEqual({ group: 'tag' });
     expect(routeQueryToFilters(query)).toMatchObject(filters);
+  });
+
+  it('leaves out a sort or a grouping that the search does not know', () => {
+    const filters = routeQueryToFilters({ sort: 'foo', group: 'foo' });
+    expect(filters.sort).toBeUndefined();
+    expect(filters.group).toBeUndefined();
+    expect(routeQueryToFilters({ sort: '-Due', group: 'Tag' })).toMatchObject({ sort: '-due', group: 'tag' });
+    expect(routeSort({ sort: '--due' })).toBeUndefined();
+    expect(routeSort({ sort: '-due' })).toBe('-due');
+    expect(viewRouteName({ group: 'foo' as never })).toBe('list');
   });
 
   it('leaves out what is not set', () => {

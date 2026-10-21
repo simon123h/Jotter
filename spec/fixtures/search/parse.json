@@ -230,6 +230,35 @@
         "sort": "planned",
         "group": "planned"
       }
+    },
+    {
+      "query": "planned:Before:2026-12-31",
+      "filter": {
+        "planned_before": "2026-12-31"
+      }
+    },
+    {
+      "query": "planned:AFTER:today",
+      "filter": {
+        "planned_after": "today"
+      }
+    },
+    {
+      "query": "due:Before:2026-01-01 created:After:-7d",
+      "filter": {
+        "due_before": "2026-01-01",
+        "created_after": "-7d"
+      }
+    },
+    {
+      "query": "sort:--due",
+      "filter": {}
+    },
+    {
+      "query": "sort:-Due",
+      "filter": {
+        "sort": "-due"
+      }
     }
   ]
 }

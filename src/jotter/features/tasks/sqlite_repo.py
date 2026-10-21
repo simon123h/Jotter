@@ -52,27 +52,29 @@ def _sort_value(task: Task, key: str) -> str | int | None:
         case "priority":
             return _PRIORITY_RANK.get(task.priority.value) if task.priority.value else None
         case _:
-            return task.title
+            return _title_key(task.title)
 
 
-def _title_key(title: str) -> tuple[str, str]:
-    """How titles sort (packages/task-filter `compareTitles`): symbols and emojis in front of a title do not count, case
-    and accents hardly."""
+def _title_key(title: str) -> str:
+    """How `sort:title` compares titles (spec/README.md, Search fixtures): no symbols or emojis in front, no accents, lower
+    case, then by code point. The TypeScript implementation does the same."""
     start = next((i for i, ch in enumerate(title) if ch.isalnum()), len(title))
-    plain = "".join(ch for ch in unicodedata.normalize("NFKD", title[start:]) if not unicodedata.combining(ch))
-    return plain.casefold(), title
+    return "".join(
+        ch for ch in unicodedata.normalize("NFKD", title[start:]) if not unicodedata.category(ch).startswith("M")
+    ).lower()
 
 
 def _sorted(tasks: list[Task], sort: str | None) -> list[Task]:
     """The tasks in the order a `sort` asks for (`created`, `-due`, ...); equal ones keep theirs. Anything else leaves it."""
-    key = (sort or "").lower().lstrip("-")
+    text = (sort or "").lower()
+    key = text.removeprefix("-")  # one dash reverses; two are no sort
     if key not in _SORT_KEYS:
         return tasks
-    sign = -1 if (sort or "").startswith("-") else 1
+    sign = -1 if text.startswith("-") else 1
     # Those without a value are last in both directions, so they are sorted apart from the rest
     valued = [(t, v) for t in tasks if (v := _sort_value(t, key)) is not None]
     missing = [t for t in tasks if _sort_value(t, key) is None]
-    valued.sort(key=lambda pair: _title_key(str(pair[1])) if key == "title" else pair[1], reverse=sign < 0)
+    valued.sort(key=lambda pair: pair[1], reverse=sign < 0)
     return [t for t, _ in valued] + missing
 
 

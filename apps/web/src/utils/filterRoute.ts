@@ -1,3 +1,4 @@
+import { toGroup, toSort } from '@jotter/task-filter';
 import type { TaskFilterParams } from '@/types';
 
 /** The filters that go into the address as they are: one query parameter each. */
@@ -25,7 +26,7 @@ const GROUP_PAGES = { planned: 'time', tag: 'tag', bucket: 'board' } as const;
 
 /** The page that shows a view: the layout its `group:` asks for, a plain list when it asks for none. */
 export function viewRouteName(filters: TaskFilterParams): 'time' | 'tag' | 'board' | 'list' {
-  return filters.group ? GROUP_PAGES[filters.group] : 'list';
+  return (filters.group && GROUP_PAGES[filters.group]) || 'list';
 }
 
 /** Every query parameter the filters use, so that a page can take them out of an address before it puts its own in. */
@@ -51,8 +52,13 @@ export function routeQueryToFilters(q: Record<string, unknown>): TaskFilterParam
   const filters: TaskFilterParams = { has_due_date };
   for (const key of TEXT_KEYS) {
     const value = q[key] as string | undefined;
-    if (value) (filters as Record<string, unknown>)[key] = value;
-    else (filters as Record<string, unknown>)[key] = undefined;
+    (filters as Record<string, unknown>)[key] = value || undefined;
   }
+  // An address can say anything: a sort or a grouping that is none is left out
+  filters.sort = toSort(filters.sort);
+  filters.group = toGroup(filters.group);
   return filters;
 }
+
+/** The sort an address asks for (none when it asks for no sort the search knows). */
+export const routeSort = (q: Record<string, unknown>) => toSort(q.sort as string | undefined);

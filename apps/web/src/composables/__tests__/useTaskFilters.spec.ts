@@ -337,6 +337,19 @@ describe('useTaskFilters', () => {
       expect(route.query).toEqual({});
     });
 
+    it('keeps the search of a saved view that is opened from a project (the address changes the project and the search at once)', async () => {
+      route.params = { projectId: 'home' };
+      const { filters } = setup();
+      await nextTick();
+
+      route.params = { projectId: 'all' };
+      route.query = { planned_after: 'today', sort: 'planned', group: 'planned' };
+      for (let i = 0; i < 4; i++) await nextTick();
+
+      expect(filters.searchQuery.value).toBe('planned:after:today sort:planned group:planned');
+      expect(route.query).toEqual({ planned_after: 'today', sort: 'planned', group: 'planned' });
+    });
+
     it('keeps the search when no project was left (opening a page with a search in its address)', async () => {
       route.query = { search: 'milk' };
       const { filters } = setup();

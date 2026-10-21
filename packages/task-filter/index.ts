@@ -77,6 +77,31 @@ export function parseTags(input: string | readonly string[] | null | undefined):
 
 const quoted = (value: string) => (value.includes(" ") ? `"${value}"` : value);
 
+/** `before:2026-12-31` or `after:-7d` (in any case) as its kind and its day. */
+function boundary(raw: string): ["before" | "after", string] | null {
+  const match = /^(before|after):(.*)$/i.exec(raw);
+  return match ? [match[1].toLowerCase() as "before" | "after", match[2]] : null;
+}
+
+const SORT_KEYS = ["created", "updated", "due", "planned", "priority", "title"] as const;
+type SortKey = (typeof SORT_KEYS)[number];
+
+/** A sort is a key, with one `-` in front to reverse it. */
+export const isSortKey = (sort: string) =>
+  (SORT_KEYS as readonly string[]).includes(sort.startsWith("-") ? sort.slice(1) : sort);
+
+const GROUPS = ["planned", "tag", "bucket"] as const;
+
+/** The grouping a text names, or undefined when it is none. */
+export const toGroup = (text: string | undefined): TaskFilter["group"] =>
+  GROUPS.find((group) => group === (text ?? "").toLowerCase());
+
+/** The sort a text names (lower case), or undefined when it is none. */
+export const toSort = (text: string | undefined): string | undefined => {
+  const sort = (text ?? "").toLowerCase();
+  return isSortKey(sort) ? sort : undefined;
+};
+
 /**
  * Supports:
  * - tag:ui,bug (any of them) or tag:ui+bug (all of them), also `tags:`
@@ -145,35 +170,33 @@ export function parseQuery(query: string): TaskFilter {
       } else if (lowerKey === "project" || lowerKey === "proj") {
         filter.project = rawValue;
       } else if (lowerKey === "planned") {
-        if (rawValue.startsWith("before:"))
-          filter.planned_before = rawValue.substring(7);
-        else if (rawValue.startsWith("after:"))
-          filter.planned_after = rawValue.substring(6);
+        const range = boundary(rawValue);
+        if (range?.[0] === "before") filter.planned_before = range[1];
+        else if (range?.[0] === "after") filter.planned_after = range[1];
         else filter.planned_date = rawValue;
       } else if (lowerKey === "group") {
-        const group = rawValue.toLowerCase();
-        if (group === "planned" || group === "tag" || group === "bucket") filter.group = group;
+        const group = toGroup(rawValue);
+        if (group) filter.group = group;
       } else if (lowerKey === "sort") {
-        const sort = rawValue.toLowerCase();
-        if (isSortKey(sort)) filter.sort = sort;
+        const sort = toSort(rawValue);
+        if (sort) filter.sort = sort;
       } else if (lowerKey === "due") {
         const lowerVal = rawValue.toLowerCase();
         if (lowerVal === "has") filter.has_due_date = true;
         else if (lowerVal === "none") filter.has_due_date = false;
-        else if (rawValue.startsWith("before:"))
-          filter.due_before = rawValue.substring(7);
-        else if (rawValue.startsWith("after:"))
-          filter.due_after = rawValue.substring(6);
+        else {
+          const range = boundary(rawValue);
+          if (range?.[0] === "before") filter.due_before = range[1];
+          else if (range?.[0] === "after") filter.due_after = range[1];
+        }
       } else if (lowerKey === "created") {
-        if (rawValue.startsWith("before:"))
-          filter.created_before = rawValue.substring(7);
-        else if (rawValue.startsWith("after:"))
-          filter.created_after = rawValue.substring(6);
+        const range = boundary(rawValue);
+        if (range?.[0] === "before") filter.created_before = range[1];
+        else if (range?.[0] === "after") filter.created_after = range[1];
       } else if (lowerKey === "updated") {
-        if (rawValue.startsWith("before:"))
-          filter.updated_before = rawValue.substring(7);
-        else if (rawValue.startsWith("after:"))
-          filter.updated_after = rawValue.substring(6);
+        const range = boundary(rawValue);
+        if (range?.[0] === "before") filter.updated_before = range[1];
+        else if (range?.[0] === "after") filter.updated_after = range[1];
       }
     } else {
       const text = (
@@ -221,10 +244,10 @@ export function stringifyQuery(filter: TaskFilter): string {
   return parts.join(" ");
 }
 
-/** Whether the query asks for anything: a filter of only empty fields does not. */
+/** Whether the query asks for anything: a filter of only empty fields does not, and neither does one that only sorts or groups. */
 export function isEmptyFilter(filter: TaskFilter): boolean {
   return !Object.entries(filter).some(([key, value]) =>
-    key === "tag_mode"
+    key === "tag_mode" || key === "sort" || key === "group"
       ? false
       : value !== undefined && value !== null && value !== "",
   );
@@ -372,13 +395,26 @@ export function matchesFilter(
   return true;
 }
 
-const SORT_KEYS = ["created", "updated", "due", "planned", "priority", "title"] as const;
-type SortKey = (typeof SORT_KEYS)[number];
-
-const isSortKey = (sort: string) =>
-  (SORT_KEYS as readonly string[]).includes(sort.replace(/^-/, ""));
-
 const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+
+/** The title as `sort:title` compares it: no symbols or emojis in front, no accents, lower case (spec/README.md, Search fixtures). */
+const titleKey = (title: string) =>
+  title
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase();
+
+/** Strings by code point, not by UTF-16 unit, as Python compares them. */
+function compareCodePoints(a: string, b: string): number {
+  const x = [...a];
+  const y = [...b];
+  for (let i = 0; i < Math.min(x.length, y.length); i++) {
+    const d = x[i].codePointAt(0)! - y[i].codePointAt(0)!;
+    if (d) return d < 0 ? -1 : 1;
+  }
+  return x.length === y.length ? 0 : x.length < y.length ? -1 : 1;
+}
 
 /** What a task is sorted by; null when it has no value, which puts it last in either direction. */
 function sortValue(task: FilterableTask, key: SortKey): string | number | null {
@@ -394,22 +430,23 @@ function sortValue(task: FilterableTask, key: SortKey): string | number | null {
     case "priority":
       return PRIORITY_RANK[(task.priority ?? "").toLowerCase()] ?? null;
     case "title":
-      return task.title;
+      return titleKey(task.title);
   }
 }
 
 /** The tasks in the order a `sort` asks for (see TaskFilter.sort); equal ones keep theirs. A sort that is none leaves it. */
 export function sortTasks<T extends FilterableTask>(tasks: T[], sort: string | undefined): T[] {
-  if (!sort || !isSortKey(sort)) return tasks;
-  const key = sort.replace(/^-/, "") as SortKey;
-  const sign = sort.startsWith("-") ? -1 : 1;
+  const normalized = toSort(sort);
+  if (!normalized) return tasks;
+  const key = normalized.replace(/^-/, "") as SortKey;
+  const sign = normalized.startsWith("-") ? -1 : 1;
   const values = new Map(tasks.map((task) => [task, sortValue(task, key)]));
   return [...tasks].sort((a, b) => {
     const x = values.get(a)!;
     const y = values.get(b)!;
     if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1;
     if (typeof x === "number" || typeof y === "number") return sign * ((x as number) - (y as number));
-    return sign * (key === "title" ? compareTitles(x, y as string) : x < y ? -1 : x > y ? 1 : 0);
+    return sign * (key === "title" ? compareCodePoints(x as string, y as string) : x < y ? -1 : x > y ? 1 : 0);
   });
 }
 

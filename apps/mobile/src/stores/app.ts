@@ -191,6 +191,7 @@ export const useAppStore = defineStore('app', () => {
       const byName = new Map<string, Bucket>();
       for (const bucket of lists.flat()) if (!byName.has(bucket.name)) byName.set(bucket.name, bucket);
       buckets.value = [...byName.values()];
+      bucketsOfProject = new Map(open.map((id, i) => [id, new Set(lists[i]!.map((b) => b.name))]));
     } else if (!projectId.value) {
       buckets.value = [];
       allTasks.value = [];
@@ -202,6 +203,9 @@ export const useAppStore = defineStore('app', () => {
     const existing = new Set(allTasks.value.map((t) => t.id));
     if (selection.value.some((id) => !existing.has(id))) selection.value = selection.value.filter((id) => existing.has(id));
   }
+
+  /** The column names of each project, while a saved view shows all of them: a task can only go to a column its project has. */
+  let bucketsOfProject = new Map<string, Set<string>>();
 
   const idList = (value: unknown) => (Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : []);
 
@@ -230,9 +234,28 @@ export const useAppStore = defineStore('app', () => {
       const list = settings.views.filter(isSavedView);
       if (JSON.stringify(list) !== JSON.stringify(views.value)) views.value = list;
     } else if (vault.value) {
-      // Never set: the example views are offered once, in the language of the app
-      views.value = exampleViews({ upcoming: t('views.upcoming'), recent: t('views.recent') });
-      saveSettings({ views: views.value });
+      await offerExampleViews();
+    }
+  }
+
+  /**
+   * A vault that never had views gets the examples once, in the language of the app. They are written only if the file
+   * has no list when the write runs, so a list the desktop app saved meanwhile (or one that could not be read just now)
+   * is never replaced; what the vault holds afterwards is what the app shows.
+   */
+  let offering = false;
+  async function offerExampleViews() {
+    if (offering) return;
+    offering = true;
+    try {
+      const examples = exampleViews({ upcoming: t('views.upcoming'), recent: t('views.recent') });
+      await repository().updateSettings((current) => (Array.isArray(current.views) ? null : { views: examples }));
+      const written = (await repository().readSettings()).views;
+      if (Array.isArray(written)) views.value = written.filter(isSavedView);
+    } catch {
+      // Not written (the file cannot be read or written): the views stay as they are, and the next scan tries again
+    } finally {
+      offering = false;
     }
   }
 
@@ -550,10 +573,12 @@ export const useAppStore = defineStore('app', () => {
       await r.createBucket(requireProject(), { title });
       await loadProject();
     }
-    const moving = ids
-      .map(taskById)
-      .filter((t): t is Task => !!t && t.bucket !== bucket)
+    const wanted = ids.map(taskById).filter((t): t is Task => !!t && t.bucket !== bucket);
+    // In a saved view the tasks come from several projects; one without that column keeps its task where it is
+    const moving = wanted
+      .filter((t) => !scoped.value || bucketsOfProject.get(t.project_id)?.has(bucket))
       .sort((a, b) => a.position - b.position);
+    if (moving.length < wanted.length) ui.showToast(t('views.skipped', { count: wanted.length - moving.length }));
     let next = Math.max(0, ...allTasks.value.filter((t) => t.bucket === bucket).map((t) => t.position)) + 1000;
     const before: Placement[] = [];
     for (const task of moving) {
