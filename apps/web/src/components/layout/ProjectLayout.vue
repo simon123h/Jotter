@@ -64,7 +64,9 @@ const isGlobalView = computed(() => !!route.meta.isGlobal);
 const { filteredTasks, taskFilters, hasActiveFilters } = useTaskFilters(tasks, { syncRoute: false });
 
 // A query that names planned dates is not cut by the horizon (see horizonContext). The planning views never are.
-const horizonApplies = computed(() => !taskFilters.value.planned_date);
+const horizonApplies = computed(
+  () => !(taskFilters.value.planned_date || taskFilters.value.planned_before || taskFilters.value.planned_after)
+);
 provide(HorizonAppliesKey, horizonApplies);
 
 /** What a search found beyond the horizon: the views leave it out, and the strip under the toolbar says so. */

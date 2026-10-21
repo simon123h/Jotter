@@ -40,7 +40,7 @@ const drag = useCardDrag({
   onHoldRelease: (task) => app.toggleSelected(task.id),
   onError: (err) => ui.showToast(err instanceof Error ? err.message : String(err)),
   // The order of tasks belongs to the board's columns
-  canReorder: () => app.view === 'board',
+  canReorder: () => app.view === 'board' && !app.scoped,
 });
 
 /**

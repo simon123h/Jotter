@@ -4,7 +4,7 @@ The task search of Jotter, shared by the desktop app (`apps/web/`) and the mobil
 search field (`tag:ui+bug prio:high due:before:2026-12-31 "fix leak"`) and the matching of tasks against it.
 
 - `parseQuery(query)` gives a `TaskFilter`, `stringifyQuery(filter)` the query back.
-- `filterTasks(tasks, filter)` keeps the tasks that match, in their order.
+- `filterTasks(tasks, filter)` keeps the tasks that match, in their order, or in the one the filter's `sort` asks for (`sortTasks` does the sorting alone).
 - `parseTags(text)` is what a tag field makes of a text: commas, semicolons, bars, line breaks or spaces separate tags (`foo bar` is two tags), a leading `#` goes, tags are lower case, each appears once.
 - `isoDay(offset)` and `today()` name days in the local calendar (not UTC, which is a day off around midnight).
 - `planned.ts` has the planned date: `plannedStart`, `plannedSpan` and `plannedSlot` read a day, a week (`2026-W43`) or a month (`2026-10`); `isBeyond(planned, horizon, today)` tells whether a task is planned further ahead than a view looks (`HORIZONS`, `horizonEnd`).
