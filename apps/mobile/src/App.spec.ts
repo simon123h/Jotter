@@ -83,6 +83,13 @@ async function closeSheet() {
   else await find('sheet-backdrop').trigger('click');
 }
 
+/** The settings file as the app left it, without the example views it adds once (those have their own test). */
+const settingsWithoutViews = async () => {
+  const settings = JSON.parse(await fs.readText('Jotter/settings.json'));
+  delete settings.views;
+  return settings;
+};
+
 const desktopVault = (f: MemoryFs) => {
   f.put('Jotter/work/index.md', '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: done\n    title: Done\n---\n');
   f.put(
@@ -729,7 +736,7 @@ describe('projects and vaults', () => {
     await all('project-up')[0]!.trigger('click');
     expect(app.orderedProjects.map((p) => p.id)).toEqual(['lab', 'home', 'work']);
 
-    expect(JSON.parse(await fs.readText('Jotter/settings.json'))).toEqual({
+    expect(await settingsWithoutViews()).toEqual({
       pinnedProjectIds: ['lab'],
       sortBy: 'manual',
       projectOrder: ['lab', 'home', 'work'],
@@ -745,7 +752,7 @@ describe('projects and vaults', () => {
     });
     await settle();
     expect(app.pinned).toEqual(['work']);
-    expect(JSON.parse(await fs.readText('Jotter/settings.json'))).toEqual({ pinnedProjectIds: ['work'] });
+    expect(await settingsWithoutViews()).toEqual({ pinnedProjectIds: ['work'] });
   });
 
   it('adds a second vault and switches to it', async () => {
@@ -875,7 +882,7 @@ describe('settings', () => {
     await type('setting-capture-project', 'home', 'change');
     await settle();
     expect(app.captureProjectId).toBe('home');
-    expect(JSON.parse(await fs.readText('Jotter/settings.json'))).toEqual({ currentTheme: 'nordic-dark', captureProjectId: 'home' });
+    expect(await settingsWithoutViews()).toEqual({ currentTheme: 'nordic-dark', captureProjectId: 'home' });
 
     await type('setting-capture-project', '', 'change');
     await settle();
@@ -2862,5 +2869,98 @@ describe('archived projects', () => {
     await find('open-projects').trigger('click');
     await settle();
     expect(all('project-switch-row').map((r) => r.text())).toEqual(['Work']);
+  });
+});
+
+describe('saved views', () => {
+  const stamp = (day: number) => `created_at: '2026-01-0${day}T09:00:00Z'`;
+  const projects = (f: MemoryFs, views: unknown = undefined, extra: Record<string, unknown> = {}) => {
+    const buckets = '---\ntitle: X\nbuckets:\n  - name: todo\n    title: To Do\n  - name: done\n    title: Done\n---\n';
+    f.put('Jotter/work/index.md', buckets.replace('X', 'Work'));
+    f.put('Jotter/home/index.md', buckets.replace('X', 'Home'));
+    // The same file name in both projects
+    f.put('Jotter/work/a.md', `---\ntitle: Write report\nstatus: todo\nposition: 1000\n${stamp(2)}\nplanned_date: ${isoDay(3)}\n---\n`);
+    f.put('Jotter/home/a.md', `---\ntitle: Water plants\nstatus: todo\nposition: 1000\n${stamp(5)}\nplanned_date: ${isoDay(1)}\n---\n`);
+    f.put('Jotter/home/b.md', `---\ntitle: Old chore\nstatus: todo\nposition: 2000\n${stamp(1)}\n---\n`);
+    if (views !== undefined) f.put('Jotter/settings.json', JSON.stringify({ views, ...extra }));
+  };
+  const ahead = { id: 'ahead', name: 'Ahead', query: 'planned:after:today sort:planned group:planned' };
+  const recent = { id: 'recent', name: 'Recent', query: 'sort:-created' };
+  const titles = () => all('row-title').map((t) => t.text());
+  const open = async (index: number) => {
+    await openDrawer();
+    await all('drawer-view')[index]!.trigger('click');
+    await settle();
+  };
+
+  it('offers the example views once, and keeps them deleted', async () => {
+    const { app } = await start((f) => projects(f));
+    expect(app.views.map((v) => v.id)).toEqual(['upcoming', 'recent']);
+    expect(JSON.parse(await fs.readText('Jotter/settings.json')).views).toHaveLength(2);
+
+    await openDrawer();
+    await all('drawer-view-edit')[0]!.trigger('click');
+    await settle();
+    await find('view-delete').trigger('click');
+    await settle();
+    await app.refresh({ force: true });
+    expect(app.views.map((v) => v.id)).toEqual(['recent']);
+  });
+
+  it('shows the tasks of all projects in the layout of the grouping, in the order of the search', async () => {
+    await start((f) => projects(f, [ahead, recent]));
+    await open(0);
+
+    expect(find('app-bar-title').text()).toContain('Ahead');
+    const tabs = all('bucket-tab').map((t) => t.text().replace(/\d+$/, '').trim());
+    expect(tabs.slice(0, 3)).toEqual(['Not planned', 'Today', 'Tomorrow']);
+    expect(all('column')[2]!.text()).toContain('Water plants');
+    expect(titles().join()).toContain('Write report');
+    expect(titles().join()).not.toContain('Old chore'); // not planned: the search wants planned tasks
+  });
+
+  it('shows a view without grouping as one list', async () => {
+    await start((f) => projects(f, [ahead, recent], { planningHorizon: 'all' }));
+    await open(1);
+
+    expect(all('column')).toHaveLength(1);
+    expect(titles()).toEqual(['Water plants', 'Write report', 'Old chore']); // the newest first
+  });
+
+  it('changes the right task when two projects have the same file name', async () => {
+    await start((f) => projects(f, [ahead, recent], { planningHorizon: 'all' }));
+    await open(1);
+
+    const row = all('task-row').find((r) => r.text().includes('Water plants'))!;
+    await row.find('[data-testid="row-check"]').trigger('click');
+    await settle();
+
+    expect(fs.files.get('Jotter/home/a.md')!.data).toContain('status: done');
+    expect(fs.files.get('Jotter/work/a.md')!.data).toContain('status: todo');
+  });
+
+  it('saves the search of the app bar as a view, scoped to the project, and opens it', async () => {
+    const { app } = await start((f) => projects(f, [ahead]));
+    await find('open-search').trigger('click');
+    await type('search-input', 'planned:after:today');
+    await find('save-view').trigger('click');
+    await settle();
+    await type('view-name', 'Soon');
+    await submit('view-save');
+
+    const saved = app.views.find((v) => v.name === 'Soon')!;
+    expect(saved.query).toBe(`project:${app.projectId} planned:after:today`);
+    expect(app.savedViewId).toBe(saved.id);
+    expect(JSON.parse(await fs.readText('Jotter/settings.json')).views.map((v: { id: string }) => v.id)).toContain(saved.id);
+  });
+
+  it('leaves the view when a project is chosen', async () => {
+    const { app } = await start((f) => projects(f, [ahead]));
+    await open(0);
+    await openDrawer();
+    await all('drawer-project')[0]!.trigger('click');
+    await settle();
+    expect(app.savedViewId).toBeNull();
+    expect(find('app-bar-title').text()).not.toContain('Ahead');
   });
 });

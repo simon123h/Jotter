@@ -22,6 +22,10 @@ A vault starts with two views, which you can change or delete like your own:
 
 They are offered once. When you delete them, they stay deleted.
 
+## On the phone
+
+The Android app lists the views in the side menu and opens them across all projects, as described in [The Android App](./mobile#saved-views). The bookmark in its search field saves a search as a view.
+
 ## Good to know
 
 - A search that names `planned:` (`planned:after:...`) ignores the [planning horizon](./planning), as any search with a planned date does. Other searches keep it.

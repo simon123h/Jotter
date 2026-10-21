@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Database, ChevronsUpDown, Folder, Pin, Pencil, Plus, Columns3, Settings } from '@lucide/vue';
+import { Database, ChevronsUpDown, Folder, Pin, Pencil, Plus, Columns3, ListFilter, Settings } from '@lucide/vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -9,6 +9,11 @@ const ui = useUiStore();
 
 async function select(id: string) {
   await app.selectProject(id);
+  ui.close();
+}
+
+async function openView(id: string) {
+  await app.openView(id);
   ui.close();
 }
 
@@ -50,6 +55,30 @@ const row = 'flex h-14 w-full items-center gap-4 rounded-full px-4 text-left tex
         </button>
       </div>
 
+      <!-- Saved searches, across all projects -->
+      <div v-if="app.views.length" class="shrink-0 px-3 pb-1" data-testid="drawer-views">
+        <h2 class="px-4 pb-1 pt-3 text-sm font-medium text-muted">{{ t('views.title') }}</h2>
+        <div v-for="v in app.views" :key="v.id" class="flex items-center">
+          <button
+            :class="[row, 'min-w-0 flex-1', app.savedViewId === v.id ? 'bg-accent/15 text-accent' : '']"
+            :aria-current="app.savedViewId === v.id ? 'page' : undefined"
+            data-testid="drawer-view"
+            @click="openView(v.id)"
+          >
+            <ListFilter class="h-5 w-5 shrink-0" />
+            <span class="min-w-0 flex-1 truncate">{{ v.name }}</span>
+          </button>
+          <button
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted active:bg-line"
+            :aria-label="t('views.edit')"
+            data-testid="drawer-view-edit"
+            @click="ui.open({ type: 'view', id: v.id })"
+          >
+            <Pencil class="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
       <div class="flex shrink-0 items-center justify-between px-7 pb-1 pt-3">
         <h2 class="text-sm font-medium text-muted">{{ t('nav.projects') }}</h2>
         <button
@@ -66,8 +95,8 @@ const row = 'flex h-14 w-full items-center gap-4 rounded-full px-4 text-left tex
         <button
           v-for="p in app.orderedProjects"
           :key="p.id"
-          :class="[row, p.id === app.projectId ? 'bg-accent/15 text-accent' : '']"
-          :aria-current="p.id === app.projectId ? 'page' : undefined"
+          :class="[row, p.id === app.projectId && !app.scoped ? 'bg-accent/15 text-accent' : '']"
+          :aria-current="p.id === app.projectId && !app.scoped ? 'page' : undefined"
           data-testid="drawer-project"
           @click="select(p.id)"
         >
@@ -82,7 +111,7 @@ const row = 'flex h-14 w-full items-center gap-4 rounded-full px-4 text-left tex
 
       <div class="shrink-0 border-t border-line px-3 py-2">
         <button
-          v-if="app.project && app.view === 'board'"
+          v-if="app.project && app.view === 'board' && !app.scoped"
           :class="row"
           data-testid="drawer-manage-columns"
           @click="ui.open({ type: 'columns' })"

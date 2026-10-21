@@ -22,6 +22,10 @@ Ein Vault beginnt mit zwei Ansichten, die du wie deine eigenen ändern oder lös
 
 Sie werden einmal angeboten. Löschst du sie, bleiben sie gelöscht.
 
+## Auf dem Handy
+
+Die Android-App listet die Ansichten im Seitenmenü und öffnet sie über alle Projekte, wie in [Die Android-App](./mobile#gespeicherte-ansichten) beschrieben. Das Lesezeichen im Suchfeld speichert eine Suche als Ansicht.
+
 ## Gut zu wissen
 
 - Eine Suche mit `planned:` (`planned:after:...`) ignoriert den [Planungshorizont](./planning), wie jede Suche mit geplantem Datum. Andere Suchen behalten ihn.
