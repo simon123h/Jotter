@@ -112,6 +112,16 @@ describe('TaskCard.vue', () => {
     expect(markDoneBtn.exists()).toBe(false);
   });
 
+  it('marks a medium, high or urgent task with a flag and leaves the others unmarked', () => {
+    const flag = (priority?: string) =>
+      mount(TaskCard, { ...mountOptions, props: { task: { ...mockTask, priority } } }).find('[data-testid="card-priority"]');
+    expect(flag('urgent').attributes('title')).toBe('Urgent');
+    expect(flag('high').exists()).toBe(true);
+    expect(flag('medium').exists()).toBe(true);
+    expect(flag('low').exists()).toBe(false);
+    expect(flag(undefined).exists()).toBe(false);
+  });
+
   it('extracts and renders level-zero checklist items correctly, ignoring indented ones by default', () => {
     const taskWithChecklist = createMockTask({
       ...mockTask,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Calendar, Clock, Paperclip, Box, Repeat, Bell, Link } from '@lucide/vue';
+import { Calendar, Clock, Paperclip, Box, Repeat, Bell, Link, Flag } from '@lucide/vue';
 import { domainOf, taskUrl } from '@jotter/links';
 import { today } from '@jotter/task-filter';
 import { repeatLabel } from '@/utils/repeat';
@@ -39,7 +39,7 @@ const hasContent = computed(
       domain.value ||
       props.task.due_date ||
       props.task.planned_date ||
-      props.task.priority ||
+      flagged.value ||
       props.task.repeat ||
       (props.task.reminders && props.task.reminders.length) ||
       (props.task.attachments && props.task.attachments.length) ||
@@ -62,24 +62,18 @@ const formatDate = (dateStr: string) => {
   }
 };
 
-const getPriorityClasses = (prio: string) => {
-  switch (prio) {
-    case 'low':
-      return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-    case 'medium':
-      return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-    case 'high':
-      return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
-    case 'urgent':
-      return 'bg-red-500/10 text-red-400 border-red-500/20 animate-pulse';
-    default:
-      return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-  }
-};
+// A flag marks the tasks that matter; low and no priority stay unmarked
+const FLAG_COLORS: Record<string, string> = { medium: 'text-blue-400', high: 'text-orange-400', urgent: 'text-red-400' };
+const flagged = computed(() => (props.task.priority && FLAG_COLORS[props.task.priority] ? props.task.priority : null));
 </script>
 
 <template>
   <div v-if="hasContent" class="flex flex-wrap items-center gap-2 text-xs text-theme-text-muted select-none mt-1">
+    <!-- Priority: a flag for medium and up -->
+    <span v-if="flagged" class="flex shrink-0" :title="t(`priorityOptions.${flagged}`)" data-testid="card-priority">
+      <Flag :class="[FLAG_COLORS[flagged], compact ? 'w-3 h-3' : 'w-3.5 h-3.5', flagged !== 'medium' ? 'fill-current' : '']" />
+    </span>
+
     <!-- Tags -->
     <div v-if="showTags && task.tags && task.tags.length" class="flex flex-wrap gap-1">
       <span
@@ -156,18 +150,6 @@ const getPriorityClasses = (prio: string) => {
     >
       <Paperclip :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0 text-theme-text-muted/80" />
       <span v-if="task.attachments.length > 1" :class="{ 'text-[10px]': compact }">{{ task.attachments.length }}</span>
-    </div>
-
-    <!-- Priority -->
-    <div
-      v-if="task.priority"
-      class="rounded border uppercase tracking-wider leading-none"
-      :class="[
-        getPriorityClasses(task.priority),
-        compact ? 'text-[8px] px-1 py-0.25 font-bold' : 'text-[10px] px-1.5 py-0.25 font-extrabold',
-      ]"
-    >
-      {{ task.priority }}
     </div>
 
     <!-- Timeblock Allocation Badge -->
