@@ -35,5 +35,5 @@ def test_env(temp_dir: str) -> Generator[tuple[TestClient, str], None, None]:
     )
     app = create_app(config, enable_background_sync=False)
 
-    with TestClient(app) as client:
+    with TestClient(app, base_url="http://localhost") as client:
         yield client, temp_dir

@@ -268,6 +268,7 @@ Jotter provides dual interfaces for external programmatic access:
 
    - Automated OpenAPI specification served directly by FastAPI.
    - **Interactive API Docs**: When running the Jotter server, interactive documentation is available at `http://localhost:58271/docs` (Swagger UI) and `http://localhost:58271/redoc` (ReDoc).
+   - **Local only**: the API has no login, so `jotter/local_guard.py` turns away requests from other web pages. A `Host` header that does not name this machine is refused while the server is bound to loopback (DNS rebinding), and so is an `Origin` that is neither a page of this machine nor the same origin as the request. CORS allows only those loopback origins. Tools without an `Origin` (curl, scripts, MCP) are not affected.
 
 2. **Model Context Protocol (MCP)**:
    - Built-in stdio-based MCP server (`jotter mcp` implemented via `FastMCP`).
