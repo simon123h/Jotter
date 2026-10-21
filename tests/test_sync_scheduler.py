@@ -207,7 +207,7 @@ class RecordingScheduler:
 def test_mutating_api_calls_mark_vault_dirty(temp_dir):
     config = UserConfig(data_dir=temp_dir, port=8000, vaults_config_path=str(Path(temp_dir) / "vaults.json"))
     app = create_app(config, enable_background_sync=False)
-    with TestClient(app) as client:
+    with TestClient(app, base_url="http://localhost") as client:
         rec = RecordingScheduler()
         app.state.sync_scheduler = rec
 
