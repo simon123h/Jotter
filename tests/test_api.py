@@ -390,7 +390,7 @@ def test_concurrent_multithreaded_requests(test_env):
         )
 
     def worker(i: int):
-        with TestClient(app) as thread_client:
+        with TestClient(app, base_url="http://localhost") as thread_client:
             if i % 3 == 0:
                 res = thread_client.get("/api/projects/default/buckets")
             elif i % 3 == 1:
@@ -473,7 +473,7 @@ def test_parallel_requests_do_not_share_a_connection(temp_dir):
             if r.status_code != 200:
                 errors.append((r.status_code, r.text[:80]))
 
-    with TestClient(create_app(config, enable_background_sync=False)) as client:
+    with TestClient(create_app(config, enable_background_sync=False), base_url="http://localhost") as client:
         threads = [threading.Thread(target=writer, args=(client, k)) for k in range(4)]
         for t in threads:
             t.start()

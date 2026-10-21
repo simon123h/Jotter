@@ -19,6 +19,7 @@ from jotter.features.sync.router import router as system_router
 from jotter.features.tasks.router import router as tasks_router
 from jotter.features.timeblock.router import router as timeblock_router
 from jotter.features.vaults.router import router as vaults_router
+from jotter.local_guard import LOOPBACK_ORIGIN_REGEX, make_local_guard
 from jotter.shared.db import ConnectionPool
 from jotter.shared.exceptions import DomainException, EntityNotFoundError, ValidationError
 
@@ -120,11 +121,14 @@ def create_app(
     # CORS Middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origin_regex=LOOPBACK_ORIGIN_REGEX,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Outermost, so a foreign page is turned away before anything else runs
+    app.middleware("http")(make_local_guard(cfg.host))
 
     # Register API Routers
     app.include_router(projects_router)
