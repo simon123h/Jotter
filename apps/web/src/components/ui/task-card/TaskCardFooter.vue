@@ -69,6 +69,11 @@ const flagged = computed(() => (props.task.priority && FLAG_COLORS[props.task.pr
 
 <template>
   <div v-if="hasContent" class="flex flex-wrap items-center gap-2 text-xs text-theme-text-muted select-none mt-1">
+    <!-- Priority: a flag for medium and up -->
+    <span v-if="flagged" class="flex shrink-0" :title="t(`priorityOptions.${flagged}`)" data-testid="card-priority">
+      <Flag :class="[FLAG_COLORS[flagged], compact ? 'w-3 h-3' : 'w-3.5 h-3.5', flagged !== 'medium' ? 'fill-current' : '']" />
+    </span>
+
     <!-- Tags -->
     <div v-if="showTags && task.tags && task.tags.length" class="flex flex-wrap gap-1">
       <span
@@ -146,11 +151,6 @@ const flagged = computed(() => (props.task.priority && FLAG_COLORS[props.task.pr
       <Paperclip :class="compact ? 'w-3 h-3' : 'w-3.5 h-3.5'" class="shrink-0 text-theme-text-muted/80" />
       <span v-if="task.attachments.length > 1" :class="{ 'text-[10px]': compact }">{{ task.attachments.length }}</span>
     </div>
-
-    <!-- Priority: a flag for medium and up -->
-    <span v-if="flagged" class="flex shrink-0" :title="t(`priorityOptions.${flagged}`)" data-testid="card-priority">
-      <Flag :class="[FLAG_COLORS[flagged], compact ? 'w-3 h-3' : 'w-3.5 h-3.5', flagged === 'urgent' ? 'fill-current' : '']" />
-    </span>
 
     <!-- Timeblock Allocation Badge -->
     <div
