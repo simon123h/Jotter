@@ -340,24 +340,6 @@
       ]
     },
     {
-      "name": "a keyword stands for its day, week or month on today",
-      "filter": {
-        "planned_date": "thisWeek"
-      },
-      "ids": [
-        "c"
-      ]
-    },
-    {
-      "name": "today is a day",
-      "filter": {
-        "planned_date": "today"
-      },
-      "ids": [
-        "c"
-      ]
-    },
-    {
       "name": "none finds the tasks without a planned date",
       "filter": {
         "planned_date": "none"
@@ -476,25 +458,21 @@
       ]
     },
     {
-      "name": "the old words for no date find the tasks that are not planned",
+      "name": "a keyword stands for its day, week or month on today",
       "filter": {
-        "planned_date": "someday"
+        "planned_date": "thisWeek"
       },
       "ids": [
-        "b",
-        "d",
-        "f"
+        "c"
       ]
     },
     {
-      "name": "thisYear is such a word too",
+      "name": "today is a day",
       "filter": {
-        "planned_date": "thisYear"
+        "planned_date": "today"
       },
       "ids": [
-        "b",
-        "d",
-        "f"
+        "c"
       ]
     }
   ]

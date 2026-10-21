@@ -69,20 +69,14 @@ def test_due_date_value_object():
 
 
 def test_planned_date_value_object():
-    today = date(2026, 10, 14)
     assert PlannedDate.from_str("2026-08-30").value == "2026-08-30"
     assert PlannedDate.from_str("2026-w43").value == "2026-W43"
     assert PlannedDate.from_str("2026-10").value == "2026-10"
     assert PlannedDate.from_str(None).value is None
-    # A caller may still pass a legacy keyword: it is resolved, and the ones without a date give none
-    assert PlannedDate.from_str("thisWeek", today).value == "2026-W42"
-    assert PlannedDate.from_str("tomorrow", today).value == "2026-10-15"
-    assert PlannedDate.from_str("sometime", today).value is None
-
     assert PlannedDate.from_str("2026-08-30").as_date == date(2026, 8, 30)
     assert PlannedDate.from_str("2026-W43").as_date is None
 
-    for bad in ("2027-W53", "2026-13", "soon", "2026-02-30"):
+    for bad in ("2027-W53", "2026-13", "soon", "2026-02-30", "thisWeek", "tomorrow"):
         with pytest.raises(ValidationError):
             PlannedDate.from_str(bad)
 

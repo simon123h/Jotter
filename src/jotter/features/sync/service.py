@@ -184,14 +184,8 @@ class SyncApplicationService:
                     file_stat = _file_stat(disk_stat)
 
                     known = indexed.get(file_path.stem)
-                    if (
-                        known is not None
-                        and file_stat is not None
-                        and known.file_stat == file_stat
-                        and known.legacy_day in (None, now.astimezone().date().isoformat())
-                    ):
-                        # Unchanged since it was indexed: no need to open and parse it (retention still applies). A file with a
-                        # planning keyword is read again on a new day, since the day it stands for moves on with the calendar
+                    if known is not None and file_stat is not None and known.file_stat == file_stat:
+                        # Unchanged since it was indexed: no need to open and parse it (retention still applies)
                         if _is_expired(
                             known.bucket,
                             known.updated_at,
@@ -208,8 +202,7 @@ class SyncApplicationService:
                             total_synced += 1
                         continue
 
-                    scan_day = now.astimezone().date()
-                    task = self.disk_task_repo.read_task_file(file_path, default_project_id=p_id, today=scan_day)
+                    task = self.disk_task_repo.read_task_file(file_path, default_project_id=p_id)
                     self.last_changes += 1
 
                     # Check if done task should be pruned based on retention period
@@ -235,8 +228,7 @@ class SyncApplicationService:
                         known_buckets[task.bucket] = new_b
 
                     # Index task in SQLite
-                    # The day of this scan stamps a legacy file, the same day the shortcut above compares with
-                    self.sqlite_task_repo.upsert_task(task, file_stat, scan_day)
+                    self.sqlite_task_repo.upsert_task(task, file_stat)
                     total_synced += 1
                 except Exception as e:
                     if isinstance(e, OSError):

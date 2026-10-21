@@ -1,19 +1,6 @@
 /// <reference types="node" />
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { readPlanned, weekOf, plannedStart, plannedSpan, plannedSlot } from '@jotter/task-filter';
-
-// Vitest runs from packages/vault-format
-const legacy = JSON.parse(readFileSync(resolve(process.cwd(), '../../spec/fixtures/planned/legacy.json'), 'utf-8'));
-
-describe('legacy planned values', () => {
-  for (const c of legacy.cases) {
-    it(`${c.value} on ${c.today}`, () => {
-      expect(readPlanned(c.value, c.today)).toBe(c.expected);
-    });
-  }
-});
+import { canonicalPlanned, weekOf, plannedStart, plannedSpan, plannedSlot } from '@jotter/task-filter';
 
 describe('weeks', () => {
   it('knows the ISO week of a day', () => {
@@ -34,25 +21,31 @@ describe('what is no planned value', () => {
   it('is read the same as the Python reader does', () => {
     for (const value of ['2026-13', '0999-12-31', '0000-W01', '0999-01']) {
       expect(plannedStart(value), value).toBeNull();
-      expect(readPlanned(value, '2026-10-14'), value).toBeNull();
+      expect(canonicalPlanned(value), value).toBeNull();
     }
   });
 
   it('trims the value, as the Python reader does', () => {
-    expect(readPlanned(' 2026-10\n', '2026-10-14')).toBe('2026-10');
-    expect(readPlanned('2026-w43\n', '2026-10-14')).toBe('2026-W43');
+    expect(canonicalPlanned(' 2026-10\n')).toBe('2026-10');
+    expect(canonicalPlanned('2026-w43\n')).toBe('2026-W43');
   });
 });
 
 describe('the ends of the calendar and of the month', () => {
   it('stops a span at the last day of year 9999', () => {
-    expect(plannedSpan('9999-W52', '2026-10-14')).toEqual(['9999-12-27', '9999-12-31']);
-    expect(plannedSpan('9999-12', '2026-10-14')).toEqual(['9999-12-01', '9999-12-31']);
+    expect(plannedSpan('9999-W52')).toEqual(['9999-12-27', '9999-12-31']);
+    expect(plannedSpan('9999-12')).toEqual(['9999-12-01', '9999-12-31']);
   });
 
-  it('files a month under Month in its last days, whether it is written as a month or as the old word', () => {
+  it('files a month under Month in its last days', () => {
     const now = new Date(2026, 9, 29); // Thursday 29 October: the week goes on to Sunday 1 November
     expect(plannedSlot('2026-10', now)).toBe('month');
-    expect(plannedSlot('thisMonth', now)).toBe('month');
+  });
+
+  it('knows no planning keyword', () => {
+    for (const word of ['today', 'thisWeek', 'someday']) {
+      expect(canonicalPlanned(word), word).toBeNull();
+      expect(plannedSpan(word), word).toBeNull();
+    }
   });
 });

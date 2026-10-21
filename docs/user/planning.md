@@ -67,6 +67,15 @@ planned_date: 2026-W43
 
 The `status` is never touched by planning. Hiding is a setting of the view, not part of the file.
 
-### Older files
+### Files from before version 5
 
-Earlier versions had words like `thisWeek` or `sometime` in `planned_date`, and a `postponed_until` date that hid a task until then. They are still read: a word is turned into the day, week or month it stands for on the day the file is read (`sometime`, `thisYear` and their kind mean "not planned"), and a `postponed_until` that is still ahead becomes the planned date. When Jotter next saves the task, it writes the new form and drops the old keys.
+Earlier versions wrote words like `thisWeek` or `sometime` into `planned_date`, and a `postponed_until` date that hid a task until then. Version 5 turned them into dates when it read a file. From version 6 Jotter no longer reads them: a word is not a planned date, so the task shows as not planned, and a `postponed_until` no longer hides anything.
+
+Convert a vault once, before you update (or right after, on a copy of the files you have not saved since):
+
+```sh
+python3 scripts/migrate_planned.py ~/path/to/vault           # lists what would change
+python3 scripts/migrate_planned.py ~/path/to/vault --write   # changes the files
+```
+
+A word becomes the day, week or month it stands for today (`sometime` and `thisYear` mean "not planned"), and a `postponed_until` that is still ahead becomes the planned date. `hidePostponedColumn` in `settings.json` becomes a horizon. Only those lines change, so a Git commit before the run shows exactly what happened. The script is in the [repository](https://github.com/simon123h/Jotter/blob/main/scripts/migrate_planned.py).

@@ -19,7 +19,7 @@
     ],
     "body": "Body text.\n\n- [x] done item\n- [ ] open item\n",
     "due_date": "2026-06-15",
-    "planned_date": "2026-W42",
+    "planned_date": "2026-W24",
     "priority": "high",
     "color": "#3b82f6",
     "extra": {},

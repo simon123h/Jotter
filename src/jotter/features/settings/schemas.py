@@ -34,15 +34,13 @@ class AppSettings(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _migrate_hide_postponed(cls, data: Any) -> Any:
-        """Before the horizon there was a switch for postponed tasks: off showed everything. A value that is not a
-        horizon falls back to the default."""
+    def _default_horizon(cls, data: Any) -> Any:
+        """A value that is not a horizon falls back to the default."""
         if not isinstance(data, dict):
             return data
         data = dict(data)
-        legacy = data.pop("hidePostponedColumn", None)
         if data.get("planningHorizon") not in ("today", "tomorrow", "week", "month", "all"):
-            data["planningHorizon"] = "all" if legacy is False else "today"
+            data["planningHorizon"] = "today"
         return data
 
 
