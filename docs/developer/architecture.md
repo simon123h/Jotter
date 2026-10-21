@@ -65,13 +65,13 @@ flowchart TD
 
 The repository ([ADR 0018](./adr/0018-repository-layout.md)):
 
-| Folder | Contents |
-| :-- | :-- |
-| `src/jotter/`, `tests/` | The Python backend (FastAPI), at the repository root |
-| `apps/web/` | The web client, served by the backend and built as a static demo |
-| `apps/mobile/` | The Android app ([ADR 0017](./adr/0017-mobile-app.md)), without a backend |
-| `packages/` | TypeScript shared by the apps: `vault-format`, `themes`, `title-parser`, `task-filter` |
-| `spec/` | The vault format and the fixtures every implementation runs |
+| Folder                  | Contents                                                                               |
+| :---------------------- | :------------------------------------------------------------------------------------- |
+| `src/jotter/`, `tests/` | The Python backend (FastAPI), at the repository root                                   |
+| `apps/web/`             | The web client, served by the backend and built as a static demo                       |
+| `apps/mobile/`          | The Android app ([ADR 0017](./adr/0017-mobile-app.md)), without a backend              |
+| `packages/`             | TypeScript shared by the apps: `vault-format`, `themes`, `title-parser`, `task-filter` |
+| `spec/`                 | The vault format and the fixtures every implementation runs                            |
 
 ```mermaid
 flowchart LR
@@ -108,11 +108,13 @@ The Android app is a separate project (`apps/mobile/`, [ADR 0017](./adr/0017-mob
 Jotter is built using a clean, layered architectural design divided into modular feature packages (`src/jotter/features/...`): `projects`, `buckets`, `tasks`, `settings`, and `sync`.
 
 1. **Routes (Controller Layer)**:
+
    - Registers feature-specific REST endpoints (`projects/router.py`, `buckets/router.py`, `tasks/router.py`, `settings/router.py`, `system/router.py`).
    - Parses request parameters, query filters, and validates request payloads into Pydantic DTO models.
    - Translates domain-level responses and exceptions into standard HTTP status codes and JSON responses.
 
 2. **Services (Business Logic Layer)**:
+
    - Contains pure business logic, input validation, and coordinates operations between disk files and the SQLite index.
    - Handles advanced file-system operations such as multi-part attachment uploads, task list filtering, and project-scoped auto-pruning.
 
@@ -160,6 +162,7 @@ Jotter is deployed as a lightweight client-server web application:
 2. **Frontend**: Built Single Page Application (Vue 3 + Vite + Tailwind CSS) served directly from `apps/web/dist/`.
 
 Running Jotter:
+
 ```bash
 pip install -e .
 jotter
@@ -262,6 +265,7 @@ Project overview notes and documentation.
 Jotter provides dual interfaces for external programmatic access:
 
 1. **REST & OpenAPI 3.0**:
+
    - Automated OpenAPI specification served directly by FastAPI.
    - **Interactive API Docs**: When running the Jotter server, interactive documentation is available at `http://localhost:58271/docs` (Swagger UI) and `http://localhost:58271/redoc` (ReDoc).
 
@@ -295,6 +299,3 @@ Key architectural decisions are documented as Architecture Decision Records (ADR
 - [ADR 0016: Rewrite the Backend from Go to Python](./adr/0016-rewrite-backend-from-go-to-python.md)
 - [ADR 0017: A Separate Mobile App with a Core Feature Set](./adr/0017-mobile-app.md)
 - [ADR 0018: Repository Layout: Apps, Shared Packages and the Spec](./adr/0018-repository-layout.md)
-
-
-
