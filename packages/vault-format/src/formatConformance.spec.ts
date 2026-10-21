@@ -13,9 +13,6 @@ import { parseTaskMarkdown, dumpTaskMarkdown, parseProjectManifest, dumpProjectM
  */
 const KNOWN_DIVERGENCES: Record<string, string> = {};
 
-// Reading depends on today for legacy values (spec/README.md)
-const FIXTURE_TODAY = '2026-10-14';
-
 // Vitest runs from packages/vault-format
 const fixturesDir = `${resolve(process.cwd(), '../../spec/fixtures')}/`;
 
@@ -98,12 +95,12 @@ describe('format conformance: tasks', () => {
     it(`${c.name}: read and round trip`, () => {
       check(`task/${c.name}`, () => {
         if (c.expected.error) {
-          expect(() => parseTaskMarkdown(c.content, c.context.default_project_id, `${c.context.file_stem}.md`, FIXTURE_TODAY)).toThrow();
+          expect(() => parseTaskMarkdown(c.content, c.context.default_project_id, `${c.context.file_stem}.md`)).toThrow();
           return;
         }
-        const first = parseTaskMarkdown(c.content, c.context.default_project_id, `${c.context.file_stem}.md`, FIXTURE_TODAY);
+        const first = parseTaskMarkdown(c.content, c.context.default_project_id, `${c.context.file_stem}.md`);
         expect(taskView(first, c.expected)).toEqual(c.expected);
-        const second = parseTaskMarkdown(dumpTaskMarkdown(first), c.context.default_project_id, `${c.context.file_stem}.md`, FIXTURE_TODAY);
+        const second = parseTaskMarkdown(dumpTaskMarkdown(first), c.context.default_project_id, `${c.context.file_stem}.md`);
         expect(taskView(second, c.expected)).toEqual(c.expected);
       });
     });

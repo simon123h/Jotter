@@ -67,6 +67,15 @@ planned_date: 2026-W43
 
 Das Planen ändert nie den `status`. Das Ausblenden ist eine Einstellung der Ansicht und steht nicht in der Datei.
 
-### Ältere Dateien
+### Dateien aus Version 4 und älter
 
-Frühere Versionen schrieben Wörter wie `thisWeek` oder `sometime` in `planned_date` und ein Datum `postponed_until`, das eine Aufgabe bis dahin ausblendete. Sie werden weiter gelesen: Ein Wort wird zu dem Tag, der Woche oder dem Monat, für den es an dem Tag steht, an dem die Datei gelesen wird (`sometime`, `thisYear` und Ähnliches heißen "nicht geplant"), und ein `postponed_until`, das noch bevorsteht, wird zum geplanten Datum. Speichert Jotter die Aufgabe das nächste Mal, schreibt es die neue Form und lässt die alten Schlüssel weg.
+Frühere Versionen schrieben Wörter wie `thisWeek` oder `sometime` in `planned_date` und ein Datum `postponed_until`, das eine Aufgabe bis dahin ausblendete. Version 5 machte beim Lesen einer Datei Daten daraus. Ab Version 6 liest Jotter sie nicht mehr: Ein Wort ist kein geplantes Datum, die Aufgabe gilt also als nicht geplant, und ein `postponed_until` blendet nichts mehr aus.
+
+Wandle einen Vault einmal um, bevor du aktualisierst:
+
+```sh
+python3 scripts/migrate_planned.py ~/pfad/zum/vault           # zeigt, was sich ändern würde
+python3 scripts/migrate_planned.py ~/pfad/zum/vault --write   # ändert die Dateien
+```
+
+Ein Wort wird zu dem Tag, der Woche oder dem Monat, für den es heute steht (`sometime` und `thisYear` heißen "nicht geplant"), und ein `postponed_until`, das noch bevorsteht, wird zum geplanten Datum. `hidePostponedColumn` in `settings.json` wird zu einem Horizont. Nur diese Zeilen ändern sich; ein Git-Commit vorher zeigt genau, was passiert ist. Das Skript liegt im [Repository](https://github.com/simon123h/Jotter/blob/main/scripts/migrate_planned.py).

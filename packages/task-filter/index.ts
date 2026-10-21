@@ -8,7 +8,7 @@
  * run against both, so that they agree.
  */
 
-import { isPlanningKeyword, plannedSpan, plannedStart, resolveKeyword } from "./planned";
+import { plannedSpan, plannedStart } from "./planned";
 
 export * from "./planned";
 
@@ -303,12 +303,11 @@ export function matchesFilter(
   if (dueAfter && !(due && due >= dueAfter)) return false;
   if (filter.planned_date) {
     const start = task.planned_date ? plannedStart(task.planned_date) : null;
-    // `none`, and the old words for no date (`someday`, `thisYear`, ...), find the tasks that are not planned
-    const word = filter.planned_date;
-    if (word.toLowerCase() === "none" || (isPlanningKeyword(word) && resolveKeyword(word, day) === null)) {
+    // `none` finds the tasks that are not planned
+    if (filter.planned_date.toLowerCase() === "none") {
       if (start) return false;
     } else {
-      // A day, week or month (or a keyword for one) finds the tasks planned in it: those that start in its span
+      // A day, week or month finds the tasks planned in it: those that start in its span
       const span = plannedSpan(filter.planned_date, day);
       if (!span || !start || start < span[0] || start > span[1]) return false;
     }

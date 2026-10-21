@@ -8,8 +8,7 @@ export interface FileStamp {
   mtime: number;
 }
 
-/** `legacy_day`: the day a file with a planning keyword was read, since the day it stands for moves with the calendar. */
-export type CachedTask = Task & FileStamp & { legacy_day?: string };
+export type CachedTask = Task & FileStamp;
 export type CachedProject = Project & { size: number; mtime: number };
 export type CachedBucket = Bucket & { project_id: string };
 
@@ -33,6 +32,10 @@ export class VaultDb extends Dexie {
     // The planned date changed shape (a day, a week or a month, no keywords, no postponed_until): rows read by the older
     // parser are dropped, so that the next scan reads every file again.
     this.version(2)
+      .stores(stores)
+      .upgrade((tx) => tx.table('tasks').clear());
+    // Planning keywords and postponements are no longer read: rows that resolved them are dropped as well
+    this.version(3)
       .stores(stores)
       .upgrade((tx) => tx.table('tasks').clear());
   }

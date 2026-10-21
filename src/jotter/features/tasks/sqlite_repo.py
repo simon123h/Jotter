@@ -9,7 +9,7 @@ from itertools import batched
 from typing import Any, NamedTuple
 
 from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Task, TaskId, clean_reminders
-from jotter.features.tasks.planned import PlannedDate, is_planning_keyword, planned_span, resolve_keyword
+from jotter.features.tasks.planned import PlannedDate, planned_span
 from jotter.shared.exceptions import EntityNotFoundError
 
 _sqlite_write_lock = threading.Lock()
@@ -56,7 +56,6 @@ class IndexedFile(NamedTuple):
     file_stat: tuple[int, int] | None
     repeats: bool = False
     planned_start: str | None = None
-    legacy_day: str | None = None
 
 
 class SqliteTaskRepository:
@@ -66,9 +65,9 @@ class SqliteTaskRepository:
 
         self._projector = TaskProjector(conn)
 
-    def upsert_task(self, task: Task, file_stat: tuple[int, int] | None = None, today: date | None = None) -> None:
+    def upsert_task(self, task: Task, file_stat: tuple[int, int] | None = None) -> None:
         """Indexes or updates a task in SQLite via TaskProjector."""
-        self._projector.project_task_upsert(task, file_stat, today)
+        self._projector.project_task_upsert(task, file_stat)
 
     def delete_task(self, task_id: str) -> None:
         """Deletes a task from SQLite via TaskProjector."""
@@ -120,7 +119,7 @@ class SqliteTaskRepository:
     def get_index_state(self, project_id: str) -> dict[str, IndexedFile]:
         """Returns what the index knows about each task file of a project, keyed by task ID."""
         rows = self.conn.execute(
-            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size, repeat, planned_start, legacy_day "
+            "SELECT id, bucket, created_at, updated_at, file_mtime_ns, file_size, repeat, planned_start "
             "FROM tasks WHERE project_id = ?",
             (project_id,),
         ).fetchall()
@@ -132,7 +131,6 @@ class SqliteTaskRepository:
                 file_stat=(row["file_mtime_ns"], row["file_size"]) if row["file_mtime_ns"] is not None else None,
                 repeats=bool(row["repeat"]),
                 planned_start=row["planned_start"],
-                legacy_day=row["legacy_day"],
             )
             for row in rows
         }
@@ -228,10 +226,8 @@ class SqliteTaskRepository:
             query += " AND due_date IS NOT NULL AND due_date >= ?"
             args.append(due_after)
         if planned_date:
-            # `none`, and the old words for no date (`someday`, `thisYear`, ...), find the tasks that are not planned
-            if planned_date.lower() == "none" or (
-                is_planning_keyword(planned_date) and resolve_keyword(planned_date, _today()) is None
-            ):
+            # `none` finds the tasks that are not planned
+            if planned_date.lower() == "none":
                 query += " AND planned_start IS NULL"
             else:
                 span = planned_span(planned_date, _today())

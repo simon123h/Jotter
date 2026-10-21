@@ -16,10 +16,9 @@ tags:
 attachments:
   - uploads/photo.png
 due_date: '2026-10-01'
-planned_date: this-week
+planned_date: 2026-W42
 priority: high
 color: '#3b82f6'
-postponed_until: '2026-10-15'
 created_at: '2026-09-20T10:00:00.000Z'
 updated_at: '2026-09-20T11:00:00.000Z'
 ---
@@ -30,7 +29,7 @@ updated_at: '2026-09-20T11:00:00.000Z'
 - [ ] Test on Android emulator
 `;
 
-    const task = parseTaskMarkdown(rawMarkdown, 'default', 'task-123.md', '2026-10-14');
+    const task = parseTaskMarkdown(rawMarkdown, 'default', 'task-123.md');
     expect(task.id).toBe('task-123');
     expect(task.project_id).toBe('default');
     expect(task.title).toBe('Implement mobile storage');
@@ -40,7 +39,7 @@ updated_at: '2026-09-20T11:00:00.000Z'
     expect(task.attachments).toEqual(['uploads/photo.png']);
     expect(task.due_date).toBe('2026-10-01');
     // this-week starts before the postponement, which is folded into the planned date
-    expect(task.planned_date).toBe('2026-10-15');
+    expect(task.planned_date).toBe('2026-W42');
     expect(task.priority).toBe('high');
     expect(task.color).toBe('#3b82f6');
     expect(task.body).toContain('# Notes on mobile implementation');

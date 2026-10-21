@@ -139,7 +139,7 @@ def test_task_filters_and_queries(test_env):
             "tags": ["frontend", "urgent"],
             "priority": "urgent",
             "due_date": "2026-06-01",
-            "planned_date": "today",
+            "planned_date": "2026-06-01",
         },
     ).json()
     t2 = client.post(

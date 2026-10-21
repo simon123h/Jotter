@@ -1,6 +1,6 @@
 import yaml from 'yaml';
 import type { Task, Project, Bucket, RepeatRule } from './types';
-import { isLegacyPlanned, isPlanningKeyword, mergePostponed, readPlanned, today as localToday } from '@jotter/task-filter';
+import { canonicalPlanned } from '@jotter/task-filter';
 
 /**
  * Reads and writes the vault format defined in spec/FORMAT.md. The Python backend implements the same format;
@@ -44,8 +44,6 @@ const KNOWN_TASK_KEYS = new Set([
   'plannedDate',
   'priority',
   'color',
-  'postponed_until',
-  'postponedUntil',
   'repeat',
   'reminders',
   'created_at',
@@ -165,10 +163,9 @@ function timestamp(raw: unknown, fallback: string): string {
 }
 
 /**
- * Parses a Task markdown file with YAML frontmatter. Throws when the frontmatter is not valid YAML. `today` (a local
- * `YYYY-MM-DD`) resolves the legacy planning values.
+ * Parses a Task markdown file with YAML frontmatter. Throws when the frontmatter is not valid YAML.
  */
-export function parseTaskMarkdown(content: string, defaultProjectId = 'default', filename = '', today = localToday()): Task {
+export function parseTaskMarkdown(content: string, defaultProjectId = 'default', filename = ''): Task {
   const { data: fm, body } = splitFrontmatter(content);
 
   const id = String(fm.id || filename.replace(/\.md$/i, '') || `task_${Date.now()}`).trim();
@@ -177,17 +174,10 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
   const bucket = String(fm.status || fm.bucket || '').trim() || 'todo';
   const position = typeof fm.position === 'number' ? fm.position : parseFloat(String(fm.position ?? '')) || 1000.0;
 
-  // A planning keyword in due_date is a planned date. A legacy postponed_until is folded into the planned date.
-  // An empty value falls through to the other spelling of the key, as in the Python reader
-  const rawDue = fm.due_date || fm.dueDate;
-  let dueDate = dateValue(rawDue);
-  let rawPlanned = fm.planned_date || fm.plannedDate;
-  const rawPostponed = fm.postponed_until || fm.postponedUntil;
-  if (rawDue && !dueDate && isPlanningKeyword(String(rawDue))) {
-    rawPlanned = rawPlanned || rawDue;
-    dueDate = null;
-  }
-  const plannedDate = mergePostponed(readPlanned(rawPlanned, today), rawPostponed, today);
+  // An empty value falls through to the other spelling of the key, as in the Python reader. Values that are no date are dropped
+  const dueDate = dateValue(fm.due_date || fm.dueDate);
+  const rawPlanned = fm.planned_date || fm.plannedDate;
+  const plannedDate = rawPlanned ? canonicalPlanned(String(rawPlanned)) : null;
 
   const priority = String(fm.priority ?? '')
     .trim()
@@ -206,7 +196,6 @@ export function parseTaskMarkdown(content: string, defaultProjectId = 'default',
     body,
     due_date: dueDate ?? undefined,
     planned_date: plannedDate ?? undefined,
-    legacy_planned: isLegacyPlanned(rawPlanned, rawPostponed, today) || undefined,
     priority: PRIORITIES.includes(priority) ? priority : undefined,
     color: fm.color ? String(fm.color).trim() : undefined,
     repeat: parseRepeat(fm.repeat),

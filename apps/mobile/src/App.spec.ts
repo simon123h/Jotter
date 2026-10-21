@@ -1761,9 +1761,15 @@ describe('automatic rescan', () => {
 describe('tag and planning views', () => {
   const viewsVault = (f: MemoryFs) => {
     f.put('Jotter/work/index.md', '---\ntitle: Work\nbuckets:\n  - name: todo\n    title: To Do\n  - name: done\n    title: Done\n---\n');
-    f.put('Jotter/work/a.md', '---\ntitle: Write report\nstatus: todo\nposition: 1000\ntags: [office, travel]\nplanned_date: today\n---\n');
-    f.put('Jotter/work/b.md', '---\ntitle: Book flights\nstatus: todo\nposition: 2000\ntags: [office]\nplanned_date: this-week\n---\n');
-    f.put('Jotter/work/c.md', '---\ntitle: Ship release\nstatus: done\nposition: 1000\ntags: [office]\nplanned_date: today\n---\n');
+    f.put(
+      'Jotter/work/a.md',
+      `---\ntitle: Write report\nstatus: todo\nposition: 1000\ntags: [office, travel]\nplanned_date: ${isoDay(0)}\n---\n`
+    );
+    f.put(
+      'Jotter/work/b.md',
+      `---\ntitle: Book flights\nstatus: todo\nposition: 2000\ntags: [office]\nplanned_date: ${weekOf(isoDay(0))}\n---\n`
+    );
+    f.put('Jotter/work/c.md', `---\ntitle: Ship release\nstatus: done\nposition: 1000\ntags: [office]\nplanned_date: ${isoDay(0)}\n---\n`);
     f.put('Jotter/work/d.md', '---\ntitle: Loose end\nstatus: todo\nposition: 3000\n---\n');
   };
   const tabs = () => all('bucket-tab').map((t) => t.text());
@@ -1786,7 +1792,7 @@ describe('tag and planning views', () => {
     expect(column(2)).toContain('Loose end');
   });
 
-  it('groups the open tasks by when they are planned, whatever the spelling in the file', async () => {
+  it('groups the open tasks by when they are planned', async () => {
     await start(viewsVault);
     await switchTo('planning');
 
@@ -2022,15 +2028,6 @@ describe('planning ahead', () => {
     const settings = JSON.parse(fs.files.get('Jotter/settings.json')!.data);
     expect(settings.planningHorizon).toBe('week');
     expect(settings.hideDoneColumn).toBe(true); // the other settings are kept
-  });
-
-  it('reads the old switch for postponed tasks as a horizon, as the desktop does', async () => {
-    const { app } = await start((f) => {
-      vault(f);
-      f.put('Jotter/settings.json', JSON.stringify({ hidePostponedColumn: false }));
-    });
-    expect(app.horizon).toBe('all');
-    expect(find('board').text()).toContain('Later task');
   });
 
   it('leaves tasks planned ahead out of the tag view until the horizon is wider', async () => {

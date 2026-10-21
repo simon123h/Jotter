@@ -14,7 +14,7 @@ import {
 import { compareTitles, filterTasks, type TaskFilter } from '@jotter/task-filter';
 import { VaultDb, type CachedTask } from './db';
 import type { FsPort } from './fs';
-import { isoDay, today } from '@jotter/task-filter';
+import { isoDay } from '@jotter/task-filter';
 import { VaultRegistry, type Vault } from './vaults';
 
 export interface NewTask {
@@ -64,7 +64,7 @@ export interface UpcomingReminder {
 }
 
 function toTask(row: CachedTask): Task {
-  const { file, size, mtime, legacy_day, ...task } = row;
+  const { file, size, mtime, ...task } = row;
   return task;
 }
 
@@ -227,13 +227,11 @@ export class VaultRepository {
       const file = entry.name.slice(0, -3);
       seen.add(file);
       const row = await db.tasks.where('[project_id+file]').equals([id, file]).first();
-      // A file with a planning keyword is read again on a new day: the day it stands for moves on with the calendar
-      if (row && row.size === entry.size && row.mtime === entry.mtime && (!row.legacy_day || row.legacy_day === today())) continue;
+      if (row && row.size === entry.size && row.mtime === entry.mtime) continue;
       try {
-        const day = today(); // the same day resolves the old words and stamps the row
-        const task = parseTaskMarkdown(await this.fs.readText(`${dir}/${entry.name}`), id, entry.name, day);
+        const task = parseTaskMarkdown(await this.fs.readText(`${dir}/${entry.name}`), id, entry.name);
         if (row && row.id !== task.id) await db.tasks.delete([id, row.id]);
-        await db.tasks.put({ ...task, legacy_day: task.legacy_planned ? day : undefined, file, size: entry.size, mtime: entry.mtime });
+        await db.tasks.put({ ...task, file, size: entry.size, mtime: entry.mtime });
         result.read++;
         result.changed = true;
       } catch {
@@ -529,7 +527,7 @@ export class VaultRepository {
 
     await this.fs.remove(`${this.projectDir(projectId)}/${row.file}.md`);
     await db.tasks.delete([projectId, id]);
-    await db.tasks.put({ ...task, legacy_planned: undefined, legacy_day: undefined, file: row.file, ...(await this.stamp(newPath)) });
+    await db.tasks.put({ ...task, file: row.file, ...(await this.stamp(newPath)) });
     return task;
   }
 
@@ -538,7 +536,7 @@ export class VaultRepository {
     const path = `${this.projectDir(task.project_id)}/${file}.md`;
     await this.fs.writeText(path, dumpTaskMarkdown(task));
     // What is written is in the new form: the file is no longer one that the scan must read again
-    await db.tasks.put({ ...task, legacy_planned: undefined, legacy_day: undefined, file, ...(await this.stamp(path)) });
+    await db.tasks.put({ ...task, file, ...(await this.stamp(path)) });
   }
 
   /**

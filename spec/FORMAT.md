@@ -87,8 +87,6 @@ Further rules:
 - **Aliases.** Readers MUST accept the legacy keys `bucket` (for `status`), `projectId`, `dueDate`,
   `plannedDate`, `createdAt` and `updatedAt`. Writers MUST use the names in the table.
 - **Tags** are lower-cased and lose a leading `#`. A tag may not contain a space.
-- **Keyword in `due_date`.** Any legacy planning keyword (see *Dates and times*) found in `due_date` is read as
-  `planned_date`.
 - **Values a reader cannot use are dropped, the task is still read.** This covers an unknown `priority`, a tag
   with a space, a `planned_date` that is none of the forms below, a `due_date` that is not a date, a `position` that is not a number, a `repeat` that does not follow the rules below and a reminder that
   is not a local date-time. See the `invalid-values-dropped` and `repeat-invalid` fixtures. (A writer that finds
@@ -151,20 +149,10 @@ A task has four fields about time. Each answers a different question, and none s
   whether a planned task is still in the future. A planned date that lies in the past, a passed week or month
   included, is *slipped*: nothing changes it by itself. Whether a planned date in the future is shown or kept out
   of the way is a setting of the app, not part of the file.
-- **Legacy values are resolved when a file is read.** Older files may hold a planning keyword in `planned_date`
-  (or in `due_date`, see section 3) and may hold `postponed_until`. A reader resolves them against *today*, and
-  everything after that sees only the forms above. A writer never writes a keyword or `postponed_until`; a file
-  that is saved loses them. A file that is only read is not rewritten. A reader that keeps an index MUST read a file
-  with a planning keyword (or a postponement still ahead) again on a new day, at most once a day, until it is saved, so
-  that the day it stands for follows the calendar, the same on every device.
-  - **Keywords** are compared ignoring case and hyphens (`this-week`, `thisWeek` and `THISWEEK` are the same
-    keyword). `today` and `tomorrow` become that day, `thisWeek` and `nextWeek` the ISO week, `thisMonth` and
-    `nextMonth` the month. `thisYear`, `nextYear`, `someday` and `sometime` have no date: the task reads as not
-    planned. See `fixtures/planned/legacy.json`.
-  - **`postponed_until`** (`YYYY-MM-DD`, ignored when it is not a date) used to keep a task out of the way until a
-    day. A postponement that lies after today is merged into `planned_date`: the planned date becomes that day,
-    unless it is a day or a period that starts on or after it. A postponement that is today or in the past is
-    ignored.
+- **Files from before Jotter 5.0** may hold a planning keyword in `planned_date` (`thisWeek`, `someday`, ...) or a
+  `postponed_until`. They are not part of the format. A keyword is no planned date, so a reader drops it like any other
+  value it cannot use, and `postponed_until` is an unknown key that is kept. `scripts/migrate_planned.py` converts a vault
+  to the forms above.
 - **Only reminders have a time of day**, and it is *floating*: `09:00` means 09:00 on the wall clock wherever
   the reader is, with no time zone and no UTC. `created_at` and `updated_at` are the only instants.
 - `due_date` is date-only on purpose. A time of day belongs in a reminder (or a time block).

@@ -1,7 +1,6 @@
 /**
- * The planned date: a day, an ISO week or a month (spec/FORMAT.md, "Dates and times"). It is always absolute. The legacy
- * values of older files (a planning keyword, `postponed_until`) are resolved against today when a file is read, so
- * nothing else has to know about them. Days are `YYYY-MM-DD` strings, calculated in UTC so that no time zone shifts them.
+ * The planned date: a day, an ISO week or a month (spec/FORMAT.md, "Dates and times"). It is always absolute. Days are
+ * `YYYY-MM-DD` strings, calculated in UTC so that no time zone shifts them.
  */
 
 const DAY_MS = 86_400_000;
@@ -58,17 +57,12 @@ export function plannedStart(value: string): string | null {
   return canonical;
 }
 
-// Legacy planning keywords, compared ignoring case and hyphens (`this-week` is `thisWeek`)
-const KEYWORDS = new Set(['today', 'tomorrow', 'thisweek', 'nextweek', 'thismonth', 'nextmonth', 'thisyear', 'nextyear', 'someday', 'sometime']);
-const keyword = (text: string) => text.trim().toLowerCase().replace(/-/g, '');
+const min9999 = (day: string) => (day.startsWith('+') ? '9999-12-31' : day);
 
-/** True for a legacy planning keyword (`today`, `thisWeek`, `someday`, ...). */
-export const isPlanningKeyword = (text: string) => KEYWORDS.has(keyword(text));
-
-/** The planned date a legacy keyword stands for on `today`. Null for those without a date. */
-export function resolveKeyword(text: string, today: string): string | null {
+/** The day, week or month a word of the search stands for on `today` (`today`, `thisWeek`, `nextMonth`, ...). */
+export function searchWord(text: string, today: string): string | null {
   const now = parseDay(today);
-  switch (keyword(text)) {
+  switch (text.trim().toLowerCase()) {
     case 'today':
       return today;
     case 'tomorrow':
@@ -86,42 +80,9 @@ export function resolveKeyword(text: string, today: string): string | null {
   }
 }
 
-/** A planned date as found in a file: a canonical value, a legacy keyword resolved, anything else dropped. */
-export function readPlanned(raw: unknown, today: string): string | null {
-  if (raw === undefined || raw === null || raw === '') return null;
-  const text = String(raw).trim();
-  return isPlanningKeyword(text) ? resolveKeyword(text, today) : canonicalPlanned(text);
-}
-
-/**
- * True when a file holds a planning keyword or a postponement that is still ahead. Such a file is read again on every scan
- * until it is saved, so that the day it stands for follows the calendar the way it always did, on every device.
- */
-export function isLegacyPlanned(plannedRaw: unknown, postponedRaw: unknown, today: string): boolean {
-  if (plannedRaw && isPlanningKeyword(String(plannedRaw))) return true;
-  const match = postponedRaw ? /^([1-9]\d{3}-\d{2}-\d{2})(?:[T ].*)?$/.exec(String(postponedRaw).trim()) : null;
-  return !!match && !!validDay(match[1]) && match[1] > today;
-}
-
-/** Folds a legacy `postponed_until` into the planned date: it wins when it lies after today and the planned date
- * starts before it. */
-export function mergePostponed(planned: string | null, postponedRaw: unknown, today: string): string | null {
-  if (postponedRaw === undefined || postponedRaw === null || postponedRaw === '') return planned;
-  const match = /^([1-9]\d{3}-\d{2}-\d{2})(?:[T ].*)?$/.exec(String(postponedRaw).trim());
-  const postponed = match ? validDay(match[1]) : null;
-  if (!postponed || postponed <= today) return planned;
-  if (planned !== null) {
-    const start = plannedStart(planned);
-    if (start !== null && start >= postponed) return planned;
-  }
-  return postponed;
-}
-
-const min9999 = (day: string) => (day.startsWith('+') ? '9999-12-31' : day);
-
-/** The first and last day a search for `value` covers: a day, a week, a month, or a legacy keyword for one. */
-export function plannedSpan(value: string, today: string): [string, string] | null {
-  const text = isPlanningKeyword(value) ? resolveKeyword(value, today) : canonicalPlanned(value);
+/** The first and last day a search for `value` covers: a day, a week or a month, or with `today` a word for one (`thisWeek`). */
+export function plannedSpan(value: string, today?: string): [string, string] | null {
+  const text = (today ? searchWord(value, today) : null) ?? canonicalPlanned(value);
   const start = text ? plannedStart(text) : null;
   if (!text || !start) return null;
   if (text.length === 10) return [start, start];
@@ -144,9 +105,9 @@ export function horizonEnd(horizon: Horizon, today: string): string | null {
     case 'tomorrow':
       return formatDay(addDays(parseDay(today), 1));
     case 'week':
-      return plannedSpan(weekOf(today), today)![1];
+      return plannedSpan(weekOf(today))![1];
     case 'month':
-      return plannedSpan(monthOf(today), today)![1];
+      return plannedSpan(monthOf(today))![1];
     default:
       return null;
   }
@@ -195,15 +156,14 @@ export type PlanSlot = (typeof PLAN_SLOTS)[number];
  */
 export function plannedSlot(value: string | null | undefined, now: Date = new Date()): PlanSlot {
   const day = localDay(now);
-  const span = value ? plannedSpan(value, day) : null;
+  const span = value ? plannedSpan(value) : null;
   if (!span) return 'none';
   const [from, to] = span;
   if (to < day) return 'slipped';
   if (from === to && from === day) return 'today';
   if (from === to && from === localDay(now, 1)) return 'tomorrow';
   // A month plan is "some day this month" even in the last days of it, when the week reaches past the end of the month
-  const resolved = isPlanningKeyword(value!) ? resolveKeyword(value!, day) : canonicalPlanned(value!);
-  const isMonth = resolved?.length === 7;
+  const isMonth = canonicalPlanned(value!)?.length === 7;
   if (!isMonth && to <= horizonEnd('week', day)!) return 'week';
   if (to <= horizonEnd('month', day)!) return 'month';
   return 'later';
