@@ -312,6 +312,29 @@ describe('titleParser', () => {
   });
 
   describe('deadlines', () => {
+    it('reads a planned day and a deadline from one title, in either order', () => {
+      for (const title of ['buy bread tomorrow !6.11.', 'buy bread !6.11. tomorrow', 'buy bread until 6.11. tomorrow']) {
+        const result = parseDateFromTitle(title, 'en');
+        expect(result.plannedDate).toBe('2026-06-04');
+        expect(result.dueDate).toBe('2026-11-06');
+        expect(result.cleanTitle).toBe('buy bread');
+      }
+    });
+
+    it('takes only the first date of each kind and leaves the others in the title', () => {
+      const result = parseDateFromTitle('call tomorrow friday !monday !sunday', 'en');
+      expect(result.plannedDate).toBe('2026-06-04');
+      expect(result.dueDate).toBe('2026-06-08');
+      expect(result.cleanTitle).toBe('call friday !sunday');
+    });
+
+    it('dismisses one of the two without the other', () => {
+      const result = parseDateFromTitle('buy bread tomorrow !6.11.', 'en', new Set(['tomorrow']));
+      expect(result.plannedDate).toBeNull();
+      expect(result.dueDate).toBe('2026-11-06');
+      expect(result.cleanTitle).toBe('buy bread tomorrow');
+    });
+
     it('plans a date typed on its own, and does not make it a deadline', () => {
       const result = parseDateFromTitle('File taxes 21.5.', 'en');
       expect(result.plannedDate).toBe('2027-05-21');

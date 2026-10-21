@@ -21,7 +21,7 @@ The menu offers *Today*, *Tomorrow*, *This week*, *Next week*, *This month* and 
 
 A planned date that has passed is **slipped**. Nothing changes it for you. The planning view shows a *Re-plan* tab as long as there is something in it, and from the selection toolbar you can plan those tasks again with one action, for example for today.
 
-You can plan a task from the task page, the new-task dialog, the selection toolbar (*Plan for...*), by dragging a task between the columns of the planning view, or by typing a date into the title (`friday`, `21.5.`, `tomorrow`). A date in the title plans the task. To set a **deadline** instead, put `!` in front of it (`!friday`, `!21.5.`) or the word `until` (`bis` in German): `Send report until friday`.
+You can plan a task from the task page, the new-task dialog, the selection toolbar (*Plan for...*), by dragging a task between the columns of the planning view, or by typing a date into the title (`friday`, `21.5.`, `tomorrow`). A date in the title plans the task. To set a **deadline** instead, put `!` in front of it (`!friday`, `!21.5.`) or the word `until` (`bis` in German): `Send report until friday`. One title can hold both: `Buy bread tomorrow !21.5.` plans the task for tomorrow and sets the deadline.
 
 ---
 

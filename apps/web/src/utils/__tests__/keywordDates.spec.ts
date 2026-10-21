@@ -43,4 +43,12 @@ describe('keywordDates', () => {
     dates.clear();
     expect(form.plannedDate).toBe('2040-01-02');
   });
+
+  it('sets a planned day and a deadline together and gives both back', () => {
+    const { form, dates } = setup({ dueDate: '2031-03-04', plannedDate: '2030-W19' });
+    dates.apply({ dueDate: '2040-02-03', plannedDate: '2040-01-02' });
+    expect(form).toEqual({ dueDate: '2040-02-03', plannedDate: '2040-01-02' });
+    dates.clear();
+    expect(form).toEqual({ dueDate: '2031-03-04', plannedDate: '2030-W19' });
+  });
 });

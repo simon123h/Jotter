@@ -40,10 +40,12 @@ export function useSmartTitle(title: Ref<string>, buckets: () => Array<{ name: s
     const matches = getKeywordMatches(title.value, locale.value, names(), new Set(ignored.value));
     const keywordOf = (kind: 'priority' | 'bucket') => matches.find((m) => m.type === kind)?.keyword ?? '';
     const list: Hint[] = [];
-    if (p.matchedKeyword) {
-      // A date with `!` or `until` in front is a deadline, any other is planned
-      const label = p.dueDate ? dueInfo(p.dueDate).text : p.plannedDate ? plannedLabel(p.plannedDate) : p.matchedKeyword;
-      list.push({ id: 'date', kind: 'date', label, keyword: p.matchedKeyword.toLowerCase() });
+    // A date with `!` or `until` in front is a deadline, any other is planned; a title can hold one of each
+    if (p.matchedPlanned && p.plannedDate) {
+      list.push({ id: 'date', kind: 'date', label: plannedLabel(p.plannedDate), keyword: p.matchedPlanned.toLowerCase() });
+    }
+    if (p.matchedDue && p.dueDate) {
+      list.push({ id: 'due', kind: 'date', label: dueInfo(p.dueDate).text, keyword: p.matchedDue.toLowerCase() });
     }
     if (p.priority) {
       list.push({ id: 'priority', kind: 'priority', label: t(`priority.${p.priority}` as MessageKey), keyword: keywordOf('priority') });
@@ -62,8 +64,8 @@ export function useSmartTitle(title: Ref<string>, buckets: () => Array<{ name: s
       title: p.cleanTitle,
       bucket: p.bucket,
       tags: p.tags,
-      due_date: p.matchedKeyword ? p.dueDate : null,
-      planned_date: p.matchedKeyword ? p.plannedDate : null,
+      due_date: p.dueDate,
+      planned_date: p.plannedDate,
       priority: p.priority,
       found: hints.value.length > 0,
     };

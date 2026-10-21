@@ -183,37 +183,58 @@ function isIgnored(title: string, found: DateFound, ignored?: Set<string>): bool
   return ignored.has(title.slice(found.start, found.end).toLowerCase()) || ignored.has(title.slice(found.dateStart, found.end).toLowerCase());
 }
 
-export function parseDateFromTitle(
-  title: string,
-  locale: string,
-  ignoredKeywords?: Set<string>
-): { cleanTitle: string; dueDate: string | null; plannedDate: string | null; matchedKeyword: string | null } {
-  if (!title) {
-    return { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null };
-  }
+export interface DateParse {
+  cleanTitle: string;
+  dueDate: string | null;
+  plannedDate: string | null;
+  /** What was read, for telling one reading from the next: both texts when the title holds a planned day and a deadline. */
+  matchedKeyword: string | null;
+  /** The text that set the planned day, and the one that set the deadline. */
+  matchedPlanned: string | null;
+  matchedDue: string | null;
+}
 
+/**
+ * Reads up to two dates: the first without a marker plans the task, the first with `!` or `until` is its deadline.
+ * A further date of the same kind stays in the title as plain text.
+ */
+export function parseDateFromTitle(title: string, locale: string, ignoredKeywords?: Set<string>): DateParse {
+  const none: DateParse = { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null, matchedPlanned: null, matchedDue: null };
+  if (!title) return none;
+
+  const candidates: Array<DateFound & { day: string }> = [];
   for (const rule of getRules(locale)) {
     const found = locateDate(title, rule, rule.pattern, locale);
-    if (!found) continue;
-    const matchedText = title.slice(found.start, found.end);
-    if (isIgnored(title, found, ignoredKeywords)) {
-      continue;
-    }
-
-    // A date in the title is the day the task is planned for. With `!` or `until` in front it is a deadline instead.
-    const day = formatDate(rule.getDate(found.match));
-    const spanStart = found.deadline ? found.start : found.match.index;
-    const cleanTitle = `${title.slice(0, spanStart)} ${title.slice(found.end)}`.replace(/\s+/g, ' ').trim();
-
-    return {
-      cleanTitle,
-      dueDate: found.deadline ? day : null,
-      plannedDate: found.deadline ? null : day,
-      matchedKeyword: matchedText,
-    };
+    if (found && !isIgnored(title, found, ignoredKeywords)) candidates.push({ ...found, day: formatDate(rule.getDate(found.match)) });
   }
+  // The first of each kind in the title wins, unless it overlaps the other one's words
+  let planned: (DateFound & { day: string }) | null = null;
+  let due: (DateFound & { day: string }) | null = null;
+  for (const found of candidates.sort((x, y) => x.start - y.start)) {
+    const taken = found.deadline ? due : planned;
+    const other = found.deadline ? planned : due;
+    if (taken || (other && found.start < other.end && other.start < found.end)) continue;
+    if (found.deadline) due = found;
+    else planned = found;
+  }
+  if (!planned && !due) return none;
 
-  return { cleanTitle: title, dueDate: null, plannedDate: null, matchedKeyword: null };
+  // The words go out of the title (a planned day with the space in front of it, as the rule matched it)
+  const spans = [planned && { from: planned.match.index, to: planned.end }, due && { from: due.start, to: due.end }]
+    .filter((x): x is { from: number; to: number } => !!x)
+    .sort((x, y) => y.from - x.from);
+  let clean = title;
+  for (const { from, to } of spans) clean = `${clean.slice(0, from)} ${clean.slice(to)}`;
+  const text = (f: DateFound | null) => (f ? title.slice(f.start, f.end) : null);
+
+  return {
+    cleanTitle: clean.replace(/\s+/g, ' ').trim(),
+    dueDate: due ? due.day : null,
+    plannedDate: planned ? planned.day : null,
+    matchedKeyword: [text(planned), text(due)].filter(Boolean).join(' '),
+    matchedPlanned: text(planned),
+    matchedDue: text(due),
+  };
 }
 
 export function extractTagsFromTitle(title: string, ignoredKeywords?: Set<string>): { cleanTitle: string; tags: string[] } {
@@ -328,6 +349,8 @@ export function parseTitleState(
   dueDate: string | null;
   plannedDate: string | null;
   matchedKeyword: string | null;
+  matchedPlanned: string | null;
+  matchedDue: string | null;
   tags: string[];
   bucket: string | null;
   priority: string | null;
@@ -345,6 +368,8 @@ export function parseTitleState(
     dueDate: dateResult.dueDate,
     plannedDate: dateResult.plannedDate,
     matchedKeyword: dateResult.matchedKeyword,
+    matchedPlanned: dateResult.matchedPlanned,
+    matchedDue: dateResult.matchedDue,
     tags: tagsResult.tags,
     bucket: bucketResult.bucket,
     priority: priorityResult.priority,
