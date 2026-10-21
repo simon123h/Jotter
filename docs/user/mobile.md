@@ -33,7 +33,7 @@ Press and hold a task to select it, then tap more tasks. The bar at the top show
 | Planned | Sets the planned date |
 | More | Mark done, archive, move to another project, due date, colour, delete |
 
-To move tasks without the sheet, leave them selected and open another column: the bar at the top then has a *Move here* button that puts the selected tasks at the end of the column you are looking at. In the list view every section header has the same button while tasks are selected, also on a folded one. To move a single card to a place in its column, press, hold and drag it.
+To move tasks without the sheet, leave them selected and open another column: the bar at the top then has a *Move here* button that puts the selected tasks at the end of the column you are looking at. In the list view every section header has the same button while tasks are selected, also on a folded one. The planning view works the same way: *Move here* plans the tasks for the stretch of time you are looking at (*Not planned* clears the date; *Re-plan* has no button). In the tag view a task can be in several columns, so there is no move: the bar offers *Add #tag* and *Remove #tag* for the column in view, and *Remove tags* in *Untagged*. To move a single card to a place in its column, press, hold and drag it.
 
 ## Views
 

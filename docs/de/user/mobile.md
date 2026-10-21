@@ -33,7 +33,7 @@ Halte eine Aufgabe gedrückt, um sie auszuwählen, und tippe dann weitere an. Di
 | Planung | Setzt das geplante Datum |
 | Mehr | Erledigen, archivieren, in ein anderes Projekt verschieben, Fälligkeit, Farbe, löschen |
 
-Um Aufgaben ohne das Auswahlfenster zu verschieben, lass sie ausgewählt und öffne eine andere Spalte: Die Leiste oben zeigt dann die Taste *Hierher*, die die ausgewählten Aufgaben ans Ende der Spalte setzt, die du gerade siehst. In der Listenansicht hat jede Abschnittskopfzeile dieselbe Taste, solange Aufgaben ausgewählt sind, auch eine zugeklappte. Um eine einzelne Karte an eine bestimmte Stelle ihrer Spalte zu setzen, halte sie gedrückt und ziehe sie.
+Um Aufgaben ohne das Auswahlfenster zu verschieben, lass sie ausgewählt und öffne eine andere Spalte: Die Leiste oben zeigt dann die Taste *Hierher*, die die ausgewählten Aufgaben ans Ende der Spalte setzt, die du gerade siehst. In der Listenansicht hat jede Abschnittskopfzeile dieselbe Taste, solange Aufgaben ausgewählt sind, auch eine zugeklappte. Die Planung funktioniert genauso: *Hierher* plant die Aufgaben für den Zeitraum, den du gerade siehst (*Nicht geplant* löscht das Datum, *Umplanen* hat keine Taste). In der Tag-Ansicht kann eine Aufgabe in mehreren Spalten stehen, deshalb gibt es kein Verschieben: Die Leiste bietet *#Tag hinzufügen* und *#Tag entfernen* für die Spalte in Sicht, und in *Ohne Tag* die Taste *Tags entfernen*. Um eine einzelne Karte an eine bestimmte Stelle ihrer Spalte zu setzen, halte sie gedrückt und ziehe sie.
 
 ## Ansichten
 

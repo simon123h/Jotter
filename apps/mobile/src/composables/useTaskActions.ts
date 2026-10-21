@@ -91,6 +91,7 @@ export function useTaskActions() {
     edit(ids, (task) => ({ tags: [...new Set([...task.tags, ...tags])] }), 'task.edited', 'tasks.tagAdded');
   const removeTag = (ids: string[], tag: string) =>
     edit(ids, (task) => ({ tags: task.tags.filter((x) => x !== tag) }), 'task.edited', 'tasks.tagRemoved');
+  const clearTags = (ids: string[]) => edit(ids, () => ({ tags: [] }), 'task.edited', 'tasks.tagsCleared');
 
   async function moveToProject(ids: string[], projectId: string) {
     const title = app.projects.find((p) => p.id === projectId)?.title ?? projectId;
@@ -125,6 +126,7 @@ export function useTaskActions() {
     setPlanned,
     addTags,
     removeTag,
+    clearTags,
     moveToProject,
     remove,
   };

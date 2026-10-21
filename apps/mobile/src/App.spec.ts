@@ -1779,6 +1779,89 @@ describe('tag and planning views', () => {
   };
   const column = (index: number) => all('column')[index]!.text();
 
+  it('puts the selected tasks into the planned stretch in view with Move here', async () => {
+    await start(viewsVault);
+    await switchTo('planning');
+    await holdSelect('Loose end'); // not planned
+    expect(find('move-here').exists()).toBe(true);
+
+    useUiStore().activeColumn = all('bucket-tab').findIndex((t) => t.text().startsWith('Tomorrow'));
+    await settle();
+    await find('move-here').trigger('click');
+    await settle();
+
+    expect(file('d')).toContain(`planned_date: ${isoDay(1)}`);
+    expect(find('toast').text()).toContain('Task updated');
+    expect(find('move-here').exists()).toBe(false); // the selection is used up
+  });
+
+  it('clears the date with Move here in Not planned', async () => {
+    await start(viewsVault);
+    await switchTo('planning');
+    await holdSelect('Write report'); // planned today
+    const index = (name: string) => all('bucket-tab').findIndex((t) => t.text().startsWith(name));
+
+    useUiStore().activeColumn = index('Not planned');
+    await settle();
+    await find('move-here').trigger('click');
+    await settle();
+
+    expect(file('a')).not.toContain('planned_date');
+  });
+
+  it('adds and removes the tag of the column in view in the tag view', async () => {
+    await start(viewsVault);
+    await switchTo('tags');
+    await holdSelect('Loose end'); // no tags at all
+    expect(find('tag-remove').exists()).toBe(false);
+
+    useUiStore().activeColumn = 1; // #travel
+    await settle();
+    expect(find('move-here').exists()).toBe(false); // a task has many tags: no move here
+    await find('tag-add').trigger('click');
+    await settle();
+
+    expect(file('d')).toContain('travel');
+    expect(find('toast').text()).toContain('Task updated');
+
+    await holdSelect('Write report'); // has #travel
+    expect(find('tag-add').exists()).toBe(false);
+    await find('tag-remove').trigger('click');
+    await settle();
+
+    expect(file('a')).not.toContain('travel');
+    expect(file('a')).toContain('office');
+  });
+
+  it('takes all tags away in the Untagged column', async () => {
+    await start(viewsVault);
+    await switchTo('tags');
+    await holdSelect('Write report');
+    useUiStore().activeColumn = 2; // Untagged
+    await settle();
+    await find('tag-remove').trigger('click');
+    await settle();
+
+    expect(file('a')).not.toContain('office');
+    expect(file('a')).not.toContain('travel');
+    expect(find('toast').text()).toContain('Task updated');
+  });
+
+  it('shows the buttons in the section headers of the list in the tag view', async () => {
+    await start(viewsVault);
+    await switchTo('tags');
+    await find('view-menu').trigger('click');
+    await find('layout-list').trigger('click');
+    await settle();
+    await holdSelect('Loose end');
+
+    expect(find('tag-add-tag:office').exists()).toBe(true);
+    expect(find('tag-add-tag:travel').exists()).toBe(true);
+    await find('tag-add-tag:travel').trigger('click');
+    await settle();
+    expect(file('d')).toContain('travel');
+  });
+
   it('groups the open tasks by tag, a task with two tags in both, and leaves done ones out', async () => {
     await start(viewsVault);
     await switchTo('tags');
