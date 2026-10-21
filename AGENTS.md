@@ -24,4 +24,4 @@ Local-first kanban-inspired task manager. A vault is a folder of Markdown task f
 
 - Conventional Commits (`feat`, `fix`, `perf`, `chore`, ...). Do not add `Co-Authored-By` or "Generated with Claude Code" lines to commits or PRs.
 - A pre-commit hook runs ruff and the frontend formatter on staged files.
-- The version comes from the Git tag (`vX.Y.Z`, via setuptools-scm). Do not push commits or tags without being asked.
+- The version comes from the Git tag (`vX.Y.Z`, via setuptools-scm).
