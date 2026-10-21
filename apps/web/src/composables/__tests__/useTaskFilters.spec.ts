@@ -350,6 +350,19 @@ describe('useTaskFilters', () => {
       expect(route.query).toEqual({ planned_after: 'today', sort: 'planned', group: 'planned' });
     });
 
+    it('carries a sort typed in the field through the address to the page that lists the tasks', async () => {
+      // The field of the navigation bar owns the address ...
+      const field = setup();
+      field.filters.searchQuery.value = 'sort:title';
+      for (let i = 0; i < 3; i++) await nextTick();
+      expect(route.query.sort).toBe('title');
+
+      // ... and the page (a project board) reads it from there, without writing the address itself
+      const page = setup({ syncRoute: false });
+      for (let i = 0; i < 3; i++) await nextTick();
+      expect(ids(page.filters.filteredTasks.value)).toEqual(['a', 'c', 'b']); // Buy milk, Call Pia, Write report
+    });
+
     it('keeps the search when no project was left (opening a page with a search in its address)', async () => {
       route.query = { search: 'milk' };
       const { filters } = setup();
