@@ -205,6 +205,31 @@
         "sort": "-due",
         "search": "fix"
       }
+    },
+    {
+      "query": "group:planned",
+      "filter": {
+        "group": "planned"
+      }
+    },
+    {
+      "query": "group:Tag sort:-due",
+      "filter": {
+        "group": "tag",
+        "sort": "-due"
+      }
+    },
+    {
+      "query": "group:bogus",
+      "filter": {}
+    },
+    {
+      "query": "planned:after:today sort:planned group:planned",
+      "filter": {
+        "planned_after": "today",
+        "sort": "planned",
+        "group": "planned"
+      }
     }
   ]
 }

@@ -18,7 +18,15 @@ const TEXT_KEYS = [
   'planned_before',
   'planned_after',
   'sort',
+  'group',
 ] as const;
+
+const GROUP_PAGES = { planned: 'time', tag: 'tag', bucket: 'board' } as const;
+
+/** The page that shows a view: the layout its `group:` asks for, a plain list when it asks for none. */
+export function viewRouteName(filters: TaskFilterParams): 'time' | 'tag' | 'board' | 'list' {
+  return filters.group ? GROUP_PAGES[filters.group] : 'list';
+}
 
 /** Every query parameter the filters use, so that a page can take them out of an address before it puts its own in. */
 export const FILTER_QUERY_KEYS: readonly string[] = [...TEXT_KEYS, 'has_due_date'];

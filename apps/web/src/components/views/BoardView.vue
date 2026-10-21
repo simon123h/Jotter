@@ -83,9 +83,12 @@ const tasksByBucket = computed(() => {
     groups[b].push(task);
   });
 
-  Object.keys(groups).forEach((key) => {
-    groups[key].sort((a, b) => a.position - b.position);
-  });
+  // The order of the board, or the one a search asks for (`sort:` in a saved view)
+  if (!route.query.sort) {
+    Object.keys(groups).forEach((key) => {
+      groups[key].sort((a, b) => a.position - b.position);
+    });
+  }
 
   return groups;
 });

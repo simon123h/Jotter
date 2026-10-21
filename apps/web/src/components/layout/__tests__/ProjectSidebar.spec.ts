@@ -196,6 +196,13 @@ describe('ProjectSidebar.vue', () => {
       });
     });
 
+    it('opens a view in the layout its grouping asks for', () => {
+      settingsStore.views = [{ id: 'ahead', name: 'Ahead', query: 'planned:after:today group:planned' }];
+      const wrapper = mount(ProjectSidebar, getMountOptions());
+      const row = wrapper.findAllComponents(RouterLinkStub).find((l) => l.attributes('data-testid') === 'saved-view')!;
+      expect(row.props('to')).toMatchObject({ name: 'time', query: { planned_after: 'today', group: 'planned' } });
+    });
+
     it('offers the example views once the settings are read, but only while the vault has none of its own', async () => {
       settingsStore.views = null;
       settingsStore.loaded = true;

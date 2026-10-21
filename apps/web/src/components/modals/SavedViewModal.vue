@@ -7,7 +7,7 @@ import { useI18n } from '@/composables/useI18n';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import type { SavedView } from '@/types';
 import { parseQuery } from '@jotter/task-filter';
-import { filtersToRouteQuery } from '@/utils/filterRoute';
+import { filtersToRouteQuery, viewRouteName } from '@/utils/filterRoute';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -35,7 +35,8 @@ const save = () => {
   } else {
     const created = settingsStore.addView(name.value, query.value);
     // The new view is the one in view: the address says so, and the sidebar marks it
-    router.push({ name: 'list', params: { projectId: 'all' }, query: filtersToRouteQuery(parseQuery(created.query)) });
+    const filters = parseQuery(created.query);
+    router.push({ name: viewRouteName(filters), params: { projectId: 'all' }, query: filtersToRouteQuery(filters) });
   }
   emit('close');
 };

@@ -31,7 +31,7 @@ import { isServerOnline, checkServerStatus } from '@/api';
 import { useSelectionStore } from '@/stores/selection';
 import { compareTitles, normalizedQuery, parseQuery, stringifyQuery } from '@jotter/task-filter';
 import { useRoute } from 'vue-router';
-import { filtersToRouteQuery, routeQueryToFilters } from '@/utils/filterRoute';
+import { filtersToRouteQuery, routeQueryToFilters, viewRouteName } from '@/utils/filterRoute';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -239,6 +239,10 @@ watch(
   },
   { immediate: true }
 );
+const viewLocation = (query: string) => {
+  const filters = parseQuery(query);
+  return { name: viewRouteName(filters), params: { projectId: 'all' }, query: filtersToRouteQuery(filters) };
+};
 const currentQuery = computed(() => stringifyQuery(routeQueryToFilters(route.query as Record<string, unknown>)));
 const isViewActive = (query: string) => props.activeProjectId === 'all' && currentQuery.value === normalizedQuery(query);
 
@@ -312,7 +316,7 @@ const onVaultSelected = async (event: Event) => {
       <router-link
         v-for="view in savedViews"
         :key="view.id"
-        :to="{ name: 'list', params: { projectId: 'all' }, query: filtersToRouteQuery(parseQuery(view.query)) }"
+        :to="viewLocation(view.query)"
         class="group relative flex items-center justify-between px-3 py-1.5 rounded text-sm transition-all duration-200 font-medium border"
         :class="
           isViewActive(view.query)

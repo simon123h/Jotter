@@ -30,6 +30,7 @@ A search query is composed of standalone full-text search phrases and optional c
 | **Due Date Boundaries** | `due:before:2026-12-31` <br> `due:after:2026-06-01` | Tasks with due dates within the specified date boundaries |
 | **Created / Updated** | `created:after:2026-06-01` <br> `updated:before:2026-06-30` | Tasks created or last changed within the specified date boundaries (`before:` and `after:` include the day itself) |
 | **Relative Days** | `created:after:-7d` <br> `due:before:+2w` | Any date boundary can count from today instead: `-7d` is seven days ago, `+2w` is two weeks ahead (days `d` or weeks `w`, the sign is required); `today` and `tomorrow` work as well. `created:after:-7d` finds the tasks added in the last week, and keeps doing so tomorrow. |
+| **Grouping** | `group:planned` <br> `group:tag` <br> `group:bucket` | Lays the result out by planned time (Re-plan, Today, This week, ...), by tag or by column instead of a plain list. It does not change which tasks match; a [saved view](./saved-views) opens in the matching layout |
 | **Sorting** | `sort:-created` <br> `sort:due` <br> `sort:priority` | Orders the result: `created`, `updated`, `due`, `planned`, `priority` (most urgent first) or `title`. A leading `-` reverses it (`sort:-created` is the newest first). Tasks without the value come last in either direction. Without `sort:` the order is the one of the board |
 
 ---

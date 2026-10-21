@@ -9,16 +9,16 @@ Eine **Ansicht** ist eine Suche, die du unter einem Namen behältst. Sie steht i
 
 Eine Suche, die du in einem Projekt speicherst, bekommt `project:<Name>` dazu, die Ansicht zeigt also weiter dieses Projekt. Speichere sie unter _Alle Projekte_ (oder schreibe die Suche ohne `project:`) für eine Ansicht über alle.
 
-Ein Klick auf eine Ansicht in der Seitenleiste öffnet sie. Sie zeigt die passenden Aufgaben aller Projekte in der **Liste**, in der Reihenfolge, die die Suche verlangt (`sort:`). Über **...** an der Zeile änderst du Name und Suche oder löschst die Ansicht.
+Ein Klick auf eine Ansicht in der Seitenleiste öffnet sie. Sie zeigt die passenden Aufgaben aller Projekte in der Reihenfolge, die die Suche verlangt (`sort:`), so ausgelegt, wie `group:` es sagt: `group:planned` als Planungsspalten, `group:tag` als Tags, `group:bucket` als Board. Ohne `group:` ist sie eine einfache **Liste**. Über **...** an der Zeile änderst du Name und Suche oder löschst die Ansicht.
 
 ## Die Beispielansichten
 
 Ein Vault beginnt mit zwei Ansichten, die du wie deine eigenen ändern oder löschen kannst:
 
-| Ansicht                 | Suche                                                                                   |
-| :---------------------- | :-------------------------------------------------------------------------------------- |
-| **Demnächst**           | `planned:after:today sort:planned`: alles, was ab heute geplant ist, das Nächste zuerst |
-| **Zuletzt hinzugefügt** | `created:after:-7d sort:-created`: was in der letzten Woche dazukam, das Neueste zuerst |
+| Ansicht                 | Suche                                                                                                     |
+| :---------------------- | :-------------------------------------------------------------------------------------------------------- |
+| **Demnächst**           | `planned:after:today sort:planned group:planned`: alles, was ab heute geplant ist, in den Planungsspalten |
+| **Zuletzt hinzugefügt** | `created:after:-7d sort:-created`: was in der letzten Woche dazukam, das Neueste zuerst                   |
 
 Sie werden einmal angeboten. Löschst du sie, bleiben sie gelöscht.
 

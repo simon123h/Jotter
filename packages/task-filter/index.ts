@@ -40,6 +40,8 @@ export interface TaskFilter {
   project?: string;
   /** How the result is ordered: `created`, `updated`, `due`, `planned`, `priority` or `title`; a leading `-` reverses it. */
   sort?: string;
+  /** How the result is laid out: by planned time, by tag or by column. It does not change which tasks match. */
+  group?: "planned" | "tag" | "bucket";
 }
 
 /** The parts of a task that a filter looks at. */
@@ -90,6 +92,7 @@ const quoted = (value: string) => (value.includes(" ") ? `"${value}"` : value);
  *   and tomorrow
  * - sort:created, sort:-due (a leading - reverses it): created, updated, due, planned, priority, title; tasks without
  *   the value come last
+ * - group:planned, group:tag or group:bucket lays the result out by planned time, by tag or by column
  * - words and "quoted phrases" for the full-text search
  * Values with spaces go in quotes (bucket:"in progress").
  */
@@ -147,6 +150,9 @@ export function parseQuery(query: string): TaskFilter {
         else if (rawValue.startsWith("after:"))
           filter.planned_after = rawValue.substring(6);
         else filter.planned_date = rawValue;
+      } else if (lowerKey === "group") {
+        const group = rawValue.toLowerCase();
+        if (group === "planned" || group === "tag" || group === "bucket") filter.group = group;
       } else if (lowerKey === "sort") {
         const sort = rawValue.toLowerCase();
         if (isSortKey(sort)) filter.sort = sort;
@@ -209,6 +215,7 @@ export function stringifyQuery(filter: TaskFilter): string {
     parts.push(`updated:before:${filter.updated_before}`);
   if (filter.updated_after) parts.push(`updated:after:${filter.updated_after}`);
   if (filter.sort) parts.push(`sort:${filter.sort}`);
+  if (filter.group) parts.push(`group:${filter.group}`);
   if (filter.search) parts.push(filter.search);
 
   return parts.join(" ");

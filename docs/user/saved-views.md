@@ -9,16 +9,16 @@ A **view** is a search you keep under a name. It sits in the sidebar, above the 
 
 A search saved from inside a project gets `project:<name>` added, so the view keeps showing that project. Save it from _All Projects_ (or write a query without `project:`) for a view across all of them.
 
-Click a view in the sidebar to open it. It shows the tasks of all projects that match, in the **list**, in the order the search asks for (`sort:`). The **...** button on the row changes its name or its search, or deletes it.
+Click a view in the sidebar to open it. It shows the tasks of all projects that match, in the order the search asks for (`sort:`), laid out as `group:` says: `group:planned` as the planning columns, `group:tag` as the tags, `group:bucket` as the board. Without `group:` it is a plain **list**. The **...** button on the row changes its name or its search, or deletes it.
 
 ## The example views
 
 A vault starts with two views, which you can change or delete like your own:
 
-| View               | Search                                                                                  |
-| :----------------- | :-------------------------------------------------------------------------------------- |
-| **Upcoming**       | `planned:after:today sort:planned`: everything planned from today on, the nearest first |
-| **Recently added** | `created:after:-7d sort:-created`: what was added in the last week, the newest first    |
+| View               | Search                                                                                                      |
+| :----------------- | :---------------------------------------------------------------------------------------------------------- |
+| **Upcoming**       | `planned:after:today sort:planned group:planned`: everything planned from today on, in the planning columns |
+| **Recently added** | `created:after:-7d sort:-created`: what was added in the last week, the newest first                        |
 
 They are offered once. When you delete them, they stay deleted.
 

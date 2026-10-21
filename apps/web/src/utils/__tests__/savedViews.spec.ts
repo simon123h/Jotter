@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { exampleViews, newViewId, sameQuery, scopedQuery } from '@jotter/task-filter';
-import { filtersToRouteQuery, routeQueryToFilters } from '@/utils/filterRoute';
+import { filtersToRouteQuery, routeQueryToFilters, viewRouteName } from '@/utils/filterRoute';
 import { parseQuery } from '@jotter/task-filter';
 
 describe('saved views', () => {
@@ -34,11 +34,21 @@ describe('saved views', () => {
   });
 });
 
+describe('the page of a view', () => {
+  it('follows the grouping of the search, and is the list without one', () => {
+    expect(viewRouteName(parseQuery('planned:after:today group:planned'))).toBe('time');
+    expect(viewRouteName(parseQuery('group:tag'))).toBe('tag');
+    expect(viewRouteName(parseQuery('group:bucket'))).toBe('board');
+    expect(viewRouteName(parseQuery('sort:-created'))).toBe('list');
+  });
+});
+
 describe('filters in the address', () => {
   it('writes what is set and reads it back, also the planned range and the sort', () => {
     const filters = parseQuery('tag:ui planned:after:today planned:before:+2w sort:-created due:has');
     const query = filtersToRouteQuery(filters);
     expect(query).toMatchObject({ planned_after: 'today', planned_before: '+2w', sort: '-created', has_due_date: 'true' });
+    expect(filtersToRouteQuery(parseQuery('group:tag'))).toEqual({ group: 'tag' });
     expect(routeQueryToFilters(query)).toMatchObject(filters);
   });
 

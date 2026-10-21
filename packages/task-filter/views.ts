@@ -14,7 +14,7 @@ export interface SavedView {
 /** The views a vault starts with, until the user has a list of their own. The names come from the app, in its language. */
 export function exampleViews(names: { upcoming: string; recent: string }): SavedView[] {
   return [
-    { id: "upcoming", name: names.upcoming, query: "planned:after:today sort:planned" },
+    { id: "upcoming", name: names.upcoming, query: "planned:after:today sort:planned group:planned" },
     { id: "recent", name: names.recent, query: "created:after:-7d sort:-created" },
   ];
 }
