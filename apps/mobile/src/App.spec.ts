@@ -1880,17 +1880,25 @@ describe('tag and planning views', () => {
     await switchTo('planning');
 
     expect(tabs().map((t) => t.replace(/\d+$/, '').trim())).toEqual([
+      'Not planned',
       'Today',
       'Tomorrow',
       'This week',
       'This month',
       'Later',
-      'Not planned',
     ]);
-    expect(column(0)).toContain('Write report');
-    expect(column(0)).not.toContain('Ship release');
-    expect(column(2)).toContain('Book flights');
-    expect(column(5)).toContain('Loose end');
+    expect(column(0)).toContain('Loose end');
+    expect(column(1)).toContain('Write report');
+    expect(column(1)).not.toContain('Ship release');
+    expect(column(3)).toContain('Book flights');
+  });
+
+  it('opens the planning view on the Today tab, with Not planned one tab to the left', async () => {
+    await start(viewsVault);
+    await switchTo('planning');
+
+    expect(useUiStore().activeColumn).toBe(1);
+    expect(useAppStore().columns[useUiStore().activeColumn].key).toBe('planned:today');
   });
 
   it('shows a tab for what has slipped, once something has', async () => {
@@ -1900,8 +1908,8 @@ describe('tag and planning views', () => {
     });
     await switchTo('planning');
 
-    expect(tabs().map((t) => t.replace(/\d+$/, '').trim())[0]).toBe('Re-plan');
-    expect(column(0)).toContain('Missed it');
+    expect(tabs().map((t) => t.replace(/\d+$/, '').trim())[1]).toBe('Re-plan');
+    expect(column(1)).toContain('Missed it');
   });
 
   it('remembers the view and goes back to the board', async () => {
@@ -1937,7 +1945,7 @@ describe('tag and planning views', () => {
     expect(created()).toContain('travel');
 
     await switchTo('planning');
-    useUiStore().activeColumn = 1;
+    useUiStore().activeColumn = 2; // Tomorrow
     await find('fab').trigger('click');
     await type('quick-add-input', 'Call back');
     await submit('quick-add-input');

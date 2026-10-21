@@ -27,7 +27,7 @@ describe('TimelineLayout.vue', () => {
     columns(wrapper)[0].vm.$emit('card-dropped', { taskId, toId });
 
   it('shows a column for what has slipped only when something has', () => {
-    expect(columns(mountWith()).map((c) => c.props('id'))).toEqual(['slipped', 'today', 'tomorrow', 'week', 'month', 'later', 'none']);
+    expect(columns(mountWith()).map((c) => c.props('id'))).toEqual(['none', 'slipped', 'today', 'tomorrow', 'week', 'month', 'later']);
     expect(columns(mountWith([createMockTask({ id: 'a', planned_date: isoDay(0) })])).map((c) => c.props('id'))).not.toContain('slipped');
   });
 
