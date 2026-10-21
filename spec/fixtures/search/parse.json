@@ -162,6 +162,49 @@
         "due_before": "+2w",
         "updated_after": "-3d"
       }
+    },
+    {
+      "query": "planned:after:2026-06-02",
+      "filter": {
+        "planned_after": "2026-06-02"
+      }
+    },
+    {
+      "query": "planned:before:+1w",
+      "filter": {
+        "planned_before": "+1w"
+      }
+    },
+    {
+      "query": "planned:after:today planned:before:+2w",
+      "filter": {
+        "planned_after": "today",
+        "planned_before": "+2w"
+      }
+    },
+    {
+      "query": "sort:-created",
+      "filter": {
+        "sort": "-created"
+      }
+    },
+    {
+      "query": "sort:Title",
+      "filter": {
+        "sort": "title"
+      }
+    },
+    {
+      "query": "sort:bogus",
+      "filter": {}
+    },
+    {
+      "query": "bucket:todo sort:-due fix",
+      "filter": {
+        "buckets": "todo",
+        "sort": "-due",
+        "search": "fix"
+      }
     }
   ]
 }

@@ -4,18 +4,21 @@ import json
 import re
 import sqlite3
 import threading
+import unicodedata
 from datetime import date, timedelta
 from itertools import batched
 from typing import Any, NamedTuple
 
 from jotter.features.tasks.domain import DueDate, Priority, RepeatRule, Tag, Task, TaskId, clean_reminders
-from jotter.features.tasks.planned import PlannedDate, planned_span
+from jotter.features.tasks.planned import PlannedDate, planned_span, planned_start
 from jotter.shared.exceptions import EntityNotFoundError
 
 _sqlite_write_lock = threading.Lock()
 
 
 _RELATIVE_DAY = re.compile(r"([+-])(\d+)([dw])", re.IGNORECASE)
+_SORT_KEYS = ("created", "updated", "due", "planned", "priority", "title")
+_PRIORITY_RANK = {"urgent": 0, "high": 1, "medium": 2, "low": 3}
 
 
 def _today() -> date:
@@ -23,12 +26,54 @@ def _today() -> date:
 
 
 def _resolve_day(value: str | None) -> str | None:
-    """A day relative to today (`-7d`, `+2w`) as YYYY-MM-DD. Anything else is a day as written."""
+    """A day relative to today (`-7d`, `+2w`, `today`, `tomorrow`) as YYYY-MM-DD. Anything else is a day as written."""
+    if value and value.lower() == "today":
+        return _today().isoformat()
+    if value and value.lower() == "tomorrow":
+        return (_today() + timedelta(days=1)).isoformat()
     match = _RELATIVE_DAY.fullmatch(value) if value else None
     if not match:
         return value
     days = int(match[2]) * (7 if match[3].lower() == "w" else 1) * (-1 if match[1] == "-" else 1)
     return (_today() + timedelta(days=days)).isoformat()
+
+
+def _sort_value(task: Task, key: str) -> str | int | None:
+    """What a task is sorted by; None when it has no value, which puts it last in either direction."""
+    match key:
+        case "created":
+            return task.created_at or None
+        case "updated":
+            return task.updated_at or None
+        case "due":
+            return task.due_date.value or None
+        case "planned":
+            return planned_start(task.planned_date.value).isoformat() if task.planned_date.value else None
+        case "priority":
+            return _PRIORITY_RANK.get(task.priority.value) if task.priority.value else None
+        case _:
+            return task.title
+
+
+def _title_key(title: str) -> tuple[str, str]:
+    """How titles sort (packages/task-filter `compareTitles`): symbols and emojis in front of a title do not count, case
+    and accents hardly."""
+    start = next((i for i, ch in enumerate(title) if ch.isalnum()), len(title))
+    plain = "".join(ch for ch in unicodedata.normalize("NFKD", title[start:]) if not unicodedata.combining(ch))
+    return plain.casefold(), title
+
+
+def _sorted(tasks: list[Task], sort: str | None) -> list[Task]:
+    """The tasks in the order a `sort` asks for (`created`, `-due`, ...); equal ones keep theirs. Anything else leaves it."""
+    key = (sort or "").lower().lstrip("-")
+    if key not in _SORT_KEYS:
+        return tasks
+    sign = -1 if (sort or "").startswith("-") else 1
+    # Those without a value are last in both directions, so they are sorted apart from the rest
+    valued = [(t, v) for t in tasks if (v := _sort_value(t, key)) is not None]
+    missing = [t for t in tasks if _sort_value(t, key) is None]
+    valued.sort(key=lambda pair: _title_key(str(pair[1])) if key == "title" else pair[1], reverse=sign < 0)
+    return [t for t, _ in valued] + missing
 
 
 def _json_or_none(raw: str | None) -> Any:
@@ -155,12 +200,15 @@ class SqliteTaskRepository:
         due_before: str | None = None,
         due_after: str | None = None,
         planned_date: str | None = None,
+        planned_before: str | None = None,
+        planned_after: str | None = None,
         has_due_date: bool | None = None,
         created_before: str | None = None,
         created_after: str | None = None,
         updated_before: str | None = None,
         updated_after: str | None = None,
         include_archived: bool = False,
+        sort: str | None = None,
     ) -> list[Task]:
         cursor = self.conn.cursor()
         query = """
@@ -235,6 +283,12 @@ class SqliteTaskRepository:
                     return []
                 query += " AND planned_start BETWEEN ? AND ?"
                 args.extend(span)
+        if planned_before := _resolve_day(planned_before):
+            query += " AND planned_start IS NOT NULL AND planned_start <= ?"
+            args.append(planned_before)
+        if planned_after := _resolve_day(planned_after):
+            query += " AND planned_start IS NOT NULL AND planned_start >= ?"
+            args.append(planned_after)
         if has_due_date is True:
             query += " AND due_date IS NOT NULL AND due_date != ''"
         elif has_due_date is False:
@@ -279,18 +333,9 @@ class SqliteTaskRepository:
         tasks = [self._row_to_task(row) for row in rows]
 
         effective_tags = list(tags) if tags else ([tag] if tag else [])
-        if not effective_tags:
-            return tasks
-
-        return [
-            t
-            for t in tasks
-            if self._matches_tags(
-                task=t,
-                effective_tags=effective_tags,
-                tag_mode=tag_mode,
-            )
-        ]
+        if effective_tags:
+            tasks = [t for t in tasks if self._matches_tags(task=t, effective_tags=effective_tags, tag_mode=tag_mode)]
+        return _sorted(tasks, sort)
 
     def _matches_tags(
         self,
