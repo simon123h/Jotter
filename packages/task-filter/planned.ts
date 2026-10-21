@@ -147,7 +147,7 @@ export function plannedFor(preset: PlannedPreset, now: Date = new Date()): strin
 }
 
 /** The stretches of time a planning view groups by, in order. */
-export const PLAN_SLOTS = ['slipped', 'today', 'tomorrow', 'week', 'month', 'later', 'none'] as const;
+export const PLAN_SLOTS = ['none', 'slipped', 'today', 'tomorrow', 'week', 'month', 'later'] as const;
 export type PlanSlot = (typeof PLAN_SLOTS)[number];
 
 /**

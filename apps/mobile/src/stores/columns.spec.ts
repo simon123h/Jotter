@@ -65,13 +65,13 @@ describe('columnsFor', () => {
     const cols = planningColumns(tasks, now);
     const ids = (key: string) => cols.find((c) => c.key === key)!.tasks.map((t) => t.id);
     expect(cols.map((c) => c.key)).toEqual([
+      'planned:none',
       'planned:slipped',
       'planned:today',
       'planned:tomorrow',
       'planned:week',
       'planned:month',
       'planned:later',
-      'planned:none',
     ]);
     expect(ids('planned:slipped')).toEqual(['2026-10-01']);
     expect(ids('planned:today')).toEqual(['2026-10-14']);
@@ -93,7 +93,7 @@ describe('columnsFor', () => {
     const hidden = defaultHidden();
     const unplanned = (h: typeof hidden) =>
       columnsFor('planning', buckets, tasks, h)
-        .at(-1)!
+        .find((c) => c.key === 'planned:none')!
         .tasks.map((t) => t.id);
     expect(unplanned(hidden)).toEqual(['open']);
     hidden.planning.done = false;

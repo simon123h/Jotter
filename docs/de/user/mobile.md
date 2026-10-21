@@ -41,7 +41,7 @@ Die Leiste unten wechselt die Ansicht. Die Spalten sind Tabs, zwischen denen du 
 
 - **Board**: ein Tab pro Spalte.
 - **Tags**: ein Tab pro Tag und einer für Aufgaben ohne Tag.
-- **Planung**: ein Tab für jede Zeitspanne voraus (heute, morgen, Rest dieser Woche, Rest dieses Monats, später), ein Tab *Umplanen*, solange etwas verpasst ist, und einer für Aufgaben ohne Planung.
+- **Planung**: ein erster Tab für Aufgaben ohne Planung, ein Tab *Umplanen*, solange etwas verpasst ist, und ein Tab für jede Zeitspanne voraus (heute, morgen, Rest dieser Woche, Rest dieses Monats, später).
 
 Eine Aufgabe, die du in einem Tab anlegst, wird dort eingeordnet: mit diesem Tag oder diesem geplanten Datum.
 
