@@ -79,16 +79,25 @@ defineExpose({
         v-if="task.due_date || task.planned_date || task.priority || task.repeat || task.reminders?.length"
         class="flex flex-wrap gap-3.5 mt-3 items-center"
       >
-        <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
-          <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.dueLabel') }}</span>
-          <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
-            {{ new Date(task.due_date).toLocaleDateString() }}
+        <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
+          <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.priorityLabel') }}</span>
+          <span
+            class="px-2 py-0.5 rounded border text-xs font-extrabold uppercase tracking-wider"
+            :class="getPriorityClasses(task.priority)"
+          >
+            {{ t('priorityOptions.' + task.priority) }}
           </span>
         </div>
         <div v-if="task.planned_date" class="flex items-center gap-1.5 text-xs">
           <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.plannedLabel') }}</span>
           <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
             {{ plannedLabel(task.planned_date, t, locale) }}
+          </span>
+        </div>
+        <div v-if="task.due_date" class="flex items-center gap-1.5 text-xs">
+          <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.dueLabel') }}</span>
+          <span class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card">
+            {{ new Date(task.due_date).toLocaleDateString() }}
           </span>
         </div>
         <div v-if="task.repeat" class="flex items-center gap-1.5 text-xs" data-testid="detail-repeat">
@@ -105,15 +114,6 @@ defineExpose({
             class="bg-theme-card px-2 py-0.5 rounded border border-theme-border text-xs font-semibold text-theme-text-card"
           >
             {{ new Date(r).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) }}
-          </span>
-        </div>
-        <div v-if="task.priority" class="flex items-center gap-1.5 text-xs">
-          <span class="text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('taskDetail.priorityLabel') }}</span>
-          <span
-            class="px-2 py-0.5 rounded border text-xs font-extrabold uppercase tracking-wider"
-            :class="getPriorityClasses(task.priority)"
-          >
-            {{ t('priorityOptions.' + task.priority) }}
           </span>
         </div>
       </div>

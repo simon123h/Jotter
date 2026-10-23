@@ -103,8 +103,8 @@ defineExpose({
       </div>
     </div>
 
-    <!-- Bucket & Tags Row -->
-    <div class="grid grid-cols-2 gap-3.5">
+    <!-- Column, priority & tags: the tags get the wider part -->
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_1fr_2fr] gap-3.5">
       <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.columnLabel') }}</label>
         <select
@@ -114,21 +114,6 @@ defineExpose({
           <option v-for="b in buckets" :key="b.name" :value="b.name">{{ tBucket(b.name, b.title) }}</option>
         </select>
       </div>
-      <div class="relative">
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.tagsLabel') }}</label>
-        <TagInput v-model="editor.form.tags" :placeholder="t('form.tagsPlaceholderEdit')" />
-      </div>
-    </div>
-
-    <!-- Due Date, Planned Date & Priority Row -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
-          t('form.plannedDateLabel') || 'Planned'
-        }}</label>
-        <PlannedSelect v-model="editor.form.plannedDate" />
-      </div>
-      <DeadlineField v-model="editor.form.dueDate" />
       <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.priorityLabel') }}</label>
         <select
@@ -142,10 +127,21 @@ defineExpose({
           <option value="urgent">{{ t('priorityOptions.urgent') }}</option>
         </select>
       </div>
+      <div class="relative">
+        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.tagsLabel') }}</label>
+        <TagInput v-model="editor.form.tags" :placeholder="t('form.tagsPlaceholderEdit')" />
+      </div>
     </div>
 
-    <!-- Repeat, how it is counted & Reminders: one line, the counting only once something repeats -->
-    <div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-3.5">
+    <!-- Planned, due date & repeat -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{
+          t('form.plannedDateLabel') || 'Planned'
+        }}</label>
+        <PlannedSelect v-model="editor.form.plannedDate" />
+      </div>
+      <DeadlineField v-model="editor.form.dueDate" />
       <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.repeatLabel') }}</label>
         <select
@@ -158,60 +154,65 @@ defineExpose({
           <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t('repeat.once.' + u) }}</option>
           <option value="custom">{{ t('form.repeatCustom') }}</option>
         </select>
-        <div v-if="editor.form.repeatKind === 'custom'" class="mt-2 flex items-center gap-2">
-          <span class="text-sm text-theme-text-muted">{{ t('form.repeatEvery') }}</span>
-          <input
-            v-model.number="editor.form.repeatEvery"
-            type="number"
-            min="1"
-            class="w-20 bg-theme-base/60 border border-theme-border rounded px-2 py-1.5 text-sm text-theme-text-input"
-            data-testid="task-repeat-every"
-          />
-          <select
-            v-model="editor.form.repeatUnit"
-            class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            data-testid="task-repeat-unit"
-          >
-            <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t('repeat.units.' + u) }}</option>
-          </select>
-        </div>
       </div>
-      <div v-if="editor.form.repeatKind">
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.repeatCounted') }}</label>
+    </div>
+
+    <!-- What a repeat needs to know: only once the task repeats, so that the rows above keep their height -->
+    <div v-if="editor.form.repeatKind" class="flex flex-wrap items-end gap-3.5">
+      <div v-if="editor.form.repeatKind === 'custom'" class="flex items-center gap-2">
+        <span class="text-sm text-theme-text-muted">{{ t('form.repeatEvery') }}</span>
+        <input
+          v-model.number="editor.form.repeatEvery"
+          type="number"
+          min="1"
+          class="w-20 bg-theme-base/60 border border-theme-border rounded px-2 py-1.5 text-sm text-theme-text-input"
+          data-testid="task-repeat-every"
+        />
+        <select
+          v-model="editor.form.repeatUnit"
+          class="w-auto bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+          data-testid="task-repeat-unit"
+        >
+          <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t('repeat.units.' + u) }}</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-theme-text-muted">{{ t('form.repeatCounted') }}</label>
         <select
           v-model="editor.form.repeatFrom"
-          class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+          class="w-auto bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
           data-testid="task-repeat-from"
         >
           <option value="completion">{{ t('form.repeatFromCompletion') }}</option>
           <option value="due">{{ t('form.repeatFromDue') }}</option>
         </select>
       </div>
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.remindersLabel') }}</label>
-        <ul class="space-y-2">
-          <li v-for="(_, i) in editor.form.reminders" :key="i" class="flex items-center gap-2">
-            <input
-              v-model="editor.form.reminders[i]"
-              type="datetime-local"
-              class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-              data-testid="reminder-input"
-            />
-            <button
-              type="button"
-              class="p-1.5 text-theme-text-muted hover:text-theme-text-main"
-              :title="t('form.removeReminder')"
-              data-testid="reminder-remove"
-              @click="editor.removeReminder(i)"
-            >
-              <X class="w-4 h-4" />
-            </button>
-          </li>
-        </ul>
+    </div>
+
+    <!-- Reminders: side by side, so that several do not make the form taller line by line -->
+    <div>
+      <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.remindersLabel') }}</label>
+      <div class="flex flex-wrap items-center gap-2">
+        <div v-for="(_, i) in editor.form.reminders" :key="i" class="flex items-center gap-1">
+          <input
+            v-model="editor.form.reminders[i]"
+            type="datetime-local"
+            class="w-56 bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+            data-testid="reminder-input"
+          />
+          <button
+            type="button"
+            class="p-1.5 text-theme-text-muted hover:text-theme-text-main"
+            :title="t('form.removeReminder')"
+            data-testid="reminder-remove"
+            @click="editor.removeReminder(i)"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
         <button
           type="button"
-          class="flex w-full items-center gap-1.5 rounded border border-dashed border-theme-border px-3 py-1.5 text-sm text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary transition-colors cursor-pointer"
-          :class="{ 'mt-2': editor.form.reminders.length }"
+          class="flex items-center gap-1.5 rounded border border-dashed border-theme-border px-3 py-1.5 text-sm text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary transition-colors cursor-pointer"
           data-testid="reminder-add"
           @click="editor.addReminder"
         >
