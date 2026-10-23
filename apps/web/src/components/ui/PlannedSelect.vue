@@ -37,14 +37,14 @@ const field =
 </script>
 
 <template>
-  <div class="space-y-1.5">
-    <select v-model="choice" :class="field" data-testid="planned-select">
+  <div class="flex gap-1.5">
+    <select v-model="choice" :class="[field, 'min-w-0 flex-1']" data-testid="planned-select">
       <option value="">{{ t('plannedDateOptions.none') }}</option>
       <option v-for="c in choices" :key="c.value" :value="c.value">{{ t('plannedDateOptions.' + c.preset) }}</option>
       <option value="__day">{{ t('plannedDateOptions.pickDay') }}</option>
       <!-- A value from elsewhere (a week or a month that is not the current one) stays selectable and is kept -->
       <option v-if="model && !picking && !offered" :value="model">{{ plannedLabel(model, t, locale) }}</option>
     </select>
-    <input v-if="showDay" v-model="day" type="date" :class="field" data-testid="planned-day" />
+    <input v-if="showDay" v-model="day" type="date" :class="[field, 'min-w-0 flex-1']" data-testid="planned-day" />
   </div>
 </template>
