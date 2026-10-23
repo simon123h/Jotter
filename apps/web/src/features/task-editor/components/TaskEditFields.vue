@@ -144,8 +144,8 @@ defineExpose({
       </div>
     </div>
 
-    <!-- Repeat & Reminders -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+    <!-- Repeat, how it is counted & Reminders: one line, the counting only once something repeats -->
+    <div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-3.5">
       <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.repeatLabel') }}</label>
         <select
@@ -175,17 +175,17 @@ defineExpose({
             <option v-for="u in REPEAT_UNITS" :key="u" :value="u">{{ t('repeat.units.' + u) }}</option>
           </select>
         </div>
-        <div v-if="editor.form.repeatKind" class="mt-2">
-          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.repeatCounted') }}</label>
-          <select
-            v-model="editor.form.repeatFrom"
-            class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            data-testid="task-repeat-from"
-          >
-            <option value="completion">{{ t('form.repeatFromCompletion') }}</option>
-            <option value="due">{{ t('form.repeatFromDue') }}</option>
-          </select>
-        </div>
+      </div>
+      <div v-if="editor.form.repeatKind">
+        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.repeatCounted') }}</label>
+        <select
+          v-model="editor.form.repeatFrom"
+          class="w-full bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+          data-testid="task-repeat-from"
+        >
+          <option value="completion">{{ t('form.repeatFromCompletion') }}</option>
+          <option value="due">{{ t('form.repeatFromDue') }}</option>
+        </select>
       </div>
       <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.remindersLabel') }}</label>
