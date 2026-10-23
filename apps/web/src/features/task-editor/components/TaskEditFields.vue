@@ -189,38 +189,6 @@ defineExpose({
       </div>
     </div>
 
-    <!-- Reminders: side by side, so that several do not make the form taller line by line -->
-    <div>
-      <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.remindersLabel') }}</label>
-      <div class="flex flex-wrap items-center gap-2">
-        <div v-for="(_, i) in editor.form.reminders" :key="i" class="flex items-center gap-1">
-          <input
-            v-model="editor.form.reminders[i]"
-            type="datetime-local"
-            class="w-56 bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
-            data-testid="reminder-input"
-          />
-          <button
-            type="button"
-            class="p-1.5 text-theme-text-muted hover:text-theme-text-main"
-            :title="t('form.removeReminder')"
-            data-testid="reminder-remove"
-            @click="editor.removeReminder(i)"
-          >
-            <X class="w-4 h-4" />
-          </button>
-        </div>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 rounded border border-dashed border-theme-border px-3 py-1.5 text-sm text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary transition-colors cursor-pointer"
-          data-testid="reminder-add"
-          @click="editor.addReminder"
-        >
-          <Plus class="w-4 h-4 shrink-0" />{{ t('form.addReminder') }}
-        </button>
-      </div>
-    </div>
-
     <!-- Body (Markdown Editor) -->
     <div>
       <div class="flex items-center justify-between mb-1">
@@ -240,37 +208,69 @@ defineExpose({
       <MarkdownEditor ref="markdownEditorRef" v-model="editor.form.body" :rows="12" :placeholder="t('form.markdownPlaceholderEdit')" />
     </div>
 
-    <!-- Highlight Color Selector -->
-    <div>
-      <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
-        {{ t('columnEdit.colorLabel') }}
-      </label>
-      <div class="flex flex-wrap gap-2.5 items-center">
-        <!-- None Option -->
-        <button
-          type="button"
-          @click="editor.form.color = null"
-          class="w-7 h-7 rounded-full border border-theme-border flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 text-theme-text-muted hover:text-theme-text-main"
-          :class="[
-            editor.form.color === null
-              ? 'ring-2 ring-theme-accent ring-offset-2 ring-offset-theme-base bg-theme-card/80 border-theme-accent/60'
-              : 'bg-theme-card/30 hover:bg-theme-card',
-          ]"
-          :title="t('columnEdit.colorNone')"
-        >
-          <Slash class="w-3 h-3 shrink-0 rotate-90" />
-        </button>
+    <!-- Colour & reminders, the two the desktop seldom needs: the colour keeps its width, the reminders sit side by side in the rest -->
+    <div class="flex flex-wrap gap-x-6 gap-y-3">
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
+          {{ t('columnEdit.colorLabel') }}
+        </label>
+        <div class="flex flex-wrap gap-2.5 items-center">
+          <!-- None Option -->
+          <button
+            type="button"
+            @click="editor.form.color = null"
+            class="w-7 h-7 rounded-full border border-theme-border flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 text-theme-text-muted hover:text-theme-text-main"
+            :class="[
+              editor.form.color === null
+                ? 'ring-2 ring-theme-accent ring-offset-2 ring-offset-theme-base bg-theme-card/80 border-theme-accent/60'
+                : 'bg-theme-card/30 hover:bg-theme-card',
+            ]"
+            :title="t('columnEdit.colorNone')"
+          >
+            <Slash class="w-3 h-3 shrink-0 rotate-90" />
+          </button>
 
-        <!-- Colors -->
-        <button
-          v-for="c in colors"
-          :key="c.id"
-          type="button"
-          @click="editor.form.color = c.id"
-          class="w-7 h-7 rounded-full cursor-pointer transition-all hover:scale-110 active:scale-95"
-          :class="[c.bg, editor.form.color === c.id ? `ring-2 ring-offset-2 ring-offset-theme-base ${c.ring}` : '']"
-          :title="c.name"
-        />
+          <!-- Colors -->
+          <button
+            v-for="c in colors"
+            :key="c.id"
+            type="button"
+            @click="editor.form.color = c.id"
+            class="w-7 h-7 rounded-full cursor-pointer transition-all hover:scale-110 active:scale-95"
+            :class="[c.bg, editor.form.color === c.id ? `ring-2 ring-offset-2 ring-offset-theme-base ${c.ring}` : '']"
+            :title="c.name"
+          />
+        </div>
+      </div>
+      <div class="min-w-0 flex-1">
+        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.remindersLabel') }}</label>
+        <div class="flex flex-wrap items-center gap-2">
+          <div v-for="(_, i) in editor.form.reminders" :key="i" class="flex items-center gap-1">
+            <input
+              v-model="editor.form.reminders[i]"
+              type="datetime-local"
+              class="w-56 bg-theme-base/60 border border-theme-border rounded px-3 py-1.5 text-sm text-theme-text-input focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+              data-testid="reminder-input"
+            />
+            <button
+              type="button"
+              class="p-1.5 text-theme-text-muted hover:text-theme-text-main"
+              :title="t('form.removeReminder')"
+              data-testid="reminder-remove"
+              @click="editor.removeReminder(i)"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded border border-dashed border-theme-border px-3 py-1.5 text-sm text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary transition-colors cursor-pointer"
+            data-testid="reminder-add"
+            @click="editor.addReminder"
+          >
+            <Plus class="w-4 h-4 shrink-0" />{{ t('form.addReminder') }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
