@@ -180,17 +180,7 @@ defineExpose({
         </div>
       </div>
       <div>
-        <div class="flex items-center justify-between mb-1">
-          <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">{{ t('form.remindersLabel') }}</label>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 text-xs font-semibold text-theme-primary"
-            data-testid="reminder-add"
-            @click="editor.addReminder"
-          >
-            <Plus class="w-3.5 h-3.5" />{{ t('form.addReminder') }}
-          </button>
-        </div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1">{{ t('form.remindersLabel') }}</label>
         <ul class="space-y-2">
           <li v-for="(_, i) in editor.form.reminders" :key="i" class="flex items-center gap-2">
             <input
@@ -210,6 +200,15 @@ defineExpose({
             </button>
           </li>
         </ul>
+        <button
+          type="button"
+          class="flex w-full items-center gap-1.5 rounded border border-dashed border-theme-border px-3 py-1.5 text-sm text-theme-text-muted hover:text-theme-text-main hover:border-theme-primary transition-colors cursor-pointer"
+          :class="{ 'mt-2': editor.form.reminders.length }"
+          data-testid="reminder-add"
+          @click="editor.addReminder"
+        >
+          <Plus class="w-4 h-4 shrink-0" />{{ t('form.addReminder') }}
+        </button>
       </div>
     </div>
 
