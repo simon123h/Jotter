@@ -1,6 +1,6 @@
 import { beforeAll, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import TaskDetailModal from '@/features/task-editor/components/TaskDetailModal.vue';
 import { getTask, updateTask, deleteTask, createTask } from '@/api';
@@ -355,5 +355,29 @@ describe('TaskDetailModal.vue', () => {
 
     const editFields = wrapper.findComponent({ name: 'TaskEditFields' });
     expect(editFields.exists()).toBe(true);
+  });
+
+  it('moves from the title to the notes on Enter', async () => {
+    const focus = vi.fn();
+    const wrapper = mount(TaskDetailModal, {
+      props: defaultProps,
+      global: {
+        stubs: {
+          MarkdownEditor: defineComponent({ setup: (_, { expose }) => (expose({ focus }), () => h('div')) }),
+          Teleport: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await nextTick();
+
+    await wrapper.find('h2.task-title').trigger('dblclick');
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    await wrapper.findComponent({ name: 'TaskEditFields' }).find('input').trigger('keydown', { key: 'Enter' });
+    expect(focus).toHaveBeenCalledTimes(1);
   });
 });

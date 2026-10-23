@@ -29,6 +29,14 @@ const editor = useTaskEditorContext();
 const titleInputRef = ref<any>(null);
 const markdownEditorRef = ref<any>(null);
 
+// Enter in the title goes on to the notes, unless the autocomplete took it to pick a column
+const onTitleKeyDown = (event: KeyboardEvent) => {
+  editor.handleTitleKeyDown(event);
+  if (event.key !== 'Enter' || event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey) return;
+  event.preventDefault();
+  markdownEditorRef.value?.focus();
+};
+
 const focusTitle = () => {
   titleInputRef.value?.focus();
 };
@@ -57,7 +65,7 @@ defineExpose({
           @input="editor.checkAutocomplete"
           @click="editor.checkAutocomplete"
           @keyup="editor.checkAutocomplete"
-          @keydown="editor.handleTitleKeyDown"
+          @keydown="onTitleKeyDown"
           @blur="editor.showAutocomplete.value = false"
         />
         <!-- Autocomplete Popup -->
