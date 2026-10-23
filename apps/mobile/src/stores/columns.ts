@@ -76,6 +76,7 @@ const SLOT_TITLES: Record<PlanSlot, () => string> = {
   today: () => t('planned.today'),
   tomorrow: () => t('planned.tomorrow'),
   week: () => t('planned.thisWeek'),
+  nextWeek: () => t('planned.nextWeek'),
   month: () => t('planned.thisMonth'),
   later: () => t('planned.later'),
   none: () => t('planned.none'),
@@ -83,7 +84,7 @@ const SLOT_TITLES: Record<PlanSlot, () => string> = {
 
 /**
  * One column for each stretch of time ahead: what has slipped (only when something has), today, tomorrow, the rest of the
- * week, the rest of the month, later, and the tasks that are not planned.
+ * week, next week, the rest of the month, later, and the tasks that are not planned.
  */
 export function planningColumns(open: Task[], now: Date = new Date()): Column[] {
   return PLAN_SLOTS.map((slot) => ({

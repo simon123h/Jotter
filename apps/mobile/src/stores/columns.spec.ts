@@ -55,7 +55,9 @@ describe('columnsFor', () => {
       planned('2026-10-15'),
       planned('2026-10-17'),
       planned('2026-W42'),
-      planned('2026-10-25'),
+      planned('2026-10-20'),
+      planned('2026-W43'),
+      planned('2026-10-28'),
       planned('2026-10'),
       planned('2026-W44'),
       planned('2026-12'),
@@ -70,6 +72,7 @@ describe('columnsFor', () => {
       'planned:today',
       'planned:tomorrow',
       'planned:week',
+      'planned:nextWeek',
       'planned:month',
       'planned:later',
     ]);
@@ -77,7 +80,8 @@ describe('columnsFor', () => {
     expect(ids('planned:today')).toEqual(['2026-10-14']);
     expect(ids('planned:tomorrow')).toEqual(['2026-10-15']);
     expect(ids('planned:week')).toEqual(['2026-10-17', '2026-W42']);
-    expect(ids('planned:month')).toEqual(['2026-10-25', '2026-10']);
+    expect(ids('planned:nextWeek')).toEqual(['2026-10-20', '2026-W43']);
+    expect(ids('planned:month')).toEqual(['2026-10-28', '2026-10']);
     expect(ids('planned:later')).toEqual(['2026-W44', '2026-12']);
     expect(ids('planned:none')).toEqual(['undefined']);
     expect(planningColumns([planned('2026-10-14')], now).map((c) => c.key)).not.toContain('planned:slipped');

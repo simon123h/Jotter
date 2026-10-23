@@ -49,8 +49,9 @@ const SLOT_COLORS: Record<PlanSlot, string> = {
   today: 'red',
   tomorrow: 'orange',
   week: 'yellow',
+  nextWeek: 'green',
   month: 'blue',
-  later: 'green',
+  later: 'purple',
   none: 'slate',
 };
 const SLOT_TITLES: Record<PlanSlot, string> = {
@@ -58,6 +59,7 @@ const SLOT_TITLES: Record<PlanSlot, string> = {
   today: 'plannedDateOptions.today',
   tomorrow: 'plannedDateOptions.tomorrow',
   week: 'plannedDateOptions.thisWeek',
+  nextWeek: 'plannedDateOptions.nextWeek',
   month: 'plannedDateOptions.thisMonth',
   later: 'plannedDateOptions.later',
   none: 'plannedDateOptions.notPlanned',

@@ -42,6 +42,14 @@ describe('the ends of the calendar and of the month', () => {
     expect(plannedSlot('2026-10', now)).toBe('month');
   });
 
+  it('files next week under Next week, also when it reaches into the next month', () => {
+    const now = new Date(2026, 9, 29); // Thursday 29 October: next week is 2026-W45, 2 to 8 November
+    expect(plannedSlot('2026-W45', now)).toBe('nextWeek');
+    expect(plannedSlot('2026-11-05', now)).toBe('nextWeek');
+    expect(plannedSlot('2026-W46', now)).toBe('later');
+    expect(plannedSlot('2026-11', now)).toBe('later');
+  });
+
   it('knows no planning keyword', () => {
     for (const word of ['today', 'thisWeek', 'someday']) {
       expect(canonicalPlanned(word), word).toBeNull();

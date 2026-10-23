@@ -41,7 +41,7 @@ The bar at the bottom switches the view. The columns are tabs you can swipe, or,
 
 - **Board**: one tab per column.
 - **Tags**: one tab per tag, and one for tasks without a tag.
-- **Planning**: a first tab for tasks that are not planned, a *Re-plan* tab while something has slipped, and one tab for each stretch of time ahead (today, tomorrow, the rest of this week, the rest of this month, later).
+- **Planning**: a first tab for tasks that are not planned, a *Re-plan* tab while something has slipped, and one tab for each stretch of time ahead (today, tomorrow, the rest of this week, next week, the rest of this month, later).
 
 Adding a task in a tab files it there: with that tag or that planned date.
 

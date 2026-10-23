@@ -147,12 +147,13 @@ export function plannedFor(preset: PlannedPreset, now: Date = new Date()): strin
 }
 
 /** The stretches of time a planning view groups by, in order. */
-export const PLAN_SLOTS = ['none', 'slipped', 'today', 'tomorrow', 'week', 'month', 'later'] as const;
+export const PLAN_SLOTS = ['none', 'slipped', 'today', 'tomorrow', 'week', 'nextWeek', 'month', 'later'] as const;
 export type PlanSlot = (typeof PLAN_SLOTS)[number];
 
 /**
  * The stretch of time a planned value belongs to, by the last day it covers: a day that has passed or a week or month
- * that is over has slipped, the current week is "week", the current month "month".
+ * that is over has slipped, the current week is "week", the next one "nextWeek" (also when it reaches into the next
+ * month), the current month "month".
  */
 export function plannedSlot(value: string | null | undefined, now: Date = new Date()): PlanSlot {
   const day = localDay(now);
@@ -165,6 +166,7 @@ export function plannedSlot(value: string | null | undefined, now: Date = new Da
   // A month plan is "some day this month" even in the last days of it, when the week reaches past the end of the month
   const isMonth = canonicalPlanned(value!)?.length === 7;
   if (!isMonth && to <= horizonEnd('week', day)!) return 'week';
+  if (!isMonth && to <= plannedSpan(weekOf(localDay(now, 7)))![1]) return 'nextWeek';
   if (to <= horizonEnd('month', day)!) return 'month';
   return 'later';
 }
@@ -176,6 +178,7 @@ export function slotValue(slot: PlanSlot, now: Date = new Date()): string {
     today: 'today',
     tomorrow: 'tomorrow',
     week: 'thisWeek',
+    nextWeek: 'nextWeek',
     month: 'thisMonth',
     later: 'nextMonth',
     none: null,
