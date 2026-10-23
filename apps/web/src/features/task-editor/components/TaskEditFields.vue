@@ -213,6 +213,25 @@ defineExpose({
       </div>
     </div>
 
+    <!-- Body (Markdown Editor) -->
+    <div>
+      <div class="flex items-center justify-between mb-1">
+        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">
+          {{ t('form.markdownLabelEdit') }}
+        </label>
+        <button
+          v-if="!editor.hasChecklist.value"
+          type="button"
+          @click="emit('add-checklist')"
+          class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
+        >
+          <ClipboardList class="w-3.5 h-3.5" />
+          {{ t('form.quickAddChecklist') }}
+        </button>
+      </div>
+      <MarkdownEditor ref="markdownEditorRef" v-model="editor.form.body" :rows="12" :placeholder="t('form.markdownPlaceholderEdit')" />
+    </div>
+
     <!-- Highlight Color Selector -->
     <div>
       <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted mb-1.5">
@@ -245,25 +264,6 @@ defineExpose({
           :title="c.name"
         />
       </div>
-    </div>
-
-    <!-- Body (Markdown Editor) -->
-    <div>
-      <div class="flex items-center justify-between mb-1">
-        <label class="block text-xs font-bold uppercase tracking-wider text-theme-text-muted">
-          {{ t('form.markdownLabelEdit') }}
-        </label>
-        <button
-          v-if="!editor.hasChecklist.value"
-          type="button"
-          @click="emit('add-checklist')"
-          class="text-xs font-semibold px-2 py-1 bg-theme-column hover:bg-theme-column/80 text-theme-text-main border border-theme-border rounded flex items-center gap-1 transition-all cursor-pointer hover:border-theme-accent hover:text-theme-accent"
-        >
-          <ClipboardList class="w-3.5 h-3.5" />
-          {{ t('form.quickAddChecklist') }}
-        </button>
-      </div>
-      <MarkdownEditor ref="markdownEditorRef" v-model="editor.form.body" :rows="12" :placeholder="t('form.markdownPlaceholderEdit')" />
     </div>
   </div>
 </template>
