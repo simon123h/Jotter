@@ -26,3 +26,41 @@ def test_an_update_is_checked_again_and_keeps_the_other_settings(tmp_path) -> No
     assert updated.planningHorizon == "week"
     assert updated.hideDoneColumn is False
     assert service.load_settings().planningHorizon == "week"
+
+
+def test_views_are_none_until_the_user_has_a_list_and_survive_an_update(tmp_path) -> None:
+    from jotter.features.settings.service import SettingsApplicationService
+
+    service = SettingsApplicationService(str(tmp_path))
+    assert service.load_settings().views is None
+
+    views = [{"id": "recent", "name": "Recently added", "query": "created:after:-7d sort:-created"}]
+    service.update_settings(SettingsUpdate(views=views))
+    assert service.update_settings(SettingsUpdate(planningHorizon="week")).views is not None
+    loaded = service.load_settings()
+    assert [v.model_dump() for v in loaded.views or []] == views
+
+    service.update_settings(SettingsUpdate(views=[]))
+    assert service.load_settings().views == []
+
+
+def test_a_view_needs_an_id_a_name_and_a_query() -> None:
+    with pytest.raises(ValidationError):
+        SettingsUpdate(views=[{"id": "x", "name": "No query"}])
+
+
+def test_a_view_that_is_malformed_is_dropped_and_the_other_settings_stay(caplog) -> None:
+    settings = AppSettings(
+        planningHorizon="week",
+        views=[
+            {"id": "ok", "name": "Fine", "query": "tag:ui"},
+            {"name": "No id", "query": "x"},
+            "junk",
+            {"id": 1, "name": "n", "query": "q"},
+        ],
+    )
+    assert settings.planningHorizon == "week"
+    assert [v.id for v in settings.views or []] == ["ok"]
+    assert "Dropping 3 view(s)" in caplog.text
+    assert AppSettings(views="junk").views is None
+    assert "not a list" in caplog.text

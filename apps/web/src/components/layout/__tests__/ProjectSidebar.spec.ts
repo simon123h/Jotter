@@ -175,4 +175,44 @@ describe('ProjectSidebar.vue', () => {
     await closeBtn!.trigger('click');
     expect(wrapper.emitted('close')).toBeTruthy();
   });
+
+  describe('saved views', () => {
+    it('shows no section while the vault has no views', () => {
+      settingsStore.views = [];
+      expect(mount(ProjectSidebar, getMountOptions()).find('[data-testid="saved-views"]').exists()).toBe(false);
+    });
+
+    it('lists the views, each linking to the list of all projects with its search in the address', () => {
+      settingsStore.views = [{ id: 'recent', name: 'Recently added', query: 'created:after:-7d sort:-created' }];
+      const wrapper = mount(ProjectSidebar, getMountOptions());
+
+      const rows = wrapper.findAllComponents(RouterLinkStub).filter((l) => l.attributes('data-testid') === 'saved-view');
+      expect(rows).toHaveLength(1);
+      expect(rows[0].text()).toContain('Recently added');
+      expect(rows[0].props('to')).toEqual({
+        name: 'list',
+        params: { projectId: 'all' },
+        query: { created_after: '-7d', sort: '-created' },
+      });
+    });
+
+    it('opens a view in the layout its grouping asks for', () => {
+      settingsStore.views = [{ id: 'ahead', name: 'Ahead', query: 'planned:after:today group:planned' }];
+      const wrapper = mount(ProjectSidebar, getMountOptions());
+      const row = wrapper.findAllComponents(RouterLinkStub).find((l) => l.attributes('data-testid') === 'saved-view')!;
+      expect(row.props('to')).toMatchObject({ name: 'time', query: { planned_after: 'today', group: 'planned' } });
+    });
+
+    it('offers the example views once the settings are read, but only while the vault has none of its own', async () => {
+      settingsStore.views = null;
+      settingsStore.loaded = true;
+      const wrapper = mount(ProjectSidebar, getMountOptions());
+      await wrapper.vm.$nextTick();
+      expect(settingsStore.views.map((v: { id: string }) => v.id)).toEqual(['upcoming', 'recent']);
+
+      settingsStore.views = [];
+      mount(ProjectSidebar, getMountOptions());
+      expect(settingsStore.views).toEqual([]);
+    });
+  });
 });

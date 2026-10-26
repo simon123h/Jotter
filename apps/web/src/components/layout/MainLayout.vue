@@ -20,6 +20,7 @@ import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useToast } from '@/composables/useToast';
 import { useI18n } from '@/composables/useI18n';
 import { crossTabBus } from '@/utils/broadcast';
+import { scopedQuery } from '@jotter/task-filter';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -145,6 +146,11 @@ const openFilterModal = () => {
   });
 };
 
+// A search saved from inside a project asks for that project, or the view would show the tasks of all of them
+const saveSearchAsView = () => {
+  modalStore.openViewEdit(undefined, scopedQuery(searchQuery.value, activeProjectId.value));
+};
+
 const openCreateModal = (bucketName?: string) => {
   modalStore.openTaskCreate(bucketName || 'todo');
 };
@@ -256,6 +262,7 @@ onBeforeUnmount(() => {
       @toggle-sidebar="toggleSidebar"
       @toggle-timeblock-sidebar="toggleTimeblockSidebar"
       @open-filter="openFilterModal"
+      @save-view="saveSearchAsView"
       @create-task="openCreateModal"
     />
 

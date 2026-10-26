@@ -18,6 +18,7 @@ from jotter.shared.db import init_schema
 
 FIXTURES = Path(__file__).resolve().parent.parent / "spec" / "fixtures" / "search"
 MATCH = json.loads((FIXTURES / "match.json").read_text(encoding="utf-8"))
+SORT = json.loads((FIXTURES / "sort.json").read_text(encoding="utf-8"))
 
 LISTS = {"buckets", "exclude_buckets", "priorities"}
 
@@ -67,4 +68,28 @@ def repo() -> SqliteTaskRepository:
 @pytest.mark.parametrize("case", MATCH["cases"], ids=[c["name"] for c in MATCH["cases"]])
 def test_search_case(repo: SqliteTaskRepository, case: dict[str, Any]) -> None:
     found = repo.find_tasks(project_id="p", **_kwargs(case["filter"]))
+    assert [str(t.id)[0].lower() for t in found] == case["ids"]
+
+
+@pytest.fixture
+def titled_repo() -> SqliteTaskRepository:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    init_schema(conn)
+    repo = SqliteTaskRepository(conn)
+    for position, row in enumerate(SORT["tasks"]):
+        repo.upsert_task(
+            Task.create(
+                project_id="p",
+                title=row["title"],
+                position=float(position + 1),
+                task_id=row["id"].upper().ljust(26, "0"),
+            )
+        )
+    return repo
+
+
+@pytest.mark.parametrize("case", SORT["cases"], ids=[c["name"] for c in SORT["cases"]])
+def test_sort_title_case(titled_repo: SqliteTaskRepository, case: dict[str, Any]) -> None:
+    found = titled_repo.find_tasks(project_id="p", **_kwargs(case["filter"]))
     assert [str(t.id)[0].lower() for t in found] == case["ids"]

@@ -37,8 +37,11 @@ export const isHiddenIn = (task: Task, hidden: Hidden, horizonApplies = true) =>
   (horizonApplies && isBeyond(task.planned_date, hidden.horizon, today()));
 
 /** Tasks the tag and planning views list, most urgent first. */
-export const openTasksOf = (tasks: Task[], hidden: Hidden, horizonApplies = true): Task[] =>
-  tasks.filter((task) => !isHiddenIn(task, hidden, horizonApplies)).sort(byUrgency);
+export const openTasksOf = (tasks: Task[], hidden: Hidden, horizonApplies = true, keepOrder = false): Task[] => {
+  const open = tasks.filter((task) => !isHiddenIn(task, hidden, horizonApplies));
+  // A search with `sort:` brings its own order
+  return keepOrder ? open : open.sort(byUrgency);
+};
 
 /** One column per bucket, plus one for tasks that name a bucket the project does not have. */
 export function boardColumns(buckets: Bucket[], tasks: Task[], hidden: Hidden, horizonApplies = true): Column[] {
@@ -97,8 +100,15 @@ export function planningColumns(open: Task[], now: Date = new Date()): Column[] 
 }
 
 /** The columns a view shows for the given tasks (already narrowed by the search filter). */
-export function columnsFor(view: View, buckets: Bucket[], tasks: Task[], hidden: Record<View, Hidden>, horizonApplies = true): Column[] {
+export function columnsFor(
+  view: View,
+  buckets: Bucket[],
+  tasks: Task[],
+  hidden: Record<View, Hidden>,
+  horizonApplies = true,
+  keepOrder = false
+): Column[] {
   if (view === 'board') return boardColumns(buckets, tasks, hidden.board, horizonApplies);
-  const open = openTasksOf(tasks, hidden[view], horizonApplies);
+  const open = openTasksOf(tasks, hidden[view], horizonApplies, keepOrder);
   return view === 'tags' ? tagColumns(open) : planningColumns(open);
 }

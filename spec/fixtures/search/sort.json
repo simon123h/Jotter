@@ -1,0 +1,155 @@
+{
+  "description": "The order of sort:title. The key of a title is the title without the symbols and emojis in front of it, without accents (NFKD, marks removed) and in lower case; keys are compared by code point, equal keys keep the order of the tasks. One leading dash reverses the sort, two are no sort.",
+  "tasks": [
+    {
+      "id": "a",
+      "title": "Zebra"
+    },
+    {
+      "id": "b",
+      "title": "apple"
+    },
+    {
+      "id": "c",
+      "title": "Äpfel"
+    },
+    {
+      "id": "d",
+      "title": "10 things"
+    },
+    {
+      "id": "e",
+      "title": "2 things"
+    },
+    {
+      "id": "f",
+      "title": "_under"
+    },
+    {
+      "id": "g",
+      "title": "😀 smile"
+    },
+    {
+      "id": "h",
+      "title": "a-b"
+    },
+    {
+      "id": "i",
+      "title": "a1b"
+    },
+    {
+      "id": "j",
+      "title": "a_b"
+    },
+    {
+      "id": "k",
+      "title": "Ärger"
+    },
+    {
+      "id": "l",
+      "title": "arger"
+    }
+  ],
+  "cases": [
+    {
+      "name": "titles ascend by letters, digits and symbols by code point, without accents or case",
+      "filter": {
+        "sort": "title"
+      },
+      "ids": [
+        "d",
+        "e",
+        "h",
+        "i",
+        "j",
+        "c",
+        "b",
+        "k",
+        "l",
+        "g",
+        "f",
+        "a"
+      ]
+    },
+    {
+      "name": "titles descend, equal ones keep their order",
+      "filter": {
+        "sort": "-title"
+      },
+      "ids": [
+        "a",
+        "f",
+        "g",
+        "k",
+        "l",
+        "b",
+        "c",
+        "j",
+        "i",
+        "h",
+        "e",
+        "d"
+      ]
+    },
+    {
+      "name": "a sort in capitals is the same sort",
+      "filter": {
+        "sort": "-Title"
+      },
+      "ids": [
+        "a",
+        "f",
+        "g",
+        "k",
+        "l",
+        "b",
+        "c",
+        "j",
+        "i",
+        "h",
+        "e",
+        "d"
+      ]
+    },
+    {
+      "name": "two dashes are no sort",
+      "filter": {
+        "sort": "--title"
+      },
+      "ids": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j",
+        "k",
+        "l"
+      ]
+    },
+    {
+      "name": "a sort that is no key is none",
+      "filter": {
+        "sort": "name"
+      },
+      "ids": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j",
+        "k",
+        "l"
+      ]
+    }
+  ]
+}
