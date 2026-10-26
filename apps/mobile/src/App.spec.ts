@@ -1884,6 +1884,7 @@ describe('tag and planning views', () => {
       'Today',
       'Tomorrow',
       'This week',
+      'Next week',
       'This month',
       'Later',
     ]);
