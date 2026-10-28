@@ -258,7 +258,7 @@ watch(
               >{{ col.tasks.length }}</span
             >
           </h2>
-          <ul v-show="!app.isCollapsed(col)">
+          <ul v-show="!listed || !app.isCollapsed(col)">
             <template v-for="task in col.tasks" :key="task.id">
               <li
                 v-if="!isDragged(task) && dropIndex(col.key) === shown(col.tasks).indexOf(task)"
