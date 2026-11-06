@@ -27,7 +27,17 @@ jotter
 
 ---
 
-## Option 2: Android App (.apk)
+## Option 2: Eigenständige Windows-Binärdatei (Kein Python erforderlich)
+
+Falls du kein Python installiert hast, kannst du eine vorkompilierte Datei (`jotter-server`) direkt von den [GitHub Releases](https://github.com/simon123h/jotter/releases) herunterladen:
+
+- **Windows**: `jotter-server-windows-amd64.zip` herunterladen, entpacken und `jotter-server.exe` per Doppelklick starten.
+
+Dein Standard-Webbrowser öffnet sich automatisch unter `http://localhost:58271`. Verwende `--no-browser`, falls du den Server ohne automatisches Öffnen des Browsers betreiben möchtest.
+
+---
+
+## Option 3: Android App (.apk)
 
 Die App ist eine eigenständige, offline-fähige Android-App mit den Kernfunktionen von Jotter (ohne Zeitblöcke, Canvas und Git-Verlauf):
 
@@ -57,6 +67,8 @@ pipx install 'jotter-app[mcp]'      # oder zu einer bestehenden Installation hin
 pip install 'jotter-app[mcp]'
 uvx --from 'jotter-app[mcp]' jotter mcp
 ```
+
+Die eigenständige Windows-Binärdatei enthält den MCP-Server nicht; verwende dafür eine der oben genannten Python-Installationen.
 
 ---
 

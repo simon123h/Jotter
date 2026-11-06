@@ -11,6 +11,7 @@
     "dev": "concurrently --kill-others-on-fail --names \"Backend,Frontend\" --prefix-colors \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:web\"",
     "build:web": "cd apps/web && npm run build",
     "build:apk": "cd apps/mobile && npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "build:exe": "npm run build:web && pyinstaller jotter.spec --clean --distpath dist-bin",
     "build:package": "npm run build:web && rm -rf src/jotter/dist build && cp -r apps/web/dist src/jotter/dist && pyproject-build",
     "build": "npm run build:package",
     "test:backend": "python3 -m pytest tests/",

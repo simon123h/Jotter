@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -140,12 +141,14 @@ def create_app(
     app.include_router(canvas_router)
     app.include_router(vaults_router)
 
-    # Locate static frontend distribution (bundled package dist or local dev apps/web/dist)
+    # Locate static frontend distribution (PyInstaller MEIPASS, bundled package dist, or local dev apps/web/dist)
+    meipass = getattr(sys, "_MEIPASS", None)
+    pyinstaller_dist = (Path(meipass) / "jotter" / "dist") if meipass else None
     pkg_dist = Path(__file__).resolve().parent / "dist"
     dev_dist = Path(__file__).resolve().parent.parent.parent / "apps" / "web" / "dist"
 
     static_dir: Path | None = None
-    for candidate in [pkg_dist, dev_dist]:
+    for candidate in [pyinstaller_dist, pkg_dist, dev_dist]:
         if candidate and candidate.is_dir() and (candidate / "index.html").is_file():
             static_dir = candidate
             break
