@@ -45,11 +45,15 @@ pipx install jotter-app
 jotter
 ```
 
-### Option 2: Android Mobile App (.apk)
+### Option 2: Standalone Windows Executable (.exe)
+
+If you don't have Python installed, download `jotter-server-windows-amd64.zip` from [GitHub Releases](https://github.com/simon123h/jotter/releases), extract it, and double-click `jotter-server.exe`. No Python or build tools required.
+
+### Option 3: Android Mobile App (.apk)
 
 Download the signed `jotter-*-android.apk` from [GitHub Releases](https://github.com/simon123h/jotter/releases) and install it on your Android phone. No server or internet connection required. Point it to your synced Markdown folder (via Syncthing, Git, etc.) for cross-device synchronization.
 
-### Option 3: Run from Source
+### Option 4: Run from Source
 
 1. Clone the repository:
    ```bash

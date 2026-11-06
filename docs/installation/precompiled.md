@@ -25,7 +25,17 @@ jotter
 
 ---
 
-## Option 2: Android Mobile App (.apk)
+## Option 2: Standalone Windows Executable Binary (Zero Python Required)
+
+If you don't have Python installed, you can download the pre-built standalone executable (`jotter-server`) from the [GitHub Releases](https://github.com/simon123h/jotter/releases) page:
+
+- **Windows**: Download `jotter-server-windows-amd64.zip`, extract, and double-click `jotter-server.exe`.
+
+Your default web browser will automatically open to `http://localhost:58271`. Pass `--no-browser` if running without automatically opening the browser.
+
+---
+
+## Option 3: Android Mobile App (.apk)
 
 The app is a standalone, offline Android app with Jotter's core features (it does not include time blocking, the canvas or Git history):
 
@@ -55,6 +65,8 @@ pipx install 'jotter-app[mcp]'      # or add it to an existing install: pipx inj
 pip install 'jotter-app[mcp]'
 uvx --from 'jotter-app[mcp]' jotter mcp
 ```
+
+The standalone Windows executable does not include the MCP server; use one of the Python installs above.
 
 ---
 
