@@ -1,7 +1,20 @@
 import { ref, shallowRef, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { Task, Project, Bucket } from '@jotter/vault-format';
-import { compareTitles, filterTasks, isBeyond, isEmptyFilter, parseQuery, today, HORIZONS, type Horizon } from '@jotter/task-filter';
+import {
+  compareTitles,
+  exampleViews,
+  filterTasks,
+  isBeyond,
+  isEmptyFilter,
+  newViewId,
+  parseQuery,
+  today,
+  HORIZONS,
+  type Horizon,
+  type SavedView,
+} from '@jotter/task-filter';
+import { t } from '@/i18n';
 import { getRepository, type VaultRepository, type Vault, type NewTask } from '@/data';
 import { ensureStoragePermission } from '@/data/storagePermission';
 import { armDelay, armReminders, localDateTime } from '@/reminders';
@@ -45,16 +58,28 @@ export const useAppStore = defineStore('app', () => {
   /** The project that shared text and the new-task shortcut go to. Null: the project that is open. Kept in the vault's settings.json, shared with the desktop. */
   const captureProjectId = ref<string | null>(null);
   const view = ref<View>('board');
+  /** The saved searches of the vault (settings.json, shared with the desktop). */
+  const views = ref<SavedView[]>([]);
+  /** The saved view in sight: its tasks come from all projects. Null: the project that is open. */
+  const savedViewId = ref<string | null>(null);
+  const activeView = computed(() => views.value.find((v) => v.id === savedViewId.value) ?? null);
+  const scoped = computed(() => savedViewId.value !== null);
   const hidden = ref<Record<View, Hidden>>(defaultHidden());
   /** How far ahead the board and the tags look, from the vault's settings.json (shared with the desktop). The planning view looks ahead anyway. */
   const planningHorizon = ref<Horizon>('today');
   const horizonOf = (v: View): Horizon => (v === 'planning' ? 'all' : planningHorizon.value);
   /** What the views hide: the finished tasks of `hidden`, and those planned beyond the horizon. */
-  const hiding = computed<Record<View, Hidden>>(() => ({
-    board: { ...hidden.value.board, horizon: horizonOf('board') },
-    tags: { ...hidden.value.tags, horizon: horizonOf('tags') },
-    planning: { ...hidden.value.planning, horizon: horizonOf('planning') },
-  }));
+  const hiding = computed<Record<View, Hidden>>(() => {
+    // A search that names a column (bucket:done) shows its tasks even though the view hides finished ones
+    const named = (parsedFilter.value.buckets ?? '').toLowerCase().split(',');
+    const of = (v: View): Hidden => ({
+      ...hidden.value[v],
+      done: hidden.value[v].done && !named.includes('done'),
+      archive: hidden.value[v].archive && !named.includes('archive'),
+      horizon: horizonOf(v),
+    });
+    return { board: of('board'), tags: of('tags'), planning: of('planning') };
+  });
   /** The horizon of the view in sight. */
   const horizon = computed(() => horizonOf(view.value));
   const layout = ref<Layout>('tabs');
@@ -91,14 +116,34 @@ export const useAppStore = defineStore('app', () => {
   const query = ref('');
   const parsedFilter = computed(() => parseQuery(query.value));
   const isFiltering = computed(() => !isEmptyFilter(parsedFilter.value));
-  const visibleTasks = computed(() => filterTasks(allTasks.value, parsedFilter.value));
+  const visibleTasks = computed(() => {
+    let list = allTasks.value;
+    // The search matches tasks, not projects: across all of them, `project:` narrows the tasks here
+    const wanted = (scoped.value && parsedFilter.value.project ? parsedFilter.value.project : '').toLowerCase();
+    if (wanted) {
+      const titles = new Map(projects.value.map((p) => [p.id, p.title.toLowerCase()]));
+      list = list.filter((task) => task.project_id.toLowerCase() === wanted || (titles.get(task.project_id) ?? '').includes(wanted));
+    }
+    return filterTasks(list, { ...parsedFilter.value, project: undefined });
+  });
   const allTags = computed(() => [...new Set(allTasks.value.flatMap((t) => t.tags))].sort());
 
   /** A query that names planned dates (`planned:2026-11`) is not cut by the horizon: whoever asks about planning wants the answer. */
-  const horizonApplies = computed(() => !parsedFilter.value.planned_date);
+  const horizonApplies = computed(
+    () => !(parsedFilter.value.planned_date || parsedFilter.value.planned_before || parsedFilter.value.planned_after)
+  );
 
   /** The columns of the current view. */
-  const columns = computed(() => columnsFor(view.value, buckets.value, visibleTasks.value, hiding.value, horizonApplies.value));
+  const columns = computed<Column[]>(() => {
+    // A saved view without a grouping is one list
+    if (scoped.value && !parsedFilter.value.group) {
+      const shown = visibleTasks.value.filter((task) => !isHiddenIn(task, hiding.value.board, horizonApplies.value));
+      return [{ key: '__results', title: activeView.value?.name ?? '', bucket: null, tasks: shown }];
+    }
+    const found = columnsFor(view.value, buckets.value, visibleTasks.value, hiding.value, horizonApplies.value, !!parsedFilter.value.sort);
+    // The projects of a view have columns of their own: a column of the board stands for no bucket to move tasks to
+    return scoped.value ? found.map((column) => ({ ...column, bucket: null })) : found;
+  });
 
   /** How many tasks the view leaves out because they are planned beyond its horizon (not the finished ones it hides anyway). */
   const beyondCount = computed(() => {
@@ -136,16 +181,31 @@ export const useAppStore = defineStore('app', () => {
   async function loadProject() {
     const r = repository();
     armRemindersSoon();
-    if (!projectId.value) {
+    if (savedViewId.value !== null) {
+      // A saved view: the tasks of all projects, each with an id that names its project (two projects can have the same file name)
+      const open = projects.value.filter((p) => !p.archived).map((p) => p.id);
+      const [tasks, lists] = await Promise.all([r.listTasks(null), Promise.all(open.map((id) => r.listBuckets(id)))]);
+      allTasks.value = tasks
+        .filter((task) => open.includes(task.project_id))
+        .map((task) => ({ ...task, id: `${task.project_id}/${task.id}` }));
+      const byName = new Map<string, Bucket>();
+      for (const bucket of lists.flat()) if (!byName.has(bucket.name)) byName.set(bucket.name, bucket);
+      buckets.value = [...byName.values()];
+      bucketsOfProject = new Map(open.map((id, i) => [id, new Set(lists[i]!.map((b) => b.name))]));
+    } else if (!projectId.value) {
       buckets.value = [];
       allTasks.value = [];
       return;
+    } else {
+      [buckets.value, allTasks.value] = await Promise.all([r.listBuckets(projectId.value), r.listTasks(projectId.value)]);
     }
-    [buckets.value, allTasks.value] = await Promise.all([r.listBuckets(projectId.value), r.listTasks(projectId.value)]);
     // Tasks that are gone (deleted, moved away, removed by a sync tool) cannot stay selected
     const existing = new Set(allTasks.value.map((t) => t.id));
     if (selection.value.some((id) => !existing.has(id))) selection.value = selection.value.filter((id) => existing.has(id));
   }
+
+  /** The column names of each project, while a saved view shows all of them: a task can only go to a column its project has. */
+  let bucketsOfProject = new Map<string, Set<string>>();
 
   const idList = (value: unknown) => (Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : []);
 
@@ -169,7 +229,38 @@ export const useAppStore = defineStore('app', () => {
     if (horizonSetting !== planningHorizon.value) planningHorizon.value = horizonSetting;
     const capture = typeof settings.captureProjectId === 'string' && settings.captureProjectId ? settings.captureProjectId : null;
     if (capture !== captureProjectId.value) captureProjectId.value = capture;
+
+    if (Array.isArray(settings.views)) {
+      const list = settings.views.filter(isSavedView);
+      if (JSON.stringify(list) !== JSON.stringify(views.value)) views.value = list;
+    } else if (vault.value) {
+      await offerExampleViews();
+    }
   }
+
+  /**
+   * A vault that never had views gets the examples once, in the language of the app. They are written only if the file
+   * has no list when the write runs, so a list the desktop app saved meanwhile (or one that could not be read just now)
+   * is never replaced; what the vault holds afterwards is what the app shows.
+   */
+  let offering = false;
+  async function offerExampleViews() {
+    if (offering) return;
+    offering = true;
+    try {
+      const examples = exampleViews({ upcoming: t('views.upcoming'), recent: t('views.recent') });
+      await repository().updateSettings((current) => (Array.isArray(current.views) ? null : { views: examples }));
+      const written = (await repository().readSettings()).views;
+      if (Array.isArray(written)) views.value = written.filter(isSavedView);
+    } catch {
+      // Not written (the file cannot be read or written): the views stay as they are, and the next scan tries again
+    } finally {
+      offering = false;
+    }
+  }
+
+  const isSavedView = (v: unknown): v is SavedView =>
+    !!v && typeof v === 'object' && ['id', 'name', 'query'].every((k) => typeof (v as Record<string, unknown>)[k] === 'string');
 
   /** Not kept when the file cannot be written; the lists look right until the next scan. */
   function saveSettings(patch: Record<string, unknown>) {
@@ -339,6 +430,7 @@ export const useAppStore = defineStore('app', () => {
   const captureProject = computed(() => projects.value.find((p) => p.id === captureProjectId.value) ?? null);
 
   async function selectProject(id: string) {
+    savedViewId.value = null;
     projectId.value = id;
     if (vault.value) rememberProject(vault.value.id, id);
     resetFilter();
@@ -380,6 +472,43 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  // ---------- saved views ----------
+
+  const viewOfGroup = { planned: 'planning', tag: 'tags', bucket: 'board' } as const;
+
+  /** Opens a saved view: the tasks of all projects that its search finds, laid out as its grouping says. */
+  async function openView(id: string) {
+    const found = views.value.find((v) => v.id === id);
+    if (!found) return;
+    savedViewId.value = id;
+    selection.value = [];
+    const group = parseQuery(found.query).group;
+    view.value = group ? viewOfGroup[group] : 'board';
+    resetFilter();
+    await loadProject();
+  }
+
+  function saveViews(next: SavedView[]) {
+    views.value = next;
+    saveSettings({ views: next });
+  }
+
+  function addView(name: string, search: string): SavedView {
+    const created = { id: newViewId(name, views.value), name: name.trim(), query: search.trim() };
+    saveViews([...views.value, created]);
+    return created;
+  }
+
+  async function updateView(id: string, changes: Partial<Pick<SavedView, 'name' | 'query'>>) {
+    saveViews(views.value.map((v) => (v.id === id ? { ...v, ...changes } : v)));
+    if (savedViewId.value === id) await openView(id);
+  }
+
+  async function removeView(id: string) {
+    saveViews(views.value.filter((v) => v.id !== id));
+    if (savedViewId.value === id) await selectProject(projectId.value ?? firstProject() ?? '');
+  }
+
   // ---------- tasks ----------
 
   function requireProject(): string {
@@ -387,14 +516,31 @@ export const useAppStore = defineStore('app', () => {
     return projectId.value;
   }
 
+  /** The project and file name of a task. In a saved view the id names both (`project/file`). */
+  function locate(id: string): { project: string; id: string } {
+    if (!scoped.value) return { project: requireProject(), id };
+    const slash = id.indexOf('/');
+    return { project: id.slice(0, slash), id: id.slice(slash + 1) };
+  }
+
+  /** Where a new task goes from a saved view: the project its search names, else the one for quick capture, else the first. */
+  function projectForNewTask(): string {
+    const named = (parsedFilter.value.project ?? '').toLowerCase();
+    const open = projects.value.filter((p) => !p.archived);
+    const matches = named ? open.filter((p) => p.id.toLowerCase() === named || p.title.toLowerCase().includes(named)) : [];
+    return (matches.length === 1 ? matches[0]!.id : captureProject.value?.id) ?? projectId.value ?? firstProject() ?? requireProject();
+  }
+
   async function addTask(input: NewTask) {
-    const task = await repository().createTask(requireProject(), input);
+    const project = scoped.value ? projectForNewTask() : requireProject();
+    const task = await repository().createTask(project, input);
     await loadProject();
-    return task;
+    return scoped.value ? { ...task, id: `${task.project_id}/${task.id}` } : task;
   }
 
   async function saveTask(id: string, updates: Partial<Task>) {
-    await repository().updateTask(requireProject(), id, updates);
+    const at = locate(id);
+    await repository().updateTask(at.project, at.id, updates);
     await loadProject();
   }
 
@@ -402,7 +548,8 @@ export const useAppStore = defineStore('app', () => {
   async function moveTask(id: string, bucket: string, position?: number) {
     const inBucket = allTasks.value.filter((t) => t.bucket === bucket && t.id !== id);
     const target = position ?? Math.max(0, ...inBucket.map((t) => t.position)) + 1000;
-    await repository().moveTask(requireProject(), id, bucket, target);
+    const at = locate(id);
+    await repository().moveTask(at.project, at.id, bucket, target);
     await loadProject();
   }
 
@@ -422,15 +569,16 @@ export const useAppStore = defineStore('app', () => {
    */
   async function moveManyToBucket(ids: string[], bucket: string, title?: string): Promise<Placement[]> {
     const r = repository();
-    const project = requireProject();
-    if (title && !buckets.value.some((b) => b.name === bucket)) {
-      await r.createBucket(project, { title });
+    if (title && !scoped.value && !buckets.value.some((b) => b.name === bucket)) {
+      await r.createBucket(requireProject(), { title });
       await loadProject();
     }
-    const moving = ids
-      .map(taskById)
-      .filter((t): t is Task => !!t && t.bucket !== bucket)
+    const wanted = ids.map(taskById).filter((t): t is Task => !!t && t.bucket !== bucket);
+    // In a saved view the tasks come from several projects; one without that column keeps its task where it is
+    const moving = wanted
+      .filter((t) => !scoped.value || bucketsOfProject.get(t.project_id)?.has(bucket))
       .sort((a, b) => a.position - b.position);
+    if (moving.length < wanted.length) ui.showToast(t('views.skipped', { count: wanted.length - moving.length }));
     let next = Math.max(0, ...allTasks.value.filter((t) => t.bucket === bucket).map((t) => t.position)) + 1000;
     const before: Placement[] = [];
     for (const task of moving) {
@@ -451,7 +599,8 @@ export const useAppStore = defineStore('app', () => {
             }
           : {}),
       });
-      await r.moveTask(project, task.id, bucket, next);
+      const at = locate(task.id);
+      await r.moveTask(at.project, at.id, bucket, next);
       next += 1000;
     }
     await loadProject();
@@ -495,12 +644,13 @@ export const useAppStore = defineStore('app', () => {
   async function restoreMany(placements: Placement[]) {
     for (const p of placements) {
       const task = taskById(p.id);
+      const at = locate(p.id);
       if (p.rolled) {
-        await repository().updateTask(requireProject(), p.id, p.rolled);
+        await repository().updateTask(at.project, at.id, p.rolled);
         continue;
       }
       if (task && (task.bucket !== p.bucket || task.position !== p.position)) {
-        await repository().moveTask(requireProject(), p.id, p.bucket, p.position);
+        await repository().moveTask(at.project, at.id, p.bucket, p.position);
       }
     }
     await loadProject();
@@ -517,24 +667,34 @@ export const useAppStore = defineStore('app', () => {
       if (!task) continue;
       const updates = changes(task);
       before.push({ id, previous: Object.fromEntries(Object.keys(updates).map((key) => [key, task[key as keyof Task]])) as Partial<Task> });
-      await repository().updateTask(requireProject(), id, updates);
+      const at = locate(id);
+      await repository().updateTask(at.project, at.id, updates);
     }
     await loadProject();
     return before;
   }
 
   async function restoreFields(before: Array<{ id: string; previous: Partial<Task> }>) {
-    for (const { id, previous } of before) await repository().updateTask(requireProject(), id, previous);
+    for (const { id, previous } of before) {
+      const at = locate(id);
+      await repository().updateTask(at.project, at.id, previous);
+    }
     await loadProject();
   }
 
   async function moveManyToProject(ids: string[], targetProjectId: string) {
-    for (const id of ids) await repository().moveToProject(requireProject(), id, targetProjectId);
+    for (const id of ids) {
+      const at = locate(id);
+      await repository().moveToProject(at.project, at.id, targetProjectId);
+    }
     await loadProject();
   }
 
   async function removeMany(ids: string[]) {
-    for (const id of ids) await repository().deleteTask(requireProject(), id);
+    for (const id of ids) {
+      const at = locate(id);
+      await repository().deleteTask(at.project, at.id);
+    }
     await loadProject();
   }
 
@@ -557,22 +717,26 @@ export const useAppStore = defineStore('app', () => {
   }
 
   async function removeTask(id: string) {
-    await repository().deleteTask(requireProject(), id);
+    const at = locate(id);
+    await repository().deleteTask(at.project, at.id);
     await loadProject();
   }
 
   async function addAttachment(id: string, file: File) {
-    await repository().addAttachment(requireProject(), id, file);
+    const at = locate(id);
+    await repository().addAttachment(at.project, at.id, file);
     await loadProject();
   }
 
   async function removeAttachment(id: string, name: string) {
-    await repository().removeAttachment(requireProject(), id, name);
+    const at = locate(id);
+    await repository().removeAttachment(at.project, at.id, name);
     await loadProject();
   }
 
   function attachmentUrl(id: string, name: string) {
-    return repository().attachmentUrl(requireProject(), id, name);
+    const at = locate(id);
+    return repository().attachmentUrl(at.project, at.id, name);
   }
 
   /** Positions of the tasks in a bucket, in order, optionally without one task. */
@@ -588,7 +752,8 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function resetFilter() {
-    query.value = '';
+    // In a saved view the search is the view's own
+    query.value = activeView.value?.query ?? '';
   }
 
   return {
@@ -608,6 +773,14 @@ export const useAppStore = defineStore('app', () => {
     setSortBy,
     projectId,
     view,
+    views,
+    activeView,
+    savedViewId,
+    scoped,
+    openView,
+    addView,
+    updateView,
+    removeView,
     hidden,
     layout,
     setLayout,

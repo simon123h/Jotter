@@ -45,6 +45,12 @@ The bar at the bottom switches the view. The columns are tabs you can swipe, or,
 
 Adding a task in a tab files it there: with that tag or that planned date.
 
+### Saved views
+
+The side menu lists the [saved views](/user/saved-views) of the vault, above the projects: searches kept under a name, the same as on the desktop. A view shows the matching tasks of **all projects**, laid out as its `group:` says (planning, tags or board; one list without a grouping) and in the order of its `sort:`. *Show as list* works here too. The title of the app bar is the name of the view; choosing a project in the side menu leaves it.
+
+The bookmark in the search field saves the current search as a view (with the project added, if you are in one). The pencil next to a view in the side menu changes or deletes it. In a view, cards cannot be dragged and the columns of a project cannot be managed; everything else, from the task page to the selection bar, works on the task in its own project.
+
 ## Search and filters
 
 The search field understands the same query language as the desktop, for example `tag:work+urgent prio:high due:none bucket:todo`. The filter button next to it has selectors for priority, tag and due date, which write into the field and follow what you type. See [Search & Filtering](/user/searching-filtering) for the whole syntax. Words match the beginning of words in the title, notes and tags, so `sat` finds *saturation* as you type.

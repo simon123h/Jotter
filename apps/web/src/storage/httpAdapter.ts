@@ -112,6 +112,9 @@ export class HttpStorageAdapter implements StorageAdapter {
     if (filters.due_before) url.searchParams.append('due_before', filters.due_before);
     if (filters.due_after) url.searchParams.append('due_after', filters.due_after);
     if (filters.planned_date) url.searchParams.append('planned_date', filters.planned_date);
+    if (filters.planned_before) url.searchParams.append('planned_before', filters.planned_before);
+    if (filters.planned_after) url.searchParams.append('planned_after', filters.planned_after);
+    if (filters.sort) url.searchParams.append('sort', filters.sort);
     if (filters.has_due_date !== undefined && filters.has_due_date !== null) {
       url.searchParams.append('has_due_date', String(filters.has_due_date));
     }

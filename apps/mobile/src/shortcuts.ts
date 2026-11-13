@@ -62,7 +62,8 @@ export async function openReminder(ref: { projectId: string; taskId: string }): 
   const app = useAppStore();
   const ui = useUiStore();
   if (!(await whenReady(app))) return;
-  if (app.projectId !== ref.projectId) await app.selectProject(ref.projectId);
+  // A saved view has ids of its own (project/file): the task is opened in its project
+  if (app.scoped || app.projectId !== ref.projectId) await app.selectProject(ref.projectId);
   if (!app.taskById(ref.taskId)) return;
   ui.close();
   app.clearSelection();
@@ -80,7 +81,7 @@ export async function runShortcut(url: string): Promise<void> {
   // What comes from outside goes to the project chosen for quick capture, and the app opens there. Shared text that
   // is empty opens nothing, so it does not switch the project either.
   const capture = action === 'new-task' || (action === 'share' && sharedDraft(url)) ? app.captureProject : null;
-  if (ready && capture && capture.id !== app.projectId) await app.selectProject(capture.id);
+  if (ready && capture && (app.scoped || capture.id !== app.projectId)) await app.selectProject(capture.id);
   if (!ready || !app.project) {
     // Shared text is not dropped without a word
     if (action === 'share' && sharedDraft(url)) ui.showToast(t('share.noProject'));

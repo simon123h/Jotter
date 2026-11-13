@@ -13,6 +13,8 @@ export type Sheet =
   | { type: 'horizon' }
   | { type: 'settings' }
   | { type: 'drawer' }
+  /** A saved view to change, or a search to save as a new one. */
+  | { type: 'view'; id?: string; query?: string }
   | { type: 'move'; ids: string[] }
   | { type: 'bulk-tags'; ids?: string[] }
   | { type: 'bulk-priority' }

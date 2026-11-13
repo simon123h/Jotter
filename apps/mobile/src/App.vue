@@ -19,6 +19,7 @@ import ProjectPickerSheet from '@/components/ProjectPickerSheet.vue';
 import BulkMoreSheet from '@/components/BulkMoreSheet.vue';
 import NavDrawer from '@/components/NavDrawer.vue';
 import SettingsSheet from '@/components/SettingsSheet.vue';
+import ViewSheet from '@/components/ViewSheet.vue';
 import { t } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -116,6 +117,7 @@ watch(
       <ProjectPickerSheet v-else-if="ui.sheet?.type === 'bulk-project'" />
       <BulkMoreSheet v-else-if="ui.sheet?.type === 'bulk-more'" />
       <SettingsSheet v-else-if="ui.sheet?.type === 'settings'" />
+      <ViewSheet v-else-if="ui.sheet?.type === 'view'" :id="ui.sheet.id" :query="ui.sheet.query" />
     </Transition>
   </template>
 
