@@ -50,11 +50,11 @@
     "globals": "^17.14.0",
     "jsdom": "^31.0.1",
     "prettier": "^3.10.1",
-    "typescript": "~6.0.3",
-    "typescript-eslint": "^8.71.1",
+    "typescript": "~7.0.2",
+    "typescript-eslint": "^8.72.2",
     "vite": "^8.3.8",
     "vitest": "^5.0.0",
-    "vue-tsc": "^3.3.12",
+    "vue-tsc": "^3.3.14",
     "wait-on": "^9.5.1"
   },
   "overrides": {
