@@ -45,6 +45,12 @@ Die Leiste unten wechselt die Ansicht. Die Spalten sind Tabs, zwischen denen du 
 
 Eine Aufgabe, die du in einem Tab anlegst, wird dort eingeordnet: mit diesem Tag oder diesem geplanten Datum.
 
+### Gespeicherte Ansichten
+
+Das Seitenmenü listet die [gespeicherten Ansichten](/de/user/saved-views) des Vaults über den Projekten: Suchen, die unter einem Namen bleiben, genau wie am Desktop. Eine Ansicht zeigt die passenden Aufgaben **aller Projekte**, so ausgelegt, wie ihr `group:` es sagt (Planung, Tags oder Board; ohne Gruppierung eine Liste), und in der Reihenfolge ihres `sort:`. *Als Liste anzeigen* geht auch hier. Der Titel der App-Leiste ist der Name der Ansicht; ein Projekt im Seitenmenü zu wählen, verlässt sie.
+
+Das Lesezeichen im Suchfeld speichert die aktuelle Suche als Ansicht (mit dem Projekt, wenn du in einem bist). Der Stift neben einer Ansicht im Seitenmenü ändert oder löscht sie. In einer Ansicht lassen sich Karten nicht ziehen, und die Spalten eines Projekts lassen sich nicht verwalten; alles andere, von der Aufgabenseite bis zur Auswahlleiste, wirkt auf die Aufgabe in ihrem eigenen Projekt.
+
 ## Suche und Filter
 
 Das Suchfeld versteht dieselbe Abfragesprache wie der Desktop, zum Beispiel `tag:arbeit+dringend prio:high due:none bucket:todo`. Die Filtertaste daneben hat Auswahlfelder für Priorität, Tag und Fälligkeit, die ins Feld schreiben und dem folgen, was du tippst. Die ganze Syntax steht unter [Suche & Filter](/de/user/searching-filtering). Wörter passen auf den Anfang von Wörtern in Titel, Notizen und Tags, `sat` findet also schon beim Tippen *Saturation*.

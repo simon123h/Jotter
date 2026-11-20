@@ -150,9 +150,12 @@ class TaskFilterParams:
     due_before: str | None = None
     due_after: str | None = None
     planned_date: str | None = None
+    planned_before: str | None = None
+    planned_after: str | None = None
     has_due_date: bool | None = None
     created_before: str | None = None
     created_after: str | None = None
     updated_before: str | None = None
     updated_after: str | None = None
     include_archived: bool = False
+    sort: str | None = None

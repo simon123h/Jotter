@@ -1,7 +1,19 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import { Menu, Search, ArrowLeft, X, SlidersHorizontal, ListChecks, EllipsisVertical, Check, ChevronDown, Calendar } from '@lucide/vue';
-import { isEmptyFilter } from '@jotter/task-filter';
+import {
+  Menu,
+  Search,
+  ArrowLeft,
+  X,
+  SlidersHorizontal,
+  ListChecks,
+  EllipsisVertical,
+  Check,
+  ChevronDown,
+  Calendar,
+  Bookmark,
+} from '@lucide/vue';
+import { isEmptyFilter, scopedQuery } from '@jotter/task-filter';
 import { t, type MessageKey } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useUiStore } from '@/stores/ui';
@@ -11,7 +23,7 @@ const app = useAppStore();
 const ui = useUiStore();
 
 const input = ref<HTMLInputElement | null>(null);
-const title = computed(() => app.project?.title ?? t('app.name'));
+const title = computed(() => app.activeView?.name ?? app.project?.title ?? t('app.name'));
 /** The query asks for more than words: the filter button shows a dot. */
 const hasExtraFilters = computed(() => !isEmptyFilter({ ...app.parsedFilter, search: undefined }));
 
@@ -188,6 +200,15 @@ const iconButton = 'relative flex h-12 w-12 shrink-0 items-center justify-center
       />
       <button v-if="app.query" :class="iconButton" :aria-label="t('search.clear')" data-testid="clear-search" @click="app.query = ''">
         <X class="h-5 w-5" />
+      </button>
+      <button
+        v-if="app.query && !app.scoped"
+        :class="iconButton"
+        :aria-label="t('views.save')"
+        data-testid="save-view"
+        @click="ui.open({ type: 'view', query: scopedQuery(app.query, app.projectId) })"
+      >
+        <Bookmark class="h-5 w-5" />
       </button>
       <button :class="iconButton" :aria-label="t('search.filters')" data-testid="open-filter" @click="ui.open({ type: 'filter' })">
         <SlidersHorizontal class="h-5 w-5" />

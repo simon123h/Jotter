@@ -25,10 +25,13 @@ A search query is composed of standalone full-text search phrases and optional c
 | **Priorities** | `priority:high` <br> *or* `prio:high,urgent` | Tasks with the specified priority levels |
 | **Projects** | `project:marketing` <br> *or* `proj:frontend` | Tasks belonging to a project by ID or **Project Title** |
 | **Planned Date** | `planned:today` <br> `planned:2026-W43` <br> `planned:2026-10` <br> `planned:none` | Tasks planned for that day, week or month: those planned on a day inside it, and weeks or months that start inside it. A week counts for the month it starts in, so `planned:2026-11` does not find a task planned for the week of 26 October. `thisWeek` and `thisMonth` stand for the current week or month, `nextWeek` and `nextMonth` for the next one. `none` finds the tasks that are not planned |
+| **Planned Boundaries** | `planned:after:today` <br> `planned:before:2026-12-31` | Tasks whose planned start lies on or after / on or before that day. A week starts on its Monday, a month on its first day; tasks that are not planned are never found. Together they make a range |
 | **Presence of Due Date** | `due:has` <br> *or* `due:none` | Tasks that have *any* due date, or *no* due date |
 | **Due Date Boundaries** | `due:before:2026-12-31` <br> `due:after:2026-06-01` | Tasks with due dates within the specified date boundaries |
 | **Created / Updated** | `created:after:2026-06-01` <br> `updated:before:2026-06-30` | Tasks created or last changed within the specified date boundaries (`before:` and `after:` include the day itself) |
-| **Relative Days** | `created:after:-7d` <br> `due:before:+2w` | Any date boundary can count from today instead: `-7d` is seven days ago, `+2w` is two weeks ahead (days `d` or weeks `w`, the sign is required). `created:after:-7d` finds the tasks added in the last week, and keeps doing so tomorrow. |
+| **Relative Days** | `created:after:-7d` <br> `due:before:+2w` | Any date boundary can count from today instead: `-7d` is seven days ago, `+2w` is two weeks ahead (days `d` or weeks `w`, the sign is required); `today` and `tomorrow` work as well. `created:after:-7d` finds the tasks added in the last week, and keeps doing so tomorrow. |
+| **Grouping** | `group:planned` <br> `group:tag` <br> `group:bucket` | Lays the result out by planned time (Re-plan, Today, This week, ...), by tag or by column instead of a plain list. It does not change which tasks match; a [saved view](./saved-views) opens in the matching layout |
+| **Sorting** | `sort:-created` <br> `sort:due` <br> `sort:priority` | Orders the result: `created`, `updated`, `due`, `planned`, `priority` (most urgent first) or `title`. A leading `-` reverses it (`sort:-created` is the newest first). Tasks without the value come last in either direction. Without `sort:` the order is the one of the board |
 
 ---
 

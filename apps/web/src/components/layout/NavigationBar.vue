@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router';
 import {
   Menu,
   Filter,
+  Bookmark,
   Search,
   LayoutGrid,
   List,
@@ -39,6 +40,7 @@ const emit = defineEmits<{
   (e: 'toggle-sidebar'): void;
   (e: 'toggle-timeblock-sidebar'): void;
   (e: 'open-filter'): void;
+  (e: 'save-view'): void;
   (e: 'create-task', defaultBucket: BucketName): void;
 }>();
 
@@ -103,8 +105,18 @@ onClickOutside(overflowMenuRef, () => {
         @keydown.esc="($event.target as HTMLInputElement).blur()"
         type="text"
         :placeholder="t('searchPlaceholder')"
-        class="w-full bg-theme-card border border-theme-border rounded pl-8 pr-7 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
+        class="w-full bg-theme-card border border-theme-border rounded pl-8 pr-14 py-1 text-xs text-theme-text-input placeholder-theme-text-muted/50 focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-ring"
       />
+      <!-- Save the search as a view -->
+      <button
+        v-if="modelValue.trim()"
+        @click="emit('save-view')"
+        class="absolute right-8 p-1 rounded transition-colors cursor-pointer text-theme-text-muted hover:text-theme-text-main hover:bg-theme-column/50"
+        :title="t('savedViews.save')"
+        data-testid="save-view"
+      >
+        <Bookmark class="w-3.5 h-3.5" />
+      </button>
       <!-- Integrated Filter Button -->
       <button
         @click="emit('open-filter')"

@@ -45,12 +45,15 @@ class TaskQueryService:
         due_before: str | None = None,
         due_after: str | None = None,
         planned_date: str | None = None,
+        planned_before: str | None = None,
+        planned_after: str | None = None,
         has_due_date: bool | None = None,
         created_before: str | None = None,
         created_after: str | None = None,
         updated_before: str | None = None,
         updated_after: str | None = None,
         include_archived: bool = False,
+        sort: str | None = None,
     ) -> list[TaskResponse]:
         tasks = self.sqlite_repo.find_tasks(
             project_id=project_id,
@@ -66,12 +69,15 @@ class TaskQueryService:
             due_before=due_before,
             due_after=due_after,
             planned_date=planned_date,
+            planned_before=planned_before,
+            planned_after=planned_after,
             has_due_date=has_due_date,
             created_before=created_before,
             created_after=created_after,
             updated_before=updated_before,
             updated_after=updated_after,
             include_archived=include_archived,
+            sort=sort,
         )
         return [self._to_response(t) for t in tasks]
 

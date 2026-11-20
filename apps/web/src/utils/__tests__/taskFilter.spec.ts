@@ -4,6 +4,7 @@ import { filterTasks, parseQuery, stringifyQuery, isEmptyFilter, isoDay, isBeyon
 // The same cases run against the Python backend (tests/test_search_conformance.py)
 import matchFixture from '../../../../../spec/fixtures/search/match.json';
 import parseFixture from '../../../../../spec/fixtures/search/parse.json';
+import sortFixture from '../../../../../spec/fixtures/search/sort.json';
 
 const {
   tasks,
@@ -30,6 +31,19 @@ describe('task filter conformance', () => {
   }
 });
 
+describe('sort:title conformance', () => {
+  const rows = (sortFixture as { tasks: Array<{ id: string; title: string }> }).tasks.map((t) => ({
+    ...t,
+    bucket: 'todo',
+    tags: [] as string[],
+  }));
+  for (const c of (sortFixture as { cases: Array<{ name: string; filter: TaskFilter; ids: string[] }> }).cases) {
+    it(`sorts: ${c.name}`, () => {
+      expect(filterTasks(rows, c.filter, '2026-06-15').map((t) => t.id)).toEqual(c.ids);
+    });
+  }
+});
+
 describe('task filter', () => {
   it('writes a filter back as a query that parses to the same filter', () => {
     for (const { filter } of parseCases) expect(parseQuery(stringifyQuery(filter))).toEqual(filter);
@@ -39,6 +53,8 @@ describe('task filter', () => {
     expect(isEmptyFilter({})).toBe(true);
     expect(isEmptyFilter({ tag_mode: 'any' })).toBe(true);
     expect(isEmptyFilter({ has_due_date: false })).toBe(false);
+    // Sorting and grouping ask for no tasks: a view of only those has nothing filtered
+    expect(isEmptyFilter({ sort: '-created', group: 'planned' })).toBe(true);
   });
 
   it('keeps the order of the tasks', () => {

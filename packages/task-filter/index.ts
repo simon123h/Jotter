@@ -11,6 +11,7 @@
 import { plannedSpan, plannedStart } from "./planned";
 
 export * from "./planned";
+export * from "./views";
 
 /** What a query asks for. Lists are comma-separated strings, as the HTTP API takes them. */
 export interface TaskFilter {
@@ -27,6 +28,9 @@ export interface TaskFilter {
   due_before?: string; // YYYY-MM-DD
   due_after?: string;
   planned_date?: string;
+  /** The planned start (a week or month starts on its first day) lies on or before / on or after this day. */
+  planned_before?: string;
+  planned_after?: string;
   has_due_date?: boolean | null;
   created_before?: string;
   created_after?: string;
@@ -34,6 +38,10 @@ export interface TaskFilter {
   updated_after?: string;
   /** A project id or title. Matching one task cannot tell: the caller narrows the tasks to it. */
   project?: string;
+  /** How the result is ordered: `created`, `updated`, `due`, `planned`, `priority` or `title`; a leading `-` reverses it. */
+  sort?: string;
+  /** How the result is laid out: by planned time, by tag or by column. It does not change which tasks match. */
+  group?: "planned" | "tag" | "bucket";
 }
 
 /** The parts of a task that a filter looks at. */
@@ -69,6 +77,31 @@ export function parseTags(input: string | readonly string[] | null | undefined):
 
 const quoted = (value: string) => (value.includes(" ") ? `"${value}"` : value);
 
+/** `before:2026-12-31` or `after:-7d` (in any case) as its kind and its day. */
+function boundary(raw: string): ["before" | "after", string] | null {
+  const match = /^(before|after):(.*)$/i.exec(raw);
+  return match ? [match[1].toLowerCase() as "before" | "after", match[2]] : null;
+}
+
+const SORT_KEYS = ["created", "updated", "due", "planned", "priority", "title"] as const;
+type SortKey = (typeof SORT_KEYS)[number];
+
+/** A sort is a key, with one `-` in front to reverse it. */
+export const isSortKey = (sort: string) =>
+  (SORT_KEYS as readonly string[]).includes(sort.startsWith("-") ? sort.slice(1) : sort);
+
+const GROUPS = ["planned", "tag", "bucket"] as const;
+
+/** The grouping a text names, or undefined when it is none. */
+export const toGroup = (text: string | undefined): TaskFilter["group"] =>
+  GROUPS.find((group) => group === (text ?? "").toLowerCase());
+
+/** The sort a text names (lower case), or undefined when it is none. */
+export const toSort = (text: string | undefined): string | undefined => {
+  const sort = (text ?? "").toLowerCase();
+  return isSortKey(sort) ? sort : undefined;
+};
+
 /**
  * Supports:
  * - tag:ui,bug (any of them) or tag:ui+bug (all of them), also `tags:`
@@ -79,7 +112,12 @@ const quoted = (value: string) => (value.includes(" ") ? `"${value}"` : value);
  * - planned:today, planned:2026-W43, planned:2026-10 (the tasks planned in that day, week or month; thisWeek and the
  *   like stand for the current one), planned:none
  * - due:has, due:none, due:before:YYYY-MM-DD, due:after:YYYY-MM-DD; created: and updated: take before: and after:
- * - a day can be relative to today: -7d, +2w (days or weeks, the sign is required), e.g. created:after:-7d
+ * - planned:before:2026-12-31, planned:after:today (the planned start, a week or month starts on its first day)
+ * - a day can be relative to today: -7d, +2w (days or weeks, the sign is required), e.g. created:after:-7d; also today
+ *   and tomorrow
+ * - sort:created, sort:-due (a leading - reverses it): created, updated, due, planned, priority, title; tasks without
+ *   the value come last
+ * - group:planned, group:tag or group:bucket lays the result out by planned time, by tag or by column
  * - words and "quoted phrases" for the full-text search
  * Values with spaces go in quotes (bucket:"in progress").
  */
@@ -132,25 +170,33 @@ export function parseQuery(query: string): TaskFilter {
       } else if (lowerKey === "project" || lowerKey === "proj") {
         filter.project = rawValue;
       } else if (lowerKey === "planned") {
-        filter.planned_date = rawValue;
+        const range = boundary(rawValue);
+        if (range?.[0] === "before") filter.planned_before = range[1];
+        else if (range?.[0] === "after") filter.planned_after = range[1];
+        else filter.planned_date = rawValue;
+      } else if (lowerKey === "group") {
+        const group = toGroup(rawValue);
+        if (group) filter.group = group;
+      } else if (lowerKey === "sort") {
+        const sort = toSort(rawValue);
+        if (sort) filter.sort = sort;
       } else if (lowerKey === "due") {
         const lowerVal = rawValue.toLowerCase();
         if (lowerVal === "has") filter.has_due_date = true;
         else if (lowerVal === "none") filter.has_due_date = false;
-        else if (rawValue.startsWith("before:"))
-          filter.due_before = rawValue.substring(7);
-        else if (rawValue.startsWith("after:"))
-          filter.due_after = rawValue.substring(6);
+        else {
+          const range = boundary(rawValue);
+          if (range?.[0] === "before") filter.due_before = range[1];
+          else if (range?.[0] === "after") filter.due_after = range[1];
+        }
       } else if (lowerKey === "created") {
-        if (rawValue.startsWith("before:"))
-          filter.created_before = rawValue.substring(7);
-        else if (rawValue.startsWith("after:"))
-          filter.created_after = rawValue.substring(6);
+        const range = boundary(rawValue);
+        if (range?.[0] === "before") filter.created_before = range[1];
+        else if (range?.[0] === "after") filter.created_after = range[1];
       } else if (lowerKey === "updated") {
-        if (rawValue.startsWith("before:"))
-          filter.updated_before = rawValue.substring(7);
-        else if (rawValue.startsWith("after:"))
-          filter.updated_after = rawValue.substring(6);
+        const range = boundary(rawValue);
+        if (range?.[0] === "before") filter.updated_before = range[1];
+        else if (range?.[0] === "after") filter.updated_after = range[1];
       }
     } else {
       const text = (
@@ -179,6 +225,8 @@ export function stringifyQuery(filter: TaskFilter): string {
       `tags:${quoted(filter.tags.split(",").join(filter.tag_mode === "all" ? "+" : ","))}`,
     );
   if (filter.planned_date) parts.push(`planned:${quoted(filter.planned_date)}`);
+  if (filter.planned_before) parts.push(`planned:before:${filter.planned_before}`);
+  if (filter.planned_after) parts.push(`planned:after:${filter.planned_after}`);
   if (filter.has_due_date !== undefined && filter.has_due_date !== null)
     parts.push(`due:${filter.has_due_date ? "has" : "none"}`);
   if (filter.due_before) parts.push(`due:before:${filter.due_before}`);
@@ -189,15 +237,17 @@ export function stringifyQuery(filter: TaskFilter): string {
   if (filter.updated_before)
     parts.push(`updated:before:${filter.updated_before}`);
   if (filter.updated_after) parts.push(`updated:after:${filter.updated_after}`);
+  if (filter.sort) parts.push(`sort:${filter.sort}`);
+  if (filter.group) parts.push(`group:${filter.group}`);
   if (filter.search) parts.push(filter.search);
 
   return parts.join(" ");
 }
 
-/** Whether the query asks for anything: a filter of only empty fields does not. */
+/** Whether the query asks for anything: a filter of only empty fields does not, and neither does one that only sorts or groups. */
 export function isEmptyFilter(filter: TaskFilter): boolean {
   return !Object.entries(filter).some(([key, value]) =>
-    key === "tag_mode"
+    key === "tag_mode" || key === "sort" || key === "group"
       ? false
       : value !== undefined && value !== null && value !== "",
   );
@@ -230,8 +280,11 @@ const words = (text: string) =>
     .split(/[^\p{L}\p{N}]+/u)
     .filter(Boolean);
 
-/** A day relative to today (-7d, +2w) as YYYY-MM-DD, counted from `day`. Anything else is a day as written. */
+/** A day relative to today (-7d, +2w, today, tomorrow) as YYYY-MM-DD, counted from `day`. Anything else is a day as written. */
 function resolveDay(value: string, day: string): string {
+  const word = value.toLowerCase();
+  if (word === "today") return day;
+  if (word === "tomorrow") return resolveDay("+1d", day);
   const match = /^([+-])(\d+)([dw])$/i.exec(value);
   if (!match) return value;
   const days = Number(match[2]) * (match[3].toLowerCase() === "w" ? 7 : 1) * (match[1] === "-" ? -1 : 1);
@@ -295,6 +348,8 @@ export function matchesFilter(
   const createdAfter = resolve(filter.created_after);
   const updatedBefore = resolve(filter.updated_before);
   const updatedAfter = resolve(filter.updated_after);
+  const plannedBefore = resolve(filter.planned_before);
+  const plannedAfter = resolve(filter.planned_after);
 
   const due = task.due_date || "";
   if (filter.has_due_date === true && !due) return false;
@@ -311,6 +366,12 @@ export function matchesFilter(
       const span = plannedSpan(filter.planned_date, day);
       if (!span || !start || start < span[0] || start > span[1]) return false;
     }
+  }
+
+  if (plannedBefore || plannedAfter) {
+    const start = task.planned_date ? plannedStart(task.planned_date) : null;
+    if (plannedBefore && !(start && start <= plannedBefore)) return false;
+    if (plannedAfter && !(start && start >= plannedAfter)) return false;
   }
 
   const created = task.created_at ?? "";
@@ -334,15 +395,73 @@ export function matchesFilter(
   return true;
 }
 
-/** The tasks that match, in their order. */
+const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+
+/** The title as `sort:title` compares it: no symbols or emojis in front, no accents, lower case (spec/README.md, Search fixtures). */
+const titleKey = (title: string) =>
+  title
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase();
+
+/** Strings by code point, not by UTF-16 unit, as Python compares them. */
+function compareCodePoints(a: string, b: string): number {
+  const x = [...a];
+  const y = [...b];
+  for (let i = 0; i < Math.min(x.length, y.length); i++) {
+    const d = x[i].codePointAt(0)! - y[i].codePointAt(0)!;
+    if (d) return d < 0 ? -1 : 1;
+  }
+  return x.length === y.length ? 0 : x.length < y.length ? -1 : 1;
+}
+
+/** What a task is sorted by; null when it has no value, which puts it last in either direction. */
+function sortValue(task: FilterableTask, key: SortKey): string | number | null {
+  switch (key) {
+    case "created":
+      return task.created_at || null;
+    case "updated":
+      return task.updated_at || null;
+    case "due":
+      return task.due_date || null;
+    case "planned":
+      return (task.planned_date && plannedStart(task.planned_date)) || null;
+    case "priority":
+      return PRIORITY_RANK[(task.priority ?? "").toLowerCase()] ?? null;
+    case "title":
+      return titleKey(task.title);
+  }
+}
+
+/** The tasks in the order a `sort` asks for (see TaskFilter.sort); equal ones keep theirs. A sort that is none leaves it. */
+export function sortTasks<T extends FilterableTask>(tasks: T[], sort: string | undefined): T[] {
+  const normalized = toSort(sort);
+  if (!normalized) return tasks;
+  const key = normalized.replace(/^-/, "") as SortKey;
+  const sign = normalized.startsWith("-") ? -1 : 1;
+  const values = new Map(tasks.map((task) => [task, sortValue(task, key)]));
+  return [...tasks].sort((a, b) => {
+    const x = values.get(a)!;
+    const y = values.get(b)!;
+    if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1;
+    if (typeof x === "number" || typeof y === "number") return sign * ((x as number) - (y as number));
+    return sign * (key === "title" ? compareCodePoints(x as string, y as string) : x < y ? -1 : x > y ? 1 : 0);
+  });
+}
+
+/** The tasks that match, in their order (or the one the filter's `sort` asks for). */
 export function filterTasks<T extends FilterableTask>(
   tasks: T[],
   filter: TaskFilter,
   day: string = today(),
 ): T[] {
-  return isEmptyFilter(filter)
-    ? tasks
-    : tasks.filter((task) => matchesFilter(task, filter, day));
+  return sortTasks(
+    isEmptyFilter(filter)
+      ? tasks
+      : tasks.filter((task) => matchesFilter(task, filter, day)),
+    filter.sort,
+  );
 }
 
 /** A title without its emojis, for a window or tab title, where they are noise. */

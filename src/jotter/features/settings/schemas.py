@@ -1,11 +1,22 @@
 """Pydantic schemas and DTOs for Application Settings."""
 
+import logging
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+
+logger = logging.getLogger(__name__)
 
 # How far ahead planned tasks are shown (spec/FORMAT.md does not know it: it is a setting of the views)
 PlanningHorizon = Literal["today", "tomorrow", "week", "month", "all"]
+
+
+class SavedView(BaseModel):
+    """A saved search: a name and a query of the search language (packages/task-filter), shown in the sidebar."""
+
+    id: str
+    name: str
+    query: str
 
 
 class AppSettings(BaseModel):
@@ -14,6 +25,8 @@ class AppSettings(BaseModel):
     hideDoneColumn: bool = True
     hideArchiveColumn: bool = True
     planningHorizon: PlanningHorizon = "today"
+    # None: never set, so the apps offer their example views once; a list (also an empty one) is the user's choice
+    views: list[SavedView] | None = None
     isSidebarOpen: bool = True
     currentTheme: str = "nordic-light"
     thresholdDays: int = 7
@@ -31,6 +44,26 @@ class AppSettings(BaseModel):
     tagColors: dict[str, str] = {}
     doneCleanPeriod: int | None = None
     autoCommit: bool = True
+
+    @field_validator("views", mode="before")
+    @classmethod
+    def _keep_the_valid_views(cls, value: Any) -> Any:
+        """A view without an id, a name or a query is dropped, instead of failing all the settings."""
+        if value is None:
+            return None
+        if not isinstance(value, list):
+            logger.warning("Ignoring 'views' in settings.json: not a list")
+            return None
+        valid = [
+            v
+            for v in value
+            if isinstance(v, dict) and all(isinstance(v.get(key), str) for key in ("id", "name", "query"))
+        ]
+        if len(valid) < len(value):
+            logger.warning(
+                "Dropping %d view(s) in settings.json without an id, a name or a query", len(value) - len(valid)
+            )
+        return valid
 
     @model_validator(mode="before")
     @classmethod
@@ -50,6 +83,7 @@ class SettingsUpdate(BaseModel):
     hideDoneColumn: bool | None = None
     hideArchiveColumn: bool | None = None
     planningHorizon: PlanningHorizon | None = None
+    views: list[SavedView] | None = None
     isSidebarOpen: bool | None = None
     currentTheme: str | None = None
     thresholdDays: int | None = None

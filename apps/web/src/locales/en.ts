@@ -459,6 +459,20 @@ export const en = {
   shortcuts: {
     createTask: 'Press Q to add a new task',
   },
+  savedViews: {
+    title: 'Views',
+    upcoming: 'Upcoming',
+    recent: 'Recently added',
+    save: 'Save this search as a view',
+    saveTitle: 'Save view',
+    editTitle: 'Edit view',
+    edit: 'Edit view',
+    name: 'Name',
+    namePlaceholder: 'e.g. Upcoming',
+    query: 'Search',
+    queryHelp: 'Written like in the search field, e.g. tag:ui sort:-created.',
+    delete: 'Delete view',
+  },
   sidebar: {
     collapse: 'Collapse Sidebar',
     expand: 'Expand Sidebar',

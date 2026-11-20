@@ -50,9 +50,15 @@ A new implementation only needs a small runner that loads these files and compar
 
 ## Search fixtures
 
-`fixtures/search/` holds the cases of the task search: `parse.json` (a query and the filter it gives) and `match.json` (tasks,
-and for each filter the ids it must find). The query language and the matching live in `packages/task-filter`; the
+`fixtures/search/` holds the cases of the task search: `parse.json` (a query and the filter it gives), `match.json` (tasks,
+and for each filter the ids it must find) and `sort.json` (the order of `sort:title`). The query language and the matching live in `packages/task-filter`; the
 Python backend answers the same filters from SQLite.
+
+`sort:` takes one key (`created`, `updated`, `due`, `planned`, `priority`, `title`), in any case, with at most one `-` in
+front to reverse it; `--due` and unknown keys are no sort. Tasks without the value come last in either direction, and equal
+ones keep their order. `sort:title` compares a *key*: the title without the symbols and emojis in front of it, without
+accents (NFKD, marks removed) and in lower case, **by code point** (not by locale, which the two implementations do not
+share). `priority` puts the most urgent first.
 
 | Implementation | Runner |
 | :-- | :-- |

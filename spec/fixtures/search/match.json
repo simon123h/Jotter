@@ -474,6 +474,197 @@
       "ids": [
         "c"
       ]
+    },
+    {
+      "name": "planned:after counts the planned start, a week from its Monday and a month from its first day",
+      "filter": {
+        "planned_after": "2026-06-02"
+      },
+      "ids": [
+        "c"
+      ]
+    },
+    {
+      "name": "planned:before includes the day itself",
+      "filter": {
+        "planned_before": "2026-06-01"
+      },
+      "ids": [
+        "a",
+        "e"
+      ]
+    },
+    {
+      "name": "today and tomorrow are days for the boundaries",
+      "filter": {
+        "planned_after": "today"
+      },
+      "ids": [
+        "c"
+      ]
+    },
+    {
+      "name": "tomorrow starts after the week that begins today",
+      "filter": {
+        "planned_after": "tomorrow"
+      },
+      "ids": []
+    },
+    {
+      "name": "a relative day works for planned too",
+      "filter": {
+        "planned_before": "-1w"
+      },
+      "ids": [
+        "a",
+        "e"
+      ]
+    },
+    {
+      "name": "planned before and after make a range",
+      "filter": {
+        "planned_after": "2026-03-13",
+        "planned_before": "2026-06-10"
+      },
+      "ids": [
+        "e"
+      ]
+    },
+    {
+      "name": "tasks that are not planned are in no planned range",
+      "filter": {
+        "planned_before": "2099-01-01"
+      },
+      "ids": [
+        "a",
+        "c",
+        "e"
+      ]
+    },
+    {
+      "name": "sort newest created first",
+      "filter": {
+        "sort": "-created"
+      },
+      "ids": [
+        "f",
+        "e",
+        "d",
+        "c",
+        "b",
+        "a"
+      ]
+    },
+    {
+      "name": "sort by created",
+      "filter": {
+        "sort": "created"
+      },
+      "ids": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "sort by due date, those without one last",
+      "filter": {
+        "sort": "due"
+      },
+      "ids": [
+        "a",
+        "c",
+        "b",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "sort by due date reversed keeps those without one last",
+      "filter": {
+        "sort": "-due"
+      },
+      "ids": [
+        "c",
+        "a",
+        "b",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "name": "sort by planned start",
+      "filter": {
+        "sort": "planned"
+      },
+      "ids": [
+        "a",
+        "e",
+        "c",
+        "b",
+        "d",
+        "f"
+      ]
+    },
+    {
+      "name": "sort by priority, the most urgent first",
+      "filter": {
+        "sort": "priority"
+      },
+      "ids": [
+        "c",
+        "a",
+        "e",
+        "f",
+        "b",
+        "d"
+      ]
+    },
+    {
+      "name": "sort by priority reversed, tasks without one last",
+      "filter": {
+        "sort": "-priority"
+      },
+      "ids": [
+        "f",
+        "e",
+        "a",
+        "c",
+        "b",
+        "d"
+      ]
+    },
+    {
+      "name": "sort by title",
+      "filter": {
+        "sort": "title"
+      },
+      "ids": [
+        "e",
+        "b",
+        "f",
+        "d",
+        "c",
+        "a"
+      ]
+    },
+    {
+      "name": "sort works together with the filter",
+      "filter": {
+        "buckets": "todo",
+        "sort": "-updated"
+      },
+      "ids": [
+        "e",
+        "d",
+        "b",
+        "a"
+      ]
     }
   ]
 }

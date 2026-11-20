@@ -6,6 +6,7 @@ import { useMediaQuery } from '@vueuse/core';
 import { useRoute } from 'vue-router';
 import { Plus } from '@lucide/vue';
 import Sortable from 'sortablejs';
+import { routeSort } from '@/utils/filterRoute';
 import type { Task, Bucket, BucketName } from '@/types';
 import BoardColumn from '@/components/views/BoardColumn.vue';
 import SnapScroller from '@/components/ui/SnapScroller.vue';
@@ -83,9 +84,12 @@ const tasksByBucket = computed(() => {
     groups[b].push(task);
   });
 
-  Object.keys(groups).forEach((key) => {
-    groups[key].sort((a, b) => a.position - b.position);
-  });
+  // The order of the board, or the one a search asks for (`sort:` in a saved view)
+  if (!routeSort(route.query)) {
+    Object.keys(groups).forEach((key) => {
+      groups[key].sort((a, b) => a.position - b.position);
+    });
+  }
 
   return groups;
 });
