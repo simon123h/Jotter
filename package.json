@@ -45,7 +45,7 @@
   "devDependencies": {
     "concurrently": "^10.0.7",
     "husky": "^9.1.7",
-    "lint-staged": "^17.6.0",
+    "lint-staged": "^17.6.1",
     "vitepress": "^1.6.4"
   },
   "lint-staged": {
